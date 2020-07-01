@@ -18,8 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -72,10 +71,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return err
 	}
-	hostSrv.Config.Auth, err = engine.WithAuth()
-	if err != nil {
-		return err
-	}
 
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {
@@ -83,13 +78,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
 
-	blog.Info("host server auth config is: %+v", hostSrv.Config.Auth)
-	authorizer, err := auth.NewAuthorize(nil, hostSrv.Config.Auth, engine.Metric().Registry())
-	if err != nil {
-		blog.Errorf("new host authorizer failed, err: %+v", err)
-		return fmt.Errorf("new host authorizer failed, err: %+v", err)
-	}
-	authManager := extensions.NewAuthManager(engine.CoreAPI, authorizer)
+	authManager := extensions.NewAuthManager(engine.CoreAPI)
 	service.AuthManager = authManager
 	service.Engine = engine
 	service.Config = hostSrv.Config

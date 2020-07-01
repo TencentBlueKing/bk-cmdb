@@ -184,11 +184,6 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 			return nil, err
 		}
 		createdInstIDs = append(createdInstIDs, instID)
-		err = assoc.authManager.RegisterInstancesByID(kit.Ctx, kit.Header, current.Object().ObjectID, instID)
-		if err != nil {
-			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, instID: %d, err: %v, rid: %s", current.Object().ObjectID, instID, err, kit.Rid)
-			return nil, err
-		}
 
 		// reset the child's parent instance's parent id to current instance's id.
 		children, err := parent.GetMainlineChildInst()

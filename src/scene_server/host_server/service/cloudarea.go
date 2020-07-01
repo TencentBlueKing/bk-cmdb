@@ -17,8 +17,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"configcenter/src/auth/extensions"
-	authmeta "configcenter/src/auth/meta"
+	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -73,7 +72,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 	filter := input.Condition
 	if s.AuthManager.Enabled() && !s.AuthManager.SkipReadAuthorization {
 		// auth: get authorized resources
-		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.user)
+		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.header, srvData.user)
 		if err != nil {
 			blog.Errorf("FindManyCloudArea failed, ListAuthorizedPlatIDs failed, user: %s, err: %+v, rid: %s", srvData.user, err, rid)
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommListAuthorizedResourceFromIAMFailed)})
@@ -191,12 +190,6 @@ func (s *Service) CreatePlatBatch(req *restful.Request, resp *restful.Response) 
 			}
 		}
 
-		// register plats to iam
-		if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platIDs...); err != nil {
-			blog.Errorf("CreatePlatBatch failed, RegisterPlatByID err: %s, rid:%s", err.Error(), srvData.rid)
-			return srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		}
-
 		// add auditLog
 		auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
 		if err := auditLog.WithCurrent(srvData.ctx, platIDs...); err != nil {
@@ -262,12 +255,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 			return errors.New(res.Code, res.ErrMsg)
 		}
 
-		// register plat to iam
 		platID := int64(res.Data.Created.ID)
-		if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
-			blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
-			return srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		}
 
 		// add auditLog
 		auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
@@ -293,6 +281,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		BaseResp: meta.SuccessBaseResp,
 		Data:     res.Data,
 	})
+
 }
 
 func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
@@ -343,16 +332,6 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	iamResource, err := s.AuthManager.MakeResourcesByPlatID(srvData.header, authmeta.Delete, platID)
-	if err != nil {
-		blog.Errorf("DelPlat failed, MakeResourcesByPlatID failed, err: %v, input:%d, rid:%s", err, platID, srvData.rid)
-		result := &meta.RespError{
-			Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed),
-		}
-		_ = resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
-
 	// add auditLog preData
 	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
 	if err := auditLog.WithPrevious(srvData.ctx, platID); err != nil {
@@ -375,19 +354,12 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		if false == res.Result {
 			blog.Errorf("DelPlat http response error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, srvData.rid)
 			return srvData.ccErr.New(res.Code, res.ErrMsg)
-
 		}
 
-		// deregister plat
-		if err := s.AuthManager.Authorize.DeregisterResource(srvData.ctx, iamResource...); err != nil {
-			blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
-			return srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
 		if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditDelete); err != nil {
 			blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
-			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return srvData.ccErr.New(res.Code, res.ErrMsg)
 		}
-
 		return nil
 	})
 
@@ -396,10 +368,7 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	_ = resp.WriteEntity(meta.Response{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     "",
-	})
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
@@ -480,16 +449,6 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 			return errors.New(res.Code, res.ErrMsg)
 		}
 
-		// auth: sync resource info to iam
-		iamPlat := extensions.PlatSimplify{
-			BKCloudIDField:   platID,
-			BKCloudNameField: input.CloudName,
-		}
-		if err := s.AuthManager.UpdateRegisteredPlat(srvData.ctx, srvData.header, iamPlat); err != nil {
-			blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)
-			return srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
-
 		// update auditLog
 		if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
 			blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
@@ -543,10 +502,9 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-	_ = resp.WriteEntity(meta.Response{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     "",
-	})
+
+	// response success
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) searchPlatAddHostCount(srvData *srvComm, dataInfo metadata.InstDataInfo) (map[string]interface{}, error) {

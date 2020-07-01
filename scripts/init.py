@@ -212,45 +212,11 @@ res = conf/language
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
-enableSync = false
-syncWorkers = $auth_sync_workers
-syncIntervalMinutes = $auth_sync_interval_minutes
     '''
 
     template = FileTemplate(migrate_file_template_str)
     result = template.substitute(**context)
     with open(output + "migrate.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # auth.conf
-    auth_file_template_str = '''
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
-
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
-
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 3000
-maxIDleConns = 100
-mechanism = SCRAM-SHA-1
-'''
-
-    template = FileTemplate(auth_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "auth.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
 def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor):

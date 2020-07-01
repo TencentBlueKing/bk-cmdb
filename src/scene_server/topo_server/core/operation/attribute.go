@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"

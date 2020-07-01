@@ -28,7 +28,7 @@ func getResourceTableName(resourceType iam.ResourceTypeID) string {
 		return common.BKTableNameBaseHost
 	case iam.SysEventPushing:
 		return common.BKTableNameSubscription
-	case iam.SysModelGroup, iam.SysInstanceModelGroup:
+	case iam.SysModelGroup:
 		return common.BKTableNameObjClassification
 	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKTableNameObjDes
@@ -56,10 +56,10 @@ func getResourceTableName(resourceType iam.ResourceTypeID) string {
 		return common.BKTableNameServiceInstance
 	case iam.BizSetTemplate:
 		return common.BKTableNameSetTemplate
-	case iam.Set:
-		return common.BKTableNameBaseSet
-	case iam.Module:
-		return common.BKTableNameBaseModule
+	//case iam.Set:
+	//	return common.BKTableNameBaseSet
+	//case iam.Module:
+	//	return common.BKTableNameBaseModule
 	default:
 		return ""
 	}
@@ -67,7 +67,7 @@ func getResourceTableName(resourceType iam.ResourceTypeID) string {
 
 func isResourceIDStringType(resourceType iam.ResourceTypeID) bool {
 	switch resourceType {
-	case iam.SysModelGroup, iam.SysInstanceModelGroup, iam.SysModel, iam.SysInstanceModel, iam.SysAssociationType:
+	case iam.SysModelGroup, iam.SysModel, iam.SysInstanceModel, iam.SysAssociationType:
 		return true
 	}
 	return false
@@ -82,10 +82,10 @@ func GetInstanceResourceObjID(resourceType iam.ResourceTypeID) string {
 		return common.BKInnerObjIDPlat
 	case iam.Business:
 		return common.BKInnerObjIDApp
-	case iam.Set:
-		return common.BKInnerObjIDSet
-	case iam.Module:
-		return common.BKInnerObjIDModule
+	//case iam.Set:
+	//	return common.BKInnerObjIDSet
+	//case iam.Module:
+	//	return common.BKInnerObjIDModule
 	default:
 		return ""
 	}
@@ -129,15 +129,6 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Reso
 		}
 		condition[common.BKObjIDField] = map[string]interface{}{
 			common.BKDBNIN: excludedObjIDs,
-		}
-		return condition, nil
-	}
-
-	// model group for instance selection not include biz topology and host
-	if resourceType == iam.SysInstanceModelGroup {
-		excludedGroupIDs := []string{"bk_host_manage", "bk_biz_topo", "bk_organization"}
-		condition[common.BKClassificationIDField] = map[string]interface{}{
-			common.BKDBNIN: excludedGroupIDs,
 		}
 		return condition, nil
 	}

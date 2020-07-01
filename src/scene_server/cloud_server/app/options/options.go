@@ -13,7 +13,6 @@
 package options
 
 import (
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 
@@ -46,7 +45,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	Auth           authcenter.AuthConfig
 	SecretKeyUrl   string
 	SecretsAddrs   string
 	SecretsToken   string

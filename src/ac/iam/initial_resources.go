@@ -41,8 +41,9 @@ func genBusinessResources() []ResourceType {
 			Description:   "主机",
 			DescriptionEn: "hosts under a business or in resource pool",
 			Parents: []Parent{{
-				SystemID:   SystemIDCMDB,
-				ResourceID: Module,
+				SystemID: SystemIDCMDB,
+				//ResourceID: Module,
+				ResourceID: Business,
 			}, {
 				SystemID:   SystemIDCMDB,
 				ResourceID: SysResourcePoolDirectory,
@@ -149,33 +150,33 @@ func genBusinessResources() []ResourceType {
 			Version: 1,
 		},
 		// only for host topology usage, not related to actions
-		{
-			ID:            Set,
-			Name:          "集群",
-			NameEn:        "Set",
-			Description:   "集群列表",
-			DescriptionEn: "all the sets in blueking cmdb.",
-			Parents:       []Parent{businessParent},
-			ProviderConfig: ResourceConfig{
-				Path: "/auth/v3/find/business/resource",
-			},
-			Version: 1,
-		},
-		{
-			ID:            Module,
-			Name:          "模块",
-			NameEn:        "Module",
-			Description:   "模块列表",
-			DescriptionEn: "all the modules in blueking cmdb.",
-			Parents: []Parent{{
-				SystemID:   SystemIDCMDB,
-				ResourceID: Set,
-			}},
-			ProviderConfig: ResourceConfig{
-				Path: "/auth/v3/find/business/resource",
-			},
-			Version: 1,
-		},
+		//{
+		//	ID:            Set,
+		//	Name:          "集群",
+		//	NameEn:        "Set",
+		//	Description:   "集群列表",
+		//	DescriptionEn: "all the sets in blueking cmdb.",
+		//	Parents:       []Parent{businessParent},
+		//	ProviderConfig: ResourceConfig{
+		//		Path: "/auth/v3/find/business/resource",
+		//	},
+		//	Version: 1,
+		//},
+		//{
+		//	ID:            Module,
+		//	Name:          "模块",
+		//	NameEn:        "Module",
+		//	Description:   "模块列表",
+		//	DescriptionEn: "all the modules in blueking cmdb.",
+		//	Parents: []Parent{{
+		//		SystemID:   SystemIDCMDB,
+		//		ResourceID: Set,
+		//	}},
+		//	ProviderConfig: ResourceConfig{
+		//		Path: "/auth/v3/find/business/resource",
+		//	},
+		//	Version: 1,
+		//},
 	}
 }
 
@@ -230,27 +231,12 @@ func genPublicResources() []ResourceType {
 			Version: 1,
 		},
 		{
-			ID:            SysInstanceModelGroup,
-			Name:          "实例模型分组",
-			NameEn:        "Instance Model Group",
-			Description:   "实例模型分组用于对实例模型进行归类",
-			DescriptionEn: "group instance models by instance model group",
-			Parents:       nil,
-			ProviderConfig: ResourceConfig{
-				Path: "/auth/v3/find/system/resource",
-			},
-			Version: 1,
-		},
-		{
 			ID:            SysInstanceModel,
 			Name:          "实例模型",
 			NameEn:        "InstanceModel",
 			Description:   "实例模型",
 			DescriptionEn: "instance model",
-			Parents: []Parent{{
-				SystemID:   SystemIDCMDB,
-				ResourceID: SysInstanceModelGroup,
-			}},
+			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/system/resource",
 			},
@@ -262,10 +248,7 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Model",
 			Description:   "模型",
 			DescriptionEn: "model",
-			Parents: []Parent{{
-				SystemID:   SystemIDCMDB,
-				ResourceID: SysModelGroup,
-			}},
+			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/system/resource",
 			},

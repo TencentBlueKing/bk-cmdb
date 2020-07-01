@@ -14,11 +14,12 @@ package types
 
 import (
 	"fmt"
-	"strings"
+	"reflect"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
 )
 
 const (
@@ -30,16 +31,20 @@ const (
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
 // TODO confirm how to filter path attribute
-func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
-	operator := filter.Operator
+func ParseFilterToMongo(filter *operator.Policy, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
+	op := filter.Operator
 
 	// parse filter which is composed of multiple sub filters
-	if operator == OperatorAnd || operator == OperatorOr {
-		if filter.Content == nil || len(filter.Content) == 0 {
-			return nil, fmt.Errorf("filter operator %s content can't be empty", operator)
+	if op == operator.And || op == operator.Or {
+		content, ok := filter.Element.(*operator.Content)
+		if !ok {
+			return nil, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(filter.Element).String())
+		}
+		if content == nil || len(content.Content) == 0 {
+			return nil, fmt.Errorf("filter op %s content can't be empty", op)
 		}
 		mongoFilters := make([]map[string]interface{}, 0)
-		for _, content := range filter.Content {
+		for _, content := range content.Content {
 			mongoFilter, err := ParseFilterToMongo(content, resourceType)
 			if err != nil {
 				return nil, err
@@ -53,24 +58,22 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 			return nil, nil
 		}
 		return map[string]interface{}{
-			operatorMap[operator]: mongoFilters,
+			operatorMap[op]: mongoFilters,
 		}, nil
 	}
 
 	// parse single attribute filter field to [ resourceType, attribute ]
-	field := filter.Field
-	if field == "" {
-		return nil, fmt.Errorf("filter operator %s field can't be empty", operator)
+	fieldValue, ok := filter.Element.(*operator.FieldValue)
+	if !ok {
+		return nil, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(filter.Element).String())
 	}
-	fieldArr := strings.Split(field, ".")
-	if len(fieldArr) != 2 {
-		return nil, fmt.Errorf("filter operator %s field %s not in the form of 'resourceType.attribute'", operator, field)
-	}
+	field := fieldValue.Field
 	// if field is another resource's attribute, then the filter isn't for this resource, ignore it
-	if fieldArr[0] != string(resourceType) {
+	if field.Resource != string(resourceType) {
 		return nil, nil
 	}
-	value := filter.Value
+	attribute := field.Attribute
+	value := fieldValue.Value
 	if value == IDField {
 		value = GetResourceIDField(resourceType)
 	}
@@ -78,93 +81,93 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 		value = GetResourceNameField(resourceType)
 	}
 
-	switch operator {
-	case OperatorEqual, OperatorNotEqual:
+	switch op {
+	case operator.Equal, operator.NEqual:
 		if getValueType(value) == "" {
-			return nil, fmt.Errorf("filter operator %s value %#v isn't string, numeric or boolean type", operator, value)
+			return nil, fmt.Errorf("filter op %s value %#v isn't string, numeric or boolean type", op, value)
 		}
 		return map[string]interface{}{
-			fieldArr[1]: map[string]interface{}{
-				operatorMap[operator]: value,
+			attribute: map[string]interface{}{
+				operatorMap[op]: value,
 			},
 		}, nil
-	case OperatorIn, OperatorNotIn:
+	case operator.In, operator.Nin:
 		valueArr, ok := value.([]interface{})
 		if !ok || len(valueArr) == 0 {
-			return nil, fmt.Errorf("filter operator %s value %#v isn't array type or is empty", operator, value)
+			return nil, fmt.Errorf("filter op %s value %#v isn't array type or is empty", op, value)
 		}
 		valueType := getValueType(valueArr[0])
 		if valueType == "" {
-			return nil, fmt.Errorf("filter operator %s value %#v isn't string, numeric or boolean array type", operator, value)
+			return nil, fmt.Errorf("filter op %s value %#v isn't string, numeric or boolean array type", op, value)
 		}
 		for _, val := range valueArr {
 			if getValueType(val) != valueType {
-				return nil, fmt.Errorf("filter operator %s value %#v contains values with different types", operator, valueArr)
+				return nil, fmt.Errorf("filter op %s value %#v contains values with different types", op, valueArr)
 			}
 		}
 		return map[string]interface{}{
-			fieldArr[1]: map[string]interface{}{
-				operatorMap[operator]: valueArr,
+			attribute: map[string]interface{}{
+				operatorMap[op]: valueArr,
 			},
 		}, nil
-	case OperatorLessThan, OperatorLessThanOrEqual, OperatorGreaterThan, OperatorGreaterThanOrEqual:
+	case operator.LessThan, operator.LessThanEqual, operator.GreaterThan, operator.GreaterThanEqual:
 		if !util.IsNumeric(value) {
-			return nil, fmt.Errorf("filter operator %s value %#v isn't numeric type", operator, value)
+			return nil, fmt.Errorf("filter op %s value %#v isn't numeric type", op, value)
 		}
 		return map[string]interface{}{
-			fieldArr[1]: map[string]interface{}{
-				operatorMap[operator]: value,
+			attribute: map[string]interface{}{
+				operatorMap[op]: value,
 			},
 		}, nil
-	case OperatorContains, OperatorStartsWith, OperatorEndsWith:
+	case operator.Contains, operator.StartWith, operator.EndWith:
 		valueStr, ok := value.(string)
 		if !ok {
-			return nil, fmt.Errorf("filter operator %s value %#v isn't string type", operator, value)
+			return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
 		}
 		return map[string]interface{}{
-			fieldArr[1]: map[string]interface{}{
-				common.BKDBLIKE: fmt.Sprintf(operatorRegexFmtMap[operator], valueStr),
+			attribute: map[string]interface{}{
+				common.BKDBLIKE: fmt.Sprintf(operatorRegexFmtMap[op], valueStr),
 			},
 		}, nil
-	case OperatorNotContains, OperatorNotStartsWith, OperatorNotEndsWith:
+	case operator.NContains, operator.NStartWith, operator.NEndWith:
 		valueStr, ok := value.(string)
 		if !ok {
-			return nil, fmt.Errorf("filter operator %s value %#v isn't string type", operator, value)
+			return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
 		}
 		return map[string]interface{}{
-			fieldArr[1]: map[string]interface{}{
-				common.BKDBNot: fmt.Sprintf(operatorRegexFmtMap[operator], valueStr),
+			attribute: map[string]interface{}{
+				common.BKDBNot: fmt.Sprintf(operatorRegexFmtMap[op], valueStr),
 			},
 		}, nil
-	case OperatorAny:
-		// operator any means having all permissions of this resource
+	case operator.Any:
+		// op any means having all permissions of this resource
 		return make(map[string]interface{}), nil
 	default:
-		return nil, fmt.Errorf("filter operator %s not supported", operator)
+		return nil, fmt.Errorf("filter op %s not supported", op)
 	}
 }
 
 var (
-	operatorMap = map[Operator]string{
-		OperatorAnd:                common.BKDBAND,
-		OperatorOr:                 common.BKDBOR,
-		OperatorEqual:              common.BKDBEQ,
-		OperatorNotEqual:           common.BKDBNE,
-		OperatorIn:                 common.BKDBIN,
-		OperatorNotIn:              common.BKDBNIN,
-		OperatorLessThan:           common.BKDBLT,
-		OperatorLessThanOrEqual:    common.BKDBLTE,
-		OperatorGreaterThan:        common.BKDBGT,
-		OperatorGreaterThanOrEqual: common.BKDBGTE,
+	operatorMap = map[operator.OperType]string{
+		operator.And:              common.BKDBAND,
+		operator.Or:               common.BKDBOR,
+		operator.Equal:            common.BKDBEQ,
+		operator.NEqual:           common.BKDBNE,
+		operator.In:               common.BKDBIN,
+		operator.Nin:              common.BKDBNIN,
+		operator.LessThan:         common.BKDBLT,
+		operator.LessThanEqual:    common.BKDBLTE,
+		operator.GreaterThan:      common.BKDBGT,
+		operator.GreaterThanEqual: common.BKDBGTE,
 	}
 
-	operatorRegexFmtMap = map[Operator]string{
-		OperatorContains:      "%s",
-		OperatorNotContains:   "%s",
-		OperatorStartsWith:    "^%s",
-		OperatorNotStartsWith: "^%s",
-		OperatorEndsWith:      "%s$",
-		OperatorNotEndsWith:   "%s$",
+	operatorRegexFmtMap = map[operator.OperType]string{
+		operator.Contains:   "%s",
+		operator.NContains:  "%s",
+		operator.StartWith:  "^%s",
+		operator.NStartWith: "^%s",
+		operator.EndWith:    "%s$",
+		operator.NEndWith:   "%s$",
 	}
 )
 
@@ -188,7 +191,7 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 		return common.BKHostIDField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionIDField
-	case iam.SysModelGroup, iam.SysInstanceModelGroup:
+	case iam.SysModelGroup:
 		return common.BKClassificationIDField
 	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjIDField
@@ -208,10 +211,10 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppIDField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
-	case iam.Set:
-		return common.BKSetIDField
-	case iam.Module:
-		return common.BKModuleIDField
+	//case iam.Set:
+	//	return common.BKSetIDField
+	//case iam.Module:
+	//	return common.BKModuleIDField
 	default:
 		return ""
 	}
@@ -224,7 +227,7 @@ func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 		return common.BKHostInnerIPField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionNameField
-	case iam.SysModelGroup, iam.SysInstanceModelGroup:
+	case iam.SysModelGroup:
 		return common.BKClassificationNameField
 	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjNameField
@@ -244,10 +247,10 @@ func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppNameField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName
-	case iam.Set:
-		return common.BKSetNameField
-	case iam.Module:
-		return common.BKModuleNameField
+	//case iam.Set:
+	//	return common.BKSetNameField
+	//case iam.Module:
+	//	return common.BKModuleNameField
 	default:
 		return ""
 	}

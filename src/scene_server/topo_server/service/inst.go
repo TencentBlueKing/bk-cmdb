@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -100,22 +100,6 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 				blog.Errorf("failed to create new object %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 				return err
 			}
-
-			// auth register new created
-			if len(setInst.SuccessCreated) != 0 {
-				if err := s.AuthManager.RegisterInstancesByID(ctx.Kit.Ctx, ctx.Kit.Header, objID, setInst.SuccessCreated...); err != nil {
-					blog.Errorf("create instance success, but register instances to iam failed, instances: %+v, err: %+v, rid: %s", setInst.SuccessCreated, err, ctx.Kit.Rid)
-					return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-				}
-			}
-
-			// auth update registered instances
-			if len(setInst.SuccessUpdated) != 0 {
-				if err := s.AuthManager.UpdateRegisteredInstanceByID(ctx.Kit.Ctx, ctx.Kit.Header, objID, setInst.SuccessUpdated...); err != nil {
-					blog.Errorf("update registered instances to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-					return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-				}
-			}
 			return nil
 		})
 
@@ -134,18 +118,6 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 		if nil != err {
 			blog.Errorf("failed to create a new %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 			return err
-		}
-
-		instanceID, err := setInst.GetInstID()
-		if err != nil {
-			blog.Errorf("create instance failed, unexpected error, create instance success, but get id failed, instance: %+v, err: %+v, rid: %s", setInst, err, ctx.Kit.Rid)
-			return err
-		}
-
-		// auth: register instances to iam
-		if err := s.AuthManager.RegisterInstancesByID(ctx.Kit.Ctx, ctx.Kit.Header, objID, instanceID); err != nil {
-			blog.Errorf("create instance success, but register instance to iam failed, instance: %d, err: %+v, rid: %s", instanceID, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -225,12 +197,6 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 		if err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, deleteCondition.Delete.InstID, true); err != nil {
 			blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), objID, deleteCondition.Delete.InstID, ctx.Kit.Rid)
 			return err
-		}
-
-		// auth: deregister resources
-		if err := s.AuthManager.DeregisterInstances(ctx.Kit.Ctx, ctx.Kit.Header, authInstances...); err != nil {
-			blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", deleteCondition.Delete.InstID, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -312,11 +278,6 @@ func (s *Service) DeleteInst(ctx *rest.Contexts) {
 			return err
 		}
 
-		// auth: deregister resources
-		if err := s.AuthManager.DeregisterInstances(ctx.Kit.Ctx, ctx.Kit.Header, authInstances...); err != nil {
-			blog.Errorf("delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", instID, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 
@@ -391,12 +352,6 @@ func (s *Service) UpdateInsts(ctx *rest.Contexts) {
 				blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s, rid: %s", obj.Object().ObjectID, item.InstID, data, err.Error(), ctx.Kit.Rid)
 				return err
 			}
-		}
-
-		// auth: update resources
-		if err := s.AuthManager.UpdateRegisteredInstanceByID(ctx.Kit.Ctx, ctx.Kit.Header, objID, instanceIDs...); err != nil {
-			blog.Errorf("update inst success, but update register to iam failed, instanceIDs: %+v, err: %+v, rid: %s", instanceIDs, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -476,12 +431,6 @@ func (s *Service) UpdateInst(ctx *rest.Contexts) {
 		if nil != err {
 			blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s, rid: %s", obj.Object().ObjectID, ctx.Request.PathParameter("inst_id"), data, err.Error(), ctx.Kit.Rid)
 			return err
-		}
-
-		// auth: deregister resources
-		if err := s.AuthManager.UpdateRegisteredInstanceByID(ctx.Kit.Ctx, ctx.Kit.Header, objID, instID); err != nil {
-			blog.Error("update inst failed, authorization failed, instID: %d, err: %+v, rid: %s", instID, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})

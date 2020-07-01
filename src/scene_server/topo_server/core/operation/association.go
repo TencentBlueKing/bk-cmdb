@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -577,22 +577,12 @@ func (assoc *association) CreateType(kit *rest.Kit, request *metadata.Associatio
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
 	request.ID = resp.Data.ID
-	if err := assoc.authManager.RegisterAssociationTypeByID(kit.Ctx, kit.Header, resp.Data.ID); err != nil {
-		blog.Error("create association type: %s success, but register id: %d to auth failed, err: %v, rid: %s", request.AssociationKindID, resp.Data.ID, err, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
 
 	return resp, nil
 
 }
 
 func (assoc *association) UpdateType(kit *rest.Kit, asstTypeID int64, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
-	if len(request.AsstName) != 0 {
-		if err := assoc.authManager.UpdateAssociationTypeByID(kit.Ctx, kit.Header, asstTypeID); err != nil {
-			blog.Errorf("update association type %s, but got update resource to auth failed, err: %v, rid: %s", request.AsstName, err, kit.Rid)
-			return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	}
 
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstTypeID).ToMapStr(),
@@ -609,10 +599,6 @@ func (assoc *association) UpdateType(kit *rest.Kit, asstTypeID int64, request *m
 }
 
 func (assoc *association) DeleteType(kit *rest.Kit, asstTypeID int64) (resp *metadata.DeleteAssociationTypeResult, err error) {
-	if err := assoc.authManager.DeregisterAssociationTypeByIDs(kit.Ctx, kit.Header, asstTypeID); err != nil {
-		blog.Errorf("delete association type id: %d, but deregister from auth failed, err: %v, rid: %s", asstTypeID, err, kit.Rid)
-		return nil, kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-	}
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
 	query := &metadata.SearchAssociationTypeRequest{

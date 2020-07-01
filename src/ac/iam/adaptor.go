@@ -13,39 +13,76 @@
 package iam
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
-// ResourceTypeID is resource's type in auth center.
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
-	var err error
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
+// convert cc auth attributes to iam resources TODO add resource attributes when attribute filter is enabled
+func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
+	resources := make([]types.Resource, len(attributes))
+	for index, attribute := range attributes {
+		info := types.Resource{
+			System: SystemIDCMDB,
+		}
 
-	resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
-	if err != nil {
-		return nil, err
+		resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
+		if err != nil {
+			return nil, err
+		}
+		info.Type = types.ResourceType(*resourceTypeID)
+
+		resourceIDArr, err := GenerateResourceID(ResourceTypeID(info.Type), &attribute)
+		if err != nil {
+			return nil, err
+		}
+		resourceIDArrLen := len(resourceIDArr)
+		if resourceIDArrLen == 0 {
+			resources[index] = info
+			continue
+		}
+		// no biz or parent parentPath related, no need to fill parentPath attribute
+		if attribute.BusinessID <= 0 && resourceIDArrLen == 1 {
+			info.ID = resourceIDArr[0].ResourceID
+			resources[index] = info
+			continue
+		}
+
+		// generate iam path attribute by biz and parent layer
+		pathArr := make([]string, 0)
+		if attribute.BusinessID > 0 {
+			businessPath := "/" + string(Business) + "," + strconv.FormatInt(attribute.BusinessID, 10) + "/"
+			pathArr = append(pathArr, businessPath)
+		}
+		var parentPath bytes.Buffer
+		parentPath.WriteByte('/')
+		for i := 0; i < resourceIDArrLen-1; i++ {
+			resourceIDAndType := resourceIDArr[i]
+			parentPath.WriteString(string(resourceIDAndType.ResourceType))
+			parentPath.WriteByte(',')
+			parentPath.WriteString(resourceIDAndType.ResourceID)
+			parentPath.WriteByte('/')
+		}
+		if parentPath.Len() > 0 {
+			pathArr = append(pathArr, parentPath.String())
+		}
+
+		info.Attribute = map[string]interface{}{
+			IamPathField: pathArr,
+		}
+		info.ID = resourceIDArr[resourceIDArrLen-1].ResourceID
+		resources[index] = info
 	}
-	info.ResourceType = *resourceTypeID
 
-	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
-	if err != nil {
-		return nil, err
-	}
-
-	return info, nil
+	return resources, nil
 }
 
 func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
@@ -119,6 +156,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysCloudAccount
 	case meta.CloudResourceTask:
 		iamResourceType = SysCloudResourceTask
+	case meta.EventWatch:
+		iamResourceType = SysEventWatch
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -175,10 +214,11 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 			meta.Create: EditModel,
 		},
 		meta.Business: {
-			meta.Archive: ArchiveBusiness,
-			meta.Create:  CreateBusiness,
-			meta.Update:  EditBusiness,
-			meta.Find:    FindBusiness,
+			meta.Archive:              ArchiveBusiness,
+			meta.Create:               CreateBusiness,
+			meta.Update:               EditBusiness,
+			meta.Find:                 FindBusiness,
+			meta.ViewBusinessResource: ViewBusinessResource,
 		},
 		meta.DynamicGrouping: {
 			meta.Delete:  DeleteBusinessCustomQuery,
@@ -313,6 +353,17 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		meta.AuditLog: {
 			meta.Find: FindAuditLog,
 		},
+		meta.SystemBase: {
+			meta.ModelTopologyView:      EditModelTopologyView,
+			meta.ModelTopologyOperation: EditBusinessTopology,
+		},
+		meta.EventWatch: {
+			meta.WatchHost:         WatchHostEvent,
+			meta.WatchHostRelation: WatchHostRelationEvent,
+			meta.WatchBiz:          WatchBizEvent,
+			meta.WatchSet:          WatchSetEvent,
+			meta.WatchModule:       WatchModuleEvent,
+		},
 	}
 	if _, exist := resourceActionMap[resourceType]; exist {
 		actionID, ok := resourceActionMap[resourceType][convertAction]
@@ -323,119 +374,8 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 	return Unknown, fmt.Errorf("unsupported action: %s", action)
 }
 
-func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
-	ctx := util.NewContextFromHTTPHeader(header)
-
-	result, err := clientSet.TopoServer().Instance().GetAppBasicInfo(ctx, header, bizID)
-	if err != nil {
-		return "", err
-	}
-	if result.Code == common.CCNoPermission {
-		return "", nil
-	}
-	if !result.Result {
-		return "", errors.New(result.ErrMsg)
-	}
-	bizName := result.Data.BizName
-	return bizName, nil
-}
-
 // AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
-var actionMap map[ResourceActionID]ResourceAction
-var resourceTypeMap map[ResourceTypeID]ResourceType
-
 func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
-	rid := util.GetHTTPCCRequestID(h)
-	language := util.GetLanguage(h)
-
-	ps := make([]metadata.Permission, 0)
-	bizIDMap := make(map[int64]string)
-	if actionMap == nil {
-		actionMap = make(map[ResourceActionID]ResourceAction)
-		for _, action := range GenerateActions() {
-			actionMap[action.ID] = action
-		}
-	}
-	if resourceTypeMap == nil {
-		resourceTypeMap = make(map[ResourceTypeID]ResourceType)
-		for _, resource := range GenerateResourceTypes() {
-			resourceTypeMap[resource.ID] = resource
-		}
-	}
-	for _, r := range rs {
-		var p metadata.Permission
-		p.SystemID = SystemIDCMDB
-		if language == string(common.English) {
-			p.SystemName = SystemNameCMDBEn
-		} else {
-			p.ScopeName = SystemNameCMDB
-		}
-
-		if r.BusinessID > 0 {
-			p.ScopeType = ScopeTypeIDBiz
-			if language == string(common.English) {
-				p.ScopeTypeName = ScopeTypeIDBizNameEn
-			} else {
-				p.ScopeTypeName = ScopeTypeIDBizName
-			}
-			p.ScopeID = strconv.FormatInt(r.BusinessID, 10)
-			scopeName, exist := bizIDMap[r.BusinessID]
-			if !exist {
-				var err error
-				scopeName, err = GetBizNameByID(api, h, r.BusinessID)
-				if err != nil {
-					blog.Errorf("AdoptPermissions failed, GetBizNameByID failed, bizID: %d, err: %s, rid: %s", r.BusinessID, err.Error(), rid)
-				} else {
-					bizIDMap[r.BusinessID] = scopeName
-				}
-			}
-			p.ScopeName = scopeName
-		} else {
-			p.ScopeType = ScopeTypeIDSystem
-			p.ScopeID = SystemIDCMDB
-			if language == string(common.English) {
-				p.ScopeTypeName = ScopeTypeIDSystemNameEn
-				p.ScopeName = SystemNameCMDBEn
-			} else {
-				p.ScopeTypeName = ScopeTypeIDSystemName
-				p.ScopeName = SystemNameCMDB
-			}
-		}
-
-		actID, err := ConvertResourceAction(r.Type, r.Action, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-		p.ActionID = string(actID)
-		if language == string(common.English) {
-			p.ActionName = actionMap[actID].NameEn
-		} else {
-			p.ActionName = actionMap[actID].Name
-		}
-
-		rscType, err := ConvertResourceType(r.Basic.Type, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-
-		rscIDs, err := GenerateResourceID(*rscType, &r)
-		if err != nil {
-			return nil, err
-		}
-
-		var rsc metadata.Resource
-		rsc.ResourceType = string(*rscType)
-		if language == string(common.English) {
-			p.ResourceTypeName = resourceTypeMap[*rscType].NameEn
-		} else {
-			p.ResourceTypeName = resourceTypeMap[*rscType].Name
-		}
-		if len(rscIDs) != 0 {
-			rsc.ResourceID = rscIDs[len(rscIDs)-1].ResourceID
-		}
-		rsc.ResourceName = r.Basic.Name
-		p.Resources = [][]metadata.Resource{{rsc}}
-		ps = append(ps, p)
-	}
-	return ps, nil
+	// TODO implement this
+	return []metadata.Permission{}, nil
 }

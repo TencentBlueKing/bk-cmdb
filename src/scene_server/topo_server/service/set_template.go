@@ -15,7 +15,6 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -52,11 +51,6 @@ func (s *Service) CreateSetTemplate(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			return err
-		}
-
-		if err := s.AuthManager.RegisterSetTemplates(ctx.Kit.Ctx, ctx.Kit.Header, setTemplate); err != nil {
-			blog.Errorf("CreateSetTemplate failed, RegisterSetTemplates failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -123,11 +117,6 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 			}
 		}
-
-		if err := s.AuthManager.UpdateRegisteredSetTemplates(ctx.Kit.Ctx, ctx.Kit.Header, setTemplate); err != nil {
-			blog.Errorf("UpdateSetTemplate failed, UpdateRegisteredSetTemplates failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 
@@ -152,22 +141,10 @@ func (s *Service) DeleteSetTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	iamResource, err := s.AuthManager.MakeResourcesBySetTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.EmptyAction, bizID, option.SetTemplateIDs...)
-	if err != nil {
-		blog.ErrorJSON("DeleteSetTemplate failed, MakeResourcesBySetTemplateIDs failed, bizID: %d, option: %s, err: %s, rid: %s", bizID, option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		if err := s.Engine.CoreAPI.CoreService().SetTemplate().DeleteSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
 			blog.Errorf("DeleteSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			return err
-		}
-
-		if err := s.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResource...); err != nil {
-			blog.Errorf("DeleteSetTemplate failed, DeregisterResource failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 		return nil
 	})

@@ -13,8 +13,8 @@
 package core
 
 import (
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common/language"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"

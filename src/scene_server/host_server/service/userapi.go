@@ -75,10 +75,6 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 			blog.Errorf("GetUserCustom http response error, err code:%d,err msg:%s, input:%+v,rid:%s", result.Code, result.ErrMsg, ucq, srvData.rid)
 			return srvData.ccErr.New(result.Code, result.ErrMsg)
 		}
-		if err := s.AuthManager.RegisterDynamicGroupByID(srvData.ctx, srvData.header, result.Data.ID); err != nil {
-			blog.Errorf("AddUserCustomQuery register user api failed, err: %+v, rid:%s", err, srvData.rid)
-			return srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 
@@ -129,12 +125,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 			blog.Errorf("UpdateUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,input:%+v,rid:%s", result.Code, result.ErrMsg, bizID, params, srvData.rid)
 			return srvData.ccErr.New(result.Code, result.ErrMsg)
 		}
-
-		id := req.PathParameter("id")
-		if err := s.AuthManager.UpdateRegisteredDynamicGroupByID(srvData.ctx, srvData.header, id); err != nil {
-			blog.Errorf("UpdateRegisteredDynamicGroupByID failed, dynamicgroupid: %s, err:%+v, rid:%s", id, err, srvData.rid)
-			return srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
+		
 		return nil
 	})
 
@@ -142,6 +133,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
+	
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     nil,
@@ -179,10 +171,6 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 			return srvData.ccErr.New(result.Code, result.ErrMsg)
 		}
 
-		if err := s.AuthManager.DeregisterDynamicGroupByID(srvData.ctx, srvData.header, dyResult.Data); err != nil {
-			blog.Errorf("GetUserCustom deregister user api failed, err: %+v, rid: %s", err, srvData.rid)
-			return srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 

@@ -43,18 +43,10 @@ const (
 
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
-	var err error
 	var cfg AuthConfig
 
 	if !auth.IsAuthed() {
 		return AuthConfig{}, nil
-	}
-	enableSync, exist := configmap[prefix+".enableSync"]
-	if exist && len(enableSync) > 0 {
-		cfg.EnableSync, err = strconv.ParseBool(enableSync)
-		if err != nil {
-			return AuthConfig{}, errors.New(`invalid auth "enable" value`)
-		}
 	}
 
 	address, exist := configmap[prefix+".address"]
@@ -89,32 +81,6 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 	if len(cfg.AppCode) == 0 {
 		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
-
-	workerCount := int64(1)
-	workerCountStr, exist := configmap[prefix+".syncWorkers"]
-	if exist {
-		workerCount, err = strconv.ParseInt(workerCountStr, 10, 64)
-		if err != nil {
-			return cfg, fmt.Errorf(`"syncWorkers" configuration should be integer for auth center, value: %s`, workerCountStr)
-		}
-	}
-	if workerCount < 1 {
-		workerCount = 1
-	}
-	cfg.SyncWorkerCount = int(workerCount)
-
-	syncIntervalMinutes := int64(45)
-	syncIntervalMinutesStr, exist := configmap[prefix+".syncIntervalMinutes"]
-	if exist {
-		syncIntervalMinutes, err = strconv.ParseInt(syncIntervalMinutesStr, 10, 64)
-		if err != nil {
-			return cfg, fmt.Errorf(`"syncIntervalMinutes" configuration should be integer for auth center, value: %s`, syncIntervalMinutesStr)
-		}
-	}
-	if syncIntervalMinutes < 45 {
-		syncIntervalMinutes = 45
-	}
-	cfg.SyncIntervalMinutes = int(syncIntervalMinutes)
 
 	cfg.SystemID = SystemIDCMDB
 

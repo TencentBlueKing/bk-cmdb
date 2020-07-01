@@ -16,7 +16,6 @@ import (
 	"context"
 
 	"configcenter/src/ac/iam"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -38,7 +37,6 @@ type Service struct {
 	ccApiSrvAddr string
 	ctx          context.Context
 	Config       options.Config
-	authCenter   *authcenter.AuthCenter
 	iam          *iam.Iam
 }
 
@@ -54,10 +52,6 @@ func (s *Service) SetDB(db dal.RDB) {
 
 func (s *Service) SetCache(cache *redis.Client) {
 	s.cache = cache
-}
-
-func (s *Service) SetAuthCenter(authCenter *authcenter.AuthCenter) {
-	s.authCenter = authCenter
 }
 
 func (s *Service) SetIam(iam *iam.Iam) {

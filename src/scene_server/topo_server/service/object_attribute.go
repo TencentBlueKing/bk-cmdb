@@ -60,13 +60,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			return err
 		}
 
-		// auth: register resource
 		attribute := attr.Attribute()
-		if err := s.AuthManager.RegisterModelAttribute(ctx.Kit.Ctx, ctx.Kit.Header, *attribute); err != nil {
-			blog.Errorf("create object attribute success, but register model attribute to auth failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
-
 		cond := condition.CreateCondition()
 		cond.Field("id").Eq(attribute.ID)
 		attrInfo, err = s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, metaData)
@@ -199,13 +193,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	data.Remove(common.BKPropertyGroupField)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-    err := s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
-		// auth: update registered resource
-		if err := s.AuthManager.UpdateRegisteredModelAttributeByID(ctx.Kit.Ctx, ctx.Kit.Header, id); err != nil {
-			blog.Errorf("update object attribute success , but update registered model attribute to auth failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
-
+		err := s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
 		if err != nil {
 			return err
 		}
@@ -252,12 +240,6 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		// auth: update registered resource
-		if err := s.AuthManager.DeregisterModelAttributeByID(ctx.Kit.Ctx, ctx.Kit.Header, id); err != nil {
-			blog.Errorf("delete object attribute failed, deregister model attribute to auth failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
-
 		md := new(MetaShell)
 		if err := ctx.DecodeInto(md); err != nil {
 			return err
