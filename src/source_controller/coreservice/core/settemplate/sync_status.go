@@ -120,11 +120,11 @@ func (sto *setTemplateOperation) ModifySetTemplateSyncStatus(kit *rest.Kit, setI
 	// check 数据是否存在
 	cnt, err := sto.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Find(filter).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("ModifyStatus failed, db upsert sync status failed, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
+		blog.Errorf("ModifyStatus failed, find set template sync info error, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if cnt <= 0 {
-		blog.Errorf("ModifyStatus failed, db upsert sync status failed, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
+		blog.Errorf("ModifyStatus failed, not find set template sync info, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
