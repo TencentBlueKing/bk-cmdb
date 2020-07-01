@@ -46,7 +46,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			common.BKDBIN: hostIDs,
 		},
 	}
-	hosts := make([]map[string]interface{}, 0)
+	hosts := make([]metadata.HostMapStr, 0)
 	if err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).All(kit.Ctx, &hosts); err != nil {
 		blog.ErrorJSON("GenerateApplyPlan failed, list hosts failed, filter: %s, err: %s, rid: %s", hostFilter, err.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)

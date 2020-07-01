@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/version"
 
@@ -37,6 +39,6 @@ func (s *Service) Index(c *gin.Context) {
 		"userName":       userName,
 		"agentAppUrl":    s.Config.AgentAppUrl,
 		"authCenter":     s.Config.AuthCenter,
-		"bkDesktop":      s.Config.BkDesktopUrl,
+		"userManage":     strings.TrimSuffix(s.Config.Site.PaasDomainUrl, "/") + "/api/c/compapi/v2/usermanage/fs_list_users/",
 	})
 }

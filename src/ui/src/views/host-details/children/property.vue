@@ -9,12 +9,12 @@
                     v-for="property in group.properties"
                     :key="property.id"
                     :id="`property-item-${property.id}`">
-                    <span class="property-name" v-overflow-tips>
+                    <span class="property-name" v-bk-overflow-tips>
                         {{property.bk_property_name}}
                     </span>
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
-                        v-overflow-tips
-                        v-show="property !== editState.property">
+                        v-bk-overflow-tips
+                        v-if="property !== editState.property">
                         <cmdb-property-value
                             :ref="`property-value-${property.bk_property_id}`"
                             :value="host[property.bk_property_id]"

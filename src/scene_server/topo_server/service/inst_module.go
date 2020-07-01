@@ -452,20 +452,19 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(option.Fields) == 0 {
-		option.Fields = []string{common.BKModuleIDField, common.BKModuleNameField}
-	}
-
+	moduleIDs := util.IntArrayUnique(option.IDs)
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 		common.BKModuleIDField: mapstr.MapStr{
-			common.BKDBIN: option.InstIDs,
+			common.BKDBIN: moduleIDs,
 		},
 	}
 
 	qc := &metadata.QueryCondition{
-		Fields:    option.Fields,
-		Page:      option.Page,
+		Fields: option.Fields,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
 		Condition: cond,
 	}
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
@@ -479,7 +478,7 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
 		return
 	}
-	ctx.RespEntity(instanceResult.Data)
+	ctx.RespEntity(instanceResult.Data.Info)
 }
 
 func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {

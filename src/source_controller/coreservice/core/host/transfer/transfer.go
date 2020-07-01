@@ -137,7 +137,7 @@ func (t *genericTransfer) deleteHost(kit *rest.Kit, hostID int64) (mapstr.MapStr
 	hostCond := condition.CreateCondition()
 	hostCond.Field(common.BKHostIDField).Eq(hostID)
 	hostCondMap := util.SetQueryOwner(hostCond.ToMapStr(), kit.SupplierAccount)
-	hostInfoArr := make([]mapstr.MapStr, 0)
+	hostInfoArr := make([]metadata.HostMapStr, 0)
 	err := t.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCondMap).All(kit.Ctx, &hostInfoArr)
 	if err != nil {
 		blog.ErrorJSON("deleteHost find data error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, kit.Rid)
@@ -164,7 +164,7 @@ func (t *genericTransfer) deleteHost(kit *rest.Kit, hostID int64) (mapstr.MapStr
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
-	return hostInfoArr[0], nil
+	return mapstr.MapStr(hostInfoArr[0]), nil
 }
 
 // generateEvent handle event trigger.

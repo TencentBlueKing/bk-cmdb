@@ -187,7 +187,7 @@
                 text: '',
                 inner: true,
                 outer: true,
-                exact: false
+                exact: true
             }
             return {
                 ip: {

@@ -498,10 +498,7 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 	}
 
 	// get host inner ip
-	host := struct {
-		InnerIP string `json:"bk_host_innerip" bson:"bk_host_innerip"`
-		HostID  int    `json:"bk_host_id" bson:"bk_host_id"`
-	}{}
+	host := metadata.HostMapStr{}
 
 	hostFilter := map[string]interface{}{
 		common.BKHostIDField: instance.HostID,
@@ -513,7 +510,7 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 		}
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	instanceName := host.InnerIP
+	instanceName := host[common.BKHostInnerIPField].(string)
 
 	// get first process instance relation
 	relation := metadata.ProcessInstanceRelation{}

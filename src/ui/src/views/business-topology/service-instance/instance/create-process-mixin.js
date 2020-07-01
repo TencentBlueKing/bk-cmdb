@@ -1,4 +1,4 @@
-import Form from '../common/form.js'
+import Form from '@/components/service/form/form.js'
 import Bus from '../common/bus'
 export default {
     methods: {

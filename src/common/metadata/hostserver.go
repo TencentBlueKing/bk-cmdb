@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
@@ -42,6 +43,11 @@ type HostInstancePropertiesResult struct {
 type HostSnapResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]interface{} `json:"data"`
+}
+
+type HostSnapBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     []map[string]interface{} `json:"data"`
 }
 
 type UserCustomQueryDetailResult struct {
@@ -138,6 +144,140 @@ type HostModuleFind struct {
 	Page      BasePage  `json:"page"`
 }
 
+type FindHostsBySrvTplOpt struct {
+	ServiceTemplateIDs []int64  `json:"bk_service_template_ids"`
+	ModuleIDs          []int64  `json:"bk_module_ids"`
+	Fields             []string `json:"fields"`
+	Page               BasePage `json:"page"`
+}
+
+func (o *FindHostsBySrvTplOpt) Validate() (rawError errors.RawErrorInfo) {
+	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_service_template_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.ModuleIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_module_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindHostsBySetTplOpt struct {
+	SetTemplateIDs []int64  `json:"bk_set_template_ids"`
+	SetIDs         []int64  `json:"bk_set_ids"`
+	Fields         []string `json:"fields"`
+	Page           BasePage `json:"page"`
+}
+
+func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
+	if len(o.SetTemplateIDs) == 0 || len(o.SetTemplateIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_set_template_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.SetIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_set_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindModuleHostRelationParameter struct {
+	ModuleIDS    []int64  `json:"bk_module_ids"`
+	ModuleFields []string `json:"module_fields"`
+	HostFields   []string `json:"host_fields"`
+	Page         BasePage `json:"page"`
+}
+
+func (param FindModuleHostRelationParameter) Validate() errors.RawErrorInfo {
+	if len(param.ModuleIDS) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_module_ids"},
+		}
+	}
+	if len(param.ModuleIDS) > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_module_ids", 200},
+		}
+	}
+	if param.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"page"},
+		}
+	}
+	if len(param.HostFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"host_fields"},
+		}
+	}
+	if len(param.ModuleFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"module_fields"},
+		}
+	}
+	return errors.RawErrorInfo{}
+}
+
+type ModuleHostRelation struct {
+	Host    map[string]interface{}   `json:"host"`
+	Modules []map[string]interface{} `json:"modules"`
+}
+
+type FindModuleHostRelationResult struct {
+	Count    int                  `json:"count"`
+	Relation []ModuleHostRelation `json:"relation"`
+}
+
+type FindModuleHostRelationResp struct {
+	BaseResp `json:",inline"`
+	Data     FindModuleHostRelationResult `json:"data"`
+}
+
 type ListHostsParameter struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
 	SetCond            []ConditionItem           `json:"set_cond"`
@@ -159,6 +299,14 @@ func (option ListHostsParameter) Validate() (string, error) {
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
 			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
+	}
+
+	if len(option.SetIDs) > 200 {
+		return "bk_set_ids", fmt.Errorf("exceed max length: 200")
+	}
+
+	if len(option.ModuleIDs) > 500 {
+		return "bk_module_ids", fmt.Errorf("exceed max length: 500")
 	}
 
 	return "", nil

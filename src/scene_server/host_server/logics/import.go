@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -469,8 +470,18 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	}
 
 	// step2. query host info by innerIPs
+	ipCond := make([]map[string]interface{}, len(ipArr))
+	for index, innerIP := range ipArr {
+		innerIPArr := strings.Split(innerIP, ",")
+		ipCond[index] = map[string]interface{}{
+			common.BKHostInnerIPField: map[string]interface{}{
+				common.BKDBAll:  innerIPArr,
+				common.BKDBSize: len(innerIPArr),
+			},
+		}
+	}
 	filter := map[string]interface{}{
-		common.BKHostInnerIPField: common.KvMap{common.BKDBIN: ipArr},
+		common.BKDBOR: ipCond,
 	}
 	query := &metadata.QueryCondition{
 		Condition: filter,

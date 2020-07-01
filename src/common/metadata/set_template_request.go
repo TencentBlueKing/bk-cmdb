@@ -14,7 +14,6 @@ package metadata
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"configcenter/src/common"
 )
@@ -130,7 +129,6 @@ type SetTplDiffResult struct {
 }
 
 type SyncModuleTask struct {
-	Header      http.Header                `json:"header"`
 	Set         SetInst                    `json:"set"`
 	SetTopoPath []TopoInstanceNodeSimplify `json:"set_topo_path"`
 	ModuleDiff  SetModuleDiff              `json:"module_diff"`

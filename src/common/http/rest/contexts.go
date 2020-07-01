@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
@@ -330,4 +331,34 @@ func (c *Contexts) writeAsJson(resp *metadata.Response) {
 		blog.ErrorfDepthf(2, "response http request failed, err: %v, rid: %s", err, c.Kit.Rid)
 		return
 	}
+}
+
+// NewContexts 产生一个新的contexts， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (c *Contexts) NewContexts() *Contexts {
+	newHeader := util.CCHeader(c.Kit.Header)
+	c.Kit.Header = newHeader
+	return &Contexts{
+		Kit:            c.Kit,
+		Request:        c.Request,
+		resp:           c.resp,
+		respStatusCode: 0,
+	}
+}
+
+// NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (c *Contexts) NewHeader() http.Header {
+	return util.CCHeader(c.Kit.Header)
+}
+
+// NewKit 产生一个新的kit， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (kit *Kit) NewKit() *Kit {
+	newHeader := util.CCHeader(kit.Header)
+	newKit := *kit
+	newKit.Header = newHeader
+	return &newKit
+}
+
+// NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (kit *Kit) NewHeader() http.Header {
+	return util.CCHeader(kit.Header)
 }

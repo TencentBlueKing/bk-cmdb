@@ -26,7 +26,7 @@
             <list-cell-tag slot-scope="{ row }" :row="row" @update-labels="handleUpdateLabels(row, ...arguments)"></list-cell-tag>
         </bk-table-column>
         <bk-table-column :label="$t('操作')" :min-width="$i18n.locale === 'en' ? 200 : 150">
-            <list-cell-operation slot-scope="{ row }" :row="row"></list-cell-operation>
+            <list-cell-operation slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-operation>
         </bk-table-column>
     </bk-table>
 </template>
@@ -76,20 +76,20 @@
                 const tagFilters = []
                 this.filters.forEach(data => {
                     if (data.id === 'name') return
-                    const item = data.values[0]
-                    const hasColon = /[:：]/.test(item.name)
-                    const filter = {
-                        key: item.name,
-                        operator: 'exists',
-                        values: []
+                    if (data.hasOwnProperty('condition')) {
+                        tagFilters.push({
+                            key: data.condition.id,
+                            operator: 'in',
+                            values: data.values.map(value => value.name)
+                        })
+                    } else {
+                        const [{ id }] = data.values
+                        tagFilters.push({
+                            key: id,
+                            operator: 'exists',
+                            values: []
+                        })
                     }
-                    if (hasColon) {
-                        const [key, ...value] = item.name.split(/[:：]/)
-                        filter.key = key
-                        filter.operator = 'in'
-                        filter.values = [value.join(':')]
-                    }
-                    tagFilters.push(filter)
                 })
                 return tagFilters
             }
@@ -291,6 +291,7 @@
             },
             handleUpdateLabels (row, labels) {
                 row.labels = labels
+                Bus.$emit('update-labels')
             },
             handleBatchEditLabels () {
                 LabelBatchDialog.show({

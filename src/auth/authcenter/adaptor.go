@@ -155,6 +155,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysCloudAccount
 	case meta.CloudResourceTask:
 		iamResourceType = SysCloudResourceTask
+	case meta.ConfigAdmin:
+		iamResourceType = SysConfigAdmin
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -177,6 +179,8 @@ const (
 	SysAssociationType    ResourceTypeID = "sys_association_type"
 	SysAuditLog           ResourceTypeID = "sys_audit_log"
 	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
+	SysEventWatch         ResourceTypeID = "event_watch"
+	SysConfigAdmin        ResourceTypeID = "sys_config_admin"
 	SysCloudAccount       ResourceTypeID = "sys_cloud_account"
 	SysCloudResourceTask  ResourceTypeID = "sys_cloud_resource_task"
 )
@@ -197,7 +201,6 @@ const (
 	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
 	BizSetTemplate            ResourceTypeID = "biz_set_template"
 	BizHostApply              ResourceTypeID = "biz_host_apply"
-	SysEventWatch             ResourceTypeID = "event_watch"
 )
 
 const (
@@ -231,6 +234,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	SysOperationStatistic:     "运营统计",
 	BizHostApply:              "主机属性自动应用",
 	SysEventWatch:             "事件监听",
+	SysConfigAdmin:            "配置管理",
 }
 
 type ActionID string

@@ -274,30 +274,22 @@ type ListHostWithoutAppResponse struct {
 }
 
 type SearchInstBatchOption struct {
-	InstIDs []int64  `json:"inst_ids"`
-	Fields  []string `json:"fields"`
-	Page    BasePage `json:"page"`
+	IDs    []int64  `json:"bk_ids"`
+	Fields []string `json:"fields"`
 }
 
 func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
-	if len(s.InstIDs) == 0 {
+	if len(s.IDs) == 0 || len(s.IDs) > common.BKMaxInstanceLimit {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"inst_ids"},
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_ids", common.BKMaxInstanceLimit},
 		}
 	}
 
-	if len(s.InstIDs) > common.BKMaxPageSize {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrExceedMaxOperationRecordsAtOnce,
-			Args:    []interface{}{common.BKMaxPageSize},
-		}
-	}
-
-	if s.Page.IsIllegal() {
+	if len(s.Fields) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"page.limit"},
+			Args:    []interface{}{"fields"},
 		}
 	}
 

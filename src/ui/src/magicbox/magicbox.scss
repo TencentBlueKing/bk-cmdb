@@ -191,3 +191,11 @@
 .bk-dropdown-menu {
     vertical-align: middle;
 }
+
+// 覆盖人员选择器的样式，避免影响magicbox
+.tippy-tooltip {
+    .tippy-arrow {
+        width: unset;
+        height: unset;
+    }
+}

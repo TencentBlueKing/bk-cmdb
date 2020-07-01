@@ -211,9 +211,9 @@
                         app_code: 'bk_nodeman'
                     }), '*')
                 } else {
-                    const agentAppUrl = window.Site.agent
+                    const agentAppUrl = window.CMDB_CONFIG.site.agent
                     if (agentAppUrl) {
-                        window.open(window.Site.agent)
+                        window.open(agentAppUrl)
                     } else {
                         this.$warn(this.$t('未配置Agent安装APP地址'))
                     }

@@ -292,7 +292,7 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 		common.BKCloudVendor:     accountConf.VendorName,
 		common.BKVpcID:           vpc.VpcID,
 		common.BKVpcName:         vpc.VpcName,
-		common.BKReion:           vpc.Region,
+		common.BKRegion:          vpc.Region,
 		common.BKCloudAccountID:  accountConf.AccountID,
 		common.BKCreator:         common.BKCloudSyncUser,
 		common.BKLastEditor:      common.BKCloudSyncUser,

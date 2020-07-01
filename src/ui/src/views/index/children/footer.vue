@@ -6,9 +6,9 @@
                 <bk-link
                     theme="primary"
                     target="_blank"
-                    :key="link.name"
-                    :href="link.href">
-                    {{$i18n.locale === 'en' ? link.en_name : link.name}}
+                    :key="link.value"
+                    :href="link.value">
+                    {{$i18n.locale === 'en' ? link.i18n.en : link.i18n.cn}}
                 </bk-link>
             </template>
         </p>
@@ -20,22 +20,25 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import links from './footer.config'
     export default {
         data () {
             return {
-                links,
                 year: (new Date()).getFullYear()
             }
         },
         computed: {
-            ...mapGetters(['site'])
+            ...mapGetters(['site']),
+            links () {
+                const { footer = {} } = this.site
+                const links = footer.links || []
+                return links.filter(link => link.enabled)
+            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .footer{
+    .footer {
         position: absolute;
         width: calc(100vw - 50px);
         left: 25px;

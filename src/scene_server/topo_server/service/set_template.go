@@ -857,6 +857,17 @@ func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	// 处理当前需要同步任务的状态
+	for _, info := range result.Info {
+		if !info.Status.IsFinished() {
+			go func(info metadata.SetTemplateSyncStatus) {
+				s.Core.SetTemplateOperation().TriggerCheckSetTemplateSyncingStatus(ctx.NewContexts().Kit, info.BizID, info.SetTemplateID, info.SetID)
+			}(info)
+		}
+
+	}
+
 	ctx.RespEntity(result)
 	return
 }

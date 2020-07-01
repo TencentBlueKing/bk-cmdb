@@ -38,6 +38,9 @@ const (
 	// max limit of a page
 	BKMaxPageSize = 1000
 
+	// max limit of instance count
+	BKMaxInstanceLimit = 500
+
 	// 一次最大操作记录数
 	BKMaxRecordsAtOnce = 2000
 
@@ -204,6 +207,12 @@ const (
 
 	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
 	BKDBPull = "$pull"
+
+	// BKDBAll matches arrays that contain all elements specified in the query.
+	BKDBAll = "$all"
+
+	// BKDBSize selects documents if the array field is a specified size.
+	BKDBSize = "$size"
 
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
@@ -953,6 +962,12 @@ const (
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
 
+// config admin
+const (
+	ConfigAdminID         = "configadmin"
+	ConfigAdminValueField = "config"
+)
+
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
 	APPConfigWaitTime = 15
@@ -1176,6 +1191,6 @@ const (
 	BKSecretID                   = "bk_secret_id"
 	BKVpcID                      = "bk_vpc_id"
 	BKVpcName                    = "bk_vpc_name"
-	BKReion                      = "bk_region"
+	BKRegion                     = "bk_region"
 	BKCloudSyncVpcs              = "bk_sync_vpcs"
 )

@@ -5,14 +5,19 @@ import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
 
 const customRules = {
-    singlechar: {
-        validate: value => {
-            return /\S*/.test(value)
-        }
-    },
     length: {
         validate: (value, [length]) => {
             return stringLength(value) <= length
+        }
+    },
+    repeat: {
+        validate: (value, otherValue) => {
+            return otherValue.findIndex(item => item === value) === -1
+        }
+    },
+    singlechar: {
+        validate: value => {
+            return /\S*/.test(value)
         }
     },
     longchar: {
@@ -25,11 +30,13 @@ const customRules = {
             return /^[a-zA-Z][\w]*$/.test(value)
         }
     },
+    // 未被使用
     classifyName: {
         validate: value => {
             return /^([a-zA-Z0-9_ ]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/.test(value)
         }
     },
+    // 模型分组id
     classifyId: {
         validate: value => {
             return /^[a-zA-Z][\w]*$/.test(value)
@@ -40,6 +47,7 @@ const customRules = {
             return /^http(s?):\/\/[^\s]+/.test(value)
         }
     },
+    // 新建模型唯一标识id
     modelId: {
         validate: value => {
             return /^[a-zA-Z][\w]*$/.test(value)
@@ -55,11 +63,6 @@ const customRules = {
             return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。\."\' \\/:])*$/.test(value)
         }
     },
-    repeat: {
-        validate: (value, otherValue) => {
-            return otherValue.findIndex(item => item === value) === -1
-        }
-    },
     number: {
         validate: (value) => {
             if (!String(value).length) {
@@ -73,6 +76,7 @@ const customRules = {
             return Number(value) > Number(targetValue)
         }
     },
+    // 新建字段唯一标识
     fieldId: {
         validate: (value) => {
             return /^[a-zA-Z][\w]*$/.test(value)
@@ -98,16 +102,19 @@ const customRules = {
             return /^((20|21|22|23|[0-1]\d):[0-5][0-9])?$/.test(value)
         }
     },
+    // 服务分类名称
     namedCharacter: {
         validate: (value) => {
             return /^[a-zA-Z0-9\u4e00-\u9fa5_\-:\(\)]+$/.test(value)
         }
     },
+    // 服务实例标签键
     instanceTagKey: {
         validate: value => {
             return /^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
         }
     },
+    // 服务实例标签值
     instanceTagValue: {
         validate: value => {
             return /^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$/.test(value)
@@ -145,6 +152,11 @@ const customRules = {
             }
             return true
         }
+    },
+    reservedWord: {
+        validate: value => {
+            return /^(?!bk_).*/.test(value)
+        }
     }
 }
 
@@ -181,10 +193,11 @@ const dictionary = {
             repeatTagKey: () => '标签键不能重复',
             setNameMap: () => '集群名称重复',
             emptySetName: () => '请勿输入空白集群名称',
-            instanceTagValue: () => '请输入英文 / 数字',
-            instanceTagKey: () => '请输入英文 / 数字, 以英文开头',
+            instanceTagValue: () => '请输入英文数字的组合',
+            instanceTagKey: () => '请输入英文开头数字的组合',
             setNameLen: () => '请输入256个字符以内的内容',
-            businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|'
+            businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|',
+            reservedWord: () => '不能以"bk_"开头'
         },
         custom: {
             asst: {
@@ -223,11 +236,12 @@ const dictionary = {
             max_value: () => 'This value is greater than the maximum',
             setNameMap: () => 'Duplicate Set name',
             emptySetName: () => 'Do not enter blank Set name',
-            instanceTagValue: () => 'Please enter letter / number',
-            instanceTagKey: () => 'Please enter letter / number starts with letter',
+            instanceTagValue: () => 'Please enter letter, number',
+            instanceTagKey: () => 'Please enter letter, number starts with letter',
             repeatTagKey: () => 'Label key cannot be repeated',
             setNameLen: () => 'Content length max than 256',
-            businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|'
+            businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|',
+            reservedWord: () => 'Can not start with "bk_"'
         },
         custom: {
             asst: {
@@ -237,15 +251,87 @@ const dictionary = {
     }
 }
 
-for (const rule in customRules) {
-    Validator.extend(rule, customRules[rule])
+// 可配置规则清单
+const customConfigRules = [
+    {
+        number: (value, cb) => {
+            if (!String(value).length) {
+                return true
+            }
+            return cb()
+        }
+    },
+    'float',
+    'singlechar',
+    'longchar',
+    'associationId',
+    'classifyId',
+    'modelId',
+    'enumId',
+    'enumName',
+    'fieldId',
+    'namedCharacter',
+    'instanceTagKey',
+    'instanceTagValue',
+    'businessTopoInstNames'
+]
+
+const mixinConfig = () => {
+    const { validationRules = {} } = window.CMDB_CONFIG || {}
+    for (const item of customConfigRules) {
+        const useCb = typeof item !== 'string'
+        const key = useCb ? Object.keys(item)[0] : item
+
+        const rule = validationRules[key]
+        if (!rule) continue
+
+        let validate = value => {
+            return new RegExp(rule.value).test(value)
+        }
+        if (useCb) {
+            validate = value => {
+                return item[key](value, () => {
+                    return new RegExp(rule.value).test(value)
+                })
+            }
+        }
+
+        // 加入到自定义规则列表
+        customRules[key] = { validate }
+        // 提示语设置
+        dictionary['zh_CN']['messages'][key] = (field, args) => {
+            // 确保总是获取最新的配置
+            const { validationRules } = window.CMDB_CONFIG
+            const rule = validationRules[key]
+            return rule.i18n.cn.replace(/{field}/g, field)
+        }
+        dictionary['en']['messages'][key] = (field, args) => {
+            const { validationRules } = window.CMDB_CONFIG
+            const rule = validationRules[key]
+            return rule.i18n.en.replace(/{field}/g, field)
+        }
+    }
 }
-if (language === 'en') {
-    Validator.localize(language)
-} else {
-    Validator.localize(language, cnMessages)
+
+export function setupValidator () {
+    mixinConfig()
+    for (const rule in customRules) {
+        Validator.extend(rule, customRules[rule])
+    }
+    if (language === 'en') {
+        Validator.localize(language)
+    } else {
+        Validator.localize(language, cnMessages)
+    }
+    Vue.use(veeValidate, {
+        locale: language,
+        dictionary
+    })
 }
-Vue.use(veeValidate, {
-    locale: language,
-    dictionary
-})
+
+export function updateValidator () {
+    mixinConfig()
+    for (const rule in customRules) {
+        Validator.extend(rule, customRules[rule])
+    }
+}

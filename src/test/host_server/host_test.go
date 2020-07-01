@@ -1081,8 +1081,8 @@ var _ = Describe("host test", func() {
 
 		It("update idle host", func() {
 			input := map[string]interface{}{
-				"bk_host_id":   fmt.Sprintf("%v,%v", hostId, hostId3),
-				"bk_host_name": "update_host_name",
+				"bk_host_id": fmt.Sprintf("%v,%v", hostId, hostId3),
+				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1113,9 +1113,9 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_name"].(string)).To(Equal("update_host_name"))
+			Expect(data["bk_sn"].(string)).To(Equal("update_bk_sn"))
 			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect(data1["bk_host_name"].(string)).To(Equal("update_host_name"))
+			Expect(data1["bk_sn"].(string)).To(Equal("update_bk_sn"))
 		})
 
 		It("delete resource host", func() {
@@ -1321,7 +1321,7 @@ var _ = Describe("batch_update_host test", func() {
 		hostId2, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
 		Expect(err).NotTo(HaveOccurred())
 
-		By("update host property batch")
+		By("update host property batch, bk_host_name is not editable field")
 		updateInput := map[string]interface{}{
 			"update": []map[string]interface{}{
 				{
@@ -1352,12 +1352,61 @@ var _ = Describe("batch_update_host test", func() {
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
-		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_name"].(string)).To(Equal("batch_update1"))
+		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_name"].(string)).To(Equal(""))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["operator"].(string)).To(Equal("admin"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_comment"].(string)).To(Equal("test"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_isp_name"].(string)).To(Equal("1"))
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_bak_operator"].(string)).To(Equal("admin"))
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("127.2.3.4"))
+	})
+})
+
+var _ = Describe("multiple ip host validation test", func() {
+	It("multiple ip host validation", func() {
+		test.ClearDatabase()
+
+		By("add hosts with one same ip using api")
+		hostInput := map[string]interface{}{
+			"host_info": map[string]interface{}{
+				"1": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1,1.0.0.2",
+				},
+				"2": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1",
+				},
+				"3": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1,1.0.0.2,1.0.0.3",
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
+
+		By("search hosts")
+		searchInput := &params.HostCommonSearch{
+			Page: params.PageInfo{
+				Sort: common.BKHostIDField,
+			},
+		}
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(3))
+
+		By("add same multiple ip host using api")
+		input := &metadata.CreateModelInstance{
+			Data: map[string]interface{}{
+				"bk_host_innerip": "1.0.0.1,1.0.0.2",
+				"bk_cloud_id" : 0,
+			},
+		}
+		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		util.RegisterResponse(addHostResult)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
 	})
 })
 

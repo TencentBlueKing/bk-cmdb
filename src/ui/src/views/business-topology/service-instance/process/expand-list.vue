@@ -50,11 +50,11 @@
 </template>
 
 <script>
-    import { processPropertyRequestId } from '../common/symbol'
+    import { processPropertyRequestId } from '@/components/service/form/symbol'
     import { processTableHeader } from '@/dictionary/table-header'
     import { mapGetters } from 'vuex'
     import Bus from '../common/bus'
-    import Form from '../common/form.js'
+    import Form from '@/components/service/form/form.js'
     import RouterQuery from '@/router/query'
     export default {
         props: {

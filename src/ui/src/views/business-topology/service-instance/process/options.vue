@@ -38,7 +38,7 @@
 <script>
     import ViewSwitcher from '../common/view-switcher'
     import Bus from '../common/bus'
-    import FormMultiple from '../common/form-multiple.js'
+    import FormMultiple from '@/components/service/form/form-multiple.js'
     import { mapGetters } from 'vuex'
     export default {
         components: {
@@ -103,7 +103,7 @@
                 this.$bkInfo({
                     title: this.$t('确定删除N个进程', { count: this.selection.value.length }),
                     confirmFn: () => {
-                        Bus.$emit('batch-delete', this.selection.name)
+                        Bus.$emit('batch-delete', this.selection.process.bk_process_name)
                     }
                 })
             },

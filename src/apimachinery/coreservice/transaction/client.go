@@ -56,6 +56,15 @@ func (t *txn) NewTransaction(enableTxn bool, h http.Header, opts ...metadata.Txn
 }
 
 func (t *txn) AutoRunTxn(ctx context.Context, enableTxn bool, h http.Header, run func() error, opts ...metadata.TxnOption) error {
+	if !enableTxn {
+		return run()
+	}
+
+	// to avoid nested txn
+	if h.Get(common.TransactionIdHeader) != "" {
+		return run()
+	}
+
 	txn, err := t.NewTransaction(enableTxn, h, opts...)
 	if err != nil {
 		return ccErr.New(common.CCErrCommStartTransactionFailed, err.Error())

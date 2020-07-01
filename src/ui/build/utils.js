@@ -18,8 +18,7 @@ exports.cssLoaders = function (options) {
   const cssLoader = {
     loader: 'css-loader',
     options: {
-      sourceMap: options.sourceMap,
-      minimize:true
+      sourceMap: options.sourceMap
     }
   }
 

@@ -1,11 +1,16 @@
 <template>
-    <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`">{{displayValue}}</compmoent>
+    <user-value :value="value" v-if="isUser"></user-value>
+    <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`" v-else>{{displayValue}}</compmoent>
 </template>
 
 <script>
+    import UserValue from './user-value'
     const ORG_CACHES = {}
     export default {
         name: 'cmdb-property-value',
+        components: {
+            UserValue
+        },
         props: {
             value: {
                 type: [String, Number, Array, Boolean],
@@ -59,6 +64,10 @@
                 }
 
                 return attrs
+            },
+            isUser () {
+                const type = typeof this.property === 'object' ? this.property.bk_property_type : this.property
+                return type === 'objuser'
             }
         },
         watch: {
@@ -71,6 +80,7 @@
         },
         methods: {
             async setDisplayValue (value) {
+                if (this.isUser) return
                 let displayValue
                 const isPropertyObject = Object.prototype.toString.call(this.property) === '[object Object]'
                 const type = isPropertyObject ? this.property.bk_property_type : this.property
