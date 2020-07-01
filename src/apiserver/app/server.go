@@ -26,6 +26,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/redis"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -70,7 +72,23 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	blog.Infof("enable authcenter: %v", authorize.Enabled())
 
-	svc.SetConfig(engine, client, engine.Discovery(), authorize)
+	redisConf, err := engine.WithRedis()
+	if err != nil {
+		return err
+	}
+	cache, err := redis.NewFromConfig(redisConf)
+	if err != nil {
+		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
+	}
+
+	limiter := service.NewLimiter(engine.ServiceManageClient().Client())
+	err = limiter.SyncLimiterRules()
+	if err != nil {
+		blog.Infof("SyncLimiterRules failed, err: %v", err)
+		return err
+	}
+
+	svc.SetConfig(engine, client, engine.Discovery(), authorize, cache, limiter)
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})

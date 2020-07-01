@@ -29,6 +29,7 @@ const (
 
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
+// TODO confirm how to filter path attribute
 func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
 	operator := filter.Operator
 
@@ -183,13 +184,13 @@ func getValueType(value interface{}) string {
 // get resource id's actual field
 func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 	switch resourceType {
-	case iam.SysHostInstance, iam.BizHostInstance:
+	case iam.Host:
 		return common.BKHostIDField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionIDField
-	case iam.SysModelGroup:
+	case iam.SysModelGroup, iam.SysInstanceModelGroup:
 		return common.BKClassificationIDField
-	case iam.SysModel:
+	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjIDField
 	case iam.SysInstance:
 		return common.BKInstIDField
@@ -207,6 +208,10 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppIDField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
+	case iam.Set:
+		return common.BKSetIDField
+	case iam.Module:
+		return common.BKModuleIDField
 	default:
 		return ""
 	}
@@ -215,13 +220,13 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 // get resource display name's actual field
 func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 	switch resourceType {
-	case iam.SysHostInstance, iam.BizHostInstance:
+	case iam.Host:
 		return common.BKHostInnerIPField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionNameField
-	case iam.SysModelGroup:
+	case iam.SysModelGroup, iam.SysInstanceModelGroup:
 		return common.BKClassificationNameField
-	case iam.SysModel:
+	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjNameField
 	case iam.SysInstance:
 		return common.BKInstNameField
@@ -239,6 +244,10 @@ func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppNameField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName
+	case iam.Set:
+		return common.BKSetNameField
+	case iam.Module:
+		return common.BKModuleNameField
 	default:
 		return ""
 	}

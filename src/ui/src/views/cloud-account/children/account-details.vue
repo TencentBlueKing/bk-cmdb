@@ -6,14 +6,12 @@
                 {{account.bk_account_name}}
             </bk-form-item>
             <bk-form-item class="details-item" :label="$t('账户类型')">
-                {{account.bk_cloud_vendor}}
+                <cmdb-vendor :type="account.bk_cloud_vendor"></cmdb-vendor>
             </bk-form-item>
             <bk-form-item class="details-item" label="ID">
                 {{account.bk_secret_id}}
             </bk-form-item>
-            <bk-form-item class="details-item" label="Key">
-                {{account.bk_secret_key | formatter('singlechar')}}
-            </bk-form-item>
+            <bk-form-item class="details-item" label="Key">{{account.bk_secret_key}}</bk-form-item>
             <bk-form-item class="details-item" :label="$t('备注')">
                 {{account.bk_description | formatter('longchar')}}
             </bk-form-item>
@@ -40,8 +38,12 @@
 </template>
 
 <script>
+    import CmdbVendor from '@/components/ui/other/vendor'
     export default {
         name: 'cloud-account-details',
+        components: {
+            CmdbVendor
+        },
         props: {
             id: {
                 type: Number,
@@ -64,12 +66,16 @@
         methods: {
             async getAccountData () {
                 try {
-                    this.account = await this.$store.dispatch('cloud/account/findOne', {
+                    const account = await this.$store.dispatch('cloud/account/findOne', {
                         id: this.id,
                         config: {
                             requestId: this.requestId
                         }
                     })
+                    this.account = {
+                        ...account,
+                        bk_secret_key: '******'
+                    }
                 } catch (e) {
                     this.account = {}
                     console.error(e)
@@ -96,6 +102,7 @@
     .details-layout {
         padding: 18px 27px;
         .details-item {
+            margin-top: 10px;
             /deep/ {
                 .bk-label {
                     position: relative;
@@ -108,13 +115,15 @@
                         content: '：'
                     }
                     span {
-                        display: block;
+                        display: inline-block;
+                        vertical-align: middle;
                         @include ellipsis;
                     }
                 }
                 .bk-form-content {
                     color: #313238;
                     font-size: 14px;
+                    line-height: 32px;
                 }
             }
         }

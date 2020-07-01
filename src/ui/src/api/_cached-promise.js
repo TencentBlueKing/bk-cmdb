@@ -51,14 +51,4 @@ export default class CachedPromise {
         })
         return Promise.resolve(deleteIds)
     }
-
-    get pageCache () {
-        const pageCache = []
-        for (const id in this.cache) {
-            if (this.cache[id].config.cacheExpire === 'page') {
-                pageCache.push(id)
-            }
-        }
-        return pageCache
-    }
 }

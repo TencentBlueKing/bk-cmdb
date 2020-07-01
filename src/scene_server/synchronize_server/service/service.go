@@ -74,10 +74,7 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFunc := func() errors.CCErrorIf {
-		return s.CCErr
-	}
-	ws.Path("/synchronize/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.HTTPRequestIDFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	ws.Path("/synchronize/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.HTTPRequestIDFilter()).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/search").To(s.Find))
 	ws.Route(ws.POST("/set/identifier/flag").To(s.SetIdentifierFlag))

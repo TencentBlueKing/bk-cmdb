@@ -6,7 +6,6 @@ import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
 import { language } from '@/i18n'
 
-import middlewares from './middleware'
 // axios实例
 const axiosInstance = Axios.create({
     baseURL: window.API_PREFIX,
@@ -17,36 +16,14 @@ const axiosInstance = Axios.create({
 
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
-    config => {
-        try {
-            middlewares.forEach(middleware => {
-                if (typeof middleware.request === 'function') {
-                    config = middleware.request(config)
-                }
-            })
-        } catch (e) {
-            console.error(e)
-        }
-        return config
-    },
+    config => config,
     error => {
         return Promise.reject(error)
     }
 )
 
 axiosInstance.interceptors.response.use(
-    response => {
-        try {
-            middlewares.forEach(middleware => {
-                if (typeof middleware.response === 'function') {
-                    response = middleware.response(response)
-                }
-            })
-        } catch (e) {
-            console.error(e)
-        }
-        return response
-    },
+    response => response,
     error => {
         return Promise.reject(error)
     }
@@ -188,7 +165,7 @@ function handleReject (error, config) {
             if (window.loginModal) {
                 window.loginModal.show()
             } else {
-                window.Site.login && (window.location.href = window.Site.login)
+                window.CMDB_CONFIG.site.login && (window.location.href = window.CMDB_CONFIG.site.login)
             }
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
@@ -233,8 +210,6 @@ function initConfig (method, url, userConfig) {
         fromCache: false,
         // 是否在请求发起前清楚缓存
         clearCache: false,
-        // 缓存过期时间, 'project' | 'page'
-        cacheExpire: 'project',
         // 响应结果是否返回原始数据
         originalResponse: false,
         // 转换返回数据，仅返回data对象

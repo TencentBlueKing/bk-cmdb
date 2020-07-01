@@ -131,17 +131,18 @@
                 return (this.showAll ? items.length : 1) * (itemHeight + itemMargin)
             },
             handleRemove (moduleId) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
-                        type: 'remove'
+                        type: 'remove',
+                        module: moduleId
                     },
                     query: {
                         sourceModel: 'module',
                         sourceId: moduleId,
-                        resources: this.$route.params.id,
-                        from: this.$route.fullPath
-                    }
+                        resources: this.$route.params.id
+                    },
+                    history: true
                 })
             }
         }

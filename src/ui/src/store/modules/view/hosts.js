@@ -1,20 +1,19 @@
-const defaultParams = {
-    ip: {
-        flag: 'bk_host_innerip|bk_host_outer',
-        exact: 0,
-        data: []
-    }
+function getDefaultCondition () {
+    return ['biz', 'set', 'module', 'host', 'object'].map(modelId => {
+        return {
+            bk_obj_id: modelId,
+            fields: [],
+            condition: []
+        }
+    })
 }
 const state = {
     filterList: [],
-    filterIP: null,
-    filterParams: {
-        ...defaultParams
-    },
     collection: null,
     collectionList: [],
     propertyList: [],
-    isHostSearch: null
+    condition: getDefaultCondition(),
+    shouldInjectAsset: true // 控制是否注入固资编号
 }
 
 const getters = {
@@ -29,27 +28,20 @@ const getters = {
         })
 
         return state.propertyList
-    }
+    },
+    condition: state => state.condition,
+    shouldInjectAsset: state => state.shouldInjectAsset
 }
 
 const mutations = {
     setFilterList (state, list) {
         state.filterList = list
     },
-    setFilterIP (state, IP) {
-        state.filterIP = IP
-    },
-    setFilterParams (state, params) {
-        state.filterParams = params
-    },
     setCollectionList (state, list) {
         state.collectionList = list
     },
     setCollection (state, collection) {
         state.collection = collection
-    },
-    setIsHostSearch (state, boolean) {
-        state.isHostSearch = boolean
     },
     addCollection (state, collection) {
         state.collectionList.push(collection)
@@ -62,15 +54,17 @@ const mutations = {
     },
     clearFilter (state) {
         state.filterList = []
-        state.filterIP = null
-        state.filterParams = {
-            ...defaultParams
-        }
         state.collection = null
-        state.isHostSearch = false
+        state.condition = getDefaultCondition()
     },
     setPropertyList (state, list) {
         state.propertyList = list
+    },
+    setCondition (state, condition) {
+        state.condition = condition
+    },
+    setShouldInjectAsset (state, shouldInjectAsset) {
+        state.shouldInjectAsset = !!shouldInjectAsset
     }
 }
 

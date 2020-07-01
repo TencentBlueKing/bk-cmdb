@@ -17,52 +17,99 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/util"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/types"
-
-	"gopkg.in/redis.v5"
 )
 
 // list enumeration attributes of instance type resource
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.ResourceTypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := GetInstanceResourceObjID(resourceType)
-	if objID == "" {
+	if objID == "" && resourceType != iam.SysInstance {
 		return attrs, nil
 	}
 
-	// get all attribute cache keys by object ID TODO use database if error occurred using redis
-	keys, err := lgc.cache.Keys(common.BKCacheKeyV3Prefix + "attribute:object" + objID + "*").Result()
+	// TODO use cache
+	//attributes, err := cache.GetCacheItemsByKeyRegex(common.BKCacheKeyV3Prefix+"attribute:object"+objID+"*", lgc.cache)
+	//if err != nil {
+	// get attributes from db if get them from cache encounters error
+	// blog.Errorf("get attribute from cache failed, try to get from db, error: %s, object ID: %s", err.Error(), objID)
+	param := metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKPropertyTypeField: common.FieldTypeEnum,
+		},
+		Fields: []string{common.BKPropertyIDField, common.BKPropertyNameField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	var res *metadata.ReadModelAttrResult
+	var err error
+	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
+	if resourceType == iam.SysInstance {
+		param.Fields = append(param.Fields, common.BKObjIDField)
+		param.Condition[common.BKObjIDField] = map[string]interface{}{
+			common.BKDBNIN: []string{
+				common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule,
+				common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
+			},
+		}
+		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &param)
+	} else {
+		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
+	}
 	if err != nil {
-		blog.ErrorJSON("get attribute cache keys for object %s failed, error: %s, rid: %s", objID, err.Error(), kit.Rid)
+		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
+	}
+	if !res.Result {
+		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
+		return nil, res.CCError()
 	}
 
-	// get all attributes' id and name field from cache TODO use a separate function for all redis reading
-	pipeline := lgc.cache.Pipeline()
-	for _, key := range keys {
-		pipeline.HGetAll(key)
-	}
-	results, err := pipeline.Exec()
-	if err != nil {
-		blog.ErrorJSON("get cached attributes for object %s using keys: %v failed, error: %s, rid: %s", objID, keys, err.Error(), kit.Rid)
-		return nil, err
-	}
-	for _, result := range results {
-		cmd := result.(*redis.StringStringMapCmd)
-		attribute, err := cmd.Result()
+	// get object id name map for common instances
+	objIDNameMap := make(map[string]string)
+	if resourceType == iam.SysInstance {
+		objIDs := make([]string, 0)
+		for _, attr := range res.Data.Info {
+			objIDs = append(objIDs, attr.ObjectID)
+		}
+		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
+			Fields: []string{common.BKObjIDField, common.BKObjNameField},
+			Page:   metadata.BasePage{Limit: common.BKNoLimit},
+			Condition: map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{
+					common.BKDBIN: objIDs,
+				},
+			},
+		})
 		if err != nil {
-			blog.ErrorJSON("get cached attribute result failed, error: %s, keys: %v, rid: %s", objID, keys, err.Error(), kit.Rid)
+			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, err
 		}
-		// only returns enumeration attributes
-		if attribute[common.BKPropertyTypeField] == common.FieldTypeEnum {
-			attrs = append(attrs, types.AttrResource{
-				ID:          util.GetStrByInterface(attribute[common.BKPropertyIDField]),
-				DisplayName: util.GetStrByInterface(attribute[common.BKPropertyNameField]),
-			})
+		for _, obj := range modelRes.Data.Info {
+			objIDNameMap[obj.Spec.ObjectID] = obj.Spec.ObjectName
 		}
 	}
 
+	for _, attr := range res.Data.Info {
+		displayName := attr.PropertyName
+		if resourceType == iam.SysInstance {
+			displayName = objIDNameMap[attr.ObjectID] + "-" + attr.PropertyName
+		}
+		attrs = append(attrs, types.AttrResource{
+			ID:          attr.PropertyID,
+			DisplayName: displayName,
+		})
+	}
 	return attrs, nil
+	//}
+	// only returns enumeration attributes
+	//for _, attribute := range attributes {
+	//	if attribute[common.BKPropertyTypeField] == common.FieldTypeEnum {
+	//		attrs = append(attrs, types.AttrResource{
+	//			ID:          attribute[common.BKPropertyIDField],
+	//			DisplayName: attribute[common.BKPropertyNameField],
+	//		})
+	//	}
+	//}
+	//return attrs, nil
 }

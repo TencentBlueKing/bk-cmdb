@@ -35,52 +35,58 @@ func GenerateResourceTypes() []ResourceType {
 func genBusinessResources() []ResourceType {
 	return []ResourceType{
 		{
-			ID:            BizHostInstance,
-			Name:          "业务主机",
-			NameEn:        "Business Host",
-			Description:   "业务下的机器",
-			DescriptionEn: "hosts under a business",
-			Parents:       []Parent{businessParent},
+			ID:            Host,
+			Name:          "主机",
+			NameEn:        "Host",
+			Description:   "主机",
+			DescriptionEn: "hosts under a business or in resource pool",
+			Parents: []Parent{{
+				SystemID:   SystemIDCMDB,
+				ResourceID: Module,
+			}, {
+				SystemID:   SystemIDCMDB,
+				ResourceID: SysResourcePoolDirectory,
+			}},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/instance/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizHostApply,
-			Name:          "属性自动应用",
-			NameEn:        "Business Host Apply",
+			Name:          "主机自动应用",
+			NameEn:        "Host Apply",
 			Description:   "自动应用业务主机的属性信息",
 			DescriptionEn: "apply business host attribute automatically",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/empty/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizCustomQuery,
 			Name:          "动态分组",
-			NameEn:        "Business Custom Query",
+			NameEn:        "Dynamic Grouping",
 			Description:   "根据条件查询主机信息",
 			DescriptionEn: "custom query the host instances",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/business/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizCustomField,
-			Name:          "业务自定义字段",
-			NameEn:        "Business Custom Field",
+			Name:          "自定义字段",
+			NameEn:        "Custom Field",
 			Description:   "模型在业务下的自定义字段",
 			DescriptionEn: "model's custom field under a business",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/empty/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizProcessServiceInstance,
@@ -90,9 +96,9 @@ func genBusinessResources() []ResourceType {
 			DescriptionEn: "service instance",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/empty/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizProcessServiceCategory,
@@ -102,9 +108,9 @@ func genBusinessResources() []ResourceType {
 			DescriptionEn: "service category is to classify service instances",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/business/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizSetTemplate,
@@ -114,9 +120,9 @@ func genBusinessResources() []ResourceType {
 			DescriptionEn: "set template is used to instantiate a set",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/business/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizTopology,
@@ -126,9 +132,9 @@ func genBusinessResources() []ResourceType {
 			DescriptionEn: "business topology contains all elements related to the business topology tree",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/empty/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            BizProcessServiceTemplate,
@@ -138,9 +144,37 @@ func genBusinessResources() []ResourceType {
 			DescriptionEn: "service template is used to instantiate a service instance ",
 			Parents:       []Parent{businessParent},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/business/resource",
 			},
-			Version: 0,
+			Version: 1,
+		},
+		// only for host topology usage, not related to actions
+		{
+			ID:            Set,
+			Name:          "集群",
+			NameEn:        "Set",
+			Description:   "集群列表",
+			DescriptionEn: "all the sets in blueking cmdb.",
+			Parents:       []Parent{businessParent},
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/business/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            Module,
+			Name:          "模块",
+			NameEn:        "Module",
+			Description:   "模块列表",
+			DescriptionEn: "all the modules in blueking cmdb.",
+			Parents: []Parent{{
+				SystemID:   SystemIDCMDB,
+				ResourceID: Set,
+			}},
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/business/resource",
+			},
+			Version: 1,
 		},
 	}
 }
@@ -155,9 +189,9 @@ func genPublicResources() []ResourceType {
 			DescriptionEn: "all the business in blueking cmdb.",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/instance/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysCloudArea,
@@ -167,36 +201,21 @@ func genPublicResources() []ResourceType {
 			DescriptionEn: "cloud area",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/instance/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysResourcePoolDirectory,
-			Name:          "资源池目录",
-			NameEn:        "Resource Pool Directory",
-			Description:   "资源池目录",
-			DescriptionEn: "resource pool directory",
+			Name:          "主机池目录",
+			NameEn:        "Host Pool Directory",
+			Description:   "主机池目录",
+			DescriptionEn: "host pool directory",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/system/resource",
 			},
-			Version: 0,
-		},
-		{
-			ID:            SysHostInstance,
-			Name:          "资源池主机",
-			NameEn:        "Resource Pool Host",
-			Description:   "资源池中的主机",
-			DescriptionEn: "host in resource pool",
-			Parents: []Parent{{
-				SystemID:   SystemIDCMDB,
-				ResourceID: SysResourcePoolDirectory,
-			}},
-			ProviderConfig: ResourceConfig{
-				Path: "",
-			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysModelGroup,
@@ -206,9 +225,36 @@ func genPublicResources() []ResourceType {
 			DescriptionEn: "group models by model group",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/system/resource",
 			},
-			Version: 0,
+			Version: 1,
+		},
+		{
+			ID:            SysInstanceModelGroup,
+			Name:          "实例模型分组",
+			NameEn:        "Instance Model Group",
+			Description:   "实例模型分组用于对实例模型进行归类",
+			DescriptionEn: "group instance models by instance model group",
+			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/system/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            SysInstanceModel,
+			Name:          "实例模型",
+			NameEn:        "InstanceModel",
+			Description:   "实例模型",
+			DescriptionEn: "instance model",
+			Parents: []Parent{{
+				SystemID:   SystemIDCMDB,
+				ResourceID: SysInstanceModelGroup,
+			}},
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/system/resource",
+			},
+			Version: 1,
 		},
 		{
 			ID:            SysModel,
@@ -216,11 +262,14 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Model",
 			Description:   "模型",
 			DescriptionEn: "model",
-			Parents:       nil,
+			Parents: []Parent{{
+				SystemID:   SystemIDCMDB,
+				ResourceID: SysModelGroup,
+			}},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/system/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysInstance,
@@ -233,9 +282,9 @@ func genPublicResources() []ResourceType {
 				ResourceID: SysModel,
 			}},
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/instance/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysAssociationType,
@@ -245,57 +294,57 @@ func genPublicResources() []ResourceType {
 			DescriptionEn: "association type is the classification of model association",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/system/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysEventPushing,
-			Name:          "事件推送",
-			NameEn:        "Event Pushing",
+			Name:          "事件订阅",
+			NameEn:        "Event Subscription",
 			Description:   "当配置发生变化时推送事件",
 			DescriptionEn: "push event when configuration changes",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/system/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysSystemBase,
 			Name:          "系统基础",
-			NameEn:        "System Base",
+			NameEn:        "System",
 			Description:   "基础系统资源",
 			DescriptionEn: "basic system resource",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/empty/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysOperationStatistic,
 			Name:          "运营统计",
-			NameEn:        "Operation Statistic",
+			NameEn:        "Operational Statistics",
 			Description:   "运营统计",
 			DescriptionEn: "operational statistics",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/empty/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysAuditLog,
 			Name:          "操作审计",
-			NameEn:        "Audit Log",
+			NameEn:        "Operation Audit",
 			Description:   "操作审计",
 			DescriptionEn: "audit log",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/empty/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysCloudAccount,
@@ -305,9 +354,9 @@ func genPublicResources() []ResourceType {
 			DescriptionEn: "cloud account",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/system/resource",
 			},
-			Version: 0,
+			Version: 1,
 		},
 		{
 			ID:            SysCloudResourceTask,
@@ -317,9 +366,21 @@ func genPublicResources() []ResourceType {
 			DescriptionEn: "cloud resource task",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
-				Path: "",
+				Path: "/auth/v3/find/system/resource",
 			},
-			Version: 0,
+			Version: 1,
+		},
+		{
+			ID:            SysEventWatch,
+			Name:          "事件监听",
+			NameEn:        "Event Listen",
+			Description:   "事件监听",
+			DescriptionEn: "event watch",
+			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/empty/resource",
+			},
+			Version: 1,
 		},
 	}
 }

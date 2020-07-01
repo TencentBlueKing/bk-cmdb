@@ -40,6 +40,7 @@ type Service struct {
 	disc        discovery.DiscoveryInterface
 	CacheDB     *redis.Client
 	AuthManager *extensions.AuthManager
+	EnableTxn   bool
 }
 
 type srvComm struct {
@@ -88,6 +89,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/hosts/batch").To(s.DeleteHostBatchFromResourcePool))
 	api.Route(api.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	api.Route(api.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
+	api.Route(api.POST("/hosts/snapshot/batch").To(s.HostSnapInfoBatch))
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
 	api.Route(api.POST("/hosts/add/resource").To(s.AddHostToResourcePool))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
@@ -147,11 +149,15 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
+	api.Route(api.POST("/findmany/module_relation/bk_biz_id/{bk_biz_id}").To(s.FindModuleHostRelation))
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.POST("/createmany/cloudarea").To(s.CreatePlatBatch))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DeletePlat))
+
+	api.Route(api.POST("/findmany/hosts/by_service_templates/biz/{bk_biz_id}").To(s.FindHostsByServiceTemplates))
+	api.Route(api.POST("/findmany/hosts/by_set_templates/biz/{bk_biz_id}").To(s.FindHostsBySetTemplates))
 
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
@@ -200,6 +206,10 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		coreSrv.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, coreSrv)
+
+	// redis
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.CacheDB.Ping().Err())
+	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

@@ -14,6 +14,7 @@ package logics
 
 import (
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/cryptor"
 	"configcenter/src/storage/dal"
 
 	"gopkg.in/redis.v5"
@@ -22,10 +23,16 @@ import (
 // Logics framwork need
 type Logics struct {
 	*backbone.Engine
-	db    dal.RDB
-	cache *redis.Client
+	db      dal.RDB
+	cache   *redis.Client
+	cryptor cryptor.Cryptor
 }
 
-func NewLogics(engine *backbone.Engine, db dal.RDB, cache *redis.Client) *Logics {
-	return &Logics{db: db, Engine: engine, cache: cache}
+func NewLogics(engine *backbone.Engine, db dal.RDB, cache *redis.Client, cryptor cryptor.Cryptor) *Logics {
+	return &Logics{
+		Engine:  engine,
+		db:      db,
+		cache:   cache,
+		cryptor: cryptor,
+	}
 }

@@ -116,9 +116,10 @@ type SystemResp struct {
 }
 
 type RegisteredSystemInfo struct {
-	BaseInfo      System           `json:"base_info"`
-	ResourceTypes []ResourceType   `json:"resource_types"`
-	Actions       []ResourceAction `json:"actions"`
+	BaseInfo           System              `json:"base_info"`
+	ResourceTypes      []ResourceType      `json:"resource_types"`
+	Actions            []ResourceAction    `json:"actions"`
+	InstanceSelections []InstanceSelection `json:"instance_selections"`
 }
 
 type BaseResponse struct {
@@ -141,10 +142,12 @@ func (a *AuthError) Error() string {
 type ResourceTypeID string
 
 const (
-	SysSystemBase            ResourceTypeID = "sys_system_base"
-	SysHostInstance          ResourceTypeID = "sys_host_instance"
-	SysEventPushing          ResourceTypeID = "sys_event_pushing"
-	SysModelGroup            ResourceTypeID = "sys_model_group"
+	SysSystemBase   ResourceTypeID = "sys_system_base"
+	SysEventPushing ResourceTypeID = "sys_event_pushing"
+	SysModelGroup   ResourceTypeID = "sys_model_group"
+	// special model group and model resource for selection of instance, not including biz topology and host model group
+	SysInstanceModelGroup    ResourceTypeID = "sys_instance_model_group"
+	SysInstanceModel         ResourceTypeID = "sys_instance_model"
 	SysModel                 ResourceTypeID = "sys_model"
 	SysInstance              ResourceTypeID = "sys_instance"
 	SysAssociationType       ResourceTypeID = "sys_association_type"
@@ -154,11 +157,14 @@ const (
 	SysCloudArea             ResourceTypeID = "sys_cloud_area"
 	SysCloudAccount          ResourceTypeID = "sys_cloud_account"
 	SysCloudResourceTask     ResourceTypeID = "sys_cloud_resource_task"
+	SysEventWatch            ResourceTypeID = "event_watch"
+	Host                     ResourceTypeID = "host"
 )
 
 const (
 	Business                  ResourceTypeID = "business"
-	BizHostInstance           ResourceTypeID = "biz_host_instance"
+	Set                       ResourceTypeID = "set"
+	Module                    ResourceTypeID = "module"
 	BizCustomQuery            ResourceTypeID = "biz_custom_query"
 	BizTopology               ResourceTypeID = "biz_topology"
 	BizCustomField            ResourceTypeID = "biz_custom_field"
@@ -207,7 +213,7 @@ type ResourceActionID string
 
 const (
 	EditBusinessHost                   ResourceActionID = "edit_biz_host"
-	BusinessHostTransferToResourcePool ResourceActionID = "biz_host_transfer_to_resource_pool"
+	BusinessHostTransferToResourcePool ResourceActionID = "unassign_biz_host"
 
 	CreateBusinessCustomQuery ResourceActionID = "create_biz_dynamic_query"
 	EditBusinessCustomQuery   ResourceActionID = "edit_biz_dynamic_query"
@@ -241,17 +247,18 @@ const (
 	CreateResourcePoolHost              ResourceActionID = "create_resource_pool_host"
 	EditResourcePoolHost                ResourceActionID = "edit_resource_pool_host"
 	DeleteResourcePoolHost              ResourceActionID = "delete_resource_pool_host"
-	ResourcePoolHostTransferToBusiness  ResourceActionID = "resource_pool_host_transfer_to_biz"
-	ResourcePoolHostTransferToDirectory ResourceActionID = "resource_pool_host_transfer_to_directory"
+	ResourcePoolHostTransferToBusiness  ResourceActionID = "assign_host_to_biz"
+	ResourcePoolHostTransferToDirectory ResourceActionID = "host_transfer_in_resource_pool"
 
 	CreateResourcePoolDirectory ResourceActionID = "create_resource_pool_directory"
 	EditResourcePoolDirectory   ResourceActionID = "edit_resource_pool_directory"
 	DeleteResourcePoolDirectory ResourceActionID = "delete_resource_pool_directory"
 
-	CreateBusiness  ResourceActionID = "create_business"
-	EditBusiness    ResourceActionID = "edit_business"
-	ArchiveBusiness ResourceActionID = "archive_business"
-	FindBusiness    ResourceActionID = "find_business"
+	CreateBusiness       ResourceActionID = "create_business"
+	EditBusiness         ResourceActionID = "edit_business"
+	ArchiveBusiness      ResourceActionID = "archive_business"
+	FindBusiness         ResourceActionID = "find_business"
+	ViewBusinessResource ResourceActionID = "find_business_resource"
 
 	CreateCloudArea ResourceActionID = "create_cloud_area"
 	EditCloudArea   ResourceActionID = "edit_cloud_area"
@@ -299,6 +306,12 @@ const (
 
 	FindAuditLog ResourceActionID = "find_audit_log"
 
+	WatchHostEvent         ResourceActionID = "watch_host_event"
+	WatchHostRelationEvent ResourceActionID = "watch_host_relation_event"
+	WatchBizEvent          ResourceActionID = "watch_biz_event"
+	WatchSetEvent          ResourceActionID = "watch_set_event"
+	WatchModuleEvent       ResourceActionID = "watch_module_event"
+
 	// Unknown is an action that can not be recognized
 	Unknown ResourceActionID = "unknown"
 )
@@ -316,12 +329,13 @@ type ResourceAction struct {
 }
 
 type RelateResourceType struct {
-	SystemID           string              `json:"system_id"`
-	ID                 ResourceTypeID      `json:"id"`
-	NameAlias          string              `json:"name_alias"`
-	NameAliasEn        string              `json:"name_alias_en"`
-	Scope              *Scope              `json:"scope"`
-	InstanceSelections []InstanceSelection `json:"instance_selections"`
+	SystemID           string                     `json:"system_id"`
+	ID                 ResourceTypeID             `json:"id"`
+	NameAlias          string                     `json:"name_alias"`
+	NameAliasEn        string                     `json:"name_alias_en"`
+	Scope              *Scope                     `json:"scope"`
+	SelectionMode      string                     `json:"selection_mode"`
+	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
 
 type Scope struct {
@@ -335,10 +349,37 @@ type ScopeContent struct {
 	Value string `json:"value"`
 }
 
+type RelatedInstanceSelection struct {
+	ID       InstanceSelectionID `json:"id"`
+	SystemID string              `json:"system_id"`
+}
+
+type InstanceSelectionID string
+
+const (
+	BusinessSelection                  InstanceSelectionID = "business"
+	BizHostInstanceSelection           InstanceSelectionID = "biz_host_instance"
+	BizCustomQuerySelection            InstanceSelectionID = "biz_custom_query"
+	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"
+	BizSetTemplateSelection            InstanceSelectionID = "biz_set_template"
+	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
+	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
+	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
+	SysModelSelection                  InstanceSelectionID = "sys_model"
+	SysInstanceSelection               InstanceSelectionID = "sys_instance"
+	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
+	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
+	SysResourcePoolDirectorySelection  InstanceSelectionID = "sys_resource_pool_directory"
+	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
+	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
+	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
+)
+
 type InstanceSelection struct {
-	Name              string          `json:"name"`
-	NameEn            string          `json:"name_en"`
-	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
+	ID                InstanceSelectionID `json:"id"`
+	Name              string              `json:"name"`
+	NameEn            string              `json:"name_en"`
+	ResourceTypeChain []ResourceChain     `json:"resource_type_chain"`
 }
 
 type ResourceChain struct {

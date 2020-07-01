@@ -44,11 +44,12 @@ func (ps *parseStream) topologyLatest() *parseStream {
 		objectInstanceAssociationLatest().
 		objectInstanceLatest().
 		objectLatest().
-		ObjectClassificationLatest().
+		objectClassificationLatest().
 		objectAttributeGroupLatest().
 		objectAttributeLatest().
 		mainlineLatest().
-		SetTemplate()
+		setTemplate().
+		cache()
 
 	return ps
 }
@@ -498,6 +499,11 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// create instance association operation.
 	if ps.hitPattern(createObjectInstanceAssociationLatestPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		associationObjAsstID := gjson.GetBytes(ps.RequestCtx.Body, common.AssociationObjAsstIDField).String()
 		filter := mapstr.MapStr{
 			common.AssociationObjAsstIDField: associationObjAsstID,
@@ -530,41 +536,24 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 				return ps
 			}
 
-			// get biz ID for host to separate biz host from resource pool host
-			instID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
-			asstInstID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
-			var instBizID, asstInstBizID int64
-			if models[0].ObjectID == common.BKInnerObjIDHost {
-				instBizID, err = ps.getBizIDByHostID(instID)
-				if err != nil {
-					ps.err = err
-					return ps
-				}
-				asstInstBizID, err = ps.getBizIDByHostID(asstInstID)
-				if err != nil {
-					ps.err = err
-					return ps
-				}
-			}
-
 			ps.Attribute.Resources = []meta.ResourceAttribute{
 				{
 					Basic: meta.Basic{
 						Type:       instanceType,
 						Action:     meta.Update,
-						InstanceID: instID,
+						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int(),
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: instBizID,
+					BusinessID: bizID,
 				},
 				{
 					Basic: meta.Basic{
 						Type:       instanceType,
 						Action:     meta.Update,
-						InstanceID: asstInstID,
+						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int(),
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: asstInstBizID,
+					BusinessID: bizID,
 				},
 			}
 			return ps
@@ -581,15 +570,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			if err != nil {
 				ps.err = err
 				return ps
-			}
-			// get biz ID for host to separate biz host from resource pool host
-			var bizID int64
-			if model.ObjectID == common.BKInnerObjIDHost {
-				bizID, err = ps.getBizIDByHostID(instID)
-				if err != nil {
-					ps.err = err
-					return ps
-				}
 			}
 
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
@@ -1260,7 +1240,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 	}
 
 	// find object's topology operation.
-	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPut) {
+	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPost) {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
@@ -1331,7 +1311,7 @@ var (
 	updateObjectClassificationLatestRegexp = regexp.MustCompile("^/api/v3/update/objectclassification/[0-9]+/?$")
 )
 
-func (ps *parseStream) ObjectClassificationLatest() *parseStream {
+func (ps *parseStream) objectClassificationLatest() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1483,8 +1463,6 @@ const (
 var (
 	findObjectAttributeGroupLatestRegexp   = regexp.MustCompile(`^/api/v3/find/objectattgroup/object/[^\s/]+/?$`)
 	deleteObjectAttributeGroupLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectattgroup/[0-9]+/?$`)
-	// TODO remove it, interface implementation not found
-	removeAttributeAwayFromGroupLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectattgroupasst/object/[^\s/]+/property/[^\s/]+/group/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
@@ -1637,32 +1615,6 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 					InstanceID: groupID,
 				},
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-			},
-		}
-		return ps
-	}
-
-	// remove a object's attribute away from a group.
-	if ps.hitRegexp(removeAttributeAwayFromGroupLatestRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 12 {
-			ps.err = errors.New("remove a object attribute away from a group, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelAttributeGroup,
-					Action: meta.Delete,
-					Name:   ps.RequestCtx.Elements[11],
-				},
 			},
 		}
 		return ps
@@ -2019,10 +1971,6 @@ var (
 	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
 	findHostApplyRelatedObjectTopologyRegex                = regexp.MustCompile(`^/api/v3/find/topoinst/bk_biz_id/([0-9]+)/host_apply_rule_related/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
-	// TODO remove it, interface implementation not found
-	findMainlineSubInstanceTopoLatestRegexp = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
-	// TODO remove it, interface implementation not found
-	findMainlineIdleFaultModuleLatestRegexp = regexp.MustCompile(`^/api/v3/find/topointernal/biz/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
@@ -2093,31 +2041,6 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		return ps
 	}
 
-	// find mainline object instance's sub-instance topology operation.
-	if ps.hitRegexp(findMainlineSubInstanceTopoLatestRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 9 {
-			ps.err = errors.New("find mainline object's sub instance topology, but got invalid url")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find mainline object's sub instance topology, but got invalid business id %s", ps.RequestCtx.Elements[6])
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.MainlineInstanceTopology,
-					Action: meta.Find,
-				},
-			},
-		}
-
-		return ps
-	}
-
 	// 根据主机属性自动应用规则查找拓扑节点
 	if ps.hitRegexp(findHostApplyRelatedObjectTopologyRegex, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 7 {
@@ -2135,31 +2058,6 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
-					Action: meta.Find,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// find mainline internal idle and fault module operation.
-	if ps.hitRegexp(findMainlineIdleFaultModuleLatestRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find mainline idle and fault module, but got invalid url")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s", ps.RequestCtx.Elements[5])
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.MainlineModel,
 					Action: meta.Find,
 				},
 			},
@@ -2196,5 +2094,29 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+const (
+	searchTopologyTreePattern = "/api/v3/find/cache/topotree"
+)
+
+func (ps *parseStream) cache() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	// search object association operation
+	if ps.hitPattern(searchTopologyTreePattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizTopology,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
 	return ps
 }

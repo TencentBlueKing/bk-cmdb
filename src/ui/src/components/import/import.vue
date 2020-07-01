@@ -3,7 +3,7 @@
         <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
             <img src="../../assets/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />
-            <i18n path="导入提示" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSize }">
+            <i18n path="导入提示" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSizeLocal }">
                 <b place="clickUpload">{{$t('点击上传')}}</b>
                 <br place="breakRow">
             </i18n>
@@ -13,7 +13,7 @@
             <div class="upload-file-size fr">{{fileInfo.size}}</div>
             <div class="upload-file-status" hidden>{{fileInfo.status}}</div>
             <div class="upload-file-status-icon" hidden>
-                <i :class="['bk-icon ',{ 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
+                <i :class="['bk-icon ', { 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
             </div>
         </div>
         <div class="upload-details">
@@ -97,7 +97,7 @@
             },
             maxSize: {
                 type: Number,
-                default: 500 // kb
+                default: 20 * 1024 // kb
             },
             uploadDone: {
                 type: Function,
@@ -129,6 +129,10 @@
         computed: {
             allowTypeRegExp () {
                 return new RegExp(`^.*?.(${this.allowType.join('|')})$`)
+            },
+            maxSizeLocal () {
+                const maxSize = this.maxSize * 1024
+                return this.formatSize(maxSize)
             }
         },
         methods: {
@@ -142,11 +146,11 @@
                     return false
                 } else if (fileInfo.size / 1024 > this.maxSize) {
                     this.$refs.fileInput.value = ''
-                    this.$error(this.$t('文件大小溢出', { maxSize: this.maxSize }))
+                    this.$error(this.$t('文件大小溢出', { maxSize: this.maxSizeLocal }))
                     return false
                 } else {
                     this.fileInfo.name = fileInfo.name
-                    this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
+                    this.fileInfo.size = this.formatSize(fileInfo.size, 2)
                     const formData = new FormData()
                     formData.append('file', files[0])
                     if (this.importPayload.hasOwnProperty('metadata')) {
@@ -207,6 +211,13 @@
                     update_error: null,
                     asst_error: null
                 }
+            },
+            formatSize (value, digits = 0) {
+                const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+                const index = Math.floor(Math.log(value) / Math.log(1024))
+                let size = value / Math.pow(1024, index)
+                size = `${size.toFixed(digits)}${uints[index]}`
+                return size
             },
             async handleDownloadTemplate () {
                 try {

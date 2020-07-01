@@ -15,6 +15,7 @@ package operation
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -22,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -39,7 +41,7 @@ type InstOperationInterface interface {
 	DeleteInst(kit *rest.Kit, obj model.Object, cond condition.Condition, needCheckHost bool) error
 	DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, instID int64) error
 	DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID []int64, needCheckHost bool) error
-	FindOriginInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error)
+	FindOriginInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, errors.CCError)
 	FindInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
 	FindInstByAssociationInst(kit *rest.Kit, obj model.Object, asstParamCond *AssociationParams) (cont int, results []inst.Inst, err error)
 	FindInstChildTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
@@ -119,6 +121,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 	}
 
 	results := &BatchResult{}
+	colIdxErrMap := map[int]string{}
+	colIdxList := []int{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
 	}
@@ -174,13 +178,17 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
-				results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+				colIdxList = append(colIdxList, int(colIdx))
+				colIdxErrMap[int(colIdx)] = errStr
 				continue
 			}
 			instID, err := item.GetInstID()
 			if err != nil {
 				blog.ErrorJSON("update inst success, but get id field failed, inst: %s, err: %s, rid: %s", item.GetValues(), err.Error(), kit.Rid)
-				results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+				colIdxList = append(colIdxList, int(colIdx))
+				colIdxErrMap[int(colIdx)] = errStr
 				continue
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, instID)
@@ -199,7 +207,9 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 		err = item.Create()
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
-			results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+			colIdxList = append(colIdxList, int(colIdx))
+			colIdxErrMap[int(colIdx)] = errStr
 			continue
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
@@ -215,6 +225,13 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 
 	results.SuccessCreated = createdInstanceIDs
 	results.SuccessUpdated = updatedInstanceIDs
+	sort.Strings(results.Success)
+
+	//sort error
+	sort.Ints(colIdxList)
+	for colIdx := range colIdxList {
+		results.Errors = append(results.Errors, colIdxErrMap[colIdx])
+	}
 
 	return results, nil
 }
@@ -347,6 +364,8 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 func (c *commonInst) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ModuleIDArr: moduleIDS,
+		Fields:      []string{common.BKHostIDField},
+		Page:        metadata.BasePage{Limit: 1},
 	}
 	rsp, err := c.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
 	if nil != err {
@@ -980,8 +999,8 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, obj model.Object, 
 	return c.FindInst(kit, obj, query, false)
 }
 
-func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
-	switch obj.Object().ObjectID {
+func (c *commonInst) FindOriginInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, errors.CCError) {
+	switch objID {
 	case common.BKInnerObjIDHost:
 		rsp, err := c.clientSet.CoreService().Host().GetHosts(kit.Ctx, kit.Header, cond)
 		if nil != err {
@@ -990,7 +1009,7 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metad
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, kit.Rid)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", objID, cond, rsp.ErrMsg, kit.Rid)
 			return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -1003,14 +1022,14 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metad
 		input.Page.Limit = cond.Limit
 		input.Page.Sort = cond.Sort
 		input.Fields = strings.Split(cond.Fields, ",")
-		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj.GetObjectID(), input)
+		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, kit.Rid)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", objID, cond, rsp.ErrMsg, kit.Rid)
 			return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 		return &metadata.InstResult{Info: rsp.Data.Info, Count: rsp.Data.Count}, nil
@@ -1018,7 +1037,7 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metad
 }
 
 func (c *commonInst) FindInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
-	rsp, err := c.FindOriginInst(kit, obj, cond)
+	rsp, err := c.FindOriginInst(kit, obj.GetObjectID(), cond)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to find origin inst , err: %s, rid: %s", err.Error(), kit.Rid)
 		return 0, nil, err

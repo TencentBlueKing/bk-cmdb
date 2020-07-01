@@ -1,8 +1,10 @@
+export const MENU_ENTRY = 'menu_entry'
 export const MENU_INDEX = 'menu_index'
 export const MENU_BUSINESS = 'menu_business'
 export const MENU_RESOURCE = 'menu_resource'
 export const MENU_MODEL = 'menu_model'
 export const MENU_ANALYSIS = 'menu_analysis'
+export const MENU_ADMIN = 'menu_admin'
 
 export const MENU_BUSINESS_HOST = 'menu_business_host'
 export const MENU_BUSINESS_HOST_MANAGEMENT = 'menu_business_host_management'

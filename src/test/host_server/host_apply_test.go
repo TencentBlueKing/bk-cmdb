@@ -220,19 +220,19 @@ var _ = Describe("host abnormal test", func() {
 				"input_type": "excel",
 				"host_info": map[string]interface{}{
 					"1": map[string]interface{}{
-						"bk_host_innerip": fmt.Sprintf("1.%d.0.1", value1),
+						"bk_host_innerip": fmt.Sprintf("127.%d.0.1", value1),
 						"bk_asset_id":     "addhost_excel_asset_1",
-						"bk_host_name":    "1.value1.0.1",
+						"bk_host_name":    "127.value1.0.1",
 					},
 					"2": map[string]interface{}{
-						"bk_host_innerip": fmt.Sprintf("1.%d.0.2", value1),
+						"bk_host_innerip": fmt.Sprintf("127.%d.0.2", value1),
 						"bk_asset_id":     "addhost_excel_asset_1",
-						"bk_host_name":    "1.value1.0.2",
+						"bk_host_name":    "127.value1.0.2",
 					},
 					"3": map[string]interface{}{
-						"bk_host_innerip": fmt.Sprintf("1.%d.0.3", value1),
+						"bk_host_innerip": fmt.Sprintf("127.%d.0.3", value1),
 						"bk_asset_id":     "addhost_excel_asset_1",
-						"bk_host_name":    "1.value1.0.3",
+						"bk_host_name":    "127.value1.0.3",
 					},
 				},
 			}
@@ -261,9 +261,9 @@ var _ = Describe("host abnormal test", func() {
 							"operator": "in",
 							"field":    "bk_host_innerip",
 							"value": []string{
-								fmt.Sprintf("1.%d.0.1", value1),
-								fmt.Sprintf("1.%d.0.2", value1),
-								fmt.Sprintf("1.%d.0.3", value1),
+								fmt.Sprintf("127.%d.0.1", value1),
+								fmt.Sprintf("127.%d.0.2", value1),
+								fmt.Sprintf("127.%d.0.3", value1),
 							},
 						},
 					},

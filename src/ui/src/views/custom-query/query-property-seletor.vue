@@ -12,8 +12,13 @@
                 <div class="property-list">
                     <div class="property-item"
                         v-for="property in group.children"
+                        :title="property.bk_property_name"
                         :key="property.bk_property_id">
-                        <bk-checkbox v-model="property.__selected__" @change="handleCloneGroups(property)">{{property.bk_property_name}}</bk-checkbox>
+                        <bk-checkbox
+                            v-model="property.__selected__"
+                            @change="handleCloneGroups(property)">
+                            {{property.bk_property_name}}
+                        </bk-checkbox>
                     </div>
                 </div>
             </div>
@@ -139,6 +144,11 @@
                     font-size: 14px;
                     color: #63656e;
                     padding: 0 0 20px 0;
+
+                    /deep/ .bk-checkbox-text {
+                        @include ellipsis;
+                        width: 130px;
+                    }
                 }
             }
         }

@@ -32,6 +32,7 @@ func (s *Service) initAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}", Handler: s.SearchMainLineObjectTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/{owner_id}/{bk_biz_id}", Handler: s.SearchBusinessTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/cache/topotree", Handler: s.SearchTopologyTree})
 	// TODO: delete this api, it's not used by front.
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", Handler: s.SearchMainLineChildInstTopo})
 
@@ -110,6 +111,7 @@ func (s *Service) initModule(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/module/{app_id}/{set_id}/{module_id}", Handler: s.DeleteModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/module/{app_id}/{set_id}/{module_id}", Handler: s.UpdateModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/search/{owner_id}/{app_id}/{set_id}", Handler: s.SearchModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module/bk_biz_id/{bk_biz_id}", Handler: s.SearchModuleBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}", Handler: s.ListModulesByServiceTemplateID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}/bk_module_id/{bk_module_id}", Handler: s.UpdateModuleHostApplyEnableStatus})
 
@@ -127,6 +129,7 @@ func (s *Service) initSet(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/set/{app_id}/{set_id}", Handler: s.DeleteSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/set/{app_id}/{set_id}", Handler: s.UpdateSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/search/{owner_id}/{app_id}", Handler: s.SearchSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/set/bk_biz_id/{bk_biz_id}", Handler: s.SearchSetBatch})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -255,7 +258,7 @@ func (s *Service) initIdentifier(web *restful.WebService) {
 }
 
 // 全文索引
-func (s *Service) initFind(web *restful.WebService) {
+func (s *Service) initFullTextSearch(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
 		Language: s.Engine.Language,
@@ -305,7 +308,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initBusinessGraphics(web)
 	s.initBusinessInst(web)
 
-	s.initFind(web)
+	s.initFullTextSearch(web)
 	s.initSetTemplate(web)
 	s.initInternalTask(web)
 

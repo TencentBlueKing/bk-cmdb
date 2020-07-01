@@ -98,14 +98,12 @@ func (p *processOperation) validateHostID(kit *rest.Kit, hostID int64) (string, 
 	filter := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
-	host := &struct {
-		InnerIP string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
-	}{}
-	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).One(kit.Ctx, host)
+	host := metadata.HostMapStr{}
+	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField).One(kit.Ctx, &host)
 	if nil != err {
 		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	return host.InnerIP, nil
+	return host[common.BKHostInnerIPField].(string), nil
 }

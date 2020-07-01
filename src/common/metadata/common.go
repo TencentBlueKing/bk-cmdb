@@ -115,6 +115,24 @@ type QueryInput struct {
 	Sort      string                 `json:"sort,omitempty"`
 }
 
+// Validate validates the input param
+func (o *QueryInput) Validate() (rawError errors.RawErrorInfo) {
+	if o.Limit <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"limit"},
+		}
+	}
+
+	if o.Limit > common.BKAuditLogPageLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
 	for key, item := range o.Condition {
@@ -253,4 +271,27 @@ type UpdateParams struct {
 type ListHostWithoutAppResponse struct {
 	BaseResp `json:",inline"`
 	Data     ListHostResult `json:"data"`
+}
+
+type SearchInstBatchOption struct {
+	IDs    []int64  `json:"bk_ids"`
+	Fields []string `json:"fields"`
+}
+
+func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
+	if len(s.IDs) == 0 || len(s.IDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(s.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

@@ -24,6 +24,7 @@ import (
 )
 
 type Interface interface {
+	Lister(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error)
 	Watcher(ctx context.Context, opts *types.WatchOptions, cap *Capable) error
 	ListWatcher(ctx context.Context, opts *types.ListWatchOptions, cap *Capable) error
 }
@@ -39,6 +40,10 @@ func NewReflector(conf local.MongoConf) (Interface, error) {
 
 type Reflector struct {
 	Stream stream.Interface
+}
+
+func (r *Reflector) Lister(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error) {
+	return r.Stream.List(ctx, opts)
 }
 
 func (r *Reflector) Watcher(ctx context.Context, opts *types.WatchOptions, cap *Capable) error {

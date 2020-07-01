@@ -10,6 +10,7 @@
 	"process_property_group_gsekit_baseinfo": "GSEkit 基本信息",
 	"process_property_group_gsekit_manage": "GSEkit 进程管理信息",
 	"process_property_group_proc_mgr": "进程管理信息",
+	"process_property_group_network_proxy": "外网代理信息",
 	"plat_property_group_default": "基础信息",
     "bk_switch_property_group_default": "基础信息",
     "bk_router_property_group_default": "基础信息",

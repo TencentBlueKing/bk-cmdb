@@ -9,13 +9,18 @@
                     v-for="property in $groupedProperties[index]"
                     :key="property.id"
                     :id="`property-item-${property.id}`">
-                    <span class="property-name" v-overflow-tips>
+                    <span class="property-name" v-bk-overflow-tips>
                         {{property.bk_property_name}}
                     </span>
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
-                        v-overflow-tips
-                        v-show="property !== editState.property">
-                        {{$tools.getPropertyText(property, instState) | filterShowText(property.unit)}}
+                        v-bk-overflow-tips
+                        v-if="property !== editState.property">
+                        <cmdb-property-value
+                            :ref="`property-value-${property.bk_property_id}`"
+                            :value="instState[property.bk_property_id]"
+                            :property="property"
+                            :show-title="false">
+                        </cmdb-property-value>
                     </span>
                     <template v-if="!loadingState.includes(property)">
                         <template v-if="!isPropertyEditable(property)">
@@ -35,7 +40,7 @@
                         <template v-else>
                             <cmdb-auth
                                 style="margin: 8px 0 0 8px; font-size: 0;"
-                                :auth="$authResources({ type: $OPERATION.U_INST })"
+                                :auth="authResources"
                                 v-show="property !== editState.property">
                                 <bk-button slot-scope="{ disabled }"
                                     text
@@ -70,11 +75,11 @@
                                 </span>
                             </div>
                         </template>
-                        <template v-if="$tools.getPropertyText(property, instState) !== '--' && property !== editState.property">
+                        <template v-if="instState[property.bk_property_id] && property !== editState.property">
                             <div class="copy-box">
                                 <i
                                     class="property-copy icon-cc-details-copy"
-                                    @click="handleCopy($tools.getPropertyText(property, instState), property.bk_property_id)">
+                                    @click="handleCopy(property.bk_property_id)">
                                 </i>
                                 <transition name="fade">
                                     <span class="copy-tips"
@@ -95,13 +100,14 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import formMixins from '@/mixins/form'
+    import authMixin from './mixin-auth'
     export default {
         filters: {
             filterShowText (value, unit) {
                 return value === '--' ? '--' : value + unit
             }
         },
-        mixins: [formMixins],
+        mixins: [formMixins, authMixin],
         props: {
             inst: {
                 type: Object,
@@ -128,6 +134,12 @@
             isPublicModel () {
                 const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
                 return !this.$tools.getMetadataBiz(model)
+            },
+            authResources () {
+                if (this.resourceType === 'business') {
+                    return this.INST_AUTH.U_BUSINESS
+                }
+                return this.INST_AUTH.U_INST
             }
         },
         watch: {
@@ -143,7 +155,7 @@
                 focus ? item.classList.add('focus') : item.classList.remove('focus')
             },
             getPlaceholder (property) {
-                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             isPropertyEditable (property) {
@@ -151,7 +163,7 @@
             },
             setEditState (property) {
                 const value = this.instState[property.bk_property_id]
-                this.editState.value = value === null ? '' : value
+                this.editState.value = (value === null || value === undefined) ? '' : value
                 this.editState.property = property
                 this.$nextTick(() => {
                     const component = this.$refs[`component-${property.bk_property_id}`]
@@ -195,7 +207,9 @@
                 this.editState.property = null
                 this.editState.value = null
             },
-            handleCopy (copyText, propertyId) {
+            handleCopy (propertyId) {
+                const component = this.$refs[`property-value-${propertyId}`]
+                const copyText = component[0] ? component[0].$el.innerText : ''
                 this.$copyText(copyText).then(() => {
                     this.showCopyTips = propertyId
                     const timer = setTimeout(() => {
@@ -359,22 +373,21 @@
             border-radius: 2px;
             border: 1px solid #c4c6cc;
             line-height: 30px;
-            font-size: 12px;
+            font-size: 20px;
             text-align: center;
             cursor: pointer;
             &.form-confirm {
                 color: #0082ff;
+                font-size: 20px;
                 &:before {
                     display: inline-block;
-                    transform: scale(0.83);
                 }
             }
             &.form-cancel {
                 color: #979ba5;
-                font-size: 14px;
+                font-size: 20px;
                 &:before {
                     display: inline-block;
-                    transform: scale(0.66);
                 }
             }
             &:hover {

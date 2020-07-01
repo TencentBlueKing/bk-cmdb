@@ -1,51 +1,68 @@
 <template>
     <div class="cloud-account-layout">
-        <cmdb-tips class="cloud-account-tips">提示语</cmdb-tips>
+        <cmdb-tips class="cloud-account-tips" tips-key="cloud-account-tips">
+            {{$t('云资源发现提示语')}}
+        </cmdb-tips>
         <div class="cloud-account-options">
-            <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+            <div class="options-left">
+                <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+            </div>
+            <div class="options-right">
+                <bk-input class="options-filter" clearable
+                    v-model.trim="filter"
+                    :placeholder="$t('请输入xx', { name: $t('任务名称') })">
+                </bk-input>
+            </div>
         </div>
         <bk-table class="cloud-account-table"
             v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="list"
             :pagination="pagination"
+            @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('任务名称')" prop="bk_task_name" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+            <bk-table-column
+                :label="$t('任务名称')"
+                sortable="custom"
+                prop="bk_task_name"
+                class-name="is-highlight"
+                show-overflow-tooltip>
+            </bk-table-column>
             <bk-table-column :label="$t('资源')" prop="bk_resource_type" :formatter="resourceTypeFormatter"></bk-table-column>
-            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip>
+            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip sortable="custom">
                 <task-account-selector slot-scope="{ row }"
                     display="info"
                     :value="row.bk_account_id">
                 </task-account-selector>
             </bk-table-column>
-            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter"></bk-table-column>
-            <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status">
+            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" sortable="custom">
+                <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
+            </bk-table-column>
+            <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status" sortable="custom">
                 <div class="row-status"
                     slot-scope="{ row }"
                     v-bk-tooltips.right="{
-                        disabled: !row.bk_status_description,
-                        content: row.bk_status_description
+                        disabled: !(row.bk_status_description && row.bk_status_description.error_info),
+                        content: row.bk_status_description && row.bk_status_description.error_info
                     }">
-                    <i :class="['status', { 'is-error': row.bk_sync_status !== 'cloud_sync_success' }]"></i>
-                    {{row.bk_sync_status !== 'cloud_sync_success' ? $t('失败') : $t('成功')}}
+                    <template v-if="row.bk_sync_status">
+                        <i :class="['status', { 'is-error': row.bk_sync_status !== 'cloud_sync_success' }]"></i>
+                        {{row.bk_sync_status !== 'cloud_sync_success' ? $t('失败') : $t('成功')}}
+                    </template>
+                    <template v-else>--</template>
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip>
+            <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip sortable="custom">
                 <template slot-scope="{ row }">{{row.bk_last_sync_time | formatter('time')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('最近编辑人')" prop="bk_last_editor">
+            <bk-table-column :label="$t('编辑人')" prop="bk_last_editor">
                 <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <link-button class="mr10" @click="handleEdit(row)">{{$t('编辑')}}</link-button>
-                    <bk-popconfirm
-                        trigger="click"
-                        :title="$t('确定删除该任务')"
-                        @confirm="handleDelete(row)">
-                        <link-button>{{$t('删除')}}</link-button>
-                    </bk-popconfirm>
+                    <link-button @click="handleDelete(row)">{{$t('删除')}}</link-button>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -58,23 +75,34 @@
 <script>
     import TaskSideslider from './children/task-sideslider.vue'
     import { formatter as resourceTypeFormatter } from '@/dictionary/cloud-resource-type'
-    import { formatter as vendorFormatter } from '@/dictionary/cloud-vendor'
     import TaskAccountSelector from './children/task-account-selector.vue'
     import TaskForm from './children/task-form.vue'
     import Bus from '@/utils/bus.js'
+    import symbols from './common/symbol'
+    import CmdbVendor from '@/components/ui/other/vendor'
+    import throttle from 'lodash.throttle'
     export default {
         components: {
             TaskSideslider,
-            TaskAccountSelector
+            TaskAccountSelector,
+            CmdbVendor
         },
         data () {
             return {
+                filter: '',
                 list: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
+                sort: 'bk_task_id',
                 request: {
                     findTask: Symbol('findTask'),
                     findAccount: Symbol('findAccount')
-                }
+                },
+                scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
+            }
+        },
+        watch: {
+            filter () {
+                this.scheduleSearch()
             }
         },
         created () {
@@ -83,6 +111,7 @@
         },
         beforeDestroy () {
             Bus.$off('request-refresh', this.getData)
+            this.$http.cancelCache(symbols.all)
         },
         methods: {
             handleCreate () {
@@ -93,6 +122,10 @@
                         type: 'create'
                     }
                 })
+            },
+            handleSortChange (sort) {
+                this.sort = this.$tools.getSort(sort, { prop: 'bk_task_id' })
+                this.getData()
             },
             handlePageChange (page) {
                 this.pagination.current = page
@@ -128,24 +161,39 @@
                 })
             },
             async handleDelete (row) {
-                try {
-                    await this.$store.dispatch('cloud/resource/deleteTask', {
-                        id: row.bk_task_id
-                    })
-                    this.$success('删除成功')
-                    this.getData()
-                } catch (e) {
-                    console.error(e)
-                }
+                const infoInstance = this.$bkInfo({
+                    title: this.$t('确认删除xx', { instance: row.bk_task_name }),
+                    closeIcon: false,
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('cloud/resource/deleteTask', {
+                                id: row.bk_task_id
+                            })
+                            this.$success('删除成功')
+                            this.getData()
+                            return true
+                        } catch (e) {
+                            console.error(e)
+                            return false
+                        } finally {
+                            infoInstance.buttonLoading = false
+                        }
+                    }
+                })
             },
             async getData () {
                 try {
                     const data = await this.$store.dispatch('cloud/resource/findTask', {
                         params: {
                             fields: [],
-                            condition: {},
+                            condition: {
+                                bk_task_name: this.filter
+                            },
                             exact: false,
-                            page: this.$tools.getPageParams(this.pagination)
+                            page: {
+                                ...this.$tools.getPageParams(this.pagination),
+                                sort: this.sort
+                            }
                         },
                         config: {
                             requestId: this.request.findTask
@@ -165,9 +213,6 @@
             },
             resourceTypeFormatter (row, column) {
                 return this.$t(resourceTypeFormatter(row[column.property]))
-            },
-            vendorFormatter (row, column) {
-                return this.$t(vendorFormatter(row[column.property]))
             }
         }
     }
@@ -182,6 +227,12 @@
     }
     .cloud-account-options {
         margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .options-filter {
+            width: 200px;
+        }
     }
     .cloud-account-table {
         margin-top: 10px;

@@ -27,27 +27,23 @@
                 </icon-button>
             </div>
             <div class="options-filter clearfix fr">
-                <bk-select
+                <cmdb-property-selector
                     class="filter-selector fl"
                     v-model="filter.id"
-                    searchable
-                    font-size="medium"
-                    :clearable="false">
-                    <bk-option v-for="(option, index) in filter.options"
-                        :key="index"
-                        :id="option.id"
-                        :name="option.name">
-                    </bk-option>
-                </bk-select>
+                    :properties="properties"
+                    :object-unique="objectUnique">
+                </cmdb-property-selector>
                 <component class="filter-value fl"
-                    v-if="['enum', 'list'].includes(filter.type)"
+                    v-if="['enum', 'list', 'organization'].includes(filter.type)"
                     :is="`cmdb-form-${filter.type}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
                     v-model="filter.value"
+                    :clearable="true"
                     font-size="medium"
-                    @on-selected="handleFilterData(true)">
+                    @on-selected="handleFilterData(true)"
+                    @on-checked="handleFilterData(true)">
                 </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
@@ -76,25 +72,29 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 200"
-            :row-style="{ cursor: 'pointer' }"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="bk_biz_id" label="ID" width="120" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
-                :class-name="column.id === 'bk_biz_name' ? 'is-highlight' : ''"
                 sortable="custom"
-                :fixed="column.id === 'bk_biz_name'"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
+                min-width="80"
                 show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+                <template slot-scope="{ row }">
+                    <cmdb-property-value
+                        :theme="column.id === 'bk_biz_id' ? 'primary' : 'default'"
+                        :value="row[column.id]"
+                        :show-unit="false"
+                        :property="column.property"
+                        @click.native.stop="handleValueClick(row, column)">
+                    </cmdb-property-value>
+                </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                    <cmdb-auth @click.native.stop :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
                         <template slot-scope="{ disabled }">
                             <span class="text-primary"
                                 style="color: #dcdee5 !important; cursor: not-allowed;"
@@ -131,6 +131,7 @@
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-form
                         ref="form"
+                        :object-unique="objectUnique"
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
@@ -160,12 +161,15 @@
     import { mapState, mapGetters, mapActions } from 'vuex'
     import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
+    import cmdbPropertySelector from '@/components/property-selector'
     export default {
         components: {
-            cmdbColumnsConfig
+            cmdbColumnsConfig,
+            cmdbPropertySelector
         },
         data () {
             return {
+                objectUnique: [],
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -186,10 +190,9 @@
                     }
                 },
                 filter: {
-                    id: '',
+                    id: 'bk_biz_name',
                     value: '',
-                    type: '',
-                    options: [],
+                    type: 'singlechar',
                     sendValue: ''
                 },
                 slider: {
@@ -209,7 +212,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_biz_name']
+                    disabledColumns: ['bk_biz_id', 'bk_biz_name']
                 }
             }
         },
@@ -258,6 +261,7 @@
         async created () {
             try {
                 this.properties = await this.searchObjectAttribute({
+                    injectId: 'biz',
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
@@ -269,8 +273,8 @@
                 })
                 await Promise.all([
                     this.getPropertyGroups(),
-                    this.setTableHeader(),
-                    this.setFilterOptions()
+                    this.getObjectUnique(),
+                    this.setTableHeader()
                 ])
 
                 // 配合全文检索过滤列表
@@ -306,6 +310,15 @@
                     return groups
                 })
             },
+            getObjectUnique () {
+                return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'biz',
+                    params: {}
+                }).then(data => {
+                    this.objectUnique = data
+                    return data
+                })
+            },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
                     const customColumns = this.customBusinessColumns.length ? this.customBusinessColumns : this.globalCustomColumns
@@ -316,19 +329,6 @@
                     this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
                 })
             },
-            setFilterOptions () {
-                this.filter.options = this.properties.map(property => {
-                    return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
-                    }
-                })
-                if (this.$route.params.bizName) {
-                    this.filter.id = 'bk_biz_name'
-                } else {
-                    this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
-                }
-            },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {
                     return {
@@ -338,12 +338,16 @@
                     }
                 })
             },
-            handleRowClick (item) {
-                this.$router.push({
+            handleValueClick (row, column) {
+                if (column.id !== 'bk_biz_id') {
+                    return false
+                }
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_BUSINESS_DETAILS,
                     params: {
-                        bizId: item.bk_biz_id
-                    }
+                        bizId: row.bk_biz_id
+                    },
+                    history: true
                 })
             },
             handleSortChange (sort) {
@@ -454,6 +458,7 @@
                         this.$http.cancel('post_searchBusiness_$ne_disabled')
                     })
                 } else {
+                    delete values.bk_biz_id // properties中注入了前端自定义的bk_biz_id属性
                     this.createBusiness({
                         params: values
                     }).then(() => {
@@ -481,8 +486,9 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({
-                    name: MENU_RESOURCE_BUSINESS_HISTORY
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_BUSINESS_HISTORY,
+                    history: true
                 })
             },
             handleSliderBeforeClose () {

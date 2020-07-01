@@ -89,6 +89,10 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return operationStatisticResourceID(resourceType, attribute)
 	case meta.HostApply:
 		return hostApplyResourceID(resourceType, attribute)
+	case meta.EventWatch:
+		return resourceWatch(resourceType, attribute)
+	case meta.ConfigAdmin:
+		return configAdminResourceID(resourceType, attribute)
 	case meta.CloudAccount:
 		return cloudAccountResourceID(resourceType, attribute)
 	case meta.CloudResourceTask:
@@ -481,6 +485,11 @@ func hostApplyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAt
 	}, nil
 }
 
+func resourceWatch(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return make([]RscTypeAndID, 0), nil
+}
+
 func cloudAccountResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	return []RscTypeAndID{
 		{
@@ -497,4 +506,9 @@ func cloudResourceTaskResourceID(resourceType ResourceTypeID, attribute *meta.Re
 			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 		},
 	}, nil
+}
+
+func configAdminResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return make([]RscTypeAndID, 0), nil
 }

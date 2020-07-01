@@ -301,29 +301,35 @@ func (ps *parseStream) userCustom() *parseStream {
 }
 
 const (
-	deleteHostBatchPattern                    = "/api/v3/hosts/batch"
-	addHostsToHostPoolPattern                 = "/api/v3/hosts/add"
-	addHostsToResourcePoolPattern             = "/api/v3/hosts/add/resource"
-	moveHostToBusinessModulePattern           = "/api/v3/hosts/modules"
-	moveResPoolToBizIdleModulePattern         = "/api/v3/hosts/modules/resource/idle"
-	moveHostsToBizFaultModulePattern          = "/api/v3/hosts/modules/fault"
-	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
-	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
-	moveHostsToBizRecycleModulePattern        = "/api/v3/hosts/modules/recycle"
-	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
-	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
-	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
-	findHostTopoRelationPattern               = "/api/v3/host/topo/relation/read"
-	updateHostCloudAreaFieldPattern           = "/api/v3/updatemany/hosts/cloudarea_field"
-	updateImportHostsPattern                  = "/api/v3/hosts/update"
+	deleteHostBatchPattern              = "/api/v3/hosts/batch"
+	addHostsToHostPoolPattern           = "/api/v3/hosts/add"
+	addHostsToResourcePoolPattern       = "/api/v3/hosts/add/resource"
+	moveHostToBusinessModulePattern     = "/api/v3/hosts/modules"
+	moveResPoolToBizIdleModulePattern   = "/api/v3/hosts/modules/resource/idle"
+	moveHostsToBizFaultModulePattern    = "/api/v3/hosts/modules/fault"
+	moveHostsFromModuleToResPoolPattern = "/api/v3/hosts/modules/resource"
+	moveHostsToBizIdleModulePattern     = "/api/v3/hosts/modules/idle"
+	moveHostsToBizRecycleModulePattern  = "/api/v3/hosts/modules/recycle"
+	moveHostsFromRscPoolToAppModule     = "/api/v3/hosts/host/add/module"
+	moveHostAcrossBizPattern            = "/api/v3/hosts/modules/across/biz"
+	cleanHostInSetOrModulePattern       = "/api/v3/hosts/modules/idle/set"
+	findHostTopoRelationPattern         = "/api/v3/host/topo/relation/read"
+	updateHostCloudAreaFieldPattern     = "/api/v3/updatemany/hosts/cloudarea_field"
+	updateImportHostsPattern            = "/api/v3/hosts/update"
+	getHostModuleRelationPattern        = "/api/v3/hosts/modules/read"
+	lockHostPattern                     = "/api/v3/host/lock"
+	unLockHostPattern                   = "/api/v3/host/lock"
+	queryHostLockPattern                = "/api/v3/host/lock/search"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
 	findHostsWithConditionPattern     = "/api/v3/hosts/search"
 	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
+	findResourcePoolHostsPattern      = "/api/v3/hosts/list_resource_pool_hosts"
 	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
 	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
+	cloneHostPropertyBatchPattern     = "/api/v3/hosts/property/clone"
 	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
 
 	// 特殊接口，给蓝鲸业务使用
@@ -343,6 +349,10 @@ var (
 	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
 
 	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)
+
+	findHostsByServiceTemplatesRegex = regexp.MustCompile(`^/api/v3/findmany/hosts/by_service_templates/biz/\d+$`)
+	findHostsBySetTemplatesRegex     = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
+	findHostModuleRelationsRegex     = regexp.MustCompile(`^/api/v3/findmany/module_relation/bk_biz_id/[0-9]+/?$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -384,7 +394,101 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// TODO: add host lock authorize filter if needed.
+	if ps.hitRegexp(findHostsByServiceTemplatesRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find hosts by service templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findHostModuleRelationsRegex, http.MethodPost) {
+		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
+		bizID, err := util.GetInt64ByInterface(match[1])
+		if err != nil {
+			blog.Errorf("get business id from request path failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
+			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findHostsBySetTemplatesRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// host lock authorize filter
+	if ps.hitPattern(lockHostPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(unLockHostPattern, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(queryHostLockPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
 
 	// delete hosts batch operation.
 	if ps.hitPattern(deleteHostBatchPattern, http.MethodDelete) {
@@ -571,26 +675,6 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// move hosts from one business module to another business module.
-	if ps.hitPattern(moveHostsFromOneToAnotherBizModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostToAnotherBizModule,
-				},
-			},
-		}
-
-		return ps
-	}
-
 	if ps.hitPattern(moveHostsFromRscPoolToAppModule, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
@@ -603,6 +687,20 @@ func (ps *parseStream) host() *parseStream {
 			},
 		}
 
+		return ps
+	}
+
+	// transfer host to another business
+	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostToAnotherBizModule,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -744,6 +842,19 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	// find resource pool hosts
+	if ps.hitPattern(findResourcePoolHostsPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
 	// find hosts under business specified by path parameter
 	if ps.hitRegexp(findBizHostsRegex, http.MethodPost) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
@@ -823,8 +934,9 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.UpdateMany,
+					Type: meta.HostInstance,
+					// Action: meta.UpdateMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -847,6 +959,19 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	// clone hosts property, but can not get the exactly host id.
+	if ps.hitPattern(cloneHostPropertyBatchPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	if ps.hitPattern(hostInstallPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -865,6 +990,24 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.SystemConfig,
 					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(getHostModuleRelationPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstanceTopology,
+					Action: meta.Find,
 				},
 			},
 		}
@@ -1004,6 +1147,8 @@ func (ps *parseStream) cloudResourceSync() *parseStream {
 
 var (
 	findHostSnapshotAPIRegexp = regexp.MustCompile(`^/api/v3/hosts/snapshot/[0-9]+/?$`)
+
+	findHostSnapshotBatchPattern = "/api/v3/hosts/snapshot/batch"
 )
 
 func (ps *parseStream) hostSnapshot() *parseStream {
@@ -1027,6 +1172,20 @@ func (ps *parseStream) hostSnapshot() *parseStream {
 		}
 		return ps
 	}
+
+	if ps.hitPattern(findHostSnapshotBatchPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	return ps
 }
 

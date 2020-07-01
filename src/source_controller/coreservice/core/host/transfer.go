@@ -51,6 +51,11 @@ func (hm *hostManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.Host
 	return hm.hostTransfer.GetHostModuleRelation(kit, input)
 }
 
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (hm *hostManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+	return hm.hostTransfer.GetDistinctHostIDsByTopoRelation(kit, input)
+}
+
 func (hm *hostManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 	return hm.hostTransfer.TransferResourceDirectory(kit, input)
 }

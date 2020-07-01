@@ -2,8 +2,7 @@
     <div class="process-wrapper">
         <bk-table class="process-table"
             v-bkloading="{ isLoading: loading }"
-            :data="showList"
-            :max-height="$APP.height - 300">
+            :data="showList">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
@@ -15,14 +14,14 @@
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" prop="operation" v-if="$parent.isFormMode">
-                <template slot-scope="{ row }">
+                <template slot-scope="{ row, $index }">
                     <cmdb-auth :auth="$authResources(auth)">
                         <bk-button slot-scope="{ disabled }"
                             class="mr10"
                             theme="primary"
                             :disabled="disabled"
                             :text="true"
-                            @click.stop="handleEdit(row._original_)">
+                            @click.stop="handleEdit(row._original_, $index)">
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
@@ -31,7 +30,7 @@
                             theme="primary"
                             :disabled="disabled"
                             :text="true"
-                            @click.stop="handleDelete(row._original_)">
+                            @click.stop="handleDelete(row._original_, $index)">
                             {{$t('删除')}}
                         </bk-button>
                     </cmdb-auth>
@@ -42,6 +41,7 @@
 </template>
 
 <script>
+    import { processTableHeader } from '@/dictionary/table-header'
     export default {
         filters: {
             ipText (value) {
@@ -79,18 +79,7 @@
         },
         computed: {
             header () {
-                const display = [
-                    'bk_func_name',
-                    'bk_process_name',
-                    'bk_start_param_regex',
-                    'bind_ip',
-                    'port',
-                    'bk_port_enable',
-                    'protocol',
-                    'work_path',
-                    'user'
-                ]
-                const header = display.map(id => {
+                const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
@@ -119,11 +108,11 @@
             }
         },
         methods: {
-            handleEdit (process) {
-                this.$emit('on-edit', process)
+            handleEdit (process, index) {
+                this.$emit('on-edit', process, index)
             },
-            handleDelete (process) {
-                this.$emit('on-delete', process)
+            handleDelete (process, index) {
+                this.$emit('on-delete', process, index)
             }
         }
     }

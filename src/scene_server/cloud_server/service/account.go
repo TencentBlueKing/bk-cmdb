@@ -61,6 +61,23 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 		return
 	}
 
+	rawErr := account.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// 加密云账户密钥
+	if s.cryptor != nil {
+		secretKey, err := s.cryptor.Encrypt(account.SecretKey)
+		if err != nil {
+			blog.Errorf("CreateAccount failed, Encrypt err: %st", err.Error())
+			ctx.RespWithError(err, common.CCErrCloudAccountCreateFail, "CreateAccount Encrypt err")
+			return
+		}
+		account.SecretKey = secretKey
+	}
+
 	res, err := s.CoreAPI.CoreService().Cloud().CreateAccount(ctx.Kit.Ctx, ctx.Kit.Header, account)
 	if err != nil {
 		ctx.RespAutoError(err)

@@ -4,6 +4,7 @@
         v-model="selected"
         :clearable="false"
         :disabled="disabled"
+        :multiple="multiple"
         :placeholder="placeholder"
         ref="selector">
         <bk-option
@@ -21,10 +22,14 @@
         name: 'cmdb-form-timezone',
         props: {
             value: {
-                type: [String, Number],
+                type: [Array, String, Number],
                 default: ''
             },
             disabled: {
+                type: Boolean,
+                default: false
+            },
+            multiple: {
                 type: Boolean,
                 default: false
             },
@@ -42,7 +47,7 @@
             })
             return {
                 timezoneList,
-                selected: ''
+                selected: this.multiple ? [] : ''
             }
         },
         watch: {
@@ -57,14 +62,23 @@
             },
             disabled (disabled) {
                 if (!disabled) {
-                    this.selected = this.value ? this.value : 'Asia/Shanghai'
+                    this.selected = this.getDefaultValue()
                 }
             }
         },
         created () {
-            this.selected = this.value ? this.value : 'Asia/Shanghai'
+            this.selected = this.getDefaultValue()
         },
         methods: {
+            getDefaultValue () {
+                let value = this.value
+                if (this.multiple && !value.length) {
+                    value = ['Asia/Shanghai']
+                } else {
+                    value = value || 'Asia/Shanghai'
+                }
+                return value
+            },
             focus () {
                 this.$refs.selector.show()
             }

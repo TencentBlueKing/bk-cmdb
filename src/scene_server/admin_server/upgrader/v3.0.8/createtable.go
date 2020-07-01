@@ -141,4 +141,5 @@ var tables = map[string][]types.Index{
 	common.BKTableNameUserCustom:   {},
 	common.BKTableNameIDgenerator:  {},
 	common.BKTableNameSystem:       {},
+	common.BKTableNameDelArchive:   {},
 }

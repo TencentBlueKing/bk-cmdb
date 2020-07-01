@@ -1,19 +1,19 @@
 <template>
-    <div class="host-apply">
+    <div class="host-apply" v-bkloading="{ isLoading: $loading(['getHostPropertyList', 'getTopologyData']) }">
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
                 :handler-offset="3"
-                :min="300"
+                :min="310"
                 :max="480">
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
-            <div class="main-content">
+            <div class="main-content" v-bkloading="{ isLoading: $loading(['getHostApplyRules']) }">
                 <template v-if="moduleId">
                     <div class="config-panel" v-show="!batchAction">
                         <div class="config-head">
                             <h2 class="config-title">
-                                <span class="module-name">{{currentModule.bk_inst_name}}</span>
+                                <span class="module-name" v-bk-overflow-tips>{{currentModule.bk_inst_name}}</span>
                                 <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}{{ruleLastEditTime}} )</small>
                             </h2>
                         </div>
@@ -139,7 +139,7 @@
                         <bk-button
                             outline
                             theme="primary"
-                            @click="$router.push({ name: hostAndServiceRouteName })"
+                            @click="$routerActions.redirect({ name: hostAndServiceRouteName })"
                         >
                             {{$t('跳转创建')}}
                         </bk-button>
@@ -225,7 +225,7 @@
                         bk_module_ids: [this.moduleId]
                     },
                     config: {
-                        requestId: `getHostApplyRules`
+                        requestId: 'getHostApplyRules'
                     }
                 })
             },
@@ -236,7 +236,7 @@
                         bk_module_ids: [this.moduleId]
                     },
                     config: {
-                        requestId: `getHostApplyPreview`
+                        requestId: 'getHostApplyPreview'
                     }
                 })
             },
@@ -299,7 +299,7 @@
                 })
             },
             handleViewConflict () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
                     query: {
                         mid: this.moduleId
@@ -307,7 +307,7 @@
                 })
             },
             handleEdit () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: this.moduleId
@@ -330,7 +330,7 @@
         height: 100%;
     }
     .tree-layout {
-        width: 300px;
+        width: 310px;
         height: 100%;
         border-right: 1px solid $cmdbLayoutBorderColor;
     }
@@ -374,12 +374,19 @@
         }
 
         .config-title {
+            display: flex;
+            align-items: center;
             font-size: 14px;
             color: #313238;
             font-weight: 700;
             margin-top: 20px;
 
+            .module-name {
+                @include ellipsis;
+            }
+
             .last-edit-time {
+                flex: none;
                 font-size: 12px;
                 font-weight: 400;
                 color: #979ba5;

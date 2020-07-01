@@ -19,7 +19,7 @@ const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss') => {
 }
 
 const numericFormatter = value => {
-    if (isNaN(value) || value === null) {
+    if (isNaN(value) || value === null || value === undefined || value === '') {
         return '--'
     }
     return value
@@ -72,12 +72,15 @@ export function bool (value) {
     return '--'
 }
 
-export function enumeration (value, options) {
+export function enumeration (value, options, showId = false) {
     const option = (options || []).find(option => option.id === value)
     if (!option) {
         return '--'
     }
-    return `${option.name}(${option.id})`
+    if (showId) {
+        return `${option.name}(${option.id})`
+    }
+    return option.name
 }
 
 export function foreignkey (value) {
@@ -92,6 +95,13 @@ export function foreignkey (value) {
 
 export function list (value) {
     return defaultFormatter(value)
+}
+
+export function implode (value, separator = ',') {
+    if (Array.isArray(value)) {
+        return value.join(separator)
+    }
+    return value.toString()
 }
 
 const formatterMap = {

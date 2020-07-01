@@ -64,6 +64,8 @@ func (m *module) hasHost(kit *rest.Kit, bizID int64, setIDs, moduleIDS []int64) 
 	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		ModuleIDArr:   moduleIDS,
+		Fields:        []string{common.BKHostIDField},
+		Page:          metadata.BasePage{Limit: 1},
 	}
 	if len(setIDs) > 0 {
 		option.SetIDArr = setIDs

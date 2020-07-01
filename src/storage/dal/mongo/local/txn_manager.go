@@ -13,34 +13,36 @@
 package local
 
 import (
+	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
+	"net/http"
+	"strconv"
 	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
+
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 	"gopkg.in/redis.v5"
 )
 
-// Errors defined
-var (
-	ErrSessionInfoNotFound = errors.New("session info not found in storage")
-	ErrRedisNotInited      = errors.New("redis of TxnManager is not inited")
+const (
+	transactionNumberRedisKeyNamespace = common.BKCacheKeyV3Prefix + "transaction:number:"
 )
+
+type sessionKey string
+
+func (s sessionKey) genKey() string {
+	return transactionNumberRedisKeyNamespace + string(s)
+}
 
 // a transaction manager
 type TxnManager struct {
-	// enable remote traction functionality or not.
-	// if false, the local transaction still is enabled.
-	enableTransaction bool
-	cache             *redis.Client
-	// transaction timeout time.
-	timeout time.Duration
+	cache *redis.Client
 }
-
-var redisCache = map[string][]string{}
-var Sep = "-_-"
-var SessPre = "sessinfo_"
 
 // InitTxnManager is to init txn manager, set the redis storage
 func (t *TxnManager) InitTxnManager(r *redis.Client) error {
@@ -48,79 +50,226 @@ func (t *TxnManager) InitTxnManager(r *redis.Client) error {
 	return nil
 }
 
-// SaveSessionMock is to save session in a mock storage
-func (t *TxnManager) SaveSessionMock(sess mongo.Session) error {
-	se := mongo.SessionExposer{}
-	info, err := se.GetSessionInfo(sess)
+func (t *TxnManager) GetTxnNumber(sessionID string) (int64, error) {
+	key := sessionKey(sessionID).genKey()
+	v, err := t.cache.Get(key).Result()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	redisCache[info.SessionID] = []string{info.SessionState, info.TxnNumber}
-	return nil
+	return strconv.ParseInt(v, 10, 64)
 }
 
-// GetSessionInfoFromStorageMock is to get session info from a mock storage
-func (t *TxnManager) GetSessionInfoFromStorageMock(sessionID string) (*mongo.SessionInfo, error) {
-	v, ok := redisCache[sessionID]
-	if !ok {
-		return nil, ErrSessionInfoNotFound
-	}
-	return &mongo.SessionInfo{SessionID: sessionID, SessionState: v[0], TxnNumber: v[1]}, nil
-}
+// GenTxnNumber generate the transaction number from redis.
+func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, error) {
+	// return txnNumber with 1 directly, when our mongodb client option's RetryWrite
+	// is set to false.
+	key := sessionKey(sessionID).genKey()
 
-// SaveSession is to save session in storage
-func (t *TxnManager) SaveSession(sess mongo.Session) error {
-	if t.cache == nil {
-		return ErrRedisNotInited
+	pip := t.cache.Pipeline()
+	defer pip.Close()
+
+	// we increase by step 1, so that we can calculate how many transaction has already
+	// be executed in a same session.
+	pip.SetNX(key, 0, ttl).Result()
+	incrBy := pip.IncrBy(key, 1)
+	if ttl == 0 {
+		ttl = common.TransactionDefaultTimeout
 	}
-	se := mongo.SessionExposer{}
-	info, err := se.GetSessionInfo(sess)
+	_, err := pip.Exec()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	val := info.SessionState + Sep + info.TxnNumber
-	return t.cache.Set(SessPre+info.SessionID, val, t.timeout).Err()
+	num := incrBy.Val()
+	// value of (num - num/2 +1) is the real transaction number
+	// in a distribute session.
+	return num, nil
 }
 
-// DeleteSession is to delete session in redis storage
-func (t *TxnManager) DeleteSession(sess mongo.Session) error {
-	if t.cache == nil {
-		return ErrRedisNotInited
-	}
-	se := mongo.SessionExposer{}
-	info, err := se.GetSessionInfo(sess)
-	if err != nil {
-		return err
-	}
-	return t.cache.Del(SessPre + info.SessionID).Err()
+func (t *TxnManager) RemoveSessionKey(sessionID string) error {
+	key := sessionKey(sessionID).genKey()
+	return t.cache.Del(key).Err()
 }
 
-// GetSessionInfoFromStorage is to get session info from storage
-func (t *TxnManager) GetSessionInfoFromStorage(sessionID string) (*mongo.SessionInfo, error) {
-	if t.cache == nil {
-		return nil, ErrRedisNotInited
-	}
-	v, err := t.cache.Get(SessPre + sessionID).Result()
+func (t *TxnManager) ReloadSession(sess mongo.Session, info *mongo.SessionInfo) (mongo.Session, error) {
+	err := mongo.CmdbReloadSession(sess, info)
 	if err != nil {
 		return nil, err
 	}
-	if v == "" {
-		return nil, ErrSessionInfoNotFound
-	}
-	items := strings.Split(v, Sep)
-	if len(items) != 2 {
-		return nil, errors.New(fmt.Sprintf("the session info format in redis is wrong, value:%s", v))
-	}
-	return &mongo.SessionInfo{SessionID: sessionID, SessionState: items[0], TxnNumber: items[1]}, nil
+	return sess, nil
 }
 
-// ConvertToSameSession is to convert a different session to a same session by setting the sessInfo
-func (t *TxnManager) ConvertToSameSession(sess mongo.Session, sessionID string) error {
-	sessInfo, err := t.GetSessionInfoFromStorage(sessionID)
+func (t *TxnManager) PrepareCommit(cli *mongo.Client) (mongo.Session, error) {
+	// create a session client.
+	sess, err := cli.StartSession()
+	if err != nil {
+		return nil, fmt.Errorf("start session failed, err: %v", err)
+	}
+	return sess, nil
+}
+
+func (t *TxnManager) PrepareTransaction(cap *metadata.TxnCapable, cli *mongo.Client) (mongo.Session, error) {
+	// create a session client.
+	sess, err := cli.StartSession()
+	if err != nil {
+		return nil, fmt.Errorf("start session failed, err: %v", err)
+	}
+
+	// only for changing the transaction status
+	err = sess.StartTransaction()
+	if err != nil {
+		return nil, fmt.Errorf("start transaction %s failed: %v", cap.SessionID, err)
+	}
+
+	txnNumber, err := t.GenTxnNumber(cap.SessionID, cap.Timeout)
+	if err != nil {
+		return nil, fmt.Errorf("generate txn number failed, err: %v", err)
+	}
+
+	// reset the session info with the session id.
+	info := &mongo.SessionInfo{
+		TxnNubmer: txnNumber,
+		SessionID: cap.SessionID,
+	}
+
+	err = mongo.CmdbReloadSession(sess, info)
+	if err != nil {
+		return nil, fmt.Errorf("reload transaction: %s failed, err: %v", cap.SessionID, err)
+	}
+
+	return sess, nil
+}
+
+// GetTxnContext create a session if the ctx is a session context, and the bool value is true.
+// so the caller must check the bool, and use session only when the bool is true.
+// otherwise the caller should not use the session, should call the mongodb command directly.
+// Note: this function is always used with mongo.CmdbReleaseSession(ctx, sessCtx) to release the session connection.
+func (t *TxnManager) GetTxnContext(ctx context.Context, cli *mongo.Client) (context.Context, mongo.Session, bool, error) {
+	cap, useTxn, err := parseTxnInfoFromCtx(ctx)
+	if err != nil {
+		return ctx, nil, false, err
+	}
+
+	if !useTxn {
+		// not use transaction, return directly.
+		return ctx, nil, false, nil
+	}
+
+	session, err := t.PrepareTransaction(cap, cli)
+	if err != nil {
+		return ctx, nil, true, err
+	}
+
+	// prepare the session context, it tells the driver to run this within a transaction.
+	sessCtx := mongo.CmdbContextWithSession(ctx, session)
+
+	return sessCtx, session, true, nil
+}
+
+// parseTxnInfoFromCtx try to parse transaction info from context,
+// it returns the TxnCable, and a bool to indicate whether it's a transaction context or not.
+// so the caller can use the returned TxnCapable only when the bool is true. otherwise it will be panic.
+func parseTxnInfoFromCtx(txnCtx context.Context) (*metadata.TxnCapable, bool, error) {
+	id := txnCtx.Value(common.TransactionIdHeader)
+	if id == nil {
+		// do not use transaction, and return directly.
+		return nil, false, nil
+	}
+
+	txnID, ok := id.(string)
+	if !ok {
+		return nil, false, fmt.Errorf("invalid transaction id value： %v", id)
+	}
+
+	// parse timeout
+	ttl := txnCtx.Value(common.TransactionTimeoutHeader)
+	if ttl == nil {
+		return nil, false, errors.New("transaction timeout value not exist")
+	}
+
+	ttlStr, ok := ttl.(string)
+	if !ok {
+		return nil, false, fmt.Errorf("invalid transaction timeout value: %v", ttl)
+	}
+
+	timeout, err := strconv.ParseInt(ttlStr, 10, 64)
+	if err != nil {
+		return nil, false, fmt.Errorf("invalid transaction timeout value, parse %v failed, err: %v", ttl, err)
+	}
+
+	cap := &metadata.TxnCapable{
+		// timeout is not
+		Timeout:   time.Duration(timeout),
+		SessionID: txnID,
+	}
+	return cap, true, nil
+}
+
+func (t *TxnManager) AutoRunWithTxn(ctx context.Context, cli *mongo.Client, cmd func(ctx context.Context) error) error {
+	cap, useTxn, err := parseTxnInfoFromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
-	se := &mongo.SessionExposer{}
-	return se.SetSessionInfo(sess, sessInfo)
+	if !useTxn {
+		// not use transaction, run command directly.
+		return cmd(ctx)
+	}
+
+	session, err := t.PrepareTransaction(cap, cli)
+	if err != nil {
+		return err
+	}
+
+	// prepare the session context, it tells the driver to run this within a transaction.
+	sessCtx := mongo.CmdbContextWithSession(ctx, session)
+
+	// run the command and check error
+	err = cmd(sessCtx)
+	if err != nil {
+		// release the session connection.
+		// Attention: do not use session.EndSession() to do this, it will abort the transaction.
+		// mongo.CmdbReleaseSession(ctx, session)
+		return err
+	}
+	// release the session connection.
+	// Attention: do not use session.EndSession() to do this, it will abort the transaction.
+	// mongo.CmdbReleaseSession(ctx, session)
+	return nil
+}
+
+func GenSessionID() (string, error) {
+	// mongodb driver used this as it's mongodb session id, and we use it too.
+	id, err := uuid.New()
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(id[:]), nil
+}
+
+// generate a session id and set it to header.
+func GenTxnCableAndSetHeader(header http.Header, opts ...metadata.TxnOption) (*metadata.TxnCapable, error) {
+	sessionID, err := GenSessionID()
+	if err != nil {
+		return nil, fmt.Errorf("generate session id failed, err: %v", err)
+	}
+	var timeout time.Duration
+	if len(opts) != 0 {
+		if opts[0].Timeout < 30*time.Second {
+			timeout = common.TransactionDefaultTimeout
+		} else {
+			timeout = opts[0].Timeout
+		}
+	} else {
+		// set default value
+		timeout = common.TransactionDefaultTimeout
+	}
+
+	header.Set(common.TransactionIdHeader, sessionID)
+	header.Set(common.TransactionTimeoutHeader, strconv.FormatInt(int64(timeout), 10))
+
+	cap := metadata.TxnCapable{
+		Timeout:   timeout,
+		SessionID: sessionID,
+	}
+	return &cap, nil
 }

@@ -17,7 +17,7 @@
             authscheme: <%= htmlWebpackPlugin.options.config.AUTH_SCHEME %> || 'internal',
             authCenter: <%= htmlWebpackPlugin.options.config.AUTH_CENTER %>,
             buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>',
-            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH %> || 'off',
+            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH %> || 'off'
         }
         window.User = {
             admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,
@@ -25,6 +25,9 @@
         }
         window.Supplier = {
             account: '0'
+        }
+        window.ESB = {
+          userManage: <%= htmlWebpackPlugin.options.config.USER_MANAGE %>
         }
         window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
         window.API_PREFIX = API_HOST + 'api/' + Site.version

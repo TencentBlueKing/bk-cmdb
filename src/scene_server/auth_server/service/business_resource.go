@@ -33,7 +33,7 @@ func (s *AuthService) PullBusinessResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
+	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizSetTemplate, iam.Set, iam.Module:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.NotFoundErrorCode,
@@ -59,7 +59,11 @@ func (s *AuthService) PullBusinessResource(ctx *rest.Contexts) {
 		})
 		return
 	case types.ListInstanceMethod:
-		res, err := s.lgc.ListBusinessInstance(ctx.Kit, query)
+		parentType := iam.Business
+		if query.Type == iam.Module {
+			parentType = iam.Set
+		}
+		res, err := s.lgc.ListBusinessInstance(ctx.Kit, query, parentType)
 		if err != nil {
 			ctx.RespHTTPBody(types.BaseResp{
 				Code:    types.InternalServerErrorCode,

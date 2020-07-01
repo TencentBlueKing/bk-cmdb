@@ -7,12 +7,15 @@
                 <h3 class="subtitle">{{$t('请勾选需要转到的模块')}}</h3>
                 <bk-input class="tree-filter" clearable right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
                 <bk-big-tree ref="tree" class="topology-tree"
+                    display-matched-node-descendants
                     :default-expand-all="moduleType === 'idle'"
                     :options="{
                         idKey: getNodeId,
                         nameKey: 'bk_inst_name',
                         childrenKey: 'child'
                     }"
+                    :height="290"
+                    :node-height="36"
                     :show-checkbox="isShowCheckbox"
                     @node-click="handleNodeClick"
                     @check-change="handleNodeCheck">
@@ -359,7 +362,6 @@
             width: 20px;
             height: 20px;
             margin: 8px 4px 8px 0;
-            vertical-align: middle;
             border-radius: 50%;
             background-color: #C4C6CC;
             line-height: 1.666667;

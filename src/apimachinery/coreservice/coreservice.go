@@ -18,6 +18,8 @@ import (
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
 	"configcenter/src/apimachinery/coreservice/auth"
+	"configcenter/src/apimachinery/coreservice/cache"
+	"configcenter/src/apimachinery/coreservice/count"
 	"configcenter/src/apimachinery/coreservice/cloud"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
@@ -31,6 +33,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
 	"configcenter/src/apimachinery/coreservice/topographics"
+	"configcenter/src/apimachinery/coreservice/transaction"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -50,6 +53,9 @@ type CoreServiceClientInterface interface {
 	SetTemplate() settemplate.SetTemplateInterface
 	HostApplyRule() hostapplyrule.HostApplyRuleInterface
 	System() ccSystem.SystemClientInterface
+	Txn() transaction.Interface
+	Count() count.CountClientInterface
+	Cache() cache.Interface
 	Cloud() cloud.CloudInterface
 	Auth() auth.AuthClientInterface
 }
@@ -120,6 +126,18 @@ func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
 
 func (c *coreService) HostApplyRule() hostapplyrule.HostApplyRuleInterface {
 	return hostapplyrule.NewHostApplyRuleClient(c.restCli)
+}
+
+func (c *coreService) Txn() transaction.Interface {
+	return transaction.NewTxn(c.restCli)
+}
+
+func (c *coreService) Count() count.CountClientInterface {
+	return count.NewCountClientInterface(c.restCli)
+}
+
+func (c *coreService) Cache() cache.Interface {
+	return cache.NewCacheClient(c.restCli)
 }
 
 func (c *coreService) Cloud() cloud.CloudInterface {

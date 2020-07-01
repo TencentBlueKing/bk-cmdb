@@ -13,16 +13,17 @@
             </bk-form-item>
             <bk-form-item class="form-item" :label="$t('账户名称')" required>
                 <task-account-selector class="form-meta"
-                    :readonly="!isCreateMode"
+                    ref="accountSelector"
+                    :disabled="!isCreateMode"
                     :data-vv-as="$t('账户名称')"
                     data-vv-name="bk_account_id"
                     v-model="form.bk_account_id"
                     v-validate="'required'">
                 </task-account-selector>
-                <link-button class="form-account-link" @click="handleLinkToCloudAccount">
-                    <i class="icon-cc-share"></i>
-                    {{$t('跳转账户管理')}}
-                </link-button>
+                <bk-link theme="primary" class="form-account-link" @click="handleLinkToCloudAccount">
+                    <i class="form-account-link-icon icon-cc-share"></i>
+                    <span>{{$t('跳转账户管理')}}</span>
+                </bk-link>
                 <p class="form-tips" v-if="form.bk_account_id">
                     <i class="icon-cc-exclamation-tips"></i>
                     {{$t('同步频率提示语')}}
@@ -31,7 +32,7 @@
             </bk-form-item>
             <bk-form-item class="form-item" :label="$t('资源类型')" required>
                 <task-resource-selector class="form-meta"
-                    :readonly="true"
+                    :disabled="true"
                     :data-vv-as="$t('资源类型')"
                     data-vv-name="bk_resource_type"
                     v-model="form.bk_resource_type"
@@ -59,7 +60,7 @@
             slot-scope="{ sticky }"
             :class="{ 'is-sticky': sticky }">
             <bk-button theme="primary"
-                :loading="$loading([request.createTask, request.updateTask])"
+                :loading="$loading([request.createTask, request.updateTask, request.createArea])"
                 @click="handleSumbit">
                 {{isCreateMode ? $t('提交') : $t('保存')}}
             </bk-button>
@@ -88,6 +89,7 @@
     import TaskAccountSelector from './task-account-selector.vue'
     import TaskResourceSelector from './task-resource-selector.vue'
     import Bus from '@/utils/bus.js'
+    import symbols from '../common/symbol'
     export default {
         name: 'task-form',
         components: {
@@ -124,9 +126,10 @@
                 form: form,
                 selectedVPC: this.task ? this.task.bk_sync_vpcs : [],
                 request: {
-                    getAccounts: Symbol('getAccounts'),
-                    createTask: Symbol('createTask'),
-                    updateTask: Symbol('updateTask')
+                    getAccounts: symbols.get('getAccounts'),
+                    createTask: symbols.get('createTask'),
+                    updateTask: symbols.get('updateTask'),
+                    createArea: symbols.get('createArea')
                 },
                 showVPCSelector: false
             }
@@ -156,6 +159,16 @@
                 if (!isFormValid || !isDirectoryValid) {
                     return false
                 }
+
+                const vendor = this.$refs.accountSelector.accountVendor
+                const next = await this.$refs.vpcTable.createCloudArea({
+                    bk_cloud_vendor: vendor.id,
+                    bk_account_id: this.form.bk_account_id
+                })
+                if (!next) {
+                    return false
+                }
+
                 if (this.isCreateMode) {
                     this.doCreate()
                 } else {
@@ -167,7 +180,7 @@
                     await this.$store.dispatch('cloud/resource/createTask', {
                         params: {
                             ...this.form,
-                            bk_sync_vpcs: this.$refs.vpcTable.getSyncVPC()
+                            bk_sync_vpcs: this.getVPCList()
                         },
                         config: {
                             requestId: this.request.createTask
@@ -184,7 +197,7 @@
                     const params = {
                         bk_task_id: this.task.bk_task_id,
                         bk_task_name: this.form.bk_task_name,
-                        bk_sync_vpcs: this.$refs.vpcTable.getSyncVPC()
+                        bk_sync_vpcs: this.getVPCList()
                     }
                     await this.$store.dispatch('cloud/resource/updateTask', {
                         id: this.task.bk_task_id,
@@ -204,6 +217,18 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            getVPCList () {
+                return this.$refs.vpcTable.list.map(row => {
+                    return {
+                        bk_vpc_id: row.bk_vpc_id,
+                        bk_vpc_name: row.bk_vpc_name,
+                        bk_region: row.bk_region,
+                        bk_host_count: row.bk_host_count,
+                        bk_sync_dir: row.bk_sync_dir,
+                        bk_cloud_id: row.bk_cloud_id
+                    }
+                })
             },
             handleCancel () {
                 if (this.isCreateMode) {
@@ -232,14 +257,15 @@
     .form-layout {
         padding: 10px 25px;
         display: block;
+        font-size: 0;
         .form-item:nth-child(2n) {
-            margin-left: 32px;
+            padding-left: 32px;
         }
         .form-item:nth-child(n + 3) {
             margin-top: 10px;
         }
         .form-item {
-            width: 300px;
+            width: 50%;
             margin-left: 0;
             /deep/ {
                 .bk-label,
@@ -265,7 +291,18 @@
             position: absolute;
             bottom: 100%;
             right: 0;
-            font-size: 12px;
+            /deep/ {
+                .bk-link-text {
+                    display: flex;
+                    align-items: center;
+                    font-size: 12px;
+                }
+            }
+            .form-account-link-icon {
+                height: 20px;
+                line-height: 20px;
+                margin-right: 4px;
+            }
         }
         .form-tips {
             position: absolute;

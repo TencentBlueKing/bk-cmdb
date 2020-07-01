@@ -45,30 +45,32 @@ func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, h
 	if businessID == 0 {
 		cond.Merge(metadata.BizLabelNotExist)
 	}
-	query := &metadata.QueryCondition{
-		Condition: cond,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	result, err := am.clientSet.CoreService().Model().ReadModelClassification(ctx, header, query)
-	if err != nil {
-		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
-		return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
-	}
-
 	classifications := make([]metadata.Classification, 0)
-	for _, cls := range result.Data.Info {
-		classification := metadata.Classification{}
-		data, err := json.Marshal(cls)
-		if err != nil {
-			blog.ErrorJSON("CollectClassificationByBusinessIDs %s failed, parse attribute %s failed, err: %s, rid: %s", businessID, cls, err, rid)
-			return nil, fmt.Errorf("CollectClassificationByBusinessIDs marshel json %+v failed, err: %+v", cls, err)
+	count := -1
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+		query := &metadata.QueryCondition{
+			Condition: cond,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
 		}
-		err = json.Unmarshal(data, &classification)
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassification, query)
 		if err != nil {
-			blog.Errorf("CollectClassificationByBusinessIDs %+v failed, parse attribute %s failed, err: %s, rid: %s", businessID, string(data), err, rid)
-			return nil, fmt.Errorf("CollectClassificationByBusinessIDs unmarshel json %s failed, err: %+v", string(data), err)
+			blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
+			return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
 		}
-		classifications = append(classifications, classification)
+
+		for _, cls := range result.Data.Info {
+			classification := metadata.Classification{}
+			_, err = classification.Parse(cls)
+			if err != nil {
+				return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			}
+			classifications = append(classifications, classification)
+		}
+		count = result.Data.Count
 	}
 	return classifications, nil
 }

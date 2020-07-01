@@ -13,6 +13,7 @@
 package rest
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -24,6 +25,8 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -46,7 +49,7 @@ type Contexts struct {
 func (c *Contexts) DecodeInto(to interface{}) error {
 	body, err := ioutil.ReadAll(c.Request.Request.Body)
 	if err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, read request body failed, err: %v", c.Kit.Rid, err))
+		blog.ErrorfDepthf(1, "rid: %s, read request body failed, err: %v", c.Kit.Rid, err)
 		return c.Kit.CCError.Error(common.CCErrCommHTTPReadBodyFailed)
 	}
 
@@ -56,7 +59,7 @@ func (c *Contexts) DecodeInto(to interface{}) error {
 	}
 
 	if err := json.Unmarshal(body, to); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, unmarshal request body failed, err: %v, body: %s", c.Kit.Rid, err, string(body)))
+		blog.ErrorfDepthf(1, "rid: %s, unmarshal request body failed, err: %v, body: %s", c.Kit.Rid, err, string(body))
 		return c.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 	return nil
@@ -67,8 +70,47 @@ func (c *Contexts) RespEntity(data interface{}) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
 	c.writeAsJson(metadata.NewSuccessResp(data))
+}
+
+// RespString response the data format to a json string.
+// the data is a string, and do not need marshal, can return directly.
+func (c *Contexts) RespString(data string) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	jsonBuffer := bytes.Buffer{}
+	jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": ")
+	jsonBuffer.WriteString(data)
+	jsonBuffer.WriteByte('}')
+	c.resp.Write(jsonBuffer.Bytes())
+}
+
+// RespString response the data format to a json string.
+// the data is a string, and do not need marshal, can return directly.
+func (c *Contexts) RespStringArray(jsonArray []string) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	last := len(jsonArray) - 1
+	jsonBuffer := bytes.Buffer{}
+	jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": ")
+	// convert json string to json array format.
+	jsonBuffer.WriteByte('[')
+	for idx, val := range jsonArray {
+		jsonBuffer.WriteString(val)
+		if idx != last {
+			jsonBuffer.WriteByte(',')
+		}
+	}
+	jsonBuffer.WriteByte(']')
+	// end of json
+	jsonBuffer.WriteByte('}')
+	c.resp.Write(jsonBuffer.Bytes())
 }
 
 func (c *Contexts) RespEntityWithError(data interface{}, err error) {
@@ -84,11 +126,11 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 		if err == auth.NoAuthorizeError {
 			body, err := json.Marshal(data)
 			if err != nil {
-				blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
+				blog.ErrorfDepthf(2, "rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err)
 				return
 			}
 			if _, err := c.resp.Write(body); err != nil {
-				blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+				blog.ErrorfDepthf(2, "rid: %s, response http request failed, err: %v", c.Kit.Rid, err)
 				return
 			}
 			return
@@ -151,7 +193,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, %s, err: %v", c.Kit.Rid, fmt.Sprintf(format, args), err))
+	blog.ErrorfDepthf(1, "rid: %s, %s, err: %v", c.Kit.Rid, fmt.Sprintf(format, args), err)
 
 	var code int
 	var errMsg string
@@ -191,7 +233,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 }
 
 func (c *Contexts) RespAutoError(err error) {
-	blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, err: %v", c.Kit.Rid, err))
+	blog.ErrorfDepthf(1, "rid: %s, err: %v", c.Kit.Rid, err)
 	var code int
 	var errMsg string
 	if err != nil {
@@ -230,7 +272,7 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepth(1, fmt.Errorf("rid: %s, %s", c.Kit.Rid, logMsg))
+	blog.ErrorfDepthf(1, "rid: %s, %s", c.Kit.Rid, logMsg)
 
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
@@ -249,7 +291,7 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, %s", c.Kit.Rid, fmt.Sprintf(format, args)))
+	blog.ErrorfDepthf(1, "%s, rid: %s", fmt.Sprintf(format, args), c.Kit.Rid)
 
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
@@ -270,11 +312,11 @@ func (c *Contexts) RespHTTPBody(data interface{}) {
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
 	body, err := json.Marshal(data)
 	if err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
+		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
 		return
 	}
 	if _, err := c.resp.Write(body); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
 		return
 	}
 }
@@ -282,11 +324,41 @@ func (c *Contexts) RespHTTPBody(data interface{}) {
 func (c *Contexts) writeAsJson(resp *metadata.Response) {
 	body, err := json.Marshal(resp)
 	if err != nil {
-		blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
+		blog.ErrorfDepthf(2, "marshal json response failed, err: %v, rid: %s", err, c.Kit.Rid)
 		return
 	}
 	if _, err := c.resp.Write(body); err != nil {
-		blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+		blog.ErrorfDepthf(2, "response http request failed, err: %v, rid: %s", err, c.Kit.Rid)
 		return
 	}
+}
+
+// NewContexts 产生一个新的contexts， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (c *Contexts) NewContexts() *Contexts {
+	newHeader := util.CCHeader(c.Kit.Header)
+	c.Kit.Header = newHeader
+	return &Contexts{
+		Kit:            c.Kit,
+		Request:        c.Request,
+		resp:           c.resp,
+		respStatusCode: 0,
+	}
+}
+
+// NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (c *Contexts) NewHeader() http.Header {
+	return util.CCHeader(c.Kit.Header)
+}
+
+// NewKit 产生一个新的kit， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (kit *Kit) NewKit() *Kit {
+	newHeader := util.CCHeader(kit.Header)
+	newKit := *kit
+	newKit.Header = newHeader
+	return &newKit
+}
+
+// NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
+func (kit *Kit) NewHeader() http.Header {
+	return util.CCHeader(kit.Header)
 }

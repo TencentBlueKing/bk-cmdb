@@ -94,6 +94,9 @@
                 return this.$loading([
                     'getInstRelation'
                 ])
+            },
+            resourceType () {
+                return this.$parent.resourceType
             }
         },
         watch: {

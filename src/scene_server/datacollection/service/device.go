@@ -29,7 +29,7 @@ import (
 // CreateDevice create device
 func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	deviceInfo := meta.NetcollectDevice{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&deviceInfo); nil != err {
@@ -38,7 +38,7 @@ func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	result, err := s.Logics.AddDevice(pheader, deviceInfo)
+	result, err := s.logics.AddDevice(pheader, deviceInfo)
 	if nil != err {
 		if err.Error() == defErr.Error(common.CCErrCollectNetDeviceCreateFail).Error() {
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -55,7 +55,7 @@ func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 // UpdateDevice update device
 func (s *Service) UpdateDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	netDeviceID, err := checkDeviceIDPathParam(defErr, req.PathParameter("device_id"))
 	if nil != err {
@@ -70,7 +70,7 @@ func (s *Service) UpdateDevice(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err = s.Logics.UpdateDevice(pheader, netDeviceID, deviceInfo); nil != err {
+	if err = s.logics.UpdateDevice(pheader, netDeviceID, deviceInfo); nil != err {
 		if err.Error() == defErr.Error(common.CCErrCollectNetDeviceUpdateFail).Error() {
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
@@ -86,7 +86,7 @@ func (s *Service) UpdateDevice(req *restful.Request, resp *restful.Response) {
 // BatchCreateDevice batch create device
 func (s *Service) BatchCreateDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	batchAddDevice := new(meta.BatchAddDevice)
 	if err := json.NewDecoder(req.Request.Body).Decode(&batchAddDevice); nil != err {
@@ -96,7 +96,7 @@ func (s *Service) BatchCreateDevice(req *restful.Request, resp *restful.Response
 	}
 
 	deviceList := batchAddDevice.Data
-	resultList, hasError := s.Logics.BatchCreateDevice(pheader, deviceList)
+	resultList, hasError := s.logics.BatchCreateDevice(pheader, deviceList)
 	if hasError {
 		resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{
@@ -114,7 +114,7 @@ func (s *Service) BatchCreateDevice(req *restful.Request, resp *restful.Response
 // SearchDevice search device
 func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	body := new(meta.NetCollSearchParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); nil != err {
@@ -123,7 +123,7 @@ func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	devices, err := s.Logics.SearchDevice(pheader, body)
+	devices, err := s.logics.SearchDevice(pheader, body)
 	if nil != err {
 		blog.Errorf("[NetDevice] search net device failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetDeviceGetFail)})
@@ -139,7 +139,7 @@ func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
 // DeleteDevice delete device
 func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	deleteNetDeviceBatchOpt := new(meta.DeleteNetDeviceBatchOpt)
 	if err := json.NewDecoder(req.Request.Body).Decode(deleteNetDeviceBatchOpt); nil != err {
@@ -149,7 +149,7 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	}
 
 	for _, deviceID := range deleteNetDeviceBatchOpt.DeviceIDs {
-		if err := s.Logics.DeleteDevice(pheader, deviceID); nil != err {
+		if err := s.logics.DeleteDevice(pheader, deviceID); nil != err {
 			blog.Errorf("[NetDevice] delete net device failed, with device_id [%d], err: %v", deviceID, err)
 
 			if defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail).Error() == err.Error() {

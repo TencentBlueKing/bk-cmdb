@@ -32,15 +32,15 @@
             </bk-table-column>
             <bk-table-column prop="last_time" :label="$t('更新时间')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column prop="operation" :label="$t('推送情况（近一周）')">
+            <bk-table-column prop="statistics" :label="$t('推送情况（近一周）')">
                 <template slot-scope="{ row }">
                     <i class="circle"
                         :class="{
-                            'danger': row.operation.failure,
-                            'success': !row.operation.failure
+                            'danger': row.statistics.failure,
+                            'success': !row.statistics.failure
                         }">
                     </i>
-                    {{$t('失败')}} {{row.operation.failure}} / {{$t('总量')}} {{row.operation.total}}
+                    {{$t('失败')}} {{row.statistics.failure}} / {{$t('总量')}} {{row.statistics.total}}
                 </template>
             </bk-table-column>
             <bk-table-column prop="setting" :label="$t('配置')">

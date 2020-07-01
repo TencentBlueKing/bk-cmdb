@@ -146,7 +146,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 	case common.FieldTypeBool:
 		rawError = attribute.validBool(ctx, data, key)
 	case common.FieldTypeUser:
-		rawError = attribute.validChar(ctx, data, key)
+		rawError = attribute.validUser(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
 	case common.FieldTypeOrganization:
@@ -437,7 +437,7 @@ func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key
 	return errors.RawErrorInfo{}
 }
 
-// validInt valid object attribute that is long char type
+// validLongChar valid object attribute that is long char type
 func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
@@ -456,7 +456,7 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 	case string:
 		value = strings.TrimSpace(value)
 		if len(value) > common.FieldTypeLongLenChar {
-			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeLongLenChar, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommOverLimit,
 				Args:    []interface{}{key},
@@ -569,6 +569,52 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 				ErrCode: common.CCErrFieldRegValidFailed,
 				Args:    []interface{}{key},
 			}
+		}
+	default:
+		blog.Errorf("params should be string, rid: %s", rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedString,
+			Args:    []interface{}{key},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// validUser valid object attribute that is user type
+func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if nil == val || "" == val {
+		if attribute.IsRequired {
+			blog.Errorf("params in need, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	switch value := val.(type) {
+	case string:
+		value = strings.TrimSpace(value)
+		if len(value) > common.FieldTypeUserLenChar {
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeUserLenChar, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommOverLimit,
+				Args:    []interface{}{key},
+			}
+		}
+		if 0 == len(value) {
+			if attribute.IsRequired {
+				blog.Errorf("params can not be empty, rid: %s", rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsNeedSet,
+					Args:    []interface{}{key},
+				}
+			}
+			return errors.RawErrorInfo{}
 		}
 	default:
 		blog.Errorf("params should be string, rid: %s", rid)
@@ -973,34 +1019,37 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 }
 
 var HostApplyFieldMap = map[string]bool{
-	common.BKHostInnerIPField: false,
-	common.BKHostOuterIPField: false,
-	common.BKOperatorField:    true,
-	common.BKBakOperatorField: true,
-	common.BKAssetIDField:     false,
-	common.BKSNField:          false,
-	"bk_comment":              false,
-	"bk_service_term":         false,
-	"bk_sla":                  true,
-	common.BKCloudIDField:     false,
-	"bk_state_name":           false,
-	"bk_province_name":        false,
-	"bk_isp_name":             false,
-	common.BKHostNameField:    false,
-	common.BKOSTypeField:      false,
-	common.BKOSNameField:      false,
-	"bk_os_version":           false,
-	"bk_os_bit":               false,
-	"bk_cpu":                  false,
-	"bk_cpu_mhz":              false,
-	"bk_cpu_module":           false,
-	"bk_mem":                  false,
-	"bk_disk":                 false,
-	"bk_mac":                  false,
-	"bk_outer_mac":            false,
-	common.CreateTimeField:    false,
-	common.LastTimeField:      false,
-	common.BKImportFrom:       false,
+	common.BKOperatorField:              true,
+	common.BKBakOperatorField:           true,
+	"bk_state":                          true,
+	"bk_sla":                            true,
+	common.BKHostInnerIPField:           false,
+	common.BKHostOuterIPField:           false,
+	common.BKAssetIDField:               false,
+	common.BKSNField:                    false,
+	"bk_comment":                        false,
+	"bk_service_term":                   false,
+	common.BKCloudIDField:               false,
+	"bk_state_name":                     false,
+	"bk_province_name":                  false,
+	"bk_isp_name":                       false,
+	common.BKHostNameField:              false,
+	common.BKOSTypeField:                false,
+	common.BKOSNameField:                false,
+	"bk_os_version":                     false,
+	"bk_os_bit":                         false,
+	"bk_cpu":                            false,
+	"bk_cpu_mhz":                        false,
+	"bk_cpu_module":                     false,
+	"bk_mem":                            false,
+	"bk_disk":                           false,
+	"bk_mac":                            false,
+	"bk_outer_mac":                      false,
+	common.HostFieldDockerClientVersion: false,
+	common.HostFieldDockerServerVersion: false,
+	common.CreateTimeField:              false,
+	common.LastTimeField:                false,
+	common.BKImportFrom:                 false,
 }
 
 // CheckAllowHostApplyOnField 检查字段是否能用于主机属性自动应用

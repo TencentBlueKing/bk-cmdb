@@ -60,13 +60,17 @@ func StrArrayUnique(a []string) (ret []string) {
 
 // IntArrayUnique get unique int array
 func IntArrayUnique(a []int64) (ret []int64) {
-	ret = make([]int64, 0)
-	length := len(a)
-	for i := 0; i < length; i++ {
-		if !ContainsInt(ret, a[i]) {
-			ret = append(ret, a[i])
-		}
+	unique := make(map[int64]struct{})
+	for _, val := range a {
+		unique[val] = struct{}{}
 	}
+	ret = make([]int64, len(unique))
+	idx := 0
+	for k := range unique {
+		ret[idx] = k
+		idx += 1
+	}
+
 	return ret
 }
 

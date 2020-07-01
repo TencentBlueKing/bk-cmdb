@@ -55,20 +55,15 @@ func (a *auditLog) GetInstNameByID(ctx context.Context, objID string, instID int
 				common.BKHostIDField: instID,
 			},
 		})
-		if nil != err || !rsp.Result {
-			blog.ErrorfDepth(1, "GetInstNameByID %d GetHosts failed, err: %v, rsp: %+v, rid: %s", instID, err, rsp, a.rid)
+		if nil != err || (err == nil && !rsp.Result) {
+			blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts failed, err: %v, rsp: %+v, rid: %s", instID, err, rsp, a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 		if rsp.Data.Count != 1 {
-			blog.ErrorfDepth(1, "GetInstNameByID %d GetHosts find %d insts, rid: %s", instID, rsp.Data.Count, a.rid)
+			blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts find %d insts, rid: %s", instID, rsp.Data.Count, a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
-		ip, err := rsp.Data.Info[0].String(common.BKHostInnerIPField)
-		if err != nil {
-			blog.ErrorfDepth(1, "GetInstNameByID %d GetHosts parse ip failed, data: %+v, rid: %s", instID, rsp.Data.Info[0], a.rid)
-			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
-		}
-		return ip, nil
+		return util.GetStrByInterface(rsp.Data.Info[0][common.BKHostInnerIPField]), nil
 	default:
 		rsp, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, a.header, objID, &metadata.QueryCondition{
 			Fields: []string{common.GetInstNameField(objID)},
@@ -76,17 +71,17 @@ func (a *auditLog) GetInstNameByID(ctx context.Context, objID string, instID int
 				common.GetInstIDField(objID): instID,
 			},
 		})
-		if nil != err || !rsp.Result {
-			blog.ErrorfDepth(1, "GetInstNameByID %s %d ReadInstance failed, err: %v, rsp: %+v, rid: %s", objID, instID, err, rsp, a.rid)
+		if nil != err || (err == nil && !rsp.Result) {
+			blog.ErrorfDepthf(1, "GetInstNameByID %s %d ReadInstance failed, err: %v, rsp: %+v, rid: %s", objID, instID, err, rsp, a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 		if rsp.Data.Count != 1 {
-			blog.ErrorfDepth(1, "GetInstNameByID %d ReadInstance find %d insts, rid: %s", instID, rsp.Data.Count, a.rid)
+			blog.ErrorfDepthf(1, "GetInstNameByID %d ReadInstance find %d insts, rid: %s", instID, rsp.Data.Count, a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 		instName, err := rsp.Data.Info[0].String(common.GetInstNameField(objID))
 		if err != nil {
-			blog.ErrorfDepth(1, "GetInstNameByID %d ReadInstance parse inst name failed, data: %+v, rid: %s", instID, rsp.Data.Info[0], a.rid)
+			blog.ErrorfDepthf(1, "GetInstNameByID %d ReadInstance parse inst name failed, data: %+v, rid: %s", instID, rsp.Data.Info[0], a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 		return instName, nil
@@ -107,8 +102,8 @@ func (a *auditLog) GetAuditLogProperty(ctx context.Context, objID string) ([]met
 		},
 	}
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(ctx, a.header, objID, &metadata.QueryCondition{Condition: cond})
-	if nil != err || !rsp.Result {
-		blog.ErrorfDepth(1, "GetAuditLogProperty failed to get the object(%s)' attribute, error: %v, rsp: %+v, rid: %s", objID, err, rsp, a.rid)
+	if nil != err || (err == nil && !rsp.Result) {
+		blog.ErrorfDepthf(1, "GetAuditLogProperty failed to get the object(%s)' attribute, error: %v, rsp: %+v, rid: %s", objID, err, rsp, a.rid)
 		return nil, a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
 

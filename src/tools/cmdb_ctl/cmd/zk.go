@@ -89,7 +89,7 @@ func NewZkCommand() *cobra.Command {
 }
 
 func (c *zkConf) addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.path, "zk-path", "", "the zookeeper path")
+	cmd.PersistentFlags().StringVar(&c.path, "zk-path", "", "the zookeeper  resource path")
 }
 
 type zkService struct {

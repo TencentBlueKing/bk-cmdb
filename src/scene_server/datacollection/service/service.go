@@ -13,6 +13,9 @@
 package service
 
 import (
+	"context"
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -22,51 +25,71 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/logics"
 	"configcenter/src/storage/dal"
+	"configcenter/src/thirdpartyclient/esbserver"
 
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
 )
 
+// Service impls main logics as service for datacolection app.
 type Service struct {
-	*backbone.Engine
+	ctx    context.Context
+	engine *backbone.Engine
+
 	db      dal.RDB
 	cache   *redis.Client
-	snapcli *redis.Client
+	snapCli *redis.Client
 	disCli  *redis.Client
 	netCli  *redis.Client
-	*logics.Logics
+
+	logics *logics.Logics
 }
 
+// NewService creates a new Service object.
+func NewService(ctx context.Context, engine *backbone.Engine) *Service {
+	return &Service{ctx: ctx, engine: engine}
+}
+
+// SetLogics setups logics comm.
+func (s *Service) SetLogics(db dal.RDB, esb esbserver.EsbClientInterface) {
+	s.logics = logics.NewLogics(s.ctx, s.engine, db, esb)
+}
+
+// SetDB setups database.
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
+// SetCache setups cc main redis.
 func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) SetSnapcli(db *redis.Client) {
-	s.snapcli = db
+// SetSnapCli setups snap redis.
+func (s *Service) SetSnapCli(db *redis.Client) {
+	s.snapCli = db
 }
 
-func (s *Service) SetDisCli(db *redis.Client) {
+// SetDiscoverCli setups discover redis.
+func (s *Service) SetDiscoverCli(db *redis.Client) {
 	s.disCli = db
 }
 
-func (s *Service) SetNetCli(db *redis.Client) {
+// SetNetCollectCli setups netcollect redis.
+func (s *Service) SetNetCollectCli(db *redis.Client) {
 	s.netCli = db
 }
 
+// WebService setups a new restful web service.
 func (s *Service) WebService() *restful.Container {
-
 	container := restful.NewContainer()
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
-		return s.CCErr
+		return s.engine.CCErr
 	}
 
-	api.Path("/collector/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/collector/v3").Filter(s.engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/netcollect/device/action/create").To(s.CreateDevice))
 	api.Route(api.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))
@@ -98,38 +121,52 @@ func (s *Service) WebService() *restful.Container {
 	return container
 }
 
+// Healthz is a HTTP restful interface for health check.
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	// metadata.
 	meta := metric.HealthMeta{IsHealthy: true}
 
-	// zk health status
-	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
+	// zookeeper health status info.
+	zkItem := metric.HealthItem{
+		IsHealthy: true,
+		Name:      types.CCFunctionalityServicediscover,
+	}
+	if err := s.engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
 
-	// topo server
-	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_TOPO}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TOPO); err != nil {
-		objCtr.IsHealthy = false
-		objCtr.Message = err.Error()
+	// topo server health status info.
+	topoItem := metric.HealthItem{
+		IsHealthy: true,
+		Name:      types.CC_MODULE_TOPO,
 	}
-	meta.Items = append(meta.Items, objCtr)
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TOPO); err != nil {
+		topoItem.IsHealthy = false
+		topoItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, topoItem)
 
-	// mongodb
+	// mongodb health status info.
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
-	// redis
+	// cc main redis health status info.
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
-	if s.snapcli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - snapcli", s.snapcli.Ping().Err()))
+
+	// snap redis health status info.
+	if s.snapCli != nil {
+		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - snapCli", types.CCFunctionalityRedis), s.snapCli.Ping().Err()))
 	}
+
+	// discover redis health status info.
 	if s.disCli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - disCli", s.disCli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - disCli", types.CCFunctionalityRedis), s.disCli.Ping().Err()))
 	}
+
+	// netcollect redis health status info.
 	if s.netCli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - netCli", s.netCli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - netCli", types.CCFunctionalityRedis), s.netCli.Ping().Err()))
 	}
 
 	for _, item := range meta.Items {
@@ -146,13 +183,14 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		AtTime:     metadata.Now(),
 	}
 
-	answer := metric.HealthResponse{
+	healthResp := metric.HealthResponse{
 		Code:    common.CCSuccess,
 		Data:    info,
 		OK:      meta.IsHealthy,
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+
 	resp.Header().Set("Content-Type", "application/json")
-	_ = resp.WriteEntity(answer)
+	resp.WriteEntity(healthResp)
 }

@@ -343,3 +343,40 @@ func (s *coreService) DeleteSetTemplateSyncStatus(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
+
+func (s *coreService) ModifySetTemplateSyncStatus(ctx *rest.Contexts) {
+	setIDStr := ctx.Request.PathParameter(common.BKSetIDField)
+	setID, err := strconv.ParseInt(setIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKSetIDField))
+		return
+	}
+	strStatus := ctx.Request.PathParameter(common.BKStatusField)
+	if strStatus == "" {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsLostField, common.BKStatusField))
+		return
+	}
+	var status metadata.SyncStatus
+	switch strStatus {
+	case "waiting":
+		status = metadata.SyncStatusWaiting
+	case "syncing":
+		status = metadata.SyncStatusSyncing
+	case "finished":
+		status = metadata.SyncStatusFinished
+	case "failure":
+		status = metadata.SyncStatusFailure
+	default:
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKStatusField))
+		return
+
+	}
+
+	ccErr := s.core.SetTemplateOperation().ModifySetTemplateSyncStatus(ctx.Kit, setID, status)
+	if ccErr != nil {
+		blog.Errorf("ModifySetTemplateSyncStatus failed, setID: %+v, status: %s, err: %+v, rid: %s", setID, status, ccErr, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}

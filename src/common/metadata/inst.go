@@ -86,8 +86,8 @@ type HostIdentifier struct {
 	SupplierAccount string                      `json:"bk_supplier_account"`                    // 开发商帐号（bk_supplier_account）	数字
 	CloudID         int64                       `json:"bk_cloud_id" bson:"bk_cloud_id"`         // 所属云区域id(bk_cloud_id)				数字
 	CloudName       string                      `json:"bk_cloud_name" bson:"bk_cloud_name"`     // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）
-	InnerIP         string                      `json:"bk_host_innerip" bson:"bk_host_innerip"` // 内网IP
-	OuterIP         string                      `json:"bk_host_outerip" bson:"bk_host_outerip"` // 外网IP
+	InnerIP         StringArrayToString         `json:"bk_host_innerip" bson:"bk_host_innerip"` // 内网IP
+	OuterIP         StringArrayToString         `json:"bk_host_outerip" bson:"bk_host_outerip"` // 外网IP
 	OSType          string                      `json:"bk_os_type" bson:"bk_os_type"`           // 操作系统类型
 	OSName          string                      `json:"bk_os_name" bson:"bk_os_name"`           // 操作系统名称
 	Memory          int64                       `json:"bk_mem" bson:"bk_mem"`                   // 内存容量
@@ -112,7 +112,7 @@ type HostIdentProcess struct {
 	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
-	PortEnable      bool    `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
+	PortEnable      bool    `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
 }
 
 type HostIdentProcessSorter []HostIdentProcess

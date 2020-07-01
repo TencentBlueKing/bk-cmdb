@@ -39,6 +39,7 @@ const (
 	DataCollectType RequestType = "collect"
 	OperationType   RequestType = "operation"
 	TaskType        RequestType = "task"
+	AdminType       RequestType = "admin"
 	CloudType       RequestType = "cloud"
 )
 
@@ -95,8 +96,12 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 	case OperationType:
 		servers, err = s.discovery.OperationServer().GetServers()
+
 	case TaskType:
 		servers, err = s.discovery.TaskServer().GetServers()
+
+	case AdminType:
+		servers, err = s.discovery.MigrateServer().GetServers()
 
 	case CloudType:
 		servers, err = s.discovery.CloudServer().GetServers()
@@ -228,6 +233,89 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		blog.V(7).Infof("authFilter authorize on url:%s success, rid: %s", path, rid)
+		fchain.ProcessFilter(req, resp)
+		return
+	}
+}
+
+// KEYS[1] is the redis key to incr and expire
+// ARGV[1] is the ttl
+const setRequestCntTTLScript = `
+local cnt = redis.pcall('INCR', KEYS[1]);
+if type(cnt) ~= "number"
+then
+	return cnt
+end
+
+local rs = redis.pcall('TTL', KEYS[1]);
+if type(rs) ~= "number"
+then
+	return rs
+end
+
+if rs == -1
+then
+	rs = redis.pcall('EXPIRE', KEYS[1], ARGV[1]);
+	if type(rs) ~= "number"
+	then
+		return rs
+	end
+end
+
+return cnt
+`
+
+// LimiterFilter limit on a api request according to limiter rules
+func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		rid := util.GetHTTPCCRequestID(req.Request.Header)
+		if s.limiter.LenOfRules() == 0 {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		rule := s.limiter.GetMatchedRule(req)
+		if rule == nil {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if rule.DenyAll {
+			blog.Errorf("too many requests, matched rule is %#v, rid: %s", *rule, rid)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrTooManyRequestErr,
+				ErrMsg: "too many requests",
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		key := common.ApiCacheLimiterRulePrefix + rule.RuleName
+		result, err := s.cache.Eval(setRequestCntTTLScript, []string{key}, rule.TTL).Result()
+		if err != nil {
+			blog.Errorf("redis Eval failed, key:%s, rule:%#v, err: %v, rid: %s", key, *rule, err, rid)
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+		cnt, ok := result.(int64)
+		if !ok {
+			blog.Errorf("execute setRequestCntTTLScript failed, key:%s, rule:%#v, err: %v, rid: %s", key, *rule, result, rid)
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if cnt > rule.Limit {
+			blog.Errorf("too many requests, matched rule is %#v, rid: %s", *rule, rid)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrTooManyRequestErr,
+				ErrMsg: "too many requests",
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
+			return
+		}
+
 		fchain.ProcessFilter(req, resp)
 		return
 	}

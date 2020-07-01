@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -45,19 +44,28 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		ServiceCategoryID: option.ServiceCategoryID,
 		SupplierAccount:   ctx.Kit.SupplierAccount,
 	}
-	tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, newTemplate)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
+
+	var tpl *metadata.ServiceTemplate
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		tpl, err = ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, newTemplate)
+		if err != nil {
+			blog.Errorf("create service template failed, err: %v", err)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if err := ps.AuthManager.RegisterServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
+			blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if err := ps.AuthManager.RegisterServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
-		blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	ctx.RespEntity(tpl)
 }
 
@@ -115,19 +123,28 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 		Name:              option.Name,
 		ServiceCategoryID: option.ServiceCategoryID,
 	}
-	tpl, err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, option.ID, updateParam)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update service template failed, err: %v", err)
+
+	var tpl *metadata.ServiceTemplate
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		tpl, err = ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, option.ID, updateParam)
+		if err != nil {
+			blog.Errorf("update service template failed, err: %v", err)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if err := ps.AuthManager.UpdateRegisteredServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
+			blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if err := ps.AuthManager.UpdateRegisteredServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
-		blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	ctx.RespEntity(tpl)
 }
 
@@ -244,49 +261,42 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		return
 	}
 
+	// generate count conditions
+	filters := make([]map[string]interface{}, len(listResult.Info))
+	for idx, serviceTemplate := range listResult.Info {
+		filters[idx] = map[string]interface{}{
+			common.BKServiceTemplateIDField: serviceTemplate.ID,
+		}
+	}
+
+	// process templates reference count
+	processTemplateCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameProcessTemplate, filters)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed, "count process template by filters: %+v failed.", filters)
+		return
+	}
+
+	// module reference count
+	moduleCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameBaseModule, filters)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrTopoModuleSelectFailed, "count process template by filters: %+v failed.", filters)
+		return
+	}
+
+	// service instance reference count
+	serviceInstanceCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, filters)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "count process template by filters: %+v failed.", filters)
+		return
+	}
+
 	details := make([]metadata.ListServiceTemplateWithDetailResult, 0)
-	for _, serviceTemplate := range listResult.Info {
-		// process templates reference count
-		option := &metadata.ListProcessTemplatesOption{
-			BusinessID:         bizID,
-			ServiceTemplateIDs: []int64{serviceTemplate.ID},
-		}
-		processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
-				"list service template: %d detail, but list process template failed.", serviceTemplate.ID)
-			return
-		}
-
-		// module reference
-		listModuleOption := &metadata.QueryCondition{
-			Condition: mapstr.MapStr(map[string]interface{}{
-				common.BKServiceTemplateIDField: serviceTemplate.ID,
-			}),
-		}
-		moduleRst, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, listModuleOption)
-		if e != nil {
-			ctx.RespWithError(e, common.CCErrTopoModuleSelectFailed, "list service template: %d detail, but module failed.", serviceTemplate.ID)
-			return
-		}
-
-		// service instance reference count
-		serviceOption := &metadata.ListServiceInstanceOption{
-			BusinessID:        bizID,
-			ServiceTemplateID: serviceTemplate.ID,
-		}
-		serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
-				"list service template: %d detail, but list service instance failed.", serviceTemplate.ID)
-			return
-		}
-
+	for idx, serviceTemplate := range listResult.Info {
 		details = append(details, metadata.ListServiceTemplateWithDetailResult{
 			ServiceTemplate:      serviceTemplate,
-			ProcessTemplateCount: int64(processTemplates.Count),
-			ServiceInstanceCount: int64(serviceInstances.Count),
-			ModuleCount:          int64(moduleRst.Data.Count),
+			ProcessTemplateCount: processTemplateCounts[idx],
+			ServiceInstanceCount: serviceInstanceCounts[idx],
+			ModuleCount:          moduleCounts[idx],
 		})
 	}
 
@@ -319,18 +329,23 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	err = ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcDeleteServiceTemplateFailed, "delete service template: %d failed", input.ServiceTemplateID)
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		err = ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
+		if err != nil {
+			blog.Errorf("delete service template: %d failed", input.ServiceTemplateID)
+			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceTemplateFailed)
+		}
+
+		if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
+			blog.Errorf("delete service template success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
-		blog.Errorf("delete service template success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		err := ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	ctx.RespEntity(nil)
 }

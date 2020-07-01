@@ -2,11 +2,11 @@
     <div>
         <div class="tree-wrapper">
             <bk-big-tree ref="tree" class="tree"
+                display-matched-node-descendants
                 :lazy-method="loadHost"
                 :lazy-disabled="isLazyDisabled"
                 :show-checkbox="shouldShowCheckbox"
                 :selectable="false"
-                :show-link-line="true"
                 :options="{
                     idKey: getNodeId,
                     nameKey: 'bk_inst_name',
@@ -15,6 +15,8 @@
                 :style="{
                     'min-width': `calc(100% + ${deepestExpandedLevel * 60}px)`
                 }"
+                :height="270"
+                :node-height="36"
                 :filter-method="filterMethod"
                 :before-check="beforeCheck"
                 @node-click="handleNodeClick"
@@ -324,7 +326,6 @@
             width: 20px;
             height: 20px;
             margin: 8px 4px 8px 0;
-            vertical-align: middle;
             border-radius: 50%;
             background-color: #C4C6CC;
             line-height: 1.666667;

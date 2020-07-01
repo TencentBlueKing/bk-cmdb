@@ -144,6 +144,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case ModelAttributeRes, ModelGroupRes:
+		operationDetail := new(ModelAttrOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -200,6 +206,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case ModelAttributeRes, ModelGroupRes:
+		operationDetail := new(ModelAttrOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -248,9 +260,19 @@ func (op *BasicOpDetail) WithName() string {
 	return "BasicDetail"
 }
 
+type ModelAttrOpDetail struct {
+	BasicOpDetail `bson:",inline"`
+	BkObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
+	BkObjName     string `json:"bk_obj_name" bson:"bk_obj_name"`
+}
+
+func (op *ModelAttrOpDetail) WithName() string {
+	return "ModelAttrDetail"
+}
+
 type InstanceOpDetail struct {
-	BasicOpDetail BasicOpDetail `json:"basic_detail" bson:"basic_detail"`
-	ModelID       string        `json:"bk_obj_id" bson:"bk_obj_id"`
+	BasicOpDetail `bson:",inline"`
+	ModelID       string `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 func (op *InstanceOpDetail) WithName() string {
@@ -388,6 +410,8 @@ const (
 	ModelInstanceRes       ResourceType = "model_instance"
 	MainlineInstanceRes    ResourceType = "mainline_instance"
 	ModelAssociationRes    ResourceType = "model_association"
+	ModelAttributeRes      ResourceType = "model_attribute"
+	ModelClassificationRes ResourceType = "model_classification"
 	InstanceAssociationRes ResourceType = "instance_association"
 	ModelGroupRes          ResourceType = "model_group"
 	ModelUniqueRes         ResourceType = "model_unique"

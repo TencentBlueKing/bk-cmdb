@@ -84,6 +84,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
+	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
+	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
 	api.Route(api.GET("/healthz").To(s.Healthz))
 
 	container.Add(api)
@@ -109,6 +111,10 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	// mongodb
 	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
 	meta.Items = append(meta.Items, healthItem)
+
+	// redis
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
+	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
