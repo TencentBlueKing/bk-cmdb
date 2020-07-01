@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -39,8 +40,8 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
 	}
 
-	idField := types.GetResourceIDField(req.Type)
-	nameField := types.GetResourceNameField(req.Type)
+	idField := GetResourceIDField(req.Type)
+	nameField := GetResourceNameField(req.Type)
 	if idField == "" || nameField == "" {
 		blog.Errorf("request type %s is invalid, rid: %s", req.Type, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")

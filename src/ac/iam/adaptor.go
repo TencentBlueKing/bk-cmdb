@@ -76,7 +76,7 @@ func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
 		}
 
 		info.Attribute = map[string]interface{}{
-			IamPathField: pathArr,
+			types.IamPathKey: pathArr,
 		}
 		info.ID = resourceIDArr[resourceIDArrLen-1].ResourceID
 		resources[index] = info

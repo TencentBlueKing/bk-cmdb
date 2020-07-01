@@ -31,9 +31,6 @@ const (
 	SystemNameCMDB   = "配置平台"
 
 	SystemIDIAM = "bk_iam"
-
-	// the topology path of resource, in the form of /parent,parent_id/secondary_parent,secondary_parent_id/
-	IamPathField = "_bk_iam_path_"
 )
 
 type AuthConfig struct {

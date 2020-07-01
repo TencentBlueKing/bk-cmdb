@@ -179,8 +179,3 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Reso
 	condition[common.BKAppIDField] = defaultBizID
 	return condition, nil
 }
-
-// get model instance resource's model id
-//func GetResourceTopoPath(resourceType iam.ResourceTypeID) []types. {
-//	return
-//}
