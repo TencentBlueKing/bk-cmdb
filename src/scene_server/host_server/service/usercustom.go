@@ -157,5 +157,6 @@ func (s *Service) SaveModelDefaultCustom(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
+
 	ctx.RespEntity(nil)
 }
