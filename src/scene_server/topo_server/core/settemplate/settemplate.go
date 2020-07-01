@@ -34,6 +34,7 @@ type SetTemplate interface {
 	UpdateSetSyncStatus(kit *rest.Kit, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
 	GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder)
 	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
+	TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID, setID int64) errors.CCErrorCoder
 }
 
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
@@ -207,8 +208,9 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 			blog.InfoJSON("dispatch synchronize task on set [%s](%s) success, result: %s, rid: %s", setDiff.SetDetail.SetName, setDiff.SetID, taskDetail, rid)
 		}
 
-		// update cc_SetTemplateSyncStatus status
-		_, err = st.UpdateSetSyncStatus(kit, setDiff.SetID)
+		// 修改任务到同步中的状态
+		err = st.client.CoreService().SetTemplate().ModifySetTemplateSyncStatus(kit.Ctx, kit.Header, setDiff.SetID, metadata.SyncStatusSyncing)
+		//_, err = st.UpdateSetSyncStatus(kit, setDiff.SetID)
 		if err != nil {
 			blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setDiff.SetID, err.Error())
 			return err
@@ -221,15 +223,16 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 			maxDuration := 10 * time.Second
 			ticker := time.NewTimer(duration)
 			timeoutTimer := time.NewTimer(5 * time.Minute)
+
 			for {
 				select {
 				case <-timeoutTimer.C:
 					blog.Errorf("poll UpdateSetSyncStatus timeout, setID: %d", setID)
 					return
 				case <-ticker.C:
-					setSyncStatus, err := st.UpdateSetSyncStatus(kit, setID)
+					setSyncStatus, err := st.UpdateSetSyncStatus(kit.NewKit(), setID)
 					if err != nil {
-						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setID, err.Error())
+						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 						return
 					}
 					if setSyncStatus.Status.IsFinished() {

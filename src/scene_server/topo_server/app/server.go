@@ -28,6 +28,7 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
+	"configcenter/src/storage/driver/redis"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
@@ -123,6 +124,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
+		return err
+	}
+	// TODO  redis, auth 可以在backbone 完成
+	if err := redis.InitClient("redis", &server.Config.Redis); err != nil {
+		blog.Errorf("it is failed to connect reids. err:%s", err.Error())
 		return err
 	}
 
