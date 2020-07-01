@@ -513,7 +513,7 @@ func (c *CloudAreaAuditLog) buildAuditLogData(ctx context.Context, withPrevious,
 		}
 
 		if withCurrent {
-			c.MultiCloudArea[cloudID].PreData = data
+			c.MultiCloudArea[cloudID].CurData = data
 		}
 	}
 

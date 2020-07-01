@@ -140,7 +140,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 // CreatePlatBatch create plat instance in batch
 func (s *Service) CreatePlatBatch(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
-	input := struct{
+	input := struct {
 		Data []mapstr.MapStr `json:"data"`
 	}{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
@@ -183,13 +183,11 @@ func (s *Service) CreatePlatBatch(req *restful.Request, resp *restful.Response) 
 			return srvData.ccErr.Error(common.CCErrTopoCloudNotFound)
 		}
 
-
-
 		platIDs := make([]int64, len(res.Data.Created))
 		for i, created := range res.Data.Created {
 			platIDs[i] = int64(created.ID)
 			result[i] = metadata.CreateManyCloudAreaElem{
-				CloudID:  int64(created.ID),
+				CloudID: int64(created.ID),
 			}
 		}
 
@@ -389,7 +387,7 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 			blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
 			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		
+
 		return nil
 	})
 
@@ -397,7 +395,7 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-	
+
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     "",
@@ -425,11 +423,11 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 
 	// decode request body
 	input := struct {
-		CloudName string `json:"bk_cloud_name"`
+		CloudName   string `json:"bk_cloud_name"`
 		CloudVendor string `json:"bk_cloud_vendor"`
-		Region string `json:"bk_region"`
+		Region      string `json:"bk_region"`
 	}{}
-	
+
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("UpdatePlat failed, err:%+v, rid:%s", err, srvData.rid)
 		ccErr := srvData.ccErr.Errorf(common.CCErrCommJSONUnmarshalFailed)
@@ -447,24 +445,23 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 
 	// update plat
 	user := util.GetUser(req.Request.Header)
-	
+
 	toUpdate := mapstr.MapStr{
 		common.BKLastEditor: user,
 	}
-	
+
 	if len(input.CloudVendor) != 0 {
 		toUpdate[common.BKCloudVendor] = input.CloudVendor
 	}
-	
+
 	if len(input.Region) != 0 {
 		toUpdate[common.BKRegion] = input.Region
 	}
-	
+
 	if len(input.CloudName) != 0 {
 		toUpdate[common.BKCloudNameField] = input.CloudName
 	}
-	
-	
+
 	updateOption := &meta.UpdateOption{
 		Data: toUpdate,
 		Condition: map[string]interface{}{
@@ -502,7 +499,7 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 			blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
 			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		
+
 		return nil
 	})
 
@@ -510,7 +507,7 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-	
+
 	// response success
 	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
