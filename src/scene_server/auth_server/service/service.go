@@ -103,7 +103,7 @@ func (s *AuthService) WebService() *restful.Container {
 	container.Add(api)
 
 	authAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	authAPI.Path("/auth/v3")
+	authAPI.Path("/ac/v3")
 	s.initAuth(authAPI)
 	container.Add(authAPI)
 
