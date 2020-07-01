@@ -527,24 +527,18 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
+	// 根据约束cond,获得去重后的主机id
 	ret,err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
-
 	if err != nil {
 		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	//  ret convert to []int64 and put to hostIDArr
-	hostIDArr := make([]int64, len(ret))
-
-	for index,item := range ret{
-		val,ok := item.(int64)
-		if !ok {
-			blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed) //TODO : this is really good?
-		}
-		hostIDArr[index] = val
+	// 将ret转化为[]int64
+	var hostIDArr []int64
+	if hostIDArr,err = util.SliceInterfaceToInt64(ret); err != nil{
+		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-
 	return hostIDArr, nil
 }

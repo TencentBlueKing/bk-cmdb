@@ -1,166 +1,102 @@
 package local
 
 import (
-	cc "context"
+	"time"
+
+	"configcenter/src/common/util"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
-/*
-decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}) (results interface{},error)
- if dbResults.Elem().Type is：
-	string or bool or int64  		than：direct return
-	int... or uint...    than： convert to int64
-	others	than：return nil,error
-*/
 
-var _ = PDescribe("Decode", func() {
-	var ctx  = cc.TODO()
+
+var _ = Describe("Decode", func() {
 	Context("[]int test", func() {
 		It("", func() {
-			var src = []int{1,2,3,4,100,-20,10}
-			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
+			var input = []interface{}{1,2,3,4,100,-20,10}
+			var shouldout = []int64{1,2,3,4,100,-20,10}
+			var results []int64
 
-			//err == nil
+			// 获得结果,且 err == nil
+			ret,err := decodeDistinctIntoSlice(input)
 			Expect(err).NotTo(HaveOccurred())
-			//length should be equal
-			Expect(len(results)).To(Equal(len(src)))
 
-			for i,item := range results{
-
-				val,ok := item.(int64)
-
-				Expect(ok).To(BeTrue())
-
-				Expect(val).To(Equal(int64(src[i])))
-			}
+			// 转化到int64,err == nil,且deep-equal
+			results,err = util.SliceInterfaceToInt64(ret)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldout).To( Equal(results))
 		})
 	})
 	Context("[]uint test", func() {
 		It("", func() {
-			var src = []uint{1,2,3,4,100,111111111,2222222,18446744073709551615}
+			var input = []interface{}{uint(1),uint(2),uint(3),uint(4),uint(100),uint(111111111),uint(2222222),uint(1844674407370955161)}
+			var shouldout = []int64{1,2,3,4,100,111111111,2222222,1844674407370955161}
+			var results []int64
 
-			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
-
-			//err == nil
+			// 获得结果,且 err == nil
+			ret,err := decodeDistinctIntoSlice(input)
 			Expect(err).NotTo(HaveOccurred())
-			//length should be equal
-			Expect(len(results)).To(Equal(len(src)))
 
-			for i,item := range results{
-
-				val,ok := item.(int64)
-
-				Expect(ok).To(BeTrue())
-
-				Expect(val).To(Equal(int64(src[i])))
-			}
+			// 转化到int64,err == nil,且deep-equal
+			results,err = util.SliceInterfaceToInt64(ret)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldout).To( Equal(results))
 		})
 
 	})
 	Context("[]string test", func() {
 		It("", func() {
-			var src = []string{"a","b","c","hello world",""}
+			var input = []interface{}{"a","b","c","hello world",""}
+			var shouldout = []string{"a","b","c","hello world",""}
+			var results []string
 
-			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
-
-			//err == nil
+			// 获得结果,且 err == nil
+			ret,err := decodeDistinctIntoSlice(input)
 			Expect(err).NotTo(HaveOccurred())
-			//length should be equal
-			Expect(len(results)).To(Equal(len(src)))
 
-			for i,item := range results{
-
-				val,ok := item.(string)
-
-				Expect(ok).To(BeTrue())
-
-				Expect(val).To(Equal(src[i]))
-			}
+			// 转化到string,err == nil，且deep-equal
+			results,err = util.SliceInterfaceToString(ret)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldout).To( Equal(results))
 		})
 	})
 	Context("[]bool test", func() {
 		It("", func() {
-			var src = []bool{true,false,true}
+			var input = []interface{}{true,false,true}
+			var shouldout = []bool{true,false,true}
+			var results []bool
 
-			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
-
-			//err == nil
+			// 获得结果,且 err == nil
+			ret,err := decodeDistinctIntoSlice(input)
 			Expect(err).NotTo(HaveOccurred())
-			//length should be equal
-			Expect(len(results)).To(Equal(len(src)))
 
-			for i,item := range results{
-
-				val,ok := item.(bool)
-
-				Expect(ok).To(BeTrue())
-
-				Expect(val).To(Equal(src[i]))
-			}
+			// 转化到Bool,err == nil，且deep-equal
+			results,err = util.SliceInterfaceToBool(ret)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldout).To( Equal(results))
 		})
 	})
 	Context("nil text", func() {
 		It("", func() {
-
-			results,err := decodeDistinctIntoSlice(ctx,nil)
-
-			//err == nil
+			results,err := decodeDistinctIntoSlice(nil)
 			Expect(err).NotTo(HaveOccurred())
-			//length should be equal
 
-			Expect(results).To(BeNil())
+			// 结果不等于nil,且长度为0
+			Expect(results).NotTo(BeNil())
+			Expect(len(results)).To(Equal(0))
 		})
 	})
+
 	Context("not convert", func() {
 		It("", func() {
-			var bad = []time.Duration{
-				time.Second,
-				time.Millisecond,
-				time.Microsecond,
-			}
-			var src = make([]interface{},len(bad))
-			for i := range bad{
-				src[i] = bad[i]
-			}
-			_,err := decodeDistinctIntoSlice(ctx,src)
+			// 因为decode检测的是别名是否符合,所以虽然time.Second的实际类型是int64,但别名是Duration，所以不能转换
+			var badinput = []interface{}{time.Microsecond,time.Second,time.Millisecond}
 
+			//错误发生
+			_,err := decodeDistinctIntoSlice(badinput)
 			Expect(err).To(HaveOccurred())
 		})
 	})
 
 })
-func convert2Sliceface(who interface{}) []interface{}{
-	if who == nil {
-		return nil
-	}
-	var ans []interface{}
-	switch ve := who.(type) {
-	case []string:
-		ans = make([]interface{},len(ve))
-		for i:=0;i < len(ve);i++{
-			ans[i] = ve[i]
-		}
-
-	case []int:
-		ans = make([]interface{},len(ve))
-		for i:=0;i < len(ve);i++{
-			ans[i] = ve[i]
-		}
-	case []uint:
-		ans = make([]interface{},len(ve))
-		for i:=0;i < len(ve);i++{
-			ans[i] = ve[i]
-		}
-	case []bool:
-		ans = make([]interface{},len(ve))
-		for i:=0;i < len(ve);i++{
-			ans[i] = ve[i]
-		}
-	default:
-		Fail("only support []int,[]string,[]bool")
-
-	}
-	return ans
-}

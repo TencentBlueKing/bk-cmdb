@@ -22,10 +22,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 )
 
 func BenchmarkLocalCUD(b *testing.B) {
@@ -1328,43 +1329,7 @@ func TestDropDcocsColumn(t *testing.T) {
 	}
 
 }
-//要求dest的每个元素是int64,
-func assertInt64Equal(t *testing.T,src []int64 ,dest []interface{}) {
-	require.Equal(t,len(src),len(dest))
 
-	//[]interface{}  convert to []int64
-	var tmp  = make([]int64,len(src))
-	for index,item := range dest{
-		val,ok := item.(int64)
-		require.Equal(t,ok,true)
-		tmp[index] = val
-	}
-	require.Equal(t,src,tmp)
-}
-func assertBoolEqual(t *testing.T,src []bool ,dest []interface{}) {
-	require.Equal(t,len(src),len(dest))
-
-	//[]interface{}  convert to []int64
-	var tmp  = make([]bool,len(src))
-	for index,item := range dest{
-		val,ok := item.(bool)
-		require.Equal(t,ok,true)
-		tmp[index] = val
-	}
-	require.Equal(t,src,tmp)
-}
-func assertStringEqual(t *testing.T,src []string ,dest []interface{}) {
-	require.Equal(t,len(src),len(dest))
-
-	//[]interface{}  convert to []int64
-	var tmp  = make([]string,len(src))
-	for index,item := range dest{
-		val,ok := item.(string)
-		require.Equal(t,ok,true)
-		tmp[index] = val
-	}
-	require.Equal(t,src,tmp)
-}
 func TestDistinct(t *testing.T) {
 	ctx := context.Background()
 	tableName := "tmp_test_distinct"
@@ -1433,25 +1398,50 @@ func TestDistinct(t *testing.T) {
 	var ret []interface{}
 	ret, dbErr = table.Distinct(context.TODO(), "int64", map[string]string{"type": "int"})
 	require.NoError(t, err, "find distinct int64 error")
-	assertInt64Equal(t, []int64{64, 164}, ret)
+	if true{
+		// 测试转化后的结果与预期是否相同
+		results,err := util.SliceInterfaceToInt64(ret)
+		require.NoError(t, err,"convert to []int64 error")
+		require.Equal(t,[]int64{64, 164},results)
+	}
 
 	// distinct int 字段， db 数据为int,返回的结构都是int64
 	ret, dbErr = table.Distinct(context.TODO(), "int", map[string]string{"type": "int"})
 	require.NoError(t, dbErr, "find distinct int error")
-	assertInt64Equal(t, []int64{0, 100}, ret)
+	if true{
+		// 测试转化后的结果与预期是否相同
+		results,err := util.SliceInterfaceToInt64(ret)
+		require.NoError(t, err,"convert to []int64 error")
+		require.Equal(t,[]int64{0, 100},results)
+	}
 
 	// distinct uint 字段， db 数据为uint,返回的结构都是int64
 	ret, dbErr = table.Distinct(context.TODO(), "uint", map[string]string{"type": "int"})
 	require.NoError(t, dbErr, "find distinct uint error")
-	assertInt64Equal(t, []int64{0, 100}, ret)
+	if true{
+		// 测试转化后的结果与预期是否相同
+		results,err := util.SliceInterfaceToInt64(ret)
+		require.NoError(t, err,"convert to []int64 error")
+		require.Equal(t,[]int64{0, 100},results)
+	}
 
 	// distinct string 字段， db 数据为string,返回的结构都是string
 	ret, dbErr = table.Distinct(context.TODO(), "string", map[string]string{"type": "string"})
 	require.NoError(t, dbErr, "find distinct string error")
-	assertStringEqual(t, []string{"aa", "bb"}, ret)
+	if true{
+		// 测试转化后的结果与预期是否相同
+		results,err := util.SliceInterfaceToString(ret)
+		require.NoError(t, err,"convert to []string error")
+		require.Equal(t,[]string{"aa", "bb"},results)
+	}
 
 	// distinct bool 字段， db 数据为bool,返回的结构都是bool
 	ret, dbErr = table.Distinct(context.TODO(), "bool", map[string]string{"type": "bool"})
-	require.NoError(t, dbErr, "find distinct string error")
-	assertBoolEqual(t, []bool{false, true}, ret)
+	require.NoError(t, dbErr, "find distinct bool error")
+	if true{
+		// 测试转化后的结果与预期是否相同
+		results,err := util.SliceInterfaceToBool(ret)
+		require.NoError(t, err,"convert to []bool error")
+		require.Equal(t,[]bool{false,true},results)
+	}
 }

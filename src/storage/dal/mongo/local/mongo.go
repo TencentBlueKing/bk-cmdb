@@ -759,6 +759,7 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 //	is int64 if query results type of filed is integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint)
 //  is string if query results type of filed is string
 //  is bool if query results type of filed is boolean
+//  is empty slice(non-nil) if query results is empty
 func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter) ([]interface{},error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
@@ -777,27 +778,33 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 			return err
 		}
 		//get []interface{}
-		results , err = decodeDistinctIntoSlice(ctx, dbResults)
+		results , err = decodeDistinctIntoSlice(dbResults)
 		return err
 
 	})
 	return results,err
 }
-func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}) ([]interface{},error){
-	// len == 0  direct return
+
+func decodeDistinctIntoSlice(dbResults []interface{}) ([]interface{},error){
+	// 如果长度为0，返回长度为0的slice
 	if len(dbResults) == 0 {
-		return  nil,nil
+		return  make([]interface{},0),nil
 	}
 
-	//int64,string,bool  direct return
+	// 如果源数据是string,bool 直接返回结果
 	switch dbResults[0].(type) {
-	case int64:
-		return dbResults,nil
 	case string:
 		return dbResults,nil
 	case bool:
 		return dbResults,nil
+	// 整型到后面统一转化为int64
+	case int,int8,int16,int32,int64,uint,uint8,uint16,uint32,uint64:
+		break
+	// 不支持的类型转化
+	default:
+		return nil,errors.New("unsupported types,only support:string,bool,and integer")
 	}
+	// 整型统一转化为int64
 	var results = make([]interface{},len(dbResults))
 	for i,item := range dbResults{
 		switch val := item.(type) {
@@ -811,7 +818,6 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}) ([]in
 			results[i] = int64(val)
 		case int64:
 			results[i] = val
-
 		case uint:
 			results[i] = int64(val)
 		case uint8:
@@ -823,7 +829,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}) ([]in
 		case uint64:
 			results[i] = int64(val)
 		default:
-			return nil,errors.New("no can to int64 or bool or string")
+			return nil,errors.New("no can convert to integer")
 		}
 	}
 	return results,nil
