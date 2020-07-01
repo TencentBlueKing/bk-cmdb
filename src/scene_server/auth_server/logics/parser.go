@@ -224,7 +224,7 @@ func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, 
 		return nil, fmt.Errorf("filter op %s not supported", op)
 	}
 
-	// resources except for host has their parent id stored in their instance table
+	// resources except for host has their parent id stored in their instance table(currently all resources only have one layer TODO support multiple layers if needed)
 	if resourceType != iam.Host {
 		return cond, nil
 	}
