@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"time"
 
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -99,17 +98,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Service.SetCache(cache)
 
-	process.Config.Auth, err = engine.WithAuth()
-	if err != nil {
-		blog.Errorf("get auth conf failed, err: %s", err.Error())
-		return err
-	}
-
-	authCli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("new authcenter failed, err: %v, config: %+v", err, process.Config.Auth)
-	}
-	process.Service.SetAuth(authCli)
 	blog.Infof("enable auth center: %v", auth.IsAuthed())
 
 	var accountCryptor cryptor.Cryptor

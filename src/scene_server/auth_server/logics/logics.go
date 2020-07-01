@@ -14,18 +14,14 @@ package logics
 
 import (
 	"configcenter/src/apimachinery"
-
-	"gopkg.in/redis.v5"
 )
 
 type Logics struct {
 	CoreAPI apimachinery.ClientSetInterface
-	cache   *redis.Client
 }
 
-func NewLogics(CoreAPI apimachinery.ClientSetInterface, cache *redis.Client) *Logics {
+func NewLogics(CoreAPI apimachinery.ClientSetInterface) *Logics {
 	return &Logics{
 		CoreAPI: CoreAPI,
-		cache:   cache,
 	}
 }

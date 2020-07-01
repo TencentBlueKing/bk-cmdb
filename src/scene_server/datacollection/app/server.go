@@ -22,9 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	enableauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -93,8 +91,8 @@ type DataCollectionConfig struct {
 	// ESB blueking ESB configs.
 	Esb esbutil.EsbConfig
 
-	// AuthConfig auth configs.
-	AuthConfig authcenter.AuthConfig
+	// DefaultAppName default name of this app.
+	DefaultAppName string
 }
 
 // DataCollection is data collection server.
@@ -268,12 +266,6 @@ func (c *DataCollection) initConfigs() error {
 		return fmt.Errorf("init netcollect redis configs, %+v", err)
 	}
 
-	// authorization.
-	c.config.AuthConfig, err = c.engine.WithAuth()
-	if err != nil {
-		return fmt.Errorf("init authorization configs, %+v", err)
-	}
-
 	return nil
 }
 
@@ -343,12 +335,7 @@ func (c *DataCollection) initModules() error {
 
 	// handle authorize.
 	if enableauth.IsAuthed() {
-		authorize, err := auth.NewAuthorize(nil, c.config.AuthConfig, c.engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("create new authorize failed, %+v", err)
-		}
-		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, authorize)
-		blog.Infof("DataCollection| init modules, create authorize success[%+v]", c.config.AuthConfig)
+		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI)
 	}
 
 	return nil

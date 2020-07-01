@@ -21,7 +21,6 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
-	"configcenter/src/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -62,16 +61,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	authConf, err := engine.WithAuth()
-	if err != nil {
-		return err
-	}
-	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("new authorize failed, err: %v", err)
-	}
-	blog.Infof("enable authcenter: %v", authorize.Enabled())
-
 	redisConf, err := engine.WithRedis()
 	if err != nil {
 		return err
@@ -88,11 +77,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	svc.SetConfig(engine, client, engine.Discovery(), authorize, cache, limiter)
+	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, limiter)
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
-	for _, item := range svc.WebServices(authConf) {
+	for _, item := range svc.WebServices() {
 		ctnr.Add(item)
 	}
 	apiSvr.Core = engine

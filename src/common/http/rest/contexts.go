@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/auth"
+	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -123,7 +123,7 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 		Data: data,
 	}
 	if err != nil {
-		if err == auth.NoAuthorizeError {
+		if err == ac.NoAuthorizeError {
 			body, err := json.Marshal(data)
 			if err != nil {
 				blog.ErrorfDepthf(2, "rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err)

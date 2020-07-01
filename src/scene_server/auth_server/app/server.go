@@ -19,13 +19,16 @@ import (
 	"time"
 
 	"configcenter/src/ac/iam"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/auth_server/app/options"
+	"configcenter/src/scene_server/auth_server/logics"
+	"configcenter/src/scene_server/auth_server/sdk/auth"
+	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/service"
-	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -61,39 +64,24 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return err
 		}
 
-		redisConf, err := engine.WithRedis()
-		if nil != err {
-			blog.Errorf("get redis conf failed: %s", err.Error())
-			return err
+		authConf := authServer.Config.Auth
+		authConfig := sdktypes.Config{
+			Iam: sdktypes.IamConfig{
+				Address:   authConf.Address,
+				AppCode:   authConf.AppCode,
+				AppSecret: authConf.AppSecret,
+				SystemID:  authConf.SystemID,
+				TLS:       authServer.Config.TLS,
+			},
+			Options: sdktypes.Options{Metric: engine.Metric().Registry()},
 		}
-		redisCli, err := redis.NewFromConfig(redisConf)
-		if nil != err {
-			blog.Errorf("new redis client failed: %s", err.Error())
-			return err
+		lgc := logics.NewLogics(engine.CoreAPI)
+		authorizer, err := auth.NewAuth(authConfig, lgc)
+		if err != nil {
+			return fmt.Errorf("new authorize failed, err: %v", err)
 		}
 
-		// TODO use unified cache
-		//listDone := make(chan bool, 1)
-		//errChan := make(chan error, 1)
-		//mongoConf, err := engine.WithMongo()
-		//if nil != err {
-		//	blog.Errorf("get mongo conf failed: %s", err.Error())
-		//	return err
-		//}
-		//go func() {
-		//	cache.SyncDatabaseToRedis(ctx, mongoConf.GetMongoConf(), redisCli, listDone, errChan)
-		//}()
-		//select {
-		//case err = <-errChan:
-		//	if nil != err {
-		//		blog.Errorf("sync database to redis failed: %s", err.Error())
-		//		return err
-		//	}
-		//case <-listDone:
-		//	blog.V(5).Info("cache current mongo database into redis done")
-		//}
-
-		authServer.Service = service.NewAuthService(engine, iamCli, redisCli)
+		authServer.Service = service.NewAuthService(engine, iamCli, lgc, authorizer)
 		break
 	}
 	err = backbone.StartServer(ctx, cancel, engine, authServer.Service.WebService(), true)
@@ -130,6 +118,11 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current configcenter.ProcessCo
 		a.Config.Auth, err = iam.ParseConfigFromKV("auth", current.ConfigMap)
 		if err != nil {
 			blog.Warnf("parse auth center config failed: %v", err)
+		}
+
+		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("auth", current.ConfigMap)
+		if err != nil {
+			blog.Warnf("parse auth center tls config failed: %v", err)
 		}
 	}
 }

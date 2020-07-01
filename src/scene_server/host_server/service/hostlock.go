@@ -16,8 +16,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"configcenter/src/auth"
-	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/ac"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -42,8 +42,8 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, input.IDS...); err != nil {
-		if err != auth.NoAuthorizeError {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, meta.Update, input.IDS...); err != nil {
+		if err != ac.NoAuthorizeError {
 			blog.Errorf("check host authorization failed, hosts: %+v, err: %v", input.IDS, err)
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -90,8 +90,8 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, input.IDS...); err != nil {
-		if err != auth.NoAuthorizeError {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, meta.Update, input.IDS...); err != nil {
+		if err != ac.NoAuthorizeError {
 			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", input.IDS, err, srvData.rid)
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -139,8 +139,8 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, input.IDS...); err != nil {
-		if err != auth.NoAuthorizeError {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, meta.Update, input.IDS...); err != nil {
+		if err != ac.NoAuthorizeError {
 			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", input.IDS, err, srvData.rid)
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return

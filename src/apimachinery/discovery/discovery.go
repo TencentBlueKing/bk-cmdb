@@ -40,6 +40,7 @@ type DiscoveryInterface interface {
 	OperationServer() Interface
 	TaskServer() Interface
 	CloudServer() Interface
+	AuthServer() Interface
 	ServiceManageInterface
 }
 
@@ -139,6 +140,10 @@ func (d *discover) TaskServer() Interface {
 
 func (d *discover) CloudServer() Interface {
 	return d.servers[types.CC_MODULE_CLOUD]
+}
+
+func (d *discover) AuthServer() Interface {
+	return d.servers[types.CC_MODULE_AUTH]
 }
 
 // IsMaster check whether current is master

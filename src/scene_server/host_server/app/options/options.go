@@ -13,7 +13,6 @@
 package options
 
 import (
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
@@ -49,5 +48,4 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 type Config struct {
 	Redis redis.Config
-	Auth  authcenter.AuthConfig
 }

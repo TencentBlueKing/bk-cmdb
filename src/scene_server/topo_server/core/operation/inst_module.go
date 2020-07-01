@@ -16,9 +16,8 @@ import (
 	"context"
 	"strconv"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -235,16 +234,6 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 		return inst, createErr
 	}
 
-	// auth: register module to iam
-	moduleID, err := inst.GetInstID()
-	if err != nil {
-		blog.Errorf("create module success, but parse module id failed, response: %s, err: %s, rid: %s", inst, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrTopoModuleCreateFailed)
-	}
-	if err := m.authManager.RegisterModuleByID(kit.Ctx, kit.Header, moduleID); err != nil {
-		blog.Errorf("create module success, but register to iam failed, err: %+v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-	}
 	return inst, nil
 }
 
@@ -307,23 +296,11 @@ func (m *module) DeleteModule(kit *rest.Kit, moduleModel model.Object, bizID int
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
 	}
 
-	// auth: deregister module to iam
-	iamResources, err := m.authManager.MakeResourcesByModuleIDs(kit.Ctx, kit.Header, meta.EmptyAction, moduleIDS...)
-	if err != nil {
-		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommUnRegistResourceToIAMFailed)
-	}
-
 	// module table doesn't have metadata field
 	err = m.inst.DeleteInst(kit, moduleModel, innerCond, false)
 	if err != nil {
 		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, kit.Rid)
 		return err
-	}
-
-	if err := m.authManager.DeregisterResource(kit.Ctx, iamResources...); err != nil {
-		blog.Errorf("delete module success, but deregister module failed, err: %+v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 	return nil
 }
@@ -446,10 +423,5 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Objec
 		return updateErr
 	}
 
-	// auth: update registered module to iam
-	if err := m.authManager.UpdateRegisteredModuleByID(kit.Ctx, kit.Header, moduleID); err != nil {
-		blog.Errorf("update module success, but update registered module failed, err: %+v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-	}
 	return nil
 }

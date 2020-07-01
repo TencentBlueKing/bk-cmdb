@@ -152,12 +152,6 @@ func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data m
 	if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(kit, setID); err != nil {
 		blog.Errorf("createSet success, but UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, kit.Rid)
 	}
-
-	// auth: register set
-	if err := s.AuthManager.RegisterSetByID(kit.Ctx, kit.Header, setID); err != nil {
-		blog.Errorf("create set success,but register to iam failed, err:  %+v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-	}
 	return set, nil
 }
 
@@ -226,12 +220,6 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		// auth: deregister set
-		if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setIDs...); err != nil {
-			blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
-
 		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
 		if err != nil {
 			return err
@@ -288,12 +276,6 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		// auth: deregister set
-		if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
-			blog.Errorf("delete set failed, deregister set from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
-
 		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID}, md.Metadata)
 		if err != nil {
 			blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
@@ -345,11 +327,6 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 			return err
 		}
 
-		// auth: update register set
-		if err := s.AuthManager.UpdateRegisteredSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
-			blog.Errorf("update set success, but update registered set failed, %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 

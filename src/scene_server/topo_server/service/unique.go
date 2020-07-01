@@ -58,13 +58,6 @@ func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 			return err
 		}
 
-		uniqueID := id.ID
-
-		// auth: register model unique
-		if err := s.AuthManager.RegisterModuleUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, uniqueID); err != nil {
-			blog.Errorf("register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", uniqueID, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-		}
 		return nil
 	})
 
@@ -122,11 +115,6 @@ func (s *Service) UpdateObjectUnique(ctx *rest.Contexts) {
 			blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v, rid: %s", objectID, id, err, request, ctx.Kit.Rid)
 			return err
 		}
-		// auth: update registered model unique
-		if err := s.AuthManager.UpdateRegisteredModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
-			blog.Errorf("update register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
 		return nil
 	})
 
@@ -183,11 +171,6 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 			return err
 		}
 
-		// auth: delete registered model unique
-		if err := s.AuthManager.DeregisterModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
-			blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-		}
 		return nil
 	})
 

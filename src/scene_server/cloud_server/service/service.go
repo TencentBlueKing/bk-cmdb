@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
@@ -31,11 +30,10 @@ import (
 
 type Service struct {
 	*backbone.Engine
-	db        dal.RDB
-	cache     *redis.Client
-	auth      auth.Authorize
+	db    dal.RDB
+	cache *redis.Client
+	ctx   context.Context
 	cryptor cryptor.Cryptor
-	ctx       context.Context
 	*logics.Logics
 }
 
@@ -51,10 +49,6 @@ func (s *Service) SetDB(db dal.RDB) {
 
 func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
-}
-
-func (s *Service) SetAuth(auth auth.Authorize) {
-	s.auth = auth
 }
 
 func (s *Service) SetEncryptor(cryptor cryptor.Cryptor) {

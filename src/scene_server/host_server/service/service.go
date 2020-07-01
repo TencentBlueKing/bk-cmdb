@@ -16,8 +16,8 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"

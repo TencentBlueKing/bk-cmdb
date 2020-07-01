@@ -17,7 +17,7 @@ import (
 
 	"gopkg.in/redis.v5"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
