@@ -29,8 +29,8 @@ import (
 
 // list instances by condition
 func (lgc *Logics) ListInstance(kit *rest.Kit, cond map[string]interface{}, resourceType iam.ResourceTypeID, page types.Page) (*types.ListInstanceResult, error) {
-	idField := types.GetResourceIDField(resourceType)
-	nameField := types.GetResourceNameField(resourceType)
+	idField := GetResourceIDField(resourceType)
+	nameField := GetResourceNameField(resourceType)
 	if idField == "" || nameField == "" {
 		blog.Errorf("request type %s is invalid, rid: %s", resourceType, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
@@ -121,8 +121,8 @@ func (lgc *Logics) ListSystemInstance(kit *rest.Kit, req types.PullResourceReq) 
 			common.BKDBLIKE: strings.Join(keywords, "|"),
 		}
 		cond[common.BKDBOR] = []map[string]interface{}{
-			{types.GetResourceIDField(req.Type): keywordCond},
-			{types.GetResourceNameField(req.Type): keywordCond},
+			{GetResourceIDField(req.Type): keywordCond},
+			{GetResourceNameField(req.Type): keywordCond},
 		}
 	}
 	return lgc.ListInstance(kit, cond, req.Type, req.Page)
@@ -144,8 +144,8 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
 	}
 
-	parentIDField := types.GetResourceIDField(parentType)
-	parentNameField := types.GetResourceNameField(parentType)
+	parentIDField := GetResourceIDField(parentType)
+	parentNameField := GetResourceNameField(parentType)
 	parentObjID := GetInstanceResourceObjID(parentType)
 	if filter.Parent != nil {
 		if filter.Parent.Type != parentType {
@@ -163,8 +163,8 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 
 	// stores ancestor mapping, ancestorMap[ancestor id] = ancestor display_name
 	ancestorMap := make(map[string]string)
-	idField := types.GetResourceIDField(req.Type)
-	nameField := types.GetResourceNameField(req.Type)
+	idField := GetResourceIDField(req.Type)
+	nameField := GetResourceNameField(req.Type)
 	for resourceType, keywords := range filter.Search {
 		keywordCond := map[string]interface{}{
 			common.BKDBLIKE: strings.Join(keywords, "|"),
@@ -352,8 +352,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 
 	// stores model mapping, modelMap[model id] = model display_name
 	modelMap := make(map[string]string)
-	idField := types.GetResourceIDField(req.Type)
-	nameField := types.GetResourceNameField(req.Type)
+	idField := GetResourceIDField(req.Type)
+	nameField := GetResourceNameField(req.Type)
 	for resourceType, keywords := range filter.Search {
 		keywordCond := map[string]interface{}{
 			common.BKDBLIKE: strings.Join(keywords, "|"),

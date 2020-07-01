@@ -29,7 +29,7 @@ type AuthServerClientInterface interface {
 }
 
 func NewAuthServerClientInterface(c *util.Capability, version string) AuthServerClientInterface {
-	base := fmt.Sprintf("/auth/%s", version)
+	base := fmt.Sprintf("/ac/%s", version)
 	return &authServer{
 		client: rest.NewRESTClient(c, base),
 	}

@@ -32,6 +32,17 @@ func GenerateResourceTypes() []ResourceType {
 	return resourceTypeList
 }
 
+// GetResourceParentMap generate resource types' mapping to parents.
+func GetResourceParentMap() map[ResourceTypeID][]ResourceTypeID {
+	resourceParentMap := make(map[ResourceTypeID][]ResourceTypeID, 0)
+	for _, resourceType := range GenerateResourceTypes() {
+		for _, parent := range resourceType.Parents {
+			resourceParentMap[resourceType.ID] = append(resourceParentMap[resourceType.ID], parent.ResourceID)
+		}
+	}
+	return resourceParentMap
+}
+
 func genBusinessResources() []ResourceType {
 	return []ResourceType{
 		{

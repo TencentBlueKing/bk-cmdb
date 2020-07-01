@@ -40,13 +40,13 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, req types.PullResourceReq
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
 	}
 	collection := getResourceTableName(req.Type)
-	idField := types.GetResourceIDField(req.Type)
-	nameField := types.GetResourceNameField(req.Type)
+	idField := GetResourceIDField(req.Type)
+	nameField := GetResourceNameField(req.Type)
 	if collection == "" || idField == "" || nameField == "" {
 		blog.Errorf("request type %s is invalid", req.Type)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
 	}
-	cond, err := types.ParseFilterToMongo(filter.Expression, req.Type)
+	cond, err := lgc.parseFilterToMongo(kit.Ctx, kit.Header, filter.Expression, req.Type)
 	if err != nil {
 		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", filter.Expression, err.Error(), kit.Rid)
 		return nil, err
@@ -64,7 +64,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, req types.PullResourceReq
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
 	resourceType := iam.ResourceTypeID(opts.Type)
 	collection := getResourceTableName(resourceType)
-	idField := types.GetResourceIDField(resourceType)
+	idField := GetResourceIDField(resourceType)
 	if collection == "" || idField == "" {
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
 	}
@@ -82,7 +82,12 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			Content: policyArr,
 		},
 	}
-	cond, err := types.ParseFilterToMongo(policy, resourceType)
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, "0")
+	header.Add(common.BKSupplierIDField, "0")
+	header.Add(common.BKHTTPHeaderUser, "admin")
+	header.Add("Content-Type", "application/json")
+	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
 	if err != nil {
 		blog.ErrorJSON("parse request filter expression %s failed, error: %s", policy, err.Error())
 		return nil, err
@@ -96,11 +101,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		Fields:    []string{idField},
 		Limit:     common.BKNoLimit,
 	}
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKSupplierIDField, "0")
-	header.Add(common.BKHTTPHeaderUser, "admin")
-	header.Add("Content-Type", "application/json")
 	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
 	if err != nil {
 		blog.ErrorJSON("search auth resource failed, error: %s, param: %s", err.Error(), param)
