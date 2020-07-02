@@ -303,8 +303,13 @@ const (
 	WatchSetEvent          ResourceActionID = "watch_set_event"
 	WatchModuleEvent       ResourceActionID = "watch_module_event"
 
+	EditSystemConfig ResourceActionID = "edit_sys_conf"
+	FindSystemConfig ResourceActionID = "find_sys_conf"
+
 	// Unknown is an action that can not be recognized
-	Unknown ResourceActionID = "unknown"
+	Unsupported ResourceActionID = "unsupported"
+	// Skip is an action that no need to auth
+	Skip ResourceActionID = "skip"
 )
 
 type ResourceAction struct {

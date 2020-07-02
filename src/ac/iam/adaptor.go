@@ -196,182 +196,250 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		}
 	}
 
-	resourceActionMap := map[meta.ResourceType]map[meta.Action]ResourceActionID{
-		meta.ModelInstance: {
-			meta.Delete: DeleteInstance,
-			meta.Update: EditInstance,
-			meta.Create: CreateInstance,
-			meta.Find:   FindInstance,
-		},
-		meta.ModelAttributeGroup: {
-			meta.Delete: EditModel,
-			meta.Update: EditModel,
-			meta.Create: EditModel,
-		},
-		meta.ModelUnique: {
-			meta.Delete: EditModel,
-			meta.Update: EditModel,
-			meta.Create: EditModel,
-		},
-		meta.Business: {
-			meta.Archive:              ArchiveBusiness,
-			meta.Create:               CreateBusiness,
-			meta.Update:               EditBusiness,
-			meta.Find:                 FindBusiness,
-			meta.ViewBusinessResource: ViewBusinessResource,
-		},
-		meta.DynamicGrouping: {
-			meta.Delete:  DeleteBusinessCustomQuery,
-			meta.Update:  EditBusinessCustomQuery,
-			meta.Create:  CreateBusinessCustomQuery,
-			meta.Find:    FindBusinessCustomQuery,
-			meta.Execute: FindBusinessCustomQuery,
-		},
-		meta.MainlineModel: {
-			meta.Find:   EditBusinessLayer,
-			meta.Create: EditBusinessLayer,
-			meta.Delete: EditBusinessLayer,
-		},
-		meta.ModelTopology: {
-			meta.Find:   EditModelTopologyView,
-			meta.Update: EditModelTopologyView,
-		},
-		meta.MainlineModelTopology: {
-			meta.Find:   EditBusinessLayer,
-			meta.Update: EditBusinessLayer,
-		},
-		meta.Process: {
-			meta.BoundModuleToProcess:   EditBusinessServiceInstance,
-			meta.UnboundModuleToProcess: EditBusinessServiceInstance,
-		},
-		meta.HostInstance: {
-			meta.MoveResPoolHostToBizIdleModule: ResourcePoolHostTransferToBusiness,
-			meta.MoveResPoolHostToDirectory:     ResourcePoolHostTransferToDirectory,
-			meta.MoveHostFromModuleToResPool:    BusinessHostTransferToResourcePool,
-			meta.AddHostToResourcePool:          CreateResourcePoolHost,
-			meta.Create:                         CreateResourcePoolHost,
-			meta.Delete:                         DeleteResourcePoolHost,
-			meta.MoveHostToBizFaultModule:       EditBusinessHost,
-			meta.MoveHostToBizIdleModule:        EditBusinessHost,
-			meta.MoveHostToBizRecycleModule:     EditBusinessHost,
-			meta.MoveHostToAnotherBizModule:     EditBusinessHost,
-			meta.CleanHostInSetOrModule:         EditBusinessHost,
-			meta.TransferHost:                   EditBusinessHost,
-			meta.MoveBizHostToModule:            EditBusinessHost,
-		},
-		meta.ProcessServiceCategory: {
-			meta.Delete: DeleteBusinessServiceCategory,
-			meta.Update: EditBusinessServiceCategory,
-			meta.Create: CreateBusinessServiceCategory,
-		},
-		meta.ProcessServiceInstance: {
-			meta.Delete: DeleteBusinessServiceInstance,
-			meta.Update: EditBusinessServiceInstance,
-			meta.Create: CreateBusinessServiceInstance,
-		},
-		meta.ProcessServiceTemplate: {
-			meta.Delete: DeleteBusinessServiceTemplate,
-			meta.Update: EditBusinessServiceTemplate,
-			meta.Create: CreateBusinessServiceTemplate,
-		},
-		meta.SetTemplate: {
-			meta.Delete: DeleteBusinessSetTemplate,
-			meta.Update: EditBusinessSetTemplate,
-			meta.Create: CreateBusinessSetTemplate,
-		},
-		meta.ModelModule: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.ModelSet: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.MainlineInstance: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.MainlineInstanceTopology: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.HostApply: {
-			meta.Update: EditBusinessHostApply,
-		},
-		meta.ResourcePoolDirectory: {
-			meta.Delete: DeleteResourcePoolDirectory,
-			meta.Update: EditResourcePoolDirectory,
-			meta.Create: CreateResourcePoolDirectory,
-		},
-		meta.Plat: {
-			meta.Delete: DeleteCloudArea,
-			meta.Update: EditCloudArea,
-			meta.Create: CreateCloudArea,
-		},
-		meta.EventPushing: {
-			meta.Delete: DeleteEventPushing,
-			meta.Update: EditEventPushing,
-			meta.Create: CreateEventPushing,
-			meta.Find:   FindEventPushing,
-		},
-		meta.CloudAccount: {
-			meta.Delete: DeleteCloudAccount,
-			meta.Update: EditCloudAccount,
-			meta.Create: CreateCloudAccount,
-			meta.Find:   FindCloudAccount,
-		},
-		meta.CloudResourceTask: {
-			meta.Delete: DeleteCloudResourceTask,
-			meta.Update: EditCloudResourceTask,
-			meta.Create: CreateCloudResourceTask,
-			meta.Find:   FindCloudResourceTask,
-		},
-		meta.Model: {
-			meta.Delete: DeleteModel,
-			meta.Update: EditModel,
-			meta.Create: CreateModel,
-			meta.Find:   FindModel,
-		},
-		meta.AssociationType: {
-			meta.Delete: DeleteAssociationType,
-			meta.Update: EditAssociationType,
-			meta.Create: CreateAssociationType,
-		},
-		meta.ModelClassification: {
-			meta.Delete: DeleteModelGroup,
-			meta.Update: EditModelGroup,
-			meta.Create: CreateModelGroup,
-		},
-		meta.OperationStatistic: {
-			meta.Update: EditOperationStatistic,
-			meta.Find:   FindOperationStatistic,
-		},
-		meta.AuditLog: {
-			meta.Find: FindAuditLog,
-		},
-		meta.SystemBase: {
-			meta.ModelTopologyView:      EditModelTopologyView,
-			meta.ModelTopologyOperation: EditBusinessTopology,
-		},
-		meta.EventWatch: {
-			meta.WatchHost:         WatchHostEvent,
-			meta.WatchHostRelation: WatchHostRelationEvent,
-			meta.WatchBiz:          WatchBizEvent,
-			meta.WatchSet:          WatchSetEvent,
-			meta.WatchModule:       WatchModuleEvent,
-		},
-	}
 	if _, exist := resourceActionMap[resourceType]; exist {
 		actionID, ok := resourceActionMap[resourceType][convertAction]
 		if ok {
 			return actionID, nil
 		}
 	}
-	return Unknown, fmt.Errorf("unsupported action: %s", action)
+	return Unsupported, fmt.Errorf("unsupported action: %s", action)
+}
+
+var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
+	meta.ModelInstance: {
+		meta.Delete: DeleteInstance,
+		meta.Update: EditInstance,
+		meta.Create: CreateInstance,
+		meta.Find:   FindInstance,
+	},
+	meta.ModelAttributeGroup: {
+		meta.Delete: EditModel,
+		meta.Update: EditModel,
+		meta.Create: EditModel,
+	},
+	meta.ModelUnique: {
+		meta.Delete: EditModel,
+		meta.Update: EditModel,
+		meta.Create: EditModel,
+	},
+	meta.Business: {
+		meta.Archive:              ArchiveBusiness,
+		meta.Create:               CreateBusiness,
+		meta.Update:               EditBusiness,
+		meta.Find:                 FindBusiness,
+		meta.ViewBusinessResource: ViewBusinessResource,
+	},
+	meta.DynamicGrouping: {
+		meta.Delete:  DeleteBusinessCustomQuery,
+		meta.Update:  EditBusinessCustomQuery,
+		meta.Create:  CreateBusinessCustomQuery,
+		meta.Find:    FindBusinessCustomQuery,
+		meta.Execute: FindBusinessCustomQuery,
+	},
+	meta.MainlineModel: {
+		meta.Find:   EditBusinessLayer,
+		meta.Create: EditBusinessLayer,
+		meta.Delete: EditBusinessLayer,
+	},
+	meta.ModelTopology: {
+		meta.Find:   EditModelTopologyView,
+		meta.Update: EditModelTopologyView,
+	},
+	meta.MainlineModelTopology: {
+		meta.Find:   EditBusinessLayer,
+		meta.Update: EditBusinessLayer,
+	},
+	meta.Process: {
+		meta.BoundModuleToProcess:   EditBusinessServiceInstance,
+		meta.UnboundModuleToProcess: EditBusinessServiceInstance,
+	},
+	meta.HostInstance: {
+		meta.MoveResPoolHostToBizIdleModule: ResourcePoolHostTransferToBusiness,
+		meta.MoveResPoolHostToDirectory:     ResourcePoolHostTransferToDirectory,
+		meta.MoveHostFromModuleToResPool:    BusinessHostTransferToResourcePool,
+		meta.AddHostToResourcePool:          CreateResourcePoolHost,
+		meta.Create:                         CreateResourcePoolHost,
+		meta.Delete:                         DeleteResourcePoolHost,
+		meta.MoveHostToBizFaultModule:       EditBusinessHost,
+		meta.MoveHostToBizIdleModule:        EditBusinessHost,
+		meta.MoveHostToBizRecycleModule:     EditBusinessHost,
+		meta.MoveHostToAnotherBizModule:     EditBusinessHost,
+		meta.CleanHostInSetOrModule:         EditBusinessHost,
+		meta.TransferHost:                   EditBusinessHost,
+		meta.MoveBizHostToModule:            EditBusinessHost,
+	},
+	meta.ProcessServiceCategory: {
+		meta.Delete: DeleteBusinessServiceCategory,
+		meta.Update: EditBusinessServiceCategory,
+		meta.Create: CreateBusinessServiceCategory,
+	},
+	meta.ProcessServiceInstance: {
+		meta.Delete: DeleteBusinessServiceInstance,
+		meta.Update: EditBusinessServiceInstance,
+		meta.Create: CreateBusinessServiceInstance,
+	},
+	meta.ProcessServiceTemplate: {
+		meta.Delete: DeleteBusinessServiceTemplate,
+		meta.Update: EditBusinessServiceTemplate,
+		meta.Create: CreateBusinessServiceTemplate,
+	},
+	meta.SetTemplate: {
+		meta.Delete: DeleteBusinessSetTemplate,
+		meta.Update: EditBusinessSetTemplate,
+		meta.Create: CreateBusinessSetTemplate,
+	},
+	meta.ModelModule: {
+		meta.Delete: DeleteBusinessTopology,
+		meta.Update: EditBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+	},
+	meta.ModelSet: {
+		meta.Delete: DeleteBusinessTopology,
+		meta.Update: EditBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+	},
+	meta.MainlineInstance: {
+		meta.Delete: DeleteBusinessTopology,
+		meta.Update: EditBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+	},
+	meta.MainlineInstanceTopology: {
+		meta.Delete: DeleteBusinessTopology,
+		meta.Update: EditBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+	},
+	meta.HostApply: {
+		meta.Update: EditBusinessHostApply,
+	},
+	meta.ResourcePoolDirectory: {
+		meta.Delete: DeleteResourcePoolDirectory,
+		meta.Update: EditResourcePoolDirectory,
+		meta.Create: CreateResourcePoolDirectory,
+	},
+	meta.Plat: {
+		meta.Delete: DeleteCloudArea,
+		meta.Update: EditCloudArea,
+		meta.Create: CreateCloudArea,
+	},
+	meta.EventPushing: {
+		meta.Delete: DeleteEventPushing,
+		meta.Update: EditEventPushing,
+		meta.Create: CreateEventPushing,
+		meta.Find:   FindEventPushing,
+	},
+	meta.CloudAccount: {
+		meta.Delete: DeleteCloudAccount,
+		meta.Update: EditCloudAccount,
+		meta.Create: CreateCloudAccount,
+		meta.Find:   FindCloudAccount,
+	},
+	meta.CloudResourceTask: {
+		meta.Delete: DeleteCloudResourceTask,
+		meta.Update: EditCloudResourceTask,
+		meta.Create: CreateCloudResourceTask,
+		meta.Find:   FindCloudResourceTask,
+	},
+	meta.Model: {
+		meta.Delete: DeleteModel,
+		meta.Update: EditModel,
+		meta.Create: CreateModel,
+		meta.Find:   FindModel,
+	},
+	meta.AssociationType: {
+		meta.Delete: DeleteAssociationType,
+		meta.Update: EditAssociationType,
+		meta.Create: CreateAssociationType,
+	},
+	meta.ModelClassification: {
+		meta.Delete: DeleteModelGroup,
+		meta.Update: EditModelGroup,
+		meta.Create: CreateModelGroup,
+	},
+	meta.OperationStatistic: {
+		meta.Update: EditOperationStatistic,
+		meta.Find:   FindOperationStatistic,
+	},
+	meta.AuditLog: {
+		meta.Find: FindAuditLog,
+	},
+	meta.SystemBase: {
+		meta.ModelTopologyView:      EditModelTopologyView,
+		meta.ModelTopologyOperation: EditBusinessTopology,
+	},
+	meta.EventWatch: {
+		meta.WatchHost:         WatchHostEvent,
+		meta.WatchHostRelation: WatchHostRelationEvent,
+		meta.WatchBiz:          WatchBizEvent,
+		meta.WatchSet:          WatchSetEvent,
+		meta.WatchModule:       WatchModuleEvent,
+	},
+	meta.UserCustom: {
+		meta.Find:   Skip,
+		meta.Update: Skip,
+		meta.Delete: Skip,
+		meta.Create: Skip,
+	},
+	meta.ModelInstanceAssociation: {
+		meta.Find:   FindInstance,
+		meta.Update: EditInstance,
+		meta.Delete: DeleteInstance,
+		meta.Create: CreateInstance,
+	},
+	meta.ModelAssociation: {
+		meta.Find:   FindInstance,
+		meta.Update: EditInstance,
+		meta.Delete: DeleteInstance,
+		meta.Create: CreateInstance,
+	},
+	meta.ModelInstanceTopology: {
+		meta.Find:   Skip,
+		meta.Update: Skip,
+		meta.Delete: Skip,
+		meta.Create: Skip,
+	},
+	meta.ModelAttribute: {
+		meta.Find:   FindModel,
+		meta.Update: EditModel,
+		meta.Delete: DeleteModel,
+		meta.Create: CreateModel,
+	},
+	meta.HostFavorite: {
+		meta.Find:   Skip,
+		meta.Update: EditBusinessHost,
+		meta.Delete: DeleteResourcePoolHost,
+		meta.Create: CreateResourcePoolHost,
+	},
+	// TODO: Confirm
+	meta.ProcessTemplate: {
+		meta.Find:   Skip,
+		meta.Delete: DeleteBusinessServiceTemplate,
+		meta.Update: EditBusinessServiceTemplate,
+		meta.Create: CreateBusinessServiceTemplate,
+	},
+	meta.BizTopology: {
+		meta.Find:   Skip,
+		meta.Update: EditBusinessTopology,
+		meta.Delete: DeleteBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+	},
+	// unsupported resource actions for now
+	meta.NetDataCollector: {
+		meta.Find:   Unsupported,
+		meta.Update: Unsupported,
+		meta.Delete: Unsupported,
+		meta.Create: Unsupported,
+	},
+	meta.InstallBK: {
+		meta.Update: Skip,
+	},
+	meta.SystemConfig: {
+		meta.Find:   FindSystemConfig,
+		meta.Update: EditSystemConfig,
+		// unsupported action
+		meta.Delete: Unsupported,
+		// unsupported action
+		meta.Create: Skip,
+	},
 }
 
 // AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
