@@ -527,7 +527,7 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
-	// 根据约束cond,获得去重后的主机id
+	// 根据约束cond,获得去重后的主机id.
 	ret,err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
 	if err != nil {
 		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)

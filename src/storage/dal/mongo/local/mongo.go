@@ -756,10 +756,10 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 // field the field for which to return distinct values.
 // filter query that specifies the documents from which to retrieve the distinct values.
 // The first return value []interface{} every element real type:
-//	is int64 if query results type of filed is integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint)
-//  is string if query results type of filed is string
-//  is bool if query results type of filed is boolean
-//  is empty slice(non-nil) if query results is empty
+// is int64 if query results type of filed is integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint).
+// is string if query results type of filed is string.
+// is bool if query results type of filed is boolean.
+// is empty slice(non-nil) if query results is empty.
 func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter) ([]interface{},error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
@@ -777,7 +777,8 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 		if err != nil {
 			return err
 		}
-		//get []interface{}
+
+		// get []interface{}.
 		results , err = decodeDistinctIntoSlice(dbResults)
 		return err
 
@@ -786,25 +787,26 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 }
 
 func decodeDistinctIntoSlice(dbResults []interface{}) ([]interface{},error){
-	// 如果长度为0，返回长度为0的slice
+	// 如果长度为0，返回长度为0的slice.
 	if len(dbResults) == 0 {
 		return  make([]interface{},0),nil
 	}
 
-	// 如果源数据是string,bool 直接返回结果
+	// 如果源数据是string,bool 直接返回结果.
 	switch dbResults[0].(type) {
 	case string:
 		return dbResults,nil
 	case bool:
 		return dbResults,nil
-	// 整型到后面统一转化为int64
 	case int,int8,int16,int32,int64,uint,uint8,uint16,uint32,uint64:
+		// 整型到后面统一转化为int64.
 		break
-	// 不支持的类型转化
 	default:
+		// 不支持的类型转化.
 		return nil,errors.New("unsupported types,only support:string,bool,and integer")
 	}
-	// 整型统一转化为int64
+
+	// 整型统一转化为int64.
 	var results = make([]interface{},len(dbResults))
 	for i,item := range dbResults{
 		switch val := item.(type) {

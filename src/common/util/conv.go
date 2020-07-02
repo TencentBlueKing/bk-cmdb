@@ -244,12 +244,13 @@ func SplitStrField(str, sep string) []string {
 	return strings.Split(str, sep)
 }
 
-// SliceInterfaceToInt64 将interface切片转化为int64切片,且interface的真实类型可以是任何整数类型
-// 失败则返回nil,error
+// SliceInterfaceToInt64 将interface切片转化为int64切片,且interface的真实类型可以是任何整数类型.
+// 失败则返回nil,error.
 func SliceInterfaceToInt64(faceSlice []interface{}) ([]int64,error){
-	// 预分配空间
+	// 预分配空间.
 	var results = make([]int64,len(faceSlice))
-	// 转化操作
+
+	// 转化操作.
 	for i,item := range faceSlice{
 		switch val := item.(type) {
 		case int64:
@@ -280,15 +281,17 @@ func SliceInterfaceToInt64(faceSlice []interface{}) ([]int64,error){
 }
 
 
-// SliceInterfaceToBool将interface切片转化为string切片,且interface的真实类型必须是string
-// 失败则返回nil,error
+// SliceInterfaceToBool将interface切片转化为string切片,且interface的真实类型必须是string.
+// 失败则返回nil,error.
 func SliceInterfaceToString(faceSlice []interface{}) ([]string,error){
-	// 预分配空间
+	// 预分配空间.
 	var results = make([]string,len(faceSlice))
-	// 转化操作
+
+	// 转化操作.
 	for i,item := range faceSlice{
 		var ok bool
-		//如果转化失败则返回错误
+
+		//如果转化失败则返回错误.
 		if results[i],ok = item.(string) ; !ok {
 			return nil,errors.New("can't convert to string")
 		}
@@ -297,15 +300,17 @@ func SliceInterfaceToString(faceSlice []interface{}) ([]string,error){
 	return results,nil
 }
 
-// SliceInterfaceToBool将interface切片转化为bool切片,且interface的真实类型必须是bool
-// 失败则返回nil,error
+// SliceInterfaceToBool将interface切片转化为bool切片,且interface的真实类型必须是bool.
+// 失败则返回nil,error.
 func SliceInterfaceToBool(faceSlice []interface{}) ([]bool,error){
-	// 预分配空间
+	// 预分配空间.
 	var results = make([]bool,len(faceSlice))
-	// 转化操作
+
+	// 转化操作.
 	for i,item := range faceSlice{
 		 var ok bool
-		 //如果转化失败则返回错误
+
+		 //如果转化失败则返回错误.
 		 if results[i],ok = item.(bool) ; !ok {
 			 return nil,errors.New("can't convert to bool")
 		 }

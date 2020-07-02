@@ -73,10 +73,10 @@ type Table interface {
 	// field the field for which to return distinct values.
 	// filter query that specifies the documents from which to retrieve the distinct values.
 	// The first return value []interface{} every element real type:
-	//	is int64 if query results type of filed is integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint)
-	//  is string if query results type of filed is string
-	//  is bool if query results type of filed is boolean
-	//  is empty slice(non-nil) if query results is empty
+	// is int64 if query results type of filed is integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint).
+	// is string if query results type of filed is string.
+	// is bool if query results type of filed is boolean.
+	// is empty slice(non-nil) if query results is empty.
 	Distinct(ctx context.Context, field string, filter Filter) ([]interface{},error)
 }
 

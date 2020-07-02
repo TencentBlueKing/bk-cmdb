@@ -1335,6 +1335,7 @@ func TestDistinct(t *testing.T) {
 	tableName := "tmp_test_distinct"
 
 	db := dbCleint(t)
+
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
 
@@ -1394,52 +1395,52 @@ func TestDistinct(t *testing.T) {
 	dbErr = db.Table(tableName).Insert(context.TODO(), insertRows)
 	require.NoError(t, dbErr, "insert row to  mongodb error")
 
-	// distinct int64 字段，  db 数据为int64,返回的结构都是int64
+	// distinct int64 字段, db数据为int64,返回的结构都是int64.
 	var ret []interface{}
 	ret, dbErr = table.Distinct(context.TODO(), "int64", map[string]string{"type": "int"})
 	require.NoError(t, err, "find distinct int64 error")
 	if true{
-		// 测试转化后的结果与预期是否相同
+		// 测试转化后的结果与预期是否相同.
 		results,err := util.SliceInterfaceToInt64(ret)
 		require.NoError(t, err,"convert to []int64 error")
 		require.Equal(t,[]int64{64, 164},results)
 	}
 
-	// distinct int 字段， db 数据为int,返回的结构都是int64
+	// distinct int 字段, db数据为int,返回的结构都是int64.
 	ret, dbErr = table.Distinct(context.TODO(), "int", map[string]string{"type": "int"})
 	require.NoError(t, dbErr, "find distinct int error")
 	if true{
-		// 测试转化后的结果与预期是否相同
+		// 测试转化后的结果与预期是否相同.
 		results,err := util.SliceInterfaceToInt64(ret)
 		require.NoError(t, err,"convert to []int64 error")
 		require.Equal(t,[]int64{0, 100},results)
 	}
 
-	// distinct uint 字段， db 数据为uint,返回的结构都是int64
+	// distinct uint 字段, db数据为uint,返回的结构都是int64.
 	ret, dbErr = table.Distinct(context.TODO(), "uint", map[string]string{"type": "int"})
 	require.NoError(t, dbErr, "find distinct uint error")
 	if true{
-		// 测试转化后的结果与预期是否相同
+		// 测试转化后的结果与预期是否相同.
 		results,err := util.SliceInterfaceToInt64(ret)
 		require.NoError(t, err,"convert to []int64 error")
 		require.Equal(t,[]int64{0, 100},results)
 	}
 
-	// distinct string 字段， db 数据为string,返回的结构都是string
+	// distinct string 字段, db数据为string,返回的结构都是string.
 	ret, dbErr = table.Distinct(context.TODO(), "string", map[string]string{"type": "string"})
 	require.NoError(t, dbErr, "find distinct string error")
 	if true{
-		// 测试转化后的结果与预期是否相同
+		// 测试转化后的结果与预期是否相同.
 		results,err := util.SliceInterfaceToString(ret)
 		require.NoError(t, err,"convert to []string error")
 		require.Equal(t,[]string{"aa", "bb"},results)
 	}
 
-	// distinct bool 字段， db 数据为bool,返回的结构都是bool
+	// distinct bool 字段， db数据为bool,返回的结构都是bool.
 	ret, dbErr = table.Distinct(context.TODO(), "bool", map[string]string{"type": "bool"})
 	require.NoError(t, dbErr, "find distinct bool error")
 	if true{
-		// 测试转化后的结果与预期是否相同
+		// 测试转化后的结果与预期是否相同.
 		results,err := util.SliceInterfaceToBool(ret)
 		require.NoError(t, err,"convert to []bool error")
 		require.Equal(t,[]bool{false,true},results)
