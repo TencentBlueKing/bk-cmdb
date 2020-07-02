@@ -92,7 +92,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}()
 
 		go func() {
-			errCh <- distribution.Start(ctx, cache, db, engine.CoreAPI)
+			errCh <- distribution.Start(ctx, cache, db, engine.CoreAPI, engine.ServiceManageInterface)
 		}()
 
 		break
