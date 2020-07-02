@@ -263,6 +263,9 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
 	}
+	if len(data.Info) == 0 {
+		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+	}
 
 	// get all instances' ancestor if none is filtered
 	for _, ancestor := range filter.ResourceTypeChain {
@@ -411,6 +414,9 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
 	}
+	if len(data.Info) == 0 {
+		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+	}
 
 	// get all instances' model if no model is filtered
 	for _, ancestor := range filter.ResourceTypeChain {
@@ -540,6 +546,9 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, req types.PullResourceReq) (*
 		if !hostRsp.Result {
 			blog.Errorf("get host ids by parent failed, err code: %d, err msg: %s, rid: %s", hostRsp.Code, hostRsp.ErrMsg, kit.Rid)
 			return nil, hostRsp.Error()
+		}
+		if len(hostRsp.Data.Info) == 0 {
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		for _, relation := range hostRsp.Data.Info {
 			hostIDs = append(hostIDs, relation.HostID)
