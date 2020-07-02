@@ -31,8 +31,7 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 
 	case rsc.Type == meta.AuditLog:
 		return false
-	case rsc.Type == meta.ResourceSync:
-		return true
+
 	// case rsc.Type == meta.DynamicGrouping && rsc.Action == meta.FindMany || rsc.Action == meta.Find:
 	// 	return true
 

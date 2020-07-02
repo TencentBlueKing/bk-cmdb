@@ -27,7 +27,6 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userAPI().
 		userCustom().
 		hostFavorite().
-		cloudResourceSync().
 		hostSnapshot().
 		findObjectIdentifier().
 		HostApply()
@@ -1028,43 +1027,6 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 		return ps
 	}
-	return ps
-}
-
-var (
-	searchSyncTask       = `/api/v3/hosts/cloud/search`
-	confirmSyncTResource = `/api/v3/hosts/cloud/searchConfirm`
-)
-
-func (ps *parseStream) cloudResourceSync() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	if ps.hitPattern(searchSyncTask, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.ResourceSync,
-					Action: meta.FindMany,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitPattern(confirmSyncTResource, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.ResourceSync,
-					Action: meta.FindMany,
-				},
-			},
-		}
-		return ps
-	}
-
 	return ps
 }
 
