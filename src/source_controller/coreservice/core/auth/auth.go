@@ -58,11 +58,25 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		f = f.Fields(param.Fields...)
 	}
 
-	info := make([]map[string]interface{}, 0)
-	err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &info)
-	if err != nil {
-		blog.ErrorJSON("search auth resource failed, error: %s, input param: %s", err.Error(), param)
-		return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	var info []map[string]interface{}
+	if param.Collection == common.BKTableNameBaseHost {
+		hosts := make([]metadata.HostMapStr, 0)
+		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &hosts)
+		if err != nil {
+			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s", err.Error(), param)
+			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+		info = make([]map[string]interface{}, len(hosts))
+		for index, host := range hosts {
+			info[index] = host
+		}
+	} else {
+		info = make([]map[string]interface{}, 0)
+		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &info)
+		if err != nil {
+			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s", err.Error(), param)
+			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
 	}
 	return int64(count), info, nil
 }
