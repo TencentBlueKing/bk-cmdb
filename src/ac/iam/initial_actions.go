@@ -980,16 +980,6 @@ func genModelActions() []ResourceAction {
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   FindModel,
-		Name:                 "模型查询",
-		NameEn:               "View Model",
-		Type:                 View,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
 	return actions
 }
 

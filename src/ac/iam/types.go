@@ -279,7 +279,6 @@ const (
 	CreateModel ResourceActionID = "create_model"
 	EditModel   ResourceActionID = "edit_model"
 	DeleteModel ResourceActionID = "delete_model"
-	FindModel   ResourceActionID = "find_model"
 
 	CreateAssociationType ResourceActionID = "create_association_type"
 	EditAssociationType   ResourceActionID = "edit_association_type"

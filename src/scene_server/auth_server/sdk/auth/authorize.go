@@ -164,7 +164,7 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.Aut
 		Subject: opts.Subject,
 		Action:  opts.Action,
 		// do not use user's policy, so that we can get all the user's policy.
-		Resources: nil,
+		Resources: opts.Resources,
 	}
 
 	policy, err := a.iam.GetUserPolicy(ctx, &getOpt)

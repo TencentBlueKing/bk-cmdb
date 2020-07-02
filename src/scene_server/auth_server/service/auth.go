@@ -79,7 +79,7 @@ func (s *AuthService) Authorize(ctx *rest.Contexts) {
 	}
 	decision, err := s.authorizer.Authorize(ctx.Kit.Ctx, ops)
 	if err != nil {
-		blog.ErrorJSON("Authorize failed, err: %s, ops: %s, rid: %s", err, ops, ctx.Kit.Rid)
+		blog.ErrorJSON("Authorize failed, err: %s, ops: %s, authAttribute: %s, rid: %s", err, ops, authAttribute, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -149,6 +149,7 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 	}
 	authDecisions, err := s.authorizer.AuthorizeBatch(ctx.Kit.Ctx, ops)
 	if err != nil {
+		blog.ErrorJSON("AuthorizeBatch failed, err: %s, ops: %s, authAttribute: %s, rid: %s", err, ops, authAttribute, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -209,7 +210,7 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 	}
 	resources, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops)
 	if err != nil {
-		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v, input: %s, ops: %s, rid: %s", err, input, ops, ctx.Kit.Rid)
+		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v, input: %s, ops: %s, input: %s, rid: %s", err, input, ops, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

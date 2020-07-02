@@ -245,7 +245,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Execute: FindBusinessCustomQuery,
 	},
 	meta.MainlineModel: {
-		meta.Find:   EditBusinessLayer,
+		meta.Find:   Skip,
 		meta.Create: EditBusinessLayer,
 		meta.Delete: EditBusinessLayer,
 	},
@@ -368,7 +368,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Delete: DeleteModel,
 		meta.Update: EditModel,
 		meta.Create: CreateModel,
-		meta.Find:   FindModel,
+		meta.Find:   Skip,
 	},
 	meta.AssociationType: {
 		meta.Delete: DeleteAssociationType,
@@ -427,7 +427,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelAttribute: {
-		meta.Find:   FindModel,
+		meta.Find:   Skip,
 		meta.Update: EditModel,
 		meta.Delete: DeleteModel,
 		meta.Create: CreateModel,
