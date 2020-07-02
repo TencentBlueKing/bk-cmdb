@@ -136,6 +136,86 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 	})
 }
 
+// CreatePlatBatch create plat instance in batch
+func (s *Service) CreatePlatBatch(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	input := struct {
+		Data []mapstr.MapStr `json:"data"`
+	}{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
+		blog.Errorf("CreatePlat , but decode body failed, err: %s,rid:%s", err.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if len(input.Data) == 0 {
+		blog.Errorf("CreatePlat , input is empty, rid:%s", srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPBodyEmpty)})
+		return
+	}
+
+	instInfo := &meta.CreateManyModelInstance{
+		Datas: input.Data,
+	}
+
+	result := make([]metadata.CreateManyCloudAreaElem, len(input.Data))
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		var err error
+		res, err := s.CoreAPI.CoreService().Instance().CreateManyInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
+		if nil != err {
+			blog.Errorf("CreatePlatBatch failed, CreateManyInstance error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			return srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)
+		}
+
+		if false == res.Result {
+			blog.Errorf("CreatePlatBatch failed, CreateManyInstance error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, srvData.rid)
+			return errors.New(res.Code, res.ErrMsg)
+		}
+
+		if len(res.Data.Exceptions) > 0 {
+			blog.Errorf("CreatePlatBatch failed, err:#v,input:%+v,rid:%s", res.Data.Exceptions, input, srvData.rid)
+			return srvData.ccErr.New(int(res.Data.Exceptions[0].Code), res.Data.Exceptions[0].Message)
+		}
+
+		if len(res.Data.Created) == 0 {
+			blog.Errorf("CreatePlatBatch failed, no plat was found,input:%+v,rid:%s", input, srvData.rid)
+			return srvData.ccErr.Error(common.CCErrTopoCloudNotFound)
+		}
+
+		platIDs := make([]int64, len(res.Data.Created))
+		for i, created := range res.Data.Created {
+			platIDs[i] = int64(created.ID)
+			result[i] = metadata.CreateManyCloudAreaElem{
+				CloudID: int64(created.ID),
+			}
+		}
+
+		// add auditLog
+		auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+		if err := auditLog.WithCurrent(srvData.ctx, platIDs...); err != nil {
+			blog.ErrorJSON("CreatePlatBatch failed,  WithCurrent err: %v, rid: %s", err, srvData.rid)
+			return err
+		}
+
+		if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditCreate); err != nil {
+			blog.ErrorJSON("CreatePlatBatch failed,  SaveAuditLog err: %v, rid: %s", err, srvData.rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
+		return
+	}
+
+	_ = resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	})
+}
+
 // CreatePlat create a plat instance
 // available fields for body are last_time, bk_cloud_name, bk_supplier_account, bk_cloud_id, create_time
 // {"bk_cloud_name": "云区域", "bk_supplier_account": 0}
@@ -149,20 +229,6 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	}
 	// read supplier account from header
 	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
-
-	// set field default value
-	input[common.BKStatus] = "1"
-	user := util.GetUser(req.Request.Header)
-	input[common.BKCreator] = user
-	input[common.BKLastEditor] = user
-
-	// bk_cloud_name is required and unique
-	_, ok := input[common.BKCloudNameField]
-	if !ok {
-		blog.Errorf("CreatePlat failed, bk_cloud_name field is required, rid: %s", srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostPlatCloudNameIsrequired)})
-		return
-	}
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {
@@ -181,7 +247,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		res, err = s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
 		if nil != err {
 			blog.Errorf("CreatePlat error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
-			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+			return srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)
 		}
 
 		if false == res.Result {
@@ -194,15 +260,15 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		// add auditLog
 		auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
 		if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
-			blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
-			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+			return err
 		}
 
 		if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditCreate); err != nil {
-			blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
-			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+			return err
 		}
-		
+
 		return nil
 	})
 
@@ -210,12 +276,12 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-	
+
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     res.Data,
 	})
-	
+
 }
 
 func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
@@ -298,11 +364,11 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 	})
 
 	if txnErr != nil {
-		resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-	
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
@@ -326,11 +392,11 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 
 	// decode request body
 	input := struct {
-		CloudName string `json:"bk_cloud_name"`
+		CloudName   string `json:"bk_cloud_name"`
 		CloudVendor string `json:"bk_cloud_vendor"`
-		Region string `json:"bk_region"`
+		Region      string `json:"bk_region"`
 	}{}
-	
+
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("UpdatePlat failed, err:%+v, rid:%s", err, srvData.rid)
 		ccErr := srvData.ccErr.Errorf(common.CCErrCommJSONUnmarshalFailed)
@@ -348,24 +414,23 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 
 	// update plat
 	user := util.GetUser(req.Request.Header)
-	
+
 	toUpdate := mapstr.MapStr{
 		common.BKLastEditor: user,
 	}
-	
+
 	if len(input.CloudVendor) != 0 {
 		toUpdate[common.BKCloudVendor] = input.CloudVendor
 	}
-	
+
 	if len(input.Region) != 0 {
 		toUpdate[common.BKRegion] = input.Region
 	}
-	
+
 	if len(input.CloudName) != 0 {
 		toUpdate[common.BKCloudNameField] = input.CloudName
 	}
-	
-	
+
 	updateOption := &meta.UpdateOption{
 		Data: toUpdate,
 		Condition: map[string]interface{}{
@@ -393,7 +458,7 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 			blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
 			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		
+
 		return nil
 	})
 
@@ -403,7 +468,7 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	// response success
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.Response) {

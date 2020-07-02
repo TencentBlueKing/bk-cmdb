@@ -44,16 +44,18 @@ var testData2 = map[string]interface{}{
 	"creator":         "admin",
 }
 
-// tmpTestData
-var tmpTestData = map[string]interface{}{
-	"bk_cloud_name":   "LPL39区",
-	"bk_status":       "1",
-	"bk_cloud_vendor": "2",
-	"bk_region":       "1111",
-	"bk_vpc_id":       "1",
-	"bk_vpc_name":     "Default-VPC",
-	"bk_account_id":   2,
-	"creator":         "admin",
+// NewTmpCloudArea new a tmp cloudarea
+func NewTmpCloudArea() map[string]interface{} {
+	return map[string]interface{}{
+		"bk_cloud_name":   "LPL39区",
+		"bk_status":       "1",
+		"bk_cloud_vendor": "2",
+		"bk_region":       "1111",
+		"bk_vpc_id":       "tmp_vpc",
+		"bk_vpc_name":     "Default-VPC",
+		"bk_account_id":   2,
+		"creator":         "admin",
+	}
 }
 
 var _ = Describe("cloud area test", func() {
@@ -66,7 +68,7 @@ var _ = Describe("cloud area test", func() {
 	var _ = Describe("cloud area test create", func() {
 
 		It("create with normal data", func() {
-			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, tmpTestData)
+			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, NewTmpCloudArea())
 			cloudIDTmp = int64(rsp.Data.Created.ID)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
@@ -74,6 +76,7 @@ var _ = Describe("cloud area test", func() {
 		})
 
 		It("create with cloud area which is already exist", func() {
+			tmpTestData := NewTmpCloudArea()
 			tmpTestData["bk_cloud_name"] = testData1["bk_cloud_name"]
 			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, tmpTestData)
 			util.RegisterResponse(rsp)
@@ -82,15 +85,47 @@ var _ = Describe("cloud area test", func() {
 		})
 
 		It("create with cloud vendor which is not valid", func() {
+			tmpTestData := NewTmpCloudArea()
 			tmpTestData["bk_cloud_name"] = "best mind"
 			tmpTestData["bk_cloud_vendor"] = "hello"
-			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, testData1)
+			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, tmpTestData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
 	})
+
+	var _ = Describe("cloud area test batch create", func() {
+
+		It("batch create with normal data", func() {
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data":[]interface{}{NewTmpCloudArea()}})
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("batch create with cloud area which is already exist", func() {
+			tmpTestData := NewTmpCloudArea()
+			tmpTestData["bk_cloud_name"] = testData1["bk_cloud_name"]
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data":[]interface{}{tmpTestData}})
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("batch create with cloud vendor which is not valid", func() {
+			tmpTestData := NewTmpCloudArea()
+			tmpTestData["bk_cloud_name"] = "best mind"
+			tmpTestData["bk_cloud_vendor"] = "hello"
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data":[]interface{}{tmpTestData}})
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+	})
+
 
 	var _ = Describe("cloud area test update", func() {
 
@@ -143,7 +178,7 @@ var _ = Describe("cloud area test", func() {
 			Expect(rsp.Data.Count).To(Equal(int64(2)))
 		})
 
-		It("search with configured conditon", func() {
+		It("search with configured condition", func() {
 			queryData := map[string]interface{}{"condition": map[string]interface{}{"bk_cloud_name": testData2["bk_cloud_name"]}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
@@ -218,6 +253,8 @@ var cloudID1, cloudID2, cloudIDTmp int64
 func prepareCloudData() {
 	//删除云区域表
 	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBasePlat)
+	Expect(err).NotTo(HaveOccurred())
+	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameBasePlat)
 	Expect(err).NotTo(HaveOccurred())
 
 	// 准备数据

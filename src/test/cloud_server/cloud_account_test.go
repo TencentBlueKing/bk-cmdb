@@ -45,6 +45,8 @@ func clearData() {
 	//删除云账户表
 	err := test.GetDB().DropTable(context.Background(), common.BKTableNameCloudAccount)
 	Expect(err).NotTo(HaveOccurred())
+	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameCloudAccount)
+	Expect(err).NotTo(HaveOccurred())
 	//删除云账户id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudAccount})
 	Expect(err).NotTo(HaveOccurred())

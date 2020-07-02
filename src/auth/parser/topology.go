@@ -2538,8 +2538,9 @@ func (ps *parseStream) fullTextSearch() *parseStream {
 }
 
 const (
-	findManyCloudAreaPattern = "/api/v3/findmany/cloudarea"
-	createCloudAreaPattern   = "/api/v3/create/cloudarea"
+	findManyCloudAreaPattern   = "/api/v3/findmany/cloudarea"
+	createCloudAreaPattern     = "/api/v3/create/cloudarea"
+	createManyCloudAreaPattern = "/api/v3/createmany/cloudarea"
 )
 
 var (
@@ -2572,6 +2573,19 @@ func (ps *parseStream) cloudArea() *parseStream {
 	}
 
 	if ps.hitPattern(createCloudAreaPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(createManyCloudAreaPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

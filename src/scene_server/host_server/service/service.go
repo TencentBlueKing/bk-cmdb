@@ -152,6 +152,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/findmany/module_relation/bk_biz_id/{bk_biz_id}").To(s.FindModuleHostRelation))
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
+	api.Route(api.POST("/createmany/cloudarea").To(s.CreatePlatBatch))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DeletePlat))
 
