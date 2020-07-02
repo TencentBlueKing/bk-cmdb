@@ -150,6 +150,7 @@ const (
 	SysCloudResourceTask     ResourceTypeID = "sys_cloud_resource_task"
 	SysEventWatch            ResourceTypeID = "event_watch"
 	Host                     ResourceTypeID = "host"
+	UserCustom               ResourceTypeID = "usercustom"
 )
 
 const (
@@ -302,9 +303,7 @@ const (
 	WatchBizEvent          ResourceActionID = "watch_biz_event"
 	WatchSetEvent          ResourceActionID = "watch_set_event"
 	WatchModuleEvent       ResourceActionID = "watch_module_event"
-
-	EditSystemConfig ResourceActionID = "edit_sys_conf"
-	FindSystemConfig ResourceActionID = "find_sys_conf"
+	GlobalSettings         ResourceActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
 	Unsupported ResourceActionID = "unsupported"

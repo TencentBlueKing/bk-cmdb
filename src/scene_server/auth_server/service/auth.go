@@ -16,7 +16,6 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/iam"
-	"configcenter/src/ac/iam/permit"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -39,11 +38,19 @@ func (s *AuthService) Authorize(ctx *rest.Contexts) {
 	}
 
 	// filter out SkipAction, which set by api server to skip authorization
+	var actionID iam.ResourceActionID
 	noSkipResources := make([]meta.ResourceAttribute, 0)
 	for _, resource := range authAttribute.Resources {
-		if resource.Action == meta.SkipAction {
+		convActionID, err := iam.ConvertResourceAction(resource.Type, resource.Action, resource.BusinessID)
+		if err != nil {
+			blog.ErrorJSON("ConvertResourceAction failed, err: %s, resource: %s, rid: %s", err, resource, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if convActionID == iam.Skip {
 			continue
 		}
+		actionID = convActionID
 		noSkipResources = append(noSkipResources, resource)
 	}
 	if len(noSkipResources) == 0 {
@@ -52,13 +59,6 @@ func (s *AuthService) Authorize(ctx *rest.Contexts) {
 		return
 	}
 
-	resource := noSkipResources[0]
-	actionID, err := iam.ConvertResourceAction(resource.Type, resource.Action, resource.BusinessID)
-	if err != nil {
-		blog.ErrorJSON("ConvertResourceAction failed, err: %s, resource: %s, rid: %s", err, resource, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
 	resources, err := iam.Adaptor(noSkipResources)
 	if err != nil {
 		blog.ErrorJSON("Adaptor failed, err: %s, noSkipResources: %s, rid: %s", err, noSkipResources, ctx.Kit.Rid)
@@ -107,20 +107,19 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 	authBatchArr := make([]*types.AuthBatch, 0)
 	decisions := make([]meta.Decision, len(authAttribute.Resources))
 	for index, resource := range authAttribute.Resources {
-		// pick out skip resource at first.
-		if permit.ShouldSkipAuthorize(&resource) {
-			// this resource should be skipped, do not need to verify in auth center.
-			decisions[index].Authorized = true
-			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", resource, ctx.Kit.Rid)
-			continue
-		}
-
 		actionID, err := iam.ConvertResourceAction(resource.Type, resource.Action, resource.BusinessID)
 		if err != nil {
 			blog.ErrorJSON("ConvertResourceAction failed, err: %s, resource: %s, rid: %s", err, resource, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
+		if actionID == iam.Skip {
+			// this resource should be skipped, do not need to verify in auth center.
+			decisions[index].Authorized = true
+			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", resource, ctx.Kit.Rid)
+			continue
+		}
+
 		resources, err := iam.Adaptor([]meta.ResourceAttribute{resource})
 		if err != nil {
 			blog.ErrorJSON("Adaptor failed, err: %s, resource: %s, rid: %s", err, resource, ctx.Kit.Rid)
