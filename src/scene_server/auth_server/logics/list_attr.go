@@ -64,6 +64,9 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.ResourceTypeID) ([]t
 		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
 		return nil, res.CCError()
 	}
+	if len(res.Data.Info) == 0 {
+		return attrs, nil
+	}
 
 	// get object id name map for common instances
 	objIDNameMap := make(map[string]string)
