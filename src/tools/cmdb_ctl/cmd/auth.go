@@ -18,13 +18,18 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
-	"strings"
+	"time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac/meta"
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
+	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
 )
@@ -34,9 +39,6 @@ func init() {
 }
 
 type authConf struct {
-	address      string
-	appCode      string
-	appSecret    string
 	resource     string
 	resourceFile string
 	logv         int32
@@ -77,52 +79,46 @@ func NewAuthCommand() *cobra.Command {
 }
 
 func (c *authConf) addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&c.address, "auth-address", "p", "http://iam.service.consul", "auth center addresses, separated by comma")
-	cmd.PersistentFlags().StringVarP(&c.appCode, "app-code", "c", "bk_cmdb", "the app code used for authorize")
-	cmd.PersistentFlags().StringVarP(&c.appSecret, "app-secret", "s", "", "the app secret used for authorize")
 	cmd.PersistentFlags().StringVarP(&c.resource, "resource", "r", "", "the resource for authorize")
 	cmd.PersistentFlags().StringVarP(&c.resourceFile, "rsc-file", "f", "", "the resource file path for authorize")
 	cmd.PersistentFlags().Int32VarP(&c.logv, "logV", "v", 0, "the log level of request, default request body log level is 4")
 }
 
 type authService struct {
-	authorize auth.Authorize
+	clientSet apimachinery.ClientSetInterface
 	resource  []meta.ResourceAttribute
 }
 
 func newAuthService(c *authConf) (*authService, error) {
 	blog.SetV(c.logv)
-	if c.address == "" {
-		return nil, errors.New("auth address must be set")
-	}
-	if c.appCode == "" {
-		return nil, errors.New("app-code must be set")
-	}
-	if c.appSecret == "" {
-		return nil, errors.New("app-secret must be set")
-	}
 	if c.resource == "" && c.resourceFile == "" {
 		return nil, errors.New("resource must be set via resource flag or resource file specified by rsc-file flag")
 	}
-	addr := strings.Split(c.address, ",")
-	for i := range addr {
-		if !strings.HasSuffix(addr[i], "/") {
-			addr[i] = addr[i] + "/"
-		}
+
+	client := zk.NewZkClient(config.Conf.ZkAddr, 40*time.Second)
+	if err := client.Start(); err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
 	}
-	authConf := authcenter.AuthConfig{
-		Address:   addr,
-		AppCode:   c.appCode,
-		AppSecret: c.appSecret,
-		SystemID:  authcenter.SystemIDCMDB,
+	if err := client.Ping(); err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
 	}
-	authorize, err := auth.NewAuthorize(nil, authConf, nil)
+	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+	}
+	apiMachineryConfig := &util.APIMachineryConfig{
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
+	}
+	clientSet, err := apimachinery.NewApiMachinery(apiMachineryConfig, serviceDiscovery)
+	if err != nil {
+		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 	service := &authService{
-		authorize: authorize,
+		clientSet: clientSet,
 	}
+
 	if c.resource != "" {
 		err = json.Unmarshal([]byte(c.resource), &service.resource)
 		if err != nil {
@@ -136,7 +132,7 @@ func newAuthService(c *authConf) (*authService, error) {
 		defer resourceFile.Close()
 		resource, err := ioutil.ReadAll(resourceFile)
 		if err != nil {
-			blog.Errorf("fail to read ata from resource file(%s), err:%s", resourceFile, err.Error())
+			blog.Errorf("fail to read data from resource file(%s), err:%s", resourceFile, err.Error())
 			return nil, err
 		}
 		err = json.Unmarshal(resource, &service.resource)
@@ -159,7 +155,12 @@ func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error
 			SupplierAccount: supplierAccount,
 		},
 	}
-	decision, err := srv.authorize.Authorize(context.Background(), a)
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, "0")
+	header.Add(common.BKSupplierIDField, "0")
+	header.Add(common.BKHTTPHeaderUser, "admin")
+	header.Add("Content-Type", "application/json")
+	decision, err := srv.clientSet.AuthServer().Authorize(context.Background(), header, a)
 	if err != nil {
 		return err
 	}

@@ -127,20 +127,16 @@
 
  - 子命令
    ```
-   register    register resource to auth center
-   deregister  deregister resource from auth center
-   update      update resource in auth center
    check       check if user has the authority to operate resources
+   ```
 
  - 命令行参数
-   ```
-   -c, --app-code="bk_cmdb": the app code used for authorize
-   -s, --app-secret="": the app secret used for authorize
-   -p, --auth-address="http://iam.service.consul": auth center addresses, separated by comma
+  ```
    -h, --help[=false]: help for auth
    -v, --logV=4: the log level of request, default, request body log level is 4
    -r, --resource="": the resource for authorize
    -f, --rsc-file="": the resource file path for authorize
+  --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
    --supplier-account="0": the supplier id that this user belongs to（仅用于check命令）
    --user="": the name of the user（仅用于check命令）
    ```
@@ -148,23 +144,11 @@
  - 示例
  
    - ```
-     ./tool_ctl auth register --app-code=test --app-secret=test --auth-address=http://127.0.0.1 --resource=[{\"type\":\"modelInstance\",\"action\":\"update\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\",\"SupplierAccount\":\"\",\"business_id\":2,\"Layers\":[{\"type\":\"model\",\"action\":\"\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\"}]}]
-     ```
-   
-   - ```
-     ./tool_ctl auth deregister --app-code=test --app-secret=test --auth-address=http://127.0.0.1 --resource=[{\"type\":\"modelInstance\",\"action\":\"update\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\",\"SupplierAccount\":\"\",\"business_id\":2,\"Layers\":[{\"type\":\"model\",\"action\":\"\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\"}]}]
-     ```
- 
-   - ```
-     ./tool_ctl auth update --app-code=test --app-secret=test --auth-address=http://127.0.0.1 --resource=[{\"type\":\"modelInstance\",\"action\":\"update\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\",\"SupplierAccount\":\"\",\"business_id\":2,\"Layers\":[{\"type\":\"model\",\"action\":\"\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\"}]}]
-     ```
- 
-   - ```
      ./tool_ctl auth check --app-code=test --app-secret=test --auth-address=http://127.0.0.1 --resource=[{\"type\":\"modelInstance\",\"action\":\"update\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\",\"SupplierAccount\":\"\",\"business_id\":2,\"Layers\":[{\"type\":\"model\",\"action\":\"\",\"Name\":\"\",\"InstanceID\":1,\"InstanceIDEx\":\"\"}]}] --supplier-account=0 --user=test
      ```
 
    - ```
-     ./tool_ctl auth register --app-code=test --app-secret=test --auth-address=http://127.0.0.1 --rsc-file=resource.json
+     ./tool_ctl auth check --app-code=test --app-secret=test --auth-address=http://127.0.0.1 --rsc-file=resource.json
      
      resource.json file content example:
      [
