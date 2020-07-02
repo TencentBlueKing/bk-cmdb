@@ -38,6 +38,10 @@ func (p *Policy) UnmarshalJSON(i []byte) error {
 		return err
 	}
 
+	if broker.Operator == "" {
+		return nil
+	}
+
 	p.Operator = broker.Operator
 
 	if broker.Operator == And || broker.Operator == Or {
@@ -136,6 +140,11 @@ type Field struct {
 }
 
 func (f *Field) UnmarshalJSON(i []byte) error {
+	if string(i) == "\"\"" {
+		f.Attribute = ""
+		f.Resource = ""
+		return nil
+	}
 	index := bytes.IndexByte(i, '.')
 	if index < 0 {
 		return errors.New("invalid \"field\"")

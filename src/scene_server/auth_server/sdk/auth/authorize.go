@@ -41,7 +41,7 @@ func (a *Authorize) Authorize(ctx context.Context, opts *types.AuthOptions) (*ty
 		Subject: opts.Subject,
 		Action:  opts.Action,
 		// do not use user's policy, so that we can get all the user's policy.
-		Resources: nil,
+		Resources: opts.Resources,
 	}
 
 	policy, err := a.iam.GetUserPolicy(ctx, &getOpt)
@@ -158,6 +158,11 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 }
 
 func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions) ([]string, error) {
+	if len(opts.Resources) == 0 {
+		// actions not related to resources do not need to list authorized instances
+		return []string{}, nil
+	}
+
 	// find user's policy with action
 	getOpt := types.GetPolicyOption{
 		System:  opts.System,
@@ -172,5 +177,5 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.Aut
 		return nil, err
 	}
 
-	return a.countPolicy(ctx, policy)
+	return a.countPolicy(ctx, policy, opts.Resources[0].Type)
 }

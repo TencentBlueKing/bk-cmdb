@@ -97,9 +97,10 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	}
 
 	param := metadata.PullResourceParam{
-		Condition: cond,
-		Fields:    []string{idField},
-		Limit:     common.BKNoLimit,
+		Collection: collection,
+		Condition:  cond,
+		Fields:     []string{idField},
+		Limit:      common.BKNoLimit,
 	}
 	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
 	if err != nil {
@@ -127,5 +128,5 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		}
 		idList = append(idList, id)
 	}
-	return []string{}, nil
+	return idList, nil
 }

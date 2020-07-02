@@ -37,12 +37,12 @@ func New(dbProxy dal.DB) core.AuthOperation {
 
 func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder) {
 	if param.Collection == "" {
-		blog.Error("search auth resource in empty mongo collection")
+		blog.ErrorJSON("search auth resource in empty mongo collection, param: %s, rid: %s", param, kit.Rid)
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "collection")
 	}
 	limit := param.Limit
 	if limit > common.BKMaxPageSize && limit != common.BKNoLimit {
-		blog.Errorf("search auth resource page limit %d exceeds max page size", limit)
+		blog.Errorf("search auth resource page limit %d exceeds max page size, rid: %s", limit, kit.Rid)
 		return 0, nil, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 	if limit == 0 {
@@ -51,7 +51,7 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 	f := a.dbProxy.Table(param.Collection).Find(param.Condition)
 	count, err := f.Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("count auth resource failed, error: %s, input param: %s", err.Error(), param)
+		blog.ErrorJSON("count auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if len(param.Fields) != 0 {
@@ -63,7 +63,7 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		hosts := make([]metadata.HostMapStr, 0)
 		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &hosts)
 		if err != nil {
-			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s", err.Error(), param)
+			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
 			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		info = make([]map[string]interface{}, len(hosts))
@@ -74,7 +74,7 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		info = make([]map[string]interface{}, 0)
 		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &info)
 		if err != nil {
-			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s", err.Error(), param)
+			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
 			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 	}

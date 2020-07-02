@@ -41,6 +41,11 @@ const (
 func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
 	op := filter.Operator
 
+	if op == operator.Any {
+		// op any means having all permissions of this resource
+		return make(map[string]interface{}), nil
+	}
+
 	// parse filter which is composed of multiple sub filters
 	if op == operator.And || op == operator.Or {
 		content, ok := filter.Element.(*operator.Content)
@@ -149,9 +154,6 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 				common.BKDBNot: fmt.Sprintf(operatorRegexFmtMap[op], valueStr),
 			},
 		}, nil
-	case operator.Any:
-		// op any means having all permissions of this resource
-		return make(map[string]interface{}), nil
 	default:
 		return nil, fmt.Errorf("filter op %s not supported", op)
 	}

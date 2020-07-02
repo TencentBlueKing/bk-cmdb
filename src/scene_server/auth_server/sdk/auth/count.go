@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
-func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy) ([]string, error) {
+func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourceType types.ResourceType) ([]string, error) {
 
 	if hasIamPath(p) {
 		return nil, errors.New("policy content has _bk_iam_path_, not support for now")
@@ -34,7 +34,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy) ([]stri
 			return nil, errors.New("policy with invalid content field")
 		}
 
-		list, err := a.countContent(ctx, p.Operator, content)
+		list, err := a.countContent(ctx, p.Operator, content, resourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy) ([]stri
 		return list, nil
 
 	case operator.Any:
-		ids, err := a.countAny(ctx, p)
+		ids, err := a.countAny(ctx, p, resourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -71,6 +71,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy) ([]stri
 			opts := &types.ListWithAttributes{
 				Operator:   p.Operator,
 				Attributes: []*operator.FieldValue{fv},
+				Type:       resourceType,
 			}
 
 			ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
@@ -108,7 +109,7 @@ func (a *Authorize) countIamIDKey(op operator.OperType, fv *operator.FieldValue)
 }
 
 // count all the resource ids according to the operator and content, eg policies.
-func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content) (
+func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content, resourceType types.ResourceType) (
 	[]string, error) {
 
 	allAttrFieldValue := make([]*operator.FieldValue, 0)
@@ -122,14 +123,14 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 				return nil, errors.New("policy with invalid content field")
 			}
 
-			list, err := a.countContent(ctx, policy.Operator, content)
+			list, err := a.countContent(ctx, policy.Operator, content, resourceType)
 			if err != nil {
 				return nil, err
 			}
 			allList = append(allList, list)
 
 		case operator.Any:
-			ids, err := a.countAny(ctx, policy)
+			ids, err := a.countAny(ctx, policy, resourceType)
 			if err != nil {
 				return nil, err
 			}
@@ -162,6 +163,7 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 		opts := &types.ListWithAttributes{
 			Operator:   op,
 			Attributes: allAttrFieldValue,
+			Type:       resourceType,
 		}
 
 		ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
@@ -176,7 +178,7 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 
 }
 
-func (a *Authorize) countAny(ctx context.Context, policy *operator.Policy) ([]string, error) {
+func (a *Authorize) countAny(ctx context.Context, policy *operator.Policy, resourceType types.ResourceType) ([]string, error) {
 	fv, can := policy.Element.(*operator.FieldValue)
 	if !can {
 		return nil, errors.New("policy operator any with invalid FieldValue field")
@@ -185,6 +187,7 @@ func (a *Authorize) countAny(ctx context.Context, policy *operator.Policy) ([]st
 	opts := &types.ListWithAttributes{
 		Operator:   policy.Operator,
 		Attributes: []*operator.FieldValue{fv},
+		Type:       resourceType,
 	}
 
 	ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
