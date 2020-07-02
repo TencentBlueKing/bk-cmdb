@@ -1,8 +1,4 @@
 import Meta from '@/router/meta'
-import {
-    R_CONFIG_ADMIN,
-    GET_AUTH_META
-} from '@/dictionary/auth'
 
 export default [{
     name: 'admin_index',
@@ -17,7 +13,7 @@ export default [{
             i18n: '配置'
         },
         auth: {
-            view: GET_AUTH_META(R_CONFIG_ADMIN)
+            view: null
         },
         layout: {
             breadcrumbs: false
