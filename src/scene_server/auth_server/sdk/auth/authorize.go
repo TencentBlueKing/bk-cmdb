@@ -48,6 +48,9 @@ func (a *Authorize) Authorize(ctx context.Context, opts *types.AuthOptions) (*ty
 	if err != nil {
 		return nil, err
 	}
+	if policy == nil || policy.Operator == "" {
+		return &types.Decision{Authorized: false}, nil
+	}
 
 	if policy.Operator == operator.Any {
 		return &types.Decision{Authorized: true}, nil
@@ -175,6 +178,9 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.Aut
 	policy, err := a.iam.GetUserPolicy(ctx, &getOpt)
 	if err != nil {
 		return nil, err
+	}
+	if policy == nil || policy.Operator == "" {
+		return []string{}, nil
 	}
 
 	return a.countPolicy(ctx, policy, opts.Resources[0].Type)

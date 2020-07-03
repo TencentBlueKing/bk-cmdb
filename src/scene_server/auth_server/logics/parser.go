@@ -39,6 +39,10 @@ const (
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
 func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
+	if filter == nil || filter.Operator == "" {
+		return nil, nil
+	}
+
 	op := filter.Operator
 
 	if op == operator.Any {

@@ -32,14 +32,14 @@ type Policy struct {
 }
 
 func (p *Policy) UnmarshalJSON(i []byte) error {
+	if string(i) == "{}" {
+		return nil
+	}
+
 	broker := new(policyBroker)
 	err := json.Unmarshal(i, broker)
 	if err != nil {
 		return err
-	}
-
-	if broker.Operator == "" {
-		return nil
 	}
 
 	p.Operator = broker.Operator
