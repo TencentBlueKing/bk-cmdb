@@ -14,10 +14,9 @@ package options
 
 import (
 	"configcenter/src/ac/iam"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -46,7 +45,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	Auth  iam.AuthConfig
-	Redis redis.Config
-	Mongo mongo.Config
+	Auth iam.AuthConfig
+	TLS  util.TLSClientConfig
 }

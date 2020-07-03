@@ -9,6 +9,7 @@
  */
 
 import $http from '@/api'
+import Vue from 'vue'
 
 const state = {
     usercustom: {},
@@ -122,11 +123,15 @@ const actions = {
 }
 
 const mutations = {
-    setUsercustom (state, usercustom) {
-        state.usercustom = Object.assign({}, state.usercustom, usercustom)
+    setUsercustom (state, usercustom = {}) {
+        for (const key in usercustom) {
+            Vue.set(state.usercustom, key, usercustom[key])
+        }
     },
-    setGlobalUsercustom (state, globalUsercustom) {
-        state.globalUsercustom = Object.assign({}, state.globalUsercustom, globalUsercustom)
+    setGlobalUsercustom (state, globalUsercustom = {}) {
+        for (const key in globalUsercustom) {
+            Vue.set(state.globalUsercustom, key, globalUsercustom[key])
+        }
     }
 }
 

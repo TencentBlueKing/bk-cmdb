@@ -13,8 +13,6 @@
 package instances
 
 import (
-	"sync"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -169,7 +167,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID), destroyCloudHost)
+		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID), inputParam.CanEditAll, destroyCloudHost)
 		if nil != err {
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
@@ -197,6 +195,9 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 
 	tableName := common.GetInstTableName(objID)
 	if tableName == common.BKTableNameBaseInst {
+		if inputParam.Condition == nil {
+			inputParam.Condition = mapstr.MapStr{}
+		}
 		objIDCond, ok := inputParam.Condition[common.BKObjIDField]
 		if ok && objIDCond != objID {
 			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)
@@ -207,32 +208,26 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	instItems := make([]mapstr.MapStr, 0)
+	query := m.dbProxy.Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
+		Limit(uint64(inputParam.Page.Limit)).
+		Sort(inputParam.Page.Sort).
+		Fields(inputParam.Fields...)
 	var instErr error
-
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	go func() {
-		instErr = m.dbProxy.Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
-			Limit(uint64(inputParam.Page.Limit)).
-			Sort(inputParam.Page.Sort).
-			Fields(inputParam.Fields...).
-			All(kit.Ctx, &instItems)
-		wg.Done()
-	}()
-
-	var count uint64
-	var countErr error
-	go func() {
-		count, countErr = m.dbProxy.Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
-		wg.Done()
-	}()
-	// wait for the db query return.
-	wg.Wait()
+	if objID == common.BKInnerObjIDHost {
+		hosts := make([]metadata.HostMapStr, 0)
+		instErr = query.All(kit.Ctx, &hosts)
+		for _, host := range hosts {
+			instItems = append(instItems, mapstr.MapStr(host))
+		}
+	} else {
+		instErr = query.All(kit.Ctx, &instItems)
+	}
 	if instErr != nil {
 		blog.Errorf("search instance error [%v], rid: %s", instErr, kit.Rid)
 		return nil, instErr
 	}
 
+	count, countErr := m.dbProxy.Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
 	if countErr != nil {
 		blog.Errorf("count instance error [%v], rid: %s", countErr, kit.Rid)
 		return nil, countErr

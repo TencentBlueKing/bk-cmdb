@@ -18,13 +18,15 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
+	"configcenter/src/common/types"
 	dalRedis "configcenter/src/storage/dal/redis"
 
 	redis "gopkg.in/redis.v5"
 )
 
 /*
-暂时不支持，多个mongodb实例连接， 暂时不值热更新，所以没有加锁
+ 暂时不支持，多个mongodb实例连接， 暂时不值热更新，所以没有加锁
 */
 
 var (
@@ -36,6 +38,8 @@ var (
 	// 在并发的情况下，这里存在panic的问题
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
+
+	Nil = redis.Nil
 )
 
 // Client  get default error
@@ -52,7 +56,7 @@ func Client() *redis.Client {
 func ClientInstance(prefix string) *redis.Client {
 	lock.RLock()
 	defer lock.RUnlock()
-	if db, ok := cacheMap[defaultPrefix]; ok {
+	if db, ok := cacheMap[prefix]; ok {
 		return db
 	}
 	return nil
@@ -76,10 +80,15 @@ func ParseConfig(prefix string, configMap map[string]string) (*dalRedis.Config, 
 func InitClient(prefix string, config *dalRedis.Config) errors.CCErrorCoder {
 	lock.Lock()
 	defer lock.Unlock()
+	if cacheMap[prefix] != nil {
+		// 不支持热更新
+		blog.V(5).Infof("duplicate open redis. prefix:%s, host:%s", prefix, config.Address)
+		return nil
+	}
 	lastInitErr = nil
 	db, dbErr := dalRedis.NewFromConfig(*config)
 	if dbErr != nil {
-		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
+		blog.Errorf("failed to connect the redis server, error info is %s", dbErr.Error())
 		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'"+prefix+" redis' initialization failed")
 		return lastInitErr
 	}
@@ -96,5 +105,35 @@ func Validate() errors.CCErrorCoder {
 
 func UpdateConfig(prefix string, config dalRedis.Config) {
 	// 不支持热更行
+	return
+}
+
+func Healthz() (items []metric.HealthItem) {
+	lock.RLock()
+	defer lock.RUnlock()
+
+	for prefix, db := range cacheMap {
+		item := &metric.HealthItem{
+			IsHealthy: true,
+			Name:      types.CCFunctionalityRedis + " " + prefix,
+		}
+		items = append(items, *item)
+		if db == nil {
+			item.IsHealthy = false
+			item.Message = "[" + prefix + "] not initialized"
+			continue
+		}
+		if err := db.Ping().Err(); err != nil {
+			item.IsHealthy = false
+			item.Message = "[" + prefix + "] connect error. err: " + err.Error()
+			continue
+		}
+	}
+	if len(items) == 0 {
+		items = append(items, metric.HealthItem{
+			IsHealthy: false,
+			Name:      "not found intance",
+		})
+	}
 	return
 }

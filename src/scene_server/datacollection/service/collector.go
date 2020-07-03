@@ -26,7 +26,7 @@ import (
 
 func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	cond := metadata.ParamNetcollectorSearch{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
@@ -36,7 +36,7 @@ func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) 
 	}
 	blog.Infof("[NetDevice][SearchCollector] search by %+v", cond)
 
-	count, result, err := s.Logics.SearchCollector(pheader, cond)
+	count, result, err := s.logics.SearchCollector(pheader, cond)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError,
 			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorSearchFail)})
@@ -52,7 +52,7 @@ func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) 
 
 func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	cond := metadata.Netcollector{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
@@ -71,7 +71,7 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	err := s.Logics.UpdateCollector(pheader, cond)
+	err := s.logics.UpdateCollector(pheader, cond)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError,
 			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorUpdateFail)})
@@ -84,7 +84,7 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 
 func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	cond := metadata.ParamNetcollectDiscover{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
@@ -94,7 +94,7 @@ func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response
 	}
 	blog.Infof("[NetDevice][DiscoverNetDevice] discover by %+v", cond)
 
-	err := s.Logics.DiscoverNetDevice(pheader, cond.Collectors)
+	err := s.logics.DiscoverNetDevice(pheader, cond.Collectors)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError,
 			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorDiscoverFail)})

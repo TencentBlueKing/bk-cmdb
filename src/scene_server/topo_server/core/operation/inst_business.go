@@ -18,8 +18,8 @@ import (
 	"regexp"
 	"strings"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -71,6 +71,8 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
+		Fields:        []string{common.BKHostIDField},
+		Page:          metadata.BasePage{Limit: 1},
 	}
 	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
 	if nil != err {
@@ -173,18 +175,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
-	// register business to auth
-	bizName, err := data.String(common.BKAppNameField)
-	if err != nil {
-		blog.Errorf("create business, but got invalid business name. err: %v, rid: %s", err, kit.Rid)
-		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
-	}
-
-	if err := b.authManager.RegisterBusinessesByID(kit.Ctx, kit.Header, bizID); err != nil {
-		blog.Errorf("create business: %s, but register business resource failed, err: %v, rid: %s", bizName, err, kit.Rid)
-		return bizInst, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
-
 	// create set
 	objSet, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
 	if nil != err {
@@ -277,11 +267,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 }
 
 func (b *business) DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) error {
-	if err := b.authManager.DeregisterBusinessByRawID(kit.Ctx, kit.Header, bizID); err != nil {
-		blog.Errorf("delete business: %d, but deregister business from auth failed, err: %v, rid: %s", bizID, err, kit.Rid)
-		return kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-	}
-
 	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
@@ -480,19 +465,6 @@ func (b *business) GetInternalModule(kit *rest.Kit, obj model.Object, bizID int6
 }
 
 func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64, metaData *metadata.Metadata) error {
-	if biz, exist := data.Get(common.BKAppNameField); exist {
-		bizName, err := data.String(common.BKAppNameField)
-		if err != nil {
-			blog.Errorf("update business, but got invalid business name: %v, id: %d, rid: %s", biz, bizID, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommParamsIsInvalid)
-		}
-
-		if err := b.authManager.UpdateRegisteredBusinessByID(kit.Ctx, kit.Header, bizID); err != nil {
-			blog.Errorf("update business name: %s, but update resource to auth failed, err: %v, rid: %s", bizName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	}
-
 	innerCond := condition.CreateCondition()
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 

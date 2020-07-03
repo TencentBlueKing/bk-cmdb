@@ -329,5 +329,16 @@ func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountC
 		return nil, fmt.Errorf("GetAccountConf failed, accountID: %v is not exist", accountID)
 	}
 
-	return &result.Info[0], nil
+	accountConf := result.Info[0]
+	// 解密云账户密钥
+	if lgc.cryptor != nil {
+		secretKey, err := lgc.cryptor.Decrypt(accountConf.SecretKey)
+		if err != nil {
+			blog.Errorf("GetCloudAccountConf failed, Encrypt err: %st", err.Error())
+			return nil, err
+		}
+		accountConf.SecretKey = secretKey
+	}
+
+	return &accountConf, nil
 }

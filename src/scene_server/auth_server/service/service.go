@@ -23,23 +23,25 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/logics"
+	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
 	"configcenter/src/scene_server/auth_server/types"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type AuthService struct {
-	engine *backbone.Engine
-	auth   ac.AuthInterface
-	lgc    *logics.Logics
+	engine     *backbone.Engine
+	auth       ac.AuthInterface
+	lgc        *logics.Logics
+	authorizer sdkauth.Authorizer
 }
 
-func NewAuthService(engine *backbone.Engine, auth ac.AuthInterface, cache *redis.Client) *AuthService {
+func NewAuthService(engine *backbone.Engine, auth ac.AuthInterface, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
 	return &AuthService{
-		engine: engine,
-		auth:   auth,
-		lgc:    logics.NewLogics(engine.CoreAPI, cache),
+		engine:     engine,
+		auth:       auth,
+		lgc:        lgc,
+		authorizer: authorizer,
 	}
 }
 
@@ -100,6 +102,11 @@ func (s *AuthService) WebService() *restful.Container {
 	container := restful.NewContainer()
 	container.Add(api)
 
+	authAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	authAPI.Path("/ac/v3")
+	s.initAuth(authAPI)
+	container.Add(authAPI)
+
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
 	container.Add(healthzAPI)
@@ -117,6 +124,19 @@ func (s *AuthService) initResourcePull(api *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instance/resource", Handler: s.PullInstanceResource})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/resource", Handler: s.PullSystemResource})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/business/resource", Handler: s.PullBusinessResource})
+
+	utility.AddToRestfulWebService(api)
+}
+
+func (s *AuthService) initAuth(api *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize", Handler: s.Authorize})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize/batch", Handler: s.AuthorizeBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/authorized_resource", Handler: s.ListAuthorizedResources})
 
 	utility.AddToRestfulWebService(api)
 }

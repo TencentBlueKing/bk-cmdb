@@ -20,20 +20,22 @@
         addResizeListener,
         removeResizeListener
     } from '@/utils/resize-events'
+    import throttle from 'lodash.throttle'
     export default {
         name: 'cmdb-sticky-layout',
         data () {
             return {
-                hasScrollbar: false
+                hasScrollbar: false,
+                scheduleResize: throttle(this.handleResize, 300)
             }
         },
         mounted () {
-            addResizeListener(this.$refs.content, this.handleResize)
-            addResizeListener(this.$el, this.handleResize)
+            addResizeListener(this.$refs.content, this.scheduleResize)
+            addResizeListener(this.$el, this.scheduleResize)
         },
         beforeDestroy () {
-            removeResizeListener(this.$refs.content, this.handleResize)
-            removeResizeListener(this.$el, this.handleResize)
+            removeResizeListener(this.$refs.content, this.scheduleResize)
+            removeResizeListener(this.$el, this.scheduleResize)
         },
         methods: {
             handleResize () {

@@ -249,16 +249,7 @@
         },
         methods: {
             getTopoPath (row) {
-                const topoPath = this.$tools.clone(row.topo_path)
-                if (topoPath.length) {
-                    const setIndex = topoPath.findIndex(path => path.ObjectID === 'set')
-                    if (setIndex > -1) {
-                        topoPath.splice(setIndex, 1)
-                    }
-                    const sortPath = topoPath.sort((prev, next) => prev.bk_inst_id - next.bk_inst_id)
-                    return sortPath.map(path => path.bk_inst_name).join(' / ')
-                }
-                return '--'
+                return [...row.topo_path].reverse().map(path => path.bk_inst_name).join(' / ') || '--'
             },
             async getData () {
                 const data = await this.getSetInstancesWithStatus('getSetInstanceData')
@@ -353,7 +344,7 @@
                 }
             },
             handleLinkServiceTopo () {
-                this.$router.push({ name: MENU_BUSINESS_HOST_AND_SERVICE })
+                this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             async handleFilter (current = 1, event) {
                 this.pagination.current = current
@@ -393,11 +384,12 @@
                     id: `${this.business}_${this.templateId}`,
                     instancesId: this.checkedList
                 })
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setSync',
                     params: {
                         setTemplateId: this.templateId
-                    }
+                    },
+                    history: true
                 })
             },
             handleSync (row) {
@@ -405,11 +397,12 @@
                     id: `${this.business}_${this.templateId}`,
                     instancesId: [row.bk_set_id]
                 })
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setSync',
                     params: {
                         setTemplateId: this.templateId
-                    }
+                    },
+                    history: true
                 })
             },
             async handleRetry (row) {
@@ -431,11 +424,12 @@
                 }
             },
             routeToHistory () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'syncHistory',
                     params: {
                         templateId: this.templateId
-                    }
+                    },
+                    history: true
                 })
             }
         }

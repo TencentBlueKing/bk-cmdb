@@ -1,5 +1,5 @@
 <template>
-    <div class="userapi-preview-wrapper">
+    <div class="userapi-preview-wrapper" :style="{ 'z-index': nextIndex }">
         <div class="mask" @click="closePreview"></div>
         <div class="userapi-preview">
             <h3 class="preview-title">{{$t('预览查询')}}</h3>
@@ -19,6 +19,7 @@
                         :key="column.id"
                         :prop="column.id"
                         :label="column.name"
+                        :render-header="(h, data) => renderColumnHeader(h, data, column.property)"
                         show-overflow-tooltip>
                         <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
                     </bk-table-column>
@@ -30,6 +31,7 @@
 
 <script>
     import { mapActions } from 'vuex'
+    import { injectFields } from '@/utils/host'
     export default {
         props: {
             apiParams: {
@@ -55,7 +57,8 @@
                         limit: 10
                     },
                     sort: ''
-                }
+                },
+                nextIndex: 0
             }
         },
         computed: {
@@ -68,10 +71,6 @@
             },
             previewParams () {
                 const conditions = this.$tools.clone(this.apiParams['info']['condition'])
-                const hostCondition = conditions.find(({ bk_obj_id: objId }) => {
-                    return objId === 'host'
-                })
-                hostCondition['fields'] = this.previewFields
                 conditions.forEach(model => {
                     const modelCondition = model.condition || []
                     const newConditions = []
@@ -95,13 +94,15 @@
                         sort: this.table.sort
                     }
                 }
-                return previewParams
+
+                return injectFields(previewParams, this.table.header)
             },
             unSortableProperty () {
                 return ['bk_set_name', 'bk_module_name', 'bk_cloud_id']
             }
         },
         created () {
+            this.nextIndex = window.__bk_zIndex_manager.nextZIndex()
             this.setTableHeader()
             this.getPreviewList()
         },
@@ -177,6 +178,26 @@
                 this.table.list = res.info
                 this.fixPageLimitPosition()
             },
+            renderColumnHeader (h, { column }, property) {
+                if (column.property === 'bk_host_innerip') {
+                    return (
+                        <span>{ column.label } <i class="property-copy icon-cc-details-copy"
+                            title={'复制'}
+                            onClick={(e) => this.handleColumnCopy(column, property, e)}></i>
+                        </span>
+                    )
+                }
+                return column.label
+            },
+            handleColumnCopy (column, property, e) {
+                const copyContent = this.table.list.map(row => this.getHostCellText(property, row))
+                this.$copyText(copyContent.join('\n')).then(() => {
+                    this.$success(this.$t('复制成功'))
+                }, () => {
+                    this.$error(this.$t('复制失败'))
+                })
+                e.stopPropagation()
+            },
             handlePageChange (current) {
                 this.table.pagination.current = current
                 this.getPreviewList()
@@ -209,7 +230,6 @@
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 2400;
         .mask {
             position: absolute;
             top: 0;
@@ -243,12 +263,18 @@
                 top: 12px;
                 right: 12px;
                 cursor: pointer;
-                font-size: 14px;
+                font-size: 20px;
                 font-weight: bold;
             }
         }
         .preview-table {
             padding: 0 20px 20px;
+
+            /deep/ .property-copy {
+                &:hover {
+                    color: #3a84ff;
+                }
+            }
         }
     }
 </style>

@@ -22,7 +22,6 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/backbone/service_mange/zk"
@@ -33,6 +32,8 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/rs/xid"
 )
 
 // connect svcManager retry connect time
@@ -56,7 +57,7 @@ type BackboneParameter struct {
 func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
+		client := zk.NewZkClient(svcManagerAddr, 40*time.Second)
 		if err = client.Start(); err != nil {
 			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 			time.Sleep(time.Second * 2)
@@ -108,6 +109,9 @@ func validateParameter(input *BackboneParameter) error {
 	// to prevent other components which doesn't set it from failing
 	if input.SrvInfo.RegisterIP == "" {
 		input.SrvInfo.RegisterIP = input.SrvInfo.IP
+	}
+	if input.SrvInfo.UUID == "" {
+		input.SrvInfo.UUID = xid.New().String()
 	}
 	return nil
 }
@@ -321,36 +325,4 @@ func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	}
 	mongoConf[prefix] = mongo.ParseConfigFromKV(prefix, conf.ConfigMap)
 	return mongoConf[prefix], nil
-}
-
-var (
-	authConf = make(map[string]authcenter.AuthConfig, 0)
-)
-
-func (e *Engine) WithAuth(prefixes ...string) (authcenter.AuthConfig, error) {
-	var prefix string
-	if len(prefixes) == 0 {
-		prefix = "auth"
-	} else {
-		prefix = prefixes[0]
-	}
-	if conf, exist := authConf[prefix]; exist {
-		return conf, nil
-	}
-	data, err := e.client.Client().Get(fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon))
-	if err != nil {
-		blog.Errorf("get common config failed, err: %s", err.Error())
-		return authcenter.AuthConfig{}, err
-	}
-	conf, err := cc.ParseConfigWithData([]byte(data))
-	if err != nil {
-		blog.Errorf("parse common config failed, err: %s, data: %s", err.Error(), data)
-		return authcenter.AuthConfig{}, err
-	}
-	authConf[prefix], err = authcenter.ParseConfigFromKV(prefix, conf.ConfigMap)
-	if err != nil {
-		blog.Errorf("parse auth center config failed: %s", err.Error())
-		return authcenter.AuthConfig{}, err
-	}
-	return authConf[prefix], nil
 }

@@ -42,6 +42,8 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 		case common.BKDBLIKE:
 			regex := make(map[string]interface{})
 			regex[common.BKDBLIKE] = i.Value
+			// Case insensitivity to match upper and lower cases
+			regex[common.BKDBOPTIONS] = "i"
 			output[i.Field] = regex
 
 		case common.BKDBMULTIPLELike:
@@ -55,7 +57,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 				if !ok {
 					return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
 				}
-				fields = append(fields, mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr}})
+				fields = append(fields, mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr, common.BKDBOPTIONS: "i"}})
 			}
 			if len(fields) != 0 {
 				// only when the fields is none empty, then the fields is valid.

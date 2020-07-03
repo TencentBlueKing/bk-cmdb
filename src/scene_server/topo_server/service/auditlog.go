@@ -16,8 +16,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -29,6 +29,12 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 	query := metadata.QueryInput{}
 	if err := ctx.DecodeInto(&query); nil != err {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -86,16 +92,12 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		// add auth filter condition
 		if condition.BizID != 0 {
 			businessID = condition.BizID
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: businessID},
-				{common.BKOperationDetailField + "." + common.BKAppIDField: businessID},
-			}})
+			andCond = append(andCond, map[string]interface{}{common.BKOperationDetailField + "." + common.BKAppIDField: businessID})
 		}
 
 		if condition.ResourceID != 0 {
 			resourceID := condition.ResourceID
 			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField: resourceID},
 				{common.BKOperationDetailField + "." + common.BKResourceIDField: resourceID},
 				{common.BKOperationDetailField + "." + common.BKHostIDField: resourceID},
 				{common.BKOperationDetailField + ".src_instance_id": resourceID},
@@ -108,7 +110,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 				common.BKDBLIKE: condition.ResourceName,
 			}
 			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceNameField: resourceNameCond},
 				{common.BKOperationDetailField + "." + common.BKResourceNameField: resourceNameCond},
 				{common.BKOperationDetailField + "." + common.BKHostInnerIPField: resourceNameCond},
 				{common.BKOperationDetailField + ".src_instance_name": resourceNameCond},
@@ -164,7 +165,7 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 					{
 						common.BKAuditTypeField: metadata.HostType,
 						common.BKActionField:    map[string]interface{}{common.BKDBNE: metadata.AuditAssignHost},
-						common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBNE: defaultBizID},
+						common.BKOperationDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBNE: defaultBizID},
 					},
 				}})
 			case "resource":
@@ -175,8 +176,8 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 						common.BKActionField:    map[string]interface{}{common.BKDBEQ: metadata.AuditAssignHost},
 					},
 					{
-						common.BKAuditTypeField: metadata.HostType,
-						common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBEQ: defaultBizID},
+						common.BKAuditTypeField:                                   metadata.HostType,
+						common.BKOperationDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBEQ: defaultBizID},
 					},
 				}})
 			default:
@@ -217,9 +218,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		}
 		query.Condition = cond
 	}
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
-	}
 
 	// switch between two different control mechanism
 	// TODO use global authorization for now, need more specific auth control
@@ -231,7 +229,7 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 				ctx.RespAutoError(fmt.Errorf("try authorize failed, err: %v", err))
 				return
 			}
-			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			ctx.RespEntityWithError(resp, ac.NoAuthorizeError)
 			return
 		}
 	} else {
@@ -253,7 +251,7 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		}
 		if hasAuthorize == false {
 			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit, rid: %s", ctx.Kit.User, ctx.Kit.Rid)
-			ctx.RespAutoError(auth.NoAuthorizeError)
+			ctx.RespAutoError(ac.NoAuthorizeError)
 			return
 		}
 	}
@@ -273,6 +271,12 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	query := metadata.QueryInput{}
 	if err := ctx.DecodeInto(&query); nil != err {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -334,10 +338,7 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	var businessID int64
 	if condition.BizID != 0 {
 		businessID = condition.BizID
-		andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-			{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: businessID},
-			{common.BKOperationDetailField + "." + common.BKAppIDField: businessID},
-		}})
+		andCond = append(andCond, map[string]interface{}{common.BKOperationDetailField + "." + common.BKAppIDField: businessID})
 	}
 
 	if condition.ResourceID == 0 {
@@ -358,8 +359,8 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	}
 	orCond := []map[string]interface{}{
 		{
-			common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField: instanceID,
-			common.BKResourceTypeField: metadata.GetResourceTypeByObjID(objectID, isMainline),
+			common.BKOperationDetailField + "." + common.BKResourceIDField: instanceID,
+			common.BKResourceTypeField:                                     metadata.GetResourceTypeByObjID(objectID, isMainline),
 		},
 		{
 			common.BKOperationDetailField + ".src_instance_id": instanceID,
@@ -378,10 +379,6 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	}
 	andCond = append(andCond, map[string]interface{}{common.BKDBOR: orCond})
 
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
-	}
-
 	cond[common.BKDBAND] = andCond
 	query.Condition = cond
 
@@ -391,36 +388,36 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 		err = s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
 	case common.BKInnerObjIDProc:
 		err = s.AuthManager.AuthorizeByProcessID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
+		if err != nil && err == ac.NoAuthorizeError {
 			resp, err := s.AuthManager.GenProcessNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, businessID)
 			if err != nil {
 				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetAppFailed, businessID))
 				return
 			}
-			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			ctx.RespEntityWithError(resp, ac.NoAuthorizeError)
 			return
 		}
 	case common.BKInnerObjIDModule:
 		err = s.AuthManager.AuthorizeByModuleID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
-			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError)
+		if err != nil && err == ac.NoAuthorizeError {
+			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), ac.NoAuthorizeError)
 			return
 		}
 	case common.BKInnerObjIDSet:
 		err = s.AuthManager.AuthorizeBySetID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
-			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError)
+		if err != nil && err == ac.NoAuthorizeError {
+			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), ac.NoAuthorizeError)
 			return
 		}
 	case common.BKInnerObjIDApp:
 		err = s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
+		if err != nil && err == ac.NoAuthorizeError {
 			resp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, businessID)
 			if err != nil {
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoGetAppFailed))
 				return
 			}
-			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			ctx.RespEntityWithError(resp, ac.NoAuthorizeError)
 			return
 		}
 	default:

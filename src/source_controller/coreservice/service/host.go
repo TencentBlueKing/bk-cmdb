@@ -15,8 +15,6 @@ package service
 import (
 	"strconv"
 
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -25,6 +23,7 @@ import (
 	"configcenter/src/common/util"
 
 	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/redis.v5"
 )
 
 func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
@@ -152,7 +151,7 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 		return
 	}
 
-	result := make(map[string]interface{}, 0)
+	result := make(metadata.HostMapStr, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
 	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	err = s.db.Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
@@ -195,13 +194,13 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	condition = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
-	result := make([]mapstr.MapStr, 0)
+	result := make([]metadata.HostMapStr, 0)
 	dbInst := s.db.Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
 	if 0 < len(fieldArr) {
 		dbInst.Fields(fieldArr...)
 	}
 	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
-		blog.Errorf("failed to query the host , err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -213,16 +212,20 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		return
 	}
 
+	info := make([]mapstr.MapStr, len(result))
+	for index, host := range result {
+		info[index] = mapstr.MapStr(host)
+	}
 	ctx.RespEntity(metadata.HostInfo{
 		Count: int(count),
-		Info:  result,
+		Info:  info,
 	})
 }
 
 func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	hostID := ctx.Request.PathParameter(common.BKHostIDField)
 	key := common.RedisSnapKeyPrefix + hostID
-	result, err := s.cache.Get(key).Result()
+	result, err := s.rds.Get(key).Result()
 	if nil != err && err != redis.Nil {
 		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
@@ -232,6 +235,68 @@ func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.HostSnap{
 		Data: result,
 	})
+}
+
+func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
+	input := metadata.HostSnapBatchInput{}
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(input.HostIDs) == 0 {
+		ctx.RespEntity(map[int64]string{})
+		return
+	}
+
+	keys := []string{}
+	for _, id := range input.HostIDs {
+		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
+	}
+
+	res, err := s.rds.MGet(keys...).Result()
+	if err != nil {
+		if err == redis.Nil {
+			ctx.RespEntity(map[int64]string{})
+			return
+		}
+		blog.Errorf("get host snapshot failed, keys: %#v, err: %v, rid: %s", keys, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
+		return
+	}
+
+	ret := make(map[int64]string)
+	for i, hostID := range input.HostIDs {
+		if res[i] == nil {
+			ret[hostID] = ""
+			continue
+		}
+		value, ok := res[i].(string)
+		if !ok {
+			blog.Errorf("GetHostSnapBatch failed, hostID: %d, value in redis is not type string, but tyep: %T, value:%#v, rid: %s", hostID, res[i], res[i], ctx.Kit.Rid)
+			ret[hostID] = ""
+			continue
+		}
+		ret[hostID] = value
+	}
+
+	ctx.RespEntity(ret)
+}
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (s *coreService) GetDistinctHostIDsByTopoRelation(ctx *rest.Contexts) {
+	inputData := &metadata.DistinctHostIDByTopoRelationRequest{}
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	hostIDArr, err := s.core.HostOperation().GetDistinctHostIDsByTopoRelation(ctx.Kit, inputData)
+	if err != nil {
+		blog.ErrorJSON("GetDistinctHostIDsByTopoRelation  error. err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(metadata.DistinctID{IDArr: hostIDArr})
 }
 
 func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {

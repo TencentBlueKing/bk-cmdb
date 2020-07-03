@@ -1,9 +1,9 @@
 const vendors = [{
-    id: 'tencent_cloud',
-    name: '腾讯云'
-}, {
-    id: 'aws',
+    id: '1',
     name: '亚马逊云'
+}, {
+    id: '2',
+    name: '腾讯云'
 }]
 
 export default vendors

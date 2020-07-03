@@ -15,7 +15,6 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -45,19 +44,21 @@ func (s *Service) CreateSetTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().CreateSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option)
-	if err != nil {
-		blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	var setTemplate metadata.SetTemplate
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		setTemplate, err = s.Engine.CoreAPI.CoreService().SetTemplate().CreateSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option)
+		if err != nil {
+			blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if err := s.AuthManager.RegisterSetTemplates(ctx.Kit.Ctx, ctx.Kit.Header, setTemplate); err != nil {
-		blog.Errorf("CreateSetTemplate failed, RegisterSetTemplates failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed))
-		return
-	}
-
 	ctx.RespEntity(setTemplate)
 }
 
@@ -82,45 +83,45 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().UpdateSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, setTemplateID, option)
-	if err != nil {
-		blog.Errorf("UpdateSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	filter := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKAppIDField:         bizID,
-			common.BKSetTemplateIDField: setTemplateID,
-		}),
-	}
-	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, filter)
-	if err != nil {
-		blog.Errorf("UpdateSetTemplate failed, ListSetTplRelatedSets failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	for _, item := range setInstanceResult.Data.Info {
-		set := metadata.SetInst{}
-		if err := mapstruct.Decode2Struct(item, &set); err != nil {
-			blog.ErrorJSON("UpdateSetTemplate failed, ListSetTplRelatedSets failed, set: %s, err: %s, rid: %s", item, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
-			return
+	var setTemplate metadata.SetTemplate
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		setTemplate, err = s.Engine.CoreAPI.CoreService().SetTemplate().UpdateSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, setTemplateID, option)
+		if err != nil {
+			blog.Errorf("UpdateSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			return err
 		}
-		if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, set.SetID); err != nil {
-			blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", set.SetID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(err.GetCode()))
-			return
-		}
-	}
 
-	if err := s.AuthManager.UpdateRegisteredSetTemplates(ctx.Kit.Ctx, ctx.Kit.Header, setTemplate); err != nil {
-		blog.Errorf("UpdateSetTemplate failed, UpdateRegisteredSetTemplates failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed))
+		filter := &metadata.QueryCondition{
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+			Condition: mapstr.MapStr(map[string]interface{}{
+				common.BKAppIDField:         bizID,
+				common.BKSetTemplateIDField: setTemplateID,
+			}),
+		}
+		setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, filter)
+		if err != nil {
+			blog.Errorf("UpdateSetTemplate failed, ListSetTplRelatedSets failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		for _, item := range setInstanceResult.Data.Info {
+			set := metadata.SetInst{}
+			if err := mapstruct.Decode2Struct(item, &set); err != nil {
+				blog.ErrorJSON("UpdateSetTemplate failed, ListSetTplRelatedSets failed, set: %s, err: %s, rid: %s", item, err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+			}
+			if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, set.SetID); err != nil {
+				blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", set.SetID, err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+			}
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(setTemplate)
@@ -140,25 +141,18 @@ func (s *Service) DeleteSetTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	iamResource, err := s.AuthManager.MakeResourcesBySetTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.EmptyAction, bizID, option.SetTemplateIDs...)
-	if err != nil {
-		blog.ErrorJSON("DeleteSetTemplate failed, MakeResourcesBySetTemplateIDs failed, bizID: %d, option: %s, err: %s, rid: %s", bizID, option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		if err := s.Engine.CoreAPI.CoreService().SetTemplate().DeleteSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
+			blog.Errorf("DeleteSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if err := s.Engine.CoreAPI.CoreService().SetTemplate().DeleteSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
-		blog.Errorf("DeleteSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if err := s.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResource...); err != nil {
-		blog.Errorf("DeleteSetTemplate failed, DeregisterResource failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-		return
-	}
-
 	ctx.RespEntity(nil)
 }
 
@@ -367,6 +361,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, &relationOption)
 	if err != nil {
@@ -502,6 +497,7 @@ func (s *Service) ListSetTplRelatedSetsWeb(ctx *rest.Contexts) {
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKSetIDField, common.BKHostIDField},
 	}
 	relations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, filter)
 	if err != nil {
@@ -591,6 +587,7 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 			},
+			Fields: []string{common.BKModuleIDField},
 		}
 		relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 		if err != nil {
@@ -635,15 +632,25 @@ func (s *Service) UpdateSetVersion(kit *rest.Kit, bizID, setID, setTemplateVersi
 			common.BKSetTemplateVersionField: setTemplateVersion,
 		},
 	}
-	updateResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, updateOption)
-	if err != nil {
-		blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, err: %+v, rid: %s", updateOption, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, s.EnableTxn, kit.Header, func() error {
+		updateResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, updateOption)
+		if err != nil {
+			blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, err: %+v, rid: %s", updateOption, err, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if ccErr := updateResult.CCError(); ccErr != nil {
+			blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, response: %+v, rid: %s", updateOption, updateResult, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		blog.Errorf("UpdateSetVersion failed, err: %v, rid: %s", txnErr, kit.Rid)
+		return txnErr.(errors.CCErrorCoder)
 	}
-	if ccErr := updateResult.CCError(); ccErr != nil {
-		blog.Errorf("UpdateSetVersion failed, UpdateInstance of set failed, option: %+v, response: %+v, rid: %s", updateOption, updateResult, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
+
 	return nil
 }
 
@@ -690,12 +697,18 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 		}
 	}
 
-	if err := s.Core.SetTemplateOperation().SyncSetTplToInst(ctx.Kit, bizID, setTemplateID, option); err != nil {
-		blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		if err := s.Core.SetTemplateOperation().SyncSetTplToInst(ctx.Kit, bizID, setTemplateID, option); err != nil {
+			blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
 	ctx.RespEntity(nil)
 }
 
@@ -821,6 +834,17 @@ func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	// 处理当前需要同步任务的状态
+	for _, info := range result.Info {
+		if !info.Status.IsFinished() {
+			go func(info metadata.SetTemplateSyncStatus) {
+				s.Core.SetTemplateOperation().TriggerCheckSetTemplateSyncingStatus(ctx.NewContexts().Kit, info.BizID, info.SetTemplateID, info.SetID)
+			}(info)
+		}
+
+	}
+
 	ctx.RespEntity(result)
 	return
 }

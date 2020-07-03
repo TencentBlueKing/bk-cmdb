@@ -53,7 +53,7 @@
                     <label class="filter-label">{{getFilterLabel(filterItem)}}</label>
                     <div class="filter-condition">
                         <filter-operator class="filter-operator"
-                            v-if="!['date', 'time'].includes(filterItem.bk_property_type)"
+                            v-if="!['date', 'time', 'category'].includes(filterItem.bk_property_type)"
                             v-model="filterItem.operator"
                             :type="getOperatorType(filterItem)">
                         </filter-operator>
@@ -80,13 +80,18 @@
                             class="filter-value"
                             v-model="filterItem.value">
                         </cmdb-cloud-selector>
+                        <cmdb-service-category
+                            v-else-if="filterItem.bk_property_id === 'service_category_id'"
+                            class="filter-value"
+                            v-model="filterItem.value">
+                        </cmdb-service-category>
                         <component class="filter-value"
                             v-else
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
                             :unit="filterItem.unit"
                             v-model="filterItem.value">
                         </component>
-                        <i class="bk-icon icon-close" @click.stop="handleDeteleFilter(filterItem)"></i>
+                        <i class="bk-icon icon-close" @click.stop="handleDeleteFilter(filterItem)"></i>
                     </div>
                 </div>
                 <div class="filter-add">
@@ -158,6 +163,8 @@
     import { mapState, mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus'
+    import RouterQuery from '@/router/query'
+    import { getIPPayload } from '@/utils/host'
     export default {
         components: {
             filterOperator,
@@ -180,7 +187,7 @@
                 text: '',
                 inner: true,
                 outer: true,
-                exact: false
+                exact: true
             }
             return {
                 ip: {
@@ -196,7 +203,7 @@
             }
         },
         computed: {
-            ...mapState('hosts', ['filterList', 'filterIP', 'collection', 'isHostSearch']),
+            ...mapState('hosts', ['filterList', 'collection', 'shouldInjectAsset']),
             ...mapGetters('hosts', ['isCollection']),
             isFilterActive () {
                 const hasIP = !!this.ip.text.replace(/\n|;|；|,|，/g, '').length
@@ -215,9 +222,6 @@
         watch: {
             filterList (newList, oldList) {
                 this.setFilterCondition()
-            },
-            filterIP (value) {
-                this.initCustomFilterIP()
             },
             filterCondition () {
                 this.checkIsScrolling()
@@ -238,41 +242,41 @@
                     resolve()
                 }
             })
-            await this.initCustomFilterIP()
+            this.unwatch = RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
+                ip = '',
+                exact = this.ip.exact ? '1' : '0',
+                inner = this.ip.inner ? '1' : '0',
+                outer = this.ip.outer ? '1' : '0'
+            }) => {
+                this.ip.text = ip.split(',').join('\n')
+                this.ip.exact = parseInt(exact) === 1
+                this.ip.inner = parseInt(inner) === 1
+                this.ip.outer = parseInt(outer) === 1
+            }, { immediate: true })
             await this.initCustomFilterList()
-            this.isHostSearch && this.handleSearch()
         },
         beforeDestroy () {
             Bus.$off('toggle-host-filter', this.handleToggleFilter)
             Bus.$off('reset-host-filter', this.handleReset)
+            this.unwatch()
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
-            initCustomFilterIP () {
-                if (this.filterIP) {
-                    Object.assign(this.ip, this.filterIP)
-                } else {
-                    this.ip = { ...this.defaultIpConfig }
-                }
-            },
             initCustomFilterList () {
                 const key = this.$route.meta.filterPropertyKey
                 const customData = this.$store.getters['userCustom/getCustomData'](key, [])
                 if (!customData.length && !this.isCollection) {
-                    customData.push(...[
-                        {
-                            bk_obj_id: 'host',
-                            bk_property_id: 'operator',
-                            operator: '',
-                            value: ''
-                        },
-                        {
-                            bk_obj_id: 'host',
-                            bk_property_id: 'bk_cloud_id',
-                            operator: '',
-                            value: ''
-                        }
-                    ])
+                    customData.push({
+                        bk_obj_id: 'host',
+                        bk_property_id: 'operator',
+                        operator: '$eq',
+                        value: ''
+                    }, {
+                        bk_obj_id: 'host',
+                        bk_property_id: 'bk_cloud_id',
+                        operator: '$eq',
+                        value: ''
+                    })
                 }
                 this.$store.commit('hosts/setFilterList', customData)
             },
@@ -290,9 +294,11 @@
                 }
             },
             handleAddFilter () {
+                // fix遮盖层问题
+                window.__bk_zIndex_manager.nextZIndex()
                 this.$refs.propertySelector.isShow = true
             },
-            async handleDeteleFilter (filterItem) {
+            async handleDeleteFilter (filterItem) {
                 const conditionList = this.filterCondition.filter(item => !(item.bk_obj_id === filterItem.bk_obj_id && item.bk_property_id === filterItem.bk_property_id))
                 const list = conditionList.map(condition => {
                     return {
@@ -315,14 +321,13 @@
                         [key]: userCustomList
                     })
                 }
+                this.$store.commit('hosts/setShouldInjectAsset', false)
                 this.$store.commit('hosts/setFilterList', list)
             },
             handleSearch (toggle = true) {
                 const params = this.getParams()
-                this.$store.commit('hosts/setFilterParams', params)
-                if (toggle) {
-                    this.handleToggleFilter()
-                }
+                this.updateQuery(params)
+                toggle && this.handleToggleFilter()
             },
             handleCreateCollection () {
                 const instance = this.$refs.collectionPopover.instance
@@ -395,21 +400,22 @@
                     filterItem.value = ''
                 })
                 const params = this.getParams()
-                this.$store.commit('hosts/setFilterParams', params)
+                this.updateQuery(params)
             },
             getParams () {
+                const inputIPPlayload = {
+                    data: this.getIPList(),
+                    inner: this.ip.inner,
+                    outer: this.ip.outer,
+                    exact: this.ip.exact
+                }
                 const params = {
-                    ip: {
-                        data: this.getIPList(),
-                        exact: this.ip.exact ? 1 : 0,
-                        flag: ['bk_host_innerip', 'bk_host_outerip'].filter((flag, index) => {
-                            return index === 0 ? this.ip.inner : this.ip.outer
-                        }).join('|')
-                    },
+                    ip: getIPPayload(inputIPPlayload),
                     host: [],
                     module: [],
                     set: [],
-                    biz: []
+                    biz: [],
+                    object: []
                 }
                 this.filterCondition.forEach(filterItem => {
                     const filterValue = filterItem.value
@@ -426,17 +432,49 @@
                                 value: filterItem.value[1]
                             }])
                         } else {
+                            let operator = filterItem.operator
+                            let value = filterValue
+
+                            if (['category', 'organization'].includes(filterItem.bk_property_type)) {
+                                operator = '$in'
+                            }
+
+                            if (filterItem.operator === '$multilike' || ['bk_set_name', 'bk_module_name'].includes(filterItem.bk_property_id)) {
+                                value = filterValue.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
+                            }
+
                             params[modelId].push({
                                 field: filterItem.bk_property_id,
-                                operator: filterItem.operator,
-                                value: filterItem.operator === '$multilike'
-                                    ? filterValue.split('\n').filter(str => str.trim().length).map(str => str.trim())
-                                    : filterValue
+                                operator,
+                                value
                             })
                         }
                     }
                 })
                 return params
+            },
+            updateQuery (params) {
+                this.$store.commit('hosts/setCondition', ['biz', 'set', 'module', 'host', 'object'].map(modelId => {
+                    return {
+                        bk_obj_id: modelId,
+                        fields: [],
+                        condition: params[modelId]
+                    }
+                }))
+                const flags = params.ip.flag.split('|')
+                const query = {
+                    ip: params.ip.data.join(','),
+                    exact: params.ip.exact,
+                    inner: flags.includes('bk_host_innerip') ? 1 : 0,
+                    outer: flags.includes('bk_host_outerip') ? 1 : 0,
+                    page: 1,
+                    _t: Date.now()
+                }
+                const assetCondition = params.host.find(condition => {
+                    return condition.field === 'bk_asset_id' && condition.operator === '$in'
+                })
+                query.bk_asset_id = assetCondition ? assetCondition.value.toString() : ''
+                RouterQuery.set(query)
             },
             getIPList () {
                 const list = []
@@ -482,9 +520,35 @@
                             }
                         }
                     })
+                    this.injectAssetCondition(filterCondition)
                     this.filterCondition = filterCondition
                 } catch (e) {
                     console.error(e)
+                }
+            },
+            injectAssetCondition (filterCondition) {
+                const assetIds = RouterQuery.get('bk_asset_id', '').split(',').filter(id => !!id.length)
+                if (!this.shouldInjectAsset || !assetIds.length) {
+                    this.$store.commit('hosts/setShouldInjectAsset', true)
+                    return
+                }
+                const injectCondition = {
+                    bk_obj_id: 'host',
+                    bk_property_id: 'bk_asset_id',
+                    bk_property_type: 'singlechar',
+                    operator: '$in',
+                    option: '',
+                    value: assetIds.join('\n')
+                }
+                const assetCondition = filterCondition.find(condition => {
+                    return condition.bk_obj_id === injectCondition.bk_obj_id
+                        && condition.bk_property_id === injectCondition.bk_property_id
+                        && condition.bk_property_type === injectCondition.bk_property_type
+                })
+                if (assetCondition) {
+                    Object.assign(assetCondition, injectCondition)
+                } else {
+                    filterCondition.unshift(injectCondition)
                 }
             },
             checkIsScrolling () {
@@ -538,8 +602,13 @@
         padding: 0;
         line-height: 30px;
     }
-    .filter-trigger.is-active {
-        color: #3A84FF;
+    .filter-trigger {
+        &.is-active {
+            color: #3A84FF;
+            &:hover {
+                color: #3A84FF;
+            }
+        }
     }
     .filter-title {
         position: relative;
@@ -550,9 +619,14 @@
             position: absolute;
             right: 0px;
             top: 0px;
+            font-size: 20px;
             color: #979BA5;
             &:hover {
                 color: #63656E;
+            }
+
+            /deep/ .bk-icon {
+                font-size: 22px;
             }
         }
     }

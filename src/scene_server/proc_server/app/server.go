@@ -17,8 +17,7 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -68,26 +67,18 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 	procSvr.Config.Mongo = &mongo
-	authConf, err := engine.WithAuth()
-	if err != nil {
-		return err
-	}
-
-	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("new authorize failed, err: %v", err)
-	}
 
 	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, nil, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
-	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
+	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI)
 	procSvr.Engine = engine
 	procSvr.EsbSrv = esbSrv
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
 	}
+	procSvr.EnableTxn = op.EnableTxn
 
 	err = backbone.StartServer(ctx, cancel, engine, procSvr.WebService(), true)
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 
 var accountData1 = map[string]interface{}{
 	"bk_account_name": "awsAccount1",
-	"bk_cloud_vendor": "aws",
+	"bk_cloud_vendor": "1",
 	"bk_secret_id":    "aaaaa",
 	"bk_secret_key":   "bbbbb",
 	"bk_description":  "aws账户1",
@@ -22,7 +22,7 @@ var accountData1 = map[string]interface{}{
 
 var accountData2 = map[string]interface{}{
 	"bk_account_name": "tcAccount1",
-	"bk_cloud_vendor": "tencent_cloud",
+	"bk_cloud_vendor": "2",
 	"bk_secret_id":    "ccccc",
 	"bk_secret_key":   "ddddd",
 	"bk_description":  "腾讯云账户1",
@@ -32,7 +32,7 @@ var accountData2 = map[string]interface{}{
 func NewTmpAccount() map[string]interface{} {
 	return map[string]interface{}{
 		"bk_account_name": "tmpAccount",
-		"bk_cloud_vendor": "tencent_cloud",
+		"bk_cloud_vendor": "2",
 		"bk_secret_id":    "eeeee",
 		"bk_secret_key":   "fffff",
 		"bk_description":  "腾讯云临时账户",
@@ -44,6 +44,8 @@ func NewTmpAccount() map[string]interface{} {
 func clearData() {
 	//删除云账户表
 	err := test.GetDB().DropTable(context.Background(), common.BKTableNameCloudAccount)
+	Expect(err).NotTo(HaveOccurred())
+	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameCloudAccount)
 	Expect(err).NotTo(HaveOccurred())
 	//删除云账户id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudAccount})

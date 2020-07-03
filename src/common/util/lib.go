@@ -16,13 +16,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync/atomic"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+
 	"github.com/emicklei/go-restful"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
@@ -127,21 +127,6 @@ func IsExistSupplierID(header http.Header) bool {
 	return true
 }
 
-// GetHTTPCCTransaction return config center request id from http header
-func GetHTTPCCTransaction(header http.Header) string {
-	rid := header.Get(common.BKHTTPCCTransactionID)
-	return rid
-}
-
-// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
-func IsNil(value interface{}) bool {
-	rflValue := reflect.ValueOf(value)
-	if rflValue.IsValid() {
-		return rflValue.IsNil()
-	}
-	return true
-}
-
 type AtomicBool int32
 
 func NewBool(yes bool) *AtomicBool {
@@ -214,4 +199,19 @@ func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
 	}
 	language := GetLanguage(header)
 	return globalCCError.CreateDefaultCCErrorIf(language)
+}
+
+func CCHeader(header http.Header) http.Header {
+	newHeader := make(http.Header, 0)
+	newHeader.Add(common.BKHTTPCCRequestID, header.Get(common.BKHTTPCCRequestID))
+	newHeader.Add(common.BKHTTPCookieLanugageKey, header.Get(common.BKHTTPCookieLanugageKey))
+	newHeader.Add(common.BKHTTPHeaderUser, header.Get(common.BKHTTPHeaderUser))
+	newHeader.Add(common.BKHTTPLanguage, header.Get(common.BKHTTPLanguage))
+	newHeader.Add(common.BKHTTPOwner, header.Get(common.BKHTTPOwner))
+	newHeader.Add(common.BKHTTPOwnerID, header.Get(common.BKHTTPOwnerID))
+	newHeader.Add(common.BKHTTPRequestAppCode, header.Get(common.BKHTTPRequestAppCode))
+	newHeader.Add(common.BKHTTPRequestRealIP, header.Get(common.BKHTTPRequestRealIP))
+	newHeader.Add(common.BKHTTPSupplierID, header.Get(common.BKHTTPSupplierID))
+
+	return newHeader
 }

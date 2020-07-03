@@ -21,11 +21,12 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
-	"configcenter/src/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/redis"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -60,21 +61,27 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	authConf, err := engine.WithAuth()
+	redisConf, err := engine.WithRedis()
 	if err != nil {
 		return err
 	}
-	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
+	cache, err := redis.NewFromConfig(redisConf)
 	if err != nil {
-		return fmt.Errorf("new authorize failed, err: %v", err)
+		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 	}
-	blog.Infof("enable authcenter: %v", authorize.Enabled())
 
-	svc.SetConfig(engine, client, engine.Discovery(), authorize)
+	limiter := service.NewLimiter(engine.ServiceManageClient().Client())
+	err = limiter.SyncLimiterRules()
+	if err != nil {
+		blog.Infof("SyncLimiterRules failed, err: %v", err)
+		return err
+	}
+
+	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, limiter)
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
-	for _, item := range svc.WebServices(authConf) {
+	for _, item := range svc.WebServices() {
 		ctnr.Add(item)
 	}
 	apiSvr.Core = engine

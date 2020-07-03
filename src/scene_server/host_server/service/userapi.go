@@ -18,13 +18,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Response) {
@@ -62,23 +62,26 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 	}
 
 	ucq.CreateUser = srvData.user
-	result, err := s.CoreAPI.CoreService().Host().AddUserConfig(srvData.ctx, srvData.header, ucq)
-	if err != nil {
-		blog.Errorf("GetUserCustom http do error, err:%s, input:%+v,rid:%s", err.Error(), ucq, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("GetUserCustom http response error, err code:%d,err msg:%s, input:%+v,rid:%s", result.Code, result.ErrMsg, ucq, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
-	if err := s.AuthManager.RegisterDynamicGroupByID(srvData.ctx, srvData.header, result.Data.ID); err != nil {
-		blog.Errorf("AddUserCustomQuery register user api failed, err: %+v, rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
-		return
-	}
 
+	var result *meta.IDResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		var err error
+		result, err = s.CoreAPI.CoreService().Host().AddUserConfig(srvData.ctx, srvData.header, ucq)
+		if err != nil {
+			blog.Errorf("GetUserCustom http do error, err:%s, input:%+v,rid:%s", err.Error(), ucq, srvData.rid)
+			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !result.Result {
+			blog.Errorf("GetUserCustom http response error, err code:%d,err msg:%s, input:%+v,rid:%s", result.Code, result.ErrMsg, ucq, srvData.rid)
+			return srvData.ccErr.New(result.Code, result.ErrMsg)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
+		return
+	}
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     result.Data,
@@ -111,31 +114,30 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 		}
 	}
 
-	bizID := req.PathParameter("bk_biz_id")
-	result, err := s.CoreAPI.CoreService().Host().UpdateUserConfig(srvData.ctx, bizID, req.PathParameter("id"), srvData.header, params)
-	if err != nil {
-		blog.Errorf("UpdateUserCustomQuery http do error,err:%s, biz:%v,input:%+v,rid:%s", err.Error(), bizID, params, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("UpdateUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,input:%+v,rid:%s", result.Code, result.ErrMsg, bizID, params, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		bizID := req.PathParameter("bk_biz_id")
+		result, err := s.CoreAPI.CoreService().Host().UpdateUserConfig(srvData.ctx, bizID, req.PathParameter("id"), srvData.header, params)
+		if err != nil {
+			blog.Errorf("UpdateUserCustomQuery http do error,err:%s, biz:%v,input:%+v,rid:%s", err.Error(), bizID, params, srvData.rid)
+			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !result.Result {
+			blog.Errorf("UpdateUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,input:%+v,rid:%s", result.Code, result.ErrMsg, bizID, params, srvData.rid)
+			return srvData.ccErr.New(result.Code, result.ErrMsg)
+		}
+		
+		return nil
+	})
 
-	id := req.PathParameter("id")
-	if err := s.AuthManager.UpdateRegisteredDynamicGroupByID(srvData.ctx, srvData.header, id); err != nil {
-		blog.Errorf("UpdateRegisteredDynamicGroupByID failed, dynamicgroupid: %s, err:%+v, rid:%s", id, err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-
+	
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     nil,
 	})
-	return
 }
 
 func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Response) {
@@ -158,29 +160,28 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	result, err := s.CoreAPI.CoreService().Host().DeleteUserConfig(srvData.ctx, appID, dynamicID, srvData.header)
-	if err != nil {
-		blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v, rid:%s", err.Error(), appID, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("DeleteUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,rid:%s", result.Code, result.ErrMsg, appID, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		result, err := s.CoreAPI.CoreService().Host().DeleteUserConfig(srvData.ctx, appID, dynamicID, srvData.header)
+		if err != nil {
+			blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v, rid:%s", err.Error(), appID, srvData.rid)
+			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !result.Result {
+			blog.Errorf("DeleteUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,rid:%s", result.Code, result.ErrMsg, appID, srvData.rid)
+			return srvData.ccErr.New(result.Code, result.ErrMsg)
+		}
 
-	if err := s.AuthManager.DeregisterDynamicGroupByID(srvData.ctx, srvData.header, dyResult.Data); err != nil {
-		blog.Errorf("GetUserCustom deregister user api failed, err: %+v, rid: %s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     nil,
 	})
-
 }
 
 func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Response) {

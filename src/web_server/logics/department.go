@@ -19,12 +19,18 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
 	commonutil "configcenter/src/common/util"
+	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-gonic/gin"
 )
 
 // GetDepartment get department info from paas
-func (lgc *Logics) GetDepartment(c *gin.Context) (*metadata.DepartmentData, errors.CCErrorCoder) {
+func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metadata.DepartmentData, errors.CCErrorCoder) {
+	// if no esb config, return
+	if _, ok := config.ConfigMap["esb.addr"]; !ok {
+		return &metadata.DepartmentData{}, nil
+	}
+
 	header := c.Request.Header
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
 	rid := commonutil.GetHTTPCCRequestID(header)
@@ -43,7 +49,12 @@ func (lgc *Logics) GetDepartment(c *gin.Context) (*metadata.DepartmentData, erro
 }
 
 // GetDepartmentProfile get department profile from paas
-func (lgc *Logics) GetDepartmentProfile(c *gin.Context) (*metadata.DepartmentProfileData, errors.CCErrorCoder) {
+func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) (*metadata.DepartmentProfileData, errors.CCErrorCoder) {
+	// if no esb config, return
+	if _, ok := config.ConfigMap["esb.addr"]; !ok {
+		return &metadata.DepartmentProfileData{}, nil
+	}
+
 	header := c.Request.Header
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
 	rid := commonutil.GetHTTPCCRequestID(header)

@@ -93,6 +93,15 @@ type GetHostSnapResult struct {
 	Data     HostSnap `json:"data"`
 }
 
+type HostSnapBatchInput struct {
+	HostIDs []int64 `json:"host_ids"`
+}
+
+type GetHostSnapBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     map[int64]string `json:"data"`
+}
+
 type GetHostModuleIDsResult struct {
 	BaseResp `json:",inline"`
 	Data     []int64 `json:"data"`
@@ -217,4 +226,13 @@ type TransferHostToInnerModule struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	ModuleID      int64   `json:"bk_module_id"`
 	HostID        []int64 `json:"bk_host_id"`
+}
+
+type DistinctIDResponse struct {
+	BaseResp `json:",inline"`
+	Data     DistinctID `json:"data"`
+}
+
+type DistinctID struct {
+	IDArr []int64 `json:"id_arr"`
 }

@@ -100,7 +100,7 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 
 	err := s.db.Table(common.BKTableNameSystem).Upsert(s.ctx, cond, data)
 	if err != nil {
-		blog.ErrorJSON("UserConfigSwitch set key %s value %s error. err:%s, rid:%s", key, canModify, rid)
+		blog.ErrorJSON("UserConfigSwitch set key %s value %s error. err:%s, rid:%s", key, canModify, err, rid)
 		resp.WriteError(http.StatusBadGateway, defErr.Error(common.CCErrCommDBUpdateFailed))
 		return
 	}

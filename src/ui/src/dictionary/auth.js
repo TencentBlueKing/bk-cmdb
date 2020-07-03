@@ -123,6 +123,10 @@ export const D_SET_TEMPLATE = 'setTemplate.delete'
 // 主机属性自动应用
 export const U_HOST_APPLY = 'hostApply.update'
 
+// 管理员
+export const R_CONFIG_ADMIN = 'configAdmin.find'
+export const U_CONFIG_ADMIN = 'configAdmin.update'
+
 export const RESOURCE_TYPE_NAME = {
     modelClassification: i18n.t('模型分类'),
     model: i18n.t('模型'),
@@ -165,7 +169,7 @@ export const RESOURCE_ACTION_NAME = {
     modelTopologyView: i18n.t('模型拓扑视图')
 }
 
-const AUTH_META_KEYS = ['bk_biz_id', 'parent_layers', 'resource_id']
+const AUTH_META_KEYS = ['bk_biz_id', 'parent_layers', 'resource_id', 'resource_name']
 
 export const GET_AUTH_META = (auth, options = {}) => {
     const [type, action] = auth.split('.')

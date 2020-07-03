@@ -209,7 +209,7 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 			remoteHostsMap[host.InstanceId] = &metadata.CloudHost{
 				Instance:   *host,
 				CloudID:    hostRes.CloudID,
-				VendorName: metadata.VendorNameIDs[hostResource.AccountConf.VendorName],
+				VendorName: hostResource.AccountConf.VendorName,
 				SyncDir:    hostRes.Vpc.SyncDir,
 			}
 		}
@@ -375,10 +375,10 @@ func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *metadata.CloudAccountConf) (int64, error) {
 	cloudArea := map[string]interface{}{
 		common.BKCloudNameField:  fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
-		common.BKCloudVendor:     metadata.VendorNameIDs[accountConf.VendorName],
+		common.BKCloudVendor:     accountConf.VendorName,
 		common.BKVpcID:           vpc.VpcID,
 		common.BKVpcName:         vpc.VpcName,
-		common.BKReion:           vpc.Region,
+		common.BKRegion:          vpc.Region,
 		common.BKCloudAccountID:  accountConf.AccountID,
 		common.BKCreator:         common.BKCloudSyncUser,
 		common.BKLastEditor:      common.BKCloudSyncUser,

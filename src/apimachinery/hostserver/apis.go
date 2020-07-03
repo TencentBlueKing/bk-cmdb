@@ -61,6 +61,20 @@ func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.He
 	return
 }
 
+func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.HostSnapBatchResult, err error){
+	subPath := "/hosts/snapshot/batch"
+
+	err = hs.client.Get().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+
 func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/add"
@@ -557,6 +571,21 @@ func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data m
 
 	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error) {
+
+	resp = new(metadata.CreateManyCloudAreaResult)
+	subPath := "/createmany/cloudarea"
 
 	err = hs.client.Post().
 		WithContext(ctx).

@@ -14,8 +14,8 @@ package dal
 
 import (
 	"context"
-	"net/http"
 
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
 )
 
@@ -45,21 +45,9 @@ type DB interface {
 	IsNotFoundError(error) bool
 
 	Close() error
-
-	Transaction
-}
-
-// Transaction interface
-type Transaction interface {
-	// StartTransaction 开启新事务
-	StartTransaction(ctx *context.Context, h http.Header, opts ...types.TxnOption) (Transaction, error)
+	
 	// CommitTransaction 提交事务
-	CommitTransaction(context.Context) error
+	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务
-	AbortTransaction(context.Context) error
-
-	// AutoRun Interface for automatic processing of encapsulated transactions
-	// f func return error, abort commit, other commit transaction. transaction commit can be error.
-	// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
-	// AutoRun(ctx context.Context, opt TxnWrapperOption, f func(header http.Header) error) error
+	AbortTransaction(context.Context, *metadata.TxnCapable) error
 }

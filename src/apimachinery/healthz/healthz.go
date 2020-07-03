@@ -66,6 +66,12 @@ func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	case types.CC_MODULE_CORESERVICE:
 		h.capability.Discover = h.disc.CoreService()
 
+	case types.CC_MODULE_OPERATION:
+		h.capability.Discover = h.disc.OperationServer()
+
+	case types.CC_MODULE_TASK:
+		h.capability.Discover = h.disc.TaskServer()
+
 	case types.CC_MODULE_CLOUD:
 		h.capability.Discover = h.disc.CloudServer()
 

@@ -13,39 +13,76 @@
 package iam
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
-// ResourceTypeID is resource's type in auth center.
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
-	var err error
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
+// convert cc auth attributes to iam resources TODO add resource attributes when attribute filter is enabled
+func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
+	resources := make([]types.Resource, len(attributes))
+	for index, attribute := range attributes {
+		info := types.Resource{
+			System: SystemIDCMDB,
+		}
 
-	resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
-	if err != nil {
-		return nil, err
+		resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
+		if err != nil {
+			return nil, err
+		}
+		info.Type = types.ResourceType(*resourceTypeID)
+
+		resourceIDArr, err := GenerateResourceID(ResourceTypeID(info.Type), &attribute)
+		if err != nil {
+			return nil, err
+		}
+		resourceIDArrLen := len(resourceIDArr)
+		if resourceIDArrLen == 0 {
+			resources[index] = info
+			continue
+		}
+		// no biz or parent parentPath related, no need to fill parentPath attribute
+		if attribute.BusinessID <= 0 && resourceIDArrLen == 1 {
+			info.ID = resourceIDArr[0].ResourceID
+			resources[index] = info
+			continue
+		}
+
+		// generate iam path attribute by biz and parent layer
+		pathArr := make([]string, 0)
+		if attribute.BusinessID > 0 {
+			businessPath := "/" + string(Business) + "," + strconv.FormatInt(attribute.BusinessID, 10) + "/"
+			pathArr = append(pathArr, businessPath)
+		}
+		var parentPath bytes.Buffer
+		parentPath.WriteByte('/')
+		for i := 0; i < resourceIDArrLen-1; i++ {
+			resourceIDAndType := resourceIDArr[i]
+			parentPath.WriteString(string(resourceIDAndType.ResourceType))
+			parentPath.WriteByte(',')
+			parentPath.WriteString(resourceIDAndType.ResourceID)
+			parentPath.WriteByte('/')
+		}
+		if parentPath.Len() > 0 {
+			pathArr = append(pathArr, parentPath.String())
+		}
+
+		info.Attribute = map[string]interface{}{
+			types.IamPathKey: pathArr,
+		}
+		info.ID = resourceIDArr[resourceIDArrLen-1].ResourceID
+		resources[index] = info
 	}
-	info.ResourceType = *resourceTypeID
 
-	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
-	if err != nil {
-		return nil, err
-	}
-
-	return info, nil
+	return resources, nil
 }
 
 func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
@@ -82,13 +119,9 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.Plat:
 		iamResourceType = SysCloudArea
 	case meta.HostInstance:
-		if businessID <= 0 {
-			iamResourceType = SysHostInstance
-		} else {
-			iamResourceType = BizHostInstance
-		}
+		iamResourceType = Host
 	case meta.HostFavorite:
-		iamResourceType = BizHostInstance
+		iamResourceType = Host
 	case meta.Process:
 		iamResourceType = BizProcessServiceInstance
 	case meta.EventPushing:
@@ -100,7 +133,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.SystemBase:
 		iamResourceType = SysSystemBase
 	case meta.UserCustom:
-		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
+		iamResourceType = UserCustom
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	case meta.ProcessServiceTemplate:
@@ -123,6 +156,10 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysCloudAccount
 	case meta.CloudResourceTask:
 		iamResourceType = SysCloudResourceTask
+	case meta.EventWatch:
+		iamResourceType = SysEventWatch
+	case meta.ConfigAdmin:
+		iamResourceType = SysSystemBase
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -131,6 +168,10 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 }
 
 func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (ResourceActionID, error) {
+	if action == meta.SkipAction {
+		return Skip, nil
+	}
+
 	convertAction := action
 	switch action {
 	case meta.CreateMany:
@@ -161,285 +202,283 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		}
 	}
 
-	resourceActionMap := map[meta.ResourceType]map[meta.Action]ResourceActionID{
-		meta.ModelInstance: {
-			meta.Delete: DeleteInstance,
-			meta.Update: EditInstance,
-			meta.Create: CreateInstance,
-			meta.Find:   FindInstance,
-		},
-		meta.ModelAttributeGroup: {
-			meta.Delete: EditModel,
-			meta.Update: EditModel,
-			meta.Create: EditModel,
-		},
-		meta.ModelUnique: {
-			meta.Delete: EditModel,
-			meta.Update: EditModel,
-			meta.Create: EditModel,
-		},
-		meta.Business: {
-			meta.Archive: ArchiveBusiness,
-			meta.Create:  CreateBusiness,
-			meta.Update:  EditBusiness,
-			meta.Find:    FindBusiness,
-		},
-		meta.DynamicGrouping: {
-			meta.Delete:  DeleteBusinessCustomQuery,
-			meta.Update:  EditBusinessCustomQuery,
-			meta.Create:  CreateBusinessCustomQuery,
-			meta.Find:    FindBusinessCustomQuery,
-			meta.Execute: FindBusinessCustomQuery,
-		},
-		meta.MainlineModel: {
-			meta.Find:   EditBusinessLayer,
-			meta.Create: EditBusinessLayer,
-			meta.Delete: EditBusinessLayer,
-		},
-		meta.ModelTopology: {
-			meta.Find:   EditModelTopologyView,
-			meta.Update: EditModelTopologyView,
-		},
-		meta.MainlineModelTopology: {
-			meta.Find:   EditBusinessLayer,
-			meta.Update: EditBusinessLayer,
-		},
-		meta.Process: {
-			meta.BoundModuleToProcess:   EditBusinessServiceInstance,
-			meta.UnboundModuleToProcess: EditBusinessServiceInstance,
-		},
-		meta.HostInstance: {
-			meta.MoveResPoolHostToBizIdleModule: ResourcePoolHostTransferToBusiness,
-			meta.MoveResPoolHostToDirectory:     ResourcePoolHostTransferToDirectory,
-			meta.MoveHostFromModuleToResPool:    BusinessHostTransferToResourcePool,
-			meta.AddHostToResourcePool:          CreateResourcePoolHost,
-			meta.Create:                         CreateResourcePoolHost,
-			meta.Delete:                         DeleteResourcePoolHost,
-			meta.MoveHostToBizFaultModule:       EditBusinessHost,
-			meta.MoveHostToBizIdleModule:        EditBusinessHost,
-			meta.MoveHostToBizRecycleModule:     EditBusinessHost,
-			meta.MoveHostToAnotherBizModule:     EditBusinessHost,
-			meta.CleanHostInSetOrModule:         EditBusinessHost,
-			meta.TransferHost:                   EditBusinessHost,
-			meta.MoveBizHostToModule:            EditBusinessHost,
-		},
-		meta.ProcessServiceCategory: {
-			meta.Delete: DeleteBusinessServiceCategory,
-			meta.Update: EditBusinessServiceCategory,
-			meta.Create: CreateBusinessServiceCategory,
-		},
-		meta.ProcessServiceInstance: {
-			meta.Delete: DeleteBusinessServiceInstance,
-			meta.Update: EditBusinessServiceInstance,
-			meta.Create: CreateBusinessServiceInstance,
-		},
-		meta.ProcessServiceTemplate: {
-			meta.Delete: DeleteBusinessServiceTemplate,
-			meta.Update: EditBusinessServiceTemplate,
-			meta.Create: CreateBusinessServiceTemplate,
-		},
-		meta.SetTemplate: {
-			meta.Delete: DeleteBusinessSetTemplate,
-			meta.Update: EditBusinessSetTemplate,
-			meta.Create: CreateBusinessSetTemplate,
-		},
-		meta.ModelModule: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.ModelSet: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.MainlineInstance: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.MainlineInstanceTopology: {
-			meta.Delete: DeleteBusinessTopology,
-			meta.Update: EditBusinessTopology,
-			meta.Create: CreateBusinessTopology,
-		},
-		meta.HostApply: {
-			meta.Update: EditBusinessHostApply,
-		},
-		meta.ResourcePoolDirectory: {
-			meta.Delete: DeleteResourcePoolDirectory,
-			meta.Update: EditResourcePoolDirectory,
-			meta.Create: CreateResourcePoolDirectory,
-		},
-		meta.Plat: {
-			meta.Delete: DeleteCloudArea,
-			meta.Update: EditCloudArea,
-			meta.Create: CreateCloudArea,
-		},
-		meta.EventPushing: {
-			meta.Delete: DeleteEventPushing,
-			meta.Update: EditEventPushing,
-			meta.Create: CreateEventPushing,
-			meta.Find:   FindEventPushing,
-		},
-		meta.CloudAccount: {
-			meta.Delete: DeleteCloudAccount,
-			meta.Update: EditCloudAccount,
-			meta.Create: CreateCloudAccount,
-			meta.Find:   FindCloudAccount,
-		},
-		meta.CloudResourceTask: {
-			meta.Delete: DeleteCloudResourceTask,
-			meta.Update: EditCloudResourceTask,
-			meta.Create: CreateCloudResourceTask,
-			meta.Find:   FindCloudResourceTask,
-		},
-		meta.Model: {
-			meta.Delete: DeleteModel,
-			meta.Update: EditModel,
-			meta.Create: CreateModel,
-			meta.Find:   FindModel,
-		},
-		meta.AssociationType: {
-			meta.Delete: DeleteAssociationType,
-			meta.Update: EditAssociationType,
-			meta.Create: CreateAssociationType,
-		},
-		meta.ModelClassification: {
-			meta.Delete: DeleteModelGroup,
-			meta.Update: EditModelGroup,
-			meta.Create: CreateModelGroup,
-		},
-		meta.OperationStatistic: {
-			meta.Update: EditOperationStatistic,
-			meta.Find:   FindOperationStatistic,
-		},
-		meta.AuditLog: {
-			meta.Find: FindAuditLog,
-		},
-	}
 	if _, exist := resourceActionMap[resourceType]; exist {
 		actionID, ok := resourceActionMap[resourceType][convertAction]
-		if ok {
+		if ok && actionID != Unsupported {
 			return actionID, nil
 		}
 	}
-	return Unknown, fmt.Errorf("unsupported action: %s", action)
+	return Unsupported, fmt.Errorf("unsupported action: %s", action)
 }
 
-func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
-	ctx := util.NewContextFromHTTPHeader(header)
-
-	result, err := clientSet.TopoServer().Instance().GetAppBasicInfo(ctx, header, bizID)
-	if err != nil {
-		return "", err
-	}
-	if result.Code == common.CCNoPermission {
-		return "", nil
-	}
-	if !result.Result {
-		return "", errors.New(result.ErrMsg)
-	}
-	bizName := result.Data.BizName
-	return bizName, nil
+var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
+	meta.ModelInstance: {
+		meta.Delete: DeleteInstance,
+		meta.Update: EditInstance,
+		meta.Create: CreateInstance,
+		meta.Find:   FindInstance,
+	},
+	meta.ModelAttributeGroup: {
+		meta.Delete: EditModel,
+		meta.Update: EditModel,
+		meta.Create: EditModel,
+		meta.Find:   Skip,
+	},
+	meta.ModelUnique: {
+		meta.Delete: EditModel,
+		meta.Update: EditModel,
+		meta.Create: EditModel,
+		meta.Find:   Skip,
+	},
+	meta.Business: {
+		meta.Archive:              ArchiveBusiness,
+		meta.Create:               CreateBusiness,
+		meta.Update:               EditBusiness,
+		meta.Find:                 FindBusiness,
+		meta.ViewBusinessResource: ViewBusinessResource,
+	},
+	meta.DynamicGrouping: {
+		meta.Delete:  DeleteBusinessCustomQuery,
+		meta.Update:  EditBusinessCustomQuery,
+		meta.Create:  CreateBusinessCustomQuery,
+		meta.Find:    FindBusinessCustomQuery,
+		meta.Execute: FindBusinessCustomQuery,
+	},
+	meta.MainlineModel: {
+		meta.Find:   Skip,
+		meta.Create: EditBusinessLayer,
+		meta.Delete: EditBusinessLayer,
+	},
+	meta.ModelTopology: {
+		meta.Find:   EditModelTopologyView,
+		meta.Update: EditModelTopologyView,
+	},
+	meta.MainlineModelTopology: {
+		meta.Find: Skip,
+	},
+	meta.Process: {
+		meta.BoundModuleToProcess:   EditBusinessServiceInstance,
+		meta.UnboundModuleToProcess: EditBusinessServiceInstance,
+		meta.Find:                   Skip,
+		meta.Create:                 EditBusinessServiceInstance,
+		meta.Delete:                 EditBusinessServiceInstance,
+		meta.Update:                 EditBusinessServiceInstance,
+	},
+	meta.HostInstance: {
+		meta.MoveResPoolHostToBizIdleModule: ResourcePoolHostTransferToBusiness,
+		meta.MoveResPoolHostToDirectory:     ResourcePoolHostTransferToDirectory,
+		meta.MoveHostFromModuleToResPool:    BusinessHostTransferToResourcePool,
+		meta.AddHostToResourcePool:          CreateResourcePoolHost,
+		meta.Create:                         CreateResourcePoolHost,
+		meta.Delete:                         DeleteResourcePoolHost,
+		meta.MoveHostToBizFaultModule:       EditBusinessHost,
+		meta.MoveHostToBizIdleModule:        EditBusinessHost,
+		meta.MoveHostToBizRecycleModule:     EditBusinessHost,
+		meta.MoveHostToAnotherBizModule:     EditBusinessHost,
+		meta.CleanHostInSetOrModule:         EditBusinessHost,
+		meta.TransferHost:                   EditBusinessHost,
+		meta.MoveBizHostToModule:            EditBusinessHost,
+		meta.Find:                           Skip,
+	},
+	meta.ProcessServiceCategory: {
+		meta.Delete: DeleteBusinessServiceCategory,
+		meta.Update: EditBusinessServiceCategory,
+		meta.Create: CreateBusinessServiceCategory,
+		meta.Find:   Skip,
+	},
+	meta.ProcessServiceInstance: {
+		meta.Delete: DeleteBusinessServiceInstance,
+		meta.Update: EditBusinessServiceInstance,
+		meta.Create: CreateBusinessServiceInstance,
+		meta.Find:   Skip,
+	},
+	meta.ProcessServiceTemplate: {
+		meta.Delete: DeleteBusinessServiceTemplate,
+		meta.Update: EditBusinessServiceTemplate,
+		meta.Create: CreateBusinessServiceTemplate,
+		meta.Find:   Skip,
+	},
+	meta.SetTemplate: {
+		meta.Delete: DeleteBusinessSetTemplate,
+		meta.Update: EditBusinessSetTemplate,
+		meta.Create: CreateBusinessSetTemplate,
+		meta.Find:   Skip,
+	},
+	meta.ModelModule: {
+		meta.Delete: DeleteBusinessTopology,
+		meta.Update: EditBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+		meta.Find:   Skip,
+	},
+	meta.ModelSet: {
+		meta.Delete: DeleteBusinessTopology,
+		meta.Update: EditBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+		meta.Find:   Skip,
+	},
+	meta.MainlineInstance: {
+		meta.Delete: DeleteBusinessTopology,
+		meta.Update: EditBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+		meta.Find:   Skip,
+	},
+	meta.MainlineInstanceTopology: {
+		meta.Delete: Skip,
+		meta.Update: Skip,
+		meta.Create: Skip,
+		meta.Find:   Skip,
+	},
+	meta.HostApply: {
+		meta.Create: EditBusinessHostApply,
+		meta.Update: EditBusinessHostApply,
+		meta.Delete: EditBusinessHostApply,
+		meta.Find:   Skip,
+	},
+	meta.ResourcePoolDirectory: {
+		meta.Delete: DeleteResourcePoolDirectory,
+		meta.Update: EditResourcePoolDirectory,
+		meta.Create: CreateResourcePoolDirectory,
+		meta.Find:   Skip,
+	},
+	meta.Plat: {
+		meta.Delete: DeleteCloudArea,
+		meta.Update: EditCloudArea,
+		meta.Create: CreateCloudArea,
+		meta.Find:   Skip,
+	},
+	meta.EventPushing: {
+		meta.Delete: DeleteEventPushing,
+		meta.Update: EditEventPushing,
+		meta.Create: CreateEventPushing,
+		meta.Find:   FindEventPushing,
+	},
+	meta.CloudAccount: {
+		meta.Delete: DeleteCloudAccount,
+		meta.Update: EditCloudAccount,
+		meta.Create: CreateCloudAccount,
+		meta.Find:   FindCloudAccount,
+	},
+	meta.CloudResourceTask: {
+		meta.Delete: DeleteCloudResourceTask,
+		meta.Update: EditCloudResourceTask,
+		meta.Create: CreateCloudResourceTask,
+		meta.Find:   FindCloudResourceTask,
+	},
+	meta.Model: {
+		meta.Delete: DeleteModel,
+		meta.Update: EditModel,
+		meta.Create: CreateModel,
+		meta.Find:   Skip,
+	},
+	meta.AssociationType: {
+		meta.Delete: DeleteAssociationType,
+		meta.Update: EditAssociationType,
+		meta.Create: CreateAssociationType,
+		meta.Find:   Skip,
+	},
+	meta.ModelClassification: {
+		meta.Delete: DeleteModelGroup,
+		meta.Update: EditModelGroup,
+		meta.Create: CreateModelGroup,
+		meta.Find:   Skip,
+	},
+	meta.OperationStatistic: {
+		meta.Create: EditOperationStatistic,
+		meta.Delete: EditOperationStatistic,
+		meta.Update: EditOperationStatistic,
+		meta.Find:   FindOperationStatistic,
+	},
+	meta.AuditLog: {
+		meta.Find: FindAuditLog,
+	},
+	meta.SystemBase: {
+		meta.ModelTopologyView:      EditModelTopologyView,
+		meta.ModelTopologyOperation: EditBusinessTopology,
+	},
+	meta.EventWatch: {
+		meta.WatchHost:         WatchHostEvent,
+		meta.WatchHostRelation: WatchHostRelationEvent,
+		meta.WatchBiz:          WatchBizEvent,
+		meta.WatchSet:          WatchSetEvent,
+		meta.WatchModule:       WatchModuleEvent,
+	},
+	meta.UserCustom: {
+		meta.Find:   Skip,
+		meta.Update: Skip,
+		meta.Delete: Skip,
+		meta.Create: Skip,
+	},
+	meta.ModelInstanceAssociation: {
+		meta.Find:   Skip,
+		meta.Update: EditInstance,
+		meta.Delete: EditInstance,
+		meta.Create: EditInstance,
+	},
+	meta.ModelAssociation: {
+		meta.Find:   Skip,
+		meta.Update: EditModel,
+		meta.Delete: EditModel,
+		meta.Create: EditModel,
+	},
+	meta.ModelInstanceTopology: {
+		meta.Find:   Skip,
+		meta.Update: Skip,
+		meta.Delete: Skip,
+		meta.Create: Skip,
+	},
+	meta.ModelAttribute: {
+		meta.Find:   Skip,
+		meta.Update: EditModel,
+		meta.Delete: DeleteModel,
+		meta.Create: CreateModel,
+	},
+	meta.HostFavorite: {
+		meta.Find:   Skip,
+		meta.Update: EditBusinessHost,
+		meta.Delete: DeleteResourcePoolHost,
+		meta.Create: CreateResourcePoolHost,
+	},
+	// TODO: Confirm
+	meta.ProcessTemplate: {
+		meta.Find:   Skip,
+		meta.Delete: DeleteBusinessServiceTemplate,
+		meta.Update: EditBusinessServiceTemplate,
+		meta.Create: CreateBusinessServiceTemplate,
+	},
+	meta.BizTopology: {
+		meta.Find:   Skip,
+		meta.Update: EditBusinessTopology,
+		meta.Delete: DeleteBusinessTopology,
+		meta.Create: CreateBusinessTopology,
+	},
+	// unsupported resource actions for now
+	meta.NetDataCollector: {
+		meta.Find:   Unsupported,
+		meta.Update: Unsupported,
+		meta.Delete: Unsupported,
+		meta.Create: Unsupported,
+	},
+	meta.InstallBK: {
+		meta.Update: Skip,
+	},
+	meta.SystemConfig: {
+		meta.Find:   Skip,
+		meta.Update: Skip,
+		meta.Delete: Skip,
+		meta.Create: Skip,
+	},
+	meta.ConfigAdmin: {
+		meta.Find:   Skip,
+		meta.Update: GlobalSettings,
+		// unsupported action
+		meta.Delete: Unsupported,
+		// unsupported action
+		meta.Create: Unsupported,
+	},
 }
 
 // AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
-var actionMap map[ResourceActionID]ResourceAction
-var resourceTypeMap map[ResourceTypeID]ResourceType
-
 func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
-	rid := util.GetHTTPCCRequestID(h)
-	language := util.GetLanguage(h)
-
-	ps := make([]metadata.Permission, 0)
-	bizIDMap := make(map[int64]string)
-	if actionMap == nil {
-		actionMap = make(map[ResourceActionID]ResourceAction)
-		for _, action := range GenerateActions() {
-			actionMap[action.ID] = action
-		}
-	}
-	if resourceTypeMap == nil {
-		resourceTypeMap = make(map[ResourceTypeID]ResourceType)
-		for _, resource := range GenerateResourceTypes() {
-			resourceTypeMap[resource.ID] = resource
-		}
-	}
-	for _, r := range rs {
-		var p metadata.Permission
-		p.SystemID = SystemIDCMDB
-		if language == string(common.English) {
-			p.SystemName = SystemNameCMDBEn
-		} else {
-			p.ScopeName = SystemNameCMDB
-		}
-
-		if r.BusinessID > 0 {
-			p.ScopeType = ScopeTypeIDBiz
-			if language == string(common.English) {
-				p.ScopeTypeName = ScopeTypeIDBizNameEn
-			} else {
-				p.ScopeTypeName = ScopeTypeIDBizName
-			}
-			p.ScopeID = strconv.FormatInt(r.BusinessID, 10)
-			scopeName, exist := bizIDMap[r.BusinessID]
-			if !exist {
-				var err error
-				scopeName, err = GetBizNameByID(api, h, r.BusinessID)
-				if err != nil {
-					blog.Errorf("AdoptPermissions failed, GetBizNameByID failed, bizID: %d, err: %s, rid: %s", r.BusinessID, err.Error(), rid)
-				} else {
-					bizIDMap[r.BusinessID] = scopeName
-				}
-			}
-			p.ScopeName = scopeName
-		} else {
-			p.ScopeType = ScopeTypeIDSystem
-			p.ScopeID = SystemIDCMDB
-			if language == string(common.English) {
-				p.ScopeTypeName = ScopeTypeIDSystemNameEn
-				p.ScopeName = SystemNameCMDBEn
-			} else {
-				p.ScopeTypeName = ScopeTypeIDSystemName
-				p.ScopeName = SystemNameCMDB
-			}
-		}
-
-		actID, err := ConvertResourceAction(r.Type, r.Action, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-		p.ActionID = string(actID)
-		if language == string(common.English) {
-			p.ActionName = actionMap[actID].NameEn
-		} else {
-			p.ActionName = actionMap[actID].Name
-		}
-
-		rscType, err := ConvertResourceType(r.Basic.Type, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-
-		rscIDs, err := GenerateResourceID(*rscType, &r)
-		if err != nil {
-			return nil, err
-		}
-
-		var rsc metadata.Resource
-		rsc.ResourceType = string(*rscType)
-		if language == string(common.English) {
-			p.ResourceTypeName = resourceTypeMap[*rscType].NameEn
-		} else {
-			p.ResourceTypeName = resourceTypeMap[*rscType].Name
-		}
-		if len(rscIDs) != 0 {
-			rsc.ResourceID = rscIDs[len(rscIDs)-1].ResourceID
-		}
-		rsc.ResourceName = r.Basic.Name
-		p.Resources = [][]metadata.Resource{{rsc}}
-		ps = append(ps, p)
-	}
-	return ps, nil
+	// TODO implement this
+	return []metadata.Permission{}, nil
 }

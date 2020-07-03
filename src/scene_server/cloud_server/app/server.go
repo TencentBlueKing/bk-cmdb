@@ -14,15 +14,17 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sync"
+	"net/http"
 	"time"
 
-	"configcenter/src/auth/authcenter"
+	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/cryptor"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/cloud_server/app/options"
 	"configcenter/src/scene_server/cloud_server/cloudsync"
@@ -30,6 +32,7 @@ import (
 	svc "configcenter/src/scene_server/cloud_server/service"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdpartyclient/secrets"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -42,7 +45,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	process := new(CloudServer)
 	input := &backbone.BackboneParameter{
-		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigUpdate: process.onCloudConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
 		SrvInfo:      svrInfo,
@@ -55,61 +58,74 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Engine = engine
 	process.Core = engine
 	process.Service = service
-	for {
-		if process.Config == nil {
-			time.Sleep(time.Second * 2)
-			blog.V(3).Info("config not found, retry 2s later")
-			continue
-		}
 
-		process.Config.MongoDB, err = engine.WithMongo()
-		if err != nil {
-			return err
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if nil != process.Config {
+			configReady = true
+			break
 		}
-		process.Config.Redis, err = engine.WithRedis()
-		if err != nil {
-			return err
-		}
-		process.Config.Auth, err = engine.WithAuth()
-		if err != nil {
-			return err
-		}
-
-		mongoConf := process.Config.MongoDB.GetMongoConf()
-		db, err := local.NewMgo(mongoConf, time.Minute)
-		if err != nil {
-			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
-		}
-		process.Service.SetDB(db)
-
-		cache, err := redis.NewFromConfig(process.Config.Redis)
-		if err != nil {
-			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
-		}
-		process.Service.SetCache(cache)
-
-		authCli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
-		}
-		process.Service.SetAuth(authCli)
-		blog.Infof("enable auth center: %v", auth.IsAuthed())
-
-		process.Service.Logics = logics.NewLogics(service.Engine, db, cache)
-
-		syncConf := cloudsync.SyncConf{
-			ZKClient:  service.Engine.ServiceManageClient().Client(),
-			Logics:    process.Service.Logics,
-			AddrPort:  input.SrvInfo.Instance(),
-			MongoConf: mongoConf,
-		}
-		err = cloudsync.CloudSync(&syncConf)
-		if err != nil {
-			return fmt.Errorf("ProcessTask failed: %v", err)
-		}
-
-		break
+		blog.Infof("waiting for config ready ...")
+		time.Sleep(time.Second)
 	}
+	if false == configReady {
+		blog.Infof("waiting config timeout.")
+		return errors.New("configuration item not found")
+	}
+
+	mongoConfig, err := engine.WithMongo()
+	if nil != err {
+		blog.Errorf("get mongo conf failed, err: %s", err.Error())
+		return err
+	}
+
+	mongoConf := mongoConfig.GetMongoConf()
+	db, err := local.NewMgo(mongoConf, time.Minute)
+	if err != nil {
+		return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
+	}
+	process.Service.SetDB(db)
+
+	redisConf, err := engine.WithRedis()
+	if nil != err {
+		blog.Errorf("get redis conf failed, err: %s", err.Error())
+		return err
+	}
+
+	cache, err := redis.NewFromConfig(redisConf)
+	if err != nil {
+		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
+	}
+	process.Service.SetCache(cache)
+
+	blog.Infof("enable auth center: %v", auth.IsAuthed())
+
+	var accountCryptor cryptor.Cryptor
+	blog.Infof("enable cryptor: %v", op.EnableCryptor)
+	if op.EnableCryptor == true {
+		secretKey, err := process.getSecretKey()
+		if err != nil {
+			blog.Errorf("getSecretKey failed, err: %s", err.Error())
+			return err
+		}
+		accountCryptor = cryptor.NewAesEncrpytor(secretKey)
+	}
+
+	process.Service.SetEncryptor(accountCryptor)
+
+	process.Service.Logics = logics.NewLogics(service.Engine, db, cache, accountCryptor)
+
+	syncConf := cloudsync.SyncConf{
+		ZKClient:  service.Engine.ServiceManageClient().Client(),
+		Logics:    process.Service.Logics,
+		AddrPort:  input.SrvInfo.Instance(),
+		MongoConf: mongoConf,
+	}
+	err = cloudsync.CloudSync(&syncConf)
+	if err != nil {
+		return fmt.Errorf("ProcessTask failed: %v", err)
+	}
+
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
 		return err
@@ -129,14 +145,52 @@ type CloudServer struct {
 	Service *svc.Service
 }
 
-var configLock sync.Mutex
-
-func (c *CloudServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	configLock.Lock()
-	defer configLock.Unlock()
-	if len(current.ConfigMap) > 0 {
-		if c.Config == nil {
-			c.Config = new(options.Config)
-		}
+func (c *CloudServer) onCloudConfigUpdate(previous, current cc.ProcessConfig) {
+	if c.Config == nil {
+		c.Config = new(options.Config)
 	}
+	c.Config.SecretKeyUrl = current.ConfigMap["cryptor.secret_key_url"]
+	c.Config.SecretsAddrs = current.ConfigMap["cryptor.secrets_addrs"]
+	c.Config.SecretsToken = current.ConfigMap["cryptor.secrets_token"]
+	c.Config.SecretsProject = current.ConfigMap["cryptor.secrets_project"]
+	c.Config.SecretsEnv = current.ConfigMap["cryptor.secrets_env"]
+}
+
+// getSecretKey get the secret key from bk-secrets service
+func (c *CloudServer) getSecretKey() (string, error) {
+	if c.Config.SecretKeyUrl == "" {
+		return "", errors.New("config cryptor.secret_key_url is not set")
+	}
+
+	if c.Config.SecretsAddrs == "" {
+		return "", errors.New("config cryptor.secrets_addrs is not set")
+	}
+
+	if c.Config.SecretsToken == "" {
+		return "", errors.New("config cryptor.secrets_token is not set")
+	}
+
+	if c.Config.SecretsProject == "" {
+		return "", errors.New("config cryptor.secrets_project is not set")
+	}
+
+	if c.Config.SecretsEnv == "" {
+		return "", errors.New("config cryptor.secrets_env is not set")
+	}
+
+	secretsConfig := secrets.SecretsConfig{
+		SecretKeyUrl:   c.Config.SecretKeyUrl,
+		SecretsAddrs:   c.Config.SecretsAddrs,
+		SecretsToken:   c.Config.SecretsToken,
+		SecretsProject: c.Config.SecretsProject,
+		SecretsEnv:     c.Config.SecretsEnv,
+	}
+
+	secretsClient, err := secrets.NewSecretsClient(nil, secretsConfig, nil)
+	if err != nil {
+		blog.Errorf("NewSecretsClient err:%s", err.Error())
+		return "", err
+	}
+
+	return secretsClient.GetCloudAccountSecretKey(context.Background(), http.Header{})
 }

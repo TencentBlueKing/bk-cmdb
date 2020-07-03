@@ -184,6 +184,7 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/{bk_host_id}", Handler: s.GetHostByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/search", Handler: s.GetHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/snapshot/{bk_host_id}", Handler: s.GetHostSnap})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/snapshot/batch", Handler: s.GetHostSnapBatch})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/lock", Handler: s.LockHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host/lock", Handler: s.UnlockHost})
@@ -198,7 +199,7 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/{bk_user}/{id}", Handler: s.UpdateUserCustomByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/usercustom/user/search/{bk_user}", Handler: s.GetUserCustomByUser})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/usercustom/default", Handler: s.GetDefaultUserCustom})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/default", Handler: s.UpdatDefaultUserCustom})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/default", Handler: s.UpdateDefaultUserCustom})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/hosts/favorites/{user}", Handler: s.AddHostFavourite})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/hosts/favorites/{user}/{id}", Handler: s.UpdateHostFavouriteByID})
@@ -211,6 +212,7 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/list_hosts", Handler: s.ListHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/cloudarea_field", Handler: s.UpdateHostCloudAreaField})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/distinct/host_id/topology/relation", Handler: s.GetDistinctHostIDsByTopoRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer/resource/directory", Handler: s.TransferHostResourceDirectory})
 
 	utility.AddToRestfulWebService(web)
@@ -281,6 +283,47 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/user_config", Handler: s.GetSystemUserConfig})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/system/config_admin", Handler: s.SearchConfigAdmin})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) transaction(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/transaction/commit", Handler: s.CommitTransaction})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/transaction/abort", Handler: s.AbortTransaction})
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initCache(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topotree", Handler: s.SearchTopologyTreeInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_inner_ip", Handler: s.SearchHostWithInnerIPInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_host_id", Handler: s.SearchHostWithHostIDInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/host/with_host_id", Handler: s.ListHostWithHostIDInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/biz/{bk_biz_id}", Handler: s.SearchBusinessInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/set/{bk_set_id}", Handler: s.SearchSetInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/module/{bk_module_id}", Handler: s.SearchModuleInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/{bk_obj_id}/{bk_inst_id}", Handler: s.SearchCustomLayerInCache})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initCount(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/resource/count", Handler: s.GetCountByFilter})
+
 	utility.AddToRestfulWebService(web)
 }
 
@@ -336,6 +379,9 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.ccSystem(web)
 	s.initSetTemplate(web)
 	s.initHostApplyRule(web)
+	s.transaction(web)
+	s.initCount(web)
+	s.initCache(web)
 	s.initCloudAccount(web)
 	s.initAuth(web)
 }

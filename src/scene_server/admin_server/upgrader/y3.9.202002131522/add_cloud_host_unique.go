@@ -22,7 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// find bk_cloud_inst_id property's id
 	attrCond := condition.CreateCondition()
 	attrCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)

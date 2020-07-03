@@ -74,15 +74,15 @@ func (d *MockDiscovery) CoreService() Interface {
 	return &mockServer{}
 }
 
-func (d *MockDiscovery) TMServer() Interface {
-	return &mockServer{}
-}
-
 func (d *MockDiscovery) TaskServer() Interface {
 	return &mockServer{}
 }
 
 func (d *MockDiscovery) CloudServer() Interface {
+	return &mockServer{}
+}
+
+func (d *MockDiscovery) AuthServer() Interface {
 	return &mockServer{}
 }
 

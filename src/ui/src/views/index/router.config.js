@@ -3,7 +3,7 @@ import { MENU_INDEX } from '@/dictionary/menu-symbol'
 
 export default [{
     name: MENU_INDEX,
-    path: '/index',
+    path: 'index',
     component: () => import('./index.vue'),
     meta: new Meta({
         menu: {
@@ -11,15 +11,21 @@ export default [{
         },
         auth: {
             view: null
+        },
+        layout: {
+            breadcrumbs: false
         }
     })
 }, {
     name: 'search',
-    path: '/index/search',
+    path: 'index/search',
     component: () => import('./children/full-text-search.vue'),
     meta: new Meta({
         checkAvailable: (to, from, app) => {
-            return window.Site.fullTextSearch === 'on'
+            return window.CMDB_CONFIG.site.fullTextSearch === 'on'
+        },
+        layout: {
+            breadcrumbs: false
         }
     })
 }]

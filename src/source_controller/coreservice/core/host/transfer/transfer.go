@@ -137,7 +137,7 @@ func (t *genericTransfer) deleteHost(kit *rest.Kit, hostID int64) (mapstr.MapStr
 	hostCond := condition.CreateCondition()
 	hostCond.Field(common.BKHostIDField).Eq(hostID)
 	hostCondMap := util.SetQueryOwner(hostCond.ToMapStr(), kit.SupplierAccount)
-	hostInfoArr := make([]mapstr.MapStr, 0)
+	hostInfoArr := make([]metadata.HostMapStr, 0)
 	err := t.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCondMap).All(kit.Ctx, &hostInfoArr)
 	if err != nil {
 		blog.ErrorJSON("deleteHost find data error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, kit.Rid)
@@ -164,7 +164,7 @@ func (t *genericTransfer) deleteHost(kit *rest.Kit, hostID int64) (mapstr.MapStr
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
-	return hostInfoArr[0], nil
+	return mapstr.MapStr(hostInfoArr[0]), nil
 }
 
 // generateEvent handle event trigger.
@@ -596,29 +596,6 @@ func (t *genericTransfer) HasInnerModule(kit *rest.Kit) (bool, error) {
 
 	}
 	return false, nil
-}
-
-// DoTransferToInnerCheck check whether could be transfer to inner module
-func (t *genericTransfer) DoTransferToInnerCheck(kit *rest.Kit, hostIDs []int64) error {
-	if len(hostIDs) == 0 {
-		return nil
-	}
-
-	// check: 不能有服务实例/进程实例绑定主机实例
-	filter := map[string]interface{}{
-		common.BKHostIDField: map[string][]int64{common.BKDBIN: hostIDs},
-	}
-	var count uint64
-	count, err := t.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("DoTransferToInnerCheck failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	if count > 0 {
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
-	}
-
-	return nil
 }
 
 func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {

@@ -13,18 +13,16 @@
 package options
 
 import (
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
 
 // ServerOption define option of server in flags
 type ServerOption struct {
-	ServConf *config.CCAPIConfig
+	ServConf      *config.CCAPIConfig
+	EnableCryptor bool
 }
 
 // NewServerOption create a ServerOption object
@@ -43,10 +41,13 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
+	fs.BoolVar(&s.EnableCryptor, "enable-cryptor", false, "enable cryptor or not")
 }
 
 type Config struct {
-	MongoDB mongo.Config
-	Redis   redis.Config
-	Auth    authcenter.AuthConfig
+	SecretKeyUrl   string
+	SecretsAddrs   string
+	SecretsToken   string
+	SecretsProject string
+	SecretsEnv     string
 }

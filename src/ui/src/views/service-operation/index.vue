@@ -51,7 +51,6 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
@@ -228,20 +227,7 @@
                 this.tab.active = tab.id
             },
             redirect () {
-                if (this.$route.query.from) {
-                    this.$router.replace({
-                        path: this.$route.query.from,
-                        query: this.$route.query.query
-                    })
-                } else {
-                    this.$router.replace({
-                        name: MENU_BUSINESS_HOST_AND_SERVICE,
-                        query: {
-                            node: `module-${this.moduleId}`,
-                            tab: 'serviceInstance'
-                        }
-                    })
-                }
+                this.$routerActions.back()
             }
         }
     }

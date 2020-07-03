@@ -63,6 +63,7 @@
                                             :allow-clear="true"
                                             :options="getEnumOptions(property)"
                                             :disabled="disabled"
+                                            :multiple="isMultipleProperty(property)"
                                             v-model="property.value">
                                         </component>
                                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
@@ -80,9 +81,10 @@
                                             :disabled="disabled">
                                         </cmdb-search-input>
                                         <cmdb-form-date-range class="filter-field-value"
+                                            v-else-if="['date', 'time'].includes(property.propertyType)"
                                             v-validate="'required'"
                                             :data-vv-name="property.propertyId"
-                                            v-else-if="['date', 'time'].includes(property.propertyType)"
+                                            :disabled="disabled"
                                             v-model="property.value">
                                         </cmdb-form-date-range>
                                         <cmdb-cloud-selector
@@ -91,6 +93,8 @@
                                             v-validate="'required'"
                                             :data-vv-name="property.propertyId"
                                             :allow-clear="true"
+                                            :disabled="disabled"
+                                            :multiple="isMultipleProperty(property)"
                                             v-model="property.value">
                                         </cmdb-cloud-selector>
                                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
@@ -100,6 +104,7 @@
                                             :data-vv-name="property.propertyId"
                                             :is="`cmdb-form-${property.propertyType}`"
                                             :disabled="disabled"
+                                            :multiple="isMultipleProperty(property)"
                                             v-model="property.value">
                                         </component>
                                         <i class="userapi-delete fr bk-icon icon-close"
@@ -323,29 +328,21 @@
                             operator: property.operator,
                             value: property.value === 'true'
                         })
-                    } else if (property.operator === '$multilike') {
+                    } else if (property.operator === '$multilike' && !Array.isArray(property.value)) {
                         param.condition.push({
                             field: property.propertyId,
                             operator: property.operator,
-                            value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+                            value: property.value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
                         })
                     } else {
-                        let operator = property.operator
                         let value = property.value
                         // 多模块与多集群查询
-                        if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
-                            operator = operator === '$regex' ? '$in' : operator
-                            if (operator === '$in') {
-                                const arr = value.replace('，', ',').split(',')
-                                const isExist = arr.findIndex(val => {
-                                    return val === value
-                                }) > -1
-                                value = isExist ? arr : [...arr, value]
-                            }
+                        if (['bk_set_name', 'bk_module_name'].includes(property.propertyId)) {
+                            value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
                         }
                         param['condition'].push({
                             field: property.propertyId,
-                            operator: operator,
+                            operator: property.operator,
                             value: value
                         })
                     }
@@ -489,11 +486,27 @@
                     property.operator === '$in'
                     && ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
                 ) {
-                    return property.value[property.value.length - 1]
-                } else if (property.operator === '$multilike' && Array.isArray(property.value)) {
+                    return property.value.join('\n')
+                } else if (property.operator === '$multilike'
+                    && Array.isArray(property.value)
+                    && ['singlechar', 'longchar', 'singleasst', 'multiasst'].includes(originalProperty['bk_property_type'])
+                ) {
                     return property.value.join('\n')
                 }
                 return (property.value === null || property.value === undefined) ? '' : property.value
+            },
+            getUserPropertyDefaultValue (property) {
+                if (this.isMultipleProperty(property)) {
+                    return []
+                } else {
+                    return ''
+                }
+            },
+            isMultipleProperty (property) {
+                const propertyType = property.propertyType || property.bk_property_type
+                const propertyId = property.propertyId || property.bk_property_id
+                return ['list', 'enum', 'timezone', 'organization'].includes(propertyType)
+                    || ['bk_cloud_id'].includes(propertyId)
             },
             async previewUserAPI () {
                 if (!await this.$validator.validateAll()) {
@@ -553,7 +566,9 @@
             getOperatorType (property) {
                 const propertyType = property.propertyType
                 const propertyId = property.propertyId
-                if (['bk_set_name', 'bk_module_name'].includes(propertyId)) {
+                if (['bk_cloud_id'].includes(propertyId)) {
+                    return 'enum'
+                } else if (['bk_set_name', 'bk_module_name'].includes(propertyId) || this.isMultipleProperty(property)) {
                     return 'name'
                 } else if (['singlechar', 'longchar', 'singleasst', 'multiasst'].includes(propertyType)) {
                     return 'char'
@@ -678,6 +693,7 @@
                 const removePropertyList = propertySeletorElm.removePropertyList
                 this.userProperties = this.userProperties.filter(property => !removePropertyList.includes(`${property.objId}-${property.propertyId}`))
                 for (let i = 0; i < addPropertyList.length; i++) {
+                    const property = this.filterList.find(property => property.filter_id === addPropertyList[i].filter_id)
                     const {
                         'bk_property_id': propertyId,
                         'bk_property_name': propertyName,
@@ -685,7 +701,7 @@
                         'bk_asst_obj_id': asstObjId,
                         'bk_obj_id': objId,
                         unit
-                    } = this.filterList.find(property => property.filter_id === addPropertyList[i].filter_id)
+                    } = property
                     this.userProperties.push({
                         objId,
                         propertyId,
@@ -695,7 +711,7 @@
                         asstObjId,
                         unit,
                         operator: this.operatorMap.hasOwnProperty(propertyType) ? this.operatorMap[propertyType] : '',
-                        value: ''
+                        value: this.getUserPropertyDefaultValue(property)
                     })
                 }
                 this.handleHideQueryCondition()
@@ -817,7 +833,8 @@
                     height: 32px;
                     line-height: 32px;
                     text-align: center;
-                    font-size: 16px;
+                    font-size: 20px;
+                    font-weight: 700;
                     color: #C4C6CC;
                     cursor: pointer;
                     opacity: 0;

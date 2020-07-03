@@ -10,6 +10,27 @@
 
 import $http from '@/api'
 
+function createIdProperty (objId) {
+    const keyMap = {
+        biz: 'bk_biz_id',
+        host: 'bk_host_id'
+    }
+    return {
+        bk_obj_id: objId,
+        bk_property_id: keyMap[objId] || 'bk_inst_id',
+        bk_property_name: 'ID',
+        bk_property_index: -1,
+        bk_property_type: 'int',
+        isonly: true,
+        ispre: true,
+        bk_isapi: true,
+        bk_issystem: true,
+        isreadonly: true,
+        editable: false,
+        bk_property_group: null
+    }
+}
+
 const state = {
 
 }
@@ -29,6 +50,18 @@ const actions = {
      */
     createObjectAttribute ({ commit, state, dispatch }, { params, config }) {
         return $http.post('create/objectattr', params, config)
+    },
+
+    /**
+     * 业务下创建对象模型属性
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    createBizObjectAttribute ({ commit, state, dispatch }, { bizId, params, config }) {
+        return $http.post(`/create/objectattr/biz/${bizId}`, params, config)
     },
 
     /**
@@ -57,6 +90,19 @@ const actions = {
     },
 
     /**
+     * 业务下更新对象属性模型
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} id 被删除的数据记录的唯一标识id
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updateBizObjectAttribute ({ commit, state, dispatch }, { bizId, id, params, config }) {
+        return $http.put(`update/objectattr/biz/${bizId}/id/${id}`, params, config)
+    },
+
+    /**
      * 查询对象属性模型
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -64,8 +110,13 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
-        return $http.post('find/objectattr', params, config)
+    searchObjectAttribute ({ commit, state, dispatch }, { params, config, injectId = false }) {
+        return $http.post('find/objectattr', params, config).then(data => {
+            if (injectId === params.bk_obj_id) {
+                data.unshift(createIdProperty(injectId))
+            }
+            return data
+        })
     },
 
     /**
@@ -76,11 +127,14 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    batchSearchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+    batchSearchObjectAttribute ({ commit, state, dispatch }, { params, config, injectId = false }) {
         return $http.post(`find/objectattr`, params, config).then(properties => {
             const result = {}
             params['bk_obj_id']['$in'].forEach(objId => {
                 result[objId] = []
+                if (injectId === objId) {
+                    result[objId].push(createIdProperty(objId))
+                }
             })
             properties.forEach(property => {
                 result[property['bk_obj_id']].push(property)

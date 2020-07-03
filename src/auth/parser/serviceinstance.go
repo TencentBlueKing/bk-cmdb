@@ -29,6 +29,14 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.Create,
 	}, {
+		Name:           "createServiceInstancePreviewPattern",
+		Description:    "创建服务实例预览",
+		Pattern:        "/api/v3/create/proc/service_instance/preview",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.Create,
+	}, {
 		Name:           "findServiceInstancePattern",
 		Description:    "list 服务实例",
 		Pattern:        "/api/v3/findmany/proc/service_instance",

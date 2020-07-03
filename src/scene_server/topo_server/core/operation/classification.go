@@ -15,8 +15,8 @@ package operation
 import (
 	"context"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -94,12 +94,14 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, err
 	}
 
-	// auth: register new created classify
 	class := cls.Classify()
-	if err := c.authManager.RegisterClassification(kit.Ctx, kit.Header, class); err != nil {
-		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
 
+	//package audit response
+	err = NewObjectClsAudit(kit, c.clientSet, class.ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
+	if err != nil {
+		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
+		return nil, err
+	}
 	return cls, nil
 }
 
@@ -132,11 +134,10 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 			return kit.CCError.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 
-		if err := c.authManager.DeregisterClassification(kit.Ctx, kit.Header, cls.Classify()); err != nil {
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-
 	}
+
+	//get PreData
+	objAudit := NewObjectClsAudit(kit, c.clientSet, id).buildSnapshotForPre()
 
 	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
@@ -147,6 +148,13 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	if !rsp.Result {
 		blog.Errorf("failed to delete the classification, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	//saveAuditLog
+	err = objAudit.SaveAuditLog(metadata.AuditDelete)
+	if err != nil {
+		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -250,24 +258,20 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	// 	return err
 	// }
 
+	//get PreData
+	objAudit := NewObjectClsAudit(kit, c.clientSet, id).buildSnapshotForPre()
+
 	err := cls.Update(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
 		return err
 	}
 
-	// auth: update registered classifications
-	if len(class.ClassificationID) > 0 {
-		if err := c.authManager.UpdateRegisteredClassificationByID(kit.Ctx, kit.Header, class.ClassificationID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	} else {
-		if err := c.authManager.UpdateRegisteredClassificationByRawID(kit.Ctx, kit.Header, class.ID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
+	//get CurData and saveAuditLog
+	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
+	if err != nil {
+		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", id, err, kit.Rid)
+		return err
 	}
-
 	return nil
 }

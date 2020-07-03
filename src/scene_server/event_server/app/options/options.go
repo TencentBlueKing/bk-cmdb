@@ -13,7 +13,6 @@
 package options
 
 import (
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -49,5 +48,4 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 type Config struct {
 	MongoDB mongo.Config
 	Redis   redis.Config
-	Auth    authcenter.AuthConfig
 }

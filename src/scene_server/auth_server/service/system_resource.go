@@ -33,8 +33,8 @@ func (s *AuthService) PullSystemResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.SysEventPushing, iam.SysModelGroup, iam.SysModel, iam.SysAssociationType,
-		iam.SysCloudAccount, iam.SysCloudResourceTask, iam.SysResourcePoolDirectory:
+	case iam.SysEventPushing, iam.SysModelGroup, iam.SysModel, iam.SysInstanceModel,
+		iam.SysAssociationType, iam.SysCloudAccount, iam.SysCloudResourceTask, iam.SysResourcePoolDirectory:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.NotFoundErrorCode,

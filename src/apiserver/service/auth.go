@@ -16,10 +16,12 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac/iam"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -35,7 +37,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(pheader)
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if s.authorizer.Enabled() == false {
+	if auth.IsAuthed() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
@@ -68,7 +70,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-	verifyResults, err := s.authorizer.AuthorizeBatch(ctx, user, attrs...)
+	verifyResults, err := s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, attrs...)
 	if err != nil {
 		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
@@ -83,45 +85,12 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
 }
 
-func (s *service) GetAdminEntrance(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
-
-	if s.authorizer.Enabled() == false {
-		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
-		return
-	}
-
-	userInfo := meta.UserInfo{
-		UserName:        util.GetUser(pheader),
-		SupplierAccount: util.GetOwnerID(pheader),
-	}
-
-	systemlist, err := s.authorizer.AdminEntrance(req.Request.Context(), userInfo)
-	if err != nil {
-		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
-		return
-	}
-
-	result := struct {
-		Passed bool `json:"is_pass"`
-	}{}
-	if len(systemlist) > 0 {
-		result.Passed = true
-	}
-
-	resp.WriteEntity(metadata.NewSuccessResp(result))
-}
-
 func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if s.authorizer.Enabled() == false {
+	if auth.IsAuthed() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
@@ -132,11 +101,26 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 		SupplierAccount: util.GetOwnerID(pheader),
 	}
 
-	appIDList, err := s.authorizer.GetAnyAuthorizedBusinessList(req.Request.Context(), userInfo)
+	authInput := meta.ListAuthorizedResourcesParam{
+		UserName:     util.GetUser(pheader),
+		ResourceType: meta.Business,
+		Action:       meta.ViewBusinessResource,
+	}
+	authorizedResources, err := s.clientSet.AuthServer().ListAuthorizedResources(req.Request.Context(), pheader, authInput)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
+	}
+	appIDList := make([]int64, 0)
+	for _, resourceID := range authorizedResources {
+		bizID, err := strconv.ParseInt(resourceID, 10, 64)
+		if err != nil {
+			blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, rid)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+			return
+		}
+		appIDList = append(appIDList, bizID)
 	}
 
 	if len(appIDList) == 0 {
@@ -179,14 +163,8 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	url, err := s.authorizer.GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
-	if err != nil {
-		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
-		return
-	}
-
-	resp.WriteEntity(metadata.NewSuccessResp(url))
+	// TODO implement this
+	resp.WriteEntity(metadata.NewSuccessResp(""))
 }
 
 type ConvertedResource struct {
@@ -239,14 +217,14 @@ func (s *service) GetCmdbConvertResources(req *restful.Request, resp *restful.Re
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, att.Scope)})
 			return
 		}
-		typ, err := authcenter.ConvertResourceType(att.Attribute.Type, bizID)
+		typ, err := iam.ConvertResourceType(att.Attribute.Type, bizID)
 		if err != nil {
 			blog.Errorf("convert attribute resource type: %+v failed, err: %v", att, err)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})
 			return
 		}
 
-		action, err := authcenter.AdaptorAction(&att.Attribute)
+		action, err := iam.ConvertResourceAction(att.Attribute.Type, att.Attribute.Action, att.Attribute.BusinessID)
 		if err != nil {
 			blog.Errorf("convert attribute resource action: %+v failed, err: %v", att, err)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})

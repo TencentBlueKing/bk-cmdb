@@ -107,13 +107,14 @@
 
 <style lang="scss" scoped>
     .clone-layout {
-        padding: 15px 20px 28px;
+        padding: 15px 0 28px 0;
         font-size: 14px;
     }
     .host-type {
         line-height: 19px;
         .type-label{
             width: 100px;
+            text-align: right;
             &:after {
                 content: '*';
                 color: $cmdbDangerColor;

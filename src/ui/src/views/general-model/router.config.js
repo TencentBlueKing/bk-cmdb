@@ -18,11 +18,7 @@ export default [{
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return model && !model.bk_ispaused
         },
-        layout: {
-            previous: {
-                name: MENU_RESOURCE_MANAGEMENT
-            }
-        }
+        layout: {}
     }),
     children: [{
         name: MENU_RESOURCE_INSTANCE_DETAILS,
@@ -37,36 +33,18 @@ export default [{
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
                 return model && !model.bk_ispaused
             },
-            layout: {
-                previous () {
-                    return {
-                        name: MENU_RESOURCE_INSTANCE,
-                        params: {
-                            objId: window.CMDB_APP.$route.params.objId
-                        }
-                    }
-                }
-            }
+            layout: {}
         })
     }]
 }, {
     name: 'instanceHistory',
-    path: 'instance/:objId/history',
+    path: 'history/instance/:objId',
     component: () => import('@/views/history/index.vue'),
     meta: new Meta({
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
         },
-        layout: {
-            previous () {
-                return {
-                    name: MENU_RESOURCE_INSTANCE,
-                    params: {
-                        objId: window.CMDB_APP.$route.params.objId
-                    }
-                }
-            }
-        },
+        layout: {},
         checkAvailable: (to, from, app) => {
             const modelId = to.params.objId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)

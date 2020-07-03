@@ -20,7 +20,7 @@
                 isLoading: $loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])
             }"
             :data="table.list"
-            :max-height="$APP.height - 220"
+            :max-height="$APP.height - 320"
             :row-style="{
                 cursor: 'pointer'
             }"

@@ -12,7 +12,10 @@
 
 package common
 
-import "math"
+import (
+	"math"
+	"time"
+)
 
 const (
 	// HTTPCreate create method
@@ -35,11 +38,17 @@ const (
 	// max limit of a page
 	BKMaxPageSize = 1000
 
+	// max limit of instance count
+	BKMaxInstanceLimit = 500
+
 	// 一次最大操作记录数
 	BKMaxRecordsAtOnce = 2000
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
+
+	// BKAuditLogPageLimit the audit log page limit
+	BKAuditLogPageLimit = 200
 
 	// BKParent the parent code
 	BKParent = 1
@@ -144,6 +153,10 @@ const (
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
 
+	// BKDBOPTIONS the db operator,used with $regex
+	// detail to see https://docs.mongodb.com/manual/reference/operator/query/regex/#op._S_options
+	BKDBOPTIONS = "$options"
+
 	// BKDBEQ the db operator
 	BKDBEQ = "$eq"
 
@@ -194,6 +207,12 @@ const (
 
 	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
 	BKDBPull = "$pull"
+
+	// BKDBAll matches arrays that contain all elements specified in the query.
+	BKDBAll = "$all"
+
+	// BKDBSize selects documents if the array field is a specified size.
+	BKDBSize = "$size"
 
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
@@ -410,9 +429,6 @@ const (
 	// BKOperationDetailField the audit operation detail field
 	BKOperationDetailField = "operation_detail"
 
-	// BKOperationDetailField the audit operation detail field
-	BKBasicDetailField = "basic_detail"
-
 	// BKOperationTimeField the audit operation time field
 	BKOperationTimeField = "operation_time"
 
@@ -441,7 +457,19 @@ const (
 	BKPort = "port"
 
 	// BKProcPortEnable whether enable port,  enable port use for monitor app. default value
-	BKProcPortEnable = "bk_port_enable"
+	BKProcPortEnable = "bk_enable_port"
+
+	// BKProcGatewayIP the process gateway ip
+	BKProcGatewayIP = "bk_gateway_ip"
+
+	// BKProcGatewayPort the process gateway port
+	BKProcGatewayPort = "bk_gateway_port"
+
+	// BKProcGatewayProtocol the process gateway protocol
+	BKProcGatewayProtocol = "bk_gateway_protocol"
+
+	// BKProcGatewayCity the process gateway city
+	BKProcGatewayCity = "bk_gateway_city"
 
 	// BKUser the user
 	BKUser = "user"
@@ -657,8 +685,6 @@ const DefaultInstName string = "实例名"
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
-const BKMainLine = "mainline"
-
 // bk_classification_id value
 const BKNetwork = "bk_network"
 
@@ -730,16 +756,27 @@ const (
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 15000
+	FieldTypeLongLenChar int = 2000
+
+	// FieldTypeUserLenChar the user char length limit
+	FieldTypeUserLenChar int = 2000
 
 	//FieldTypeStrictCharRegexp the single char regex expression
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
 
-	//FieldTypeSingleCharRegexp the single char regex expression
-	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeServiceCategoryRegexp the service category regex expression
+	FieldTypeServiceCategoryRegexp string = `^([\w\p{Han}]|[:\-\(\)])+$`
 
-	//FieldTypeLongCharRegexp the single char regex expression
-	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeMainlineRegexp the mainline instance name regex expression
+	FieldTypeMainlineRegexp string = `^[^#/,><|]+$`
+
+	//FieldTypeSingleCharRegexp the single char regex expression
+	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeSingleCharRegexp string = `\S`
+
+	//FieldTypeLongCharRegexp the long char regex expression\
+	//FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeLongCharRegexp string = `\S`
 )
 
 const (
@@ -849,11 +886,17 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey          = BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey       = BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventTxnQueuePrefix = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
-	EventCacheEventTxnSet         = BKCacheKeyV3Prefix + "event:txn_set"
-	RedisSnapKeyPrefix            = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey             = BKCacheKeyV3Prefix + "event:inst_id"
+	EventCacheEventQueueKey          = BKCacheKeyV3Prefix + "event:inst_queue"
+	EventCacheEventTxnQueuePrefix    = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
+	EventCacheEventTxnCommitQueueKey = BKCacheKeyV3Prefix + "event:inst_txn_commit_queue"
+	EventCacheEventTxnAbortQueueKey  = BKCacheKeyV3Prefix + "event:inst_txn_abort_queue"
+	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
+)
+
+// api cache keys
+const (
+	ApiCacheLimiterRulePrefix = BKCacheKeyV3Prefix + "api:limiter_rule:"
 )
 
 const (
@@ -864,29 +907,29 @@ const (
 	// BKHTTPOwnerID the owner
 	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
 	// BKHTTPOwnerID the owner id
-	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
-	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
+	BKHTTPOwnerID           = "HTTP_BLUEKING_SUPPLIER_ID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID     = "bk_supplier_id"
-	BKHTTPRequestAppCode = "Bk-App-Code"
+	BKHTTPSupplierID        = "bk_supplier_id"
+	BKHTTPRequestAppCode    = "Bk-App-Code"
+	BKHTTPRequestRealIP     = "X-Real-Ip"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID      = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime       = "Cc_Request_Time"
-	BKHTTPCCTransactionID     = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr   = "Cc_Txn_Tm_addr-Ip"
-	BKHTTPCCTransactionNumber = "Cc_Txn_Number"
-	BKHTTPCCTxnSessionID      = "Cc_Txn_Session_ID"
-	BKHTTPCCTxnSessionState   = "Cc_Txn_Session_State"
+	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
+
+	BKHTTPSecretsToken   = "BK-Secrets-Token"
+	BKHTTPSecretsProject = "BK-Secrets-Project"
+	BKHTTPSecretsEnv     = "BK-Secrets-Env"
 )
 
-type CCContextKey string
-
+// transaction related
 const (
-	CCContextKeyJoinOption = CCContextKey("cc_context_joinoption")
+	TransactionIdHeader      = "cc_transaction_id_string"
+	TransactionTimeoutHeader = "cc_transaction_timeout"
+
+	// mongodb default transaction timeout is 1 minute.
+	TransactionDefaultTimeout = 2 * time.Minute
 )
 
 const (
@@ -918,6 +961,12 @@ const (
 // flag
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
+
+// config admin
+const (
+	ConfigAdminID         = "configadmin"
+	ConfigAdminValueField = "config"
+)
 
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
@@ -956,9 +1005,12 @@ const (
 )
 
 const (
-	// BKDefaultLoginUserPluginVersion 默认的登录方式
-	BKDefaultLoginUserPluginVersion = "blueking"
-	HTTPCookieBKToken               = "bk_token"
+	// login type
+	BKBluekingLoginPluginVersion   = "blueking"
+	BKOpenSourceLoginPluginVersion = "opensource"
+	BKSkipLoginPluginVersion       = "skip-login"
+
+	HTTPCookieBKToken = "bk_token"
 
 	WEBSessionUinKey           = "username"
 	WEBSessionChineseNameKey   = "chName"
@@ -984,14 +1036,7 @@ const (
 	HostFieldDockerServerVersion = "docker_server_version"
 )
 
-const TemplateStatusField = "status"
 const BKStatusField = "status"
-
-const (
-	TemplateStatusDraft   = "draft"
-	TemplateStatusOnline  = "online"
-	TemplateStatusHistory = "history"
-)
 
 const (
 	BKProcInstanceOpUser             = "proc instance user"
@@ -1000,17 +1045,6 @@ const (
 	BKCloudSyncUser = "cloud_sync_user"
 )
 
-const (
-	GSEProcOPStop           = 1
-	GSEProcOPQueryStatus    = 2
-	GSEProcOPRegister       = 3
-	GSEProcOPUnregister     = 4
-	GSEProcOPRegisterStart  = 5
-	GSEProcOPUnregisterStop = 6
-	GSEProcOPRestart        = 7
-	GSEProcOPReload         = 8
-	GSEProcOPKill           = 9
-)
 const (
 	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
@@ -1082,13 +1116,14 @@ const (
 )
 
 const (
-	AttributePlaceHolderMaxLength = 300
-	AttributeOptionMaxLength      = 1000
-	AttributeIDMaxLength          = 20
-	AttributeNameMaxLength        = 20
+	AttributePlaceHolderMaxLength = 2000
+	AttributeOptionMaxLength      = 2000
+	AttributeIDMaxLength          = 128
+	AttributeNameMaxLength        = 128
 	AttributeUnitMaxLength        = 20
 	AttributeOptionValueMaxLength = 128
 	AttributeOptionArrayMaxLength = 200
+	ServiceCategoryMaxLength      = 128
 )
 
 const (
@@ -1156,7 +1191,7 @@ const (
 	BKSecretID                   = "bk_secret_id"
 	BKVpcID                      = "bk_vpc_id"
 	BKVpcName                    = "bk_vpc_name"
-	BKReion                      = "bk_region"
+	BKRegion                     = "bk_region"
 	BKCloudSyncVpcs              = "bk_sync_vpcs"
 
 	// 是否为被销毁的云主机

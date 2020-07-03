@@ -14,6 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -43,13 +44,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 type Session struct {
 	Name            string
 	DefaultLanguage string
-	Host            string
-	// used to redis sentinel mode, expect format style: ip:port;ip:port
-	Address       string
-	Port          string
-	Secret        string
-	MasterName    string
-	MultipleOwner string
+	MultipleOwner   string
 }
 
 type Site struct {
@@ -66,11 +61,13 @@ type Site struct {
 	AuthScheme string
 	// available value: off, on
 	FullTextSearch string
+	PaasDomainUrl  string
 }
 
 type Config struct {
 	Site         Site
 	Session      Session
+	Redis        redis.Config
 	Version      string
 	AgentAppUrl  string
 	LoginUrl     string

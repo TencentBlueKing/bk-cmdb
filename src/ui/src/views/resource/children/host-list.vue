@@ -2,7 +2,7 @@
     <div class="resource-layout">
         <host-list-options></host-list-options>
         <bk-table class="hosts-table"
-            v-bkloading="{ isLoading: $loading(['searchHosts', 'batchSearchProperties', 'post_searchGroup_host']) }"
+            v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="table.list"
             :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
@@ -13,15 +13,15 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
-            <bk-table-column v-for="column in table.header"
-                :key="column.id"
-                :label="column.name"
-                :sortable="column.sortable ? 'custom' : false"
-                :prop="column.id"
-                :fixed="column.id === 'bk_host_innerip'"
-                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
+            <bk-table-column v-for="property in table.header"
+                :key="property.bk_property_id"
+                :label="$tools.getHeaderPropertyName(property)"
+                :sortable="isPropertySortable(property) ? 'custom' : false"
+                :prop="property.bk_property_id"
+                :fixed="property.bk_property_id === 'bk_host_innerip'"
+                :class-name="property.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
+                    {{ row | hostValueFilter(property.bk_obj_id, property.bk_property_id) | formatter(property)}}
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
@@ -30,14 +30,15 @@
 </template>
 
 <script>
-    import { mapState, mapGetters } from 'vuex'
+    import { mapGetters } from 'vuex'
     import hostListOptions from './host-options.vue'
     import hostValueFilter from '@/filters/host'
     import {
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
-    import Bus from '@/utils/bus.js'
+    import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             hostListOptions
@@ -54,6 +55,8 @@
                     module: []
                 },
                 propertyGroups: [],
+                directory: null,
+                scope: 1,
                 table: {
                     checked: [],
                     header: Array(8).fill({}),
@@ -63,7 +66,6 @@
                         count: 0,
                         ...this.$tools.getDefaultPaginationConfig()
                     },
-                    defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
                     exportUrl: `${window.API_HOST}hosts/export`,
                     stuff: {
@@ -77,20 +79,20 @@
                     selected: []
                 },
                 columnsConfigDisabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name'],
-                ready: false,
-                scope: 1
+                request: {
+                    property: Symbol('property'),
+                    propertyGroup: Symbol('propertyGroup'),
+                    list: Symbol('list')
+                }
             }
         },
         computed: {
-            ...mapState('hosts', ['filterParams']),
             ...mapGetters(['userName']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('hosts', ['condition']),
             ...mapGetters('resourceHost', ['activeDirectory']),
-            columnsConfigKey () {
-                return `${this.userName}_$resource_adminView_table_columns`
-            },
             customColumns () {
-                return this.usercustom[this.columnsConfigKey] || []
+                return this.usercustom[this.$route.meta.customInstanceColumn] || []
             },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
@@ -98,29 +100,6 @@
                 const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
                 const hostProperties = this.properties.host
                 return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
-            },
-            filterCondition () {
-                const defaultModel = ['biz', 'set', 'module', 'host']
-                const params = {
-                    bk_biz_id: -1,
-                    ip: this.filterParams.ip,
-                    condition: defaultModel.map(model => {
-                        return {
-                            bk_obj_id: model,
-                            condition: this.filterParams[model] || [],
-                            fields: []
-                        }
-                    })
-                }
-                if (this.activeDirectory && this.scope === 1) {
-                    const moduleCondition = params.condition.find(target => target.bk_obj_id === 'module')
-                    moduleCondition.condition.push({
-                        field: 'bk_module_id',
-                        operator: '$eq',
-                        value: this.activeDirectory.bk_module_id
-                    })
-                }
-                return params
             }
         },
         watch: {
@@ -130,125 +109,158 @@
             columnsConfigProperties () {
                 this.setTableHeader()
             },
-            filterParams () {
-                this.ready && this.getHostList(true)
+            scope () {
+                this.setModuleNamePropertyState()
             }
         },
         async created () {
             try {
-                Bus.$on('refresh-resource-list', this.handlePageChange)
                 await Promise.all([
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
-                this.getHostList()
-                this.ready = true
-            } catch (e) {
-                console.log(e)
+                this.setModuleNamePropertyState()
+                this.unwatch = RouterQuery.watch('*', ({
+                    scope = 1,
+                    page = 1,
+                    sort = 'bk_host_id',
+                    limit = this.table.pagination.limit,
+                    directory = null
+                }) => {
+                    this.table.pagination.current = parseInt(page)
+                    this.table.pagination.limit = parseInt(limit)
+                    this.table.sort = sort
+                    this.directory = parseInt(directory) || null
+                    this.scope = isNaN(scope) ? 'all' : parseInt(scope)
+                    this.getHostList()
+                }, { immediate: true, throttle: 100 })
+            } catch (error) {
+                console.error(error)
             }
         },
         beforeDestroy () {
-            this.ready = false
-            Bus.$off('refresh-resource-list', this.handlePageChange)
+            this.unwatch()
         },
         methods: {
-            getPropertyValue (modelId, propertyId, field) {
-                const model = this.properties[modelId]
-                if (!model) {
-                    return ''
-                }
-                const curProperty = model.find(property => property.bk_property_id === propertyId)
-                return curProperty ? curProperty[field] : ''
-            },
-            getProperties () {
-                return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
-                    params: this.$injectMetadata({
-                        bk_obj_id: { '$in': Object.keys(this.properties) },
-                        bk_supplier_account: this.supplierAccount
-                    }, { inject: this.$route.name !== 'resource' }),
-                    config: {
-                        requestId: 'batchSearchProperties'
-                    }
-                }).then(result => {
-                    Object.keys(this.properties).forEach(objId => {
-                        this.properties[objId] = result[objId]
+            async getProperties () {
+                try {
+                    const propertyMap = await this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
+                        params: {
+                            bk_obj_id: { '$in': Object.keys(this.properties) },
+                            bk_supplier_account: this.supplierAccount
+                        },
+                        config: {
+                            requestId: this.request.property
+                        }
                     })
-                    return result
-                })
+                    this.properties = propertyMap
+                } catch (error) {
+                    console.error(error)
+                }
             },
-            getHostPropertyGroups () {
-                return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
-                    objId: 'host',
-                    params: this.$injectMetadata(),
-                    config: {
-                        requestId: 'post_searchGroup_host'
+            async getHostPropertyGroups () {
+                try {
+                    this.propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
+                        objId: 'host',
+                        params: {},
+                        config: {
+                            requestId: this.request.propertyGroup
+                        }
+                    })
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            setModuleNamePropertyState () {
+                const property = this.properties.module.find(property => property.bk_property_id === 'bk_module_name')
+                if (property) {
+                    const normalName = this.$t('模块名')
+                    const directoryName = this.$t('目录名')
+                    const scopeModuleName = {
+                        0: normalName,
+                        1: directoryName,
+                        all: `${directoryName}/${normalName}`
                     }
-                }).then(groups => {
-                    this.propertyGroups = groups
-                    return groups
-                })
+                    property.bk_property_name = scopeModuleName[this.scope]
+                }
             },
             setTableHeader () {
                 const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
-                const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, customColumns, this.columnsConfigDisabledColumns)
-                this.table.header = properties.map(property => {
-                    return {
-                        id: property.bk_property_id,
-                        name: this.$tools.getHeaderPropertyName(property),
-                        type: property.bk_property_type,
-                        objId: property.bk_obj_id,
-                        sortable: property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
-                    }
-                })
-                this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
+                this.table.header = this.$tools.getHeaderProperties(this.columnsConfigProperties, customColumns, this.columnsConfigDisabledColumns)
+                this.columnsConfig.selected = this.table.header.map(property => property['bk_property_id'])
             },
-            getHostList (event) {
-                this.$store.dispatch('hostSearch/searchHost', {
-                    params: this.injectScope({
-                        ...this.filterCondition,
-                        page: {
-                            start: (this.table.pagination.current - 1) * this.table.pagination.limit,
-                            limit: this.table.pagination.limit,
-                            sort: this.table.sort
+            isPropertySortable (property) {
+                return property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
+            },
+            async getHostList (event) {
+                try {
+                    const { count, info } = await this.$store.dispatch('hostSearch/searchHost', {
+                        params: this.getParams(),
+                        config: {
+                            requestId: this.request.list
                         }
-                    }),
-                    config: {
-                        requestId: 'searchHosts',
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.pagination.count = data.count
-                    this.table.list = data.info
-
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
-
-                    return data
-                }).catch(e => {
+                    })
+                    this.table.pagination.count = count
+                    this.table.list = info
+                    this.table.stuff.type = event ? 'search' : 'default'
+                } catch (error) {
+                    this.table.pagination.count = 0
                     this.table.checked = []
                     this.table.list = []
-                    this.table.pagination.count = 0
-                })
+                    console.error(error)
+                }
+            },
+            getParams () {
+                const params = {
+                    bk_biz_id: -1,
+                    ip: getIPPayload(),
+                    page: {
+                        ...this.$tools.getPageParams(this.table.pagination),
+                        sort: this.table.sort
+                    },
+                    condition: this.$tools.clone(this.condition)
+                }
+                injectFields(params, this.table.header)
+                injectAsset(params, RouterQuery.get('bk_asset_id'))
+                this.injectScope(params)
+                this.injectDirectory(params)
+                return params
             },
             injectScope (params) {
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
                 if (this.scope === 'all') {
                     biz.condition = biz.condition.filter(condition => condition.field !== 'default')
                 } else {
-                    const newCondition = {
+                    const newMeta = {
                         field: 'default',
                         operator: '$eq',
                         value: this.scope
                     }
-                    const existCondition = biz.condition.find(condition => condition.field === 'default')
-                    if (existCondition) {
-                        Object.assign(existCondition, newCondition)
+                    const existMeta = biz.condition.find(({ field, operator }) => field === newMeta.field && operator === newMeta.operator)
+                    if (existMeta) {
+                        existMeta.value = newMeta.value
                     } else {
-                        biz.condition.push(newCondition)
+                        biz.condition.push(newMeta)
                     }
                 }
                 return params
+            },
+            injectDirectory (params) {
+                if (!this.directory) {
+                    return false
+                }
+                const moduleCondition = params.condition.find(condition => condition.bk_obj_id === 'module')
+                const directoryMeta = {
+                    field: 'bk_module_id',
+                    operator: '$eq',
+                    value: this.directory
+                }
+                const existMeta = moduleCondition.condition.find(({ field, operator }) => field === directoryMeta.field && operator === directoryMeta.operator)
+                if (existMeta) {
+                    existMeta.value = directoryMeta.value
+                } else {
+                    moduleCondition.condition.push(directoryMeta)
+                }
             },
             handleSelectionChange (selection) {
                 this.table.checked = selection.map(item => item.host.bk_host_id)
@@ -278,17 +290,24 @@
                     })
                 }
             },
-            handlePageChange (current, event) {
-                this.table.pagination.current = current
-                this.getHostList(event)
+            handlePageChange (current) {
+                RouterQuery.set({
+                    page: current,
+                    _t: Date.now()
+                })
             },
             handleSizeChange (limit) {
-                this.table.pagination.limit = limit
-                this.handlePageChange(1)
+                RouterQuery.set({
+                    limit: limit,
+                    page: 1,
+                    _t: Date.now()
+                })
             },
             handleSortChange (sort) {
-                this.table.sort = this.$tools.getSort(sort)
-                this.handlePageChange(1)
+                RouterQuery.set({
+                    sort: this.$tools.getSort(sort),
+                    _t: Date.now()
+                })
             }
         }
     }

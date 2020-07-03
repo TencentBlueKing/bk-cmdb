@@ -122,6 +122,7 @@
 
 	"1101100": "parse url params failed",
 	"1101101": "Query model attributes failed, please refresh the page",
+    "1101102": "model not found",
 	"1101102": "Only resource pool directory name can be update",
 	"1101103": "Fail to %s resource pool directory, directory not exist",
 	"1101104": "Idle machine directory is not allowed to delete",

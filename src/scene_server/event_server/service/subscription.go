@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -136,21 +135,6 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	s.cache.Publish(types.EventCacheProcessChannel, "create"+string(msg))
 	s.cache.Del(types.EventCacheDistCallBackCountPrefix + strconv.FormatInt(sub.SubscriptionID, 10))
 
-	// register subscription to iam
-	iamResource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Name:       sub.SubscriptionName,
-			Type:       meta.EventPushing,
-			InstanceID: sub.SubscriptionID,
-		},
-	}
-	if err = s.auth.RegisterResource(s.ctx, iamResource); err != nil {
-		blog.Errorf("register subscribe to iam failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusOK, result)
-		return
-	}
-
 	result := NewCreateSubscriptionResult(sub.SubscriptionID)
 	resp.WriteEntity(result)
 }
@@ -217,25 +201,11 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 
 	s.cache.Del(types.EventCacheDistIDPrefix+subID,
 		types.EventCacheDistQueuePrefix+subID,
-		types.EventCacheDistDonePrefix+subID)
+		types.EventCacheDistDonePrefix+subID,
+		types.EventCacheDistCallBackCountPrefix+subID)
 
 	msg, _ := json.Marshal(&sub)
 	s.cache.Publish(types.EventCacheProcessChannel, "delete"+string(msg))
-
-	// deregister subscription from iam
-	iamResource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Name:       sub.SubscriptionName,
-			Type:       meta.EventPushing,
-			InstanceID: sub.SubscriptionID,
-		},
-	}
-	if err = s.auth.DeregisterResource(s.ctx, iamResource); err != nil {
-		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusOK, result)
-		return
-	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
@@ -288,21 +258,6 @@ func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Respons
 			Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed),
 		}
 		resp.WriteError(http.StatusBadRequest, result)
-		return
-	}
-
-	// deregister subscription from iam
-	iamResource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Name:       sub.SubscriptionName,
-			Type:       meta.EventPushing,
-			InstanceID: sub.SubscriptionID,
-		},
-	}
-	if err := s.auth.UpdateResource(s.ctx, &iamResource); err != nil {
-		blog.Errorf("update subscribe to iam failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusOK, result)
 		return
 	}
 

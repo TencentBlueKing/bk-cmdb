@@ -33,7 +33,8 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.SysSystemBase, iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply, iam.BizTopology:
+	case iam.SysSystemBase, iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply,
+		iam.BizTopology, iam.SysEventWatch, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.NotFoundErrorCode,

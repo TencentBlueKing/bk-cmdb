@@ -81,10 +81,6 @@ func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *meta
 		blog.ErrorJSON("TransferHostToInnerModule validate module failed, module ID is not default module. input:%s, rid:%s", input, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID, input.ApplicationID)
 	}
-	if err := transfer.DoTransferToInnerCheck(kit, input.HostID); err != nil {
-		blog.ErrorJSON("TransferHostToInnerModule failed, DoTransferToInnerCheck failed, err: %s, rid:%s", err.Error(), kit.Rid)
-		return nil, err
-	}
 	err = transfer.ValidParameter(kit)
 	if err != nil {
 		blog.ErrorJSON("TransferHostToInnerModule failed, ValidParameter failed, input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)
@@ -139,61 +135,6 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 	}
 
 	var exceptionArr []metadata.ExceptionResult
-
-	// 检查主机从哪个模块移除，并且确认主机可以从该模块移除
-	if input.IsIncrement == false {
-		hostConfigFilter := map[string]interface{}{
-			common.BKHostIDField: map[string]interface{}{
-				common.BKDBIN: input.HostID,
-			},
-		}
-		hostModuleConfigs := make([]metadata.ModuleHost, 0)
-		if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(kit.Ctx, &hostModuleConfigs); err != nil {
-			blog.ErrorJSON("TransferToNormalModule failed, find default module failed, filter:%s, hostID:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err.Error(), kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-		}
-		hostModuleMap := make(map[int64][]int64)
-		for _, hostConfig := range hostModuleConfigs {
-			if _, exist := hostModuleMap[hostConfig.HostID]; exist == false {
-				hostModuleMap[hostConfig.HostID] = make([]int64, 0)
-			}
-			hostModuleMap[hostConfig.HostID] = append(hostModuleMap[hostConfig.HostID], hostConfig.ModuleID)
-		}
-
-		for hostID, originalModuleIDs := range hostModuleMap {
-			removedModuleIDs := make([]int64, 0)
-			for _, moduleID := range originalModuleIDs {
-				if util.InArray(moduleID, input.ModuleID) == false {
-					removedModuleIDs = append(removedModuleIDs, moduleID)
-				}
-			}
-			if len(removedModuleIDs) == 0 {
-				continue
-			}
-			serviceInstanceFilter := map[string]interface{}{
-				common.BKHostIDField: hostID,
-				common.BKModuleIDField: map[string]interface{}{
-					common.BKDBIN: removedModuleIDs,
-				},
-			}
-			instanceCount, err := manager.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(kit.Ctx)
-			if err != nil {
-				blog.ErrorJSON("TransferToNormalModule failed, find service instance failed, filter:%s, hostID:%s, err:%s, rid:%s", serviceInstanceFilter, common.BKTableNameServiceInstance, err.Error(), kit.Rid)
-				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-			}
-			if instanceCount > 0 {
-				err := kit.CCError.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
-				exceptionArr = append(exceptionArr, metadata.ExceptionResult{
-					Message:     err.Error(),
-					Code:        int64(err.GetCode()),
-					OriginIndex: hostID,
-				})
-			}
-		}
-	}
-	if len(exceptionArr) > 0 {
-		return exceptionArr, kit.CCError.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
-	}
 
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, input.ModuleID, input.IsIncrement)
 
@@ -320,24 +261,9 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 
 // TransferHostCrossBusiness Host cross-business transfer
 func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
-	// check whether there is service instance bound to hosts
-	serviceInstanceFilter := map[string]interface{}{
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: input.HostIDArr,
-		},
-	}
-	serviceInstanceCount, err := manager.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("TransferToAnotherBusiness failed, query host related service instances failed, filter: %s, err: %s, rid: %s", serviceInstanceFilter, err.Error(), kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBSelectFailed)
-	}
-	if serviceInstanceCount > 0 {
-		blog.InfoJSON("RemoveFromModule forbidden, %d service instances bound to hosts, input:%s, rid:%s", serviceInstanceCount, input, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
-	}
-
 	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false)
 	transfer.SetCrossBusiness(kit, input.SrcApplicationID)
+	var err error
 	err = transfer.ValidParameter(kit)
 	if err != nil {
 		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
@@ -496,7 +422,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
-	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(kit.Ctx)
+	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(input.Fields...).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -505,6 +431,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	hostModuleArr := make([]metadata.ModuleHost, 0)
 	db := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).
 		Find(cond).
+		Fields(input.Fields...).
 		Start(uint64(input.Page.Start)).
 		Sort(input.Page.Sort)
 
@@ -573,6 +500,41 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 		result[item.HostID] = append(result[item.HostID], item)
 	}
 	return result, nil
+}
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+	if input.Empty() {
+		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+	moduleHostCond := condition.CreateCondition()
+	if len(input.ApplicationIDArr) > 0 {
+		moduleHostCond.Field(common.BKAppIDField).In(input.ApplicationIDArr)
+	}
+	if len(input.HostIDArr) > 0 {
+		moduleHostCond.Field(common.BKHostIDField).In(input.HostIDArr)
+	}
+	if len(input.ModuleIDArr) > 0 {
+		moduleHostCond.Field(common.BKModuleIDField).In(input.ModuleIDArr)
+	}
+	if len(input.SetIDArr) > 0 {
+		moduleHostCond.Field(common.BKSetIDField).In(input.SetIDArr)
+	}
+	cond := moduleHostCond.ToMapStr()
+	if len(cond) == 0 {
+		return nil, nil
+	}
+	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
+
+	hostIDArr := make([]int64, 0)
+	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond, &hostIDArr)
+	if err != nil {
+		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return hostIDArr, nil
 }
 
 func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {

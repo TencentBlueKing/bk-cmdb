@@ -54,11 +54,15 @@ import setSync from './modules/api/set-sync.js'
 import setTemplate from './modules/api/set-template.js'
 import cloud from './modules/api/cloud.js'
 import hostApply from './modules/api/host-apply'
+
 import resourceDirectory from './modules/api/resource-directory.js'
 import resource from './modules/api/resource.js'
 
+import organization from './modules/api/organization'
+
 import businessHost from './modules/view/business-host.js'
 import resourceHost from './modules/view/resource-host.js'
+import cloudarea from './modules/api/cloudarea'
 
 Vue.use(Vuex)
 
@@ -121,6 +125,8 @@ export default new Vuex.Store({
         hostApply,
         resourceHost,
         resourceDirectory,
-        resource
+        resource,
+        cloudarea,
+        organization
     }
 })

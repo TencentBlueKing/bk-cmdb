@@ -25,7 +25,7 @@
                     @click="layout.collapse = !layout.collapse">
                 </i>
             </cmdb-resize-layout>
-            <resource-hosts class="main" ref="resourceHosts"></resource-hosts>
+            <resource-hosts class="main"></resource-hosts>
         </div>
         <router-subview></router-subview>
     </div>
@@ -35,6 +35,7 @@
     import resourceDiractory from './children/directory.vue'
     import resourceHosts from './children/host-list.vue'
     import Bus from '@/utils/bus.js'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             resourceDiractory,
@@ -45,7 +46,7 @@
                 layout: {
                     collapse: false
                 },
-                activeTab: this.$route.query.tab || 1,
+                activeTab: RouterQuery.get('scope', 1),
                 scopeList: [{
                     id: 1,
                     label: this.$t('未分配')
@@ -58,19 +59,15 @@
                 }]
             }
         },
-        watch: {
-            activeTab (tab) {
-                const resourceHosts = this.$refs.resourceHosts
-                if (resourceHosts) {
-                    resourceHosts.scope = tab
-                    resourceHosts.handlePageChange(1)
-                }
-            }
-        },
         methods: {
             handleTabChange (tab) {
                 Bus.$emit('toggle-host-filter', false)
                 Bus.$emit('reset-host-filter')
+                RouterQuery.set({
+                    scope: tab,
+                    page: 1,
+                    _t: Date.now()
+                })
             }
         }
     }
@@ -113,7 +110,8 @@
                 border-radius: 0px 12px 12px 0px;
                 transform: translateY(-50%);
                 text-align: center;
-                font-size: 12px;
+                text-indent: -2px;
+                font-size: 20px;
                 color: #fff;
                 cursor: pointer;
                 &:hover {

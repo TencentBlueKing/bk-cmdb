@@ -70,8 +70,8 @@ func (f *FieldValid) ValidName(kit *rest.Kit, value string) error {
 	return nil
 }
 
-// ValidPlaceHoler check the PlaceHoler
-func (f *FieldValid) ValidPlaceHoler(kit *rest.Kit, value string) error {
+// ValidPlaceHolder check the PlaceHolder
+func (f *FieldValid) ValidPlaceHolder(kit *rest.Kit, value string) error {
 	if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(value) {
 		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
 			f.lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)

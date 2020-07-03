@@ -188,7 +188,8 @@
             },
             async handleDelete () {
                 const instance = this.$bkInfo({
-                    title: this.$t('确认删除xx集群模板', { name: this.originalTemplateName }),
+                    title: this.$t('确认删除'),
+                    subTitle: this.$t('确认删除xx集群模板', { name: this.originalTemplateName }),
                     confirmFn: async () => {
                         try {
                             instance.buttonLoading = true
@@ -200,7 +201,7 @@
                                     }
                                 }
                             })
-                            this.$router.replace({
+                            this.$routerActions.redirect({
                                 name: MENU_BUSINESS_SET_TEMPLATE
                             })
                         } catch (e) {
@@ -249,10 +250,10 @@
                     okText: this.$t('创建集群'),
                     cancelText: this.$t('返回列表'),
                     confirmFn: () => {
-                        this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
+                        this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
                     },
                     cancelFn: () => {
-                        this.$router.replace({ name: MENU_BUSINESS_SET_TEMPLATE })
+                        this.$routerActions.redirect({ name: MENU_BUSINESS_SET_TEMPLATE })
                     }
                 })
             },
@@ -277,7 +278,7 @@
                     this.insideMode = null
                     this.$refs.templateTree.recoveryService()
                 } else {
-                    this.$router.replace({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_SET_TEMPLATE
                     })
                 }
@@ -289,15 +290,15 @@
                 this.services = services
             },
             handleBackToList () {
-                this.$router.replace({ name: MENU_BUSINESS_SET_TEMPLATE })
+                this.$routerActions.redirect({ name: MENU_BUSINESS_SET_TEMPLATE })
             },
             handleToCreateInstance () {
-                this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
+                this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             handleToSyncInstance () {
                 this.showUpdateInfo = false
                 this.insideMode = null
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',

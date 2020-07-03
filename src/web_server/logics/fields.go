@@ -142,16 +142,28 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 	}
 
 	fields := make([]Property, 0)
-	noRequiredField := make([]Property, 0)
+	noUniqueFields := make([]Property, 0)
+	noRequiredFields := make([]Property, 0)
 	index := 1
-	// 第一步，根据字段分组，对必填字段排序；并选出非必填字段
+	// 第一步，选出唯一校验字段；
+	for _, field := range sortedFields {
+		if field.IsOnly == true {
+			field.ExcelColIndex = index
+			index++
+			fields = append(fields, field)
+		} else {
+			noUniqueFields = append(noUniqueFields, field)
+		}
+	}
+
+	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
 	for _, group := range groups {
-		for _, field := range sortedFields {
+		for _, field := range noUniqueFields {
 			if field.Group != group.ID {
 				continue
 			}
 			if field.IsRequire != true {
-				noRequiredField = append(noRequiredField, field)
+				noRequiredFields = append(noRequiredFields, field)
 				continue
 			}
 			field.ExcelColIndex = index
@@ -160,9 +172,9 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 		}
 	}
 
-	// 第二步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
+	// 第三步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
 	for _, group := range groups {
-		for _, field := range noRequiredField {
+		for _, field := range noRequiredFields {
 			if field.Group != group.ID {
 				continue
 			}

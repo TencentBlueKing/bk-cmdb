@@ -9,7 +9,7 @@
             }">
             <i class="icon-cc-batch-update"
                 v-bk-tooltips="{
-                    content: $t('请选择xx', { name: 'VPC' }),
+                    content: $t('批量编辑'),
                     disabled: disabled
                 }"
                 :class="{ 'is-disabled': disabled }"

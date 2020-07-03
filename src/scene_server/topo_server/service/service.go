@@ -13,7 +13,9 @@
 package service
 
 import (
-	"configcenter/src/auth/extensions"
+	"encoding/json"
+
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -22,16 +24,13 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/storage/dal"
 	"configcenter/src/thirdpartyclient/elasticsearch"
-	"encoding/json"
 
 	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.Transaction
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -49,7 +48,7 @@ func (s *Service) WebService() *restful.Container {
 	}
 
 	api := new(restful.WebService)
-	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/topo/v3/").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)
