@@ -35,5 +35,5 @@ type ListPolicyOptions struct {
 
 type ListPolicyResp struct {
 	BaseResp `json:",inline"`
-	Data     []*operator.ActionPolicy `json:"data"`
+	Data     []*ActionPolicy `json:"data"`
 }
