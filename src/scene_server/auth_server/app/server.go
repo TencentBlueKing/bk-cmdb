@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/auth_server/app/options"
 	"configcenter/src/scene_server/auth_server/logics"
@@ -32,6 +33,9 @@ import (
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+	// init esb client
+	esb.InitEsbClient(nil)
+
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap authServer info failed, err: %v", err)
@@ -123,6 +127,10 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current configcenter.ProcessCo
 		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("auth", current.ConfigMap)
 		if err != nil {
 			blog.Warnf("parse auth center tls config failed: %v", err)
+		}
+
+		if esbConfig, err := esb.ParseEsbConfig(current.ConfigMap); err == nil {
+			esb.UpdateEsbConfig(*esbConfig)
 		}
 	}
 }

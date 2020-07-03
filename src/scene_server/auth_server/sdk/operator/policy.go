@@ -105,11 +105,6 @@ func (p *Policy) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-type ActionPolicy struct {
-	ActionID string  `json:"action_id"`
-	Policy   *Policy `json:"condition"`
-}
-
 type Element interface {
 	EleName() string
 }

@@ -145,7 +145,7 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 
 	policyMap := make(map[string]*operator.Policy)
 	for _, p := range policies {
-		policyMap[p.ActionID] = p.Policy
+		policyMap[p.Action.ID] = p.Policy
 	}
 
 	allPolicies := make([]*operator.Policy, len(opts.Batch))

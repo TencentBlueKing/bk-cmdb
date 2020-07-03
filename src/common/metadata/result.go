@@ -55,6 +55,40 @@ type JsonStringResp struct {
 	Data string
 }
 
+type IamPermission struct {
+	SystemID string      `json:"system_id"`
+	Actions  []IamAction `json:"actions"`
+}
+
+type IamAction struct {
+	ID                   string            `json:"id"`
+	RelatedResourceTypes []IamResourceType `json:"related_resource_types"`
+}
+
+type IamResourceType struct {
+	SystemID   string                 `json:"system_id"`
+	Type       string                 `json:"type"`
+	Instances  []IamResourceInstance  `json:"instances"`
+	Attributes []IamResourceAttribute `json:"attributes"`
+}
+
+type IamResourceInstance struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type IamResourceAttribute struct {
+	ID     string                      `json:"id"`
+	Name   string                      `json:"name"`
+	Values []IamResourceAttributeValue `json:"values"`
+}
+
+type IamResourceAttributeValue struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // Permission  describes all the authorities that a user
 // is need, when he attempts to operate a resource.
 // Permission is used only when a user do not have the authority to
