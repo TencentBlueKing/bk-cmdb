@@ -238,7 +238,7 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return fmt.Errorf("create host audit log failed, err: %s", result.ErrMsg)
 	}
 
-	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %s, rid: %s",
+	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %d, rid: %s",
 		hostID, innerIP, cloudID, rid)
 
 	return nil
@@ -270,11 +270,11 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		cpunum += core.Int()
 	}
 	var CPUMhz = val.Get("data.cpu.cpuinfo.0.mhz").Int()
-	var disk int64
+	var disk uint64
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
-		disk += disktotal.Int()
+		disk += disktotal.Uint() >> 10 >> 10 >> 10
 	}
-	var mem = val.Get("data.mem.meminfo.total").Int()
+	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
 	var ostype = val.Get("data.system.info.os").String()
 	var osname string
@@ -314,7 +314,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
 	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
 
-	disk = disk >> 10 >> 10 >> 10
 	mem = mem >> 10 >> 10
 	setter := map[string]interface{}{
 		"bk_cpu":                            cpunum,
@@ -345,10 +344,10 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	raw.WriteString(strconv.FormatInt(CPUMhz, 10))
 	raw.WriteString(",")
 	raw.WriteString("\"bk_disk\":")
-	raw.WriteString(strconv.FormatInt(disk, 10))
+	raw.WriteString(strconv.FormatUint(disk, 10))
 	raw.WriteString(",")
 	raw.WriteString("\"bk_mem\":")
-	raw.WriteString(strconv.FormatInt(mem, 10))
+	raw.WriteString(strconv.FormatUint(mem, 10))
 	raw.WriteString(",")
 	raw.WriteString("\"bk_os_type\":")
 	raw.Write([]byte("\"" + ostype + "\""))
