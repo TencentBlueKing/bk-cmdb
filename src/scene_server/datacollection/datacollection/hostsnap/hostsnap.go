@@ -218,11 +218,11 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		cupnum += core.Int()
 	}
 	var CPUMhz = val.Get("data.cpu.cpuinfo.0.mhz").Int()
-	var disk int64
+	var disk uint64
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
-		disk += disktotal.Int()
+		disk += disktotal.Uint() >> 10 >> 10 >>10
 	}
-	var mem = val.Get("data.mem.meminfo.total").Int()
+	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
 	var ostype = val.Get("data.system.info.os").String()
 	var osname string
@@ -262,12 +262,13 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
 	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
 
+	mem = mem >> 10 >> 10
 	setter := map[string]interface{}{
 		"bk_cpu":                            cupnum,
 		"bk_cpu_module":                     cpumodule,
 		"bk_cpu_mhz":                        CPUMhz,
-		"bk_disk":                           disk / 1024 / 1024 / 1024,
-		"bk_mem":                            mem / 1024 / 1024,
+		"bk_disk":                           disk,
+		"bk_mem":                            mem,
 		"bk_os_type":                        ostype,
 		"bk_os_name":                        osname,
 		"bk_os_version":                     version,
