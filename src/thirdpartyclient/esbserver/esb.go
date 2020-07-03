@@ -21,6 +21,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	"configcenter/src/thirdpartyclient/esbserver/gse"
+	"configcenter/src/thirdpartyclient/esbserver/iam"
 	"configcenter/src/thirdpartyclient/esbserver/nodeman"
 	"configcenter/src/thirdpartyclient/esbserver/user"
 
@@ -31,6 +32,7 @@ type EsbClientInterface interface {
 	GseSrv() gse.GseClientInterface
 	User() user.UserClientInterface
 	NodemanSrv() nodeman.NodeManClientInterface
+	IamSrv() iam.IamClientInterface
 }
 
 type esbsrv struct {
@@ -38,6 +40,7 @@ type esbsrv struct {
 	gseSrv     gse.GseClientInterface
 	userSrv    user.UserClientInterface
 	nodemanSrv nodeman.NodeManClientInterface
+	iamSrv     iam.IamClientInterface
 	sync.RWMutex
 	esbConfig *esbutil.EsbConfigSrv
 	c         *util.Capability
@@ -90,6 +93,19 @@ func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 		e.Lock()
 		e.nodemanSrv = nodeman.NewNodeManClientInterface(e.client, e.esbConfig)
 		srv = e.nodemanSrv
+		e.Unlock()
+	}
+	return srv
+}
+
+func (e *esbsrv) IamSrv() iam.IamClientInterface {
+	e.RLock()
+	srv := e.iamSrv
+	e.RUnlock()
+	if nil == srv {
+		e.Lock()
+		e.iamSrv = iam.NewIamClientInterface(e.client, e.esbConfig)
+		srv = e.iamSrv
 		e.Unlock()
 	}
 	return srv
