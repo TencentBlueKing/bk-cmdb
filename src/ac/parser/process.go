@@ -34,9 +34,9 @@ func (ps *parseStream) processRelated() *parseStream {
 		ProcessTemplate().
 		ProcessInstance().
 		OperationStatistic()
-	// remove process template and process template bound related api
-	// processTemplate()
-	// processTemplateBound()
+		// remove process template and process template bound related api
+		// processTemplate()
+		// processTemplateBound()
 
 	return ps
 }

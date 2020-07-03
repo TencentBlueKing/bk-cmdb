@@ -133,7 +133,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.SystemBase:
 		iamResourceType = SysSystemBase
 	case meta.UserCustom:
-		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
+		iamResourceType = UserCustom
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	case meta.ProcessServiceTemplate:
@@ -158,6 +158,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysCloudResourceTask
 	case meta.EventWatch:
 		iamResourceType = SysEventWatch
+	case meta.ConfigAdmin:
+		iamResourceType = SysSystemBase
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -166,6 +168,10 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 }
 
 func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (ResourceActionID, error) {
+	if action == meta.SkipAction {
+		return Skip, nil
+	}
+
 	convertAction := action
 	switch action {
 	case meta.CreateMany:
@@ -198,7 +204,7 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 
 	if _, exist := resourceActionMap[resourceType]; exist {
 		actionID, ok := resourceActionMap[resourceType][convertAction]
-		if ok {
+		if ok && actionID != Unsupported {
 			return actionID, nil
 		}
 	}
@@ -216,11 +222,13 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Delete: EditModel,
 		meta.Update: EditModel,
 		meta.Create: EditModel,
+		meta.Find:   Skip,
 	},
 	meta.ModelUnique: {
 		meta.Delete: EditModel,
 		meta.Update: EditModel,
 		meta.Create: EditModel,
+		meta.Find:   Skip,
 	},
 	meta.Business: {
 		meta.Archive:              ArchiveBusiness,
@@ -237,7 +245,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Execute: FindBusinessCustomQuery,
 	},
 	meta.MainlineModel: {
-		meta.Find:   EditBusinessLayer,
+		meta.Find:   Skip,
 		meta.Create: EditBusinessLayer,
 		meta.Delete: EditBusinessLayer,
 	},
@@ -246,12 +254,15 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Update: EditModelTopologyView,
 	},
 	meta.MainlineModelTopology: {
-		meta.Find:   EditBusinessLayer,
-		meta.Update: EditBusinessLayer,
+		meta.Find: Skip,
 	},
 	meta.Process: {
 		meta.BoundModuleToProcess:   EditBusinessServiceInstance,
 		meta.UnboundModuleToProcess: EditBusinessServiceInstance,
+		meta.Find:                   Skip,
+		meta.Create:                 EditBusinessServiceInstance,
+		meta.Delete:                 EditBusinessServiceInstance,
+		meta.Update:                 EditBusinessServiceInstance,
 	},
 	meta.HostInstance: {
 		meta.MoveResPoolHostToBizIdleModule: ResourcePoolHostTransferToBusiness,
@@ -267,59 +278,73 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.CleanHostInSetOrModule:         EditBusinessHost,
 		meta.TransferHost:                   EditBusinessHost,
 		meta.MoveBizHostToModule:            EditBusinessHost,
+		meta.Find:                           Skip,
 	},
 	meta.ProcessServiceCategory: {
 		meta.Delete: DeleteBusinessServiceCategory,
 		meta.Update: EditBusinessServiceCategory,
 		meta.Create: CreateBusinessServiceCategory,
+		meta.Find:   Skip,
 	},
 	meta.ProcessServiceInstance: {
 		meta.Delete: DeleteBusinessServiceInstance,
 		meta.Update: EditBusinessServiceInstance,
 		meta.Create: CreateBusinessServiceInstance,
+		meta.Find:   Skip,
 	},
 	meta.ProcessServiceTemplate: {
 		meta.Delete: DeleteBusinessServiceTemplate,
 		meta.Update: EditBusinessServiceTemplate,
 		meta.Create: CreateBusinessServiceTemplate,
+		meta.Find:   Skip,
 	},
 	meta.SetTemplate: {
 		meta.Delete: DeleteBusinessSetTemplate,
 		meta.Update: EditBusinessSetTemplate,
 		meta.Create: CreateBusinessSetTemplate,
+		meta.Find:   Skip,
 	},
 	meta.ModelModule: {
 		meta.Delete: DeleteBusinessTopology,
 		meta.Update: EditBusinessTopology,
 		meta.Create: CreateBusinessTopology,
+		meta.Find:   Skip,
 	},
 	meta.ModelSet: {
 		meta.Delete: DeleteBusinessTopology,
 		meta.Update: EditBusinessTopology,
 		meta.Create: CreateBusinessTopology,
+		meta.Find:   Skip,
 	},
 	meta.MainlineInstance: {
 		meta.Delete: DeleteBusinessTopology,
 		meta.Update: EditBusinessTopology,
 		meta.Create: CreateBusinessTopology,
+		meta.Find:   Skip,
 	},
 	meta.MainlineInstanceTopology: {
-		meta.Delete: DeleteBusinessTopology,
-		meta.Update: EditBusinessTopology,
-		meta.Create: CreateBusinessTopology,
+		meta.Delete: Skip,
+		meta.Update: Skip,
+		meta.Create: Skip,
+		meta.Find:   Skip,
 	},
 	meta.HostApply: {
+		meta.Create: EditBusinessHostApply,
 		meta.Update: EditBusinessHostApply,
+		meta.Delete: EditBusinessHostApply,
+		meta.Find:   Skip,
 	},
 	meta.ResourcePoolDirectory: {
 		meta.Delete: DeleteResourcePoolDirectory,
 		meta.Update: EditResourcePoolDirectory,
 		meta.Create: CreateResourcePoolDirectory,
+		meta.Find:   Skip,
 	},
 	meta.Plat: {
 		meta.Delete: DeleteCloudArea,
 		meta.Update: EditCloudArea,
 		meta.Create: CreateCloudArea,
+		meta.Find:   Skip,
 	},
 	meta.EventPushing: {
 		meta.Delete: DeleteEventPushing,
@@ -343,19 +368,23 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Delete: DeleteModel,
 		meta.Update: EditModel,
 		meta.Create: CreateModel,
-		meta.Find:   FindModel,
+		meta.Find:   Skip,
 	},
 	meta.AssociationType: {
 		meta.Delete: DeleteAssociationType,
 		meta.Update: EditAssociationType,
 		meta.Create: CreateAssociationType,
+		meta.Find:   Skip,
 	},
 	meta.ModelClassification: {
 		meta.Delete: DeleteModelGroup,
 		meta.Update: EditModelGroup,
 		meta.Create: CreateModelGroup,
+		meta.Find:   Skip,
 	},
 	meta.OperationStatistic: {
+		meta.Create: EditOperationStatistic,
+		meta.Delete: EditOperationStatistic,
 		meta.Update: EditOperationStatistic,
 		meta.Find:   FindOperationStatistic,
 	},
@@ -380,16 +409,16 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelInstanceAssociation: {
-		meta.Find:   FindInstance,
+		meta.Find:   Skip,
 		meta.Update: EditInstance,
-		meta.Delete: DeleteInstance,
-		meta.Create: CreateInstance,
+		meta.Delete: EditInstance,
+		meta.Create: EditInstance,
 	},
 	meta.ModelAssociation: {
-		meta.Find:   FindInstance,
-		meta.Update: EditInstance,
-		meta.Delete: DeleteInstance,
-		meta.Create: CreateInstance,
+		meta.Find:   Skip,
+		meta.Update: EditModel,
+		meta.Delete: EditModel,
+		meta.Create: EditModel,
 	},
 	meta.ModelInstanceTopology: {
 		meta.Find:   Skip,
@@ -398,7 +427,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelAttribute: {
-		meta.Find:   FindModel,
+		meta.Find:   Skip,
 		meta.Update: EditModel,
 		meta.Delete: DeleteModel,
 		meta.Create: CreateModel,
@@ -433,12 +462,18 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Update: Skip,
 	},
 	meta.SystemConfig: {
-		meta.Find:   FindSystemConfig,
-		meta.Update: EditSystemConfig,
+		meta.Find:   Skip,
+		meta.Update: Skip,
+		meta.Delete: Skip,
+		meta.Create: Skip,
+	},
+	meta.ConfigAdmin: {
+		meta.Find:   Skip,
+		meta.Update: GlobalSettings,
 		// unsupported action
 		meta.Delete: Unsupported,
 		// unsupported action
-		meta.Create: Skip,
+		meta.Create: Unsupported,
 	},
 }
 

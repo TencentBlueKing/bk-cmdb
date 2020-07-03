@@ -48,12 +48,12 @@ func (a *Authorize) calculatePolicy(
 		return false, fmt.Errorf("parse iam path failed, err: %v", err)
 	}
 
-	return a.calculateContent(ctx, p, resourceID, authPath)
+	return a.calculateContent(ctx, p, resourceID, authPath, resources[0].Type)
 
 }
 
 // calculateContent is to calculate the final authorize status, authorized or not.
-func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rscID string, authPath []string) (
+func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rscID string, authPath []string, resourceType types.ResourceType) (
 	bool, error) {
 	content, canContent := p.Element.(*operator.Content)
 
@@ -77,13 +77,13 @@ func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rs
 
 		switch policy.Operator {
 		case operator.And:
-			authorized, err = a.calculateContent(ctx, policy, rscID, authPath)
+			authorized, err = a.calculateContent(ctx, policy, rscID, authPath, resourceType)
 			if err != nil {
 				return false, err
 			}
 
 		case operator.Or:
-			authorized, err = a.calculateContent(ctx, policy, rscID, authPath)
+			authorized, err = a.calculateContent(ctx, policy, rscID, authPath, resourceType)
 			if err != nil {
 				return false, err
 			}
@@ -164,7 +164,7 @@ func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rs
 	if len(allAttributes) != 0 {
 		// we have an authorized with attribute policy.
 		// get the instance with these attribute
-		yes, err := a.calculateResourceAttribute(ctx, p.Operator, rscID, allAttributes)
+		yes, err := a.calculateResourceAttribute(ctx, p.Operator, rscID, allAttributes, resourceType)
 		if err != nil {
 			return false, err
 		}
@@ -222,12 +222,13 @@ func (a *Authorize) calculateAuthPath(p *operator.Policy, fv *operator.FieldValu
 // if a user have a attribute based auth policy, then we need to use the filter constructed by the policy to filter
 // out the resources. Then check the resource id is in or not in it. if yes, user is authorized.
 func (a *Authorize) calculateResourceAttribute(ctx context.Context, op operator.OperType, rscID string,
-	fv []*operator.FieldValue) (bool, error) {
+	fv []*operator.FieldValue, resourceType types.ResourceType) (bool, error) {
 
 	listOpts := &types.ListWithAttributes{
 		Operator:   op,
 		IDList:     []string{rscID},
 		Attributes: fv,
+		Type:       resourceType,
 	}
 
 	idList, err := a.fetcher.ListInstancesWithAttributes(ctx, listOpts)

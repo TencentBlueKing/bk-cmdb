@@ -435,8 +435,5 @@ func (a *AnyOper) Name() string {
 }
 
 func (a *AnyOper) Match(match interface{}, _ interface{}) (bool, error) {
-	if !reflect.ValueOf(match).IsValid() {
-		return false, errors.New("invalid parameter")
-	}
 	return true, nil
 }

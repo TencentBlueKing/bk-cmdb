@@ -69,6 +69,7 @@ func GenerateActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genOperationStatisticActions()...)
 	resourceActionList = append(resourceActionList, genAuditLogActions()...)
 	resourceActionList = append(resourceActionList, genEventWatchActions()...)
+	resourceActionList = append(resourceActionList, genConfigAdminActions()...)
 
 	return resourceActionList
 }
@@ -979,16 +980,6 @@ func genModelActions() []ResourceAction {
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   FindModel,
-		Name:                 "模型查询",
-		NameEn:               "View Model",
-		Type:                 View,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
 	return actions
 }
 
@@ -1208,6 +1199,20 @@ func genEventWatchActions() []ResourceAction {
 		Name:                 "模块数据监听",
 		NameEn:               "Module Event Listen",
 		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+	return actions
+}
+
+func genConfigAdminActions() []ResourceAction {
+	actions := make([]ResourceAction, 0)
+	actions = append(actions, ResourceAction{
+		ID:                   GlobalSettings,
+		Name:                 "全局设置",
+		NameEn:               "Global Settings",
+		Type:                 Edit,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,

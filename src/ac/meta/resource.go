@@ -67,6 +67,7 @@ const (
 	ResourcePoolDirectory    ResourceType = "resourcePoolDirectory"
 	CloudAccount             ResourceType = "cloudAccount"
 	CloudResourceTask        ResourceType = "cloudResourceTask"
+	ConfigAdmin              ResourceType = "configAdmin"
 )
 
 const (
