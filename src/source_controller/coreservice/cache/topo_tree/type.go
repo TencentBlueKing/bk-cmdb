@@ -96,3 +96,60 @@ type instance struct {
 	id       int64
 	parentID int64
 }
+
+// search one of the node's path in the the business topology.
+type SearchNodePathOption struct {
+	Business int64           `json:"bk_biz_id"`
+	Nodes    []*MainlineNode `json:"bk_nodes"`
+}
+
+type MainlineNode struct {
+	// mainline topology object
+	Object string `json:"bk_obj_id"`
+	// object's instance id, eg, bk_set_id, bk_module_id...
+	InstanceID int64 `json:"bk_inst_id"`
+}
+
+// NodePaths describes a topology instance's path from itself to the top biz.
+// cause a host may exists in multiple modules, so it's may have several paths.
+type NodePaths struct {
+	*MainlineNode
+	// host may have multiple paths
+	Paths [][]Node `json:"bk_paths"`
+}
+
+type Node struct {
+	// mainline topology object
+	Object string `json:"bk_obj_id"`
+	// object's instance id, eg, bk_set_id, bk_module_id...
+	InstanceID int64 `json:"bk_inst_id"`
+	// instance's name, eg: bk_set_name, bk_module_name...
+	InstanceName string `json:"bk_inst_name"`
+	// node's parent id, only used for internal, do not return to user.
+	ParentID int64 `json:"-"`
+}
+
+type module struct {
+	ID       int64  `json:"bk_module_id"`
+	Name     string `json:"bk_module_name"`
+	Biz      int64  `json:"bk_biz_id"`
+	ParentID int64  `json:"bk_parent_id"`
+}
+
+type set struct {
+	ID       int64  `json:"bk_set_id"`
+	Name     string `json:"bk_set_name"`
+	Biz      int64  `json:"bk_biz_id"`
+	ParentID int64  `json:"bk_parent_id"`
+}
+
+type biz struct {
+	ID   int64  `json:"bk_biz_id"`
+	Name string `json:"bk_biz_name"`
+}
+
+type custom struct {
+	ID       int64  `json:"bk_inst_id"`
+	ParentID int64  `json:"bk_parent_id"`
+	Name     string `json:"bk_inst_name"`
+}

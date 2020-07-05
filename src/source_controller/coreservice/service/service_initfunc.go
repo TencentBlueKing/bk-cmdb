@@ -312,6 +312,8 @@ func (s *coreService) initCache(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/set/{bk_set_id}", Handler: s.SearchSetInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/module/{bk_module_id}", Handler: s.SearchModuleInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/{bk_obj_id}/{bk_inst_id}", Handler: s.SearchCustomLayerInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topo/node_path",
+		Handler: s.SearchTopologyNodePath})
 
 	utility.AddToRestfulWebService(web)
 }
