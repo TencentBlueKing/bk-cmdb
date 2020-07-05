@@ -30,6 +30,8 @@ type Interface interface {
 	SearchSet(ctx context.Context, h http.Header, setID int64) (jsonString string, err error)
 	SearchModule(ctx context.Context, h http.Header, moduleID int64) (jsonString string, err error)
 	SearchCustomLayer(ctx context.Context, h http.Header, objID string, instID int64) (jsonString string, err error)
+	SearchTopologyNodePath(ctx context.Context, h http.Header, opts *topo_tree.SearchNodePathOption) ([]topo_tree.
+		NodePaths, error)
 }
 
 func NewCacheClient(client rest.ClientInterface) Interface {

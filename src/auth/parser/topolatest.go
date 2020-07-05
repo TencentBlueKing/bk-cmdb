@@ -2101,6 +2101,10 @@ const (
 	searchTopologyTreePattern = "/api/v3/find/cache/topotree"
 )
 
+var (
+	findBusinessTopoNodePathRegexp = regexp.MustCompile(`^/find/topo/cache/topo/node_path/biz/[0-9]+/?$`)
+)
+
 func (ps *parseStream) cache() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -2118,5 +2122,18 @@ func (ps *parseStream) cache() *parseStream {
 		}
 		return ps
 	}
+
+	if ps.hitRegexp(findBusinessTopoNodePathRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.BizTopology,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
