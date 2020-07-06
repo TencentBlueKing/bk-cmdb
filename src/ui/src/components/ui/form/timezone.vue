@@ -71,7 +71,7 @@
         },
         methods: {
             getDefaultValue () {
-                let value = this.value
+                let value = this.value || ''
                 if (this.multiple && !value.length) {
                     value = ['Asia/Shanghai']
                 } else {

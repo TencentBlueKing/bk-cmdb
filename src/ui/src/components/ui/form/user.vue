@@ -26,7 +26,7 @@
             },
             localValue: {
                 get () {
-                    return this.value.length ? this.value.split(',') : []
+                    return (this.value && this.value.length) ? this.value.split(',') : []
                 },
                 set (val) {
                     this.$emit('input', val.toString())
