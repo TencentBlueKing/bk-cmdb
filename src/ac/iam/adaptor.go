@@ -20,7 +20,9 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
@@ -477,8 +479,88 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 	},
 }
 
+func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
+
+	result, err := clientSet.TopoServer().Instance().GetAppBasicInfo(ctx, header, bizID)
+	if err != nil {
+		return "", err
+	}
+	if result.Code == common.CCNoPermission {
+		return "", nil
+	}
+	if !result.Result {
+		return "", result.Error()
+	}
+	bizName := result.Data.BizName
+	return bizName, nil
+}
+
 // AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
-func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
-	// TODO implement this
-	return []metadata.Permission{}, nil
+func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) (*metadata.IamPermission, error) {
+	permission := new(metadata.IamPermission)
+	permission.SystemID = SystemIDCMDB
+	bizIDMap := make(map[int64]string)
+	// permissionMap maps ResourceActionID and ResourceTypeID to ResourceInstances
+	permissionMap := make(map[string]map[string][]metadata.IamResourceInstance, 0)
+	for _, r := range rs {
+		actionID, err := ConvertResourceAction(r.Type, r.Action, r.BusinessID)
+		if err != nil {
+			return nil, err
+		}
+		rscType, err := ConvertResourceType(r.Basic.Type, r.BusinessID)
+		if err != nil {
+			return nil, err
+		}
+		rscIDs, err := GenerateResourceID(*rscType, &r)
+		if err != nil {
+			return nil, err
+		}
+
+		// generate iam resource instances by biz id and instance itself
+		instances := make([]metadata.IamResourceInstance, 0)
+		if r.BusinessID > 0 {
+			bizName, exist := bizIDMap[r.BusinessID]
+			if !exist {
+				var err error
+				bizName, err = GetBizNameByID(api, h, r.BusinessID)
+				if err != nil {
+					return nil, err
+				} else {
+					bizIDMap[r.BusinessID] = bizName
+				}
+			}
+			instances = append(instances, metadata.IamResourceInstance{
+				Type: string(Business),
+				ID:   strconv.FormatInt(r.BusinessID, 10),
+				Name: bizName,
+			})
+		}
+		instance := metadata.IamResourceInstance{
+			Type: string(*rscType),
+			Name: r.Basic.Name,
+		}
+		if len(rscIDs) != 0 {
+			instance.ID = rscIDs[len(rscIDs)-1].ResourceID
+		}
+		instances = append(instances, instance)
+
+		if _, ok := permissionMap[string(actionID)]; !ok {
+			permissionMap[string(actionID)] = make(map[string][]metadata.IamResourceInstance, 0)
+		}
+		permissionMap[string(actionID)][string(*rscType)] = instances
+	}
+
+	for actionID, permissionTypeMap := range permissionMap {
+		action := metadata.IamAction{ID: actionID}
+		for rscType, instances := range permissionTypeMap {
+			action.RelatedResourceTypes = append(action.RelatedResourceTypes, metadata.IamResourceType{
+				SystemID:  SystemIDCMDB,
+				Type:      rscType,
+				Instances: instances,
+			})
+		}
+		permission.Actions = append(permission.Actions, action)
+	}
+	return permission, nil
 }

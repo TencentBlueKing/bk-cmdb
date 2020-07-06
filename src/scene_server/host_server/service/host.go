@@ -20,10 +20,9 @@ import (
 	"strings"
 
 	"configcenter/src/ac"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
 	authmeta "configcenter/src/ac/meta"
-	"configcenter/src/auth"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -76,7 +75,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
-		if err != auth.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}

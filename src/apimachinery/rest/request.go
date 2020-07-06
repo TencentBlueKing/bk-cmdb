@@ -432,7 +432,7 @@ func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
 	if elements[3].Exists() {
 		raw := elements[3].Raw
 		if len(raw) != 0 {
-			perm := make([]metadata.Permission, 0)
+			perm := new(metadata.IamPermission)
 			if err := json.Unmarshal([]byte(raw), &perm); err != nil {
 				blog.Errorf("invalid http response, invalid permission field, body: %s, rid: %s", r.Body, r.Rid)
 				return nil, fmt.Errorf("http response with invalid permission field, body: %s", r.Body)
