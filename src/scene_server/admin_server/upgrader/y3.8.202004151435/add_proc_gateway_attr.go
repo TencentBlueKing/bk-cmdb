@@ -37,16 +37,14 @@ func addProcNetworkProxyGroup(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		IsCollapse: true,
 	}
 
-	id, err := db.NextSequence(ctx, common.BKTableNamePropertyGroup)
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyGroupIDField, common.BKOwnerIDField}
+	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNamePropertyGroup, group, "id", uniqueFields, []string{})
 	if err != nil {
-		blog.ErrorJSON("NextSequence failed, group: %s, err: %s", group, err)
-		return err
-	}
-	group.ID = int64(id)
+		if db.IsNotFoundError(err) == false {
+			blog.ErrorJSON("addProcNetworkProxyGroup failed, Upsert err: %s, group: %#v, ", err, group)
 
-	if err := db.Table(common.BKTableNamePropertyGroup).Insert(ctx, group); err != nil {
-		blog.ErrorJSON("insert failed, group: %s, err: %s", group, err)
-		return err
+			return err
+		}
 	}
 
 	return nil
@@ -63,6 +61,7 @@ func addProcNetworkProxyAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	}
 
 	now := time.Now()
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
 	for _, r := range dataRows {
 		r.OwnerID = conf.OwnerID
 		r.IsPre = true
@@ -73,15 +72,8 @@ func addProcNetworkProxyAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		id, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
-		if err != nil {
-			blog.ErrorJSON("NextSequence failed, host attrName: %s, err: %v", r.PropertyName, err)
-			return err
-		}
-		r.ID = int64(id)
-
-		if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, r); err != nil {
-			blog.ErrorJSON("insert failed, host attrName: %s, err: %s", r.PropertyName, err)
+		if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields, []string{}); err != nil {
+			blog.ErrorJSON("addProcNetworkProxyAttrs failed, Upsert err: %s, attribute: %#v, ", err, r)
 			return err
 		}
 	}

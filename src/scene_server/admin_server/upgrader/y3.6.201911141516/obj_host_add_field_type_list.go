@@ -14,10 +14,10 @@ package y3_6_201911141516
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	com "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -50,11 +50,6 @@ type Attribute struct {
 }
 
 func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	attrID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
-	if err != nil {
-		return err
-	}
-
 	optionVal := []string{
 		"运营中[需告警]",
 		"运营中[无告警]",
@@ -66,7 +61,6 @@ func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	hostListTypeField := Attribute{
-		ID:                attrID,
 		OwnerID:           conf.OwnerID,
 		ObjectID:          common.BKInnerObjIDHost,
 		PropertyID:        common.BKHostState,
@@ -87,8 +81,10 @@ func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		LastTime:          time.Now(),
 	}
 
-	if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, hostListTypeField); err != nil {
-		return fmt.Errorf("upgrade y3_6_201911141516, but insert host list type field failed, err: %v", err)
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, hostListTypeField, "id", uniqueFields, []string{}); err != nil {
+		blog.ErrorJSON("addHostFieldTypeList failed, Upsert err: %s, attribute: %#v, ", err, hostListTypeField)
+		return err
 	}
 
 	return nil
