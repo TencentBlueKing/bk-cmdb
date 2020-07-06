@@ -234,15 +234,9 @@ func (s *coreService) UpdateSetTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.SetTemplateSyncStatus{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("UpdateSetTemplateSyncStatus failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
