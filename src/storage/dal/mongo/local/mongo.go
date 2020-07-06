@@ -781,7 +781,6 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 		var err error
 		results, err = c.dbc.Database(c.dbname).Collection(c.collName).Distinct(ctx, field, filter)
 		return err
-
 	})
 	return results,err
 }
