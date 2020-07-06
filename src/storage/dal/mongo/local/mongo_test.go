@@ -22,12 +22,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
-	"configcenter/src/storage/driver/mongodb"
-
-	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 )
 
 func BenchmarkLocalCUD(b *testing.B) {
@@ -1336,8 +1335,10 @@ func TestDistinct(t *testing.T) {
 	tableName := "tmp_test_distinct"
 
 	db := dbCleint(t)
+
 	// 清理数据
 	err := db.DropTable(ctx, tableName)
+
 	require.NoError(t, err)
 	require.NoError(t, err)
 
@@ -1371,54 +1372,77 @@ func TestDistinct(t *testing.T) {
 			"type":   "int",
 		},
 		map[string]interface{}{
-			"str":  "aa",
-			"type": "str",
+			"string":  "bb",
+			"type": "string",
 		},
 		map[string]interface{}{
-			"str":  "bb",
-			"type": "str",
+			"string":  "aa",
+			"type": "string",
+		},
+		map[string]interface{}{
+			"bool": true,
+			"type": "bool",
+		},
+		map[string]interface{}{
+			"bool": false,
+			"type": "bool",
 		},
 	}
 
-	dbErr := mongodb.Client().DropTable(context.TODO(), tableName)
+	dbErr := db.DropTable(context.TODO(), tableName)
 	require.NoError(t, dbErr, "insert row to  mongodb error")
 
-	dbErr = mongodb.Client().Table(tableName).Insert(context.TODO(), insertRows)
+	dbErr = db.Table(tableName).Insert(context.TODO(), insertRows)
 	require.NoError(t, dbErr, "insert row to  mongodb error")
 
-	// distinct int64 字段， db 数据和返回的结构都是int64
-	rowInt64Arr := make([]int64, 0)
-	dbErr = table.Distinct(context.TODO(), "int64", map[string]string{"type": "int"}, &rowInt64Arr)
+	// distinct int64 字段, db数据为int64,返回的结构都是int64.
+	var ret []interface{}
+	ret, dbErr = table.Distinct(context.TODO(), "int64", map[string]string{"type": "int"})
 	require.NoError(t, err, "find distinct int64 error")
-	require.Equal(t, []int64{64, 164}, rowInt64Arr)
+	if true{
+		// 测试转化后的结果与预期是否相同.
+		results,err := util.SliceInterfaceToInt64(ret)
+		require.NoError(t, err,"convert to []int64 error")
+		require.Equal(t,[]int64{64, 164},results)
+	}
 
-	// distinct int 字段， db 数据和返回的结构都是int
-	rowIntArr := make([]int, 0)
-	dbErr = table.Distinct(context.TODO(), "int", map[string]string{"type": "int"}, &rowIntArr)
+	// distinct int 字段, db数据为int,返回的结构都是int64.
+	ret, dbErr = table.Distinct(context.TODO(), "int", map[string]string{"type": "int"})
 	require.NoError(t, dbErr, "find distinct int error")
-	require.Equal(t, []int{0, 100}, rowIntArr)
+	if true{
+		// 测试转化后的结果与预期是否相同.
+		results,err := util.SliceInterfaceToInt64(ret)
+		require.NoError(t, err,"convert to []int64 error")
+		require.Equal(t,[]int64{0, 100},results)
+	}
 
-	// distinct int64 字段， db 数据是int, 返回的结构都是int64
-	rowInt64Arr = make([]int64, 0)
-	dbErr = table.Distinct(context.TODO(), "int", map[string]string{"type": "int"}, &rowInt64Arr)
-	require.NoError(t, dbErr, "find distinct db int into int64 result error")
-	require.Equal(t, []int64{0, 100}, rowInt64Arr)
-
-	// distinct uint64 字段， db 数据和返回的结构都是uint64
-	rowUint64Arr := make([]uint64, 0)
-	dbErr = table.Distinct(context.TODO(), "uint64", map[string]string{"type": "int"}, &rowUint64Arr)
-	require.NoError(t, dbErr, "find distinct uint64 error")
-	require.Equal(t, []uint64{64, 164}, rowUint64Arr)
-
-	// distinct uint 字段， db 数据和返回的结构都是uint
-	rowUintArr := make([]uint, 0)
-	dbErr = table.Distinct(context.TODO(), "uint", map[string]string{"type": "int"}, &rowUintArr)
+	// distinct uint 字段, db数据为uint,返回的结构都是int64.
+	ret, dbErr = table.Distinct(context.TODO(), "uint", map[string]string{"type": "int"})
 	require.NoError(t, dbErr, "find distinct uint error")
-	require.Equal(t, []uint{0, 100}, rowUintArr)
+	if true{
+		// 测试转化后的结果与预期是否相同.
+		results,err := util.SliceInterfaceToInt64(ret)
+		require.NoError(t, err,"convert to []int64 error")
+		require.Equal(t,[]int64{0, 100},results)
+	}
 
-	// distinct uint64 字段， db 数据是uint, 返回的结构都是int64
-	rowUint64Arr = make([]uint64, 0)
-	dbErr = table.Distinct(context.TODO(), "uint", map[string]string{"type": "int"}, &rowUint64Arr)
-	require.NoError(t, dbErr, "find distinct db uint into uint64 result error")
-	require.Equal(t, []uint64{0, 100}, rowUint64Arr)
+	// distinct string 字段, db数据为string,返回的结构都是string.
+	ret, dbErr = table.Distinct(context.TODO(), "string", map[string]string{"type": "string"})
+	require.NoError(t, dbErr, "find distinct string error")
+	if true{
+		// 测试转化后的结果与预期是否相同.
+		results,err := util.SliceInterfaceToString(ret)
+		require.NoError(t, err,"convert to []string error")
+		require.Equal(t,[]string{"aa", "bb"},results)
+	}
+
+	// distinct bool 字段， db数据为bool,返回的结构都是bool.
+	ret, dbErr = table.Distinct(context.TODO(), "bool", map[string]string{"type": "bool"})
+	require.NoError(t, dbErr, "find distinct bool error")
+	if true{
+		// 测试转化后的结果与预期是否相同.
+		results,err := util.SliceInterfaceToBool(ret)
+		require.NoError(t, err,"convert to []bool error")
+		require.Equal(t,[]bool{false,true},results)
+	}
 }
