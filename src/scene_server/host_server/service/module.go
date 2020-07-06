@@ -86,7 +86,7 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 		
 		if !result.Result {
 			blog.Errorf("add host module relation, but add config failed, err: %v, %v.input:%+v,rid:%s", err, result.ErrMsg, config, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+			return result.CCError()
 		}
 
 		if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {

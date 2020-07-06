@@ -330,7 +330,7 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 
 	// add auditLog preData
 	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, util.GetOwnerID(ctx.Kit.Header))
+	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
 	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
 		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -350,12 +350,12 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 
 		if false == res.Result {
 			blog.Errorf("DelPlat http response error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(res.Code, res.ErrMsg)
+			return res.CCError()
 		}
 
 		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditDelete); err != nil {
 			blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(res.Code, res.ErrMsg)
+			return res.CCError()
 		}
 		return nil
 	})
@@ -399,7 +399,7 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 
 	// auditLog preData
 	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, util.GetOwnerID(ctx.Kit.Header))
+	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
 	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
 		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

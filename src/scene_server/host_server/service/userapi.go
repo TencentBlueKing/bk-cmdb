@@ -71,7 +71,7 @@ func (s *Service) AddUserCustomQuery(ctx *rest.Contexts) {
 		}
 		if !result.Result {
 			blog.Errorf("GetUserCustom http response error, err code:%d,err msg:%s, input:%+v,rid:%s", result.Code, result.ErrMsg, ucq, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+			return result.CCError()
 		}
 		return nil
 	})
@@ -118,7 +118,7 @@ func (s *Service) UpdateUserCustomQuery(ctx *rest.Contexts) {
 		}
 		if !result.Result {
 			blog.Errorf("UpdateUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,input:%+v,rid:%s", result.Code, result.ErrMsg, bizID, params, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+			return result.CCError()
 		}
 		
 		return nil
@@ -147,7 +147,7 @@ func (s *Service) DeleteUserCustomQuery(ctx *rest.Contexts) {
 
 	if !dyResult.Result {
 		blog.Errorf("DeleteUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,rid:%s", dyResult.Code, dyResult.ErrMsg, appID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(dyResult.Code, dyResult.ErrMsg))
+		ctx.RespAutoError(dyResult.CCError())
 		return
 	}
 
@@ -159,7 +159,7 @@ func (s *Service) DeleteUserCustomQuery(ctx *rest.Contexts) {
 		}
 		if !result.Result {
 			blog.Errorf("DeleteUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,rid:%s", result.Code, result.ErrMsg, appID, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+			return result.CCError()
 		}
 
 		return nil
@@ -211,7 +211,7 @@ func (s *Service) GetUserCustomQuery(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("GetUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,input:%+v,rid:%s", result.Code, result.ErrMsg, req.PathParameter("bk_biz_id"), input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 
@@ -232,7 +232,7 @@ func (s *Service) GetUserCustomQueryDetail(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("GetUserCustomQueryDetail http response error,err code:%d,err msg:%s, bizID:%v,ID:%+v,rid:%s", result.Code, result.ErrMsg, appID, ID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 

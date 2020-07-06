@@ -53,7 +53,7 @@ func (s *Service) ListHostFavourites(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("GetHostFavourites http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 	
@@ -102,7 +102,7 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 		}
 		if !result.Result {
 			blog.Errorf("AddHostFavourite http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, param, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+			return result.CCError()
 		}
 		return nil
 	})
@@ -170,7 +170,7 @@ func (s *Service) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 		}
 		if !result.Result {
 			blog.Errorf("UpdateHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, data, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+			return result.CCError()
 		}
 		return nil
 	})
@@ -200,7 +200,7 @@ func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 		}
 		if !result.Result {
 			blog.Errorf("DeleteHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, ID, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+			return result.CCError()
 		}
 		return nil
 	})
@@ -229,7 +229,7 @@ func (s *Service) IncrHostFavouritesCount(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("IncrHostFavouritesCount GetHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, ID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 
@@ -244,7 +244,7 @@ func (s *Service) IncrHostFavouritesCount(ctx *rest.Contexts) {
 		}
 		if !uResult.Result {
 			blog.Errorf("IncrHostFavouritesCount UpdateHostFavouriteByID http response error,err code:%d,err msg:%s,input:%+v,rid:%s", uResult.Code, uResult.ErrMsg, data, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(uResult.Code, uResult.ErrMsg)
+			return uResult.CCError()
 		}
 		return nil
 	})

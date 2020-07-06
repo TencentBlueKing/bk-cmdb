@@ -37,7 +37,7 @@ func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("SaveUserCustom GetUserCustomByUser http response error,err code:%d,err msg:%s,input:%s, rid:%s", result.Code, result.ErrMsg, params, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 
@@ -52,7 +52,7 @@ func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
 			}
 			if !res.Result {
 				blog.Errorf("SaveUserCustom AddUserCustom http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, ctx.Kit.Rid)
-				return ctx.Kit.CCError.New(res.Code, res.ErrMsg)
+				return res.CCError()
 			}
 			return nil
 
@@ -65,7 +65,7 @@ func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
 		}
 		if !res.Result {
 			blog.Errorf("SaveUserCustom UpdateUserCustomByID http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(res.Code, res.ErrMsg)
+			return res.CCError()
 		}
 		return nil
 	})
@@ -87,7 +87,7 @@ func (s *Service) GetUserCustom(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("GetUserCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 
@@ -105,7 +105,7 @@ func (s *Service) GetModelDefaultCustom(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("GetDefaultCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 	// ensure return {} by json decode

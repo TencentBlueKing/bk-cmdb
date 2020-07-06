@@ -349,7 +349,7 @@ func (s *Service) HostSnapInfo(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("HostSnapInfo, http response error, err code:%d,err msg:%s, input:%#v, rid:%s", result.Code, result.ErrMsg, hostID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 
@@ -400,7 +400,7 @@ func (s *Service) HostSnapInfoBatch(ctx *rest.Contexts) {
 	}
 	if !result.Result {
 		blog.Errorf("HostSnapInfoBatch failed, http response error, err code:%d, err msg:%s, input:%#v, rid:%s", result.Code, result.ErrMsg, input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(result.Code, result.ErrMsg))
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 
@@ -822,7 +822,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 					}
 					if !result.Result {
 						blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-						return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+						return result.CCError()
 					}
 				}
 			}
@@ -841,7 +841,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 			}
 			if !result.Result {
 				blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-				return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+				return result.CCError()
 			}
 		}
 
@@ -879,7 +879,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 		}
 		if !auditResp.Result {
 			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, auditResp.ErrMsg, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
+			return auditResp.CCError()
 		}
 		return nil
 	})
@@ -966,7 +966,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 			}
 			if !result.Result {
 				blog.Errorf("UpdateHostPropertyBatch UpdateObject http response error, err code:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, ctx.Kit.Rid)
-				return ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+				return result.CCError()
 			}
 
 			if err := hostLog.WithCurrent(ctx.Kit.Ctx, update.HostID, nil); err != nil {
@@ -998,7 +998,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 		}
 		if !auditResp.Result {
 			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, auditResp.ErrMsg, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
+			return auditResp.CCError()
 		}
 		return nil
 	})
@@ -1570,7 +1570,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		}
 		if !auditResp.Result {
 			blog.Errorf("UpdateImportHosts, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, auditResp.ErrMsg, ctx.Kit.Rid)
-			return ctx.Kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
+			return auditResp.CCError()
 		}
 		return nil
 	})
