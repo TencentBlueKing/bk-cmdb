@@ -20,6 +20,8 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
@@ -215,4 +217,23 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(resources)
+}
+
+// GetNoAuthSkipUrl returns the redirect url to iam for user to apply for specific authorizations
+func (s *AuthService) GetNoAuthSkipUrl(ctx *rest.Contexts) {
+	input := new(metadata.IamPermission)
+	err := ctx.DecodeInto(input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	url, err := esb.EsbClient().IamSrv().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	if err != nil {
+		blog.ErrorJSON("GetNoAuthSkipUrl failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(url)
 }

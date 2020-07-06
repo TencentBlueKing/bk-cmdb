@@ -155,16 +155,22 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
 	rid := util.GetHTTPCCRequestID(reqHeader)
 
-	p := make([]metadata.Permission, 0)
-	err := json.NewDecoder(req.Request.Body).Decode(&p)
+	p := new(metadata.IamPermission)
+	err := json.NewDecoder(req.Request.Body).Decode(p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but decode request failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	// TODO implement this
-	resp.WriteEntity(metadata.NewSuccessResp(""))
+	url, err := s.engine.CoreAPI.AuthServer().GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
+	if err != nil {
+		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
+		return
+	}
+
+	_ = resp.WriteEntity(metadata.NewSuccessResp(url))
 }
 
 type ConvertedResource struct {

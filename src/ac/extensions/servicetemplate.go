@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -94,8 +95,21 @@ func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header 
 }
 
 func (am *AuthManager) GenServiceTemplateNoPermissionResp() *metadata.BaseResp {
-	// TODO implement this
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
+	permission := &metadata.IamPermission{
+		SystemID: iam.SystemIDCMDB,
+		Actions: []metadata.IamAction{{
+			ID: string(iam.EditBusinessLayer),
+			RelatedResourceTypes: []metadata.IamResourceType{{
+				SystemID: iam.SystemIDCMDB,
+				Type:     string(iam.SysSystemBase),
+				Instances: []metadata.IamResourceInstance{{
+					Type: string(iam.SysSystemBase),
+					Name: iam.ResourceTypeIDMap[iam.SysSystemBase],
+				}},
+			}},
+		}},
+	}
+	resp := metadata.NewNoPermissionResp(permission)
 	return &resp
 }
 

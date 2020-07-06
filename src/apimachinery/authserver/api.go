@@ -99,3 +99,28 @@ func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header,
 
 	return response.Data, nil
 }
+
+func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error) {
+	response := new(struct {
+		metadata.BaseResp `json:",inline"`
+		Data              string `json:"data"`
+	})
+	subPath := "/find/no_auth_skip_url"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(response)
+
+	if err != nil {
+		return "", errors.CCHttpError
+	}
+	if response.Code != 0 {
+		return "", response.CCError()
+	}
+
+	return response.Data, nil
+}

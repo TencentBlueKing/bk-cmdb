@@ -76,8 +76,8 @@ func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.
 }
 
 func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
-	// TODO implement this
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
+	// process read authorization is skipped
+	resp := metadata.NewNoPermissionResp(nil)
 	return &resp, nil
 }
 

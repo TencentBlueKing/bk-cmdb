@@ -55,7 +55,7 @@ func (m *OwnerManager) SetHttpHeader(key, val string) {
 	m.header.Set(key, val)
 }
 
-func (m *OwnerManager) InitOwner() ([]metadata.Permission, errors.CCErrorCoder) {
+func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder) {
 	rid := util.GetHTTPCCRequestID(m.header)
 	blog.V(5).Infof("init owner %s, rid: %s", m.OwnerID, rid)
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
@@ -96,7 +96,7 @@ func (m *OwnerManager) InitOwner() ([]metadata.Permission, errors.CCErrorCoder) 
 	return nil, nil
 }
 
-func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, []metadata.Permission) {
+func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermission) {
 	rid := util.GetHTTPCCRequestID(m.header)
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
 
@@ -126,7 +126,7 @@ func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, []metadata.Permissi
 	return nil, nil
 }
 
-func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, []metadata.Permission) {
+func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata.IamPermission) {
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
 	rid := util.GetHTTPCCRequestID(m.header)
 	result, httpDoErr := m.Engine.CoreAPI.ApiServer().SearchDefaultApp(context.Background(), m.header, m.OwnerID)
@@ -143,7 +143,7 @@ func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, []metadat
 	return 0 < result.Data.Count, nil, nil
 }
 
-func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, errors.CCErrorCoder, []metadata.Permission) {
+func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, errors.CCErrorCoder, *metadata.IamPermission) {
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
 	rid := util.GetHTTPCCRequestID(m.header)
 
