@@ -91,7 +91,7 @@ func (s *Service) GetUserCustom(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(nil)
+	ctx.RespEntity(result.Data)
 }
 
 // GetModelDefaultCustom 获取模型在列表页面展示字段
