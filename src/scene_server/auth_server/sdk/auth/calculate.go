@@ -38,6 +38,10 @@ func (a *Authorize) calculatePolicy(
 		return false, errors.New("do not support auth across different system for now")
 	}
 
+	if p == nil || p.Operator == "" {
+		return false, nil
+	}
+
 	if p.Operator == operator.Any {
 		return true, nil
 	}
@@ -61,7 +65,7 @@ func (a *Authorize) calculateFieldValue(ctx context.Context, p *operator.Policy,
 	// must be a FieldValue type
 	fv, can := p.Element.(*operator.FieldValue)
 	if !can {
-		return false, fmt.Errorf("invalid type %s, should be FieldValue type", reflect.TypeOf(p.Element).String())
+		return false, fmt.Errorf("invalid type %v, should be FieldValue type", reflect.TypeOf(p.Element))
 	}
 
 	// check the special resource id at first
@@ -86,7 +90,7 @@ func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rs
 
 	if !canContent {
 		// not content and field value type at the same time.
-		return false, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(p.Element).String())
+		return false, fmt.Errorf("invalid policy with unknown element type: %v", reflect.TypeOf(p.Element))
 	}
 
 	if (p.Operator != operator.And) && (p.Operator != operator.Or) {
@@ -126,8 +130,7 @@ func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rs
 			// must be a FieldValue type
 			fv, can := policy.Element.(*operator.FieldValue)
 			if !can {
-				return false, fmt.Errorf("invalid type %s, should be FieldValue type",
-					reflect.TypeOf(policy.Element).String())
+				return false, fmt.Errorf("invalid type %v, should be FieldValue type", reflect.TypeOf(policy.Element))
 			}
 
 			// check the special resource id at first
