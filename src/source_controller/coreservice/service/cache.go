@@ -95,6 +95,10 @@ func (s *coreService) ListHostWithHostIDInCache(ctx *rest.Contexts) {
 
 func (s *coreService) SearchBusinessInCache(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid biz id")
+		return
+	}
 	biz, err := s.cacheSet.Business.GetBusiness(bizID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search biz with id in cache, but get biz failed, err: %v", err)
@@ -105,6 +109,11 @@ func (s *coreService) SearchBusinessInCache(ctx *rest.Contexts) {
 
 func (s *coreService) SearchSetInCache(ctx *rest.Contexts) {
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKSetIDField), 10, 64)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid set id")
+		return
+	}
+
 	set, err := s.cacheSet.Business.GetSet(setID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search set with id in cache failed, err: %v", err)
@@ -115,7 +124,12 @@ func (s *coreService) SearchSetInCache(ctx *rest.Contexts) {
 
 func (s *coreService) SearchModuleInCache(ctx *rest.Contexts) {
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKModuleIDField), 10, 64)
-	module, err := s.cacheSet.Business.GetModule(moduleID)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid module id")
+		return
+	}
+
+	module, err := s.cacheSet.Business.GetModuleDetail(moduleID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search module with id in cache failed, err: %v", err)
 		return
@@ -125,11 +139,35 @@ func (s *coreService) SearchModuleInCache(ctx *rest.Contexts) {
 
 func (s *coreService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
+
 	instID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKInstIDField), 10, 64)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid instance id")
+		return
+	}
+
 	inst, err := s.cacheSet.Business.GetCustomLevelDetail(objID, instID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v", err)
 		return
 	}
 	ctx.RespString(inst)
+}
+
+// SearchTopologyNodePath is to search biz instance topology node's parent path. eg:
+// from itself up to the biz instance, but not contains the node itself.
+func (s *coreService) SearchTopologyNodePath(ctx *rest.Contexts) {
+	opt := new(topo_tree.SearchNodePathOption)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	paths, err := s.cacheSet.Topology.SearchNodePath(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(paths)
 }
