@@ -72,7 +72,7 @@ func (p *Policy) UnmarshalJSON(i []byte) error {
 
 		p.Element = &FieldValue{
 			Field: broker.Field,
-			Value: to,
+			Value: *to,
 		}
 	}
 

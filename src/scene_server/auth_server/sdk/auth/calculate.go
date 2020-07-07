@@ -38,6 +38,10 @@ func (a *Authorize) calculatePolicy(
 		return false, errors.New("do not support auth across different system for now")
 	}
 
+	if p == nil || p.Operator == "" {
+		return false, nil
+	}
+
 	if p.Operator == operator.Any {
 		return true, nil
 	}
@@ -48,8 +52,35 @@ func (a *Authorize) calculatePolicy(
 		return false, fmt.Errorf("parse iam path failed, err: %v", err)
 	}
 
-	return a.calculateContent(ctx, p, resourceID, authPath, resources[0].Type)
+	switch p.Operator {
+	case operator.And, operator.Or:
+		return a.calculateContent(ctx, p, resourceID, authPath, resources[0].Type)
+	default:
+		return a.calculateFieldValue(ctx, p, resourceID, authPath, resources[0].Type)
+	}
+}
 
+// calculateFieldValue is to calculate the authorize status for attribute.
+func (a *Authorize) calculateFieldValue(ctx context.Context, p *operator.Policy, rscID string, authPath []string, resourceType types.ResourceType) (bool, error) {
+	// must be a FieldValue type
+	fv, can := p.Element.(*operator.FieldValue)
+	if !can {
+		return false, fmt.Errorf("invalid type %v, should be FieldValue type", reflect.TypeOf(p.Element))
+	}
+
+	// check the special resource id at first
+	switch fv.Field.Attribute {
+	case operator.IamIDKey:
+		authorized, err := p.Operator.Operator().Match(rscID, fv.Value)
+		if err != nil {
+			return false, fmt.Errorf("do %s match calculate failed, err: %v", p.Operator, err)
+		}
+		return authorized, nil
+	case operator.IamPathKey:
+		return a.calculateAuthPath(p, fv, authPath)
+	default:
+		return a.calculateResourceAttribute(ctx, p.Operator, rscID, []*operator.FieldValue{fv}, resourceType)
+	}
 }
 
 // calculateContent is to calculate the final authorize status, authorized or not.
@@ -59,7 +90,7 @@ func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rs
 
 	if !canContent {
 		// not content and field value type at the same time.
-		return false, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(p.Element).String())
+		return false, fmt.Errorf("invalid policy with unknown element type: %v", reflect.TypeOf(p.Element))
 	}
 
 	if (p.Operator != operator.And) && (p.Operator != operator.Or) {
@@ -99,20 +130,19 @@ func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rs
 			// must be a FieldValue type
 			fv, can := policy.Element.(*operator.FieldValue)
 			if !can {
-				return false, fmt.Errorf("invalid type %s, should be FieldValue type",
-					reflect.TypeOf(policy.Element).String())
+				return false, fmt.Errorf("invalid type %v, should be FieldValue type", reflect.TypeOf(policy.Element))
 			}
 
 			// check the special resource id at first
 			switch fv.Field.Attribute {
 			case operator.IamIDKey:
-				authorized, err = p.Operator.Operator().Match(rscID, fv.Value)
+				authorized, err = policy.Operator.Operator().Match(rscID, fv.Value)
 				if err != nil {
 					return false, fmt.Errorf("do %s match calculate failed, err: %v", p.Operator, err)
 				}
 
 			case operator.IamPathKey:
-				authorized, err = a.calculateAuthPath(p, fv, authPath)
+				authorized, err = a.calculateAuthPath(policy, fv, authPath)
 				if err != nil {
 					return false, err
 				}

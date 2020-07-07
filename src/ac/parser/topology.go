@@ -115,7 +115,7 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
-	// 创建资源池业务
+	// 创建主机池业务
 	if ps.hitRegexp(createResourcePoolBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{

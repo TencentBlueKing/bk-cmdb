@@ -187,16 +187,17 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	resource := types.Resource{
-		System: iam.SystemIDCMDB,
-		Type:   types.ResourceType(*iamResourceType),
-	}
+	resources := make([]types.Resource, 0)
 	if input.BizID > 0 {
 		businessPath := "/" + string(iam.Business) + "," + strconv.FormatInt(input.BizID, 10) + "/"
-		pathArr := []string{businessPath}
-		resource.Attribute = map[string]interface{}{
-			types.IamPathKey: pathArr,
+		resource := types.Resource{
+			System: iam.SystemIDCMDB,
+			Type:   types.ResourceType(*iamResourceType),
+			Attribute: map[string]interface{}{
+				types.IamPathKey: []string{businessPath},
+			},
 		}
+		resources = append(resources, resource)
 	}
 
 	ops := &types.AuthOptions{
@@ -208,15 +209,15 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		Action: types.Action{
 			ID: string(iamActionID),
 		},
-		Resources: []types.Resource{resource},
+		Resources: resources,
 	}
-	resources, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops)
+	resourceIDs, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops, types.ResourceType(*iamResourceType))
 	if err != nil {
 		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v, input: %s, ops: %s, input: %s, rid: %s", err, input, ops, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resources)
+	ctx.RespEntity(resourceIDs)
 }
 
 // GetNoAuthSkipUrl returns the redirect url to iam for user to apply for specific authorizations

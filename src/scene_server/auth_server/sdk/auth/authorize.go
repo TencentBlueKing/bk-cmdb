@@ -88,21 +88,19 @@ func (a *Authorize) AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOpt
 
 		pipe <- struct{}{}
 		go func(idx int, resources []types.Resource, policy *operator.Policy) {
+			defer func() {
+				wg.Done()
+				<-pipe
+			}()
 
 			authorized, err := a.calculatePolicy(ctx, resources, policy)
 			if err != nil {
 				hitError = err
-				wg.Done()
-				<-pipe
 				return
 			}
 
 			// save the result with index
 			decisions[idx] = &types.Decision{Authorized: authorized}
-
-			wg.Done()
-			<-pipe
-
 		}(idx, b.Resources, policies[idx])
 	}
 	// wait all the policy are calculated
@@ -160,12 +158,7 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 	return allPolicies, nil
 }
 
-func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions) ([]string, error) {
-	if len(opts.Resources) == 0 {
-		// actions not related to resources do not need to list authorized instances
-		return []string{}, nil
-	}
-
+func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions, resourceType types.ResourceType) ([]string, error) {
 	// find user's policy with action
 	getOpt := types.GetPolicyOption{
 		System:  opts.System,
@@ -183,5 +176,5 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *types.Aut
 		return []string{}, nil
 	}
 
-	return a.countPolicy(ctx, policy, opts.Resources[0].Type)
+	return a.countPolicy(ctx, policy, resourceType)
 }
