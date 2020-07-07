@@ -14,10 +14,10 @@ package y3_9_202002131522
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -42,6 +42,7 @@ func initPlatAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 	}
 
 	now := time.Now()
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
 	for _, r := range dataRows {
 		r.OwnerID = conf.OwnerID
 		r.IsPre = true
@@ -52,14 +53,9 @@ func initPlatAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		id, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
-		if err != nil {
-			return fmt.Errorf("upgrade y3.9.y3_9_202002131522, insert plat attrName: %s, but get NextSequence failed, err: %v", r.PropertyName, err)
-		}
-		r.ID = int64(id)
-
-		if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, r); err != nil {
-			return fmt.Errorf("upgrade y3.9.y3_9_202002131522, but insert plat attrName: %s, failed, err: %v", r.PropertyName, err)
+		if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields, []string{}); err != nil {
+			blog.ErrorJSON("initPlatAttr failed, Upsert err: %s, attribute: %#v, ", err, r)
+			return err
 		}
 	}
 
