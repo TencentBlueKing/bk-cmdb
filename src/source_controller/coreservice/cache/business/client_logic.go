@@ -481,7 +481,7 @@ func (c *Client) listSetDetailFromMongo(ids []int64) ([]string, error) {
 
 	sets := make([]map[string]interface{}, 0)
 	if err := c.db.Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &sets); err != nil {
-		blog.Errorf("get module %v update from mongo failed, err: %v", ids, err)
+		blog.Errorf("get set %v update from mongo failed, err: %v", ids, err)
 		return nil, err
 	}
 

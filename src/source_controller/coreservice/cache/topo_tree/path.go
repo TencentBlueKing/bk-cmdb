@@ -75,21 +75,21 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 		case "module":
 			paths, err = t.genModuleParentPaths(ctx, opt.Business, reverseTopo, instances)
 			if err != nil {
-				return nil, nil
+				return nil, err
 			}
 			all[object] = paths
 
 		case "set":
 			paths, err = t.genSetParentPaths(ctx, opt.Business, reverseTopo, instances)
 			if err != nil {
-				return nil, nil
+				return nil, err
 			}
 			all[object] = paths
 
 		default:
 			paths, err = t.genCustomParentPaths(ctx, opt.Business, "set", reverseTopo, instances)
 			if err != nil {
-				return nil, nil
+				return nil, err
 			}
 
 			// trim the head path

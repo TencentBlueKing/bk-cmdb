@@ -117,7 +117,13 @@ func (c *Client) ListBusinessDetails(bizIDs []int64) ([]string, error) {
 		list := make([]string, len(all))
 		for idx, biz := range all {
 			if biz == nil {
-				list[idx] = "{}"
+				detail, err := c.getBusinessFromMongo(bizIDs[idx])
+				if err != nil {
+					blog.Errorf("get module %d detail from db failed, err: %v", bizIDs[idx], err)
+					return nil, err
+				}
+
+				list[idx] = detail
 				continue
 			}
 			list[idx] = biz.(string)
@@ -253,7 +259,7 @@ func (c *Client) GetSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 }
 
 func (c *Client) GetSet(setID int64) (string, error) {
-	// try refresh the module cache
+	// try refresh the set cache
 	c.tryRefreshInstanceDetail(setID, refreshInstance{
 		mainKey:        setKey.detailKey(setID),
 		lockKey:        setKey.detailLockKey(setID),
@@ -276,7 +282,7 @@ func (c *Client) ListSetDetails(setIDs []int64) ([]string, error) {
 		return make([]string, 0), nil
 	}
 	keys := make([]string, len(setIDs))
-	// try refresh the module cache
+	// try refresh the set cache
 	for idx, set := range setIDs {
 		c.tryRefreshInstanceDetail(set, refreshInstance{
 			mainKey:        setKey.detailKey(set),
