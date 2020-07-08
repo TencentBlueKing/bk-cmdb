@@ -30,8 +30,8 @@ var NotEnoughLayer = fmt.Errorf("not enough layer")
 
 // convert cc auth attributes to iam resources TODO add resource attributes when attribute filter is enabled
 func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
-	resources := make([]types.Resource, len(attributes))
-	for index, attribute := range attributes {
+	resources := make([]types.Resource, 0)
+	for _, attribute := range attributes {
 		info := types.Resource{
 			System: SystemIDCMDB,
 		}
@@ -40,21 +40,28 @@ func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
 		if err != nil {
 			return nil, err
 		}
-		info.Type = types.ResourceType(*resourceTypeID)
 
 		resourceIDArr, err := GenerateResourceID(ResourceTypeID(info.Type), &attribute)
 		if err != nil {
 			return nil, err
 		}
 		resourceIDArrLen := len(resourceIDArr)
+		// no related resource ids means no need to use exact resources for authorization because action may not have related resources
 		if resourceIDArrLen == 0 {
-			resources[index] = info
+			// add biz as resource for actions like create custom query that has biz as their related resource instances
+			if attribute.BusinessID > 0 {
+				info.Type = types.ResourceType(Business)
+				info.ID = strconv.FormatInt(attribute.BusinessID, 10)
+				resources = append(resources, info)
+			}
 			continue
 		}
+
+		info.Type = types.ResourceType(*resourceTypeID)
 		// no biz or parent parentPath related, no need to fill parentPath attribute
 		if attribute.BusinessID <= 0 && resourceIDArrLen == 1 {
 			info.ID = resourceIDArr[0].ResourceID
-			resources[index] = info
+			resources = append(resources, info)
 			continue
 		}
 
@@ -81,7 +88,7 @@ func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
 			types.IamPathKey: pathArr,
 		}
 		info.ID = resourceIDArr[resourceIDArrLen-1].ResourceID
-		resources[index] = info
+		resources = append(resources, info)
 	}
 
 	return resources, nil

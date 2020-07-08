@@ -26,6 +26,7 @@ import (
 type AuthServerClientInterface interface {
 	Authorize(ctx context.Context, h http.Header, authAttribute *meta.AuthAttribute) (meta.Decision, error)
 	AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) ([]meta.Decision, error)
+	AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) ([]meta.Decision, error)
 	ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error)
 	GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error)
 }

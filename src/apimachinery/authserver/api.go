@@ -75,6 +75,35 @@ func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, user met
 	return response.Data, nil
 }
 
+func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) ([]meta.Decision, error) {
+	input := meta.AuthAttribute{
+		User:      user,
+		Resources: resources,
+	}
+	response := new(struct {
+		metadata.BaseResp `json:",inline"`
+		Data              []meta.Decision `json:"data"`
+	})
+	subPath := "/authorize/any/batch"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(response)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if response.Code != 0 {
+		return nil, response.CCError()
+	}
+
+	return response.Data, nil
+}
+
 func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`

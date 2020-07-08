@@ -60,6 +60,18 @@ func (a *Authorize) calculatePolicy(
 	}
 }
 
+// returns true when having policy of any resource of the action
+func (a *Authorize) calculateAnyPolicy(
+	ctx context.Context,
+	resources []types.Resource,
+	p *operator.Policy) (bool, error) {
+
+	if p == nil || p.Operator == "" {
+		return false, nil
+	}
+	return true, nil
+}
+
 // calculateFieldValue is to calculate the authorize status for attribute.
 func (a *Authorize) calculateFieldValue(ctx context.Context, p *operator.Policy, rscID string, authPath []string, resourceType types.ResourceType) (bool, error) {
 	// must be a FieldValue type

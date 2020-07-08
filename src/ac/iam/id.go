@@ -132,37 +132,27 @@ func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttrib
 
 // generate module resource id.
 func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if attribute.InstanceID == 0 {
-		// for create
-		return []RscTypeAndID{
-			{
-				ResourceType: resourceType,
-			},
-		}, nil
+	if attribute.InstanceID <= 0 {
+		return make([]RscTypeAndID, 0), nil
 	}
 
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
-			ResourceID:   fmt.Sprintf("module:%d", attribute.InstanceID),
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 		},
 	}, nil
 }
 
 func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if attribute.InstanceID == 0 {
-		// for create
-		return []RscTypeAndID{
-			{
-				ResourceType: resourceType,
-			},
-		}, nil
+	if attribute.InstanceID <= 0 {
+		return make([]RscTypeAndID, 0), nil
 	}
 
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
-			ResourceID:   fmt.Sprintf("set:%d", attribute.InstanceID),
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 		},
 	}, nil
 }
@@ -205,7 +195,14 @@ func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *
 
 func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
-		return make([]RscTypeAndID, 0), nil
+		if len(attribute.Layers) == 0 {
+			return make([]RscTypeAndID, 0), nil
+		}
+		// for create
+		return []RscTypeAndID{{
+			ResourceType: SysInstanceModel,
+			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
+		}}, nil
 	}
 
 	if len(attribute.Layers) < 1 {

@@ -70,7 +70,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-	verifyResults, err := s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, attrs...)
+	verifyResults, err := s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
 	if err != nil {
 		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
