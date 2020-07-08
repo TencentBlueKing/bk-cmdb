@@ -318,8 +318,8 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(err).To(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
 			})
 
 			// 如果云区域ID没有给出，默认是0
@@ -559,8 +559,8 @@ var _ = Describe("host abnormal test", func() {
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(err).To(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false))
 			})
 
 			It("add host using excel with no bk_cloud_id", func() {
