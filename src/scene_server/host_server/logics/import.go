@@ -103,6 +103,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		if existInDB {
 			// remove unchangeable fields
 			delete(host, common.BKHostInnerIPField)
+			delete(host, common.BKCloudIDField)
 
 			// get host info before really change it
 			preData, _, _ = lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
@@ -113,7 +114,8 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 				continue
 			}
 		} else {
-			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleID, host)
+
+			intHostID, err = instance.addHostInstance(iSubAreaVal, index, appID, moduleID, host)
 			if err != nil {
 				errMsg = append(errMsg, err.Error())
 				continue
@@ -208,6 +210,7 @@ type importInstance struct {
 	ccErr         ccErr.DefaultCCErrorIf
 	ccLang        language.DefaultCCLanguageIf
 	rid           string
+	lgc           *Logics
 }
 
 func NewImportInstance(ctx context.Context, ownerID string, lgc *Logics) *importInstance {
@@ -219,6 +222,7 @@ func NewImportInstance(ctx context.Context, ownerID string, lgc *Logics) *import
 		ccErr:   lgc.ccErr,
 		ccLang:  lgc.ccLang,
 		rid:     lgc.rid,
+		lgc:     lgc,
 	}
 }
 
@@ -244,12 +248,33 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	return nil
 }
 
+// addHostInstance  add host
+// cloud id：host belong cloud area id
+// index: index number
+// app id : host belong app id
+// module id: host belong module id
+// host : host info
 func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID []int64, host map[string]interface{}) (int64, error) {
 	ip, _ := host[common.BKHostInnerIPField].(string)
-	_, ok := host[common.BKCloudIDField]
-	if false == ok {
-		host[common.BKCloudIDField] = cloudID
+
+	if cloudID < 0 {
+		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccLang.Language("import_host_cloudID_invalid")))
 	}
+
+	// determine if the cloud area exists
+	// default cloud area must be exist
+	if cloudID != common.BKDefaultDirSubArea {
+		isExist, err := h.lgc.IsPlatExist(h.ctx, mapstr.MapStr{common.BKCloudIDField: cloudID})
+		if nil != err {
+			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
+
+		}
+		if !isExist {
+			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccErr.Errorf(common.CCErrTopoCloudNotFound).Error()))
+
+		}
+	}
+	host[common.BKCloudIDField] = cloudID
 
 	input := &metadata.CreateModelInstance{
 		Data: host,
