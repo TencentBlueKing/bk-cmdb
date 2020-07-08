@@ -203,3 +203,95 @@ func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) 
 
 	return result.CloudVendor, nil
 }
+
+func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder {
+	// get all service instance IDs that need to be removed
+	serviceInstanceFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: option.HostIDs,
+		},
+	}
+	instances := make([]metadata.ServiceInstance, 0)
+	err := c.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
+	if err != nil {
+		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %#v, rid: %s", err, serviceInstanceFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if len(instances) == 0 {
+		return nil
+	}
+	serviceInstanceIDs := make([]int64, 0)
+	for _, instance := range instances {
+		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
+	}
+
+	// get all process IDs of the service instances to be removed
+	processRelationFilter := map[string]interface{}{
+		common.BKServiceInstanceIDField: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	relations := make([]metadata.ProcessInstanceRelation, 0)
+	if err := c.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx, &relations); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %#v, rid: %s", err, processRelationFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	processIDs := make([]int64, 0)
+	for _, relation := range relations {
+		processIDs = append(processIDs, relation.ProcessID)
+	}
+
+	// delete all process relations and instances
+	if len(processIDs) > 0 {
+		if err := c.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, processRelationFilter); nil != err {
+			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %#v, rid: %s", err, processRelationFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
+
+		processFilter := map[string]interface{}{
+			common.BKProcessIDField: map[string]interface{}{
+				common.BKDBIN: processIDs,
+			},
+		}
+		if err := c.dbProxy.Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
+			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %#v, rid: %s", err, processFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
+	}
+
+	// delete service instances
+	serviceInstanceIDFilter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	if err := c.dbProxy.Table(common.BKTableNameServiceInstance).Delete(kit.Ctx, serviceInstanceIDFilter); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %#v, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+
+	// delete association
+	asstFilter := map[string]interface{}{
+		common.BKDBOR: []map[string]interface{}{
+			{
+				common.BKObjIDField: common.BKInnerObjIDHost,
+				common.BKInstIDField: map[string]interface{}{
+					common.BKDBIN: option.HostIDs,
+				},
+			},
+			{
+				common.BKAsstObjIDField: common.BKInnerObjIDHost,
+				common.BKAsstInstIDField: map[string]interface{}{
+					common.BKDBIN: option.HostIDs,
+				},
+			},
+		},
+	}
+	err = c.dbProxy.Table(common.BKTableNameInstAsst).Delete(kit.Ctx, asstFilter)
+	if nil != err {
+		blog.Errorf("delete inst association failed,  filter:%s, cond:%#v, rid: %s", err, asstFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+
+	return nil
+}

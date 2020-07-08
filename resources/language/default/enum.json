@@ -53,6 +53,7 @@
     "host_property_bk_cloud_host_status_enum_3" : "停止中",
     "host_property_bk_cloud_host_status_enum_4" : "已停止",
     "host_property_bk_cloud_host_status_enum_5" : "未知",
+    "host_property_bk_cloud_host_status_enum_6" : "已销毁",
 
     "host_property_bk_cloud_vendor_enum_1" : "亚马逊云",
     "host_property_bk_cloud_vendor_enum_2" : "腾讯云",

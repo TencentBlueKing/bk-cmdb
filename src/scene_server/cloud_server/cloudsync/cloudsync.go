@@ -14,7 +14,6 @@ package cloudsync
 
 import (
 	"context"
-	"net/http"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -32,8 +31,7 @@ const (
 )
 
 var (
-	header http.Header
-	kit    *rest.Kit
+	globalKit *rest.Kit
 )
 
 type SyncConf struct {
@@ -51,8 +49,8 @@ type CloudSyncInterface interface {
 // 进行云资源同步
 func CloudSync(conf *SyncConf) error {
 	errors.SetGlobalCCError(conf.Logics.CCErr)
-	header = ccom.GetHeader()
-	kit = ccom.GetKit(header)
+	// 只用于读操作和非事务操作的全局kit
+	globalKit = ccom.NewKit()
 	ctx := context.Background()
 
 	schedulerConf := &SchedulerConf{

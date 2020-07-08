@@ -51,6 +51,9 @@ func GetHeader() http.Header {
 
 // 获取api调用的header
 func GetKit(header http.Header) *rest.Kit {
+	if header.Get(common.BKHTTPCCRequestID) == "" {
+		header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
+	}
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.GetHTTPCCRequestID(header)
 	user := util.GetUser(header)
@@ -65,4 +68,10 @@ func GetKit(header http.Header) *rest.Kit {
 		User:            user,
 		SupplierAccount: supplierAccount,
 	}
+}
+
+// 创建一个新的Kit
+func NewKit() *rest.Kit {
+	header := GetHeader()
+	return GetKit(header)
 }

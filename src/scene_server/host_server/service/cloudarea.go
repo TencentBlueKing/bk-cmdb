@@ -154,6 +154,12 @@ func (s *Service) CreatePlatBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
+	user := util.GetUser(req.Request.Header)
+	for i, _ := range input.Data {
+		input.Data[i][common.BKCreator] = user
+		input.Data[i][common.BKLastEditor] = user
+	}
+
 	instInfo := &meta.CreateManyModelInstance{
 		Datas: input.Data,
 	}
@@ -227,8 +233,10 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	// read supplier account from header
-	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
+
+	user := util.GetUser(req.Request.Header)
+	input[common.BKCreator] = user
+	input[common.BKLastEditor] = user
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {

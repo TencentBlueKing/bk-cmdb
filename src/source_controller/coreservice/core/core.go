@@ -299,6 +299,7 @@ type CloudOperation interface {
 	DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCErrorCoder
 	CreateSyncHistory(kit *rest.Kit, account *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder)
 	SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
+	DeleteDestroyedHostRelated(kit *rest.Kit, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder
 }
 
 type SystemOperation interface {

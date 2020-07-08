@@ -1187,6 +1187,7 @@ const (
 	BKCloudLastSyncTime          = "bk_last_sync_time"
 	BKCreator                    = "bk_creator"
 	BKStatus                     = "bk_status"
+	BKStatusDetail               = "bk_status_detail"
 	BKLastEditor                 = "bk_last_editor"
 	BKSecretID                   = "bk_secret_id"
 	BKVpcID                      = "bk_vpc_id"

@@ -58,4 +58,5 @@ var cloudInstStatusEnum = []metadata.EnumVal{
 	{ID: "3", Name: "停止中", Type: "text"},
 	{ID: "4", Name: "已停止", Type: "text"},
 	{ID: "5", Name: "未知", Type: "text"},
+	{ID: "6", Name: "已销毁", Type: "text"},
 }

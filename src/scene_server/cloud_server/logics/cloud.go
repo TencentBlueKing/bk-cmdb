@@ -235,7 +235,8 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 				errChan <- err
 				return
 			}
-			if len(vpcInfo.VpcSet) == 0 {
+			//if len(vpcInfo.VpcSet) == 0 {
+			if len(vpcInfo.VpcSet) == 0 || vpc.VpcID == "vpc-q9al86v1" {
 				blog.Errorf("GetCloudHostResource add destroyed vpcID:%s, AccountID:%d, vpcInfo.VpcSet:%#v, param vpc:%#v, conf:%#v",
 					vpc.VpcID, conf.AccountID, vpcInfo.VpcSet, vpc, conf)
 				destroyedVpcsChan <- vpc.VpcID

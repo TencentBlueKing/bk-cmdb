@@ -100,11 +100,12 @@ const (
 
 // 云主机状态枚举值
 var CloudHostStatusIDs = map[string]string{
-	"starting": "1",
-	"running":  "2",
-	"stopping": "3",
-	"stopped":  "4",
-	"unknow":   "5",
+	"starting":  "1",
+	"running":   "2",
+	"stopping":  "3",
+	"stopped":   "4",
+	"unknow":    "5",
+	"destroyed": "6",
 }
 
 // 云区域状态枚举值
@@ -159,6 +160,10 @@ type SearchSyncHistoryOption struct {
 	TaskID            int64  `json:"bk_task_id" bson:"bk_task_id"`
 	StarTime          string `json:"start_time" bson:"start_time"`
 	EndTime           string `json:"end_time" bson:"end_time"`
+}
+
+type DeleteDestroyedHostRelatedOption struct {
+	HostIDs []int64 `json:"host_ids" bson:"host_ids"`
 }
 
 type MultipleSyncHistory struct {
