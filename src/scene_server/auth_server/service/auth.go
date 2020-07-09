@@ -190,6 +190,7 @@ func (s *AuthService) authorizeBatch(kit *rest.Kit, authAttribute *meta.AuthAttr
 			index++
 		}
 		decisions[index].Authorized = decision.Authorized
+		index++
 	}
 	return decisions, nil
 }

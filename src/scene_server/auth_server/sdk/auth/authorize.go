@@ -103,7 +103,7 @@ func (a *Authorize) authorizeBatch(ctx context.Context, opts *types.AuthBatchOpt
 
 			var authorized bool
 			var err error
-			if exact {
+			if exact || len(resources) > 0 {
 				authorized, err = a.calculatePolicy(ctx, resources, policy)
 			} else {
 				authorized, err = a.calculateAnyPolicy(ctx, resources, policy)

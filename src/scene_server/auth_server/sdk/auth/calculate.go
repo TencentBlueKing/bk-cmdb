@@ -89,6 +89,11 @@ func (a *Authorize) calculateFieldValue(ctx context.Context, p *operator.Policy,
 		}
 		return authorized, nil
 	case operator.IamPathKey:
+		// compatible for cases when resources to be authorized hasn't put its paths in attributes
+		if len(authPath) == 0 {
+			// compatible for cases when resources to be authorized hasn't put all of its paths in attributes
+			return a.calculateResourceAttribute(ctx, p.Operator, rscID, []*operator.FieldValue{fv}, resourceType)
+		}
 		return a.calculateAuthPath(p, fv, authPath)
 	default:
 		return a.calculateResourceAttribute(ctx, p.Operator, rscID, []*operator.FieldValue{fv}, resourceType)
@@ -152,13 +157,16 @@ func (a *Authorize) calculateContent(ctx context.Context, p *operator.Policy, rs
 				if err != nil {
 					return false, fmt.Errorf("do %s match calculate failed, err: %v", p.Operator, err)
 				}
-
 			case operator.IamPathKey:
-				authorized, err = a.calculateAuthPath(policy, fv, authPath)
+				// compatible for cases when resources to be authorized hasn't put its paths in attributes
+				if len(authPath) == 0 {
+					authorized, err = a.calculateResourceAttribute(ctx, policy.Operator, rscID, []*operator.FieldValue{fv}, resourceType)
+				} else {
+					authorized, err = a.calculateAuthPath(policy, fv, authPath)
+				}
 				if err != nil {
 					return false, err
 				}
-
 			default:
 
 				if policy.Operator != operator.Equal {
