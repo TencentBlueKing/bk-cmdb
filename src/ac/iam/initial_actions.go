@@ -195,23 +195,8 @@ func genBusinessCustomFieldActions() []ResourceAction {
 }
 
 func genBusinessServiceCategoryActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BusinessSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 BizProcessServiceCategory,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
 	actions := make([]ResourceAction, 0)
+
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessServiceCategory,
 		Name:                 "服务分类新建",
@@ -227,7 +212,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		Name:                 "服务分类编辑",
 		NameEn:               "Edit Service Category",
 		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -237,7 +222,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		Name:                 "服务分类删除",
 		NameEn:               "Delete Service Category",
 		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -246,23 +231,8 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 }
 
 func genBusinessServiceInstanceActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BusinessSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 BizProcessServiceInstance,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
 	actions := make([]ResourceAction, 0)
+
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessServiceInstance,
 		Name:                 "服务实例新建",
@@ -278,7 +248,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		Name:                 "服务实例编辑",
 		NameEn:               "Edit Service Instance",
 		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -288,7 +258,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		Name:                 "服务实例删除",
 		NameEn:               "Delete Service Instance",
 		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})

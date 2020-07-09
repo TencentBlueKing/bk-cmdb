@@ -23,8 +23,11 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
@@ -358,6 +361,33 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	fields := data.Fields
 	condition := data.Condition
 	condition = util.SetModOwner(condition, ownerID)
+
+	// get authorized event subscription ids if auth is enabled
+	if auth.IsAuthed() {
+		authInput := meta.ListAuthorizedResourcesParam{
+			UserName:     util.GetUser(header),
+			ResourceType: meta.EventPushing,
+			Action:       meta.Find,
+		}
+		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(util.NewContextFromHTTPHeader(header), header, authInput)
+		if err != nil {
+			blog.ErrorJSON("ListAuthorizedSubscriptions failed, err: %s, authInput: %s, rid: %s", err.Error(), authInput, rid)
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+			return
+		}
+		subscriptions := make([]int64, 0)
+		for _, resourceID := range authorizedResources {
+			subscriptionID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("parse resourceID(%s) failed, err: %v, rid: %s", resourceID, err, rid)
+				_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+				return
+			}
+			subscriptions = append(subscriptions, subscriptionID)
+		}
+
+		condition[common.BKSubscriptionIDField] = mapstr.MapStr{common.BKDBIN: subscriptions}
+	}
 
 	skip := data.Page.Start
 	limit := data.Page.Limit

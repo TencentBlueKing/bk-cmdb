@@ -104,8 +104,7 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:   http.MethodPost,
 		BizIDGetter:  DefaultBizIDGetter,
 		ResourceType: meta.ProcessServiceTemplate,
-		// authorization should implements in scene server
-		ResourceAction: meta.SkipAction,
+		ResourceAction: meta.FindMany,
 	}, {
 		Name:         "listServiceTemplateDetailPattern",
 		Description:  "查询服务模板详情",
@@ -113,11 +112,10 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:   http.MethodPost,
 		BizIDGetter:  DefaultBizIDGetter,
 		ResourceType: meta.ProcessServiceTemplate,
-		// authorization should implements in scene server
-		ResourceAction: meta.SkipAction,
+		ResourceAction: meta.FindMany,
 	}, {
-		Name:         "listServiceTemplateDetailPattern",
-		Description:  "查询服务模板详情",
+		Name:         "unbindServiceTemplateOnModule",
+		Description:  "解绑模块的服务模板",
 		Pattern:      "/api/v3/delete/proc/template_binding_on_module",
 		HTTPMethod:   http.MethodDelete,
 		BizIDGetter:  DefaultBizIDGetter,

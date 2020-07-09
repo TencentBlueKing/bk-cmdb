@@ -65,6 +65,14 @@ func (a *Authorize) Authorize(ctx context.Context, opts *types.AuthOptions) (*ty
 }
 
 func (a *Authorize) AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error) {
+	return a.authorizeBatch(ctx, opts, true)
+}
+
+func (a *Authorize) AuthorizeAnyBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error) {
+	return a.authorizeBatch(ctx, opts, false)
+}
+
+func (a *Authorize) authorizeBatch(ctx context.Context, opts *types.AuthBatchOptions, exact bool) ([]*types.Decision, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
@@ -93,7 +101,13 @@ func (a *Authorize) AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOpt
 				<-pipe
 			}()
 
-			authorized, err := a.calculatePolicy(ctx, resources, policy)
+			var authorized bool
+			var err error
+			if exact || len(resources) > 0 {
+				authorized, err = a.calculatePolicy(ctx, resources, policy)
+			} else {
+				authorized, err = a.calculateAnyPolicy(ctx, resources, policy)
+			}
 			if err != nil {
 				hitError = err
 				return
