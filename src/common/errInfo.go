@@ -680,6 +680,7 @@ const (
 	CCErrHostPlatCloudNameAlreadyExist                        = 1110064
 	CCErrHostFindManyCloudAreaAddHostCountFieldFail           = 1110065
 	CCErrDeleteDefaultCloudAreaFail                           = 1110066
+	CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail         = 1110067
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -805,8 +806,6 @@ const (
 	CCErrOperationUpdateChartFail         = 1116006
 	CCErrOperationGetChartDataFail        = 1116007
 	CCErrOperationUpdateChartPositionFail = 1116008
-	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
-	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
 
 	// task_server 1117xxx
 	// CCErrTaskNotFound task not found
@@ -843,6 +842,7 @@ const (
 	CCErrCloudIDNoExist                   = 1118018
 	CCErrDefaultCloudIDProvided           = 1118019
 	CCErrCloudAccountCreateFail           = 1118020
+	CCErrGetCloudAccountConfBatchFailed   = 1118021
 
 	/** TODO: 以下错误码需要改造 **/
 

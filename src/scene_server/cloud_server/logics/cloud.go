@@ -42,6 +42,42 @@ func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
 	return nil
 }
 
+// SearchAccountValidity 查询云账户有效性
+func (lgc *Logics) SearchAccountValidity(confs []metadata.CloudAccountConf) []metadata.AccountValidityInfo {
+	result := make([]metadata.AccountValidityInfo, 0)
+	validityInfoChan := make(chan metadata.AccountValidityInfo, 10)
+	var wg, wg2 sync.WaitGroup
+
+	for _, conf := range confs {
+		wg.Add(1)
+		go func(conf metadata.CloudAccountConf) {
+			defer wg.Done()
+			errMsg := ""
+			if err := lgc.AccountVerify(conf); err != nil {
+				errMsg = err.Error()
+			}
+			validityInfoChan <- metadata.AccountValidityInfo{
+				AccountID: conf.AccountID,
+				ErrMsg:    errMsg,
+			}
+		}(conf)
+	}
+
+	wg2.Add(1)
+	go func() {
+		defer wg2.Done()
+		for info := range validityInfoChan {
+			result = append(result, info)
+		}
+	}()
+
+	wg.Wait()
+	close(validityInfoChan)
+	wg2.Wait()
+
+	return result
+}
+
 // GetRegionsInfo 获取地域信息
 func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount bool) ([]metadata.SyncRegion, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
@@ -235,8 +271,7 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 				errChan <- err
 				return
 			}
-			//if len(vpcInfo.VpcSet) == 0 {
-			if len(vpcInfo.VpcSet) == 0 || vpc.VpcID == "vpc-q9al86v1" {
+			if len(vpcInfo.VpcSet) == 0 {
 				blog.Errorf("GetCloudHostResource add destroyed vpcID:%s, AccountID:%d, vpcInfo.VpcSet:%#v, param vpc:%#v, conf:%#v",
 					vpc.VpcID, conf.AccountID, vpcInfo.VpcSet, vpc, conf)
 				destroyedVpcsChan <- vpc.VpcID
@@ -317,7 +352,7 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 	return result, nil
 }
 
-// GetCloudAccountConf 获取云厂商账户配置
+// GetCloudAccountConf 获取云账户配置
 func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountConf, error) {
 	option := &metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudAccountID: accountID}}
 	result, err := lgc.CoreAPI.CoreService().Cloud().SearchAccountConf(context.Background(), ccom.GetHeader(), option)
@@ -342,4 +377,44 @@ func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountC
 	}
 
 	return &accountConf, nil
+}
+
+// GetCloudAccountConfBatch 批量获取云账户配置
+func (lgc *Logics) GetCloudAccountConfBatch(accountIDs []int64) ([]metadata.CloudAccountConf, error) {
+	if len(accountIDs) == 0 {
+		return nil, nil
+	}
+
+	option := &metadata.SearchCloudOption{
+		Condition: mapstr.MapStr{
+			common.BKCloudAccountID: mapstr.MapStr{
+				common.BKDBIN: accountIDs,
+			},
+		},
+	}
+	result, err := lgc.CoreAPI.CoreService().Cloud().SearchAccountConf(context.Background(), ccom.GetHeader(), option)
+	if err != nil {
+		blog.Errorf("GetCloudAccountConfBatch failed, accountIDs: %v, SearchAccountConf err: %s", accountIDs, err.Error())
+		return nil, err
+	}
+	if len(result.Info) == 0 {
+		blog.Errorf("GetCloudAccountConfBatch failed, accountIDs: %v are not exist", accountIDs)
+		return nil, fmt.Errorf("GetAccountConf failed, accountIDs: %v are not exist", accountIDs)
+	}
+
+	accountConfs := result.Info
+	// 解密云账户密钥
+	if lgc.cryptor != nil {
+		for i, _ := range accountConfs {
+			secretKey, err := lgc.cryptor.Decrypt(accountConfs[i].SecretKey)
+			if err != nil {
+				blog.Errorf("GetCloudAccountConfBatch failed, Encrypt err: %st", err.Error())
+				return nil, err
+			}
+			accountConfs[i].SecretKey = secretKey
+		}
+
+	}
+
+	return accountConfs, nil
 }

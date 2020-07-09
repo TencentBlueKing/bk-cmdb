@@ -57,10 +57,8 @@
 	"1110064": "Failed to create cloud area, bk_cloud_name is already exist",
 	"1110065": "Failed to query cloud area, host_count field failed to be added",
 	"1110066": "can't delete default cloud area",
+	"1110067": "Failed to query cloud area, sync_task_ids field failed to be added",
 
-
-	"1116011": "Fail to delete cloud sync task",
-	"1116012": "Fail to update cloud sync task",
 	"1110080": "Fail to add host to resource pool",
 	"": ""
 }

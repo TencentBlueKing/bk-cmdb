@@ -688,7 +688,9 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 
 // 更新云主机
 func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interface{}) error {
-	input := &metadata.UpdateOption{}
+	input := &metadata.UpdateOption{
+		CanEditAll:true,
+	}
 	input.Condition = map[string]interface{}{common.BKCloudInstIDField: cloudInstID}
 	input.Data = updateInfo
 	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(h.kit.Ctx, h.kit.Header, common.BKInnerObjIDHost, input)
@@ -721,7 +723,9 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
 		preDataMap[hostID] = data
 	}
 
-	input := &metadata.UpdateOption{}
+	input := &metadata.UpdateOption{
+		CanEditAll:true,
+	}
 	input.Condition = mapstr.MapStr{
 		common.BKHostIDField: map[string]interface{}{
 			common.BKDBIN: hostIDs,

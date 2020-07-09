@@ -59,6 +59,7 @@ func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapSt
 func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
+	inputParam.Data.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	err := m.validCreateInstanceData(kit, objID, inputParam.Data)
 	if nil != err {
 		blog.Errorf("CreateModelInstance failed, valid error: %+v, rid: %s", err, rid)

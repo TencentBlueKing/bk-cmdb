@@ -187,6 +187,26 @@ type CloudAccountVerify struct {
 	CloudVendor string `json:"bk_cloud_vendor"`
 }
 
+type SearchAccountValidityOption struct {
+	AccountIDs []int64 `json:"account_ids" bson:"account_ids"`
+}
+
+func (s *SearchAccountValidityOption) Validate() (rawError errors.RawErrorInfo) {
+	if len(s.AccountIDs) == 0 || len(s.AccountIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"account_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type AccountValidityInfo struct {
+	AccountID int64  `json:"bk_account_id" bson:"bk_account_id"`
+	ErrMsg    string `json:"err_msg" bson:"err_msg"`
+}
+
 type VpcInfo struct {
 	VpcName string `json:"bk_vpc_name"`
 	VpcID   string `json:"bk_vpc_id"`

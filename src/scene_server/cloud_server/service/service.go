@@ -85,6 +85,7 @@ func (s *Service) initRoute(api *restful.WebService) {
 
 	// cloud account
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/cloud/account/verify", Handler: s.VerifyConnectivity})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account/validity", Handler: s.SearchAccountValidity})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/account", Handler: s.CreateAccount})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account", Handler: s.SearchAccount})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/account/{bk_account_id}", Handler: s.UpdateAccount})

@@ -13,11 +13,12 @@
 package cloudvendor
 
 import (
-	"configcenter/src/common/metadata"
-	ccom "configcenter/src/scene_server/cloud_server/common"
 	"os"
 	"sync"
 	"testing"
+
+	"configcenter/src/common/metadata"
+	ccom "configcenter/src/scene_server/cloud_server/common"
 )
 
 var tcTestClient VendorClient
