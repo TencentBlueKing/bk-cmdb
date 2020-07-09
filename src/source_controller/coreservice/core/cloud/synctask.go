@@ -214,7 +214,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 	instances := make([]metadata.ServiceInstance, 0)
 	err := c.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
 	if err != nil {
-		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %#v, rid: %s", err, serviceInstanceFilter, kit.Rid)
+		blog.ErrorJSON("DeleteDestroyedHostRelated failed, get service instance IDs err:%s, filter: %#v, rid: %s", err, serviceInstanceFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if len(instances) == 0 {
@@ -233,7 +233,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
 	if err := c.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx, &relations); nil != err {
-		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %#v, rid: %s", err, processRelationFilter, kit.Rid)
+		blog.Errorf("DeleteDestroyedHostRelated failed, get process instance relation err:%s, filter: %#v, rid: %s", err, processRelationFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	processIDs := make([]int64, 0)
@@ -244,7 +244,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 	// delete all process relations and instances
 	if len(processIDs) > 0 {
 		if err := c.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, processRelationFilter); nil != err {
-			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %#v, rid: %s", err, processRelationFilter, kit.Rid)
+			blog.Errorf("DeleteDestroyedHostRelated failed, delete process instance relation err:%s, filter: %#v, rid: %s", err, processRelationFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
 
@@ -254,7 +254,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 			},
 		}
 		if err := c.dbProxy.Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
-			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %#v, rid: %s", err, processFilter, kit.Rid)
+			blog.Errorf("DeleteDestroyedHostRelated failed, delete process instances err:%s, filter: %#v, rid: %s", err, processFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
 	}
@@ -266,7 +266,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 		},
 	}
 	if err := c.dbProxy.Table(common.BKTableNameServiceInstance).Delete(kit.Ctx, serviceInstanceIDFilter); nil != err {
-		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %#v, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
+		blog.Errorf("DeleteDestroyedHostRelated failed, delete service instances err:%s, filter: %#v, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -289,7 +289,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 	}
 	err = c.dbProxy.Table(common.BKTableNameInstAsst).Delete(kit.Ctx, asstFilter)
 	if nil != err {
-		blog.Errorf("delete inst association failed,  filter:%s, cond:%#v, rid: %s", err, asstFilter, kit.Rid)
+		blog.Errorf("DeleteDestroyedHostRelated failed, delete inst association err:%s, filter:%s, rid: %s", err, asstFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 

@@ -17,10 +17,8 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/zkclient"
-	ccom "configcenter/src/scene_server/cloud_server/common"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -28,10 +26,6 @@ import (
 const (
 	// 同步器数量
 	syncorNum int = 10
-)
-
-var (
-	globalKit *rest.Kit
 )
 
 type SyncConf struct {
@@ -49,8 +43,6 @@ type CloudSyncInterface interface {
 // 进行云资源同步
 func CloudSync(conf *SyncConf) error {
 	errors.SetGlobalCCError(conf.Logics.CCErr)
-	// 只用于读操作和非事务操作的全局kit
-	globalKit = ccom.NewKit()
 	ctx := context.Background()
 
 	schedulerConf := &SchedulerConf{

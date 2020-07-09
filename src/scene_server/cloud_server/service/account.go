@@ -86,7 +86,7 @@ func (s *Service) SearchAccountValidity(ctx *rest.Contexts) {
 		}
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(validityInfo))
+	ctx.RespEntity(validityInfo)
 }
 
 // 新建云账户
