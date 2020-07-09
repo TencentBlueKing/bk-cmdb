@@ -46,7 +46,6 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 	for _, node := range opt.Nodes {
 		// validate object at first.
 		if node.Object == "biz" {
-			// return nil, fmt.Errorf("invalid object %s", node.Object)
 			return nil, ccError.New(common.CCErrCommParamsIsInvalid, "biz")
 		}
 
@@ -64,6 +63,9 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 	}
 
 	var paths map[int64][]Node
+	var nameMap map[int64]string
+
+	objNameMap := make(map[string]map[int64]string)
 	all := make(map[string]map[int64][]Node)
 	for object, instances := range objects {
 
@@ -73,21 +75,25 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 			return nil, ccError.New(common.CCErrCommParamsInvalid, "host")
 
 		case "module":
-			paths, err = t.genModuleParentPaths(ctx, opt.Business, reverseTopo, instances)
+			nameMap, paths, err = t.genModuleParentPaths(ctx, opt.Business, reverseTopo, instances)
 			if err != nil {
 				return nil, err
 			}
+
 			all[object] = paths
+			objNameMap[object] = nameMap
 
 		case "set":
-			paths, err = t.genSetParentPaths(ctx, opt.Business, reverseTopo, instances)
+			nameMap, paths, err = t.genSetParentPaths(ctx, opt.Business, reverseTopo, instances)
 			if err != nil {
 				return nil, err
 			}
+
 			all[object] = paths
+			objNameMap[object] = nameMap
 
 		default:
-			paths, err = t.genCustomParentPaths(ctx, opt.Business, "set", reverseTopo, instances)
+			nameMap, paths, err = t.genCustomParentPaths(ctx, opt.Business, "set", reverseTopo, instances)
 			if err != nil {
 				return nil, err
 			}
@@ -102,6 +108,8 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 			}
 
 			all[object] = paths
+			objNameMap[object] = nameMap
+
 		}
 	}
 
@@ -109,6 +117,7 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 	for _, node := range opt.Nodes {
 		nodePath = append(nodePath, NodePaths{
 			MainlineNode: node,
+			InstanceName: objNameMap[node.Object][node.InstanceID],
 			Paths:        [][]Node{reverseNode(all[node.Object][node.InstanceID])},
 		})
 	}
@@ -117,18 +126,18 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 }
 
 func (t *TopologyTree) genModuleParentPaths(ctx context.Context, biz int64, revTopo []string,
-	moduleIDs []int64) (paths map[int64][]Node, err error) {
+	moduleIDs []int64) (names map[int64]string, paths map[int64][]Node, err error) {
 
 	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	moduleMap, setList, err := t.searchModules(ctx, biz, moduleIDs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	setMap, _, err := t.searchSets(ctx, biz, setList)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// add set path
@@ -143,40 +152,46 @@ func (t *TopologyTree) genModuleParentPaths(ctx context.Context, biz int64, revT
 		})
 	}
 
-	setPaths, err := t.genSetParentPaths(ctx, biz, revTopo, setList)
+	_, setPaths, err := t.genSetParentPaths(ctx, biz, revTopo, setList)
 	if err != nil {
 		blog.Errorf("gen set paths failed, err: %v, rid: %v", err, rid)
-		return nil, err
+		return nil, nil, err
 	}
 
+	nameMap := make(map[int64]string, len(moduleMap))
 	for id, mod := range moduleMap {
 		ns, exist := setPaths[mod.ParentID]
 		if !exist {
 			blog.ErrorJSON("can not find set %d node from set path: %s", id, setPaths)
-			return nil, errors.New("can not find set node from set path")
+			return nil, nil, errors.New("can not find set node from set path")
 		}
 		paths[id] = append(paths[id], ns...)
+
+		nameMap[id] = mod.Name
 	}
 
-	return paths, nil
+	return nameMap, paths, nil
 }
 
 func (t *TopologyTree) genSetParentPaths(ctx context.Context, biz int64, revTopo []string,
-	previousList []int64) (paths map[int64][]Node, err error) {
+	previousList []int64) (names map[int64]string, paths map[int64][]Node, err error) {
 
 	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	nextNode, err := nextNode("set", revTopo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	// define at first, so that we can use it later, but return earlier.
+	var nameMap map[int64]string
 
 	paths = make(map[int64][]Node)
 	// loop until we go to biz node.
 	if nextNode == "biz" {
 		bizDetail, err := t.bizDetail(ctx, biz)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// add biz path
@@ -188,50 +203,55 @@ func (t *TopologyTree) genSetParentPaths(ctx context.Context, biz int64, revTopo
 				ParentID:     0,
 			})
 		}
-		return paths, nil
+		return nameMap, paths, nil
 	}
 
 	setMap, customList, err := t.searchSets(ctx, biz, previousList)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	customPaths, err := t.genCustomParentPaths(ctx, biz, "set", revTopo, customList)
+	_, customPaths, err := t.genCustomParentPaths(ctx, biz, "set", revTopo, customList)
 	if err != nil {
 		blog.Errorf("gen custom parent %s/%v paths failed, err: %v, rid: %v", nextNode, previousList, err, rid)
-		return nil, err
+		return nil, nil, err
 	}
 
+	nameMap = make(map[int64]string, len(setMap))
 	for id, set := range setMap {
 
 		custom, exist := customPaths[set.ParentID]
 		if !exist {
 			blog.ErrorJSON("can not find instance %d node from custom path: %s", id, customPaths)
-			return nil, errors.New("can not find instance node from custom path")
+			return nil, nil, errors.New("can not find instance node from custom path")
 		}
 
 		paths[id] = append(paths[id], custom...)
+
+		nameMap[id] = set.Name
 	}
 
-	return paths, nil
+	return nameMap, paths, nil
 }
 
 func (t *TopologyTree) genCustomParentPaths(ctx context.Context, biz int64, prevNode string, revTopo []string,
-	previousList []int64) (paths map[int64][]Node, err error) {
+	previousList []int64) (names map[int64]string, paths map[int64][]Node, err error) {
 
 	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	bizDetail, err := t.bizDetail(ctx, biz)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	nameMap := make(map[int64]string, 0)
 
 	paths = make(map[int64][]Node)
 	for {
 
 		nextNode, err := nextNode(prevNode, revTopo)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// loop until we go to biz node.
@@ -245,15 +265,16 @@ func (t *TopologyTree) genCustomParentPaths(ctx context.Context, biz int64, prev
 					ParentID:     0,
 				})
 			}
-			return paths, nil
+			return nameMap, paths, nil
 		}
 
 		customMap, prevList, err := t.searchCustomInstances(ctx, nextNode, previousList)
 		if err != nil {
 			blog.Errorf("search custom instance %s/%v failed, err: %v, rid: %v", nextNode, previousList, err, rid)
-			return nil, err
+			return nil, nil, err
 		}
 
+		// first paths, as is the bottom topology
 		if len(paths) == 0 {
 			for id, cu := range customMap {
 				paths[id] = append(paths[id], Node{
@@ -262,6 +283,8 @@ func (t *TopologyTree) genCustomParentPaths(ctx context.Context, biz int64, prev
 					InstanceName: cu.Name,
 					ParentID:     cu.ParentID,
 				})
+				// first custom's name id map, it's all we need.
+				nameMap[id] = cu.Name
 			}
 
 			prevNode = nextNode
@@ -284,13 +307,13 @@ func (t *TopologyTree) genCustomParentPaths(ctx context.Context, biz int64, prev
 
 			if hit < 0 {
 				blog.Errorf("gen custom topo instance path, but got invalid nodes: %v, rid: %v", nodes, rid)
-				return nil, errors.New("got invalid custom topo nodes")
+				return nil, nil, errors.New("got invalid custom topo nodes")
 			}
 
 			custom, exist := customMap[prev.ParentID]
 			if !exist {
 				blog.Errorf("gen custom topo instance path, but can not find node: %v parent, rid: %v", prev, rid)
-				return nil, fmt.Errorf("can not find node %v parent", nodes)
+				return nil, nil, fmt.Errorf("can not find node %v parent", nodes)
 			}
 
 			paths[id] = append(paths[id], Node{
