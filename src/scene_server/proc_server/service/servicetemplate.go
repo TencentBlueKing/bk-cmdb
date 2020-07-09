@@ -162,28 +162,6 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 	}
-
-	if ps.AuthManager.Enabled() {
-		authorizedIDs, err := ps.AuthManager.ListAuthorizedServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-		if err != nil {
-			blog.Errorf("ListAuthorizedServiceTemplateIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
-			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
-			ctx.RespAutoError(err)
-			return
-		}
-		if option.ServiceTemplateIDs == nil {
-			option.ServiceTemplateIDs = authorizedIDs
-		} else {
-			ids := make([]int64, 0)
-			for _, id := range option.ServiceTemplateIDs {
-				if util.InArray(id, authorizedIDs) {
-					ids = append(ids, id)
-				}
-			}
-			option.ServiceTemplateIDs = ids
-		}
-	}
-
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
@@ -221,28 +199,6 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		ServiceCategoryID: &input.ServiceCategoryID,
 		Search:            input.Search,
 	}
-
-	if ps.AuthManager.Enabled() {
-		authorizedIDs, err := ps.AuthManager.ListAuthorizedServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-		if err != nil {
-			blog.Errorf("ListAuthorizedServiceTemplateIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
-			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
-			ctx.RespAutoError(err)
-			return
-		}
-		if option.ServiceTemplateIDs == nil {
-			option.ServiceTemplateIDs = authorizedIDs
-		} else {
-			ids := make([]int64, 0)
-			for _, id := range option.ServiceTemplateIDs {
-				if util.InArray(id, authorizedIDs) {
-					ids = append(ids, id)
-				}
-			}
-			option.ServiceTemplateIDs = ids
-		}
-	}
-
 	listResult, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)

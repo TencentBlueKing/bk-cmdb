@@ -87,6 +87,14 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 }
 
 func (a *Authorize) countIamIDKey(op operator.OperType, fv *operator.FieldValue) ([]string, error) {
+	if op == operator.Equal {
+		strValue, ok := fv.Value.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid policy with operator eq value %v, should be string", fv.Value)
+		}
+		return []string{strValue}, nil
+	}
+
 	if op != operator.In {
 		return nil, errors.New("unsupported policy with iam \"id\" key, op is not \"in\"")
 	}
