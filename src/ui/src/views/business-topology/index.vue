@@ -1,5 +1,5 @@
 <template>
-    <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+    <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }" style="overflow: hidden;">
         <cmdb-resize-layout :class="['resize-layout fl', { 'is-collapse': layout.topologyCollapse }]"
             direction="right"
             :handler-offset="3"
@@ -26,7 +26,7 @@
                             <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
                         </div>
                     </div>
-                    <service-instance v-else ref="serviceInstance"></service-instance>
+                    <service-instance-view v-else-if="activeTab === 'serviceInstance'"></service-instance-view>
                 </bk-tab-panel>
                 <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
                     <div class="default-node-info" v-if="!showNodeInfo">
@@ -39,26 +39,28 @@
                 </bk-tab-panel>
             </bk-tab>
         </div>
+        <router-subview></router-subview>
     </div>
 </template>
 
 <script>
     import TopologyTree from './children/topology-tree.vue'
     import HostList from './host/host-list.vue'
-    import ServiceInstance from './children/service-instances.vue'
     import ServiceNodeInfo from './children/service-node-info.vue'
     import { mapGetters } from 'vuex'
     import Bus from '@/utils/bus.js'
+    import RouterQuery from '@/router/query'
+    import ServiceInstanceView from './service-instance/view'
     export default {
         components: {
             TopologyTree,
             HostList,
             ServiceNodeInfo,
-            ServiceInstance
+            ServiceInstanceView
         },
         data () {
             return {
-                activeTab: this.$route.query.tab || 'hostList',
+                activeTab: RouterQuery.get('tab', 'hostList'),
                 layout: {
                     topologyCollapse: false
                 },
@@ -86,14 +88,20 @@
             activeTab (tab) {
                 const refresh = (this.$refs[tab] || {}).refresh
                 typeof refresh === 'function' && refresh(1)
+                RouterQuery.set('tab', tab)
+                RouterQuery.delete('page')
+                RouterQuery.delete('limit')
             }
         },
         async created () {
+            this.unwatch = RouterQuery.watch('tab', (value = 'hostList') => {
+                this.activeTab = value
+            })
             try {
                 const topologyModels = await this.getTopologyModels()
                 const properties = await this.getProperties(topologyModels)
                 this.$store.commit('businessHost/setTopologyModels', topologyModels)
-                this.$store.commit('businessHost/setPropertyMap', properties)
+                this.$store.commit('businessHost/setPropertyMap', Object.freeze(properties))
                 this.$store.commit('businessHost/resolveCommonRequest')
             } catch (e) {
                 console.error(e)
@@ -101,6 +109,7 @@
         },
         beforeDestroy () {
             this.$store.commit('businessHost/clear')
+            this.unwatch()
         },
         methods: {
             handleTabToggle () {
@@ -116,6 +125,7 @@
             },
             getProperties (models) {
                 return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
+                    injectId: 'host',
                     params: this.$injectMetadata({
                         bk_obj_id: {
                             $in: models.map(model => model.bk_obj_id)

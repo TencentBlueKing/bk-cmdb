@@ -1,5 +1,7 @@
 <template>
-    <div class="group-wrapper" :style="{ 'padding-top': topPadding + 'px' }">
+    <div class="group-wrapper"
+        v-bkloading="{ isLoading: $loading(Object.values(request)) }"
+        :style="{ 'padding-top': topPadding + 'px' }">
         <cmdb-main-inject ref="mainInject"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
@@ -154,11 +156,11 @@
                                 :placeholder="$t('请输入唯一标识')"
                                 :disabled="groupDialog.isEdit"
                                 v-model.trim="groupDialog.data['bk_classification_id']"
-                                v-validate="'required|classifyId'">
+                                v-validate="'required|classifyId|length:128'">
                             </bk-input>
                             <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文大小写的组合')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">
@@ -171,7 +173,7 @@
                                 name="classifyName"
                                 :placeholder="$t('请输入名称')"
                                 v-model.trim="groupDialog.data['bk_classification_name']"
-                                v-validate="'required|classifyName'">
+                                v-validate="'required|length:128'">
                             </bk-input>
                             <p class="form-error" :title="errors.first('classifyName')">{{errors.first('classifyName')}}</p>
                         </div>
@@ -194,7 +196,7 @@
             :title="$t('新建模型')"
             @confirm="saveModel">
         </the-create-model>
-        
+
         <bk-dialog
             class="bk-dialog-no-padding"
             :width="400"
@@ -205,8 +207,7 @@
                 <i class="bk-icon icon-check-1"></i>
                 <p>{{$t('模型创建成功')}}</p>
                 <div class="btn-box">
-                    <bk-button theme="primary" @click="handleGoInstance(curCreateModel)">{{$t('添加实例')}}</bk-button>
-                    <bk-button @click="modelClick(curCreateModel)">{{$t('配置字段')}}</bk-button>
+                    <bk-button theme="primary" @click="modelClick(curCreateModel)">{{$t('配置字段')}}</bk-button>
                     <bk-button @click="sucessDialog.isShow = false">{{$t('返回列表')}}</bk-button>
                 </div>
             </div>
@@ -265,6 +266,10 @@
                 modelDialog: {
                     isShow: false,
                     groupId: ''
+                },
+                request: {
+                    statistics: Symbol('statistics'),
+                    searchClassifications: Symbol('searchClassifications')
                 }
             }
         },
@@ -319,11 +324,12 @@
                 const searchResult = []
                 const currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
                 const classifications = this.$tools.clone(currentClassifications)
+                const lowerCaseValue = value.toLowerCase()
                 for (let i = 0; i < classifications.length; i++) {
                     classifications[i].bk_objects = classifications[i].bk_objects.filter(model => {
-                        const modelName = model.bk_obj_name
-                        const modelId = model.bk_obj_id
-                        return (modelName && modelName.indexOf(value) !== -1) || (modelId && modelId.indexOf(value) !== -1)
+                        const modelName = model.bk_obj_name.toLowerCase()
+                        const modelId = model.bk_obj_id.toLowerCase()
+                        return (modelName && modelName.indexOf(lowerCaseValue) !== -1) || (modelId && modelId.indexOf(lowerCaseValue) !== -1)
                     })
                     searchResult.push(classifications[i])
                 }
@@ -338,10 +344,19 @@
                 this.scrollTop = event.target.scrollTop
             }
             addMainScrollListener(this.scrollHandler)
-            this.getModelStatistics()
-            this.searchClassificationsObjects({
-                params: this.$injectMetadata()
-            })
+            try {
+                await Promise.all([
+                    this.getModelStatistics(),
+                    this.searchClassificationsObjects({
+                        params: this.$injectMetadata(),
+                        config: {
+                            requestId: this.request.searchClassifications
+                        }
+                    })
+                ])
+            } catch (e) {
+                this.$route.meta.view = 'error'
+            }
             if (this.$route.query.searchModel) {
                 const hash = window.location.hash
                 this.searchModel = this.$route.query.searchModel
@@ -409,7 +424,7 @@
                 const modelStatisticsSet = {}
                 const res = await this.getClassificationsObjectStatistics({
                     config: {
-                        requestId: 'getClassificationsObjectStatistics'
+                        requestId: this.request.statistics
                     }
                 })
                 res.forEach(item => {
@@ -494,11 +509,12 @@
             },
             modelClick (model) {
                 this.$store.commit('objectModel/setActiveModel', model)
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'modelDetails',
                     params: {
                         modelId: model['bk_obj_id']
-                    }
+                    },
+                    history: true
                 })
             },
             handleGoInstance (model) {
@@ -508,11 +524,11 @@
                     biz: MENU_RESOURCE_BUSINESS
                 }
                 if (map.hasOwnProperty(model.bk_obj_id)) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: map[model.bk_obj_id]
                     })
                 } else {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_INSTANCE,
                         params: {
                             objId: model.bk_obj_id

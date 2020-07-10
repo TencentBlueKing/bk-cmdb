@@ -30,6 +30,7 @@ type Field interface {
 	NotGt(val interface{}) Condition
 	Gte(val interface{}) Condition
 	Or(val interface{}) Condition
+	Exists(val interface{}) Condition
 	ToMapStr() types.MapStr
 	GetFieldName() string
 }
@@ -142,6 +143,13 @@ func (cli *field) Gte(val interface{}) Condition {
 // Or if any expression of value are true
 func (cli *field) Or(val interface{}) Condition {
 	cli.opeartor = BKDBOR
+	cli.fieldValue = val
+	return cli.condition
+}
+
+// Exists set the key exists value as val
+func (cli *field) Exists(val interface{}) Condition {
+	cli.opeartor = BKDBEXISTS
 	cli.fieldValue = val
 	return cli.condition
 }

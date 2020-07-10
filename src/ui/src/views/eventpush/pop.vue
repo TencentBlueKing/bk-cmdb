@@ -90,6 +90,9 @@
                 }
             }
         },
+        beforeDestroy () {
+            this.$http.cancelRequest(['testPing', 'testTelnet'])
+        },
         methods: {
             ...mapActions('eventSub', [
                 'pingSubscription',

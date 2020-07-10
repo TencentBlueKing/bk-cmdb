@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -39,6 +40,12 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 		}
 	}
 
+	if len(input.Processes) == 0 {
+		ctx.RespEntity([]int64{})
+		blog.Infof("no process to create, return")
+		return
+	}
+
 	// authorize
 	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, input.ServiceTemplateID); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed, "authorize by service template id failed, id: %d, err: %+v", input.ServiceTemplateID, err)
@@ -46,22 +53,29 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	ids := make([]int64, 0)
-	for _, process := range input.Processes {
-		t := &metadata.ProcessTemplate{
-			BizID:             bizID,
-			ServiceTemplateID: input.ServiceTemplateID,
-			Property:          process.Spec,
-		}
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		for _, process := range input.Processes {
+			t := &metadata.ProcessTemplate{
+				BizID:             bizID,
+				ServiceTemplateID: input.ServiceTemplateID,
+				Property:          process.Spec,
+			}
 
-		temp, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcCreateProcessTemplateFailed, "create process template failed, template: +%v", *t)
-			return
-		}
+			temp, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
+			if err != nil {
+				blog.Errorf("create process template failed, template: +%v", *t)
+				return ctx.Kit.CCError.CCError(common.CCErrProcCreateProcessTemplateFailed)
+			}
 
-		ids = append(ids, temp.ID)
+			ids = append(ids, temp.ID)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
-
 	ctx.RespEntity(ids)
 }
 
@@ -100,15 +114,23 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	for _, processTemplate := range processTemplates.Info {
 		serviceTemplateIDs = append(serviceTemplateIDs, processTemplate.ServiceTemplateID)
 	}
+
 	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, serviceTemplateIDs...); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed, "authorize by service template id failed, id: %+v, err: %+v", serviceTemplateIDs, err)
 		return
 	}
 
-	err = ps.CoreAPI.CoreService().Process().DeleteProcessTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed, "delete process template: %v failed",
-			input.ProcessTemplates)
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		err := ps.CoreAPI.CoreService().Process().DeleteProcessTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
+		if err != nil {
+			blog.Errorf("delete process template: %v failed", input.ProcessTemplates)
+			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteTemplateFail)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -155,14 +177,25 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	for _, processTemplate := range processTemplates.Info {
 		serviceTemplateIDs = append(serviceTemplateIDs, processTemplate.ServiceTemplateID)
 	}
+
 	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, serviceTemplateIDs...); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed, "authorize by service template id failed, id: %+v, err: %+v", serviceTemplateIDs, err)
 		return
 	}
 
-	template, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, input.Property)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcUpdateProcessTemplateFailed, "update process template: %v failed.", input)
+	var template *metadata.ProcessTemplate
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		template, err = ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, input.Property)
+		if err != nil {
+			blog.Errorf("update process template: %v failed.", input)
+			return ctx.Kit.CCError.CCError(common.CCErrProcUpdateProcessTemplateFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(template)

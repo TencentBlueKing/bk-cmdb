@@ -58,10 +58,10 @@
                         <ul class="lenovo-result">
                             <template v-for="(item, index) in lenovoList">
                                 <li :key="index" v-if="item.type === 'host'"
-                                    :title="item.source.bk_host_innerip"
+                                    :title="item.source.bk_host_innerip | implode"
                                     :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoResource(item.source)">
-                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_host_innerip}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_host_innerip | implode}}</span>
                                     <span>({{$t('主机')}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'object'"
@@ -148,12 +148,16 @@
     import hostSearch from './host-search'
     import { mapGetters } from 'vuex'
     import {
-        MENU_INDEX, MENU_RESOURCE_INSTANCE,
-        MENU_RESOURCE_BUSINESS,
+        MENU_INDEX, MENU_RESOURCE_INSTANCE_DETAILS,
+        MENU_RESOURCE_BUSINESS_DETAILS,
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HISTORY
     } from '@/dictionary/menu-symbol'
+    import { implode } from '@/filters/formatter'
     export default {
+        filters: {
+            implode
+        },
         components: {
             searchResult,
             hostSearch
@@ -432,7 +436,7 @@
                 this.handleHideLenovo()
             },
             resetIndex () {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_INDEX
                 })
                 const timer = setTimeout(() => {
@@ -460,7 +464,7 @@
                 this.$set(this.result, 'data', this.$tools.clone(this.query.data))
                 this.beforeKeywords = this.keywords
                 this.$store.commit('fullTextSearch/setSearchHistory', this.keywords)
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_INDEX,
                     query: {
                         keywords: this.keywords,
@@ -480,11 +484,12 @@
                 })
             },
             handleGoResource (host) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_HOST_DETAILS,
                     params: {
                         id: host.bk_host_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleGoInstace (source) {
@@ -503,21 +508,24 @@
                     })
                     return
                 }
-                this.$router.push({
-                    name: MENU_RESOURCE_INSTANCE,
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_INSTANCE_DETAILS,
                     params: {
                         objId: source['bk_obj_id'],
                         instId: source['bk_inst_id']
-                    }
+                    },
+                    history: true
                 })
             },
             handleGoBusiness (source) {
-                const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS
-                this.$router.push({
+                const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS_DETAILS
+                this.$routerActions.redirect({
                     name: name,
                     params: {
+                        bizId: source.bk_biz_id,
                         bizName: source['bk_biz_name']
-                    }
+                    },
+                    history: true
                 })
             },
             toggleClassify (index, objId) {

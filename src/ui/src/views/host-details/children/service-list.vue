@@ -8,7 +8,7 @@
                 :title="$t('全选本页')"
                 @change="handleCheckALL">
             </bk-checkbox>
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_INSTANCE })">
+            <cmdb-auth :auth="HOST_AUTH.D_SERVICE_INSTANCE">
                 <bk-button slot-scope="{ disabled }"
                     class="ml10"
                     :disabled="disabled || !checked.length"
@@ -76,7 +76,6 @@
                 slot="empty"
                 :stuff="emptyStuff">
                 <div class="empty-text">
-                    <img src="../../../assets/images/empty-content.png" alt="">
                     <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
                 </div>
             </cmdb-table-empty>
@@ -114,10 +113,12 @@
     } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
+    import authMixin from '../mixin-auth'
     export default {
         components: {
             serviceInstanceTable
         },
+        mixins: [authMixin],
         data () {
             const serverSwitchViewTips = window.localStorage.getItem('serverSwitchViewTips')
             return {
@@ -127,7 +128,7 @@
                         id: 0
                     },
                     {
-                        name: `${this.$t('标签')}(value)`,
+                        name: this.$t('标签值'),
                         id: 1,
                         children: [{
                             id: '',
@@ -136,7 +137,7 @@
                         conditions: []
                     },
                     {
-                        name: `${this.$t('标签')}(key)`,
+                        name: this.$t('标签键'),
                         id: 2,
                         children: [{
                             id: '',
@@ -358,18 +359,12 @@
                 if (disabled) {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.checked.map(instance => instance.id).join('/')
                     },
-                    query: {
-                        from: this.$route.path,
-                        query: {
-                            ...this.$route.query,
-                            tab: 'service'
-                        }
-                    }
+                    history: true
                 })
             },
             handleCheckChange (checked, instance) {
@@ -433,7 +428,7 @@
                 el.showChildMenu(children)
             },
             handleGoAddInstance () {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },

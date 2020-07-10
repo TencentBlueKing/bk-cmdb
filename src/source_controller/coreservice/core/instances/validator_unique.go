@@ -17,23 +17,30 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
+var hostSpecialFieldMap = map[string]bool{
+	common.BKHostInnerIPField: true,
+	common.BKHostOuterIPField: true,
+	common.BKOperatorField:    true,
+	common.BKBakOperatorField: true,
+}
+
 // validCreateUnique  valid create inst data unique
-func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instanceManager *instanceManager) error {
-	uniqueAttr, err := valid.dependent.SearchUnique(ctx, valid.objID)
+func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instanceManager *instanceManager) error {
+	uniqueAttr, err := valid.dependent.SearchUnique(kit, valid.objID)
 	if nil != err {
-		blog.Errorf("[validCreateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, ctx.ReqID)
+		blog.Errorf("[validCreateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, kit.Rid)
 		return err
 	}
 
 	if 0 >= len(uniqueAttr) {
-		blog.Warnf("[validCreateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, ctx.ReqID)
+		blog.Warnf("[validCreateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, kit.Rid)
 		return nil
 	}
 
@@ -45,13 +52,13 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
-					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v, rid: %s", valid.objID, key.ID, ctx.ReqID)
-					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, key.ID)
+					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v, rid: %s", valid.objID, key.ID, kit.Rid)
+					return valid.errIf.Errorf(common.CCErrTopoObjectPropertyNotFound, key.ID)
 				}
 				uniqueKeys = append(uniqueKeys, property.PropertyID)
 			default:
-				blog.Errorf("[validCreateUnique] find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, ctx.ReqID)
-				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
+				blog.Errorf("[validCreateUnique] find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, kit.Rid)
+				return valid.errIf.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 			}
 		}
 
@@ -63,7 +70,19 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 			if !ok || isEmpty(val) {
 				anyEmpty = true
 			}
-			cond.Element(&mongo.Eq{Key: key, Val: val})
+			if valid.objID == common.BKInnerObjIDHost && hostSpecialFieldMap[key] {
+				valStr, _ := val.(string)
+				valArr := strings.Split(valStr, ",")
+				cond.Element(&mongo.KV{
+					Key: key,
+					Val: map[string]interface{}{
+						common.BKDBAll:  valArr,
+						common.BKDBSize: len(valArr),
+					},
+				})
+			} else {
+				cond.Element(&mongo.Eq{Key: key, Val: val})
+			}
 		}
 
 		if anyEmpty && !unique.MustCheck {
@@ -83,20 +102,22 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 			labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 		}
 
-		result, err := instanceManager.countInstance(ctx, valid.objID, cond.ToMapStr())
+		result, err := instanceManager.countInstance(kit, valid.objID, cond.ToMapStr())
 		if nil != err {
-			blog.Errorf("[validCreateUnique] count [%s] inst error %v, condition: %#v, rid: %s", valid.objID, err, cond.ToMapStr(), ctx.ReqID)
+			blog.Errorf("[validCreateUnique] count [%s] inst error %v, condition: %#v, rid: %s", valid.objID, err, cond.ToMapStr(), kit.Rid)
 			return err
 		}
 
 		if 0 < result {
-			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniqueKeys, valid.objID, ctx.ReqID)
+			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniqueKeys, valid.objID, kit.Rid)
 			propertyNames := make([]string, 0)
+			lang := util.GetLanguage(kit.Header)
+			language := valid.language.CreateDefaultCCLanguageIf(lang)
 			for _, key := range uniqueKeys {
-				propertyNames = append(propertyNames, util.FirstNotEmptyString(ctx.Lang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key), valid.properties[key].PropertyName, key))
 			}
 
-			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
+			return valid.errIf.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 		}
 
 	}
@@ -105,15 +126,15 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 }
 
 // validUpdateUnique valid update unique
-func (valid *validator) validUpdateUnique(ctx core.ContextParams, updateData mapstr.MapStr, instMedataData metadata.Metadata, instID uint64, instanceManager *instanceManager) error {
-	uniqueAttr, err := valid.dependent.SearchUnique(ctx, valid.objID)
+func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapStr, instMedataData metadata.Metadata, instID uint64, instanceManager *instanceManager) error {
+	uniqueAttr, err := valid.dependent.SearchUnique(kit, valid.objID)
 	if nil != err {
-		blog.Errorf("[validUpdateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, ctx.ReqID)
+		blog.Errorf("[validUpdateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, kit.Rid)
 		return err
 	}
 
 	if 0 >= len(uniqueAttr) {
-		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, ctx.ReqID)
+		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, kit.Rid)
 		return nil
 	}
 
@@ -125,13 +146,13 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, updateData map
 			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
-					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v, rid: %s", valid.objID, key.ID, ctx.ReqID)
-					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, property.ID)
+					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v, rid: %s", valid.objID, key.ID, kit.Rid)
+					return valid.errIf.Errorf(common.CCErrTopoObjectPropertyNotFound, property.ID)
 				}
 				uniqueKeys = append(uniqueKeys, property.PropertyID)
 			default:
-				blog.Errorf("[validUpdateUnique] find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, ctx.ReqID)
-				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
+				blog.Errorf("[validUpdateUnique] find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, kit.Rid)
+				return valid.errIf.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 			}
 		}
 
@@ -142,7 +163,19 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, updateData map
 			if !ok || isEmpty(val) {
 				anyEmpty = true
 			}
-			cond.Element(&mongo.Eq{Key: key, Val: val})
+			if valid.objID == common.BKInnerObjIDHost && hostSpecialFieldMap[key] {
+				valStr, _ := val.(string)
+				valArr := strings.Split(valStr, ",")
+				cond.Element(&mongo.KV{
+					Key: key,
+					Val: map[string]interface{}{
+						common.BKDBAll:  valArr,
+						common.BKDBSize: len(valArr),
+					},
+				})
+			} else {
+				cond.Element(&mongo.Eq{Key: key, Val: val})
+			}
 		}
 
 		if anyEmpty && !unique.MustCheck {
@@ -162,20 +195,22 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, updateData map
 			lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 		}
 
-		result, err := instanceManager.countInstance(ctx, valid.objID, cond.ToMapStr())
+		result, err := instanceManager.countInstance(kit, valid.objID, cond.ToMapStr())
 		if nil != err {
-			blog.Errorf("[validUpdateUnique] count [%s] inst error %v, condition: %#v, rid: %s", valid.objID, err, cond.ToMapStr(), ctx.ReqID)
+			blog.Errorf("[validUpdateUnique] count [%s] inst error %v, condition: %#v, rid: %s", valid.objID, err, cond.ToMapStr(), kit.Rid)
 			return err
 		}
 
 		if 0 < result {
-			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniqueKeys, valid.objID, ctx.ReqID)
+			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniqueKeys, valid.objID, kit.Rid)
 			propertyNames := make([]string, 0)
+			lang := util.GetLanguage(kit.Header)
+			language := valid.language.CreateDefaultCCLanguageIf(lang)
 			for _, key := range uniqueKeys {
-				propertyNames = append(propertyNames, util.FirstNotEmptyString(ctx.Lang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key), valid.properties[key].PropertyName, key))
 			}
 
-			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
+			return valid.errIf.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 		}
 	}
 	return nil

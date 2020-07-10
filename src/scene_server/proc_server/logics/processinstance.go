@@ -88,7 +88,7 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 	option := metadata.UpdateOption{
 		Data: info,
 		Condition: map[string]interface{}{
-			common.BKProcessIDField:  procID,
+			common.BKProcessIDField: procID,
 		},
 	}
 
@@ -127,7 +127,7 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCEr
 	return nil
 }
 
-func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) error {
+func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) errors.CCErrorCoder {
 	if procIDs == nil {
 		return nil
 	}
@@ -140,12 +140,12 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		return err
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
 		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procIDs, result.ErrMsg)
-		return kit.CCError.Error(result.Code)
+		return result.CCError()
 	}
 
 	return nil
@@ -479,6 +479,62 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 				PropertyName:          attrMap[common.BKProcPortEnable].PropertyName,
 				PropertyValue:         i.PortEnable,
 				TemplatePropertyValue: t.PortEnable,
+			})
+		}
+	}
+
+	if metadata.IsAsDefaultValue(t.GatewayIP.AsDefaultValue) {
+		if (t.GatewayIP.Value == nil && i.GatewayIP != nil) ||
+			(t.GatewayIP.Value != nil && i.GatewayIP == nil) ||
+			(t.GatewayIP.Value != nil && i.GatewayIP != nil && *t.GatewayIP.Value != *i.GatewayIP) {
+			changes = append(changes, metadata.ProcessChangedAttribute{
+				ID:                    attrMap[common.BKProcGatewayIP].ID,
+				PropertyID:            common.BKProcGatewayIP,
+				PropertyName:          attrMap[common.BKProcGatewayIP].PropertyName,
+				PropertyValue:         i.GatewayIP,
+				TemplatePropertyValue: t.GatewayIP,
+			})
+		}
+	}
+
+	if metadata.IsAsDefaultValue(t.GatewayPort.AsDefaultValue) {
+		if (t.GatewayPort.Value == nil && i.GatewayPort != nil) ||
+			(t.GatewayPort.Value != nil && i.GatewayPort == nil) ||
+			(t.GatewayPort.Value != nil && i.GatewayPort != nil && *t.GatewayPort.Value != *i.GatewayPort) {
+			changes = append(changes, metadata.ProcessChangedAttribute{
+				ID:                    attrMap[common.BKProcGatewayPort].ID,
+				PropertyID:            common.BKProcGatewayPort,
+				PropertyName:          attrMap[common.BKProcGatewayPort].PropertyName,
+				PropertyValue:         i.GatewayPort,
+				TemplatePropertyValue: t.GatewayPort,
+			})
+		}
+	}
+
+	if metadata.IsAsDefaultValue(t.GatewayProtocol.AsDefaultValue) {
+		if (t.GatewayProtocol.Value == nil && i.GatewayProtocol != nil) ||
+			(t.GatewayProtocol.Value != nil && i.GatewayProtocol == nil) ||
+			(t.GatewayProtocol.Value != nil && i.GatewayProtocol != nil && *t.GatewayProtocol.Value != *i.GatewayProtocol) {
+			changes = append(changes, metadata.ProcessChangedAttribute{
+				ID:                    attrMap[common.BKProcGatewayProtocol].ID,
+				PropertyID:            common.BKProcGatewayProtocol,
+				PropertyName:          attrMap[common.BKProcGatewayProtocol].PropertyName,
+				PropertyValue:         i.GatewayProtocol,
+				TemplatePropertyValue: t.GatewayProtocol,
+			})
+		}
+	}
+
+	if metadata.IsAsDefaultValue(t.GatewayCity.AsDefaultValue) {
+		if (t.GatewayCity.Value == nil && i.GatewayCity != nil) ||
+			(t.GatewayCity.Value != nil && i.GatewayCity == nil) ||
+			(t.GatewayCity.Value != nil && i.GatewayCity != nil && *t.GatewayCity.Value != *i.GatewayCity) {
+			changes = append(changes, metadata.ProcessChangedAttribute{
+				ID:                    attrMap[common.BKProcGatewayCity].ID,
+				PropertyID:            common.BKProcGatewayCity,
+				PropertyName:          attrMap[common.BKProcGatewayCity].PropertyName,
+				PropertyValue:         i.GatewayCity,
+				TemplatePropertyValue: t.GatewayCity,
 			})
 		}
 	}

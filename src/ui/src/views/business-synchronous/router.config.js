@@ -15,19 +15,7 @@ export default [{
             i18n: '同步模板',
             relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
-        layout: {
-            previous: (view) => {
-                const query = view.$route.query
-                const params = {
-                    name: query.from ? query.from : MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: {
-                        tab: 'serviceInstance',
-                        node: 'module-' + view.modules[0]
-                    }
-                }
-                return params
-            }
-        }
+        layout: {}
     })
 }, {
     name: 'syncServiceFromTemplate',
@@ -39,18 +27,6 @@ export default [{
             i18n: '同步模板',
             relative: MENU_BUSINESS_SERVICE_TEMPLATE
         },
-        layout: {
-            previous: (view) => {
-                const query = view.$route.query
-                const params = {
-                    name: query.from ? query.from : MENU_BUSINESS_SERVICE_TEMPLATE,
-                    params: {
-                        templateId: view.$route.params.template,
-                        active: 'instance'
-                    }
-                }
-                return params
-            }
-        }
+        layout: {}
     })
 }]

@@ -20,19 +20,20 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 )
 
 func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableNames := []string{common.BKTableNameSetTemplateSyncStatus, common.BKTableNameSetTemplateSyncHistory}
 	for _, tableName := range tableNames {
-		existTable, err := db.HasTable(tableName)
+		existTable, err := db.HasTable(ctx, tableName)
 		if err != nil {
 			blog.Errorf("check table %s exist failed, err:%s", tableName, err.Error())
 			return err
 		}
 
 		if !existTable {
-			err := db.CreateTable(tableName)
+			err := db.CreateTable(ctx, tableName)
 			if err != nil {
 				blog.Errorf("create table %s failed, err:%s", tableName, err.Error())
 				return err
@@ -47,7 +48,7 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 		if tableName == common.BKTableNameSetTemplateSyncHistory {
 			taskIDUnique = true
 		}
-		indexArr := []dal.Index{
+		indexArr := []types.Index{
 			{
 				Keys:       map[string]int32{"task_id": 1},
 				Name:       "idx_taskID",

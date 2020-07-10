@@ -15,24 +15,24 @@ package model
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelClassification) isValid(ctx core.ContextParams, classificationID string) (bool, error) {
+func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (bool, error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
-
-	cnt, err := m.count(ctx, cond)
+	cnt, err := m.count(kit, cond)
+	return true, nil
 	return 0 != cnt, err
 }
 
-func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string, meta metadata.Metadata) (origin *metadata.Classification, exists bool, err error) {
+func (m *modelClassification) isExists(kit *rest.Kit, classificationID string, meta metadata.Metadata) (origin *metadata.Classification, exists bool, err error) {
 
 	origin = &metadata.Classification{}
 	cond := mongo.NewCondition()
@@ -46,18 +46,17 @@ func (m *modelClassification) isExists(ctx core.ContextParams, classificationID 
 		_, labelCond := metaCond.Embed(metadata.BKLabel)
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
-	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
-
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(condMap).One(ctx, origin)
+	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		return origin, false, err
 	}
 	return origin, !m.dbProxy.IsNotFoundError(err), nil
 }
 
-func (m *modelClassification) hasModel(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, exists bool, err error) {
+func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, exists bool, err error) {
 
-	clsItems, err := m.search(ctx, cond)
+	clsItems, err := m.search(kit, cond)
 	if nil != err {
 		return 0, false, err
 	}
@@ -67,13 +66,11 @@ func (m *modelClassification) hasModel(ctx core.ContextParams, cond universalsql
 		clsIDS = append(clsIDS, item.ClassificationID)
 	}
 
-	checkModelCond := mongo.NewCondition()
-	checkModelCond.Element(mongo.Field(metadata.ModelFieldObjCls).In(clsIDS))
-	checkModelCondMap := util.SetQueryOwner(checkModelCond.ToMapStr(), ctx.SupplierAccount)
-
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(checkModelCondMap).Count(ctx)
+	filter := mapstr.MapStr{metadata.ModelFieldObjCls: mapstr.MapStr{common.BKDBIN: clsIDS}}
+	util.SetQueryOwner(filter, kit.SupplierAccount)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, filter, err.Error())
 		return 0, false, err
 	}
 	exists = 0 != cnt

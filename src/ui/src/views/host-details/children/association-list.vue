@@ -36,13 +36,17 @@
                 'mainLine',
                 'source',
                 'target',
+                'sourceInstances',
+                'targetInstances',
                 'associationTypes'
             ]),
             id () {
                 return parseInt(this.$route.params.id)
             },
             hasAssociation () {
-                return !!(this.source.length || this.target.length)
+                return [...this.sourceInstances, ...this.targetInstances].some(instance => {
+                    return !!(instance.children || []).length
+                })
             },
             list () {
                 try {
@@ -97,6 +101,9 @@
                 this.$store.commit('hostDetails/setInstances', { type: 'source', instances: root.prev })
                 this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
             })
+        },
+        beforeDestroy () {
+            bus.$off('association-change')
         },
         methods: {
             async getData () {

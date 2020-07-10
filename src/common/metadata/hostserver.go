@@ -15,11 +15,11 @@ package metadata
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
@@ -43,6 +43,11 @@ type HostInstancePropertiesResult struct {
 type HostSnapResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]interface{} `json:"data"`
+}
+
+type HostSnapBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     []map[string]interface{} `json:"data"`
 }
 
 type UserCustomQueryDetailResult struct {
@@ -119,7 +124,142 @@ type HostModuleFind struct {
 	ModuleIDS []int64   `json:"bk_module_ids"`
 	Metadata  *Metadata `json:"metadata"`
 	AppID     int64     `json:"bk_biz_id"`
+	Fields    []string  `json:"fields"`
 	Page      BasePage  `json:"page"`
+}
+
+type FindHostsBySrvTplOpt struct {
+	ServiceTemplateIDs []int64  `json:"bk_service_template_ids"`
+	ModuleIDs          []int64  `json:"bk_module_ids"`
+	Fields             []string `json:"fields"`
+	Page               BasePage `json:"page"`
+}
+
+func (o *FindHostsBySrvTplOpt) Validate() (rawError errors.RawErrorInfo) {
+	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_service_template_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.ModuleIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_module_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindHostsBySetTplOpt struct {
+	SetTemplateIDs []int64  `json:"bk_set_template_ids"`
+	SetIDs         []int64  `json:"bk_set_ids"`
+	Fields         []string `json:"fields"`
+	Page           BasePage `json:"page"`
+}
+
+func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
+	if len(o.SetTemplateIDs) == 0 || len(o.SetTemplateIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_set_template_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.SetIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_set_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindModuleHostRelationParameter struct {
+	ModuleIDS    []int64  `json:"bk_module_ids"`
+	ModuleFields []string `json:"module_fields"`
+	HostFields   []string `json:"host_fields"`
+	Page         BasePage `json:"page"`
+}
+
+func (param FindModuleHostRelationParameter) Validate() errors.RawErrorInfo {
+	if len(param.ModuleIDS) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_module_ids"},
+		}
+	}
+	if len(param.ModuleIDS) > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_module_ids", 200},
+		}
+	}
+	if param.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"page"},
+		}
+	}
+	if len(param.HostFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"host_fields"},
+		}
+	}
+	if len(param.ModuleFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"module_fields"},
+		}
+	}
+	return errors.RawErrorInfo{}
+}
+
+type ModuleHostRelation struct {
+	Host    map[string]interface{}   `json:"host"`
+	Modules []map[string]interface{} `json:"modules"`
+}
+
+type FindModuleHostRelationResult struct {
+	Count    int                  `json:"count"`
+	Relation []ModuleHostRelation `json:"relation"`
+}
+
+type FindModuleHostRelationResp struct {
+	BaseResp `json:",inline"`
+	Data     FindModuleHostRelationResult `json:"data"`
 }
 
 type ListHostsParameter struct {
@@ -127,6 +267,7 @@ type ListHostsParameter struct {
 	SetCond            []ConditionItem           `json:"set_cond"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
 }
 
@@ -139,9 +280,17 @@ func (option ListHostsParameter) Validate() (string, error) {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
-		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
+	}
+
+	if len(option.SetIDs) > 200 {
+		return "bk_set_ids", fmt.Errorf("exceed max length: 200")
+	}
+
+	if len(option.ModuleIDs) > 500 {
+		return "bk_module_ids", fmt.Errorf("exceed max length: 500")
 	}
 
 	return "", nil
@@ -149,6 +298,7 @@ func (option ListHostsParameter) Validate() (string, error) {
 
 type ListHostsWithNoBizParameter struct {
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
 }
 
@@ -161,8 +311,8 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
-		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
 	}
 
@@ -183,6 +333,7 @@ type ListHosts struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
 }
 
@@ -190,7 +341,7 @@ type ListHosts struct {
 // errKey: invalid key
 // er: detail reason why errKey in invalid
 func (option ListHosts) Validate() (errKey string, err error) {
-	if key, err := option.Page.Validate(true); err != nil {
+	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
@@ -198,8 +349,8 @@ func (option ListHosts) Validate() (errKey string, err error) {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
-		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
 	}
 
@@ -309,114 +460,19 @@ type CloneHostPropertyParams struct {
 	CloudID int64  `json:"bk_cloud_id"`
 }
 
-type CloudTaskList struct {
-	User            string `json:"bk_user" bson:"bk_user"`
-	TaskName        string `json:"bk_task_name" bson:"bk_task_name"`
-	TaskID          int64  `json:"bk_task_id" bson:"bk_task_id"`
-	AccountType     string `json:"bk_account_type" bson:"bk_account_type"`
-	AccountAdmin    string `json:"bk_account_admin" bson:"bk_account_admin"`
-	PeriodType      string `json:"bk_period_type" bson:"bk_period_type"`
-	Period          string `json:"bk_period" bson:"bk_period"`
-	LastSyncTime    string `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
-	ObjID           string `json:"bk_obj_id" bson:"bk_obj_id"`
-	Status          bool   `json:"bk_status" bson:"bk_status"`
-	ResourceConfirm bool   `json:"bk_confirm" bson:"bk_confirm"`
-	AttrConfirm     bool   `json:"bk_attr_confirm" bson:"bk_attr_confirm"`
-	SecretID        string `json:"bk_secret_id" bson:"bk_secret_id"`
-	SecretKey       string `json:"bk_secret_key" bson:"bk_secret_key"`
-	OwnerID         string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type ResourceConfirm struct {
-	ObjID        string          `json:"bk_obj_id"`
-	ResourceName []mapstr.MapStr `json:"bk_resource_name"`
-	SourceType   string          `json:"bk_source_type"`
-	SourceName   string          `json:"bk_source_name"`
-	CreateTime   time.Time       `json:"create_time"`
-	TaskID       string          `json:"bk_task_id"`
-	ResourceID   int64           `json:"bk_resource_id"`
-	ConfirmType  string          `json:"bk_confirm_type"`
-	InCharge     string          `json:"bk_in_charge"`
-	OwnerID      string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type CloudHistory struct {
-	ObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
-	Status      string `json:"bk_status" bson:"bk_status"`
-	TimeConsume string `json:"bk_time_consume" bson:"bk_time_consume"`
-	NewAdd      int    `json:"new_add" bson:"new_add"`
-	AttrChanged int    `json:"attr_changed" bson:"attr_changed"`
-	StartTime   string `json:"bk_start_time" bson:"bk_start_time"`
-	TaskID      int64  `json:"bk_task_id" bson:"bk_task_id"`
-	HistoryID   int64  `json:"bk_history_id" bson:"bk_history_id"`
-	FailReason  string `json:"fail_reason" bson:"fail_reason"`
-	OwnerID     string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type DeleteCloudTask struct {
-	TaskID int64 `json:"bk_task_id"`
-}
-
-type RegionResponse struct {
-	Response RegionSet `json:"Response"`
-}
-
-type RegionSet struct {
-	Data []Region `json:"RegionSet"`
-}
-
-type Region struct {
-	Region string `json:"Region"`
-}
-
-type HostResponse struct {
-	HostResponse InstanceSet `json:"Response"`
-}
-
-type InstanceSet struct {
-	InstanceSet []CloudHostInfo `json:"InstanceSet"`
-}
-
-type CloudHostInfo struct {
-	PrivateIpAddresses []string `json:"PrivateIpAddresses"`
-	PublicIpAddresses  []string `json:"PublicIpAddresses"`
-	OsName             string   `json:"OsName"`
-}
-
-type TaskInfo struct {
-	Args        CloudTaskInfo
-	Method      string
-	NextTrigger int64
-}
-
-type CloudSyncRedisPendingStart struct {
-	NewHeader    http.Header `json:"new_header"`
-	TaskID       int64       `json:"bk_task_id"`
-	TaskItemInfo TaskInfo    `json:"task_item_info"`
-	OwnerID      string      `json:"bk_supplier_account"`
-	Update       bool        `json:"update"`
-}
-
-type CloudSyncRedisAlreadyStarted struct {
-	LastSyncTime time.Time   `json:"last_sync_time"`
-	NewHeader    http.Header `json:"new_header"`
-	TaskID       int64       `json:"bk_task_id"`
-	TaskItemInfo TaskInfo    `json:"task_item_info"`
-	OwnerID      string      `json:"bk_supplier_account"`
-}
-
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter
 type TransferHostAcrossBusinessParameter struct {
 	SrcAppID       int64   `json:"src_bk_biz_id"`
 	DstAppID       int64   `json:"dst_bk_biz_id"`
-	HostID         int64   `json:"bk_host_id"`
+	HostID         []int64 `json:"bk_host_id"`
 	DstModuleIDArr []int64 `json:"bk_module_ids"`
 }
 
 // HostModuleRelationParameter get host and module  relation parameter
 type HostModuleRelationParameter struct {
-	AppID  int64   `json:"bk_biz_id"`
-	HostID []int64 `json:"bk_host_id"`
+	AppID  int64    `json:"bk_biz_id"`
+	HostID []int64  `json:"bk_host_id"`
+	Page   BasePage `json:"page"`
 }
 
 // DeleteHostFromBizParameter delete host from business

@@ -15,189 +15,285 @@ package service
 import (
 	"strconv"
 
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
+
+	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/redis.v5"
 )
 
-func (s *coreService) TransferHostToInnerModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 	inputData := &metadata.TransferHostToInnerModule{}
-	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("TransferHostToDefaultModule MarshalJSONInto error, err:%s, input:%v, rid: %s", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToInnerModule(params, inputData)
+	exceptionArr, err := s.core.HostOperation().TransferToInnerModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToDefaultModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
-		return exceptionArr, err
+		blog.ErrorJSON("TransferHostToDefaultModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
+		ctx.RespEntityWithError(exceptionArr, err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) TransferHostToNormalModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 	inputData := &metadata.HostsModuleRelation{}
-	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("TransferHostModule MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(params, inputData)
+	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
-		return exceptionArr, err
+		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
+		ctx.RespEntityWithError(exceptionArr, err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) TransferHostToAnotherBusiness(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 	inputData := &metadata.TransferHostsCrossBusinessRequest{}
-	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("TransferHostCrossBusiness MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(params, inputData)
+	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), data, exceptionArr, params.ReqID)
-		return exceptionArr, err
+		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
+		ctx.RespEntityWithError(exceptionArr, err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) RemoveFromModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) RemoveFromModule(ctx *rest.Contexts) {
 	inputData := &metadata.RemoveHostsFromModuleOption{}
-	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("RemoveFromModule MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	exceptionArr, err := s.core.HostOperation().RemoveFromModule(params, inputData)
+	exceptionArr, err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("RemoveFromModule error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), data, exceptionArr, params.ReqID)
-		return exceptionArr, err
+		blog.ErrorJSON("RemoveFromModule error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
+		ctx.RespEntityWithError(exceptionArr, err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) GetHostModuleRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) GetHostModuleRelation(ctx *rest.Contexts) {
 	inputData := &metadata.HostModuleRelationRequest{}
-	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("GetHostModuleRelation MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	relationArr, err := s.core.HostOperation().GetHostModuleRelation(params, inputData)
+	relationArr, err := s.core.HostOperation().GetHostModuleRelation(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("GetHostModuleRelation  error. err:%s, rid:%s", err.Error(), params.ReqID)
-		return nil, err
+		blog.ErrorJSON("GetHostModuleRelation  error. err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return relationArr, nil
+	ctx.RespEntity(relationArr)
 }
 
-func (s *coreService) DeleteHostFromSystem(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) DeleteHostFromSystem(ctx *rest.Contexts) {
 	inputData := &metadata.DeleteHostRequest{}
-	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("DeleteHost MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	exceptionArr, err := s.core.HostOperation().DeleteFromSystem(params, inputData)
+	exceptionArr, err := s.core.HostOperation().DeleteFromSystem(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("DeleteHost  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
-		return exceptionArr, err
+		blog.ErrorJSON("DeleteHost  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
+		ctx.RespEntityWithError(exceptionArr, err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) HostIdentifier(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 	inputData := &metadata.SearchHostIdentifierParam{}
-	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("Identifier MarshalJSONInto error, err:%s, input:%#v, rid:%s", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	hostIdentifierArr, err := s.core.HostOperation().Identifier(params, inputData)
+	hostIdentifierArr, err := s.core.HostOperation().Identifier(ctx.Kit, inputData)
 
 	if err != nil {
-		blog.InfoJSON("Identifier host identifier handle error. err:%s, input:%s, rid:%s", err.Error(), inputData, params.ReqID)
-		return nil, err
+		blog.InfoJSON("Identifier host identifier handle error. err:%s, input:%s, rid:%s", err.Error(), inputData, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-
-	return metadata.SearchHostIdentifierData{Info: hostIdentifierArr, Count: len(hostIdentifierArr)}, nil
+	ctx.RespEntity(metadata.SearchHostIdentifierData{Info: hostIdentifierArr, Count: len(hostIdentifierArr)})
 }
 
 // TransferHostModuleDep is a TransferHostModule dependence
-func (s *coreService) TransferHostModuleDep(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(ctx, input)
+func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(kit, input)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.ReqID)
+		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, kit.Rid)
 		return exceptionArr, err
 	}
 	return nil, nil
 }
 
-func (s *coreService) GetHostByID(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	hostID, err := strconv.Atoi(pathParams("bk_host_id"))
+func (s *coreService) GetHostByID(ctx *rest.Contexts) {
+	hostID, err := strconv.Atoi(ctx.Request.PathParameter("bk_host_id"))
 	if err != nil {
-		blog.Errorf("GetHostByID failed, get host by id, but got invalid host id, hostID: %s, err: %+v, rid: %s", hostID, err, params.ReqID)
-		return nil, params.Error.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
+		blog.Errorf("GetHostByID failed, get host by id, but got invalid host id, hostID: %s, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField))
+		return
 	}
 
-	result := make(map[string]interface{}, 0)
+	result := make(metadata.HostMapStr, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
-	condition = util.SetModOwner(condition, params.SupplierAccount)
-	err = s.db.Table(common.BKTableNameBaseHost).Find(condition).One(params.Context, &result)
+	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
+	err = s.db.Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
 	// TODO: return error for not found and deal error with all callers
 	if err != nil && !s.db.IsNotFoundError(err) {
-		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) GetHosts(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	var dat metadata.ObjQueryInput
-	if err := data.MarshalJSONInto(&dat); err != nil {
-		blog.Errorf("GetHosts failed, get hosts failed with decode body err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&dat); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	condition := util.ConvParamsTime(dat.Condition)
-	condition = util.SetModOwner(condition, params.SupplierAccount)
+	var cond map[string]interface{}
+	switch value := condition.(type) {
+	case map[string]interface{}:
+		cond = value
+	case mapstr.MapStr:
+		cond = value
+	case common.KvMap:
+		cond = value
+	default:
+		out, err := bson.Marshal(condition)
+		if err != nil {
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
+		}
+		err = bson.Unmarshal(out, &cond)
+		if err != nil {
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
+		}
+	}
+	condition = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
-	result := make([]mapstr.MapStr, 0)
+	result := make([]metadata.HostMapStr, 0)
 	dbInst := s.db.Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
 	if 0 < len(fieldArr) {
 		dbInst.Fields(fieldArr...)
 	}
-	if err := dbInst.All(params.Context, &result); err != nil {
-		blog.Errorf("failed to query the host , err: %v, rid: %s", err, params.ReqID)
-		return nil, err
+	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
+		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(params.Context)
+	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrHostSelectInst)
+		blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
+		return
 	}
 
-	return metadata.HostInfo{
+	info := make([]mapstr.MapStr, len(result))
+	for index, host := range result {
+		info[index] = mapstr.MapStr(host)
+	}
+	ctx.RespEntity(metadata.HostInfo{
 		Count: int(count),
-		Info:  result,
-	}, nil
+		Info:  info,
+	})
 }
 
-func (s *coreService) GetHostSnap(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	hostID := pathParams(common.BKHostIDField)
+func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
+	hostID := ctx.Request.PathParameter(common.BKHostIDField)
 	key := common.RedisSnapKeyPrefix + hostID
-	result, err := s.cache.Get(key).Result()
+	result, err := s.rds.Get(key).Result()
 	if nil != err && err != redis.Nil {
-		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrHostGetSnapshot)
+		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
+		return
 	}
 
-	return metadata.HostSnap{
+	ctx.RespEntity(metadata.HostSnap{
 		Data: result,
-	}, nil
+	})
+}
+
+func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
+	input := metadata.HostSnapBatchInput{}
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(input.HostIDs) == 0 {
+		ctx.RespEntity(map[int64]string{})
+		return
+	}
+
+	keys := []string{}
+	for _, id := range input.HostIDs {
+		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
+	}
+
+	res, err := s.rds.MGet(keys...).Result()
+	if err != nil {
+		if err == redis.Nil {
+			ctx.RespEntity(map[int64]string{})
+			return
+		}
+		blog.Errorf("get host snapshot failed, keys: %#v, err: %v, rid: %s", keys, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
+		return
+	}
+
+	ret := make(map[int64]string)
+	for i, hostID := range input.HostIDs {
+		if res[i] == nil {
+			ret[hostID] = ""
+			continue
+		}
+		value, ok := res[i].(string)
+		if !ok {
+			blog.Errorf("GetHostSnapBatch failed, hostID: %d, value in redis is not type string, but tyep: %T, value:%#v, rid: %s", hostID, res[i], res[i], ctx.Kit.Rid)
+			ret[hostID] = ""
+			continue
+		}
+		ret[hostID] = value
+	}
+
+	ctx.RespEntity(ret)
+}
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (s *coreService) GetDistinctHostIDsByTopoRelation(ctx *rest.Contexts) {
+	inputData := &metadata.DistinctHostIDByTopoRelationRequest{}
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	hostIDArr, err := s.core.HostOperation().GetDistinctHostIDsByTopoRelation(ctx.Kit, inputData)
+	if err != nil {
+		blog.ErrorJSON("GetDistinctHostIDsByTopoRelation  error. err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(metadata.DistinctID{IDArr: hostIDArr})
 }

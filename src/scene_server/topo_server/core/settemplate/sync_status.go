@@ -15,18 +15,21 @@ package settemplate
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/storage/driver/redis"
 )
 
-func (st *setTemplate) GetOneSet(params types.ContextParams, setID int64) (metadata.SetInst, errors.CCErrorCoder) {
+func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, errors.CCErrorCoder) {
 	set := metadata.SetInst{}
 
 	filter := map[string]interface{}{
@@ -35,26 +38,26 @@ func (st *setTemplate) GetOneSet(params types.ContextParams, setID int64) (metad
 	qc := &metadata.QueryCondition{
 		Condition: filter,
 	}
-	instResult, err := st.client.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
+	instResult, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, qc)
 	if err != nil {
-		blog.ErrorJSON("GetOneSet failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), params.ReqID)
-		return set, params.Err.CCError(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("GetOneSet failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
+		return set, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if !instResult.Result || instResult.Code != 0 {
-		blog.ErrorJSON("GetOneSet failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, params.ReqID)
+		blog.ErrorJSON("GetOneSet failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
 		return set, errors.NewCCError(instResult.Code, instResult.ErrMsg)
 	}
 	if len(instResult.Data.Info) == 0 {
-		blog.ErrorJSON("GetOneSet failed, not found, filter: %s, instResult: %s, rid: %s", filter, instResult, params.ReqID)
-		return set, params.Err.CCError(common.CCErrCommNotFound)
+		blog.ErrorJSON("GetOneSet failed, not found, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
+		return set, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 	if len(instResult.Data.Info) > 1 {
-		blog.ErrorJSON("GetOneSet failed, got multiple, filter: %s, instResult: %s, rid: %s", filter, instResult, params.ReqID)
-		return set, params.Err.CCError(common.CCErrCommGetMultipleObject)
+		blog.ErrorJSON("GetOneSet failed, got multiple, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
+		return set, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
 	if err := mapstruct.Decode2Struct(instResult.Data.Info[0], &set); err != nil {
-		blog.ErrorJSON("GetOneSet failed, unmarshal set failed, instResult: %s, err: %s, rid: %s", instResult, err.Error(), params.ReqID)
-		return set, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+		blog.ErrorJSON("GetOneSet failed, unmarshal set failed, instResult: %s, err: %s, rid: %s", instResult, err.Error(), kit.Rid)
+		return set, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 	return set, nil
 }
@@ -82,32 +85,32 @@ func extractSetTemplateVersionFromTaskData(detail *metadata.APITaskDetail) (int6
 	return versionInt, nil
 }
 
-func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder) {
+func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder) {
 	setSyncStatus := metadata.SetTemplateSyncStatus{}
-	set, err := st.GetOneSet(params, setID)
+	set, err := st.GetOneSet(kit, setID)
 	if err != nil {
-		blog.Errorf("UpdateSetSyncStatus failed, GetOneSet failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		blog.Errorf("UpdateSetSyncStatus failed, GetOneSet failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 		return setSyncStatus, err
 	}
 	if set.SetTemplateID == common.SetTemplateIDNotSet {
-		blog.V(3).Infof("UpdateSetSyncStatus success, set not bound with template, setID: %d, rid: %s", setID, params.ReqID)
+		blog.V(3).Infof("UpdateSetSyncStatus success, set not bound with template, setID: %d, rid: %s", setID, kit.Rid)
 		return setSyncStatus, nil
 	}
 	option := metadata.DiffSetTplWithInstOption{
 		SetIDs: []int64{set.SetID},
 	}
-	diff, err := st.DiffSetTplWithInst(params.Context, params.Header, set.BizID, set.SetTemplateID, option)
+	diff, err := st.DiffSetTplWithInst(kit.Ctx, kit.Header, set.BizID, set.SetTemplateID, option)
 	if err != nil {
-		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 		return setSyncStatus, err
 	}
 	if len(diff) == 0 {
-		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst result empty, setID: %d, rid: %s", setID, params.ReqID)
-		return setSyncStatus, params.Err.CCError(common.CCErrCommInternalServerError)
+		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst result empty, setID: %d, rid: %s", setID, kit.Rid)
+		return setSyncStatus, kit.CCError.CCError(common.CCErrCommInternalServerError)
 	}
 	setDiff := diff[0]
 
-	detail, err := st.GetLatestSyncTaskDetail(params, setID)
+	detail, err := st.GetLatestSyncTaskDetail(kit, setID)
 	if err != nil {
 		return setSyncStatus, err
 	}
@@ -129,8 +132,8 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 	} else if detail.Status.IsFailure() {
 		syncStatus = metadata.SyncStatusFailure
 	} else {
-		blog.ErrorJSON("unexpected task status: %s, rid: %s", detail, params.ReqID)
-		return setSyncStatus, params.Err.CCError(common.CCErrCommInternalServerError)
+		blog.ErrorJSON("unexpected task status: %s, rid: %s", detail, kit.Rid)
+		return setSyncStatus, kit.CCError.CCError(common.CCErrCommInternalServerError)
 	}
 
 	// update sync status
@@ -149,7 +152,7 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		setSyncStatus.CreateTime = set.CreateTime
 		setSyncStatus.LastTime = set.LastTime
 		setSyncStatus.TaskID = ""
-		setSyncStatus.Creator = params.User
+		setSyncStatus.Creator = kit.User
 	} else {
 		version, err := extractSetTemplateVersionFromTaskData(detail)
 		if err != nil && blog.V(5) {
@@ -166,22 +169,22 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 	}
 
 	if setTemplateVersion != 0 {
-		if ccErr := st.UpdateSetVersion(params, setID, setTemplateVersion); ccErr != nil {
-			blog.Errorf("UpdateSetSyncStatus failed, UpdateSetVersion failed, setID: %d, setTemplateVersion: %d, err: %s, rid: %s", setID, setTemplateVersion, ccErr.Error(), params.ReqID)
+		if ccErr := st.UpdateSetVersion(kit, setID, setTemplateVersion); ccErr != nil {
+			blog.Errorf("UpdateSetSyncStatus failed, UpdateSetVersion failed, setID: %d, setTemplateVersion: %d, err: %s, rid: %s", setID, setTemplateVersion, ccErr.Error(), kit.Rid)
 			return setSyncStatus, ccErr
 		}
 	}
 
-	err = st.client.CoreService().SetTemplate().UpdateSetTemplateSyncStatus(params.Context, params.Header, setID, setSyncStatus)
+	err = st.client.CoreService().SetTemplate().UpdateSetTemplateSyncStatus(kit.Ctx, kit.Header, setID, setSyncStatus)
 	if err != nil {
-		blog.Errorf("UpdateSetSyncStatus failed, UpdateSetTemplateSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		blog.Errorf("UpdateSetSyncStatus failed, UpdateSetTemplateSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 		return setSyncStatus, err
 	}
 
 	return setSyncStatus, nil
 }
 
-func (st *setTemplate) UpdateSetVersion(params types.ContextParams, setID, setTemplateVersion int64) errors.CCErrorCoder {
+func (st *setTemplate) UpdateSetVersion(kit *rest.Kit, setID, setTemplateVersion int64) errors.CCErrorCoder {
 	updateSetOption := &metadata.UpdateOption{
 		Data: map[string]interface{}{
 			common.BKSetTemplateVersionField: setTemplateVersion,
@@ -190,19 +193,19 @@ func (st *setTemplate) UpdateSetVersion(params types.ContextParams, setID, setTe
 			common.BKSetIDField: setID,
 		},
 	}
-	updateSetResult, err := st.client.CoreService().Instance().UpdateInstance(params.Context, params.Header, common.BKInnerObjIDSet, updateSetOption)
+	updateSetResult, err := st.client.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, updateSetOption)
 	if err != nil {
-		blog.Errorf("UpdateSetSyncStatus failed, UpdateInstance of set failed, option: %+v, err: %s, rid: %s", updateSetOption, err.Error(), params.ReqID)
-		return params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("UpdateSetSyncStatus failed, UpdateInstance of set failed, option: %+v, err: %s, rid: %s", updateSetOption, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if ccErr := updateSetResult.CCError(); ccErr != nil {
-		blog.Errorf("UpdateSetSyncStatus failed, UpdateInstance failed, option: %+v, result: %+v, rid: %s", updateSetOption, updateSetResult, params.ReqID)
+		blog.Errorf("UpdateSetSyncStatus failed, UpdateInstance failed, option: %+v, result: %+v, rid: %s", updateSetOption, updateSetResult, kit.Rid)
 		return ccErr
 	}
 	return nil
 }
 
-func (st *setTemplate) GetLatestSyncTaskDetail(params types.ContextParams, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder) {
+func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder) {
 	setRelatedTaskFilter := map[string]interface{}{
 		// "detail.data.set.bk_set_id": setID,
 		"flag": metadata.GetSetTemplateSyncIndex(setID),
@@ -215,13 +218,13 @@ func (st *setTemplate) GetLatestSyncTaskDetail(params types.ContextParams, setID
 		},
 	}
 
-	listResult, err := st.client.TaskServer().Task().ListTask(params.Context, params.Header, common.SyncSetTaskName, &listTaskOption)
+	listResult, err := st.client.TaskServer().Task().ListTask(kit.Ctx, kit.Header, common.SyncSetTaskName, &listTaskOption)
 	if err != nil {
-		blog.ErrorJSON("list set sync tasks failed, option: %s, rid: %s", listTaskOption, params.ReqID)
-		return nil, params.Err.CCError(common.CCErrTaskListTaskFail)
+		blog.ErrorJSON("list set sync tasks failed, option: %s, rid: %s", listTaskOption, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
 	if listResult == nil || len(listResult.Data.Info) == 0 {
-		blog.InfoJSON("list set sync tasks result empty, option: %s, result: %s, rid: %s", listTaskOption, listTaskOption, params.ReqID)
+		blog.InfoJSON("list set sync tasks result empty, option: %s, result: %s, rid: %s", listTaskOption, listTaskOption, kit.Rid)
 		return nil, nil
 	}
 	taskDetail := &listResult.Data.Info[0]
@@ -239,4 +242,26 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 		}
 		delete(subTaskDetail, "header")
 	}
+}
+
+// TriggerCheckSetTemplateSyncingStatus  触发对正在同步中任务的状态改变处理
+func (st *setTemplate) TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID, setID int64) errors.CCErrorCoder {
+	setTempLock := lock.NewLocker(redis.Client())
+	key := lock.GetLockKey(lock.CheckSetTemplateSyncFormat, setID)
+	locked, err := setTempLock.Lock(key, time.Minute)
+	if err != nil {
+		blog.Errorf("get sync set template  lock error. set template id: %d, setID: %d, err: %s, rid: %s", setTemplateID, setID, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommRedisOPErr)
+	}
+	if locked {
+		defer setTempLock.Unlock()
+		_, err := st.UpdateSetSyncStatus(kit, setID)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		blog.Warnf("skip task, reason not get lock . set template id: %d, setID: %d, rid: %s", setTemplateID, setID, kit.Rid)
+	}
+	return nil
 }

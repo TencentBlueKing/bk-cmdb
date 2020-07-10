@@ -12,15 +12,12 @@
 
 package association
 
-import (
-	"configcenter/src/source_controller/coreservice/core"
-)
+import "configcenter/src/common/http/rest"
 
 // ATTENTIONS: the dependent methods of the other module
 
-// OperationDependences methods definition
-type OperationDependences interface {
-
+// OperationDependencies methods definition
+type OperationDependencies interface {
 	// IsInstanceExist used to check if the  instances exist
-	IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error)
+	IsInstanceExist(kit *rest.Kit, objID string, instID uint64) (exists bool, err error)
 }

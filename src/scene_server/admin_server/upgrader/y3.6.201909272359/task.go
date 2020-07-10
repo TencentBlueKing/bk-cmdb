@@ -19,42 +19,43 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 )
 
 func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	existTable, err := db.HasTable(common.BKTableNameAPITask)
+	existTable, err := db.HasTable(ctx, common.BKTableNameAPITask)
 	if err != nil {
 		blog.Errorf("has table %s error. err:%s", common.BKTableNameAPITask, err.Error())
 		return err
 	}
 
 	if !existTable {
-		err := db.CreateTable(common.BKTableNameAPITask)
+		err := db.CreateTable(ctx, common.BKTableNameAPITask)
 		if err != nil {
 			blog.Errorf("create table %s error. err:%s", common.BKTableNameAPITask, err.Error())
 			return err
 		}
 	}
 
-	indexArr := []dal.Index{
-		dal.Index{
+	indexArr := []types.Index{
+		types.Index{
 			Keys:       map[string]int32{"task_id": 1},
 			Name:       "idx_taskID",
 			Unique:     true,
 			Background: true,
 		},
-		dal.Index{
+		types.Index{
 			Keys:       map[string]int32{"name": 1, "status": 1, "create_time": 1},
 			Name:       "idx_name_status_createTime",
 			Background: true,
 		},
-		dal.Index{
+		types.Index{
 			Keys:       map[string]int32{"status": 1, "last_time": 1},
 			Name:       "idx_status_lastTime",
 			Background: true,
 		},
-		dal.Index{
+		types.Index{
 			Keys:       map[string]int32{"name": 1, "flag": 1, "create_time": 1},
 			Name:       "idx_name_flag_createTime",
 			Background: true,
@@ -63,7 +64,7 @@ func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	for _, index := range indexArr {
 		err := db.Table(common.BKTableNameAPITask).CreateIndex(ctx, index)
-		if err != nil {
+		if err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("create table %s  index %s error. err:%s", common.BKTableNameAPITask, index, err.Error())
 			return err
 		}

@@ -13,24 +13,23 @@
 package instances
 
 import (
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
 // ATTENTIONS: the dependent methods of the other module
 
 // OperationDependences methods definition
 type OperationDependences interface {
-
 	// IsInstanceExist used to check if the  instances  asst exist
-	IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error)
+	IsInstAsstExist(kit *rest.Kit, objID string, instID uint64) (exists bool, err error)
 
 	// DeleteInstAsst used to delete inst asst
-	DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error
+	DeleteInstAsst(kit *rest.Kit, objID string, instID uint64) error
 
 	// SelectObjectAttWithParams select object att with params
-	SelectObjectAttWithParams(ctx core.ContextParams, objID string, bizID int64) (attribute []metadata.Attribute, err error)
+	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizID int64) (attribute []metadata.Attribute, err error)
 
 	// SearchUnique search unique attribute
-	SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error)
+	SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []metadata.ObjectUnique, err error)
 }

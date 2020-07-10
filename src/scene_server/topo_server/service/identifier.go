@@ -13,33 +13,25 @@
 package service
 
 import (
-	"encoding/json"
-
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (s *Service) ParseSearchIdentifierOriginData(data []byte) (mapstr.MapStr, error) {
-	rst := new(metadata.SearchIdentifierParam)
-	err := json.Unmarshal(data, &rst)
-	if nil != err {
-		return nil, err
+func (s *Service) SearchIdentifier(ctx *rest.Contexts) {
+	param := new(metadata.SearchIdentifierParam)
+	if err := ctx.DecodeInto(&param); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
-	result := mapstr.MapStr{}
-	result.Set("origin", rst)
-	return result, nil
-}
-
-func (s *Service) SearchIdentifier(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	param, ok := data["origin"].(*metadata.SearchIdentifierParam)
-	if !ok {
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "param not set")
+	if param == nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "param not set"))
+		return
 	}
-	retVal, err := s.Core.IdentifierOperation().SearchIdentifier(params, pathParams("obj_type"), param)
+	retVal, err := s.Core.IdentifierOperation().SearchIdentifier(ctx.Kit, ctx.Request.PathParameter("obj_type"), param)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
-	return retVal.Data, nil
+	ctx.RespEntity(retVal)
 }

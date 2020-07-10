@@ -15,7 +15,6 @@ package rest
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -33,7 +32,10 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
+	"configcenter/src/common/metadata"
 	commonUtil "configcenter/src/common/util"
+	"github.com/tidwall/gjson"
 )
 
 // map[url]responseDataString
@@ -88,6 +90,17 @@ func (r *Request) WithParams(params map[string]string) *Request {
 	}
 	for paramName, value := range params {
 		r.params[paramName] = append(r.params[paramName], value)
+	}
+	return r
+}
+
+func (r *Request) WithParamsFromURL(u *url.URL) *Request {
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	params := u.Query()
+	for paramName, value := range params {
+		r.params[paramName] = append(r.params[paramName], value...)
 	}
 	return r
 }
@@ -261,6 +274,7 @@ func (r *Request) Do() *Result {
 			req, err := http.NewRequest(string(r.verb), url, bytes.NewReader(r.body))
 			if err != nil {
 				result.Err = err
+				result.Rid = rid
 				return result
 			}
 
@@ -291,6 +305,7 @@ func (r *Request) Do() *Result {
 				blog.Errorf("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
+					result.Rid = rid
 					return result
 				}
 
@@ -310,6 +325,7 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
+					result.Rid = rid
 					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					return result
 				}
@@ -320,6 +336,7 @@ func (r *Request) Do() *Result {
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status
+			result.Rid = rid
 
 			return result
 		}
@@ -344,6 +361,7 @@ func (r *Request) tryThrottle(url string) {
 }
 
 type Result struct {
+	Rid        string
 	Body       []byte
 	Err        error
 	StatusCode int
@@ -356,9 +374,7 @@ func (r *Result) Into(obj interface{}) error {
 	}
 
 	if 0 != len(r.Body) {
-		d := json.NewDecoder(bytes.NewReader(r.Body))
-		d.UseNumber()
-		err := d.Decode(obj)
+		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
 			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
@@ -370,6 +386,61 @@ func (r *Result) Into(obj interface{}) error {
 		return fmt.Errorf("http request failed: %s", r.Status)
 	}
 	return nil
+}
+
+func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
+	if nil != r.Err {
+		return nil, r.Err
+	}
+
+	if 0 == len(r.Body) {
+		return nil, fmt.Errorf("http request failed: %s", r.Status)
+	}
+	elements := gjson.GetManyBytes(r.Body, "result", "bk_error_code", "bk_error_msg", "permission", "data")
+
+	// check result
+	if !elements[0].Exists() {
+		blog.Errorf("invalid http response, no result field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check error code
+	if !elements[1].Exists() {
+		blog.Errorf("invalid http response, no bk_error_code field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check error message
+	if !elements[2].Exists() {
+		blog.Errorf("invalid http response, no bk_error_msg field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check data
+	if !elements[4].Exists() {
+		blog.Errorf("invalid http response, no data field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	resp := new(metadata.JsonStringResp)
+	resp.Result = elements[0].Bool()
+	resp.Code = int(elements[1].Int())
+	resp.ErrMsg = elements[2].String()
+	// parse permission field
+	if elements[3].Exists() {
+		raw := elements[3].Raw
+		if len(raw) != 0 {
+			perm := make([]metadata.Permission, 0)
+			if err := json.Unmarshal([]byte(raw), &perm); err != nil {
+				blog.Errorf("invalid http response, invalid permission field, body: %s, rid: %s", r.Body, r.Rid)
+				return nil, fmt.Errorf("http response with invalid permission field, body: %s", r.Body)
+			}
+			resp.Permissions = perm
+		}
+	}
+	resp.Data = elements[4].Raw
+
+	return resp, nil
 }
 
 func (r *Request) handleMockResult() *Result {
@@ -428,11 +499,6 @@ func (r *Request) handleMockResult() *Result {
 	}
 
 	panic("got empty mock response")
-	// return &Result{
-	//     Body: []byte(""),
-	//     Err: errors.New("got empty mock response"),
-	//     StatusCode: http.StatusOK,
-	// }
 }
 
 // Returns if the given err is "connection reset by peer" error.

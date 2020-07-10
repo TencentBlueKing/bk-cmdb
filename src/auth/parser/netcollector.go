@@ -84,7 +84,7 @@ const (
 )
 
 var (
-	updateNetDeviceRegexp = regexp.MustCompile(`/api/v1/collector/netcollect/device/[0-9]+/action/update`)
+	updateNetDeviceRegexp = regexp.MustCompile(`/api/v3/collector/netcollect/device/[0-9]+/action/update`)
 )
 
 func (ps *parseStream) netDevice() *parseStream {

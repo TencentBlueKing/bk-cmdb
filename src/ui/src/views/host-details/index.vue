@@ -23,7 +23,11 @@
                 <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
             </bk-tab-panel>
             <bk-tab-panel name="history" :label="$t('变更记录')">
-                <cmdb-host-history v-if="active === 'history'"></cmdb-host-history>
+                <cmdb-audit-history v-if="active === 'history'"
+                    resource-type="host"
+                    target="host"
+                    :inst-id="id">
+                </cmdb-audit-history>
             </bk-tab-panel>
         </bk-tab>
     </div>
@@ -35,7 +39,7 @@
     import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
     import cmdbHostStatus from './children/status.vue'
-    import cmdbHostHistory from './children/history.vue'
+    import cmdbAuditHistory from '@/components/model-instance/audit-history'
     import cmdbHostService from './children/service-list.vue'
     export default {
         components: {
@@ -43,7 +47,7 @@
             cmdbHostAssociation,
             cmdbHostProperty,
             cmdbHostStatus,
-            cmdbHostHistory,
+            cmdbAuditHistory,
             cmdbHostService
         },
         data () {
@@ -59,7 +63,7 @@
                 return parseInt(this.$route.params.id)
             },
             business () {
-                const business = parseInt(this.$route.params.business)
+                const business = parseInt(this.$route.params.bizId)
                 if (isNaN(business)) {
                     return -1
                 }
@@ -104,7 +108,7 @@
                     if (info.length) {
                         this.$store.commit('hostDetails/setHostInfo', info[0])
                     } else {
-                        this.$router.replace({ name: 404 })
+                        this.$routerActions.redirect({ name: 404 })
                     }
                 } catch (e) {
                     console.error(e)

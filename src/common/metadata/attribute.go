@@ -26,9 +26,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/tidwall/gjson"
-	mgobson "gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -79,6 +78,7 @@ type Attribute struct {
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
+	BizID             int64       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	Creator    string `field:"creator" json:"creator" bson:"creator"`
 	CreateTime *Time  `json:"create_time" bson:"create_time"`
@@ -146,9 +146,11 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 	case common.FieldTypeBool:
 		rawError = attribute.validBool(ctx, data, key)
 	case common.FieldTypeUser:
-		rawError = attribute.validChar(ctx, data, key)
+		rawError = attribute.validUser(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
+	case common.FieldTypeOrganization:
+		rawError = attribute.validOrganization(ctx, data, key)
 	case "foreignkey", "singleasst", "multiasst":
 		// TODO what validation should do on these types
 	default:
@@ -435,7 +437,7 @@ func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key
 	return errors.RawErrorInfo{}
 }
 
-// validInt valid object attribute that is long char type
+// validLongChar valid object attribute that is long char type
 func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
@@ -454,7 +456,7 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 	case string:
 		value = strings.TrimSpace(value)
 		if len(value) > common.FieldTypeLongLenChar {
-			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeLongLenChar, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommOverLimit,
 				Args:    []interface{}{key},
@@ -471,34 +473,23 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 			return errors.RawErrorInfo{}
 		}
 
-		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, value)
-		if nil != err || !match {
-			blog.Errorf(`params "%s" not match longchar regexp, rid:  %s`, val, rid)
+		option, ok := attribute.Option.(string)
+		if !ok {
+			break
+		}
+		strReg, err := regexp.Compile(option)
+		if nil != err {
+			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{key},
+				Args:    []interface{}{option},
 			}
 		}
-
-		if "" != val {
-			option, ok := attribute.Option.(string)
-			if !ok {
-				break
-			}
-			strReg, err := regexp.Compile(option)
-			if nil != err {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
-			}
-			if !strReg.MatchString(value) {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
+		if !strReg.MatchString(value) {
+			blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrFieldRegValidFailed,
+				Args:    []interface{}{key},
 			}
 		}
 	default:
@@ -512,10 +503,10 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 	return errors.RawErrorInfo{}
 }
 
-// validChar valid object attribute that is  char type
+// validChar valid object attribute that is char type
 func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if nil == val {
 		if attribute.IsRequired {
 			blog.Errorf("params in need, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -527,6 +518,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 	}
 	switch value := val.(type) {
 	case string:
+		value = strings.TrimSpace(value)
 		if len(value) > common.FieldTypeSingleLenChar {
 			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
 			return errors.RawErrorInfo{
@@ -545,13 +537,13 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 
-		value = strings.TrimSpace(value)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
-		if nil != err || !match {
-			blog.Errorf(`params "%s" not match singlechar regexp, rid:  %s`, val, rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{key},
+		if key == common.BKAppNameField || key == common.BKSetNameField || key == common.BKModuleNameField {
+			if strings.Contains(value, "##") {
+				blog.ErrorJSON("params %s contains TopoModuleName's split flag ##, rid: %s", value, rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{value},
+				}
 			}
 		}
 
@@ -565,10 +557,10 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 		}
 		strReg, err := regexp.Compile(option)
 		if nil != err {
-			blog.Errorf(`params "%s" not match regexp "%s", rid:  %s`, val, option, rid)
+			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
 			return errors.RawErrorInfo{
-				ErrCode: common.CCErrFieldRegValidFailed,
-				Args:    []interface{}{key},
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{option},
 			}
 		}
 		if !strReg.MatchString(value) {
@@ -577,6 +569,52 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 				ErrCode: common.CCErrFieldRegValidFailed,
 				Args:    []interface{}{key},
 			}
+		}
+	default:
+		blog.Errorf("params should be string, rid: %s", rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedString,
+			Args:    []interface{}{key},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// validUser valid object attribute that is user type
+func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if nil == val || "" == val {
+		if attribute.IsRequired {
+			blog.Errorf("params in need, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	switch value := val.(type) {
+	case string:
+		value = strings.TrimSpace(value)
+		if len(value) > common.FieldTypeUserLenChar {
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeUserLenChar, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommOverLimit,
+				Args:    []interface{}{key},
+			}
+		}
+		if 0 == len(value) {
+			if attribute.IsRequired {
+				blog.Errorf("params can not be empty, rid: %s", rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsNeedSet,
+					Args:    []interface{}{key},
+				}
+			}
+			return errors.RawErrorInfo{}
 		}
 	default:
 		blog.Errorf("params should be string, rid: %s", rid)
@@ -611,15 +649,21 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 		}
 	}
 
-	listOption, ok := attribute.Option.([]interface{})
-	if !ok {
-		blog.Errorf("option %v invalid, not string type list option", attribute.Option)
+	var listOpt []interface{}
+	switch listOption := attribute.Option.(type) {
+	case []interface{}:
+		listOpt = listOption
+	case bson.A:
+		listOpt = listOption
+	default:
+		blog.Errorf("option %v invalid, not string type list option, but type %T", attribute.Option, attribute.Option)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
-	for _, inVal := range listOption {
+
+	for _, inVal := range listOpt {
 		inValStr, ok := inVal.(string)
 		if !ok {
 			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
@@ -632,11 +676,38 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 	}
-	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, attribute, val)
+	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOpt, attribute, val)
 	return errors.RawErrorInfo{
 		ErrCode: common.CCErrCommParamsInvalid,
 		Args:    []interface{}{key},
 	}
+}
+
+// validBool valid object attribute that is bool type
+func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if nil == val {
+		if attribute.IsRequired {
+			blog.Errorf("params can not be null, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	switch val.(type) {
+	case []interface{}:
+	default:
+		blog.Errorf("params should be type organization, rid: %s", rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+	return errors.RawErrorInfo{}
 }
 
 // parseFloatOption  parse float data in option
@@ -651,9 +722,6 @@ func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 		floatOption.Min = gjson.Get(option, "min").Raw
 		floatOption.Max = gjson.Get(option, "max").Raw
 	case map[string]interface{}:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
-	case mgobson.M:
 		floatOption.Min = getString(option["min"])
 		floatOption.Max = getString(option["max"])
 	case bson.M:
@@ -681,9 +749,6 @@ func ParseIntOption(ctx context.Context, val interface{}) IntOption {
 		intOption.Min = gjson.Get(option, "min").Raw
 		intOption.Max = gjson.Get(option, "max").Raw
 	case map[string]interface{}:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
-	case mgobson.M:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])
 	case bson.M:
@@ -769,62 +834,60 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 			return nil, err
 		}
 	case []interface{}:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(mgobson.M); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else {
-				return nil, fmt.Errorf("unknow val type: %#v", val)
-			}
+		if err := parseEnumOption(options, &enumOptions); err != nil {
+			blog.Errorf("parseEnumOption error : %s, rid: %s", err.Error(), rid)
+			return nil, err
 		}
 	case bson.A:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.D); ok {
-				opt := option.Map()
-				enumOption := EnumVal{}
-				enumOption.ID = getString(opt["id"])
-				enumOption.Name = getString(opt["name"])
-				enumOption.Type = getString(opt["type"])
-				enumOption.IsDefault = getBool(opt["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else {
-				return nil, fmt.Errorf("unknow val type: %#v", val)
-			}
+		if err := parseEnumOption(options, &enumOptions); err != nil {
+			blog.Errorf("parseEnumOption error : %s, rid: %s", err.Error(), rid)
+			return nil, err
 		}
 	default:
 		return nil, fmt.Errorf("unknow val type: %#v", val)
 	}
 	return enumOptions, nil
+}
+
+// parseEnumOption set enumOptions values from options
+func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
+	for _, optionVal := range options {
+		if option, ok := optionVal.(map[string]interface{}); ok {
+			enumOption := EnumVal{}
+			enumOption.ID = getString(option["id"])
+			enumOption.Name = getString(option["name"])
+			enumOption.Type = getString(option["type"])
+			enumOption.IsDefault = getBool(option["is_default"])
+			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+			}
+			*enumOptions = append(*enumOptions, enumOption)
+		} else if option, ok := optionVal.(bson.M); ok {
+			enumOption := EnumVal{}
+			enumOption.ID = getString(option["id"])
+			enumOption.Name = getString(option["name"])
+			enumOption.Type = getString(option["type"])
+			enumOption.IsDefault = getBool(option["is_default"])
+			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+			}
+			*enumOptions = append(*enumOptions, enumOption)
+		} else if option, ok := optionVal.(bson.D); ok {
+			opt := option.Map()
+			enumOption := EnumVal{}
+			enumOption.ID = getString(opt["id"])
+			enumOption.Name = getString(opt["name"])
+			enumOption.Type = getString(opt["type"])
+			enumOption.IsDefault = getBool(opt["is_default"])
+			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+			}
+			*enumOptions = append(*enumOptions, enumOption)
+		} else {
+			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
+		}
+	}
+	return nil
 }
 
 // parseFloatOption  parse float data in option
@@ -839,9 +902,6 @@ func ParseFloatOption(ctx context.Context, val interface{}) FloatOption {
 		floatOption.Min = gjson.Get(option, "min").Raw
 		floatOption.Max = gjson.Get(option, "max").Raw
 	case map[string]interface{}:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
-	case mgobson.M:
 		floatOption.Min = getString(option["min"])
 		floatOption.Max = getString(option["max"])
 	case bson.M:
@@ -959,34 +1019,37 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 }
 
 var HostApplyFieldMap = map[string]bool{
-	common.BKHostInnerIPField: false,
-	common.BKHostOuterIPField: false,
-	common.BKOperatorField:    true,
-	common.BKBakOperatorField: true,
-	common.BKAssetIDField:     false,
-	common.BKSNField:          false,
-	"bk_comment":              false,
-	"bk_service_term":         false,
-	"bk_sla":                  true,
-	common.BKCloudIDField:     false,
-	"bk_state_name":           false,
-	"bk_province_name":        false,
-	"bk_isp_name":             false,
-	common.BKHostNameField:    false,
-	common.BKOSTypeField:      false,
-	common.BKOSNameField:      false,
-	"bk_os_version":           false,
-	"bk_os_bit":               false,
-	"bk_cpu":                  false,
-	"bk_cpu_mhz":              false,
-	"bk_cpu_module":           false,
-	"bk_mem":                  false,
-	"bk_disk":                 false,
-	"bk_mac":                  false,
-	"bk_outer_mac":            false,
-	common.CreateTimeField:    false,
-	common.LastTimeField:      false,
-	common.BKImportFrom:       false,
+	common.BKOperatorField:              true,
+	common.BKBakOperatorField:           true,
+	"bk_state":                          true,
+	"bk_sla":                            true,
+	common.BKHostInnerIPField:           false,
+	common.BKHostOuterIPField:           false,
+	common.BKAssetIDField:               false,
+	common.BKSNField:                    false,
+	"bk_comment":                        false,
+	"bk_service_term":                   false,
+	common.BKCloudIDField:               false,
+	"bk_state_name":                     false,
+	"bk_province_name":                  false,
+	"bk_isp_name":                       false,
+	common.BKHostNameField:              false,
+	common.BKOSTypeField:                false,
+	common.BKOSNameField:                false,
+	"bk_os_version":                     false,
+	"bk_os_bit":                         false,
+	"bk_cpu":                            false,
+	"bk_cpu_mhz":                        false,
+	"bk_cpu_module":                     false,
+	"bk_mem":                            false,
+	"bk_disk":                           false,
+	"bk_mac":                            false,
+	"bk_outer_mac":                      false,
+	common.HostFieldDockerClientVersion: false,
+	common.HostFieldDockerServerVersion: false,
+	common.CreateTimeField:              false,
+	common.LastTimeField:                false,
+	common.BKImportFrom:                 false,
 }
 
 // CheckAllowHostApplyOnField 检查字段是否能用于主机属性自动应用

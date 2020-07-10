@@ -59,6 +59,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		validateVersion().
 		validateResourceAction().
 		validateUserAndSupplier().
+		adminRelated().
 		hostRelated().
 		topology().
 		topologyLatest().

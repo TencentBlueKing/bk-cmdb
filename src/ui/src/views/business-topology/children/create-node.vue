@@ -97,7 +97,11 @@
                 this.values = this.$tools.getInstFormValues(this.properties, {})
             },
             getValidateRules (property) {
-                return this.$tools.getValidateRules(property)
+                const rules = this.$tools.getValidateRules(property)
+                if (property.bk_property_id === 'bk_inst_name') {
+                    rules.businessTopoInstNames = true
+                }
+                return rules
             },
             handleSave () {
                 this.$validator.validateAll().then(isValid => {

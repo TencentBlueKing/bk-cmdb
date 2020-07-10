@@ -83,7 +83,7 @@ const directive = {
     },
     unbind (el) {
         if (el.nodeType !== 1) {
-            return
+            return false
         }
         el.className = el.className.replace('v-transfer-dom', '')
         const ref$1 = el.__transferDomData

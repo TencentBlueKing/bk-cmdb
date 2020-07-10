@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -26,20 +25,15 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/storage/rpc"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
@@ -69,21 +63,20 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
+		process.Config.MongoDB, err = engine.WithMongo()
 		if err != nil {
-			return fmt.Errorf("connect tmserver failed, err: %s", err.Error())
+			return err
+		}
+		process.Config.Redis, err = engine.WithRedis()
+		if err != nil {
+			return err
+		}
+		process.Config.Auth, err = engine.WithAuth()
+		if err != nil {
+			return err
 		}
 
-		var db dal.RDB
-		var rpcCli rpc.Client
-		if process.Config.MongoDB.Enable == "true" {
-			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
-		} else {
-			rpcCli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
-			if err != nil {
-				return fmt.Errorf("connect rpc server failed, err: %s", err.Error())
-			}
-			db, err = remote.NewWithDiscover(process.Core)
-		}
+		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
 		}
@@ -112,7 +105,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}()
 
 		go func() {
-			errCh <- distribution.Start(ctx, cache, db, rpcCli)
+			errCh <- distribution.Start(ctx, cache, db, engine.CoreAPI, engine.ServiceManageInterface)
 		}()
 
 		break
@@ -124,9 +117,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	select {
 	case <-ctx.Done():
 	case err = <-errCh:
-		blog.V(3).Infof("distribution routine stopped, err: %v", err)
+		blog.Errorf("distribution routine stopped, err: %v", err)
+		return err
 	}
-	blog.V(3).Infof("process stopped")
 
 	return nil
 }
@@ -140,7 +133,6 @@ type EventServer struct {
 var configLock sync.Mutex
 
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	var err error
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
@@ -150,44 +142,5 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		// ignore err, cause ConfigMap is map[string]string
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.Infof("config updated: \n%s", out)
-		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-		h.Config.MongoDB = mongoConf
-
-		redisConf := redis.ParseConfigFromKV("redis", current.ConfigMap)
-		h.Config.Redis = redisConf
-
-		h.Config.RPC.Address = current.ConfigMap["rpc.address"]
-
-		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-		if err != nil {
-			blog.Errorf("parse auth center config failed: %v", err)
-		}
 	}
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

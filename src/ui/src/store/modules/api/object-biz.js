@@ -9,27 +9,23 @@
  */
 
 import $http from '@/api'
-// import jsCookie from 'js-cookie'
 
 const state = {
     business: [],
     bizId: null,
-    authorizedBusiness: []
+    authorizedBusiness: null
 }
 
 const getters = {
     business: state => state.business,
     bizId: state => state.bizId,
     currentBusiness: state => state.authorizedBusiness.find(business => business.bk_biz_id === state.bizId),
-    authorizedBusiness: state => state.authorizedBusiness
+    authorizedBusiness: state => state.authorizedBusiness || []
 }
 
 const actions = {
-    getAuthorizedBusiness ({ commit }, sort, config = {}) {
-        return $http.get(`biz/with_reduced${sort ? '?sort=' + sort : ''}`, config).then(data => {
-            commit('setAuthorizedBusiness', data.info)
-            return data.info
-        })
+    getAuthorizedBusiness ({ commit, state }, config = {}) {
+        return $http.get('biz/with_reduced?sort=bk_biz_name', config)
     },
     /**
      * 添加业务
@@ -89,8 +85,8 @@ const actions = {
      * @param {Number} bizId 业务id
      * @return {promises} promises 对象
      */
-    recoveryBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${params['bk_biz_id']}`, {}, config)
+    recoveryBusiness ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+        return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${bizId}`, params, config)
     },
 
     /**
