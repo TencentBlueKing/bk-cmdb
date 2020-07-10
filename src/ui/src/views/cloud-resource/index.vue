@@ -82,6 +82,7 @@
     import symbols from './common/symbol'
     import CmdbVendor from '@/components/ui/other/vendor'
     import throttle from 'lodash.throttle'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             TaskSideslider,
@@ -109,10 +110,14 @@
         created () {
             Bus.$on('request-refresh', this.getData)
             this.getData()
+            this.unwatch = RouterQuery.watch('_t', () => {
+                this.handlePageChange(1)
+            })
         },
         beforeDestroy () {
             Bus.$off('request-refresh', this.getData)
             this.$http.cancelCache(symbols.all)
+            this.unwatch && this.unwatch()
         },
         methods: {
             handleCreate () {

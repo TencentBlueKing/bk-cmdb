@@ -47,7 +47,8 @@
         </div>
         <div class="info-options" slot="footer" slot-scope="{ sticky }"
             :class="{ 'is-sticky': sticky }">
-            <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
+            <bk-button class="mr10" :disabled="$loading(request.delete)" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
+            <bk-button theme="default" :loading="$loading(request.delete)" @click="handleDelete">{{$t('删除')}}</bk-button>
         </div>
     </cmdb-sticky-layout>
 </template>
@@ -59,6 +60,7 @@
     import TaskAccountSelector from './task-account-selector.vue'
     import TaskResourceSelector from './task-resource-selector.vue'
     import TaskCloudAreaInput from './task-cloud-area-input.vue'
+    import RouterQuery from '@/router/query'
     export default {
         name: 'task-details-info',
         components: {
@@ -79,7 +81,11 @@
             }
         },
         data () {
-            return {}
+            return {
+                request: {
+                    delete: Symbol('delete')
+                }
+            }
         },
         methods: {
             vpcFormatter (row) {
@@ -93,6 +99,35 @@
             handleEdit () {
                 this.container.show({
                     detailsComponent: TaskForm.name
+                })
+            },
+            handleDelete () {
+                const infoInstance = this.$bkInfo({
+                    title: this.$t('确认删除xx', { instance: this.task.bk_task_name }),
+                    closeIcon: false,
+                    confirmFn: () => {
+                        return new Promise(async resolve => {
+                            try {
+                                infoInstance.buttonLoading = true
+                                await this.$store.dispatch('cloud/resource/deleteTask', {
+                                    id: this.task.bk_task_id,
+                                    config: {
+                                        requestId: this.request.delete
+                                    }
+                                })
+                                this.$success('删除成功')
+                                this.container.hide()
+                                RouterQuery.set({
+                                    _t: Date.now()
+                                })
+                            } catch (error) {
+                                console.error(error)
+                            } finally {
+                                infoInstance.buttonLoading = false
+                                resolve(true)
+                            }
+                        })
+                    }
                 })
             },
             getRowClass ({ row }) {
