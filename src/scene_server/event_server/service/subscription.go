@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
@@ -385,8 +384,16 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 			}
 			subscriptions = append(subscriptions, subscriptionID)
 		}
-
-		condition[common.BKSubscriptionIDField] = mapstr.MapStr{common.BKDBIN: subscriptions}
+		condition = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				condition,
+				{
+					common.BKSubscriptionIDField: map[string]interface{}{
+						common.BKDBIN: subscriptions,
+					},
+				},
+			},
+		}
 	}
 
 	skip := data.Page.Start
