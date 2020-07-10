@@ -30,7 +30,7 @@
                 {{account.last_time | formatter('time')}}
             </bk-form-item>
             <bk-form-item class="details-options">
-                <bk-button class="mr10" theme="primary" :loading="$loading(request.delete)" @click="handleEdit">{{$t('编辑')}}</bk-button>
+                <bk-button class="mr10" theme="primary" :disabled="$loading(request.delete)" @click="handleEdit">{{$t('编辑')}}</bk-button>
                 <span class="inline-block-middle"
                     v-bk-tooltips="{
                         disabled: account.bk_can_delete_account,
