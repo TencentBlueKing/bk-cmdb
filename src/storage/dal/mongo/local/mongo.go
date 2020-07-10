@@ -765,7 +765,7 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 // Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
 // field the field for which to return distinct values.
 // filter query that specifies the documents from which to retrieve the distinct values.
-func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter) ([]interface{},error) {
+func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter) ([]interface{}, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -782,7 +782,7 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 		results, err = c.dbc.Database(c.dbname).Collection(c.collName).Distinct(ctx, field, filter)
 		return err
 	})
-	return results,err
+	return results, err
 }
 func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
 	resultv := reflect.ValueOf(result)
@@ -861,16 +861,15 @@ func validHostType(collection string, projection map[string]int, result interfac
 		}
 	case reflect.Slice:
 		// check if slice item is valid type, map or struct validation is similar as before
-		resArrElem := resElem.Elem()
-		if resArrElem.ConvertibleTo(reflect.TypeOf(map[string]interface{}{})) {
-			if resArrElem != reflect.TypeOf(metadata.HostMapStr{}) {
+		elem := resElem.Elem()
+		if elem.ConvertibleTo(reflect.TypeOf(map[string]interface{}{})) {
+			if elem != reflect.TypeOf(metadata.HostMapStr{}) {
 				blog.Errorf("host query result type(%v) not match *[]metadata.HostMapStr type", resType)
 				return fmt.Errorf("host query result type invalid")
 			}
 			return nil
 		}
 
-		elem := resArrElem.Elem()
 		if elem.Kind() != reflect.Struct {
 			blog.Errorf("host query result type(%v) not struct pointer type or map type", resType)
 			return fmt.Errorf("host query result type invalid")
