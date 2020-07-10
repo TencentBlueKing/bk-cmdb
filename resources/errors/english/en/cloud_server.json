@@ -20,6 +20,8 @@
   "1118019": "Default cloud area can't be used",
   "1118020": "Cloud account create failed",
   "1118021": "Cloud account configures get in batch failed",
+  "1118022": "Delete destroyed cloud hosts related resource failed",
+  "1118023": "Cloud account can't be deleted for it has bound cloud sync task",
 
   "": ""
 }

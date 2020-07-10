@@ -103,6 +103,11 @@ func (c *cloudOperation) validDeleteAccount(kit *rest.Kit, accountID int64) erro
 	if err := c.validAccountExist(kit, accountID); err != nil {
 		return err
 	}
+
+	// accountID has cloud sync task check
+	if err := c.validAccountHasTask(kit, accountID); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -116,6 +121,21 @@ func (c *cloudOperation) validAccountExist(kit *rest.Kit, accountID int64) error
 	if count <= 0 {
 		blog.ErrorJSON("[validAccountExist] no account exist, bk_account_id: %s", accountID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCloudAccountIDNoExistFail, accountID)
+	}
+
+	return nil
+}
+
+// validAccountHasTask valid whether the account has any cloud sync task
+func (c *cloudOperation) validAccountHasTask(kit *rest.Kit, accountID int64) errors.CCErrorCoder {
+	accountTaskcntMap, err := c.getAcccountTaskcntMap(kit)
+	if err != nil {
+		blog.ErrorJSON("getAcccountTaskcntMap error %s, rid: %s", err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if accountTaskcntMap[accountID] > 0 {
+		return kit.CCError.CCError(common.CCErrCloudAccountDeletedFailedForSyncTask)
 	}
 
 	return nil

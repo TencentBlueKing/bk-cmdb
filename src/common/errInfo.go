@@ -822,27 +822,29 @@ const (
 
 	// cloud_server 1118xxx
 	// CCErrCloudVendorNotSupport cloud vendor not support
-	CCErrCloudVendorNotSupport            = 1118001
-	CCErrCloudAccountNameAlreadyExist     = 1118002
-	CCErrCloudValidAccountParamFail       = 1118003
-	CCErrCloudAccountIDNoExistFail        = 1118004
-	CCErrCloudSyncTaskNameAlreadyExist    = 1118005
-	CCErrCloudValidSyncTaskParamFail      = 1118006
-	CCErrCloudVpcIDIsRequired             = 1118007
-	CCErrCloudVendorInterfaceCalledFailed = 1118008
-	CCErrCloudAccountSecretIDAlreadyExist = 1118009
-	CCErrCloudTaskAlreadyExistInAccount   = 1118010
-	CCErrCloudAccoutIDSecretWrong         = 1118011
-	CCErrCloudHttpRequestTimeout          = 1118012
-	CCErrCloudVpcGetFail                  = 1118013
-	CCErrCloudRegionGetFail               = 1118014
-	CCErrCloudSyncDirNoChosen             = 1118015
-	CCErrCloudSyncDirNoExist              = 1118016
-	CCErrCloudIDNoProvided                = 1118017
-	CCErrCloudIDNoExist                   = 1118018
-	CCErrDefaultCloudIDProvided           = 1118019
-	CCErrCloudAccountCreateFail           = 1118020
-	CCErrGetCloudAccountConfBatchFailed   = 1118021
+	CCErrCloudVendorNotSupport                = 1118001
+	CCErrCloudAccountNameAlreadyExist         = 1118002
+	CCErrCloudValidAccountParamFail           = 1118003
+	CCErrCloudAccountIDNoExistFail            = 1118004
+	CCErrCloudSyncTaskNameAlreadyExist        = 1118005
+	CCErrCloudValidSyncTaskParamFail          = 1118006
+	CCErrCloudVpcIDIsRequired                 = 1118007
+	CCErrCloudVendorInterfaceCalledFailed     = 1118008
+	CCErrCloudAccountSecretIDAlreadyExist     = 1118009
+	CCErrCloudTaskAlreadyExistInAccount       = 1118010
+	CCErrCloudAccoutIDSecretWrong             = 1118011
+	CCErrCloudHttpRequestTimeout              = 1118012
+	CCErrCloudVpcGetFail                      = 1118013
+	CCErrCloudRegionGetFail                   = 1118014
+	CCErrCloudSyncDirNoChosen                 = 1118015
+	CCErrCloudSyncDirNoExist                  = 1118016
+	CCErrCloudIDNoProvided                    = 1118017
+	CCErrCloudIDNoExist                       = 1118018
+	CCErrDefaultCloudIDProvided               = 1118019
+	CCErrCloudAccountCreateFail               = 1118020
+	CCErrGetCloudAccountConfBatchFailed       = 1118021
+	CCErrDeleteDestroyedHostRelatedFailed     = 1118022
+	CCErrCloudAccountDeletedFailedForSyncTask = 1118023
 
 	/** TODO: 以下错误码需要改造 **/
 

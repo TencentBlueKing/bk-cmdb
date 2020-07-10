@@ -689,7 +689,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 // 更新云主机
 func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interface{}) error {
 	input := &metadata.UpdateOption{
-		CanEditAll:true,
+		CanEditAll: true,
 	}
 	input.Condition = map[string]interface{}{common.BKCloudInstIDField: cloudInstID}
 	input.Data = updateInfo
@@ -705,7 +705,12 @@ func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interf
 	return nil
 }
 
+//删除被销毁云主机相关联的数据
 func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
 	auditLogs := make([]metadata.AuditLog, 0)
 	preDataMap := make(map[int64]map[string]interface{})
 	CurDataMap := make(map[int64]map[string]interface{})
@@ -723,31 +728,10 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
 		preDataMap[hostID] = data
 	}
 
-	input := &metadata.UpdateOption{
-		CanEditAll:true,
-	}
-	input.Condition = mapstr.MapStr{
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: hostIDs,
-		}}
-	input.Data = mapstr.MapStr{
-		common.BKHostInnerIPField:     "",
-		common.BKHostOuterIPField:     "",
-		common.BKCloudHostStatusField: metadata.CloudHostStatusIDs["destroyed"],
-		// 必须有该标识，用来跳过内网ip字段为空的校验
-		common.IsDestroyedCloudHost: true,
-	}
-
-	// 更新已销毁vpc下的云主机
-	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(h.kit.Ctx, h.kit.Header, common.BKInnerObjIDHost, input)
-	// 没有主机数据要更新并不算错误
-	if err != nil && err.Error() != h.kit.CCError.CCError(common.CCErrCommNotFound).Error() {
-		blog.Errorf("deleteDestroyedHosts fail,err:%s, input:%+v, rid:%s", err.Error(), *input, h.kit.Rid)
+	err = h.logics.CoreAPI.CoreService().Cloud().DeleteDestroyedHostRelated(h.kit.Ctx, h.kit.Header, &metadata.DeleteDestroyedHostRelatedOption{HostIDs: hostIDs})
+	if err != nil {
+		blog.Errorf("deleteDestroyedHosts failed, err:%s, hostIDs:%#v, rid:%s", err.Error(), hostIDs, h.kit.Rid)
 		return err
-	}
-	if !uResult.Result && uResult.ErrMsg != h.kit.CCError.CCError(common.CCErrCommNotFound).Error() {
-		blog.Errorf("deleteDestroyedHosts fail,err:%s, input:%+v, rid:%s", uResult.ErrMsg, *input, h.kit.Rid)
-		return uResult.CCError()
 	}
 
 	curData, err := h.getHostDetailByHostIDs(h.kit, hostIDs)
@@ -784,8 +768,7 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
 		}
 	}
 
-	//删除被销毁主机相关联的数据
-	return h.logics.CoreAPI.CoreService().Cloud().DeleteDestroyedHostRelated(h.kit.Ctx, h.kit.Header, &metadata.DeleteDestroyedHostRelatedOption{HostIDs: hostIDs})
+	return nil
 }
 
 // 更新被销毁vpc对应的云区域状态为异常

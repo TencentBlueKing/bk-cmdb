@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/eventoperator"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -205,6 +206,36 @@ func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) 
 }
 
 func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder {
+	// update destroyed host
+	updateHostCond := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: option.HostIDs,
+		},
+	}
+
+	// used to handle event
+	eo := eventoperator.NewEventOperator(c.eventCli, c.dbProxy)
+	err := eo.SetPreDataByCond(kit, common.BKInnerObjIDHost, updateHostCond)
+	if err != nil {
+		blog.ErrorJSON("DeleteDestroyedHostRelated failed, SetPreDataByCond err:%s, cond: %#v, rid: %s", err, updateHostCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrDeleteDestroyedHostRelatedFailed)
+	}
+
+	updateHostData := mapstr.MapStr{
+		common.BKHostInnerIPField:     []string{},
+		common.BKHostOuterIPField:     []string{},
+		common.BKCloudHostStatusField: metadata.CloudHostStatusIDs["destroyed"],
+		common.LastTimeField:          time.Now(),
+		common.BKLastEditor:           kit.User,
+	}
+	err = c.dbProxy.Table(common.BKTableNameBaseHost).Update(kit.Ctx, updateHostCond, updateHostData)
+
+	err = eo.SetCurDataAndPush(kit, common.BKInnerObjIDHost, metadata.EventActionUpdate, updateHostCond)
+	if err != nil {
+		blog.ErrorJSON("DeleteDestroyedHostRelated failed, SetCurDataAndPush err:%s, cond: %#v, rid: %s", err, updateHostCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrDeleteDestroyedHostRelatedFailed)
+	}
+
 	// get all service instance IDs that need to be removed
 	serviceInstanceFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
@@ -212,7 +243,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 		},
 	}
 	instances := make([]metadata.ServiceInstance, 0)
-	err := c.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
+	err = c.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
 	if err != nil {
 		blog.ErrorJSON("DeleteDestroyedHostRelated failed, get service instance IDs err:%s, filter: %#v, rid: %s", err, serviceInstanceFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)

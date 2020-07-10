@@ -240,7 +240,7 @@ func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int
 }
 
 func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
-	instMetaData metadata.Metadata, instID uint64, canEditAll bool, destroyCloudHost bool) error {
+	instMetaData metadata.Metadata, instID uint64, canEditAll bool) error {
 	updateData, err := m.getInstDataByID(kit, objID, instID, m)
 	if err != nil {
 		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, kit.Rid)
@@ -277,11 +277,6 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			continue
 		}
 
-		// if the key is host inner ip and the host is destroyed cloud host,then ignore it
-		if key == common.BKHostInnerIPField && destroyCloudHost {
-			continue
-		}
-
 		property, ok := valid.properties[key]
 		if !ok || (!property.IsEditable && !canEditAll) {
 			delete(instanceData, key)
@@ -313,11 +308,6 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			blog.Errorf("valid biz id error %v, rid: %s", err, kit.Rid)
 			return err
 		}
-	}
-
-	// if to destroy cloud  host, don't check unique anymore
-	if destroyCloudHost {
-		return nil
 	}
 
 	return valid.validUpdateUnique(kit, updateData, instMetaData, instID, m)

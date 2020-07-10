@@ -158,17 +158,10 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 		inputParam.Condition.Set(metadata.BKMetadata, instMedataData)
 	}
 
-	// whether to update destroyed cloud host
-	destroyCloudHost := false
-	if isDetroyedCloudHost(inputParam.Data) {
-		destroyCloudHost = true
-		delete(inputParam.Data, common.IsDestroyedCloudHost)
-	}
-
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID), inputParam.CanEditAll, destroyCloudHost)
+		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID), inputParam.CanEditAll)
 		if nil != err {
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
@@ -310,16 +303,4 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
-}
-
-// isDetroyedCloudHost to judge if the operation is update destroyed cloud host
-func isDetroyedCloudHost(updateData mapstr.MapStr) bool {
-	if v, ok := updateData.Get(common.IsDestroyedCloudHost); ok {
-		if val, ok := v.(bool); ok {
-			if val == true {
-				return true
-			}
-		}
-	}
-	return false
 }
