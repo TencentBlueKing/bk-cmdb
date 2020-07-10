@@ -74,6 +74,7 @@
     import CmdbVendor from '@/components/ui/other/vendor'
     import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
     import throttle from 'lodash.throttle'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             AccountSideslider,
@@ -99,6 +100,12 @@
         },
         created () {
             this.getData()
+            this.unwatch = RouterQuery.watch('_t', () => {
+                this.handlePageChange(1)
+            })
+        },
+        beforeDestroy () {
+            this.unwatch && this.unwatch()
         },
         methods: {
             handleCreate () {
@@ -179,7 +186,7 @@
                     }
                     this.list = data.info.map(account => ({ ...account, pending: true, status: 'normal', error_message: '' }))
                     this.pagination.count = data.count
-                    this.getAccountStatus()
+                    this.list.length && this.getAccountStatus()
                 } catch (e) {
                     console.error(e)
                     this.list = []
