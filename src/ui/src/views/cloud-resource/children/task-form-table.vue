@@ -49,7 +49,7 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')" width="80" :resizable="false">
             <template slot-scope="{ row }">
-                <bk-button text @click="handleRemove(row)" :disabled="row.destroyed">{{$t('删除')}}</bk-button>
+                <bk-button text @click="handleRemove(row)">{{$t('删除')}}</bk-button>
             </template>
         </bk-table-column>
         <template slot="empty">{{$t('请添加VPC')}}</template>
