@@ -12,6 +12,7 @@
             <div class="options-right">
                 <bk-input class="options-filter" clearable
                     v-model.trim="filter"
+                    right-icon="icon-search"
                     :placeholder="$t('请输入xx', { name: $t('账户名称') })">
                 </bk-input>
             </div>
@@ -197,7 +198,7 @@
                         }
                     })
                     this.list.forEach(account => {
-                        const status = results.data.find(result => result.bk_account_id === account.bk_account_id)
+                        const status = results.find(result => result.bk_account_id === account.bk_account_id)
                         if (status && status.err_msg) {
                             account.status = 'error'
                             account.error_message = status.err_msg
@@ -246,7 +247,7 @@
         align-items: center;
         justify-content: space-between;
         .options-filter {
-            width: 200px;
+            width: 260px;
         }
     }
     .cloud-account-table {

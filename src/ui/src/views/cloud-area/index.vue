@@ -9,6 +9,7 @@
         <div class="cloud-area-options">
             <bk-input class="options-filter" clearable
                 v-model.trim="filter"
+                right-icon="icon-search"
                 :placeholder="$t('请输入xx', { name: $t('云区域名称') })">
             </bk-input>
         </div>
@@ -262,7 +263,7 @@
     .cloud-area-options {
         margin-top: 10px;
         .options-filter {
-            width: 200px;
+            width: 260px;
         }
     }
     .cloud-area-tips {
