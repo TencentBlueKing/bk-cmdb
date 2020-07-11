@@ -53,10 +53,6 @@ func (w *WatchEventOptions) Validate() error {
 		return errors.New("bk_start_from and bk_cursor can not use at the same time")
 	}
 
-	// if w.StartFrom == 0 && len(w.Cursor) == 0 {
-	// 	return errors.New("bk_start_from and bk_cursor shoud use at least one")
-	// }
-
 	return nil
 }
 

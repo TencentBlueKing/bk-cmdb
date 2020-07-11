@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common/json"
 	"configcenter/src/common/watch"
@@ -24,8 +25,9 @@ import (
 )
 
 const (
-	eventStep           = 200
-	cursorNotExistError = "cursor not exist error"
+	eventStep = 200
+	// which means the the start cursor is not exist error, may be a head cursor.
+	startCursorNotExistError = "start cursor not exist error"
 
 	// getNodeWithCursorScript is to get node start from a cursor, the return result
 	// do not contain this cursor's value.
@@ -42,36 +44,49 @@ if (node == false) then
 end;
 
 local nodeJson = cjson.decode(node);
+local next = nodeJson.next_cursor
 
 local elements = {};
+if(next == KEYS[4]) then
+	return elements
+end;
 
-local next = nodeJson.next_cursor
 for i = 1,KEYS[3] do
 	local ele = redis.pcall('hget', KEYS[1], next);
 	if (ele == false) then
 		break
 	end;
 
+	elements[i] = ele;
+
 	local js = cjson.decode(ele);
+
 	next = js.next_cursor
 	if(next == KEYS[4]) then
 		break
 	end;
 
-	elements[i] = ele;
-
 end;
 
 return elements
-
 `
 )
 
 // getNodesFromCursor get node start from a cursor, the return result
 // do not contain this cursor's value.
-func (s *Service) getNodesFromCursor(count int, cursor string, key event.Key) ([]*watch.ChainNode, error) {
-	keys := []string{key.MainHashKey(), cursor, strconv.Itoa(count), key.TailKey()}
-	return s.runScriptsWithArrayChainNode(getNodeWithCursorScript, keys, cursorNotExistError)
+func (s *Service) getNodesFromCursor(count int, startCursor string, key event.Key) ([]*watch.ChainNode, error) {
+	keys := []string{key.MainHashKey(), startCursor, strconv.Itoa(count), key.TailKey()}
+	nodes, err := s.runScriptsWithArrayChainNode(getNodeWithCursorScript, keys, startCursorNotExistError)
+	if err != nil {
+
+		if strings.Contains(err.Error(), startCursorNotExistError) && startCursor == key.HeadKey() {
+			return nil, HeadNodeNotExistError
+		}
+
+		return nil, err
+	}
+
+	return nodes, nil
 }
 
 const (
@@ -129,6 +144,11 @@ func (s *Service) getHeadTailNodeTargetNode(key event.Key) (*watch.ChainNode, *w
 	keys := []string{key.MainHashKey(), key.HeadKey(), key.TailKey()}
 	headTail, err := s.runScriptsWithArrayChainNode(getHeadTailTargetNode, keys, headOrTailNodeNotExistError, headOrTailTargetedNodeNotExistError)
 	if err != nil {
+
+		if strings.Contains(err.Error(), headOrTailNodeNotExistError) {
+			return nil, nil, TailNodeNotExistError
+		}
+
 		return nil, nil, err
 	}
 	if len(headTail) != 2 {
@@ -175,17 +195,28 @@ func (s *Service) runScriptsWithArrayChainNode(script string, keys []string, arg
 	}
 }
 
+var (
+	NoEventsError               = errors.New(noEventWarning)
+	HeadNodeNotExistError       = errors.New(headNodeNotExistError)
+	TailNodeNotExistError       = errors.New(tailNodeNotExistError)
+	TailNodeTargetNotExistError = errors.New(tailNodeTargetNotExistError)
+)
+
 const (
+	headNodeNotExistError       = "head node not exist error"
 	tailNodeNotExistError       = "tail node not exist error"
 	tailNodeTargetNotExistError = "tail node target detail not exist error"
+	noEventWarning              = "no events"
 
 	// KEYS[1]: the resource's main hashmap key
-	// KEYS[2]: tail cursor
-	// KEYS[3]: event detail key prefix.
+	// KEYS[2]: head cursor
+	// KEYS[3]: tail cursor
+	// KEYS[4]: event detail key prefix.
 	// ARGV[1]: tail node not exist error
 	// ARGV[2]: tail node target detail not exist error
+	// ARGV[3]: no event warning
 	getTailTargetScript = `
-local node = redis.pcall('hget', KEYS[1], KEYS[2]);
+local node = redis.pcall('hget', KEYS[1], KEYS[3]);
 
 if (node == false) then
 	return ARGV[1]
@@ -193,12 +224,16 @@ end;
 
 local nodeJson = cjson.decode(node);
 
+if (nodeJson.next_cursor == KEYS[2]) then
+	return ARGV[3]
+end;
+
 local lastNode = redis.pcall('hget', KEYS[1], nodeJson.next_cursor);
 if (lastNode == false) then
 	return ARGV[1]
 end;
 
-local nodeDetail = redis.pcall('get', KEYS[3]..nodeJson.next_cursor);
+local nodeDetail = redis.pcall('get', KEYS[4]..nodeJson.next_cursor);
 if (nodeDetail == false) then
 	return ARGV[2]
 end;
@@ -212,10 +247,24 @@ return rtn
 )
 
 func (s *Service) getLatestEventDetail(key event.Key) (node *watch.ChainNode, detail string, err error) {
-	keys := []string{key.MainHashKey(), key.TailKey(), key.DetailKey("")}
+	keys := []string{key.MainHashKey(), key.HeadKey(), key.TailKey(), key.DetailKey("")}
 
-	result, err := s.runScriptsWithArrayString(getTailTargetScript, keys, tailNodeNotExistError, tailNodeTargetNotExistError)
+	result, err := s.runScriptsWithArrayString(getTailTargetScript, keys, tailNodeNotExistError,
+		tailNodeTargetNotExistError, noEventWarning)
 	if err != nil {
+
+		if strings.Contains(err.Error(), tailNodeNotExistError) {
+			return nil, "", TailNodeNotExistError
+		}
+
+		if strings.Contains(err.Error(), noEventWarning) {
+			return nil, "", NoEventsError
+		}
+
+		if strings.Contains(err.Error(), tailNodeTargetNotExistError) {
+			return nil, "", TailNodeTargetNotExistError
+		}
+
 		return nil, "", err
 	}
 
