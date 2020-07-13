@@ -62,8 +62,8 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, addPortEnable, "id", uniqueFields, []string{}); err != nil {
-		blog.ErrorJSON("addProcEnablePortProperty failed, Upsert err: %s, attribute: %#v, ", err, addPortEnable)
+	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, addPortEnable, "id", uniqueFields); err != nil {
+		blog.ErrorJSON("addProcEnablePortProperty failed, Insert err: %s, attribute: %#v, ", err, addPortEnable)
 		return err
 	}
 

@@ -82,8 +82,8 @@ func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, hostListTypeField, "id", uniqueFields, []string{}); err != nil {
-		blog.ErrorJSON("addHostFieldTypeList failed, Upsert err: %s, attribute: %#v, ", err, hostListTypeField)
+	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, hostListTypeField, "id", uniqueFields); err != nil {
+		blog.ErrorJSON("addHostFieldTypeList failed, Insert err: %s, attribute: %#v, ", err, hostListTypeField)
 		return err
 	}
 

@@ -42,8 +42,8 @@ func addHostAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields, []string{}); err != nil {
-			blog.ErrorJSON("addHostAttr failed, Upsert err: %s, attribute: %#v, ", err, r)
+		if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields); err != nil {
+			blog.ErrorJSON("addHostAttr failed, Insert err: %s, attribute: %#v, ", err, r)
 			return err
 		}
 	}

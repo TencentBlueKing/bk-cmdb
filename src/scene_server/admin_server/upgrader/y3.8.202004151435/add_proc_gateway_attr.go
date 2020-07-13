@@ -38,10 +38,10 @@ func addProcNetworkProxyGroup(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyGroupIDField, common.BKOwnerIDField}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNamePropertyGroup, group, "id", uniqueFields, []string{})
+	err := upgrader.Insert(ctx, db, common.BKTableNamePropertyGroup, group, "id", uniqueFields)
 	if err != nil {
 		if db.IsNotFoundError(err) == false {
-			blog.ErrorJSON("addProcNetworkProxyGroup failed, Upsert err: %s, group: %#v, ", err, group)
+			blog.ErrorJSON("addProcNetworkProxyGroup failed, Insert err: %s, group: %#v, ", err, group)
 
 			return err
 		}
@@ -72,7 +72,7 @@ func addProcNetworkProxyAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields, []string{}); err != nil {
+		if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields); err != nil {
 			blog.ErrorJSON("addProcNetworkProxyAttrs failed, Upsert err: %s, attribute: %#v, ", err, r)
 			return err
 		}
