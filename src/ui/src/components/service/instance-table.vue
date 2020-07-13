@@ -11,7 +11,7 @@
                 <i class="bk-icon icon-close" v-if="deletable" @click.stop="handleDelete"></i>
             </div>
         </div>
-        <bk-table
+        <bk-table class="service-table"
             v-show="localExpanded"
             :data="processList">
             <bk-table-column v-for="column in header"
@@ -175,8 +175,8 @@
                     type: 'update',
                     title: this.$t('编辑进程'),
                     instance: this.processList[rowIndex],
-                    serviceTemplateId: this.templates[rowIndex].service_template_id,
-                    processTemplateId: this.templates[rowIndex].id,
+                    serviceTemplateId: this.templates[rowIndex] ? this.templates[rowIndex].service_template_id : 0,
+                    processTemplateId: this.templates[rowIndex] ? this.templates[rowIndex].id : 0,
                     hostId: this.id,
                     submitHandler: (values, changedValues, raw) => {
                         Object.assign(raw, changedValues)
@@ -246,6 +246,16 @@
         .icon-plus {
             font-size: 20px;
             margin-right: -4px;
+        }
+    }
+    .service-table {
+        /deep/ {
+            .bk-table-empty-block {
+                min-height: 42px;
+                .bk-table-empty-text {
+                    padding: 0;
+                }
+            }
         }
     }
 </style>
