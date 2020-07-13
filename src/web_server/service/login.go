@@ -30,6 +30,9 @@ import (
 func (s *Service) LogOutUser(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
+	if err := session.Save(); err != nil {
+		blog.Warnf("save session failed, err: %s ", err.Error())
+	}
 	c.Request.URL.Path = ""
 	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
 	loginURL := userManger.GetLoginUrl(c)
