@@ -40,6 +40,7 @@
         color: $primaryColor;
         &.disabled {
             color: $textDisabledColor;
+            cursor: not-allowed;
         }
     }
 </style>

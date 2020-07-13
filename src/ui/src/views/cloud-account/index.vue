@@ -12,6 +12,7 @@
             <div class="options-right">
                 <bk-input class="options-filter" clearable
                     v-model.trim="filter"
+                    right-icon="icon-search"
                     :placeholder="$t('请输入xx', { name: $t('账户名称') })">
                 </bk-input>
             </div>
@@ -31,6 +32,17 @@
             </bk-table-column>
             <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" sortable="custom">
                 <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
+            </bk-table-column>
+            <bk-table-column :label="$t('状态')" prop="status">
+                <template slot-scope="{ row }">
+                    <span :class="['cloud-account-status', row.status, { pending: row.pending }]"
+                        v-bk-tooltips="{
+                            content: row.error_message,
+                            disabled: !row.error_message
+                        }">
+                        {{getStatusText(row.status)}}
+                    </span>
+                </template>
             </bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="bk_last_editor" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
@@ -62,6 +74,7 @@
     import CmdbVendor from '@/components/ui/other/vendor'
     import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
     import throttle from 'lodash.throttle'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             AccountSideslider,
@@ -74,7 +87,8 @@
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 sort: 'bk_account_id',
                 request: {
-                    search: Symbol('search')
+                    search: Symbol('search'),
+                    status: Symbol('status')
                 },
                 scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
             }
@@ -86,6 +100,12 @@
         },
         created () {
             this.getData()
+            this.unwatch = RouterQuery.watch('_t', () => {
+                this.handlePageChange(1)
+            })
+        },
+        beforeDestroy () {
+            this.unwatch && this.unwatch()
         },
         methods: {
             handleCreate () {
@@ -164,13 +184,52 @@
                         this.handlePageChange(this.pagination.current - 1)
                         return
                     }
-                    this.list = data.info
+                    this.list = data.info.map(account => ({ ...account, pending: true, status: 'normal', error_message: '' }))
                     this.pagination.count = data.count
+                    this.list.length && this.getAccountStatus()
                 } catch (e) {
                     console.error(e)
                     this.list = []
                     this.pagination.count = 0
                 }
+            },
+            async getAccountStatus () {
+                try {
+                    const results = await this.$store.dispatch('cloud/account/getStatus', {
+                        params: {
+                            account_ids: this.list.map(account => account.bk_account_id)
+                        },
+                        config: {
+                            cancelPrevious: true,
+                            requestId: this.request.status
+                        }
+                    })
+                    this.list.forEach(account => {
+                        const status = results.find(result => result.bk_account_id === account.bk_account_id)
+                        if (status && status.err_msg) {
+                            account.status = 'error'
+                            account.error_message = status.err_msg
+                        } else {
+                            account.status = 'normal'
+                            account.error_message = 'shityou'
+                        }
+                        account.pending = false
+                    })
+                } catch (error) {
+                    this.list.forEach(account => {
+                        account.pending = false
+                        account.status = 'fail'
+                    })
+                    console.error(error)
+                }
+            },
+            getStatusText (status) {
+                const textMap = {
+                    normal: this.$t('正常'),
+                    error: this.$t('异常'),
+                    fail: '--'
+                }
+                return textMap[status]
             },
             linkResource () {
                 this.$routerActions.redirect({
@@ -195,21 +254,41 @@
         align-items: center;
         justify-content: space-between;
         .options-filter {
-            width: 200px;
+            width: 260px;
         }
     }
     .cloud-account-table {
         margin-top: 10px;
     }
-    .row-status {
+    @mixin dot {
+        content: "";
         display: inline-block;
-        .status {
-            display: inline-block;
-            margin-right: 4px;
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
+        margin-right: 4px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+    }
+    .cloud-account-status {
+        &.normal:before {
+            @include dot;
             background-color: $successColor;
+        }
+        &.error:before {
+            @include dot;
+            background-color: $dangerColor;
+        }
+        &.pending {
+            font-size: 0;
+            &:before {
+                content: "";
+                display: inline-block;
+                vertical-align: middle;
+                width: 16px;
+                height: 16px;
+                margin: 2px 0;
+                background-color: transparent;
+                background-image: url("../../assets/images/icon/loading.svg");
+            }
         }
     }
 </style>

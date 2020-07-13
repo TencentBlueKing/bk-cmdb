@@ -52,7 +52,8 @@
             <task-form-table
                 ref="vpcTable"
                 :selected="selectedVPC"
-                :account="form.bk_account_id">
+                :account="form.bk_account_id"
+                @remove="handleRemove">
             </task-form-table>
         </div>
         <div class="form-options"
@@ -124,7 +125,7 @@
             return {
                 accounts: [],
                 form: form,
-                selectedVPC: this.task ? this.task.bk_sync_vpcs : [],
+                selectedVPC: this.task ? [...this.task.bk_sync_vpcs] : [],
                 request: {
                     getAccounts: symbols.get('getAccounts'),
                     createTask: symbols.get('createTask'),
@@ -152,6 +153,10 @@
             },
             handleAddVPC () {
                 this.showVPCSelector = true
+            },
+            handleRemove (target) {
+                const index = this.selectedVPC.findIndex(vpc => vpc.bk_vpc_id === target.bk_vpc_id)
+                index > -1 && this.selectedVPC.splice(index, 1)
             },
             async handleSumbit () {
                 const isFormValid = await this.$validator.validateAll()
@@ -226,7 +231,8 @@
                         bk_region: row.bk_region,
                         bk_host_count: row.bk_host_count,
                         bk_sync_dir: row.bk_sync_dir,
-                        bk_cloud_id: row.bk_cloud_id
+                        bk_cloud_id: row.bk_cloud_id,
+                        destroyed: row.destroyed
                     }
                 })
             },

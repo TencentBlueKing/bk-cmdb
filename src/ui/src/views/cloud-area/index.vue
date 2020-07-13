@@ -9,6 +9,7 @@
         <div class="cloud-area-options">
             <bk-input class="options-filter" clearable
                 v-model.trim="filter"
+                right-icon="icon-search"
                 :placeholder="$t('请输入xx', { name: $t('云区域名称') })">
             </bk-input>
         </div>
@@ -19,14 +20,33 @@
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange">
-            <bk-table-column class-name="is-highlight"
-                show-overflow-tooltip
+            <bk-table-column
                 sortable="custom"
                 prop="bk_cloud_name"
                 :label="$t('云区域名称')">
+                <template slot-scope="{ row }">
+                    <div class="cell-name"
+                        v-if="row !== rowInEdit"
+                        :class="{
+                            pending: row._pending_,
+                            limited: isLimited(row)
+                        }"
+                        @click="handleEditName($event, row)">
+                        <span class="cell-name-text" v-bk-overflow-tips>{{row.bk_cloud_name}}</span>
+                        <i class="cell-name-icon icon-cc-edit-shape" v-if="!isLimited(row)"></i>
+                    </div>
+                    <bk-input class="cell-name-input" size="small" font-size="normal" :value="row.bk_cloud_name" v-else
+                        @enter="handleUpdateName(row, ...arguments)"
+                        @blur="handleUpdateName(row, ...arguments)">
+                    </bk-input>
+                </template>
             </bk-table-column>
             <bk-table-column :label="$t('状态')" prop="bk_status" sortable="custom">
-                <div class="row-status" slot-scope="{ row }">
+                <div class="row-status" slot-scope="{ row }"
+                    v-bk-tooltips="{
+                        content: row.bk_status_detail,
+                        disabled: row.bk_status === '1' || !row.bk_status_detail
+                    }">
                     <i :class="['status', { 'is-error': row.bk_status !== '1' }]"></i>
                     {{row.bk_status === '1' ? $t('正常') : $t('异常')}}
                 </div>
@@ -49,10 +69,10 @@
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <link-button slot-scope="{ row }"
-                    :disabled="!!row.host_count || isLimited(row)"
+                    :disabled="!isRemovable(row)"
                     v-bk-tooltips="{
-                        disabled: isLimited(row) ? false : !row.host_count,
-                        content: isLimited(row) ? $t('系统限定，不能删除') : $t('主机不为空，不能删除')
+                        disabled: isRemovable(row),
+                        content: getRemoveTips(row)
                     }"
                     @click="handleDelete(row)">
                     {{$t('删除')}}
@@ -79,7 +99,8 @@
                 request: {
                     search: Symbol('search')
                 },
-                scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
+                scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true }),
+                rowInEdit: null
             }
         },
         watch: {
@@ -91,6 +112,48 @@
             this.getData()
         },
         methods: {
+            handleEditName (event, row) {
+                const cell = event.currentTarget.parentElement
+                this.rowInEdit = row
+                this.$nextTick(() => {
+                    cell.querySelector('input').focus()
+                })
+            },
+            async handleUpdateName (row, value) {
+                try {
+                    value = value.trim()
+                    this.rowInEdit = null
+                    if (row.bk_cloud_name === value) {
+                        return
+                    }
+                    this.$set(row, '_pending_', true)
+                    await this.$store.dispatch('cloud/area/update', {
+                        id: row.bk_cloud_id,
+                        params: {
+                            bk_cloud_name: value
+                        }
+                    })
+                    row.bk_cloud_name = value
+                    this.$delete(row, '_pending_')
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            isRemovable (row) {
+                return row.host_count === 0 && !this.isLimited(row) && row.sync_task_ids.length === 0
+            },
+            getRemoveTips (row) {
+                if (this.isLimited(row)) {
+                    return this.$t('系统限定，不能删除')
+                }
+                if (row.host_count !== 0) {
+                    return this.$t('主机不为空，不能删除')
+                }
+                if (row.sync_task_ids.length !== 0) {
+                    return this.$t('已关联同步任务，不能删除')
+                }
+                return null
+            },
             isLimited (row) {
                 return row.bk_cloud_id === 0
             },
@@ -138,7 +201,8 @@
                             host_count: true,
                             condition: {
                                 bk_cloud_name: this.filter
-                            }
+                            },
+                            sync_task_ids: true
                         },
                         config: {
                             requestId: this.request.search,
@@ -199,7 +263,7 @@
     .cloud-area-options {
         margin-top: 10px;
         .options-filter {
-            width: 200px;
+            width: 260px;
         }
     }
     .cloud-area-tips {
@@ -207,6 +271,61 @@
     }
     .cloud-area-table {
         margin-top: 10px;
+        .cell-name {
+            display: flex;
+            align-items: center;
+            margin: 0 -5px;
+            padding: 0 5px;
+            height: 26px;
+            line-height: 24px;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            cursor: text;
+            &:not(.limited):hover {
+                background-color: #DCDEE5;
+            }
+            &.limited {
+                pointer-events: none;
+            }
+            &.pending {
+                pointer-events: none;
+                font-size: 0;
+                &:before {
+                    content: "";
+                    display: inline-block;
+                    vertical-align: middle;
+                    width: 16px;
+                    height: 16px;
+                    margin: 2px 0;
+                    background-image: url("../../assets/images/icon/loading.svg");
+                }
+            }
+            .cell-name-icon {
+                display: none;
+                flex: 14px 0 0;
+                font-size: 14px;
+                margin-left: 6px;
+                color: $primaryColor;
+                cursor: pointer;
+                &:hover {
+                    opacity: .75;
+                }
+            }
+            .cell-name-text {
+                display: block;
+                @include ellipsis;
+            }
+        }
+        .cell-name-input {
+            display: block;
+            width: auto;
+            margin: 0 -5px;
+        }
+        /deep/ .bk-table-row:hover {
+            .cell-name-icon {
+                display: inline;
+            }
+        }
     }
     .row-status {
         display: inline-block;
@@ -217,6 +336,9 @@
             height: 7px;
             border-radius: 50%;
             background-color: $successColor;
+            &.is-error {
+                background-color: $dangerColor;
+            }
         }
     }
 </style>

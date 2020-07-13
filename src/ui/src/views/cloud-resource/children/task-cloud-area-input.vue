@@ -1,12 +1,13 @@
 <template>
-    <div class="cloud-area-input-wrapper">
+    <div class="cloud-area-input-wrapper" v-if="display === 'input'">
         <input class="cloud-area-input"
             v-model.trim="localValue"
             :readonly="readonly"
             :class="{
                 'has-tips': hasTips,
                 'has-error': error
-            }">
+            }"
+            :placeholder="$t('请输入xx', { name: $t('云区域') })">
         <i class="tips-icon icon icon-cc-tips"
             v-if="readonly"
             v-bk-tooltips="{
@@ -20,6 +21,7 @@
             }">
         </i>
     </div>
+    <span class="cloud-area-info" v-bk-overflow-tips v-else>{{localValue}}</span>
 </template>
 
 <script>
@@ -36,6 +38,10 @@
                 validator (val) {
                     return ['create', 'read'].includes(val)
                 }
+            },
+            display: {
+                type: String,
+                default: 'input'
             }
         },
         data () {
@@ -144,5 +150,9 @@
             right: 7px;
             top: 7px;
         }
+    }
+    .cloud-area-info {
+        display: block;
+        @include ellipsis;
     }
 </style>

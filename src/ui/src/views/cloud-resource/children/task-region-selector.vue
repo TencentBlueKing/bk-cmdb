@@ -11,6 +11,13 @@
             :key="region.bk_region"
             :name="region.bk_region_name"
             :id="region.bk_region">
+            <div class="region-info">
+                <span class="region-name" v-bk-overflow-tips>{{region.bk_region_name}}</span>
+                <span class="region-host-count">
+                    {{region.bk_host_count}}
+                    <i class="icon-cc-host"></i>
+                </span>
+            </div>
         </bk-option>
     </bk-select>
     <span v-else>{{getRegionInfo()}}</span>
@@ -79,3 +86,24 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .region-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        .region-name {
+            @include ellipsis;
+        }
+        .region-host-count {
+            display: flex;
+            margin-left: 15px;
+            align-items: center;
+            color: #C4C6CC;
+            .icon-cc-host {
+                margin-left: 6px;
+            }
+        }
+    }
+</style>

@@ -8,24 +8,30 @@
             </task-region-selector>
             <div class="vpc-wrapper" v-bkloading="{ isLoading: $loading([request.vpc, request.region]) }">
                 <template v-if="hasVpc">
-                    <div class="vpc-options clearfix">
-                        <span class="option-name fl">{{$t('VPC名称')}}</span>
-                        <bk-checkbox class="option-checkbox fr"
-                            :checked="selectState.all"
-                            :indeterminate="selectState.indeterminate"
-                            @change="handleToggleSelectAll">
-                            {{$t('全选')}}
-                        </bk-checkbox>
+                    <div class="vpc-options">
+                        <span class="option-name">{{$t('VPC名称')}}</span>
+                        <div class="option-right">
+                            <span class="option-count">{{$t('主机数')}}</span>
+                            <bk-checkbox class="option-checkbox"
+                                :checked="selectState.all"
+                                :indeterminate="selectState.indeterminate"
+                                @change="handleToggleSelectAll">
+                                {{$t('全选')}}
+                            </bk-checkbox>
+                        </div>
                     </div>
                     <ul class="vpc-list">
                         <li class="vpc-item"
                             v-for="vpc in regionVPC[currentRegion]"
                             :key="vpc.bk_vpc_id">
                             <span class="vpc-item-name" v-bk-overflow-tips>{{getVpcName(vpc)}}</span>
-                            <bk-checkbox class="vpc-item-checkbox"
-                                :checked="selectionMap.hasOwnProperty(vpc.bk_vpc_id)"
-                                @change="handleVpcChange(vpc, ...arguments)">
-                            </bk-checkbox>
+                            <div class="vpc-item-option">
+                                <span :class="['vpc-item-count', $i18n.locale]">{{vpc.bk_host_count}}</span>
+                                <bk-checkbox class="vpc-item-checkbox"
+                                    :checked="selectionMap.hasOwnProperty(vpc.bk_vpc_id)"
+                                    @change="handleVpcChange(vpc, ...arguments)">
+                                </bk-checkbox>
+                            </div>
                         </li>
                     </ul>
                 </template>
@@ -39,13 +45,23 @@
                 </i18n>
                 <bk-link class="selection-clear" theme="primary" @click="handleClear">{{$t('清空')}}</bk-link>
             </div>
-            <bk-table
+            <bk-table class="selected-vpc-table"
                 :height="368"
                 :data="selection"
                 :outer-border="false"
-                :header-border="false">
-                <bk-table-column label="VPC" prop="bk_vpc_id" show-overflow-tooltip>
-                    <template slot-scope="{ row }">{{getVpcName(row)}}</template>
+                :header-border="false"
+                :row-class-name="getRowClass">
+                <bk-table-column label="VPC" prop="bk_vpc_id" width="200">
+                    <template slot-scope="{ row }">
+                        <div class="vpc-info">
+                            <span class="vpc-name" v-bk-overflow-tips>{{getVpcName(row)}}</span>
+                            <span class="info-destroyed"
+                                v-if="row.destroyed"
+                                v-bk-tooltips="$t('VPC已销毁')">
+                                {{$t('已失效')}}
+                            </span>
+                        </div>
+                    </template>
                 </bk-table-column>
                 <bk-table-column :label="$t('地域')" prop="bk_region_name" show-overflow-tooltip>
                     <task-region-selector slot-scope="{ row }"
@@ -54,8 +70,8 @@
                         :account="account">
                     </task-region-selector>
                 </bk-table-column>
-                <bk-table-column :label="$t('主机数量')" prop="bk_host_count"></bk-table-column>
-                <bk-table-column :label="$t('操作')">
+                <bk-table-column :label="$t('主机数量')" prop="bk_host_count" width="80" align="right"></bk-table-column>
+                <bk-table-column :label="$t('操作')" width="80">
                     <template slot-scope="{ row }">
                         <bk-link theme="primary" @click="handleRemoveSelection(row)">{{$t('移除')}}</bk-link>
                     </template>
@@ -64,11 +80,16 @@
         </div>
         <div class="clearfix"></div>
         <div class="bottom-options">
-            <bk-button class="mr10" theme="primary"
-                :disabled="!selection.length"
-                @click="handleConfirm">
-                {{$t('确定')}}
-            </bk-button>
+            <span v-bk-tooltips="{
+                content: $t('请至少选择一个VPC'),
+                disabled: !!selection.length
+            }">
+                <bk-button class="mr10" theme="primary"
+                    :disabled="!selection.length"
+                    @click="handleConfirm">
+                    {{$t('确定')}}
+                </bk-button>
+            </span>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
@@ -185,6 +206,12 @@
                     return id
                 }
                 return `${id}(${name})`
+            },
+            getRowClass ({ row }) {
+                if (row.destroyed) {
+                    return 'is-destroyed'
+                }
+                return ''
             }
         }
     }
@@ -215,6 +242,9 @@
         height: 315px;
         @include scrollbar-y;
         .vpc-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             position: sticky;
             top: 0;
             left: 0;
@@ -224,13 +254,24 @@
             .option-name {
                 font-size: 12px;
                 font-weight: 700;
-                line-height: 16px;
             }
-            .option-checkbox {
-                direction: rtl;
-                /deep/ {
-                    .bk-checkbox-text {
-                        margin-right: 6px;
+            .option-right {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                .option-count {
+                    margin-right: 10px;
+                    font-size: 12px;
+                    font-weight: 700;
+                }
+                .option-checkbox {
+                    direction: rtl;
+                    /deep/ {
+                        .bk-checkbox-text {
+                            font-size: 12px;
+                            font-weight: 700;
+                            margin-right: 6px;
+                        }
                     }
                 }
             }
@@ -248,8 +289,18 @@
                     margin-right: 20px;
                     @include ellipsis;
                 }
+                .vpc-item-option {
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                }
+                .vpc-item-count {
+                    margin-right: 46px;
+                    &.en {
+                        margin-right: 78px;
+                    }
+                }
                 .vpc-item-checkbox {
-                    display: block;
                     flex: 16px 0 0;
                 }
             }
@@ -291,5 +342,30 @@
         align-items: center;
         background-color: #FAFBFD;
         border-top: 1px solid $borderColor;
+    }
+    .selected-vpc-table {
+        /deep/ {
+            .bk-table-row.is-destroyed {
+                color: #C4C6CC;
+            }
+        }
+        .vpc-info {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            white-space: nowrap;
+            .vpc-name {
+                @include ellipsis;
+            }
+            .info-destroyed {
+                margin-left: 4px;
+                font-size: 12px;
+                line-height: 18px;
+                color: #EA3536;
+                padding: 0 4px;
+                border-radius: 2px;
+                background-color: #FEDDDC;
+            }
+        }
     }
 </style>

@@ -10,6 +10,9 @@ const cloudArea = {
         },
         batchCreate (context, { params, config }) {
             return $http.post('createmany/cloudarea', params, config)
+        },
+        update (context, { id, params, config }) {
+            return $http.put(`update/cloudarea/${id}`, params, config)
         }
     }
 }
@@ -48,6 +51,9 @@ const cloudAccount = {
         },
         delete (context, { id, config }) {
             return $http.delete(`delete/cloud/account/${id}`, config)
+        },
+        getStatus (context, { params, config }) {
+            return $http.post('findmany/cloud/account/validity', params, config)
         }
     }
 }
