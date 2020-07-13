@@ -739,17 +739,9 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		filter := mapstr.MapStr{
-			common.BKObjIDField: ps.RequestCtx.Elements[5],
-		}
-		model, err := ps.getOneModel(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
+		objID := ps.RequestCtx.Elements[5]
 		var modelType = meta.ModelInstance
-		isMainline, err := ps.isMainlineModel(model.ObjectID)
+		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -769,7 +761,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Type:   modelType,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objID}},
 			},
 		}
 		return ps
@@ -781,40 +773,13 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = errors.New("search instance association, but got invalid url")
 			return ps
 		}
-		objectID := ps.RequestCtx.Elements[5]
-		filter := mapstr.MapStr{
-			common.BKObjIDField: objectID,
-		}
-		model, err := ps.getOneModel(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		var modelType = meta.ModelInstance
-		isMainline, err := ps.isMainlineModel(objectID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		if isMainline {
-			modelType = meta.MainlineInstance
-		}
-
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   modelType,
-					Action: meta.Find,
+					Type:   meta.ModelInstance,
+					Action: meta.SkipAction,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 
@@ -841,14 +806,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		objectID := ps.RequestCtx.Elements[5]
-		filter := mapstr.MapStr{
-			common.BKObjIDField: objectID,
-		}
-		model, err := ps.getOneModel(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		var modelType = meta.ModelInstance
 		isMainline, err := ps.isMainlineModel(objectID)
@@ -868,7 +825,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objectID}},
 			},
 		}
 		return ps
@@ -888,14 +845,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		objectID := ps.RequestCtx.Elements[5]
-		filter := mapstr.MapStr{
-			common.BKObjIDField: objectID,
-		}
-		model, err := ps.getOneModel(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		ids := make([]int64, 0)
 		gjson.GetBytes(ps.RequestCtx.Body, "update.#.inst_id").ForEach(
@@ -912,7 +861,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.UpdateMany,
 					InstanceID: id,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objectID}},
 			})
 		}
 
@@ -926,33 +875,14 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		objectID := ps.RequestCtx.Elements[5]
-		filter := mapstr.MapStr{
-			common.BKObjIDField: objectID,
-		}
-		model, err := ps.getOneModel(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
-					Action: meta.DeleteMany,
+					Action: meta.SkipAction,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
-
 		return ps
 	}
 
@@ -975,17 +905,10 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		filter := mapstr.MapStr{
-			common.BKObjIDField: ps.RequestCtx.Elements[5],
-		}
-		model, err := ps.getOneModel(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
+		objID := ps.RequestCtx.Elements[5]
 
 		var modelType = meta.ModelInstance
-		isMainline, err := ps.isMainlineModel(model.ObjectID)
+		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1007,7 +930,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objID}},
 			},
 		}
 
@@ -1036,8 +959,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				},
 				Layers: []meta.Item{
 					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
+						Type:         meta.Model,
+						InstanceIDEx: ps.RequestCtx.Elements[5],
 					},
 				},
 			},
@@ -1070,27 +993,12 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
-			return ps
-		}
-		filter := mapstr.MapStr{
-			common.BKObjIDField: ps.RequestCtx.Elements[5],
-		}
-		model, err := ps.getOneModel(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps

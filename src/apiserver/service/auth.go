@@ -65,7 +65,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		attrs[i].InstanceID = res.ResourceID
 		attrs[i].Action = meta.Action(res.Action)
 		for _, item := range res.ParentLayers {
-			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID})
+			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
 		}
 	}
 

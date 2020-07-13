@@ -67,7 +67,7 @@ func getResourceTableName(resourceType iam.ResourceTypeID) string {
 
 func isResourceIDStringType(resourceType iam.ResourceTypeID) bool {
 	switch resourceType {
-	case iam.SysModelGroup, iam.SysModel, iam.SysInstanceModel, iam.SysAssociationType:
+	case iam.SysModelGroup, iam.SysInstanceModel, iam.SysAssociationType:
 		return true
 	}
 	return false

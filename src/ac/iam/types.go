@@ -154,7 +154,7 @@ const (
 )
 
 const (
-	Business ResourceTypeID = "business"
+	Business ResourceTypeID = "biz"
 	//Set                       ResourceTypeID = "set"
 	//Module                    ResourceTypeID = "module"
 	BizCustomQuery            ResourceTypeID = "biz_custom_query"

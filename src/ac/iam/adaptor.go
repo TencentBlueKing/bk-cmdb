@@ -344,10 +344,11 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Find:   Skip,
 	},
 	meta.ResourcePoolDirectory: {
-		meta.Delete: DeleteResourcePoolDirectory,
-		meta.Update: EditResourcePoolDirectory,
-		meta.Create: CreateResourcePoolDirectory,
-		meta.Find:   Skip,
+		meta.Delete:                DeleteResourcePoolDirectory,
+		meta.Update:                EditResourcePoolDirectory,
+		meta.Create:                CreateResourcePoolDirectory,
+		meta.AddHostToResourcePool: CreateResourcePoolHost,
+		meta.Find:                  Skip,
 	},
 	meta.Plat: {
 		meta.Delete: DeleteCloudArea,

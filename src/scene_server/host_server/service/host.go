@@ -484,6 +484,15 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	if s.AuthManager.Enabled() {
+		err := s.AuthManager.AuthorizeByResourceDirectoryID(srvData.ctx, srvData.header, authmeta.AddHostToResourcePool, moduleID)
+		if err != nil {
+			blog.Errorf("add host, but authorize failed, err: %s, moduleID: %d, rid: %s", err.Error(), moduleID, srvData.rid)
+			_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+	}
+
 	retData := make(map[string]interface{})
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
 		_, success, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID},

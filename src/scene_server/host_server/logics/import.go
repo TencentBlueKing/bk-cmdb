@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"configcenter/src/ac/meta"
 	"context"
 	"fmt"
 	"net/http"
@@ -206,6 +207,14 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 	hostList.Directory, toInternalModule, err = lgc.GetModuleIDAndIsInternal(ctx, bizID, hostList.Directory)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if lgc.AuthManager.Enabled() {
+		err := lgc.AuthManager.AuthorizeByResourceDirectoryID(ctx, lgc.header, meta.AddHostToResourcePool, hostList.Directory)
+		if err != nil {
+			blog.Errorf("add host, but authorize failed, err: %s, hostList.Directory: %d, rid: %s", err.Error(), hostList.Directory, lgc.rid)
+			return nil, nil, lgc.ccErr.Error(common.CCErrCommAuthorizeFailed)
+		}
 	}
 
 	hostIDs := make([]int64, 0)

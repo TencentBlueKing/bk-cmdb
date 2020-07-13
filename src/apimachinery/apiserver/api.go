@@ -131,7 +131,7 @@ func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.He
 func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrResult, err error) {
 
 	resp = new(metadata.ObjectAttrResult)
-	subPath := "object/attr/search"
+	subPath := "find/objectattr"
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -161,11 +161,11 @@ func (a *apiServer) GetHostData(ctx context.Context, h http.Header, params mapst
 func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error) {
 
 	resp = new(metadata.ObjectAttrGroupResult)
-	subPath := "objectatt/group/property/owner/%s/object/%s"
+	subPath := "find/objectattgroup/object/%s"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
