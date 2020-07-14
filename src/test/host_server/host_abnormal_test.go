@@ -314,7 +314,7 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Data.Count).To(Equal(1))
 			})
 
-			// 云区域ID不存在不会影响添加主机
+			// 云区域ID不存在新加主机报错
 			It("add host using api with noexist cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
@@ -328,7 +328,7 @@ var _ = Describe("host abnormal test", func() {
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.ToString())
+				Expect(rsp.Result).To(Equal(false), rsp.ToString())
 			})
 
 			// 如果云区域ID没有给出，默认是0
@@ -569,7 +569,7 @@ var _ = Describe("host abnormal test", func() {
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(false))
 			})
 
 			It("add host using excel with no bk_cloud_id", func() {
