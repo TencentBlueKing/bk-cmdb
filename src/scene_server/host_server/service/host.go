@@ -497,7 +497,30 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 			retData["update_error"] = updateErrRow
 			return srvData.ccErr.Error(common.CCErrHostCreateFail)
 		}
+
+		successHost := make(map[string]interface{})
+		for index,hostID := range hostIDs {
+			indexString := success[index]
+			indexInt,_ := strconv.ParseInt(indexString,10,64)
+			host := hostList.HostInfo[indexInt]
+			innerIP, _ := host[common.BKHostInnerIPField].(string)
+			var iSubArea interface{}
+			iSubArea, ok := host[common.BKCloudIDField]
+			if false == ok {
+				iSubArea = host[common.BKCloudIDField]
+			}
+			if nil == iSubArea {
+				iSubArea = common.BKDefaultDirSubArea
+			}
+			cloudID, _ := util.GetInt64ByInterface(iSubArea)
+			hostDetail := make(map[string]interface{})
+			hostDetail[common.BKHostIDField] = hostID
+			hostDetail[common.BKHostInnerIPField] = innerIP
+			hostDetail[common.BKCloudIDField] = cloudID
+			successHost[indexString] = hostDetail
+		}
 		retData["success"] = success
+		retData["success_host"] = successHost
 
 		// auth: register hosts
 		if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
