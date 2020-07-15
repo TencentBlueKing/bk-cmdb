@@ -555,23 +555,6 @@ var _ = Describe("host abnormal test", func() {
 				Expect(rsp.Data.Count).To(Equal(1))
 			})
 
-			It("add host using excel with noexist cloud_id", func() {
-				input := map[string]interface{}{
-					"bk_biz_id": bizId,
-					"host_info": map[string]interface{}{
-						"4": map[string]interface{}{
-							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     noExistID,
-						},
-					},
-					"input_type": "excel",
-				}
-				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
-
 			It("add host using excel with no bk_cloud_id", func() {
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
