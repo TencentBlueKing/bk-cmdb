@@ -71,6 +71,8 @@ var tmpData = map[string]interface{}{
 func clearSyncTaskData() {
 	err := test.GetDB().DropTable(context.Background(), common.BKTableNameCloudSyncTask)
 	Expect(err).NotTo(HaveOccurred())
+	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameCloudSyncTask)
+	Expect(err).NotTo(HaveOccurred())
 
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudSyncTask})
 	Expect(err).NotTo(HaveOccurred())
@@ -78,8 +80,8 @@ func clearSyncTaskData() {
 
 // 准备测试用例需要的数据
 func prepareSyncTaskData() {
-	accountData := []map[string]interface{}{testData1, testData2}
-	for _, data := range accountData {
+	taskData := []map[string]interface{}{testData1, testData2}
+	for _, data := range taskData {
 		rsp, err := cloudServerClient.CreateSyncTask(context.Background(), header, data)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
