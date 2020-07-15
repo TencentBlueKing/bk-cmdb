@@ -103,7 +103,7 @@ func TestAWSConcurrence(t *testing.T) {
 	var wg sync.WaitGroup
 	cnt := 10
 	wg.Add(cnt)
-	for i:=1;i<=cnt;i++{
+	for i := 1; i <= cnt; i++ {
 		go func(idx int) {
 			defer wg.Done()
 			opt := &ccom.VpcOpt{

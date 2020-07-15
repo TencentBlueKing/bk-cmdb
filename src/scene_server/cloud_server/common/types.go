@@ -18,17 +18,16 @@ import (
 
 const (
 	// MaxLimit 最大数量限制
-	MaxLimit   int64 = 999999
+	MaxLimit int64 = 999999
 
 	// MaxLoopCnt 最大循环次数
-	MaxLoopCnt int   = 10
+	MaxLoopCnt int = 10
 )
 
 var (
 	// ErrorLoopCnt 循环过多错误
 	ErrorLoopCnt = errors.New("too much loop")
 )
-
 
 // BaseOpt 云厂商接口请求条件的公共部分
 type BaseOpt struct {

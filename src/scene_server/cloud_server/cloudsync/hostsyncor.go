@@ -17,16 +17,18 @@ import (
 
 // 云主机同步器
 type HostSyncor struct {
-	id     int
-	logics *logics.Logics
-	kit    *rest.Kit
+	id        int
+	logics    *logics.Logics
+	enableTxn bool
+	kit       *rest.Kit
 }
 
 // 创建云主机同步器
 func NewHostSyncor(id int, logics *logics.Logics) *HostSyncor {
 	return &HostSyncor{
-		id:     id,
-		logics: logics,
+		id:        id,
+		logics:    logics,
+		enableTxn: true,
 	}
 }
 
@@ -56,80 +58,89 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	blog.V(4).Infof("hostSyncor%d, taskid:%d, destroyed vpc count:%d, other vpc count:%d, rid:%s",
 		h.id, task.TaskID, len(hostResource.DestroyedVpcs), len(hostResource.HostResource), h.kit.Rid)
 
-	// 同步被销毁的VPC相关资源
-	err = h.syncDestroyedVpcs(hostResource)
-	if err != nil {
-		blog.Errorf("hostSyncor%d syncDestroyedVpcs fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
-	}
+	syncResult := new(metadata.SyncResult)
 
-	// 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
-	err = h.addCLoudId(accountConf, hostResource)
-	if err != nil {
-		blog.Errorf("hostSyncor%d addCLoudId fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
-	}
-
-	// 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
-	diffHosts, err := h.getDiffHosts(hostResource)
-	if err != nil {
-		blog.Errorf("hostSyncor%d getDiffHosts fail, taskid:%d, err:%s, rid:%s",
-			h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
-	}
-
-	// 没差异则结束
-	if len(diffHosts) == 0 {
-		blog.V(4).Infof("hostSyncor%d no diff hosts for taskid:%d, rid:%s", h.id, task.TaskID, h.kit.Rid)
-		return nil
-	}
-
-	// 有差异的更新任务同步状态为同步中
-	err = h.updateTaskState(task.TaskID, metadata.CloudSyncInProgress, nil)
-	if err != nil {
-		blog.Errorf("hostSyncor%d updateTaskState fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
-	}
-
-	// 如果中途有错误则保证更新同步任务为失败状态
-	defer func() {
-		if err != nil {
-			h.updateTaskState(task.TaskID, metadata.CloudSyncFail, &metadata.SyncStatusDesc{ErrorInfo: err.Error()})
+	txnErr := h.logics.CoreAPI.CoreService().Txn().AutoRunTxn(h.kit.Ctx, h.enableTxn, h.kit.Header, func() error {
+		if len(hostResource.DestroyedVpcs) > 0 {
+			// 同步被销毁的VPC相关资源
+			err = h.syncDestroyedVpcs(hostResource)
+			if err != nil {
+				blog.Errorf("hostSyncor%d syncDestroyedVpcs fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
+				return err
+			}
 		}
-	}()
 
-	// todo 后面几个表操作放在同一个事务里
-	// 同步有差异的主机数据
-	syncResult, err := h.syncDiffHosts(diffHosts)
-	if err != nil {
-		blog.Errorf("hostSyncor%d syncDiffHosts fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
+		// 查询vpc对应的云区域并更新云主机资源信息里的云区域id
+		err = h.addCLoudId(accountConf, hostResource)
+		if err != nil {
+			blog.Errorf("hostSyncor%d addCLoudId fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
+			return err
+		}
+
+		// 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
+		diffHosts, err := h.getDiffHosts(hostResource)
+		if err != nil {
+			blog.Errorf("hostSyncor%d getDiffHosts fail, taskid:%d, err:%s, rid:%s",
+				h.id, task.TaskID, err.Error(), h.kit.Rid)
+			return err
+		}
+
+		// 没差异则结束
+		if len(diffHosts) == 0 {
+			blog.V(4).Infof("hostSyncor%d no diff hosts for taskid:%d, rid:%s", h.id, task.TaskID, h.kit.Rid)
+			return nil
+		}
+
+		// 有差异的更新任务同步状态为同步中
+		err = h.updateTaskState(task.TaskID, metadata.CloudSyncInProgress, nil)
+		if err != nil {
+			blog.Errorf("hostSyncor%d updateTaskState fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
+			return err
+		}
+
+		// 同步有差异的主机数据
+		syncResult, err = h.syncDiffHosts(diffHosts)
+		if err != nil {
+			blog.Errorf("hostSyncor%d syncDiffHosts fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
+			return err
+		}
+
+		// 设置SyncResult的状态信息
+		err = h.SetSyncResultStatus(syncResult, startTime)
+		if err != nil {
+			blog.Errorf("hostSyncor%d SetSyncResultStatus fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
+			return err
+		}
+
+		// 增加任务同步历史记录
+		_, err = h.addSyncHistory(syncResult, task.TaskID)
+		if err != nil {
+			blog.Errorf("hostSyncor%d addSyncHistory fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
+			return err
+		}
+
+		// 完成后更新任务同步状态
+		err = h.updateTaskState(task.TaskID, syncResult.SyncStatus, &syncResult.StatusDescription)
+		if err != nil {
+			blog.Errorf("hostSyncor%d updateTaskState fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
+			return err
+		}
+
+		blog.Infof("hostSyncor%d finish SyncCloudHost, costTime:%ds, syncResult.Detail:%#v, syncResult.FailInfo:%#v, rid:%s",
+			h.id, time.Since(startTime)/time.Second, syncResult.Detail, syncResult.FailInfo, h.kit.Rid)
+
+		return nil
+	})
+	if txnErr != nil {
+		blog.Errorf("sync fail, txnErr:%v, err:%v, rid:%s", h.id, task.TaskID, txnErr, h.kit.Rid)
+		err := h.updateTaskState(task.TaskID, metadata.CloudSyncFail, &metadata.SyncStatusDesc{ErrorInfo: txnErr.Error()})
+		if err != nil {
+			blog.Errorf("hostSyncor%d updateTaskState fail, taskid:%d, err:%v, rid:%s", h.id, task.TaskID, err, h.kit.Rid)
+		}
 	}
 
-	// 设置SyncResult的状态信息
-	err = h.SetSyncResultStatus(syncResult, startTime)
-	if err != nil {
-		blog.Errorf("hostSyncor%d SetSyncResultStatus fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
-	}
-
-	// 增加任务同步历史记录
-	_, err = h.addSyncHistory(syncResult, task.TaskID)
-	if err != nil {
-		blog.Errorf("hostSyncor%d addSyncHistory fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
-	}
-
-	// 完成后更新任务同步状态
-	err = h.updateTaskState(task.TaskID, syncResult.SyncStatus, &syncResult.StatusDescription)
-	if err != nil {
-		blog.Errorf("hostSyncor%d updateTaskState fail, taskid:%d, err:%s, rid:%s", h.id, task.TaskID, err.Error(), h.kit.Rid)
-		return err
-	}
-
-	costTime := time.Since(startTime) / time.Second
-	blog.Infof("hostSyncor%d finish SyncCloudHost, costTime:%ds, syncResult.Detail:%#v, syncResult.FailInfo:%#v, rid:%s",
-		h.id, costTime, syncResult.Detail, syncResult.FailInfo, h.kit.Rid)
+	blog.Infof("hostSyncor%d sync loop is over, costTime:%ds, txnErr:%v, rid:%s",
+		h.id, time.Since(startTime)/time.Second, txnErr, h.kit.Rid)
 
 	return nil
 }
@@ -208,11 +219,11 @@ func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostReso
 		cloudID, err := h.getCloudId(hostRes.Vpc.VpcID)
 		if err != nil {
 			blog.Errorf("addCLoudId getCloudId err:%s, vpcID:%s, rid:%s", err.Error(), hostRes.Vpc.VpcID, h.kit.Rid)
-			continue
+			return err
 		}
 		if cloudID == 0 {
 			blog.Errorf("addCLoudId getCloudId err:%s, vpcID:%s, rid:%s", "the correspond cloudID for the vpc can't be found", hostRes.Vpc.VpcID, h.kit.Rid)
-			continue
+			return err
 		}
 		hostRes.CloudID = cloudID
 	}
@@ -489,6 +500,7 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 			blog.Errorf("addHosts err:%s, rid:%s", err.Error(), h.kit.Rid)
 			syncResult.FailInfo.Count++
 			syncResult.FailInfo.IPError[host.PrivateIp] = err.Error()
+			return nil, err
 		} else {
 			instIDs = append(instIDs, host.InstanceId)
 			syncResult.SuccessInfo.Count++
@@ -513,7 +525,7 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 		auditLog, err := h.logics.GetAddHostLog(h.kit, cur, properties)
 		if err != nil {
 			blog.Errorf("addHosts GetAddHostLog err:%s, cur:%#v, rid:%s", err.Error(), cur, h.kit.Rid)
-			continue
+			return nil, err
 		}
 		auditLogs = append(auditLogs, *auditLog)
 	}
@@ -626,7 +638,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		hostID, err := data.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("updateHosts Int64 err:%s, data:%#v, rid:%s", err.Error(), data, h.kit.Rid)
-			continue
+			return nil, err
 		}
 		preDataMap[hostID] = data
 	}
@@ -642,7 +654,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			blog.Errorf("updateHosts err:%v, rid:%s", err.Error(), h.kit.Rid)
 			syncResult.FailInfo.Count++
 			syncResult.FailInfo.IPError[host.PrivateIp] = err.Error()
-			continue
+			return nil, err
 		} else {
 			syncResult.SuccessInfo.Count++
 			syncResult.SuccessInfo.IPs = append(syncResult.SuccessInfo.IPs, host.PrivateIp)
@@ -657,7 +669,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		hostID, err := data.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("deleteDestroyedHosts Int64 err:%s, data:%#v, rid:%s", err.Error(), data, h.kit.Rid)
-			continue
+			return nil, err
 		}
 		CurDataMap[hostID] = data
 	}
@@ -671,7 +683,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		auditLog, err := h.logics.GetUpdateHostLog(h.kit, preDataMap[hostID], cur, properties)
 		if err != nil {
 			blog.Errorf("updateHosts GetUpdateHostLog err:%s, rid:%s", err.Error(), h.kit.Rid)
-			continue
+			return nil, err
 		}
 		auditLogs = append(auditLogs, *auditLog)
 	}
@@ -680,6 +692,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		_, err := h.logics.CoreAPI.CoreService().Audit().SaveAuditLog(h.kit.Ctx, h.kit.Header, auditLogs...)
 		if err != nil {
 			blog.Errorf("updateHosts SaveAuditLog err:%s, rid:%s", err.Error(), h.kit.Rid)
+			return nil, err
 		}
 	}
 
@@ -723,7 +736,7 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
 		hostID, err := data.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("deleteDestroyedHosts Int64 err:%s, data:%#v, rid:%s", err.Error(), data, h.kit.Rid)
-			continue
+			return err
 		}
 		preDataMap[hostID] = data
 	}
@@ -742,7 +755,7 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
 		hostID, err := data.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.Errorf("deleteDestroyedHosts Int64 err:%s, data:%#v, rid:%s", err.Error(), data, h.kit.Rid)
-			continue
+			return err
 		}
 		CurDataMap[hostID] = data
 	}
@@ -756,7 +769,7 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
 		auditLog, err := h.logics.GetUpdateHostLog(h.kit, preDataMap[hostID], cur, properties)
 		if err != nil {
 			blog.Errorf("updateHosts GetUpdateHostLog err:%s, rid:%s", err.Error(), h.kit.Rid)
-			continue
+			return err
 		}
 		auditLogs = append(auditLogs, *auditLog)
 	}
@@ -765,6 +778,7 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) error {
 		_, err := h.logics.CoreAPI.CoreService().Audit().SaveAuditLog(h.kit.Ctx, h.kit.Header, auditLogs...)
 		if err != nil {
 			blog.Errorf("updateHosts SaveAuditLog err:%s, rid:%s", err.Error(), h.kit.Rid)
+			return err
 		}
 	}
 
