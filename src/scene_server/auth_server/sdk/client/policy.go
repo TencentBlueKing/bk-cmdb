@@ -23,6 +23,11 @@ import (
 func (ac *authClient) GetUserPolicy(ctx context.Context, opt *types.GetPolicyOption) (*operator.Policy, error) {
 	resp := new(types.GetPolicyResp)
 
+	// iam requires resources to be set
+	if opt.Resources == nil {
+		opt.Resources = make([]types.Resource, 0)
+	}
+
 	result := ac.client.Post().
 		SubResourcef("/api/v1/policy/query").
 		WithContext(ctx).
@@ -48,9 +53,14 @@ func (ac *authClient) GetUserPolicy(ctx context.Context, opt *types.GetPolicyOpt
 
 // ListUserPolicies get a user's policy with multiple actions and resources
 func (ac *authClient) ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) (
-	[]*operator.ActionPolicy, error) {
+	[]*types.ActionPolicy, error) {
 
 	resp := new(types.ListPolicyResp)
+
+	// iam requires resources to be set
+	if opts.Resources == nil {
+		opts.Resources = make([]types.Resource, 0)
+	}
 
 	result := ac.client.Post().
 		SubResourcef("/api/v1/policy/query_by_actions").

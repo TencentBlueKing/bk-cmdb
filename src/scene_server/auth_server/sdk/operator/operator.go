@@ -86,13 +86,13 @@ type Operator interface {
 const (
 	Unknown          = "unknown"
 	Equal            = "eq"
-	NEqual           = "neq"
+	NEqual           = "not_eq"
 	Any              = "any"
 	In               = "in"
-	Nin              = "nin"
+	Nin              = "not_in"
 	Contains         = "contains"
 	NContains        = "not_contains"
-	StartWith        = "start_with"
+	StartWith        = "starts_with"
 	NStartWith       = "not_starts_with"
 	EndWith          = "ends_with"
 	NEndWith         = "not_ends_with"
@@ -188,30 +188,32 @@ func (e *InOper) Match(match interface{}, with interface{}) (bool, error) {
 
 	// compare string if it's can
 	if m, ok := match.(string); ok {
-		if w, ok := with.([]string); ok {
-			hit := false
-			for _, to := range w {
-				if to == m {
-					hit = true
-					break
-				}
+		valWith := reflect.ValueOf(with)
+		for i := 0; i < valWith.Len(); i++ {
+			v, ok := valWith.Index(i).Interface().(string)
+			if !ok {
+				return false, errors.New("unsupported compare with type")
 			}
-			return hit, nil
+			if m == v {
+				return true, nil
+			}
 		}
+		return false, nil
 	}
 
 	// compare bool if it's can
 	if m, ok := match.(bool); ok {
-		if w, ok := with.([]bool); ok {
-			hit := false
-			for _, to := range w {
-				if to == m {
-					hit = true
-					break
-				}
+		valWith := reflect.ValueOf(with)
+		for i := 0; i < valWith.Len(); i++ {
+			v, ok := valWith.Index(i).Interface().(bool)
+			if !ok {
+				return false, errors.New("unsupported compare with type")
 			}
-			return hit, nil
+			if m == v {
+				return true, nil
+			}
 		}
+		return false, nil
 	}
 
 	// compare numeric value if it's can
@@ -222,13 +224,14 @@ func (e *InOper) Match(match interface{}, with interface{}) (bool, error) {
 	// with value is slice or array, so we need to compare it one by one.
 	hit := false
 	valWith := reflect.ValueOf(with)
-	if !isNumeric(valWith.Interface()) {
-		return false, errors.New("unsupported compare with type")
-	}
 
 	for i := 0; i < valWith.Len(); i++ {
+		if !isNumeric(valWith.Index(i).Interface()) {
+			return false, errors.New("unsupported compare with type")
+		}
 		if toFloat64(match) == toFloat64(valWith.Index(i).Interface()) {
 			hit = true
+			break
 		}
 	}
 

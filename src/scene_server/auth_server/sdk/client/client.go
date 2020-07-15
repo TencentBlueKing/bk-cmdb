@@ -25,7 +25,7 @@ import (
 
 type Interface interface {
 	GetUserPolicy(ctx context.Context, opt *types.GetPolicyOption) (*operator.Policy, error)
-	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*operator.ActionPolicy, error)
+	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*types.ActionPolicy, error)
 }
 
 func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {

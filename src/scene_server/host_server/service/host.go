@@ -20,10 +20,9 @@ import (
 	"strings"
 
 	"configcenter/src/ac"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
 	authmeta "configcenter/src/ac/meta"
-	"configcenter/src/auth"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -76,7 +75,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
-		if err != auth.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
@@ -483,6 +482,15 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
+	}
+
+	if s.AuthManager.Enabled() {
+		err := s.AuthManager.AuthorizeByResourceDirectoryID(srvData.ctx, srvData.header, authmeta.AddHostToResourcePool, moduleID)
+		if err != nil {
+			blog.Errorf("add host, but authorize failed, err: %s, moduleID: %d, rid: %s", err.Error(), moduleID, srvData.rid)
+			_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
 	}
 
 	retData := make(map[string]interface{})

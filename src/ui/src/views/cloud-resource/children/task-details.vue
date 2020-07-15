@@ -30,7 +30,8 @@
                 type: Number,
                 required: true
             },
-            defaultComponent: String
+            defaultComponent: String,
+            container: Object
         },
         data () {
             return {
@@ -78,6 +79,7 @@
             },
             hide (eventType) {
                 eventType && this.$emit(eventType)
+                this.container.hide()
             }
         }
     }

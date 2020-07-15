@@ -317,10 +317,15 @@
             },
             handleLinkToFAQ () {
                 const FAQLink = {
-                    tencent_cloud: 'https://cloud.tencent.com/document/product/598/37140',
-                    aws: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html'
+                    '1': 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html',
+                    '2': 'https://cloud.tencent.com/document/product/598/37140'
                 }
-                window.open(FAQLink[this.form.bk_cloud_vendor])
+                const link = FAQLink[this.form.bk_cloud_vendor]
+                if (link) {
+                    window.open(FAQLink[this.form.bk_cloud_vendor])
+                } else {
+                    this.$warn('No link provided')
+                }
             }
         }
     }

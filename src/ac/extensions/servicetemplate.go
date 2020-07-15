@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -94,8 +94,21 @@ func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header 
 }
 
 func (am *AuthManager) GenServiceTemplateNoPermissionResp() *metadata.BaseResp {
-	// TODO implement this
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
+	permission := &metadata.IamPermission{
+		SystemID: iam.SystemIDCMDB,
+		Actions: []metadata.IamAction{{
+			ID: string(iam.EditBusinessLayer),
+			RelatedResourceTypes: []metadata.IamResourceType{{
+				SystemID: iam.SystemIDCMDB,
+				Type:     string(iam.SysSystemBase),
+				Instances: []metadata.IamResourceInstance{{
+					Type: string(iam.SysSystemBase),
+					Name: iam.ResourceTypeIDMap[iam.SysSystemBase],
+				}},
+			}},
+		}},
+	}
+	resp := metadata.NewNoPermissionResp(permission)
 	return &resp
 }
 
@@ -117,29 +130,4 @@ func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header h
 	resources := am.MakeResourcesByServiceTemplate(header, action, bizID, templates...)
 
 	return am.authorize(ctx, header, bizID, resources...)
-}
-
-func (am *AuthManager) ListAuthorizedServiceTemplateIDs(ctx context.Context, header http.Header, bizID int64) ([]int64, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	input := meta.ListAuthorizedResourcesParam{
-		UserName:     util.GetUser(header),
-		BizID:        0,
-		ResourceType: meta.ProcessServiceTemplate,
-		Action:       meta.FindMany,
-	}
-	resources, err := am.clientSet.AuthServer().ListAuthorizedResources(ctx, header, input)
-	if err != nil {
-		blog.Errorf("list authorized service template from iam failed, err: %+v, rid: %s", err, rid)
-		return nil, err
-	}
-	ids := make([]int64, 0)
-	for _, resourceID := range resources {
-		id, err := strconv.ParseInt(resourceID, 10, 64)
-		if err != nil {
-			blog.Errorf("list authorized service template from iam failed, err: %+v, rid: %s", err, rid)
-			return nil, fmt.Errorf("parse resource id into int64 failed, err: %+v", err)
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
 }

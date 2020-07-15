@@ -10,6 +10,7 @@
             <div class="options-right">
                 <bk-input class="options-filter" clearable
                     v-model.trim="filter"
+                    right-icon="icon-search"
                     :placeholder="$t('请输入xx', { name: $t('任务名称') })">
                 </bk-input>
             </div>
@@ -81,6 +82,7 @@
     import symbols from './common/symbol'
     import CmdbVendor from '@/components/ui/other/vendor'
     import throttle from 'lodash.throttle'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             TaskSideslider,
@@ -108,10 +110,14 @@
         created () {
             Bus.$on('request-refresh', this.getData)
             this.getData()
+            this.unwatch = RouterQuery.watch('_t', () => {
+                this.handlePageChange(1)
+            })
         },
         beforeDestroy () {
             Bus.$off('request-refresh', this.getData)
             this.$http.cancelCache(symbols.all)
+            this.unwatch && this.unwatch()
         },
         methods: {
             handleCreate () {
@@ -231,7 +237,7 @@
         align-items: center;
         justify-content: space-between;
         .options-filter {
-            width: 200px;
+            width: 260px;
         }
     }
     .cloud-account-table {

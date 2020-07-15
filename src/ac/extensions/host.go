@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
@@ -166,20 +167,110 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, header http.Header, action iam.ActionType, hostIDs []int64) (*metadata.BaseResp, error) {
-	// TODO implement this
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return nil, err
+	}
+	resPoolBizID, err := am.getResourcePoolBusinessID(ctx, header)
+	if err != nil {
+		return nil, err
+	}
+	bizHosts := make([]metadata.IamResourceInstance, 0)
+	resourceHosts := make([]metadata.IamResourceInstance, 0)
+	for _, host := range hosts {
+		if host.BKAppIDField == resPoolBizID {
+			resourceHosts = append(resourceHosts, metadata.IamResourceInstance{
+				Type: string(iam.Host),
+				ID:   strconv.FormatInt(host.BKHostIDField, 10),
+				Name: host.BKHostInnerIPField,
+			})
+		} else {
+			bizHosts = append(bizHosts, metadata.IamResourceInstance{
+				Type: string(iam.Host),
+				ID:   strconv.FormatInt(host.BKHostIDField, 10),
+				Name: host.BKHostInnerIPField,
+			})
+		}
+	}
+
+	permission := &metadata.IamPermission{SystemID: iam.SystemIDCMDB}
+	if len(bizHosts) > 0 {
+		permission.Actions = append(permission.Actions, metadata.IamAction{
+			ID: string(iam.EditBusinessHost),
+			RelatedResourceTypes: []metadata.IamResourceType{{
+				SystemID:  iam.SystemIDCMDB,
+				Type:      string(iam.Host),
+				Instances: bizHosts,
+			}},
+		})
+	}
+	if len(resourceHosts) > 0 {
+		permission.Actions = append(permission.Actions, metadata.IamAction{
+			ID: string(iam.EditResourcePoolHost),
+			RelatedResourceTypes: []metadata.IamResourceType{{
+				SystemID:  iam.SystemIDCMDB,
+				Type:      string(iam.Host),
+				Instances: resourceHosts,
+			}},
+		})
+	}
+	resp := metadata.NewNoPermissionResp(permission)
 	return &resp, nil
 }
 
 func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, header http.Header, hostIDs []int64) (*metadata.BaseResp, error) {
-	// TODO implement this
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return nil, err
+	}
+	instances := make([]metadata.IamResourceInstance, len(hosts))
+	for index, host := range hosts {
+		instances[index] = metadata.IamResourceInstance{
+			Type: string(iam.Host),
+			ID:   strconv.FormatInt(host.BKHostIDField, 10),
+			Name: host.BKHostInnerIPField,
+		}
+	}
+	permission := &metadata.IamPermission{
+		SystemID: iam.SystemIDCMDB,
+		Actions: []metadata.IamAction{{
+			ID: string(iam.EditBusinessHost),
+			RelatedResourceTypes: []metadata.IamResourceType{{
+				SystemID:  iam.SystemIDCMDB,
+				Type:      string(iam.Host),
+				Instances: instances,
+			}},
+		}},
+	}
+	resp := metadata.NewNoPermissionResp(permission)
 	return &resp, nil
 }
 
 func (am *AuthManager) GenMoveBizHostToResPoolNoPermissionResp(ctx context.Context, header http.Header, hostIDs []int64) (*metadata.BaseResp, error) {
-	// TODO implement this
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return nil, err
+	}
+	instances := make([]metadata.IamResourceInstance, len(hosts))
+	for index, host := range hosts {
+		instances[index] = metadata.IamResourceInstance{
+			Type: string(iam.Host),
+			ID:   strconv.FormatInt(host.BKHostIDField, 10),
+			Name: host.BKHostInnerIPField,
+		}
+	}
+	permission := &metadata.IamPermission{
+		SystemID: iam.SystemIDCMDB,
+		Actions: []metadata.IamAction{{
+			ID: string(iam.BusinessHostTransferToResourcePool),
+			RelatedResourceTypes: []metadata.IamResourceType{{
+				SystemID:  iam.SystemIDCMDB,
+				Type:      string(iam.Host),
+				Instances: instances,
+			}},
+		}},
+	}
+	resp := metadata.NewNoPermissionResp(permission)
 	return &resp, nil
 }
 

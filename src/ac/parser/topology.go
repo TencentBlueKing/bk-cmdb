@@ -115,7 +115,7 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
-	// 创建资源池业务
+	// 创建主机池业务
 	if ps.hitRegexp(createResourcePoolBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -213,7 +213,7 @@ func (ps *parseStream) business() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.Business,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 				// we don't know if one or more business is to find, so we assume it's a find many
 				// business operation.

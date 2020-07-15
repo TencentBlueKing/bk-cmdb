@@ -13,9 +13,21 @@
             <bk-form-item class="form-item clearfix" :label="$t('云区域设定')"></bk-form-item>
         </bk-form>
         <div class="info-table">
-            <bk-table :data="task.bk_sync_vpcs">
-                <bk-table-column label="VPC" prop="bk_vpc_id" width="200" :formatter="vpcFormatter"></bk-table-column>
-                <bk-table-column :label="$t('地域')" prop="bk_region_name" show-overflow-tooltip>
+            <bk-table :data="task.bk_sync_vpcs" :row-class-name="getRowClass">
+                <bk-table-column :label="$t('云区域')" prop="bk_cloud_id" width="150">
+                    <template slot-scope="{ row }">
+                        <div class="info-cloud-area">
+                            <task-cloud-area-input display="info" :id="row.bk_cloud_id"></task-cloud-area-input>
+                            <span class="info-destroyed"
+                                v-if="row.destroyed"
+                                v-bk-tooltips="$t('VPC已销毁')">
+                                {{$t('已失效')}}
+                            </span>
+                        </div>
+                    </template>
+                </bk-table-column>
+                <bk-table-column label="VPC" prop="bk_vpc_id" width="150" :formatter="vpcFormatter" show-overflow-tooltip></bk-table-column>
+                <bk-table-column :label="$t('地域')" prop="bk_region_name" :width="150" show-overflow-tooltip>
                     <task-region-selector
                         slot-scope="{ row }"
                         display="info"
@@ -24,7 +36,7 @@
                     </task-region-selector>
                 </bk-table-column>
                 <bk-table-column :label="$t('主机数量')" prop="bk_host_count"></bk-table-column>
-                <bk-table-column :label="$t('主机录入到')" prop="directory" width="250" show-overflow-tooltip>
+                <bk-table-column :label="$t('主机录入到')" prop="directory" width="150" show-overflow-tooltip>
                     <task-directory-selector
                         slot-scope="{ row }"
                         display="info"
@@ -35,7 +47,8 @@
         </div>
         <div class="info-options" slot="footer" slot-scope="{ sticky }"
             :class="{ 'is-sticky': sticky }">
-            <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
+            <bk-button class="mr10" :disabled="$loading(request.delete)" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
+            <bk-button theme="default" :loading="$loading(request.delete)" @click="handleDelete">{{$t('删除')}}</bk-button>
         </div>
     </cmdb-sticky-layout>
 </template>
@@ -46,13 +59,16 @@
     import TaskRegionSelector from './task-region-selector.vue'
     import TaskAccountSelector from './task-account-selector.vue'
     import TaskResourceSelector from './task-resource-selector.vue'
+    import TaskCloudAreaInput from './task-cloud-area-input.vue'
+    import RouterQuery from '@/router/query'
     export default {
         name: 'task-details-info',
         components: {
             TaskDirectorySelector,
             TaskRegionSelector,
             TaskAccountSelector,
-            TaskResourceSelector
+            TaskResourceSelector,
+            TaskCloudAreaInput
         },
         props: {
             task: {
@@ -65,7 +81,11 @@
             }
         },
         data () {
-            return {}
+            return {
+                request: {
+                    delete: Symbol('delete')
+                }
+            }
         },
         methods: {
             vpcFormatter (row) {
@@ -80,6 +100,41 @@
                 this.container.show({
                     detailsComponent: TaskForm.name
                 })
+            },
+            handleDelete () {
+                const infoInstance = this.$bkInfo({
+                    title: this.$t('确认删除xx', { instance: this.task.bk_task_name }),
+                    closeIcon: false,
+                    confirmFn: () => {
+                        return new Promise(async resolve => {
+                            try {
+                                infoInstance.buttonLoading = true
+                                await this.$store.dispatch('cloud/resource/deleteTask', {
+                                    id: this.task.bk_task_id,
+                                    config: {
+                                        requestId: this.request.delete
+                                    }
+                                })
+                                this.$success('删除成功')
+                                this.container.hide()
+                                RouterQuery.set({
+                                    _t: Date.now()
+                                })
+                            } catch (error) {
+                                console.error(error)
+                            } finally {
+                                infoInstance.buttonLoading = false
+                                resolve(true)
+                            }
+                        })
+                    }
+                })
+            },
+            getRowClass ({ row }) {
+                if (row.destroyed) {
+                    return 'is-destroyed'
+                }
+                return ''
             }
         }
     }
@@ -116,6 +171,26 @@
     }
     .info-table {
         margin: 0 30px;
+        /deep/ {
+            .bk-table-row.is-destroyed {
+                color: #C4C6CC;
+            }
+        }
+        .info-cloud-area {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            white-space: nowrap;
+            .info-destroyed {
+                margin-left: 4px;
+                font-size: 12px;
+                line-height: 18px;
+                color: #EA3536;
+                padding: 0 4px;
+                border-radius: 2px;
+                background-color: #FEDDDC;
+            }
+        }
     }
     .info-options {
         font-size: 0;

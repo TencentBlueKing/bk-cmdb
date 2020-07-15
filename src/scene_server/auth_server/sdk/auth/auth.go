@@ -29,10 +29,13 @@ type Authorizer interface {
 	// Note: being authorized resources must be the same resource.
 	AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error)
 
+	// check if a user have any authority of the operate actions batch.
+	AuthorizeAnyBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error)
+
 	// list a user's all the authorized resource instance list with an action.
 	// Note: opts.Resources is not required.
 	// the returned list may be huge, we do not do result paging
-	ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions) ([]string, error)
+	ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions, resourceType types.ResourceType) ([]string, error)
 }
 
 type ResourceFetcher interface {

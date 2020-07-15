@@ -20,6 +20,8 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
@@ -95,13 +97,38 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 		return
 	}
 
+	decisions, err := s.authorizeBatch(ctx.Kit, authAttribute, true)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(decisions)
+}
+
+// AuthorizeAnyBatch works to check if a user has any authority for actions.
+func (s *AuthService) AuthorizeAnyBatch(ctx *rest.Contexts) {
+	authAttribute := new(meta.AuthAttribute)
+	err := ctx.DecodeInto(authAttribute)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	decisions, err := s.authorizeBatch(ctx.Kit, authAttribute, false)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(decisions)
+}
+
+func (s *AuthService) authorizeBatch(kit *rest.Kit, authAttribute *meta.AuthAttribute, exact bool) ([]meta.Decision, error) {
 	if !auth.IsAuthed() {
 		decisions := make([]meta.Decision, len(authAttribute.Resources))
 		for i := range decisions {
 			decisions[i].Authorized = true
 		}
-		ctx.RespEntity(decisions)
-		return
+		return decisions, nil
 	}
 
 	authBatchArr := make([]*types.AuthBatch, 0)
@@ -109,22 +136,20 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 	for index, resource := range authAttribute.Resources {
 		actionID, err := iam.ConvertResourceAction(resource.Type, resource.Action, resource.BusinessID)
 		if err != nil {
-			blog.ErrorJSON("ConvertResourceAction failed, err: %s, resource: %s, rid: %s", err, resource, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
+			blog.ErrorJSON("ConvertResourceAction failed, err: %s, resource: %s, rid: %s", err, resource, kit.Rid)
+			return nil, err
 		}
 		if actionID == iam.Skip {
 			// this resource should be skipped, do not need to verify in auth center.
 			decisions[index].Authorized = true
-			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", resource, ctx.Kit.Rid)
+			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", resource, kit.Rid)
 			continue
 		}
 
 		resources, err := iam.Adaptor([]meta.ResourceAttribute{resource})
 		if err != nil {
-			blog.ErrorJSON("Adaptor failed, err: %s, resource: %s, rid: %s", err, resource, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
+			blog.ErrorJSON("Adaptor failed, err: %s, resource: %s, rid: %s", err, resource, kit.Rid)
+			return nil, err
 		}
 		authBatchArr = append(authBatchArr, &types.AuthBatch{
 			Action: types.Action{
@@ -134,9 +159,9 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 		})
 	}
 
+	// all resources are skipped
 	if len(authBatchArr) == 0 {
-		ctx.RespEntity(decisions)
-		return
+		return decisions, nil
 	}
 
 	ops := &types.AuthBatchOptions{
@@ -147,11 +172,16 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 		},
 		Batch: authBatchArr,
 	}
-	authDecisions, err := s.authorizer.AuthorizeBatch(ctx.Kit.Ctx, ops)
+	var authDecisions []*types.Decision
+	var err error
+	if exact {
+		authDecisions, err = s.authorizer.AuthorizeBatch(kit.Ctx, ops)
+	} else {
+		authDecisions, err = s.authorizer.AuthorizeAnyBatch(kit.Ctx, ops)
+	}
 	if err != nil {
-		blog.ErrorJSON("AuthorizeBatch failed, err: %s, ops: %s, authAttribute: %s, rid: %s", err, ops, authAttribute, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+		blog.ErrorJSON("AuthorizeBatch failed, err: %s, ops: %s, authAttribute: %s, rid: %s", err, ops, authAttribute, kit.Rid)
+		return nil, err
 	}
 	index := 0
 	for _, decision := range authDecisions {
@@ -160,8 +190,9 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 			index++
 		}
 		decisions[index].Authorized = decision.Authorized
+		index++
 	}
-	ctx.RespEntity(decisions)
+	return decisions, nil
 }
 
 // ListAuthorizedResources returns all specified resources the user has the authority to operate.
@@ -185,16 +216,17 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	resource := types.Resource{
-		System: iam.SystemIDCMDB,
-		Type:   types.ResourceType(*iamResourceType),
-	}
+	resources := make([]types.Resource, 0)
 	if input.BizID > 0 {
 		businessPath := "/" + string(iam.Business) + "," + strconv.FormatInt(input.BizID, 10) + "/"
-		pathArr := []string{businessPath}
-		resource.Attribute = map[string]interface{}{
-			types.IamPathKey: pathArr,
+		resource := types.Resource{
+			System: iam.SystemIDCMDB,
+			Type:   types.ResourceType(*iamResourceType),
+			Attribute: map[string]interface{}{
+				types.IamPathKey: []string{businessPath},
+			},
 		}
+		resources = append(resources, resource)
 	}
 
 	ops := &types.AuthOptions{
@@ -206,13 +238,32 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		Action: types.Action{
 			ID: string(iamActionID),
 		},
-		Resources: []types.Resource{resource},
+		Resources: resources,
 	}
-	resources, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops)
+	resourceIDs, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops, types.ResourceType(*iamResourceType))
 	if err != nil {
 		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v, input: %s, ops: %s, input: %s, rid: %s", err, input, ops, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resources)
+	ctx.RespEntity(resourceIDs)
+}
+
+// GetNoAuthSkipUrl returns the redirect url to iam for user to apply for specific authorizations
+func (s *AuthService) GetNoAuthSkipUrl(ctx *rest.Contexts) {
+	input := new(metadata.IamPermission)
+	err := ctx.DecodeInto(input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	url, err := esb.EsbClient().IamSrv().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	if err != nil {
+		blog.ErrorJSON("GetNoAuthSkipUrl failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(url)
 }

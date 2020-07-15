@@ -533,7 +533,7 @@ func (ps *parseStream) host() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.AddHostToResourcePool,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -547,7 +547,7 @@ func (ps *parseStream) host() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.AddHostToResourcePool,
+					Action: meta.SkipAction,
 				},
 			},
 		}

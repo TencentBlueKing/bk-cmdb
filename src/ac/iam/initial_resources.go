@@ -19,6 +19,33 @@ var (
 	}
 )
 
+var ResourceTypeIDMap = map[ResourceTypeID]string{
+	Business:                  "业务",
+	SysCloudArea:              "云区域",
+	SysResourcePoolDirectory:  "主机池目录",
+	SysModelGroup:             "模型分组",
+	SysInstanceModel:          "实例模型",
+	SysModel:                  "模型",
+	SysInstance:               "实例",
+	SysAssociationType:        "关联类型",
+	SysEventPushing:           "事件订阅",
+	SysSystemBase:             "系统基础",
+	SysOperationStatistic:     "运营统计",
+	SysAuditLog:               "操作审计",
+	SysCloudAccount:           "云账户",
+	SysCloudResourceTask:      "云资源任务",
+	SysEventWatch:             "事件监听",
+	Host:                      "主机",
+	BizHostApply:              "主机自动应用",
+	BizCustomQuery:            "动态分组",
+	BizCustomField:            "自定义字段",
+	BizProcessServiceInstance: "服务实例",
+	BizProcessServiceCategory: "服务分类",
+	BizSetTemplate:            "集群模板",
+	BizTopology:               "业务拓扑",
+	BizProcessServiceTemplate: "服务模板",
+}
+
 // GenerateResourceTypes generate all the resource types registered to IAM.
 func GenerateResourceTypes() []ResourceType {
 	resourceTypeList := make([]ResourceType, 0)
@@ -47,7 +74,7 @@ func genBusinessResources() []ResourceType {
 	return []ResourceType{
 		{
 			ID:            Host,
-			Name:          "主机",
+			Name:          ResourceTypeIDMap[Host],
 			NameEn:        "Host",
 			Description:   "主机",
 			DescriptionEn: "hosts under a business or in resource pool",
@@ -66,7 +93,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizHostApply,
-			Name:          "主机自动应用",
+			Name:          ResourceTypeIDMap[BizHostApply],
 			NameEn:        "Host Apply",
 			Description:   "自动应用业务主机的属性信息",
 			DescriptionEn: "apply business host attribute automatically",
@@ -78,7 +105,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizCustomQuery,
-			Name:          "动态分组",
+			Name:          ResourceTypeIDMap[BizCustomQuery],
 			NameEn:        "Dynamic Grouping",
 			Description:   "根据条件查询主机信息",
 			DescriptionEn: "custom query the host instances",
@@ -90,7 +117,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizCustomField,
-			Name:          "自定义字段",
+			Name:          ResourceTypeIDMap[BizCustomField],
 			NameEn:        "Custom Field",
 			Description:   "模型在业务下的自定义字段",
 			DescriptionEn: "model's custom field under a business",
@@ -102,7 +129,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizProcessServiceInstance,
-			Name:          "服务实例",
+			Name:          ResourceTypeIDMap[BizProcessServiceInstance],
 			NameEn:        "Service Instance",
 			Description:   "服务实例",
 			DescriptionEn: "service instance",
@@ -114,7 +141,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizProcessServiceCategory,
-			Name:          "服务分类",
+			Name:          ResourceTypeIDMap[BizProcessServiceCategory],
 			NameEn:        "Service Category",
 			Description:   "服务分类用于分类服务实例",
 			DescriptionEn: "service category is to classify service instances",
@@ -126,7 +153,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizSetTemplate,
-			Name:          "集群模板",
+			Name:          ResourceTypeIDMap[BizSetTemplate],
 			NameEn:        "Set Template",
 			Description:   "集群模板用于实例化集群",
 			DescriptionEn: "set template is used to instantiate a set",
@@ -138,7 +165,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizTopology,
-			Name:          "业务拓扑",
+			Name:          ResourceTypeIDMap[BizTopology],
 			NameEn:        "Business Topology",
 			Description:   "业务拓扑包含了业务拓扑树中所有的相关元素",
 			DescriptionEn: "business topology contains all elements related to the business topology tree",
@@ -150,7 +177,7 @@ func genBusinessResources() []ResourceType {
 		},
 		{
 			ID:            BizProcessServiceTemplate,
-			Name:          "服务模板",
+			Name:          ResourceTypeIDMap[BizProcessServiceTemplate],
 			NameEn:        "Service Template",
 			Description:   "服务模板用于实例化服务实例",
 			DescriptionEn: "service template is used to instantiate a service instance ",
@@ -163,7 +190,7 @@ func genBusinessResources() []ResourceType {
 		// only for host topology usage, not related to actions
 		//{
 		//	ID:            Set,
-		//	Name:          "集群",
+		//	Name:          ResourceTypeIDMap[Set],
 		//	NameEn:        "Set",
 		//	Description:   "集群列表",
 		//	DescriptionEn: "all the sets in blueking cmdb.",
@@ -175,7 +202,7 @@ func genBusinessResources() []ResourceType {
 		//},
 		//{
 		//	ID:            Module,
-		//	Name:          "模块",
+		//	Name:          ResourceTypeIDMap[Module],
 		//	NameEn:        "Module",
 		//	Description:   "模块列表",
 		//	DescriptionEn: "all the modules in blueking cmdb.",
@@ -195,7 +222,7 @@ func genPublicResources() []ResourceType {
 	return []ResourceType{
 		{
 			ID:            Business,
-			Name:          "业务",
+			Name:          ResourceTypeIDMap[Business],
 			NameEn:        "Business",
 			Description:   "业务列表",
 			DescriptionEn: "all the business in blueking cmdb.",
@@ -207,7 +234,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysCloudArea,
-			Name:          "云区域",
+			Name:          ResourceTypeIDMap[SysCloudArea],
 			NameEn:        "Cloud Area",
 			Description:   "云区域",
 			DescriptionEn: "cloud area",
@@ -219,7 +246,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysResourcePoolDirectory,
-			Name:          "主机池目录",
+			Name:          ResourceTypeIDMap[SysResourcePoolDirectory],
 			NameEn:        "Host Pool Directory",
 			Description:   "主机池目录",
 			DescriptionEn: "host pool directory",
@@ -231,7 +258,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysModelGroup,
-			Name:          "模型分组",
+			Name:          ResourceTypeIDMap[SysModelGroup],
 			NameEn:        "Model Group",
 			Description:   "模型分组用于对模型进行归类",
 			DescriptionEn: "group models by model group",
@@ -243,7 +270,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysInstanceModel,
-			Name:          "实例模型",
+			Name:          ResourceTypeIDMap[SysInstanceModel],
 			NameEn:        "InstanceModel",
 			Description:   "实例模型",
 			DescriptionEn: "instance model",
@@ -255,7 +282,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysModel,
-			Name:          "模型",
+			Name:          ResourceTypeIDMap[SysModel],
 			NameEn:        "Model",
 			Description:   "模型",
 			DescriptionEn: "model",
@@ -267,7 +294,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysInstance,
-			Name:          "实例",
+			Name:          ResourceTypeIDMap[SysInstance],
 			NameEn:        "Instance",
 			Description:   "模型实例",
 			DescriptionEn: "model instance",
@@ -282,7 +309,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysAssociationType,
-			Name:          "关联类型",
+			Name:          ResourceTypeIDMap[SysAssociationType],
 			NameEn:        "Association Type",
 			Description:   "关联类型是模型关联关系的分类",
 			DescriptionEn: "association type is the classification of model association",
@@ -294,7 +321,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysEventPushing,
-			Name:          "事件订阅",
+			Name:          ResourceTypeIDMap[SysEventPushing],
 			NameEn:        "Event Subscription",
 			Description:   "当配置发生变化时推送事件",
 			DescriptionEn: "push event when configuration changes",
@@ -306,7 +333,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysSystemBase,
-			Name:          "系统基础",
+			Name:          ResourceTypeIDMap[SysSystemBase],
 			NameEn:        "System",
 			Description:   "基础系统资源",
 			DescriptionEn: "basic system resource",
@@ -318,7 +345,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysOperationStatistic,
-			Name:          "运营统计",
+			Name:          ResourceTypeIDMap[SysOperationStatistic],
 			NameEn:        "Operational Statistics",
 			Description:   "运营统计",
 			DescriptionEn: "operational statistics",
@@ -330,7 +357,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysAuditLog,
-			Name:          "操作审计",
+			Name:          ResourceTypeIDMap[SysAuditLog],
 			NameEn:        "Operation Audit",
 			Description:   "操作审计",
 			DescriptionEn: "audit log",
@@ -342,7 +369,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysCloudAccount,
-			Name:          "云账户",
+			Name:          ResourceTypeIDMap[SysCloudAccount],
 			NameEn:        "Cloud Account",
 			Description:   "云账户",
 			DescriptionEn: "cloud account",
@@ -354,7 +381,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysCloudResourceTask,
-			Name:          "云资源任务",
+			Name:          ResourceTypeIDMap[SysCloudResourceTask],
 			NameEn:        "Cloud Resource Task",
 			Description:   "云资源任务",
 			DescriptionEn: "cloud resource task",
@@ -366,7 +393,7 @@ func genPublicResources() []ResourceType {
 		},
 		{
 			ID:            SysEventWatch,
-			Name:          "事件监听",
+			Name:          ResourceTypeIDMap[SysEventWatch],
 			NameEn:        "Event Listen",
 			Description:   "事件监听",
 			DescriptionEn: "event watch",

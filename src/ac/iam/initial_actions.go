@@ -106,7 +106,7 @@ func genBusinessHostActions() []ResourceAction {
 	// business host transfer to resource pool actions
 	actions = append(actions, ResourceAction{
 		ID:                   BusinessHostTransferToResourcePool,
-		Name:                 "主机归还资源池",
+		Name:                 "主机归还主机池",
 		NameEn:               "Return Hosts To Pool",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToResourcePoolRelatedResource,
@@ -195,23 +195,8 @@ func genBusinessCustomFieldActions() []ResourceAction {
 }
 
 func genBusinessServiceCategoryActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BusinessSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 BizProcessServiceCategory,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
 	actions := make([]ResourceAction, 0)
+
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessServiceCategory,
 		Name:                 "服务分类新建",
@@ -227,7 +212,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		Name:                 "服务分类编辑",
 		NameEn:               "Edit Service Category",
 		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -237,7 +222,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		Name:                 "服务分类删除",
 		NameEn:               "Delete Service Category",
 		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -246,23 +231,8 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 }
 
 func genBusinessServiceInstanceActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BusinessSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 BizProcessServiceInstance,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
 	actions := make([]ResourceAction, 0)
+
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessServiceInstance,
 		Name:                 "服务实例新建",
@@ -278,7 +248,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		Name:                 "服务实例编辑",
 		NameEn:               "Edit Service Instance",
 		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -288,7 +258,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		Name:                 "服务实例删除",
 		NameEn:               "Delete Service Instance",
 		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -469,7 +439,7 @@ func genResourcePoolHostActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   CreateResourcePoolHost,
-		Name:                 "资源池主机创建",
+		Name:                 "主机池主机创建",
 		NameEn:               "Create Pool Hosts",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
@@ -479,7 +449,7 @@ func genResourcePoolHostActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditResourcePoolHost,
-		Name:                 "资源池主机编辑",
+		Name:                 "主机池主机编辑",
 		NameEn:               "Edit Pool Hosts",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -489,7 +459,7 @@ func genResourcePoolHostActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteResourcePoolHost,
-		Name:                 "资源池主机删除",
+		Name:                 "主机池主机删除",
 		NameEn:               "Delete Pool Hosts",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -500,7 +470,7 @@ func genResourcePoolHostActions() []ResourceAction {
 	transferToBusinessRelatedResource := append(relatedResource, businessResource)
 	actions = append(actions, ResourceAction{
 		ID:                   ResourcePoolHostTransferToBusiness,
-		Name:                 "资源池主机分配到业务",
+		Name:                 "主机池主机分配到业务",
 		NameEn:               "Assigned Pool Hosts To Business",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToBusinessRelatedResource,
@@ -511,7 +481,7 @@ func genResourcePoolHostActions() []ResourceAction {
 	transferToDirectoryRelatedResource := append(relatedResource, resourcePoolDirResource)
 	actions = append(actions, ResourceAction{
 		ID:                   ResourcePoolHostTransferToDirectory,
-		Name:                 "资源池主机分配到目录",
+		Name:                 "主机池主机分配到目录",
 		NameEn:               "Assigned Pool Hosts To Directory",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToDirectoryRelatedResource,
@@ -526,7 +496,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateResourcePoolDirectory,
-		Name:                 "资源池目录创建",
+		Name:                 "主机池目录创建",
 		NameEn:               "Create Pool Directory",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -536,7 +506,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditResourcePoolDirectory,
-		Name:                 "资源池目录编辑",
+		Name:                 "主机池目录编辑",
 		NameEn:               "Edit Pool Directory",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
@@ -546,7 +516,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteResourcePoolDirectory,
-		Name:                 "资源池目录删除",
+		Name:                 "主机池目录删除",
 		NameEn:               "Delete Pool Directory",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},

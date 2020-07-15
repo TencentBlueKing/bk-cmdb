@@ -140,6 +140,11 @@ type Action struct {
 	ID string `json:"id"`
 }
 
+type ActionPolicy struct {
+	Action Action           `json:"action"`
+	Policy *operator.Policy `json:"condition"`
+}
+
 // Resource defines all the information used to authorize a resource.
 type Resource struct {
 	System    string             `json:"system"`

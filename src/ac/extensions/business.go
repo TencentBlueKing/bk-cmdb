@@ -14,9 +14,12 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -116,7 +119,31 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
-	// TODO implement this
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+	if err != nil {
+		return nil, err
+	}
+	if len(businesses) != 1 {
+		return nil, errors.New("get business detail failed")
+	}
+	permission := &metadata.IamPermission{
+		SystemID: iam.SystemIDCMDB,
+		Actions: []metadata.IamAction{{
+			ID: string(iam.FindAuditLog),
+			RelatedResourceTypes: []metadata.IamResourceType{{
+				SystemID: iam.SystemIDCMDB,
+				Type:     string(iam.SysAuditLog),
+				Instances: []metadata.IamResourceInstance{{
+					Type: string(iam.Business),
+					ID:   strconv.FormatInt(businessID, 10),
+					Name: businesses[0].BKAppNameField,
+				}, {
+					Type: string(iam.SysAuditLog),
+					Name: iam.ResourceTypeIDMap[iam.SysAuditLog],
+				}},
+			}},
+		}},
+	}
+	resp := metadata.NewNoPermissionResp(permission)
 	return &resp, nil
 }

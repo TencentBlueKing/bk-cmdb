@@ -1,6 +1,6 @@
 <template>
     <div class="details-layout"
-        v-bkloading="{ isLoading: $loading(requestId) }">
+        v-bkloading="{ isLoading: $loading(request.data) }">
         <bk-form :label-width="105">
             <bk-form-item class="details-item" :label="$t('账户名称')">
                 {{account.bk_account_name}}
@@ -30,8 +30,19 @@
                 {{account.last_time | formatter('time')}}
             </bk-form-item>
             <bk-form-item class="details-options">
-                <bk-button class="mr10" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
-                <bk-button @click="handleCancel">{{$t('取消')}}</bk-button>
+                <bk-button class="mr10" theme="primary" :disabled="$loading(request.delete)" @click="handleEdit">{{$t('编辑')}}</bk-button>
+                <span class="inline-block-middle"
+                    v-bk-tooltips="{
+                        disabled: account.bk_can_delete_account,
+                        content: $t('云账户禁止删除提示')
+                    }">
+                    <bk-button
+                        :disabled="!account.bk_can_delete_account"
+                        :loading="$loading(request.delete)"
+                        @click="handleDelete">
+                        {{$t('删除')}}
+                    </bk-button>
+                </span>
             </bk-form-item>
         </bk-form>
     </div>
@@ -39,6 +50,7 @@
 
 <script>
     import CmdbVendor from '@/components/ui/other/vendor'
+    import RouterQuery from '@/router/query'
     export default {
         name: 'cloud-account-details',
         components: {
@@ -57,7 +69,10 @@
         data () {
             return {
                 account: {},
-                requestId: Symbol('getAccountData')
+                request: {
+                    data: Symbol('getAccountData'),
+                    delete: Symbol('delete')
+                }
             }
         },
         created () {
@@ -69,7 +84,7 @@
                     const account = await this.$store.dispatch('cloud/account/findOne', {
                         id: this.id,
                         config: {
-                            requestId: this.requestId
+                            requestId: this.request.data
                         }
                     })
                     this.account = {
@@ -91,8 +106,33 @@
                     }
                 })
             },
-            handleCancel () {
-                this.container.hide()
+            handleDelete () {
+                const infoInstance = this.$bkInfo({
+                    title: this.$t('确认删除xx', { instance: this.account.bk_account_name }),
+                    closeIcon: false,
+                    confirmFn: () => {
+                        return new Promise(async resolve => {
+                            infoInstance.buttonLoading = true
+                            try {
+                                await this.$store.dispatch('cloud/account/delete', {
+                                    id: this.account.bk_account_id,
+                                    config: {
+                                        requestId: this.request.delete
+                                    }
+                                })
+                                this.$success('删除成功')
+                                this.container.hide()
+                                RouterQuery.set({
+                                    _t: Date.now()
+                                })
+                            } catch (error) {
+                                console.error(error)
+                            } finally {
+                                resolve(true)
+                            }
+                        })
+                    }
+                })
             }
         }
     }

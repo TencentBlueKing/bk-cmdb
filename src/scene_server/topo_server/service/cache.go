@@ -13,6 +13,9 @@
 package service
 
 import (
+	"strconv"
+
+	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/coreservice/cache/topo_tree"
 )
@@ -30,4 +33,38 @@ func (s *Service) SearchTopologyTree(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(topo)
+}
+
+func (s *Service) SearchTopologyNodePath(ctx *rest.Contexts) {
+	opt := new(topo_tree.SearchNodePathOption)
+	appID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid biz id")
+		return
+	}
+
+	if appID <= 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid biz id")
+		return
+	}
+
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(opt.Nodes) > common.BKMaxPageSize {
+		ctx.RespErrorCodeF(common.CCErrCommValExceedMaxFailed, "bk_nodes counts exceeded", "bk_nodes", common.BKMaxPageSize)
+		return
+	}
+
+	opt.Business = appID
+
+	paths, err := s.Engine.CoreAPI.CoreService().Cache().SearchTopologyNodePath(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(paths)
 }

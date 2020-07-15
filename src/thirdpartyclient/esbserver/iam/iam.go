@@ -9,31 +9,29 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package iam
 
-package types
+import (
+	"context"
+	"net/http"
 
-import "configcenter/src/scene_server/auth_server/sdk/operator"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+)
 
-type BaseResp struct {
-	Code    int64  `json:"code"`
-	Message string `json:"message"`
+type IamClientInterface interface {
+	GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error)
 }
 
-type GetPolicyOption AuthOptions
-
-type GetPolicyResp struct {
-	BaseResp `json:",inline"`
-	Data     *operator.Policy `json:"data"`
+func NewIamClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) IamClientInterface {
+	return &iam{
+		client: client,
+		config: config,
+	}
 }
 
-type ListPolicyOptions struct {
-	System    string     `json:"system"`
-	Subject   Subject    `json:"subject"`
-	Actions   []Action   `json:"actions"`
-	Resources []Resource `json:"resources"`
-}
-
-type ListPolicyResp struct {
-	BaseResp `json:",inline"`
-	Data     []*ActionPolicy `json:"data"`
+type iam struct {
+	config *esbutil.EsbConfigSrv
+	client rest.ClientInterface
 }

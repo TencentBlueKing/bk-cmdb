@@ -72,7 +72,7 @@ func (p *Policy) UnmarshalJSON(i []byte) error {
 
 		p.Element = &FieldValue{
 			Field: broker.Field,
-			Value: to,
+			Value: *to,
 		}
 	}
 
@@ -103,11 +103,6 @@ func (p *Policy) MarshalJSON() ([]byte, error) {
 	buf.Write(js[1 : len(js)-1])
 	buf.WriteByte('}')
 	return buf.Bytes(), nil
-}
-
-type ActionPolicy struct {
-	ActionID string  `json:"action_id"`
-	Policy   *Policy `json:"condition"`
 }
 
 type Element interface {
