@@ -71,11 +71,11 @@ var tmpData = map[string]interface{}{
 
 // 清除表数据，保证测试用例之间互不干扰
 func clearSyncTaskData() {
-	err := test.GetDB().DropTable(context.Background(), common.BKTableNameCloudSyncTask)
-	Expect(err).NotTo(HaveOccurred())
-	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameCloudSyncTask)
+	// 清空云同步任务表
+	err := test.GetDB().Table(common.BKTableNameCloudSyncTask).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 
+	//删除云同步任务id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudSyncTask})
 	Expect(err).NotTo(HaveOccurred())
 }
@@ -94,12 +94,11 @@ func prepareSyncTaskData() {
 var cloudID1 int64
 
 func prepareCloudData() {
-	//删除云区域表
-	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBasePlat)
-	Expect(err).NotTo(HaveOccurred())
-	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameBasePlat)
+	//清空云区域表
+	err := test.GetDB().Table(common.BKTableNameBasePlat).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 
+	//删除云区域id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameBasePlat})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -120,16 +119,16 @@ func prepareCloudData() {
 var _ = Describe("cloud sync task test", func() {
 
 	BeforeEach(func() {
-		// 准备需要云账户数据
-		clearData()
-		prepareData()
+		// 准备云账户数据
+		clearAccountData()
+		prepareAccountData()
 
 		// 准备云区域数据
 		prepareCloudData()
 
-		//清空数据
+		//清空同步任务数据
 		clearSyncTaskData()
-		//准备数据
+		//准备同步任务数据
 		prepareSyncTaskData()
 	})
 

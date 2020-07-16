@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 )
@@ -33,24 +34,27 @@ func CovertInstState(instState string) string {
 	case "stopped", "shutdown", "terminated":
 		return "stopped"
 	default:
+		blog.Infof("convert to unknow state, the origin instState:%s", instState)
 		return "unknow"
 	}
 	return instState
 }
 
-// 获取api调用的header
-func GetHeader() http.Header {
+// NewHeader 创建云资源同步需要的header
+func NewHeader() http.Header {
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
 	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, common.BKCloudSyncUser)
 	header.Add(common.BKHTTPLanguage, "cn")
+	header.Add(common.BKHTTPCCRequestID, util.GenerateRID())
 	header.Add("Content-Type", "application/json")
 	return header
 }
 
-// 获取api调用的header
-func GetKit(header http.Header) *rest.Kit {
+// NewKit 创建新的Kit
+func NewKit() *rest.Kit {
+	header := NewHeader()
 	if header.Get(common.BKHTTPCCRequestID) == "" {
 		header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
 	}
@@ -68,10 +72,4 @@ func GetKit(header http.Header) *rest.Kit {
 		User:            user,
 		SupplierAccount: supplierAccount,
 	}
-}
-
-// 创建一个新的Kit
-func NewKit() *rest.Kit {
-	header := GetHeader()
-	return GetKit(header)
 }

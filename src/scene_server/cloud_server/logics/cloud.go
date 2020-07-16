@@ -13,12 +13,12 @@
 package logics
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/cloud_server/cloudvendor"
@@ -26,16 +26,16 @@ import (
 )
 
 // AccountVerify 验证云账户连通性
-func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
+func (lgc *Logics) AccountVerify(kit *rest.Kit, conf metadata.CloudAccountConf) error {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("AccountVerify GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		blog.Errorf("AccountVerify GetVendorClient failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 		return err
 	}
 
 	_, err = client.GetRegions()
 	if err != nil {
-		blog.Errorf("AccountVerify GetRegions failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		blog.Errorf("AccountVerify GetRegions failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 		return err
 	}
 
@@ -43,7 +43,7 @@ func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
 }
 
 // SearchAccountValidity 查询云账户有效性
-func (lgc *Logics) SearchAccountValidity(confs []metadata.CloudAccountConf) []metadata.AccountValidityInfo {
+func (lgc *Logics) SearchAccountValidity(kit *rest.Kit, confs []metadata.CloudAccountConf) []metadata.AccountValidityInfo {
 	result := make([]metadata.AccountValidityInfo, 0)
 	validityInfoChan := make(chan metadata.AccountValidityInfo, 10)
 	var wg, wg2 sync.WaitGroup
@@ -53,7 +53,7 @@ func (lgc *Logics) SearchAccountValidity(confs []metadata.CloudAccountConf) []me
 		go func(conf metadata.CloudAccountConf) {
 			defer wg.Done()
 			errMsg := ""
-			if err := lgc.AccountVerify(conf); err != nil {
+			if err := lgc.AccountVerify(kit, conf); err != nil {
 				errMsg = err.Error()
 			}
 			validityInfoChan <- metadata.AccountValidityInfo{
@@ -79,16 +79,16 @@ func (lgc *Logics) SearchAccountValidity(confs []metadata.CloudAccountConf) []me
 }
 
 // GetRegionsInfo 获取地域信息
-func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount bool) ([]metadata.SyncRegion, error) {
+func (lgc *Logics) GetRegionsInfo(kit *rest.Kit, conf metadata.CloudAccountConf, withHostCount bool) ([]metadata.SyncRegion, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetRegionsInfo GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		blog.Errorf("GetRegionsInfo GetVendorClient failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	regionSet, err := client.GetRegions()
 	if err != nil {
-		blog.Errorf("GetRegionsInfo GetRegions err:%s", err.Error())
+		blog.Errorf("GetRegionsInfo GetRegions err:%s, rid:%s", err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -104,7 +104,7 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 				defer wg.Done()
 				count, err := client.GetInstancesTotalCnt(region.RegionId, nil)
 				if err != nil {
-					blog.Errorf("GetVpcHostCnt GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+					blog.Errorf("GetVpcHostCnt GetInstances failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 					return
 				}
 				hostCntChan <- []interface{}{region.RegionId, count}
@@ -137,17 +137,17 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 }
 
 // GetVpcHostCntInOneRegion 获取某地域下的vpc详情和主机数
-func (lgc *Logics) GetVpcHostCntInOneRegion(conf metadata.CloudAccountConf, region string) (*metadata.VpcHostCntResult, error) {
+func (lgc *Logics) GetVpcHostCntInOneRegion(kit *rest.Kit, conf metadata.CloudAccountConf, region string) (*metadata.VpcHostCntResult, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetVpcHostCntInOneRegion GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		blog.Errorf("GetVpcHostCntInOneRegion GetVendorClient failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	// 获取该地域下的vpc详情
 	vpcsInfo, err := client.GetVpcs(region, nil)
 	if err != nil {
-		blog.Errorf("GetVpcHostCntInOneRegion GetVpcs err:%s", err.Error())
+		blog.Errorf("GetVpcHostCntInOneRegion GetVpcs err:%s, rid:%s", err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -166,9 +166,9 @@ func (lgc *Logics) GetVpcHostCntInOneRegion(conf metadata.CloudAccountConf, regi
 			VpcID:  vpc.VpcId,
 		})
 	}
-	vpcHostCnt, err := lgc.GetVpcHostCnt(conf, option)
+	vpcHostCnt, err := lgc.GetVpcHostCnt(kit, conf, option)
 	if err != nil {
-		blog.Errorf("GetVpcHostCntInOneRegion GetVpcHostCnt failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		blog.Errorf("GetVpcHostCntInOneRegion GetVpcHostCnt failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -186,10 +186,10 @@ func (lgc *Logics) GetVpcHostCntInOneRegion(conf metadata.CloudAccountConf, regi
 }
 
 // GetVpcHostCnt 获取多个vpc对应的主机数
-func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata.SearchVpcHostCntOption) (map[string]int64, error) {
+func (lgc *Logics) GetVpcHostCnt(kit *rest.Kit, conf metadata.CloudAccountConf, option metadata.SearchVpcHostCntOption) (map[string]int64, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetVpcHostCnt GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		blog.Errorf("GetVpcHostCnt GetVendorClient failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -208,7 +208,7 @@ func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata
 				},
 			})
 			if err != nil {
-				blog.Errorf("GetVpcHostCnt GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+				blog.Errorf("GetVpcHostCnt GetInstances failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 				return
 			}
 			hostCntChan <- []interface{}{regionVpc.VpcID, count}
@@ -229,14 +229,14 @@ func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata
 }
 
 // GetCloudHostResource 获取需要同步的云主机资源信息
-func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs []metadata.VpcSyncInfo) (*metadata.CloudHostResource, error) {
+func (lgc *Logics) GetCloudHostResource(kit *rest.Kit, conf metadata.CloudAccountConf, syncVpcs []metadata.VpcSyncInfo) (*metadata.CloudHostResource, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetCloudHostResource GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		blog.Errorf("GetCloudHostResource GetVendorClient failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
-	blog.V(4).Infof("GetCloudHostResource syncVpcs %#v", syncVpcs)
+	blog.V(4).Infof("GetCloudHostResource syncVpcs %#v, rid:%s", syncVpcs, kit.Rid)
 
 	// 不再同步已经被销毁的vpc
 	allVpcs := make([]metadata.VpcSyncInfo, 0)
@@ -267,13 +267,13 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 				},
 			})
 			if err != nil {
-				blog.Errorf("GetCloudHostResource GetVpcs failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+				blog.Errorf("GetCloudHostResource GetVpcs failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 				errChan <- err
 				return
 			}
 			if len(vpcInfo.VpcSet) == 0 {
-				blog.Errorf("GetCloudHostResource add destroyed vpcID:%s, AccountID:%d, vpcInfo.VpcSet:%#v, param vpc:%#v, conf:%#v",
-					vpc.VpcID, conf.AccountID, vpcInfo.VpcSet, vpc, conf)
+				blog.Errorf("GetCloudHostResource add destroyed vpcID:%s, AccountID:%d, vpcInfo.VpcSet:%#v, param vpc:%#v, conf:%#v, rid:%s",
+					vpc.VpcID, conf.AccountID, vpcInfo.VpcSet, vpc, conf, kit.Rid)
 				destroyedVpcsChan <- vpc.VpcID
 				return
 			}
@@ -285,11 +285,11 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 				},
 			})
 			if err != nil {
-				blog.Errorf("GetCloudHostResource GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+				blog.Errorf("GetCloudHostResource GetInstances failed, AccountID:%d, err:%s, rid:%s", conf.AccountID, err.Error(), kit.Rid)
 				errChan <- err
 				return
 			}
-			blog.V(4).Infof("GetCloudHostResource vpc-id:%s, instances count %#v", vpc.VpcID, instancesInfo.Count)
+			blog.V(4).Infof("GetCloudHostResource vpc-id:%s, instances count %#v, rid:%s", vpc.VpcID, instancesInfo.Count, kit.Rid)
 			hostDetailChan <- instancesInfo.InstanceSet
 		}(vpc)
 	}
@@ -353,16 +353,16 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 }
 
 // GetCloudAccountConf 获取云账户配置
-func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountConf, error) {
+func (lgc *Logics) GetCloudAccountConf(kit *rest.Kit, accountID int64) (*metadata.CloudAccountConf, error) {
 	option := &metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudAccountID: accountID}}
-	result, err := lgc.CoreAPI.CoreService().Cloud().SearchAccountConf(context.Background(), ccom.GetHeader(), option)
+	result, err := lgc.CoreAPI.CoreService().Cloud().SearchAccountConf(kit.Ctx, kit.Header, option)
 	if err != nil {
-		blog.Errorf("SearchAccountConf failed, accountID: %v, err: %s", accountID, err.Error())
+		blog.Errorf("SearchAccountConf failed, accountID: %v, err: %s，rid:%s", accountID, err.Error(), kit.Rid)
 		return nil, err
 	}
 	if len(result.Info) == 0 {
 		blog.Errorf("GetCloudAccountConf failed, accountID: %v is not exist", accountID)
-		return nil, fmt.Errorf("GetAccountConf failed, accountID: %v is not exist", accountID)
+		return nil, fmt.Errorf("GetAccountConf failed, accountID: %v is not exist, rid:%s", accountID, kit.Rid)
 	}
 
 	accountConf := result.Info[0]
@@ -370,7 +370,7 @@ func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountC
 	if lgc.cryptor != nil {
 		secretKey, err := lgc.cryptor.Decrypt(accountConf.SecretKey)
 		if err != nil {
-			blog.Errorf("GetCloudAccountConf failed, Encrypt err: %st", err.Error())
+			blog.Errorf("GetCloudAccountConf failed, Encrypt err: %st, rid:%s", err.Error(), kit.Rid)
 			return nil, err
 		}
 		accountConf.SecretKey = secretKey
@@ -380,7 +380,7 @@ func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountC
 }
 
 // GetCloudAccountConfBatch 批量获取云账户配置
-func (lgc *Logics) GetCloudAccountConfBatch(accountIDs []int64) ([]metadata.CloudAccountConf, error) {
+func (lgc *Logics) GetCloudAccountConfBatch(kit *rest.Kit, accountIDs []int64) ([]metadata.CloudAccountConf, error) {
 	if len(accountIDs) == 0 {
 		return nil, nil
 	}
@@ -392,13 +392,13 @@ func (lgc *Logics) GetCloudAccountConfBatch(accountIDs []int64) ([]metadata.Clou
 			},
 		},
 	}
-	result, err := lgc.CoreAPI.CoreService().Cloud().SearchAccountConf(context.Background(), ccom.GetHeader(), option)
+	result, err := lgc.CoreAPI.CoreService().Cloud().SearchAccountConf(kit.Ctx, kit.Header, option)
 	if err != nil {
-		blog.Errorf("GetCloudAccountConfBatch failed, accountIDs: %v, SearchAccountConf err: %s", accountIDs, err.Error())
+		blog.Errorf("GetCloudAccountConfBatch failed, accountIDs: %v, SearchAccountConf err: %s, rid:%s", accountIDs, err.Error(), kit.Rid)
 		return nil, err
 	}
 	if len(result.Info) == 0 {
-		blog.Errorf("GetCloudAccountConfBatch failed, accountIDs: %v are not exist", accountIDs)
+		blog.Errorf("GetCloudAccountConfBatch failed, accountIDs: %v are not exist, rid:%s", accountIDs, kit.Rid)
 		return nil, fmt.Errorf("GetAccountConf failed, accountIDs: %v are not exist", accountIDs)
 	}
 
@@ -408,7 +408,7 @@ func (lgc *Logics) GetCloudAccountConfBatch(accountIDs []int64) ([]metadata.Clou
 		for i, _ := range accountConfs {
 			secretKey, err := lgc.cryptor.Decrypt(accountConfs[i].SecretKey)
 			if err != nil {
-				blog.Errorf("GetCloudAccountConfBatch failed, Encrypt err: %st", err.Error())
+				blog.Errorf("GetCloudAccountConfBatch failed, Encrypt err: %s, rid:%s", err.Error(), kit.Rid)
 				return nil, err
 			}
 			accountConfs[i].SecretKey = secretKey

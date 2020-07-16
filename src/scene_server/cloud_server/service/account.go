@@ -34,7 +34,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	}
 
 	conf := metadata.CloudAccountConf{VendorName: account.CloudVendor, SecretID: account.SecretID, SecretKey: account.SecretKey}
-	err := s.Logics.AccountVerify(conf)
+	err := s.Logics.AccountVerify(ctx.Kit, conf)
 	if err != nil {
 		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
 		errStr := err.Error()
@@ -67,13 +67,13 @@ func (s *Service) SearchAccountValidity(ctx *rest.Contexts) {
 		return
 	}
 
-	accountConfs, err := s.Logics.GetCloudAccountConfBatch(option.AccountIDs)
+	accountConfs, err := s.Logics.GetCloudAccountConfBatch(ctx.Kit, option.AccountIDs)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrGetCloudAccountConfBatchFailed))
 		return
 	}
 
-	validityInfo := s.Logics.SearchAccountValidity(accountConfs)
+	validityInfo := s.Logics.SearchAccountValidity(ctx.Kit, accountConfs)
 	for i, info := range validityInfo {
 		if info.ErrMsg == "" {
 			continue

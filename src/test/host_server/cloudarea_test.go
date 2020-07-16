@@ -250,10 +250,8 @@ var _ = Describe("cloud area test", func() {
 var cloudID1, cloudID2, cloudIDTmp int64
 
 func prepareCloudData() {
-	//删除云区域表
-	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBasePlat)
-	Expect(err).NotTo(HaveOccurred())
-	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameBasePlat)
+	//清空云区域表
+	err := test.GetDB().Table(common.BKTableNameBasePlat).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 
 	// 准备数据
