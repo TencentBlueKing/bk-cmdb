@@ -313,11 +313,6 @@ func getHostIDAndIP(hostInfo map[string]interface{}) (int64, string, error) {
 		return 0, "", fmt.Errorf("%s", "hostID is 0")
 	}
 
-	if innerIP == "" {
-		blog.Errorf("getHostIDAndIP fail,innerIP is empty, hostInfo:%+v", hostInfo)
-		return 0, "", fmt.Errorf("%s", "innerIP is empty")
-	}
-
 	return hostID, innerIP, nil
 }
 

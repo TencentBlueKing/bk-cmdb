@@ -1198,3 +1198,17 @@ const (
 	// 是否为被销毁的云主机
 	IsDestroyedCloudHost = "is_destroyed_cloud_host"
 )
+
+const (
+	BKCloudHostStatusUnknown   = "1"
+	BKCloudHostStatusStarting  = "2"
+	BKCloudHostStatusRunning   = "3"
+	BKCloudHostStatusStopping  = "4"
+	BKCloudHostStatusStopped   = "5"
+	BKCloudHostStatusDestroyed = "6"
+)
+
+const (
+	BKCloudAreaStatusNormal = "1"
+	BKCloudAreaStatusAbnormal = "2"
+)

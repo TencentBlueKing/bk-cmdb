@@ -48,11 +48,11 @@
     "plat_property_bk_status_enum_1": "正常",
     "plat_property_bk_status_enum_2": "异常",
 
-    "host_property_bk_cloud_host_status_enum_1" : "启动中",
-    "host_property_bk_cloud_host_status_enum_2" : "运行中",
-    "host_property_bk_cloud_host_status_enum_3" : "停止中",
-    "host_property_bk_cloud_host_status_enum_4" : "已停止",
-    "host_property_bk_cloud_host_status_enum_5" : "未知",
+    "host_property_bk_cloud_host_status_enum_1" : "未知",
+    "host_property_bk_cloud_host_status_enum_2" : "启动中",
+    "host_property_bk_cloud_host_status_enum_3" : "运行中",
+    "host_property_bk_cloud_host_status_enum_4" : "停止中",
+    "host_property_bk_cloud_host_status_enum_5" : "已停止",
     "host_property_bk_cloud_host_status_enum_6" : "已销毁",
 
     "host_property_bk_cloud_vendor_enum_1" : "亚马逊云",

@@ -149,10 +149,18 @@ func (c *tcClient) GetInstances(region string, opt *ccom.InstanceOpt) (*metadata
 		}
 
 		for _, inst := range resp.Response.InstanceSet {
+			privateIP := ""
+			if len(inst.PrivateIpAddresses) > 0 {
+				privateIP = *inst.PrivateIpAddresses[0]
+			}
+			publicIP := ""
+			if len(inst.PublicIpAddresses) > 0 {
+				publicIP = *inst.PublicIpAddresses[0]
+			}
 			instancesInfo.InstanceSet = append(instancesInfo.InstanceSet, &metadata.Instance{
 				InstanceId:    *inst.InstanceId,
-				PrivateIp:     *inst.PrivateIpAddresses[0],
-				PublicIp:      *inst.PublicIpAddresses[0],
+				PrivateIp:     privateIP,
+				PublicIp:      publicIP,
 				InstanceState: ccom.CovertInstState(*inst.InstanceState),
 				VpcId:         *inst.VirtualPrivateCloud.VpcId,
 			})

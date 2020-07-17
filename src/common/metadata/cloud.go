@@ -98,22 +98,6 @@ const (
 	CloudSyncInProgress string = "cloud_sync_in_progress"
 )
 
-// 云主机状态枚举值
-var CloudHostStatusIDs = map[string]string{
-	"starting":  "1",
-	"running":   "2",
-	"stopping":  "3",
-	"stopped":   "4",
-	"unknow":    "5",
-	"destroyed": "6",
-}
-
-// 云区域状态枚举值
-var CloudAreaStatusIDs = map[string]string{
-	"normal":   "1",
-	"abnormal": "2",
-}
-
 // 云厂商账户配置
 type CloudAccountConf struct {
 	AccountID  int64  `json:"bk_account_id" bson:"bk_account_id"`

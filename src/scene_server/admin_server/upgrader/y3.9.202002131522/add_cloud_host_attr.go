@@ -53,10 +53,10 @@ func addCloudHostAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 }
 
 var cloudInstStatusEnum = []metadata.EnumVal{
-	{ID: "1", Name: "启动中", Type: "text"},
-	{ID: "2", Name: "运行中", Type: "text"},
-	{ID: "3", Name: "停止中", Type: "text"},
-	{ID: "4", Name: "已停止", Type: "text"},
-	{ID: "5", Name: "未知", Type: "text"},
+	{ID: "1", Name: "未知", Type: "text"},
+	{ID: "2", Name: "启动中", Type: "text"},
+	{ID: "3", Name: "运行中", Type: "text"},
+	{ID: "4", Name: "停止中", Type: "text"},
+	{ID: "5", Name: "已停止", Type: "text"},
 	{ID: "6", Name: "已销毁", Type: "text"},
 }

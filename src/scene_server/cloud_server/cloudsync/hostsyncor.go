@@ -274,7 +274,6 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 	remoteHostsMap := make(map[string]*metadata.CloudHost)
 	for _, hostRes := range hostResource.HostResource {
 		for _, host := range hostRes.Instances {
-			host.InstanceState = metadata.CloudHostStatusIDs[host.InstanceState]
 			remoteHostsMap[host.InstanceId] = &metadata.CloudHost{
 				Instance:   *host,
 				CloudID:    hostRes.CloudID,
@@ -309,7 +308,7 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 			lh := localIdHostsMap[h.InstanceId]
 			// 判断云主机和本地主机是否有差异，有则需要更新
 			// 如果是已经同步过的已销毁主机，就不用再同步了，保持被销毁主机的内外网ip始终为空
-			if lh.InstanceState == metadata.CloudHostStatusIDs["destroyed"] {
+			if lh.InstanceState == common.BKCloudHostStatusDestroyed {
 				continue
 			}
 			if h.InstanceState != lh.InstanceState || h.PublicIp != lh.PublicIp ||
@@ -323,6 +322,10 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 
 	// 云端已销毁的主机,也就是本地需要删除的主机
 	for id, h := range localIdHostsMap {
+		// 已经同步过的已销毁主机，就不用再同步了，保持被销毁主机的内外网ip始终为空
+		if h.InstanceState == common.BKCloudHostStatusDestroyed {
+			continue
+		}
 		if _, ok := remoteHostsMap[id]; !ok {
 			diffHosts["delete"] = append(diffHosts["delete"], h)
 		}
@@ -855,7 +858,7 @@ func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 		common.BKDBIN: cloudIDs,
 	}}
 	input.Data = mapstr.MapStr{
-		common.BKStatus:       metadata.CloudAreaStatusIDs["abnormal"],
+		common.BKStatus:       common.BKCloudAreaStatusAbnormal,
 		common.BKStatusDetail: "the correspond vpc is destroyed",
 	}
 

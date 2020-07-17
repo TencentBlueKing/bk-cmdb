@@ -26,16 +26,16 @@ import (
 func CovertInstState(instState string) string {
 	switch strings.ToLower(instState) {
 	case "starting", "pending", "rebooting":
-		return "starting"
+		return common.BKCloudHostStatusStarting
 	case "running":
-		return "running"
+		return common.BKCloudHostStatusRunning
 	case "stopping", "shutting-down", "terminating":
-		return "stopping"
+		return common.BKCloudHostStatusStopping
 	case "stopped", "shutdown", "terminated":
-		return "stopped"
+		return common.BKCloudHostStatusStopped
 	default:
 		blog.Infof("convert to unknow state, the origin instState:%s", instState)
-		return "unknow"
+		return common.BKCloudHostStatusUnknown
 	}
 	return instState
 }

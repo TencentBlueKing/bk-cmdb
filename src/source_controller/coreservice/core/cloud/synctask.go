@@ -88,7 +88,10 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 
 	filter := map[string]interface{}{common.BKCloudSyncTaskID: taskID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
-	option.Set(common.BKLastEditor, kit.User)
+	// 如果用户是云资源同步任务生成的则不更新最近编辑人，其他用户更新
+	if kit.User != common.BKCloudSyncUser {
+		option.Set(common.BKLastEditor, kit.User)
+	}
 	option.Set(common.LastTimeField, time.Now())
 	// 将最近同步时间存为时间类型，而不是字符串
 	if option.Exists(common.BKCloudLastSyncTime) {
@@ -224,7 +227,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 	updateHostData := mapstr.MapStr{
 		common.BKHostInnerIPField:     []string{},
 		common.BKHostOuterIPField:     []string{},
-		common.BKCloudHostStatusField: metadata.CloudHostStatusIDs["destroyed"],
+		common.BKCloudHostStatusField: common.BKCloudHostStatusDestroyed,
 		common.LastTimeField:          time.Now(),
 		common.BKLastEditor:           kit.User,
 	}
