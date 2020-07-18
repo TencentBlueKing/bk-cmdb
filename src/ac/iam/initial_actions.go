@@ -57,7 +57,7 @@ func GenerateActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
-	resourceActionList = append(resourceActionList, genInstanceActions()...)
+	resourceActionList = append(resourceActionList, genModelInstanceActions()...)
 	resourceActionList = append(resourceActionList, genEventPushingActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
@@ -170,7 +170,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		Name:                 "动态分组查询",
 		NameEn:               "View Dynamic Grouping",
 		Type:                 View,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -268,8 +268,9 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 
 func genBusinessServiceTemplateActions() []ResourceAction {
 	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BizProcessServiceTemplateSelection,
+		SystemID:       SystemIDCMDB,
+		ID:             BizProcessServiceTemplateSelection,
+		IgnoreAuthPath: true,
 	}}
 
 	relatedResource := []RelateResourceType{
@@ -319,8 +320,9 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 
 func genBusinessSetTemplateActions() []ResourceAction {
 	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BizSetTemplateSelection,
+		SystemID:       SystemIDCMDB,
+		ID:             BizSetTemplateSelection,
+		IgnoreAuthPath: true,
 	}}
 
 	relatedResource := []RelateResourceType{
@@ -631,10 +633,20 @@ func genCloudAreaActions() []ResourceAction {
 		Version:              1,
 	})
 
+	actions = append(actions, ResourceAction{
+		ID:                   FindCloudArea,
+		Name:                 "云区域查询",
+		NameEn:               "Find Cloud Area",
+		Type:                 View,
+		RelatedResourceTypes: relatedResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
 	return actions
 }
 
-func genInstanceActions() []ResourceAction {
+func genModelInstanceActions() []ResourceAction {
 	selection := []RelatedInstanceSelection{{
 		SystemID: SystemIDCMDB,
 		ID:       SysInstanceSelection,
@@ -653,7 +665,7 @@ func genInstanceActions() []ResourceAction {
 
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
-		ID:     CreateInstance,
+		ID:     CreateSysInstance,
 		Name:   "实例创建",
 		NameEn: "Create Instance",
 		Type:   Create,
@@ -675,7 +687,7 @@ func genInstanceActions() []ResourceAction {
 	})
 
 	actions = append(actions, ResourceAction{
-		ID:                   EditInstance,
+		ID:                   EditSysInstance,
 		Name:                 "实例编辑",
 		NameEn:               "Edit Instance",
 		Type:                 Edit,
@@ -685,7 +697,7 @@ func genInstanceActions() []ResourceAction {
 	})
 
 	actions = append(actions, ResourceAction{
-		ID:                   DeleteInstance,
+		ID:                   DeleteSysInstance,
 		Name:                 "实例删除",
 		NameEn:               "Delete Instance",
 		Type:                 Delete,
@@ -694,15 +706,15 @@ func genInstanceActions() []ResourceAction {
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   FindInstance,
-		Name:                 "实例查询",
-		NameEn:               "View Instance",
-		Type:                 View,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+	// actions = append(actions, ResourceAction{
+	// 	ID:                   FindSysInstance,
+	// 	Name:                 "实例查询",
+	// 	NameEn:               "View Instance",
+	// 	Type:                 View,
+	// 	RelatedResourceTypes: relatedResource,
+	// 	RelatedActions:       nil,
+	// 	Version:              1,
+	// })
 
 	return actions
 }
@@ -909,7 +921,7 @@ func genModelActions() []ResourceAction {
 
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
-		ID:     CreateModel,
+		ID:     CreateSysModel,
 		Name:   "模型新建",
 		NameEn: "Create Model",
 		Type:   Create,
@@ -931,7 +943,7 @@ func genModelActions() []ResourceAction {
 	})
 
 	actions = append(actions, ResourceAction{
-		ID:                   EditModel,
+		ID:                   EditSysModel,
 		Name:                 "模型编辑",
 		NameEn:               "Edit Model",
 		Type:                 Edit,
@@ -941,7 +953,7 @@ func genModelActions() []ResourceAction {
 	})
 
 	actions = append(actions, ResourceAction{
-		ID:                   DeleteModel,
+		ID:                   DeleteSysModel,
 		Name:                 "模型删除",
 		NameEn:               "Delete Model",
 		Type:                 Delete,

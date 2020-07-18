@@ -59,6 +59,28 @@ func (ps *parseStream) getOneModel(cond mapstr.MapStr) (metadata.Object, error) 
 	return models[0], nil
 }
 
+func (ps *parseStream) getClassIDWithObject(obj string) (int64, error) {
+	filter := mapstr.MapStr{
+		common.BKObjIDField: obj,
+	}
+
+	model, err := ps.getOneModel(filter)
+	if err != nil {
+		return 0, err
+	}
+
+	filter = map[string]interface{}{
+		common.BKClassificationIDField: model.ObjCls,
+	}
+
+	class, err := ps.getOneClassification(filter)
+	if err != nil {
+		return 0, err
+	}
+
+	return class.ID, nil
+}
+
 func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, error) {
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModel(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: cond})
@@ -184,7 +206,7 @@ func (ps *parseStream) getInstAssociation(cond mapstr.MapStr) (metadata.InstAsst
 func (ps *parseStream) getInstanceTypeByObject(objID string) (meta.ResourceType, error) {
 	switch objID {
 	case common.BKInnerObjIDPlat:
-		return meta.Plat, nil
+		return meta.CloudAreaInstance, nil
 	case common.BKInnerObjIDHost:
 		return meta.HostInstance, nil
 	case common.BKInnerObjIDModule:

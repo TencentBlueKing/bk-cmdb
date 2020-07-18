@@ -59,37 +59,17 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 
 // be careful: plat is registered as a common instance in iam
 func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
-	ctx := util.NewContextFromHTTPHeader(header)
-	rid := util.GetHTTPCCRequestID(header)
-
-	platModels, err := am.collectObjectsByObjectIDs(ctx, header, 0, common.BKInnerObjIDPlat)
-	if err != nil {
-		blog.Errorf("get plat model failed, err: %+v, rid: %s", err, rid)
-		return nil, fmt.Errorf("get plat model failed, err: %+v", err)
-	}
-	if len(platModels) == 0 {
-		blog.Errorf("get plat model failed, not found, rid: %s", rid)
-		return nil, fmt.Errorf("get plat model failed, not found")
-	}
-	platModel := platModels[0]
 
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, plat := range plats {
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.Plat,
+				Type:       meta.CloudAreaInstance,
 				Name:       plat.BKCloudNameField,
 				InstanceID: plat.BKCloudIDField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
-			Layers: []meta.Item{
-				{
-					Type:       meta.Model,
-					Name:       platModel.ObjectName,
-					InstanceID: platModel.ID,
-				},
-			},
 		}
 
 		resources = append(resources, resource)
@@ -129,8 +109,7 @@ func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Heade
 func (am *AuthManager) ListAuthorizedPlatIDs(ctx context.Context, header http.Header, username string) ([]int64, error) {
 	input := meta.ListAuthorizedResourcesParam{
 		UserName:     username,
-		BizID:        0,
-		ResourceType: meta.Plat,
+		ResourceType: meta.CloudAreaInstance,
 		Action:       meta.FindMany,
 	}
 	authorizedResources, err := am.clientSet.AuthServer().ListAuthorizedResources(ctx, header, input)

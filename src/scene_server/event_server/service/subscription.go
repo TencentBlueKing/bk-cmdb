@@ -345,8 +345,6 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	ownerID := util.GetOwnerID(header)
 
-	blog.Infof("select subscription, rid: %s", rid)
-
 	var data metadata.ParamSubscriptionSearch
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
 		blog.Errorf("search subscription, but decode body failed, err: %v, rid: %s", err, rid)
@@ -362,18 +360,20 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	condition = util.SetModOwner(condition, ownerID)
 
 	// get authorized event subscription ids if auth is enabled
-	if auth.IsAuthed() {
+	if auth.EnableAuthorize() {
 		authInput := meta.ListAuthorizedResourcesParam{
 			UserName:     util.GetUser(header),
 			ResourceType: meta.EventPushing,
 			Action:       meta.Find,
 		}
+
 		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(util.NewContextFromHTTPHeader(header), header, authInput)
 		if err != nil {
-			blog.ErrorJSON("ListAuthorizedSubscriptions failed, err: %s, authInput: %s, rid: %s", err.Error(), authInput, rid)
+			blog.ErrorJSON("list authorized subscribe resources failed, err: %v, cond: %s, rid: %s", err, authInput, rid)
 			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 			return
 		}
+
 		subscriptions := make([]int64, 0)
 		for _, resourceID := range authorizedResources {
 			subscriptionID, err := strconv.ParseInt(resourceID, 10, 64)
@@ -384,6 +384,7 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 			}
 			subscriptions = append(subscriptions, subscriptionID)
 		}
+
 		condition = map[string]interface{}{
 			common.BKDBAND: []map[string]interface{}{
 				condition,

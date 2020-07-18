@@ -118,5 +118,5 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, r
 }
 
 func (am *AuthManager) Enabled() bool {
-	return auth.IsAuthed()
+	return auth.EnableAuthorize()
 }

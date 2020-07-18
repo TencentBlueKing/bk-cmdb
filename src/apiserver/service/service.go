@@ -67,7 +67,7 @@ func (s *service) WebServices() []*restful.WebService {
 	ws.Filter(rdapi.RequestLogFilter())
 	ws.Filter(s.LimiterFilter())
 	ws.Produces(restful.MIME_JSON)
-	if auth.IsAuthed() {
+	if auth.EnableAuthorize() {
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))

@@ -47,7 +47,7 @@ func NewAuthService(engine *backbone.Engine, auth ac.AuthInterface, lgc *logics.
 
 func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-		if !auth.IsAuthed() {
+		if !auth.EnableAuthorize() {
 			chain.ProcessFilter(req, resp)
 			return
 		}

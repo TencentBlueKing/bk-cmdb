@@ -17,7 +17,9 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -130,6 +132,27 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 					"$options":      "i",
 				}
 			}
+		}
+	}
+
+	if auth.EnableAuthorize() {
+		list, err := s.Logics.ListAuthorizedResources(ctx.Kit, meta.CloudAccount, meta.FindMany)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		if option.Condition == nil {
+			option.Condition = make(map[string]interface{})
+		}
+		option.Condition = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				option.Condition,
+				{
+					common.BKCloudAccountID: map[string]interface{}{
+						common.BKDBIN: list,
+					},
+				},
+			},
 		}
 	}
 

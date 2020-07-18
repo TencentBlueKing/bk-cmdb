@@ -98,7 +98,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Service.SetCache(cache)
 
-	blog.Infof("enable auth center: %v", auth.IsAuthed())
+	blog.Infof("enable auth center: %v", auth.EnableAuthorize())
 
 	var accountCryptor cryptor.Cryptor
 	blog.Infof("enable cryptor: %v", op.EnableCryptor)

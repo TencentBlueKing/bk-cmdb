@@ -176,7 +176,7 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 			}}}
 
 	// get authorized instance ids if auth is enabled
-	if auth.IsAuthed() {
+	if auth.EnableAuthorize() {
 		isMainline, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, obj.GetObjectID())
 		if err != nil {
 			blog.Errorf("check if object(%s) is mainline failed, err: %s, rid: %s", obj.GetObjectID(), err.Error(), ctx.Kit.Rid)
@@ -544,7 +544,7 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	page := metadata.ParsePage(queryCond.Page)
 
 	// get authorized instance ids if auth is enabled
-	if auth.IsAuthed() {
+	if auth.EnableAuthorize() {
 		isMainline, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, obj.GetObjectID())
 		if err != nil {
 			blog.Errorf("check if object(%s) is mainline failed, err: %s, rid: %s", obj.GetObjectID(), err.Error(), ctx.Kit.Rid)

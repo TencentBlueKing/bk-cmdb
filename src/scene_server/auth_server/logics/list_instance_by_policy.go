@@ -62,7 +62,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, req types.PullResourceReq
 
 // list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
-	resourceType := iam.ResourceTypeID(opts.Type)
+	resourceType := iam.TypeID(opts.Type)
 	collection := getResourceTableName(resourceType)
 	idField := GetResourceIDField(resourceType)
 	if collection == "" || idField == "" {

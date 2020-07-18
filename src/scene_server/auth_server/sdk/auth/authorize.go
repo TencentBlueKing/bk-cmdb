@@ -41,13 +41,14 @@ func (a *Authorize) Authorize(ctx context.Context, opts *types.AuthOptions) (*ty
 		Subject: opts.Subject,
 		Action:  opts.Action,
 		// do not use user's policy, so that we can get all the user's policy.
-		Resources: opts.Resources,
+		Resources: make([]types.Resource, 0),
 	}
 
 	policy, err := a.iam.GetUserPolicy(ctx, &getOpt)
 	if err != nil {
 		return nil, err
 	}
+
 	if policy == nil || policy.Operator == "" {
 		return &types.Decision{Authorized: false}, nil
 	}
@@ -103,7 +104,7 @@ func (a *Authorize) authorizeBatch(ctx context.Context, opts *types.AuthBatchOpt
 
 			var authorized bool
 			var err error
-			if exact || len(resources) > 0 {
+			if exact {
 				authorized, err = a.calculatePolicy(ctx, resources, policy)
 			} else {
 				authorized, err = a.calculateAnyPolicy(ctx, resources, policy)

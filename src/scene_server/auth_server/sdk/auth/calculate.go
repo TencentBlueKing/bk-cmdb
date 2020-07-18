@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/sdk/types"
@@ -27,6 +29,9 @@ func (a *Authorize) calculatePolicy(
 	ctx context.Context,
 	resources []types.Resource,
 	p *operator.Policy) (bool, error) {
+
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.InfoJSON("calculate policy, resource: %s, policy: %s, rid: %s", resources, p, rid)
 
 	// at least have one resources
 	if len(resources) == 0 {

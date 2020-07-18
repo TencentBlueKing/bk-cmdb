@@ -22,7 +22,7 @@ import (
 )
 
 // get resource database table name
-func getResourceTableName(resourceType iam.ResourceTypeID) string {
+func getResourceTableName(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKTableNameBaseHost
@@ -65,16 +65,16 @@ func getResourceTableName(resourceType iam.ResourceTypeID) string {
 	}
 }
 
-func isResourceIDStringType(resourceType iam.ResourceTypeID) bool {
+func isResourceIDStringType(resourceType iam.TypeID) bool {
 	switch resourceType {
-	case iam.SysModelGroup, iam.SysInstanceModel, iam.SysAssociationType:
+	case iam.SysModelGroup, iam.SysAssociationType:
 		return true
 	}
 	return false
 }
 
 // get model instance resource's model id
-func GetInstanceResourceObjID(resourceType iam.ResourceTypeID) string {
+func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKInnerObjIDHost
@@ -92,7 +92,7 @@ func GetInstanceResourceObjID(resourceType iam.ResourceTypeID) string {
 }
 
 // generate condition for resource type that have special constraints
-func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.ResourceTypeID, condition map[string]interface{}) (map[string]interface{}, error) {
+func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.TypeID, condition map[string]interface{}) (map[string]interface{}, error) {
 	if condition == nil {
 		condition = make(map[string]interface{})
 	}
@@ -108,25 +108,36 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Reso
 	// model not include mainline model
 	// process and cloud area are temporarily excluded TODO remove this restriction when they are available for user
 	if resourceType == iam.SysModel || resourceType == iam.SysInstanceModel {
-		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
-		cond := &metadata.QueryCondition{
-			Condition: map[string]interface{}{
-				common.AssociationKindIDField: common.AssociationKindMainline,
-			},
-		}
-		asst, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
-		if err != nil {
-			return nil, err
-		}
-		if !asst.Result {
-			return nil, asst.CCError()
-		}
-		for _, mainline := range asst.Data.Info {
-			excludedObjIDs = append(excludedObjIDs, mainline.AsstObjID)
-		}
+		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat, common.BKInnerObjIDApp,
+			common.BKInnerObjIDSet, common.BKInnerObjIDModule}
+		// cond := &metadata.QueryCondition{
+		// 	Condition: map[string]interface{}{
+		// 		common.AssociationKindIDField: common.AssociationKindMainline,
+		// 	},
+		// }
+		// asst, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		//
+		// if !asst.Result {
+		// 	return nil, asst.CCError()
+		// }
+		//
+		// for _, mainline := range asst.Data.Info {
+		// 	switch mainline.AsstObjID {
+		// 	// only exclude these in mainline association tree.
+		// 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
+		// 		continue
+		// 	default:
+		// 	}
+		// 	excludedObjIDs = append(excludedObjIDs, mainline.AsstObjID)
+		// }
+
 		if resourceType == iam.SysInstanceModel {
 			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost)
 		}
+
 		condition[common.BKObjIDField] = map[string]interface{}{
 			common.BKDBNIN: excludedObjIDs,
 		}

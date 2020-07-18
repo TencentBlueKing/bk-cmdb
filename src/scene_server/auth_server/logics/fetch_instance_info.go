@@ -123,7 +123,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 }
 
 // get resource iam path
-func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.ResourceTypeID, instance map[string]interface{}) ([]string, error) {
+func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, instance map[string]interface{}) ([]string, error) {
 	iamPath := make([]string, 0)
 	if resourceType != iam.Host {
 		// currently all resources only have one layer TODO support multiple layers if needed

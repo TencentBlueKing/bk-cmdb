@@ -15,10 +15,13 @@ package logics
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/cloud_server/cloudvendor"
@@ -244,8 +247,6 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 	return result, nil
 }
 
-// 获取vpc的主机数详情
-
 // 获取云厂商账户配置
 func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountConf, error) {
 	option := &metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudAccountID: accountID}}
@@ -271,4 +272,30 @@ func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountC
 	}
 
 	return &accountConf, nil
+}
+
+func (lgc *Logics) ListAuthorizedResources(kit *rest.Kit, typ meta.ResourceType, act meta.Action) ([]int64, error) {
+
+	authInput := meta.ListAuthorizedResourcesParam{
+		UserName:     kit.User,
+		ResourceType: typ,
+		Action:       act,
+	}
+
+	authList, err := lgc.CoreAPI.AuthServer().ListAuthorizedResources(kit.Ctx, kit.Header, authInput)
+	if err != nil {
+		blog.ErrorJSON("list authorized %s failed, options: %s, err: %v, rid: %s", typ, authInput, err, kit.Rid)
+		return nil, err
+	}
+
+	accountIDList := make([]int64, 0)
+	for _, id := range authList {
+		subscriptionID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			blog.Errorf("parse account id(%s) failed, err: %v, rid: %s", id, err, kit.Rid)
+			return nil, err
+		}
+		accountIDList = append(accountIDList, subscriptionID)
+	}
+	return accountIDList, nil
 }

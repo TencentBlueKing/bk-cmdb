@@ -334,7 +334,7 @@ func (c *DataCollection) initModules() error {
 	}
 
 	// handle authorize.
-	if enableauth.IsAuthed() {
+	if enableauth.EnableAuthorize() {
 		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI)
 	}
 

@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/types"
@@ -28,7 +30,7 @@ import (
 // TODO confirm 422 need to be used in which case
 
 // list instances by condition
-func (lgc *Logics) ListInstance(kit *rest.Kit, cond map[string]interface{}, resourceType iam.ResourceTypeID, page types.Page) (*types.ListInstanceResult, error) {
+func (lgc *Logics) ListInstance(kit *rest.Kit, cond map[string]interface{}, resourceType iam.TypeID, page types.Page) (*types.ListInstanceResult, error) {
 	idField := GetResourceIDField(resourceType)
 	nameField := GetResourceNameField(resourceType)
 	if idField == "" || nameField == "" {
@@ -62,7 +64,7 @@ func (lgc *Logics) ListInstance(kit *rest.Kit, cond map[string]interface{}, reso
 }
 
 // search auth resource instances from database
-func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iam.ResourceTypeID) (*metadata.PullResourceResult, error) {
+func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iam.TypeID) (*metadata.PullResourceResult, error) {
 	param.Collection = getResourceTableName(resourceType)
 	if param.Collection == "" {
 		blog.Errorf("request type %s is invalid, rid: %s", resourceType, kit.Rid)
@@ -129,7 +131,7 @@ func (lgc *Logics) ListSystemInstance(kit *rest.Kit, req types.PullResourceReq) 
 }
 
 // list business scope instances which has parent id field in its data, like biz parent instances has bk_biz_id field
-func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq, parentType iam.ResourceTypeID) (*types.ListInstanceResult, error) {
+func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq, parentType iam.TypeID) (*types.ListInstanceResult, error) {
 	if req.Page.IsIllegal() {
 		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
@@ -325,6 +327,10 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 	}, nil
 }
 
+type modelDetail struct {
+	ObjectID int `json:"bk_obj_id"`
+}
+
 // list model instances, parent is model
 func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (*types.ListInstanceResult, error) {
 	if req.Page.IsIllegal() {
@@ -349,7 +355,14 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 		if filter.Parent.Type != expectParentType {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
-		cond[expectParentIDField] = filter.Parent.ID
+
+		objID, err := lgc.getModelObjectIDWithIamParentID(kit, filter.Parent.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		cond[expectParentIDField] = objID
+
 		return lgc.ListInstance(kit, cond, req.Type, req.Page)
 	}
 
@@ -462,6 +475,28 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 		Count:   data.Count,
 		Results: instances,
 	}, nil
+}
+
+func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID string) (string, error) {
+	id, err := strconv.ParseInt(parentID, 10, 64)
+	if err != nil {
+		return "", fmt.Errorf("invalid parent id %s type, should be a int string", parentID)
+	}
+
+	opt := &metadata.QueryCondition{
+		Fields:    []string{common.BKObjIDField},
+		Condition: mapstr.MapStr{common.BKFieldID: id},
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, opt)
+	if err != nil {
+		return "", err
+	}
+
+	if len(result.Data.Info) != 1 {
+		return "", fmt.Errorf("got multiple model with id: %s", parentID)
+	}
+	return result.Data.Info[0].Spec.ObjectID, nil
 }
 
 // list host instances

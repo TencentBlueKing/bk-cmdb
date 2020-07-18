@@ -51,5 +51,5 @@ func InitFlags() {
 		os.Exit(0)
 	}
 
-	blog.Infof("[auth] enableAuth: %v", auth.IsAuthed())
+	blog.Infof("[auth] enableAuth: %v", auth.EnableAuthorize())
 }

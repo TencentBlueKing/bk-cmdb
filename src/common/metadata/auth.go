@@ -32,6 +32,4 @@ type AuthBathVerifyResult struct {
 	AuthResource
 	// the authorize decision, whether a user has been authorized or not.
 	Passed bool `json:"is_pass"`
-	// the detailed reason for this authorize.
-	Reason string `json:"reason"`
 }
