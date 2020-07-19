@@ -32,35 +32,41 @@
 
     当你有了docker的环境后，就可以在**终端**拉取bk-cmdb的体验镜像了。
 
-    bk-cmdb用于体验的镜像存储于腾讯云的镜像公共镜像仓库。仓库地址在[这里](https://console.cloud.tencent.com/tke/registry/qcloud/default/detail/tag?rid=1&reponame=bk.io%252Fcmdb-standalone)
-    。大家可以在这里看到社区对外release的蓝鲸bk-cmdb版本。
-
-    镜像tag(版本)的命名和bk-cmdb的release版本号一致，如v3.1.0。此外，为了方便大家体验最新版本，在镜像
-    仓库里会有一个tag为**latest**的镜像，代表目前最新的release版本。所以latest镜像本身是会随着社区release
-    的变化而变化。而以版本号(如v3.1.0)为tag的镜像即为指定的版本镜像。
-
+    bk-cmdb用于体验的镜像存储于腾讯云的镜像公共镜像仓库。仓库地址在[这里](https://console.cloud.tencent.com/tke/registry/qcloud/default/detail/tag?rid=1&reponame=bk.io%252Fcmdb-standalone) 。大家可以在这里看到社区对外release的蓝鲸bk-cmdb版本。
+    
+    镜像tag(版本)的命名和bk-cmdb的release版本号一致，如v3.8.9。此外，为了方便大家体验最新版本，在镜像仓库里会有一个tag为**latest**的镜像，
+    代表目前最新的release版本。所以latest镜像本身是会随着社区release的变化而变化。而以版本号(如v3.8.9)为tag的镜像即为指定的版本镜像。
+    
     镜像名称：ccr.ccs.tencentyun.com/bk.io/cmdb-standalone
-
-    镜像tag: latest, v3.1.0等
-
+    
+    镜像tag: latest, v3.8.9等
+    
     拉取镜像时将镜像名称和镜像tag用":"连接起来即可。
-
+    
     拉取命令：
     ```shell
     docker pull ccr.ccs.tencentyun.com/bk.io/cmdb-standalone:latest
     ```
     执行完成后，就将bk-cmdb的cmdb-standalone:latest镜像下载到了本地。
-
+    
     执行命令`docker images`，即可看到下载下来的镜像。
-
+    
     ![docker images](img/image-check.png)
-
+    
 * 启动容器
 
-    执行如下命令，bk-cmdb容器服务即可启动。其中端口8081可以根据自已环境的实际情况进行调整，不局限于8081。
+    命令格式为: 
+    
+    `docker run -d -p <you_port>:8090 ccr.ccs.tencentyun.com/bk.io/cmdb-standalone:latest ./run.sh <you_ip> <you_port>`
+    
+    其中`<you_ip>`是docker宿主机的ip地址，`<you_port>`是通过宿主机的该端口去访问容器内的cmdb。
+    
+    例子: 
+    
+    假如本机ip是127.0.0.1,并且想要在12345端口访问cmdb
     ```shell
-    docker run -d -p 8081:8090 ccr.ccs.tencentyun.com/bk.io/cmdb-standalone:latest
+    docker run -d -p 12345:8090 ccr.ccs.tencentyun.com/bk.io/cmdb-standalone:latest ./run.sh 127.0.0.1 12345
     ```
-    此时你可以打开浏览器，访问`http://127.0.0.1:8081`即可体验最新版的蓝鲸配置平台服务。
-
-    **恭喜你，你正在体验最新的蓝鲸配置平台服务。**
+    
+    等待1分钟后，打开浏览器，访问`http://127.0.0.1:12345` 即可体验最新版的蓝鲸配置平台服务。
+    
