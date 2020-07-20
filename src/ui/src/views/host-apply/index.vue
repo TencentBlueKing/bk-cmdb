@@ -34,7 +34,7 @@
                                         </div>
                                     </div>
                                     <div class="view-ft">
-                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                        <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                             <bk-button
                                                 slot-scope="{ disabled }"
                                                 theme="primary"
@@ -44,7 +44,7 @@
                                                 {{$t('编辑')}}
                                             </bk-button>
                                         </cmdb-auth>
-                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                        <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                             <bk-button
                                                 slot-scope="{ disabled }"
                                                 :disabled="!hasConflict || disabled"
@@ -58,7 +58,7 @@
                                                 </span>
                                             </bk-button>
                                         </cmdb-auth>
-                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                        <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                             <bk-button
                                                 slot-scope="{ disabled }"
                                                 :disabled="disabled"
@@ -77,14 +77,13 @@
                                         <span>{{$t('当前模块未启用自动应用策略')}}</span>
                                     </div>
                                     <div class="action">
-                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                        <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                             <bk-button
                                                 outline
                                                 theme="primary"
                                                 slot-scope="{ disabled }"
                                                 :disabled="disabled"
-                                                @click="handleEdit"
-                                            >
+                                                @click="handleEdit">
                                                 {{$t('立即启用')}}
                                             </bk-button>
                                         </cmdb-auth>
@@ -109,7 +108,7 @@
                                                         <span>{{$t('该模块已关闭属性自动应用')}}</span>
                                                     </div>
                                                     <div class="action">
-                                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                                        <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                                             <bk-button
                                                                 outline
                                                                 theme="primary"

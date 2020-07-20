@@ -5,11 +5,7 @@ import {
     MENU_RESOURCE_BUSINESS_HISTORY
 } from '@/dictionary/menu-symbol'
 
-import {
-    BUSINESS_ARCHIVE,
-    GET_AUTH_META
-} from '@/dictionary/auth'
-
+import { OPERATION, TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
 export default [{
     name: MENU_RESOURCE_BUSINESS,
     path: 'business',
@@ -40,11 +36,7 @@ export default [{
             relative: MENU_RESOURCE_BUSINESS
         },
         auth: {
-            view: { ...GET_AUTH_META(BUSINESS_ARCHIVE) },
-            operation: {
-                BUSINESS_ARCHIVE
-            }
-        },
-        layout: {}
+            view: TRANSFORM_TO_INTERNAL({ type: OPERATION.BUSINESS_ARCHIVE })[0]
+        }
     })
 }]

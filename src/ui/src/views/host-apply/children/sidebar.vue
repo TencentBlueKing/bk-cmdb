@@ -16,7 +16,7 @@
                         </div>
                         <ul class="bk-dropdown-list" slot="dropdown-content">
                             <li>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                     <a
                                         href="javascript:;"
                                         slot-scope="{ disabled }"
@@ -28,7 +28,7 @@
                                 </cmdb-auth>
                             </li>
                             <li>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                     <a
                                         href="javascript:;"
                                         slot-scope="{ disabled }"

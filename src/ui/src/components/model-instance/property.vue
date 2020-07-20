@@ -40,7 +40,7 @@
                         <template v-else>
                             <cmdb-auth
                                 style="margin: 8px 0 0 8px; font-size: 0;"
-                                :auth="authResources"
+                                :auth="authData"
                                 v-show="property !== editState.property">
                                 <bk-button slot-scope="{ disabled }"
                                     text
@@ -135,7 +135,7 @@
                 const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
                 return !this.$tools.getMetadataBiz(model)
             },
-            authResources () {
+            authData () {
                 if (this.resourceType === 'business') {
                     return this.INST_AUTH.U_BUSINESS
                 }

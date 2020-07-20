@@ -1,7 +1,7 @@
 <template>
     <div class="model-detail-wrapper">
         <div class="model-info" v-bkloading="{ isLoading: $loading('searchObjects') }">
-            <cmdb-auth style="display: none;" :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })"
+            <cmdb-auth style="display: none;" :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
                 @update-auth="handleReceiveAuth">
             </cmdb-auth>
             <template v-if="activeModel !== null">
@@ -66,7 +66,7 @@
                 </div>
                 <cmdb-auth class="restart-btn"
                     v-if="!isMainLine && activeModel['bk_ispaused']"
-                    :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })">
+                    :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
@@ -92,7 +92,7 @@
                         <cmdb-auth class="label-btn"
                             v-if="!isMainLine && !activeModel['bk_ispaused']"
                             v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')"
-                            :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })">
+                            :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                             <bk-button slot-scope="{ disabled }"
                                 text
                                 :disabled="disabled"
@@ -103,7 +103,7 @@
                         </cmdb-auth>
                         <cmdb-auth class="label-btn"
                             v-bk-tooltips="$t('删除模型和其下所有实例，此动作不可逆，请谨慎操作')"
-                            :auth="$authResources({ resource_id: modelId, type: $OPERATION.D_MODEL })">
+                            :auth="{ type: $OPERATION.D_MODEL, relation: [modelId] }">
                             <bk-button slot-scope="{ disabled }"
                                 text
                                 :disabled="disabled"

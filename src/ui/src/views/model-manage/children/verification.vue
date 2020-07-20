@@ -3,7 +3,7 @@
         <div class="options">
             <cmdb-auth class="inline-block-middle"
                 v-if="!isTopoModel"
-                :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })"
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
                 @update-auth="handleReceiveAuth">
                 <bk-button slot-scope="{ disabled }"
                     class="create-btn"

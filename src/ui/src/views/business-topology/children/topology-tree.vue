@@ -28,7 +28,7 @@
                 </i>
                 <cmdb-auth v-if="showCreate(node, data)"
                     class="info-create-trigger fr"
-                    :auth="$authResources({ type: $OPERATION.C_TOPO })">
+                    :auth="{ type: $OPERATION.C_TOPO, relation: [bizId] }">
                     <template slot-scope="{ disabled }">
                         <i v-if="isBlueKing && !editable"
                             class="node-button disabled-node-button"

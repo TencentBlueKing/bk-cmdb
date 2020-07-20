@@ -59,7 +59,7 @@
         </div>
         <div class="form-options" :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <cmdb-auth class="inline-block-middle" :auth="authResources">
+                <cmdb-auth class="inline-block-middle" :auth="saveAuth">
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
@@ -82,8 +82,8 @@
         mixins: [formMixins],
         props: {
             saveAuth: {
-                type: [String, Array],
-                default: ''
+                type: Object,
+                default: null
             }
         },
         data () {
@@ -135,12 +135,6 @@
             },
             hasAvaliableGroups () {
                 return this.groupedProperties.some(properties => !!properties.length)
-            },
-            authResources () {
-                const auth = this.saveAuth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
             }
         },
         watch: {

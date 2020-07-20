@@ -29,7 +29,7 @@
         </bk-table>
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                     <bk-button
                         theme="primary"
                         slot-scope="{ disabled }"

@@ -62,7 +62,7 @@
             </div>
         </div>
         <div class="options" :class="{ 'is-sticky': hasScrollbar }">
-            <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <cmdb-auth class="mr5" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="!hosts.length || disabled"
@@ -142,9 +142,6 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', ['getDefaultSearchCondition']),
-            business () {
-                return this.$store.getters['objectBiz/bizId']
-            },
             moduleId () {
                 return parseInt(this.$route.params.moduleId)
             },
@@ -244,7 +241,7 @@
             },
             getHostInfo () {
                 const params = {
-                    bk_biz_id: this.business,
+                    bk_biz_id: this.bk_biz_id,
                     ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
                     page: {},
                     condition: this.getDefaultSearchCondition()

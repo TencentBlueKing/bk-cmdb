@@ -211,7 +211,7 @@
                             account.error_message = status.err_msg
                         } else {
                             account.status = 'normal'
-                            account.error_message = 'shityou'
+                            account.error_message = ''
                         }
                         account.pending = false
                     })

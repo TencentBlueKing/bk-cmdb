@@ -36,7 +36,7 @@
             </bk-table>
         </div>
         <div class="page-options" :class="{ 'is-sticky': hasScrollbar }">
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     class="options-button"
                     theme="primary"
@@ -78,6 +78,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import { processTableHeader } from '@/dictionary/table-header'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
@@ -109,6 +110,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             header () {
                 const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}

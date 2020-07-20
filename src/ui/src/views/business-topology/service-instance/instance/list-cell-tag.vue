@@ -12,7 +12,7 @@
         <span class="tag-empty" v-else>--</span>
         <cmdb-auth tag="i" class="tag-edit icon-cc-edit"
             ref="editTrigger"
-            :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+            :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
             @click.native.stop
             @click="handleEditLabel">
         </cmdb-auth>

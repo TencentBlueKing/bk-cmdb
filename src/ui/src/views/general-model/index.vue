@@ -2,7 +2,7 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST, parent_layers: parentLayers })">
+                <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.C_INST, relation: [model.id] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
@@ -10,7 +10,11 @@
                         {{$t('新建')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST], parent_layers: parentLayers })">
+                <cmdb-auth class="fl mr10"
+                    :auth="[
+                        { type: $OPERATION.C_INST, relation: [model.id] },
+                        { type: $OPERATION.U_INST, relation: [model.id] }
+                    ]">
                     <bk-button slot-scope="{ disabled }"
                         class="models-button"
                         :disabled="disabled"
@@ -32,7 +36,7 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
+                <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.D_INST, relation: [model.id] }">
                     <bk-button slot-scope="{ disabled }"
                         hover-theme="danger"
                         class="models-button button-delete"
@@ -133,13 +137,7 @@
             </bk-table-column>
             <bk-table-column fixed="right" :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth
-                        :auth="$authResources({
-                            type: $OPERATION.D_INST,
-                            resource_id: row.bk_inst_id,
-                            resource_name: row.bk_inst_name,
-                            parent_layers: parentLayers
-                        })">
+                    <cmdb-auth :auth="{ type: $OPERATION.D_INST, relation: [model.id, row.bk_inst_id] }">
                         <template slot-scope="{ disabled }">
                             <bk-button theme="primary" text :disabled="disabled" @click.stop="handleDelete(row)">{{$t('删除')}}</bk-button>
                         </template>
@@ -148,10 +146,7 @@
             </bk-table-column>
             <cmdb-table-empty
                 slot="empty"
-                :auth="$authResources({
-                    type: $OPERATION.C_INST,
-                    parent_layers: parentLayers
-                })"
+                :auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
                 :stuff="table.stuff"
                 @create="handleCreate">
             </cmdb-table-empty>

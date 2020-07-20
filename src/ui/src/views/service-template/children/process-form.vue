@@ -54,7 +54,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <cmdb-auth :auth="$authResources(auth)">
+                <cmdb-auth :auth="auth">
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
@@ -109,7 +109,7 @@
             },
             auth: {
                 type: Object,
-                default: () => ({})
+                default: null
             },
             submitFormat: {
                 type: Function,

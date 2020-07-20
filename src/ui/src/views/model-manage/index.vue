@@ -12,7 +12,7 @@
                 {{$t('模型顶部提示')}}
             </cmdb-tips>
             <div class="fl">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_MODEL })">
+                <cmdb-auth :auth="{ type: $OPERATION.C_MODEL }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled || modelType === 'disabled'"
@@ -20,7 +20,7 @@
                         {{$t('新建模型')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_MODEL_GROUP })">
+                <cmdb-auth :auth="{ type: $OPERATION.C_MODEL_GROUP }">
                     <bk-button slot-scope="{ disabled }"
                         theme="default"
                         :disabled="disabled || modelType === 'disabled'"
@@ -72,7 +72,7 @@
                         <span class="number">({{classification['bk_objects'].length}})</span>
                     </div>
                     <template v-if="isEditable(classification) && modelType === 'enable'">
-                        <cmdb-auth class="group-btn ml5" :auth="$authResources({ type: $OPERATION.C_MODEL })">
+                        <cmdb-auth class="group-btn ml5" :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 text
@@ -81,10 +81,7 @@
                                 <i class="icon-cc-add-line"></i>
                             </bk-button>
                         </cmdb-auth>
-                        <cmdb-auth class="group-btn" :auth="$authResources({
-                            resource_id: classification.id,
-                            type: $OPERATION.U_MODEL_GROUP
-                        })">
+                        <cmdb-auth class="group-btn" :auth="{ type: $OPERATION.U_MODEL_GROUP, relation: [classification.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 text
@@ -93,10 +90,7 @@
                                 <i class="icon-cc-edit"></i>
                             </bk-button>
                         </cmdb-auth>
-                        <cmdb-auth class="group-btn" :auth="$authResources({
-                            resource_id: classification.id,
-                            type: $OPERATION.D_MODEL_GROUP
-                        })">
+                        <cmdb-auth class="group-btn" :auth="{ type: $OPERATION.D_MODEL_GROUP, relation: [classification.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 text

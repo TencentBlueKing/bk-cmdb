@@ -113,7 +113,7 @@
             <h3>{{$t('服务进程')}}</h3>
             <div class="precess-box">
                 <div class="process-create" v-if="isFormMode">
-                    <cmdb-auth :auth="$authResources(auth)">
+                    <cmdb-auth :auth="auth">
                         <bk-button slot-scope="{ disabled }"
                             class="create-btn"
                             theme="default"
@@ -144,7 +144,7 @@
                 'info-footer': true,
                 'is-sticky': sticky
             }">
-            <cmdb-auth class="mr5" :auth="$authResources(auth)">
+            <cmdb-auth class="mr5" :auth="auth">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="disabled"
@@ -260,6 +260,7 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
+            ...mapGetters('objectBiz', ['bizId']),
             templateId () {
                 return this.$route.params.templateId
             },
@@ -272,12 +273,13 @@
             auth () {
                 if (this.isCreateMode) {
                     return {
-                        type: this.$OPERATION.C_SERVICE_TEMPLATE
+                        type: this.$OPERATION.C_SERVICE_TEMPLATE,
+                        relation: [this.bizId]
                     }
                 }
                 return {
-                    resource_id: Number(this.templateId) || null,
-                    type: this.$OPERATION.U_SERVICE_TEMPLATE
+                    type: this.$OPERATION.U_SERVICE_TEMPLATE,
+                    relation: [this.bizId, Number(this.templateId)]
                 }
             },
             setActive () {

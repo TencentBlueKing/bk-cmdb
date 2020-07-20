@@ -25,7 +25,7 @@
             </div>
         </div>
         <div class="buttons" :class="{ 'is-sticky': hasScrollbar }">
-            <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <cmdb-auth class="mr5" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="!hosts.length || disabled"
@@ -47,6 +47,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import HostSelector from '@/views/business-topology/host/host-selector'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
@@ -82,9 +83,7 @@
             }
         },
         computed: {
-            business () {
-                return this.$store.getters['objectBiz/bizId']
-            },
+            ...mapGetters('objectBiz', ['bizId']),
             hostId () {
                 return parseInt(this.$route.params.hostId)
             },

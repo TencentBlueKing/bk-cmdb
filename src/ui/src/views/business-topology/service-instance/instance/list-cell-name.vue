@@ -6,18 +6,18 @@
             <ul class="menu-list">
                 <cmdb-auth tag="li" class="menu-item"
                     v-if="!row.service_template_id"
-                    :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                    :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
                     @click="handleAddProcess">
                     {{$t('添加进程')}}
                 </cmdb-auth>
                 <cmdb-auth tag="li" class="menu-item"
                     v-if="!row.service_template_id"
-                    :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                    :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }"
                     @click="handleClone">
                     {{$t('克隆')}}
                 </cmdb-auth>
                 <cmdb-auth tag="li" class="menu-item"
-                    :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                    :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }"
                     @click="handleDelete">
                     {{$t('删除')}}
                 </cmdb-auth>

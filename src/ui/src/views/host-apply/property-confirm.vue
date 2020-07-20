@@ -25,7 +25,7 @@
         <div :class="['bottom-actionbar', { 'is-sticky': hasScrollbar }]">
             <div class="actionbar-inner">
                 <bk-button theme="default" @click="handlePrevStep">{{$t('上一步')}}</bk-button>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                     <bk-button
                         theme="primary"
                         slot-scope="{ disabled }"

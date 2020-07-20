@@ -55,7 +55,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <cmdb-auth class="inline-block-middle" :auth="saveAuthResources">
+                <cmdb-auth class="inline-block-middle" :auth="saveAuth">
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
@@ -104,8 +104,8 @@
                 default: true
             },
             saveAuth: {
-                type: [String, Array],
-                default: ''
+                type: Object,
+                default: null
             },
             renderTips: Function
         },
@@ -133,12 +133,6 @@
                 return this.$groupedProperties.map(properties => {
                     return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                 })
-            },
-            saveAuthResources () {
-                const auth = this.saveAuth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
             }
         },
         watch: {

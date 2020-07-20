@@ -1,8 +1,12 @@
 <template>
     <div class="options-layout clearfix">
         <div class="options-left">
-            <template v-if="scope === 1">
-                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.C_RESOURCE_HOST }">
+            <template v-if="scope === 1 && activeDirectory">
+                <cmdb-auth class="mr10"
+                    :auth="[
+                        { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
+                        { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
+                    ]">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         style="margin-left: 0"
@@ -11,23 +15,19 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_RESOURCE_HOST }">
-                    <bk-select slot-scope="{ disabled }"
-                        class="assign-selector"
-                        font-size="medium"
-                        :popover-width="180"
-                        :disabled="!table.checked.length || disabled"
-                        :clearable="false"
-                        :placeholder="$t('分配到')"
-                        v-model="assign.curSelected"
-                        @selected="handleAssignHosts">
-                        <bk-option v-for="option in assignTarget"
-                            :key="option.id"
-                            :id="option.id"
-                            :name="option.name">
-                        </bk-option>
-                    </bk-select>
-                </cmdb-auth>
+                <bk-select
+                    class="assign-selector mr10"
+                    font-size="medium"
+                    :popover-width="180"
+                    :disabled="!table.checked.length"
+                    :clearable="false"
+                    :placeholder="$t('分配到')"
+                    v-model="assign.curSelected"
+                    @selected="handleAssignHosts">
+                    <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
+                    <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
+                    <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
+                </bk-select>
             </template>
             <cmdb-clipboard-selector class="options-clipboard mr10"
                 :list="clipboardList"
@@ -131,7 +131,7 @@
             :close-icon="false"
             :title="assign.title"
             @cancel="closeAssignDialog">
-            <div class="assign-content">
+            <div class="assign-content" v-if="assign.show">
                 <i18n class="assign-count" tag="div" path="已选择主机">
                     <span place="count">{{table.checked.length}}</span>
                 </i18n>
@@ -147,14 +147,10 @@
                         <bk-option v-for="option in assignOptions"
                             :key="option.id"
                             :id="option.id"
-                            :name="option.name">
+                            :name="option.name"
+                            :disabled="option.disabled">
+                            <cmdb-auth style="display: block;" :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
                         </bk-option>
-                        <div slot="extension" v-if="assign.curSelected === 'toDirs'" @click="handleApplyPermission">
-                            <a href="javascript:void(0)" class="apply-others">
-                                <i class="bk-icon icon-plus-circle"></i>
-                                {{$t('申请其他资源目录')}}
-                            </a>
-                        </div>
                     </bk-select>
                 </div>
             </div>
@@ -175,7 +171,6 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { translateAuth } from '@/setup/permission'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
@@ -212,26 +207,27 @@
                 assign: {
                     show: false,
                     id: '',
-                    curSelected: '',
+                    curSelected: '-1',
                     placeholder: this.$t('请选择xx', { name: this.$t('业务') }),
                     label: this.$t('业务列表'),
                     title: this.$t('分配到业务空闲机'),
                     requestId: Symbol('assignHosts')
                 },
-                assignTarget: [{
-                    id: 'toBusiness',
-                    name: this.$t('业务空闲机')
-                }, {
-                    id: 'toDirs',
-                    name: this.$t('资源池其他目录')
-                }]
+                assignOptions: []
             }
         },
         computed: {
             ...mapGetters('resourceHost', [
                 'activeDirectory',
+                'defaultDirectory',
                 'directoryList'
             ]),
+            directoryId () {
+                if (this.activeDirectory) {
+                    return this.activeDirectory.bk_module_id
+                }
+                return this.defaultDirectory ? this.defaultDirectory.bk_module_id : undefined
+            },
             table () {
                 return this.$parent.table
             },
@@ -262,13 +258,13 @@
                     text: this.$t('编辑'),
                     handler: this.handleMultipleEdit,
                     disabled: !this.table.checked.length,
-                    auth: { type: this.$OPERATION.U_RESOURCE_HOST }
+                    auth: { type: this.$OPERATION.U_RESOURCE_HOST, relation: [this.directoryId] }
                 }, {
                     id: 'delete',
                     text: this.$t('删除'),
                     handler: this.handleMultipleDelete,
                     disabled: !this.table.checked.length,
-                    auth: { type: this.$OPERATION.D_RESOURCE_HOST }
+                    auth: { type: this.$OPERATION.D_RESOURCE_HOST, relation: [this.directoryId] }
                 }, {
                     id: 'export',
                     text: this.$t('导出'),
@@ -288,18 +284,6 @@
                     module,
                     set
                 }
-            },
-            assignOptions () {
-                if (this.assign.curSelected === 'toBusiness') {
-                    return this.businessList.map(item => ({
-                        id: item.bk_biz_id,
-                        name: item.bk_biz_name
-                    }))
-                }
-                return this.directoryList.filter(item => item.bk_module_id !== (this.activeDirectory || {}).bk_module_id).map(item => ({
-                    id: item.bk_module_id,
-                    name: item.bk_module_name
-                }))
             }
         },
         watch: {
@@ -359,12 +343,39 @@
                     this.assign.label = this.$t('目录列表')
                     this.assign.title = this.$t('分配到资源池其他目录')
                 }
+                this.setAssignOptions()
                 this.assign.show = true
+            },
+            setAssignOptions () {
+                if (this.assign.curSelected === 'toBusiness') {
+                    this.assignOptions = this.businessList.map(item => ({
+                        id: item.bk_biz_id,
+                        name: item.bk_biz_name,
+                        disabled: true,
+                        auth: {
+                            type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
+                            relation: [[this.directoryId], [item.bk_biz_id]]
+                        }
+                    }))
+                } else {
+                    this.assignOptions = this.directoryList.filter(item => item.bk_module_id !== (this.activeDirectory || {}).bk_module_id).map(item => ({
+                        id: item.bk_module_id,
+                        name: item.bk_module_name,
+                        disabled: true,
+                        auth: {
+                            type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
+                            relation: [[this.directoryId], [item.bk_module_id]]
+                        }
+                    }))
+                }
+            },
+            handleUpdateAssignAuth (option, authorized) {
+                option.disabled = !authorized
             },
             closeAssignDialog () {
                 this.assign.id = ''
                 this.assign.show = false
-                this.assign.curSelected = ''
+                this.assign.curSelected = '-1'
             },
             handleConfirmAssign () {
                 this.assign.curSelected === 'toBusiness' ? this.assignHostsToBusiness() : this.changeHostsDir()
@@ -562,20 +573,6 @@
                 RouterQuery.set({
                     _t: Date.now()
                 })
-            },
-            async handleApplyPermission () {
-                try {
-                    const permission = []
-                    const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
-                    if (Object.keys(operation).length) {
-                        const translated = await translateAuth(Object.values(operation))
-                        permission.push(...translated)
-                    }
-                    const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
-                    window.open(url)
-                } catch (e) {
-                    console.error(e)
-                }
             }
         }
     }

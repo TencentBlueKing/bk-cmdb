@@ -1,35 +1,37 @@
 <template>
     <div class="details-layout">
-        <cmdb-host-info
-            ref="info"
-            @info-toggle="setInfoHeight">
-        </cmdb-host-info>
-        <bk-tab class="details-tab"
-            type="unborder-card"
-            :active.sync="active"
-            :style="{
-                '--infoHeight': infoHeight
-            }">
-            <bk-tab-panel name="property" :label="$t('主机属性')">
-                <cmdb-host-property></cmdb-host-property>
-            </bk-tab-panel>
-            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
-                <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
-            </bk-tab-panel>
-            <bk-tab-panel name="status" :label="$t('实时状态')">
-                <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
-            </bk-tab-panel>
-            <bk-tab-panel name="association" :label="$t('关联')">
-                <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
-            </bk-tab-panel>
-            <bk-tab-panel name="history" :label="$t('变更记录')">
-                <cmdb-audit-history v-if="active === 'history'"
-                    resource-type="host"
-                    target="host"
-                    :inst-id="id">
-                </cmdb-audit-history>
-            </bk-tab-panel>
-        </bk-tab>
+        <div v-bkloading="{ isLoading: loading }" style="height: 100%;">
+            <cmdb-host-info
+                ref="info"
+                @info-toggle="setInfoHeight">
+            </cmdb-host-info>
+            <bk-tab class="details-tab" v-if="!loading"
+                type="unborder-card"
+                :active.sync="active"
+                :style="{
+                    '--infoHeight': infoHeight
+                }">
+                <bk-tab-panel name="property" :label="$t('主机属性')">
+                    <cmdb-host-property></cmdb-host-property>
+                </bk-tab-panel>
+                <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
+                    <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
+                </bk-tab-panel>
+                <bk-tab-panel name="status" :label="$t('实时状态')">
+                    <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
+                </bk-tab-panel>
+                <bk-tab-panel name="association" :label="$t('关联')">
+                    <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('变更记录')">
+                    <cmdb-audit-history v-if="active === 'history'"
+                        resource-type="host"
+                        target="host"
+                        :inst-id="id">
+                    </cmdb-audit-history>
+                </bk-tab-panel>
+            </bk-tab>
+        </div>
     </div>
 </template>
 
@@ -53,7 +55,8 @@
         data () {
             return {
                 active: this.$route.query.tab || 'property',
-                infoHeight: '81px'
+                infoHeight: '81px',
+                loading: true
             }
         },
         computed: {
@@ -95,10 +98,19 @@
             setBreadcrumbs (ip) {
                 this.$store.commit('setTitle', `${this.$t('主机详情')}【${ip}】`)
             },
-            getData () {
-                this.getProperties()
-                this.getPropertyGroups()
-                this.getHostInfo()
+            async getData () {
+                try {
+                    this.loading = true
+                    await Promise.all([
+                        this.getProperties(),
+                        this.getPropertyGroups(),
+                        this.getHostInfo()
+                    ])
+                } catch (error) {
+                    console.error(error)
+                } finally {
+                    this.loading = false
+                }
             },
             async getHostInfo () {
                 try {
