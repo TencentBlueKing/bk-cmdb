@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -52,9 +53,19 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Logics.CreateSyncTask(ctx.Kit, task)
-	if err != nil {
-		ctx.RespAutoError(err)
+	var result *metadata.CloudSyncTask
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		result, err = s.Logics.CreateSyncTask(ctx.Kit, task)
+		if err != nil {
+			blog.Errorf("CreateSyncTask failed, err:%s, task:%#v, rid:%s", err, task, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 
@@ -114,9 +125,17 @@ func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Logics.UpdateSyncTask(ctx.Kit, taskID, option)
-	if err != nil {
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Logics.UpdateSyncTask(ctx.Kit, taskID, option)
+		if err != nil {
+			blog.Errorf("UpdateSyncTask failed, err:%s, taskID:%d, option:%#v, rid:%s", err, taskID, option, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 
@@ -131,9 +150,17 @@ func (s *Service) DeleteSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Logics.DeleteSyncTask(ctx.Kit, taskID)
-	if err != nil {
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Logics.DeleteSyncTask(ctx.Kit, taskID)
+		if err != nil {
+			blog.Errorf("DeleteSyncTask failed, err:%s, taskID:%d, rid:%s", err, taskID, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 

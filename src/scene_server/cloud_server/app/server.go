@@ -112,6 +112,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	process.Service.SetEncryptor(accountCryptor)
+	process.Service.EnableTxn = op.EnableTxn
 
 	process.Service.Logics = logics.NewLogics(service.Engine, db, cache, accountCryptor)
 

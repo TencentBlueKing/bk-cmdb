@@ -30,11 +30,12 @@ import (
 
 type Service struct {
 	*backbone.Engine
-	db    dal.RDB
-	cache *redis.Client
-	ctx   context.Context
+	db      dal.RDB
+	cache   *redis.Client
+	ctx     context.Context
 	cryptor cryptor.Cryptor
 	*logics.Logics
+	EnableTxn bool
 }
 
 func NewService(ctx context.Context) *Service {
