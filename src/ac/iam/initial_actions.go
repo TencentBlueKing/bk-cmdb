@@ -633,16 +633,6 @@ func genCloudAreaActions() []ResourceAction {
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   FindCloudArea,
-		Name:                 "云区域查询",
-		NameEn:               "Find Cloud Area",
-		Type:                 View,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
 	return actions
 }
 
