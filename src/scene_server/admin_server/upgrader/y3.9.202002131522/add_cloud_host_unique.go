@@ -33,7 +33,19 @@ func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	if err != nil {
 		return err
 	}
-	id := uint64(attr.ID)
+	instID := uint64(attr.ID)
+
+	// find bk_cloud_vendor property's id
+	attrCond = condition.CreateCondition()
+	attrCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
+	attrCond.Field(common.BKPropertyIDField).Eq(common.BKCloudVendor)
+	attrCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
+	attr = new(metadata.Attribute)
+	err = db.Table(common.BKTableNameObjAttDes).Find(attrCond.ToMapStr()).One(ctx, attr)
+	if err != nil {
+		return err
+	}
+	vendorID := uint64(attr.ID)
 
 	// check if this unique exists
 	uniqueCond := condition.CreateCondition()
@@ -45,19 +57,23 @@ func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		return err
 	}
 	for _, u := range existUniques {
-		if len(u.Keys) == 1 && u.Keys[0].ID == id {
+		if len(u.Keys) == 2 && u.Keys[0].ID == instID && u.Keys[1].ID == vendorID {
 			return nil
 		}
 	}
 
-	// insert bk_cloud_inst_id unique
+	// insert unique
 	unique := metadata.ObjectUnique{
 		ObjID:     common.BKInnerObjIDHost,
 		MustCheck: false,
 		Keys: []metadata.UniqueKey{
 			{
 				Kind: metadata.UniqueKeyKindProperty,
-				ID:   id,
+				ID:   instID,
+			},
+			{
+				Kind: metadata.UniqueKeyKindProperty,
+				ID:   vendorID,
 			},
 		},
 		Ispre:    false,

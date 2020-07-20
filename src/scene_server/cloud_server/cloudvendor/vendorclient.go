@@ -22,16 +22,16 @@ import (
 var vendorClients = make(map[string]VendorClient, 0)
 
 type VendorClient interface {
-	// 设置账号密码
-	SetCredential(secretID, secretKey string)
-	// 获取地域列表
-	GetRegions(opt *ccom.RequestOpt) ([]*metadata.Region, error)
-	// 获取vpc列表
-	GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsInfo, error)
-	// 获取实例列表
-	GetInstances(region string, opt *ccom.RequestOpt) (*metadata.InstancesInfo, error)
-	// 获取实例总个数
-	GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (int64, error)
+	// NewVendorClient 创建云厂商客户端
+	NewVendorClient(secretID, secretKey string) VendorClient
+	// GetRegions 获取地域列表
+	GetRegions() ([]*metadata.Region, error)
+	// GetVpcs 获取vpc列表
+	GetVpcs(region string, opt *ccom.VpcOpt) (*metadata.VpcsInfo, error)
+	// GetInstances 获取实例列表
+	GetInstances(region string, opt *ccom.InstanceOpt) (*metadata.InstancesInfo, error)
+	// GetInstancesTotalCnt 获取实例总个数
+	GetInstancesTotalCnt(region string, opt *ccom.InstanceOpt) (int64, error)
 }
 
 // Register 注册云厂商客户端
@@ -46,6 +46,6 @@ func GetVendorClient(conf metadata.CloudAccountConf) (VendorClient, error) {
 	if client, ok = vendorClients[conf.VendorName]; !ok {
 		return nil, fmt.Errorf("vendor %s is not supported", conf.VendorName)
 	}
-	client.SetCredential(conf.SecretID, conf.SecretKey)
-	return client, nil
+	cli := client.NewVendorClient(conf.SecretID, conf.SecretKey)
+	return cli, nil
 }

@@ -14,6 +14,7 @@ package cloudvendor
 
 import (
 	"os"
+	"sync"
 	"testing"
 
 	"configcenter/src/common/metadata"
@@ -36,8 +37,7 @@ func init() {
 }
 
 func TestAWSGetRegions(t *testing.T) {
-	opt := &ccom.RequestOpt{}
-	regionSet, err := awsTestClient.GetRegions(opt)
+	regionSet, err := awsTestClient.GetRegions()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestAWSGetRegions(t *testing.T) {
 }
 
 func TestAWSGetVpcs(t *testing.T) {
-	opt := &ccom.RequestOpt{}
+	opt := &ccom.VpcOpt{}
 	region := "us-west-1"
 	vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
 	if err != nil {
@@ -60,7 +60,7 @@ func TestAWSGetVpcs(t *testing.T) {
 }
 
 func TestAWSGetInstances(t *testing.T) {
-	opt := &ccom.RequestOpt{}
+	opt := &ccom.InstanceOpt{}
 	region := "us-west-1"
 	instancesInfo, err := awsTestClient.GetInstances(region, opt)
 	if err != nil {
@@ -73,7 +73,7 @@ func TestAWSGetInstances(t *testing.T) {
 }
 
 func TestAWSGetInstancesTotalCnt(t *testing.T) {
-	opt := &ccom.RequestOpt{}
+	opt := &ccom.InstanceOpt{}
 	region := "us-west-1"
 	count, err := awsTestClient.GetInstancesTotalCnt(region, opt)
 	if err != nil {
@@ -83,9 +83,10 @@ func TestAWSGetInstancesTotalCnt(t *testing.T) {
 }
 
 func TestAWSRequestOpt(t *testing.T) {
-	//opt := &ccom.RequestOpt{Limit: ccom.Int64Ptr(int64(1))}
-	opt := &ccom.RequestOpt{
-		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
+	opt := &ccom.VpcOpt{
+		BaseOpt: ccom.BaseOpt{
+			Filters: []*ccom.Filter{{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
+		},
 	}
 	region := "us-west-1"
 	vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
@@ -96,4 +97,30 @@ func TestAWSRequestOpt(t *testing.T) {
 	for i, vpc := range vpcsInfo.VpcSet {
 		t.Logf("i:%d, vpc:%#v\n", i, *vpc)
 	}
+}
+
+func TestAWSConcurrence(t *testing.T) {
+	var wg sync.WaitGroup
+	cnt := 10
+	wg.Add(cnt)
+	for i := 1; i <= cnt; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			opt := &ccom.VpcOpt{
+				BaseOpt: ccom.BaseOpt{
+					Filters: []*ccom.Filter{{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
+				},
+			}
+			region := "us-west-1"
+			vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("g%d vpcs count:%#v\n", idx, vpcsInfo.Count)
+			for i, vpc := range vpcsInfo.VpcSet {
+				t.Logf("g%d i:%d, vpc:%#v\n", idx, i, *vpc)
+			}
+		}(i)
+	}
+	wg.Wait()
 }

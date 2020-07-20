@@ -339,11 +339,12 @@
 	"host_property_bk_province_name_enum_810000" : "Hong Kong",
 	"host_property_bk_province_name_enum_820000" : "Macau",
 
-    "host_property_bk_cloud_host_status_enum_1" : "starting",
-    "host_property_bk_cloud_host_status_enum_2" : "running",
-    "host_property_bk_cloud_host_status_enum_3" : "stopping",
-    "host_property_bk_cloud_host_status_enum_4" : "stopped",
-    "host_property_bk_cloud_host_status_enum_5" : "unknow",
+    "host_property_bk_cloud_host_status_enum_1" : "unknown",
+    "host_property_bk_cloud_host_status_enum_2" : "starting",
+    "host_property_bk_cloud_host_status_enum_3" : "running",
+    "host_property_bk_cloud_host_status_enum_4" : "stopping",
+    "host_property_bk_cloud_host_status_enum_5" : "stopped",
+    "host_property_bk_cloud_host_status_enum_6" : "destroyed",
 
     "host_property_bk_cloud_vendor_enum_1" : "aws",
     "host_property_bk_cloud_vendor_enum_2" : "tencent cloud",

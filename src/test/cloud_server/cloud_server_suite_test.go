@@ -13,6 +13,7 @@ import (
 
 var header = test.GetHeader()
 var cloudServerClient = test.GetClientSet().CloudServer()
+var hostServerClient = test.GetClientSet().HostServer()
 
 func TestCloudServer(t *testing.T) {
 	RegisterFailHandler(util.Fail)

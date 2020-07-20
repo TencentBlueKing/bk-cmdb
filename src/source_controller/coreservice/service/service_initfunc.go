@@ -329,7 +329,7 @@ func (s *coreService) initCount(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initCloudAccount(web *restful.WebService) {
+func (s *coreService) initCloudSync(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
 		Language: s.engine.Language,
@@ -347,6 +347,7 @@ func (s *coreService) initCloudAccount(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/task/{bk_task_id}", Handler: s.DeleteSyncTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/sync/history", Handler: s.CreateSyncHistory})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/history", Handler: s.SearchSyncHistory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/destroyed_host_related", Handler: s.DeleteDestroyedHostRelated})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -384,6 +385,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.transaction(web)
 	s.initCount(web)
 	s.initCache(web)
-	s.initCloudAccount(web)
+	s.initCloudSync(web)
 	s.initAuth(web)
 }

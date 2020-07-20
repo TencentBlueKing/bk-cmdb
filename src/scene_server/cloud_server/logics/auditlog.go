@@ -13,9 +13,13 @@
 package logics
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -210,4 +214,289 @@ var syncTaskAuditLogProperty = []metadata.Property{
 	{"bk_account_id", "云账户ID"},
 	{"bk_resource_type", "同步资源类型"},
 	{"bk_last_sync_time", "上次同步时间"},
+}
+
+func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}, properties []metadata.Property) (*metadata.AuditLog, error) {
+	// 获取资源池业务ID和名称
+	bizID, bizName, err := lgc.GetDefaultBizIDAndName(kit)
+	if err != nil {
+		blog.Errorf("GetAddHostLog fail,err:%s, curData:%+v", err.Error(), curData)
+		return nil, err
+	}
+
+	// 获取主机ID和内网IP
+	hostID, innerIP, err := getHostIDAndIP(curData)
+	if err != nil {
+		blog.Errorf("GetAddHostLog fail,err:%s, curData:%+v", err.Error(), curData)
+		return nil, err
+	}
+
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.HostType,
+		ResourceType: metadata.HostRes,
+		Action:       metadata.AuditCreate,
+		OperateFrom:  metadata.FromCloudSync,
+		OperationDetail: &metadata.InstanceOpDetail{
+			BasicOpDetail: metadata.BasicOpDetail{
+				BusinessID:   bizID,
+				BusinessName: bizName,
+				ResourceID:   hostID,
+				ResourceName: innerIP,
+				Details: &metadata.BasicContent{
+					PreData:    nil,
+					CurData:    curData,
+					Properties: properties,
+				},
+			},
+			ModelID: common.BKInnerObjIDHost,
+		},
+	}
+
+	return &auditLog, nil
+}
+
+// 获取资源池业务ID和名称
+func (lgc *Logics) GetDefaultBizIDAndName(kit *rest.Kit) (int64, string, error) {
+	condition := mapstr.MapStr{
+		common.BKDefaultField: common.DefaultAppFlag,
+	}
+	cond := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppIDField},
+		Condition: condition,
+	}
+	res, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), kit.Header, common.BKInnerObjIDApp, cond)
+	if err != nil {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", err.Error(), *cond)
+		return 0, "", err
+	}
+	if !res.Result {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", res.ErrMsg, *cond)
+		return 0, "", fmt.Errorf("%s", res.ErrMsg)
+	}
+
+	if len(res.Data.Info) == 0 {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", "no default biz is found", *cond)
+		return 0, "", fmt.Errorf("%s", "no default biz is found")
+	}
+
+	bizID, err := res.Data.Info[0].Int64(common.BKAppIDField)
+	if err != nil {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", err.Error(), *cond)
+		return 0, "", err
+	}
+
+	bizName, err := res.Data.Info[0].String(common.BKAppNameField)
+	if err != nil {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", err.Error(), *cond)
+		return 0, "", err
+	}
+
+	return bizID, bizName, nil
+}
+
+// 获取主机ID和内网IP
+func getHostIDAndIP(hostInfo map[string]interface{}) (int64, string, error) {
+	var hostID int64
+	var innerIP string
+	if hostIDI, ok := hostInfo[common.BKHostIDField]; ok {
+		if hostIDVal, err := strconv.ParseInt(fmt.Sprintf("%v", hostIDI), 10, 64); err == nil {
+			hostID = hostIDVal
+		}
+	}
+
+	if innerIPI, ok := hostInfo[common.BKHostInnerIPField]; ok {
+		innerIP = fmt.Sprintf("%s", innerIPI)
+	}
+
+	if hostID == 0 {
+		blog.Errorf("getHostIDAndIP fail,hostID is 0, hostInfo:%+v", hostInfo)
+		return 0, "", fmt.Errorf("%s", "hostID is 0")
+	}
+
+	return hostID, innerIP, nil
+}
+
+// 获取主机的业务ID和业务Name
+func (lgc *Logics) GetBizIDAndName(kit *rest.Kit, hostID int64) (int64, string, error) {
+	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}}
+	moduleHost, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, input)
+	if err != nil {
+		blog.Errorf("GetBizIDAndName fail, err:%s, input:%+v", err.Error(), input)
+		return 0, "", err
+	}
+	if !moduleHost.Result {
+		blog.Errorf("GetBizIDAndName fail, err code:%d, err msg:%s, input:%+v", moduleHost.Code, moduleHost.ErrMsg, input)
+		return 0, "", fmt.Errorf("%s", moduleHost.ErrMsg)
+	}
+
+	if len(moduleHost.Data.Info) == 0 {
+		blog.Errorf("GetBizIDAndName fail, host biz is not found, input:%+v", input)
+		return 0, "", fmt.Errorf("%s", "host biz is not found")
+	}
+
+	bizID := moduleHost.Data.Info[0].AppID
+
+	audit := auditlog.NewAudit(lgc.CoreAPI, kit.Header)
+
+	bizName, err := audit.GetInstNameByID(context.Background(), common.BKInnerObjIDApp, bizID)
+	if err != nil {
+		blog.Errorf("GetBizIDAndName fail, err:%s, bizID:%d", err.Error(), bizID)
+		return 0, "", err
+	}
+
+	return bizID, bizName, nil
+}
+
+func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]interface{}, properties []metadata.Property) (*metadata.AuditLog, error) {
+	// 获取主机ID和内网IP
+	hostID, innerIP, err := getHostIDAndIP(preData)
+	if err != nil {
+		blog.Errorf("GetUpdateHostLog fail,err:%s, preData:%+v, curData:%+v", err.Error(), preData, curData)
+		return nil, err
+	}
+
+	// 获取主机的业务ID和业务Name
+	bizID, bizName, err := lgc.GetBizIDAndName(kit, hostID)
+	if err != nil {
+		blog.Errorf("GetUpdateHostLog fail,err:%s, preData:%+v, curData:%+v", err.Error(), preData, curData)
+		return nil, err
+	}
+
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.HostType,
+		ResourceType: metadata.HostRes,
+		Action:       metadata.AuditUpdate,
+		OperateFrom:  metadata.FromCloudSync,
+		OperationDetail: &metadata.InstanceOpDetail{
+			BasicOpDetail: metadata.BasicOpDetail{
+				BusinessID:   bizID,
+				BusinessName: bizName,
+				ResourceID:   hostID,
+				ResourceName: innerIP,
+				Details: &metadata.BasicContent{
+					PreData:    preData,
+					CurData:    curData,
+					Properties: properties,
+				},
+			},
+			ModelID: common.BKInnerObjIDHost,
+		},
+	}
+
+	return &auditLog, nil
+}
+
+type CloudAreaAuditLog struct {
+	logic          *Logics
+	kit            *rest.Kit
+	Properties     []metadata.Property
+	MultiCloudArea map[int64]*SingleCloudArea
+}
+
+type SingleCloudArea struct {
+	CloudName string
+	PreData   map[string]interface{}
+	CurData   map[string]interface{}
+}
+
+func (lgc *Logics) NewCloudAreaLog(kit *rest.Kit) *CloudAreaAuditLog {
+	return &CloudAreaAuditLog{
+		logic:          lgc,
+		kit:            kit,
+		MultiCloudArea: make(map[int64]*SingleCloudArea),
+	}
+}
+
+func (c *CloudAreaAuditLog) WithPrevious(platIDs ...int64) errors.CCError {
+	return c.buildAuditLogData(true, false, platIDs...)
+}
+
+func (c *CloudAreaAuditLog) WithCurrent(platIDs ...int64) errors.CCError {
+	return c.buildAuditLogData(false, true, platIDs...)
+}
+
+func (c *CloudAreaAuditLog) buildAuditLogData(withPrevious, withCurrent bool, platIDs ...int64) errors.CCError {
+	var err error
+	if len(c.Properties) == 0 {
+		audit := auditlog.NewAudit(c.logic.CoreAPI, c.kit.Header)
+		properties, err := audit.GetAuditLogProperty(c.kit.Ctx, common.BKInnerObjIDPlat)
+		if err != nil {
+			return err
+		}
+		c.Properties = properties
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: platIDs}},
+	}
+	res, err := c.logic.CoreAPI.CoreService().Instance().ReadInstance(c.kit.Ctx, c.kit.Header, common.BKInnerObjIDPlat, query)
+	if nil != err {
+		return err
+	}
+	if len(res.Data.Info) <= 0 {
+		return errors.New(common.CCErrTopoCloudNotFound, "")
+	}
+
+	for _, data := range res.Data.Info {
+		cloudID, err := data.Int64(common.BKCloudIDField)
+		if err != nil {
+			return err
+		}
+
+		cloudName, err := data.String(common.BKCloudNameField)
+		if err != nil {
+			return err
+		}
+
+		if c.MultiCloudArea[cloudID] == nil {
+			c.MultiCloudArea[cloudID] = new(SingleCloudArea)
+		}
+
+		c.MultiCloudArea[cloudID].CloudName = cloudName
+
+		if withPrevious {
+			c.MultiCloudArea[cloudID].PreData = data
+		}
+
+		if withCurrent {
+			c.MultiCloudArea[cloudID].CurData = data
+		}
+	}
+
+	return nil
+}
+
+func (c *CloudAreaAuditLog) SaveAuditLog(action metadata.ActionType) errors.CCError {
+	logs := make([]metadata.AuditLog, 0)
+	for cloudID, cloudarea := range c.MultiCloudArea {
+		logs = append(logs, metadata.AuditLog{
+			AuditType:    metadata.CloudResourceType,
+			ResourceType: metadata.CloudAreaRes,
+			Action:       action,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
+					ResourceID:   cloudID,
+					ResourceName: cloudarea.CloudName,
+					Details: &metadata.BasicContent{
+						PreData:    cloudarea.PreData,
+						CurData:    cloudarea.CurData,
+						Properties: c.Properties,
+					},
+				},
+				ModelID: common.BKInnerObjIDPlat,
+			},
+		})
+	}
+
+	auditResult, err := c.logic.CoreAPI.CoreService().Audit().SaveAuditLog(c.kit.Ctx, c.kit.Header, logs...)
+	if err != nil {
+		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %+v,rid:%s", err, auditResult, c.kit.Rid)
+		return c.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+	}
+	if auditResult.Result != true {
+		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %s,rid:%s", err, auditResult, c.kit.Rid)
+		return c.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+	}
+
+	return nil
 }

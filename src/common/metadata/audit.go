@@ -439,6 +439,8 @@ const (
 	FromDataCollection OperateFromType = "data_collection"
 	// FromSynchronizer means this audit is created by the data synchronizer.
 	FromSynchronizer OperateFromType = "synchronizer"
+	// FromCloudSync means this audit is created by cloud sync.
+	FromCloudSync OperateFromType = "cloud_sync"
 )
 
 // ActionType defines all the user's operation type

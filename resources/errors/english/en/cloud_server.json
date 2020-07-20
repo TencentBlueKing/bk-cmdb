@@ -15,7 +15,13 @@
   "1118014": "Get cloud vendor region info failed",
   "1118015": "No cloud sync dir was chosen",
   "1118016": "Cloud sync dir ID %d is not exist",
-  "1118017": "Cloud account create failed",
+  "1118017": "No cloud ID was provided",
+  "1118018": "Cloud ID %d is not exist",
+  "1118019": "Default cloud area can't be used",
+  "1118020": "Cloud account create failed",
+  "1118021": "Cloud account configures get in batch failed",
+  "1118022": "Delete destroyed cloud hosts related resource failed",
+  "1118023": "Cloud account can't be deleted for it has bound cloud sync task",
 
   "": ""
 }

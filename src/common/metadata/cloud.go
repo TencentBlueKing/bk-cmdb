@@ -91,20 +91,12 @@ const (
 // 实现了相应的云厂商插件
 var SupportedCloudVendors = []string{AWS, TencentCloud}
 
-// 同步状态
+// 云同步任务同步状态
 const (
 	CloudSyncSuccess    string = "cloud_sync_success"
 	CloudSyncFail       string = "cloud_sync_fail"
 	CloudSyncInProgress string = "cloud_sync_in_progress"
 )
-
-var CloudHostStatusIDs = map[string]string{
-	"starting": "1",
-	"running":  "2",
-	"stopping": "3",
-	"stopped":  "4",
-	"unknow":   "5",
-}
 
 // 云厂商账户配置
 type CloudAccountConf struct {
@@ -154,6 +146,10 @@ type SearchSyncHistoryOption struct {
 	EndTime           string `json:"end_time" bson:"end_time"`
 }
 
+type DeleteDestroyedHostRelatedOption struct {
+	HostIDs []int64 `json:"host_ids" bson:"host_ids"`
+}
+
 type MultipleSyncHistory struct {
 	Count int64         `json:"count"`
 	Info  []SyncHistory `json:"info"`
@@ -173,6 +169,26 @@ type CloudAccountVerify struct {
 	SecretID    string `json:"bk_secret_id"`
 	SecretKey   string `json:"bk_secret_key"`
 	CloudVendor string `json:"bk_cloud_vendor"`
+}
+
+type SearchAccountValidityOption struct {
+	AccountIDs []int64 `json:"account_ids" bson:"account_ids"`
+}
+
+func (s *SearchAccountValidityOption) Validate() (rawError errors.RawErrorInfo) {
+	if len(s.AccountIDs) == 0 || len(s.AccountIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"account_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type AccountValidityInfo struct {
+	AccountID int64  `json:"bk_account_id" bson:"bk_account_id"`
+	ErrMsg    string `json:"err_msg" bson:"err_msg"`
 }
 
 type VpcInfo struct {
@@ -219,6 +235,9 @@ type VpcSyncInfo struct {
 	Region       string `json:"bk_region" bson:"bk_region"`
 	VpcHostCount int64  `json:"bk_host_count" bson:"bk_host_count"`
 	SyncDir      int64  `json:"bk_sync_dir,omitempty" bson:"bk_sync_dir,omitempty"`
+	CloudID      int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	// 该vpc在云端是否被销毁
+	Destroyed bool `json:"destroyed" bson:"destroyed"`
 }
 
 type MultipleCloudSyncTask struct {
@@ -260,11 +279,12 @@ type Instance struct {
 	VpcId         string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 }
 
-// 云主机资源
+// 云主机同步时的资源数据
 type CloudHostResource struct {
-	HostResource []*VpcInstances
-	TaskID       int64             `json:"bk_task_id" bson:"bk_task_id"`
-	AccountConf  *CloudAccountConf `json:"account_conf" bson:"account_conf"`
+	HostResource  []*VpcInstances
+	DestroyedVpcs []*VpcSyncInfo
+	TaskID        int64             `json:"bk_task_id" bson:"bk_task_id"`
+	AccountConf   *CloudAccountConf `json:"account_conf" bson:"account_conf"`
 }
 
 type VpcInstances struct {

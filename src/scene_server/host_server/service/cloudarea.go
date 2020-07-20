@@ -98,7 +98,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 
 	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)
 	if nil != err {
-		blog.Errorf("FindManyCloudArea htt do error: %v query:%#v,rid:%s", err, query, rid)
+		blog.Errorf("FindManyCloudArea http do error: %v query:%#v,rid:%s", err, query, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
@@ -108,31 +108,32 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	// 查询云区域不需要主机数量
-	if input.HostCount == false {
-		retData := map[string]interface{}{
-			"info":  res.Data.Info,
-			"count": res.Data.Count,
+	// 查询云区域时附带主机数量信息
+	if input.HostCount {
+		err = s.addPlatHostCount(srvData, &res.Data.Info)
+		if err != nil {
+			blog.ErrorJSON("FindManyCloudArea failed, addPlatHostCount err: %v, rid: %s", err, srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail)})
+			return
 		}
-
-		_ = resp.WriteEntity(metadata.Response{
-			BaseResp: metadata.SuccessBaseResp,
-			Data:     retData,
-		})
-
-		return
 	}
 
-	retData, err := s.searchPlatAddHostCount(srvData, res.Data)
-	if err != nil {
-		blog.ErrorJSON("FindManyCloudArea add field host_count failed, err: %v, rid: %s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail)})
-		return
+	// 查询云区域时附带云同步任务ID信息
+	if input.SyncTaskIDs {
+		err = s.addPlatSyncTaskIDs(srvData, &res.Data.Info)
+		if err != nil {
+			blog.ErrorJSON("FindManyCloudArea failed, addPlatSyncTaskIDs err: %v, rid: %s", err, srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail)})
+			return
+		}
 	}
 
 	_ = resp.WriteEntity(metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
-		Data:     retData,
+		Data: map[string]interface{}{
+			"info":  res.Data.Info,
+			"count": res.Data.Count,
+		},
 	})
 }
 
@@ -152,6 +153,12 @@ func (s *Service) CreatePlatBatch(req *restful.Request, resp *restful.Response) 
 		blog.Errorf("CreatePlat , input is empty, rid:%s", srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPBodyEmpty)})
 		return
+	}
+
+	user := util.GetUser(req.Request.Header)
+	for i, _ := range input.Data {
+		input.Data[i][common.BKCreator] = user
+		input.Data[i][common.BKLastEditor] = user
 	}
 
 	instInfo := &meta.CreateManyModelInstance{
@@ -227,8 +234,10 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	// read supplier account from header
-	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
+
+	user := util.GetUser(req.Request.Header)
+	input[common.BKCreator] = user
+	input[common.BKLastEditor] = user
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {
@@ -507,15 +516,16 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-func (s *Service) searchPlatAddHostCount(srvData *srvComm, dataInfo metadata.InstDataInfo) (map[string]interface{}, error) {
+// addPlatHostCount add host count to plat info
+func (s *Service) addPlatHostCount(srvData *srvComm, data *[]mapstr.MapStr) error {
 	// add host_count
 	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
 	intCloudIDArray := make([]int64, 0)
-	for _, area := range dataInfo.Info {
+	for _, area := range *data {
 		intCloudID, err := area.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea fail with cloudID convert from interface to int64 failed, err: %v, rid: %s", err, srvData.rid)
-			return nil, err
+			blog.ErrorJSON("FindManyCloudArea failed, Int64 err: %v, area:%#v, rid: %s", err, area, srvData.rid)
+			return err
 		}
 		intCloudIDArray = append(intCloudIDArray, intCloudID)
 		mapCloudIDInfo[intCloudID] = area
@@ -530,39 +540,75 @@ func (s *Service) searchPlatAddHostCount(srvData *srvComm, dataInfo metadata.Ins
 	}
 	rsp, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, cond)
 	if nil != err {
-		blog.Errorf("findManyCloudAreaAddHostCount htt do error: %v cond:%#v,rid:%s", err, cond, srvData.rid)
-		return nil, err
+		blog.Errorf("addPlatHostCount failed, http do error: %v cond:%#v,rid:%s", err, cond, srvData.rid)
+		return err
 	}
 	if false == rsp.Result {
-		blog.Errorf("findManyCloudAreaAddHostCount http reply error.  cond:%#v, err code:%d, err msg:%s, rid:%s", cond, rsp.Code, rsp.ErrMsg, srvData.rid)
-		return nil, srvData.ccErr.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("addPlatHostCount failed,  http reply error, cond:%#v, err code:%d, err msg:%s, rid:%s", cond, rsp.Code, rsp.ErrMsg, srvData.rid)
+		return srvData.ccErr.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	result := make([]mapstr.MapStr, 0)
 	cloudHost := make(map[int64]int64, 0)
 	for _, info := range rsp.Data.Info {
 		intID, err := info.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.ErrorJSON("findManyCloudAreaAddHostCount fail, cloudID convert from interface to int64 failed, err: %v, rid: %s", err, srvData.rid)
-			return nil, err
+			blog.ErrorJSON("addPlatHostCount failed, Int64 failed, err: %v, info:%#v, rid: %s", err, info, srvData.rid)
+			return err
 		}
 		if _, ok := cloudHost[intID]; !ok {
 			cloudHost[intID] = 0
 		}
 		cloudHost[intID] += 1
 	}
-	for cloudID, cloudInfo := range mapCloudIDInfo {
-		cloudInfo["host_count"] = 0
-		if count, ok := cloudHost[cloudID]; ok {
-			cloudInfo["host_count"] = count
+
+	result := make([]mapstr.MapStr, 0)
+	for _, cloudID := range intCloudIDArray {
+		if cloudInfo, ok := mapCloudIDInfo[cloudID]; ok {
+			cloudInfo["host_count"] = 0
+			if count, ok := cloudHost[cloudID]; ok {
+				cloudInfo["host_count"] = count
+			}
+			result = append(result, cloudInfo)
 		}
-		result = append(result, cloudInfo)
 	}
 
-	retData := map[string]interface{}{
-		"info":  result,
-		"count": dataInfo.Count,
+	*data = result
+
+	return nil
+}
+
+// addPlatSyncTaskIDs add sync task ids to plat info
+func (s *Service) addPlatSyncTaskIDs(srvData *srvComm, data *[]mapstr.MapStr) error {
+	option := &metadata.SearchCloudOption{
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{common.BKCloudSyncTaskID, common.BKCloudSyncVpcs},
+	}
+	result, err := s.CoreAPI.CoreService().Cloud().SearchSyncTask(srvData.ctx, srvData.header, option)
+	if err != nil {
+		blog.Errorf("addPlatSyncTaskIDs failed, rid:%s, option:%+v, err:%+v", srvData.rid, option, err)
+		return err
+	}
+	cloudIDTasks := make(map[int64][]int64)
+	for _, task := range result.Info {
+		for _, vpc := range task.SyncVpcs {
+			cloudIDTasks[vpc.CloudID] = append(cloudIDTasks[vpc.CloudID], task.TaskID)
+		}
 	}
 
-	return retData, nil
+	for i, area := range *data {
+		cloudID, err := area.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.ErrorJSON("addPlatSyncTaskIDs failed, Int64 err: %v, area:%#v, rid: %s", err, area, srvData.rid)
+			return err
+		}
+		if _, ok := cloudIDTasks[cloudID]; ok {
+			(*data)[i]["sync_task_ids"] = cloudIDTasks[cloudID]
+		} else {
+			(*data)[i]["sync_task_ids"] = []int64{}
+		}
+	}
+
+	return nil
 }
