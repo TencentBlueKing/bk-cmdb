@@ -1,6 +1,6 @@
 <template>
     <div class="group-wrapper"
-        v-bkloading="{ isLoading: $loading(Object.values(request)) }"
+        v-bkloading="{ isLoading: mainLoading }"
         :style="{ 'padding-top': topPadding + 'px' }">
         <cmdb-main-inject ref="mainInject"
             inject-type="prepend"
@@ -72,7 +72,7 @@
                         <span class="number">({{classification['bk_objects'].length}})</span>
                     </div>
                     <template v-if="isEditable(classification) && modelType === 'enable'">
-                        <cmdb-auth class="group-btn ml5" :auth="$authResources({ type: $OPERATION.C_MODEL })">
+                        <cmdb-auth v-if="!mainLoading" class="group-btn ml5" :auth="$authResources({ type: $OPERATION.C_MODEL })">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 text
@@ -81,7 +81,7 @@
                                 <i class="icon-cc-add-line"></i>
                             </bk-button>
                         </cmdb-auth>
-                        <cmdb-auth class="group-btn" :auth="$authResources({
+                        <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="$authResources({
                             resource_id: classification.id,
                             type: $OPERATION.U_MODEL_GROUP
                         })">
@@ -93,7 +93,7 @@
                                 <i class="icon-cc-edit"></i>
                             </bk-button>
                         </cmdb-auth>
-                        <cmdb-auth class="group-btn" :auth="$authResources({
+                        <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="$authResources({
                             resource_id: classification.id,
                             type: $OPERATION.D_MODEL_GROUP
                         })">
@@ -314,6 +314,9 @@
             },
             disabledModelBtnText () {
                 return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
+            },
+            mainLoading () {
+                return this.$loading(Object.values(this.request))
             }
         },
         watch: {
