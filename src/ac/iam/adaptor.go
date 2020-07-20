@@ -187,8 +187,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   DeleteSysInstance,
 		meta.Update:   EditSysInstance,
 		meta.Create:   CreateSysInstance,
-		meta.Find:     FindSysInstance,
-		meta.FindMany: FindSysInstance,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.ModelAttributeGroup: {
 		meta.Delete:   EditSysModel,
@@ -326,8 +326,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   DeleteCloudArea,
 		meta.Update:   EditCloudArea,
 		meta.Create:   CreateCloudArea,
-		meta.Find:     FindCloudArea,
-		meta.FindMany: FindCloudArea,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.EventPushing: {
 		meta.Delete:   DeleteEventPushing,

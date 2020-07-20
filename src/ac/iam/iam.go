@@ -220,6 +220,21 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 			return err
 		}
 	}
+
+	// register or update resource action groups
+	actionGroups := GenerateActionGroups()
+	if len(systemResp.Data.ActionGroups) == 0 {
+		if err = i.client.RegisterActionGroups(ctx, actionGroups); err != nil {
+			blog.ErrorJSON("register action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
+			return err
+		}
+		return nil
+	}
+	if err = i.client.UpdateActionGroups(ctx, actionGroups); err != nil {
+		blog.ErrorJSON("update action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
+		return err
+	}
+
 	return nil
 }
 

@@ -65,7 +65,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
-		WithParam("fields", "base_info,resource_types,actions,action_topology,instance_selections").
+		WithParam("fields", "base_info,resource_types,actions,action_groups,instance_selections").
 		Body(nil).Do()
 	err := result.Into(resp)
 	if err != nil {
@@ -255,6 +255,52 @@ func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ActionID) erro
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("delete resource actions %v failed, code: %d, msg:%s", actionIDs, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) RegisterActionGroups(ctx context.Context, actionGroups []ActionGroup) error {
+
+	resp := new(BaseResponse)
+	result := c.client.Post().
+		SubResourcef("/api/v1/model/systems/%s/configs/action_groups", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(actionGroups).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("register action groups %v failed, code: %d, msg:%s", actionGroups, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) UpdateActionGroups(ctx context.Context, actionGroups []ActionGroup) error {
+
+	resp := new(BaseResponse)
+	result := c.client.Put().
+		SubResourcef("/api/v1/model/systems/%s/configs/action_groups", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(actionGroups).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("update action groups %v failed, code: %d, msg:%s", actionGroups, resp.Code, resp.Message),
 		}
 	}
 

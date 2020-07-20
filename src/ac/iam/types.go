@@ -111,6 +111,7 @@ type RegisteredSystemInfo struct {
 	BaseInfo           System              `json:"base_info"`
 	ResourceTypes      []ResourceType      `json:"resource_types"`
 	Actions            []ResourceAction    `json:"actions"`
+	ActionGroups       []ActionGroup       `json:"action_groups"`
 	InstanceSelections []InstanceSelection `json:"instance_selections"`
 }
 
@@ -254,7 +255,6 @@ const (
 	FindBusiness         ActionID = "find_business"
 	ViewBusinessResource ActionID = "find_business_resource"
 
-	FindCloudArea   ActionID = "find_cloud_area"
 	CreateCloudArea ActionID = "create_cloud_area"
 	EditCloudArea   ActionID = "edit_cloud_area"
 	DeleteCloudArea ActionID = "delete_cloud_area"
@@ -262,7 +262,6 @@ const (
 	CreateSysInstance ActionID = "create_sys_instance"
 	EditSysInstance   ActionID = "edit_sys_instance"
 	DeleteSysInstance ActionID = "delete_sys_instance"
-	FindSysInstance   ActionID = "find_sys_instance"
 
 	CreateEventPushing ActionID = "create_event_subscription"
 	EditEventPushing   ActionID = "edit_event_subscription"
@@ -353,6 +352,19 @@ type RelatedInstanceSelection struct {
 	// as is will be ignored, the only usage for this selection is to support a convenient
 	// way for user to find it's resource instances.
 	IgnoreAuthPath bool `json:"ignore_iam_path"`
+}
+
+// groups related resource actions to make action selection more organized
+type ActionGroup struct {
+	// must be a unique name in the whole system.
+	Name      string         `json:"name"`
+	NameEn    string         `json:"name_en"`
+	SubGroups []ActionGroup  `json:"sub_groups,omitempty"`
+	Actions   []ActionWithID `json:"actions,omitempty"`
+}
+
+type ActionWithID struct {
+	ID ActionID `json:"id"`
 }
 
 type InstanceSelectionID string
