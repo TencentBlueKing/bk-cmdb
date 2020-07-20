@@ -765,6 +765,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKHostIDField)
+	data.Remove(common.BKCloudIDField)
 	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)

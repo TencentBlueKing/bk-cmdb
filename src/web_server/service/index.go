@@ -28,7 +28,7 @@ func (s *Service) Index(c *gin.Context) {
 	role := session.Get("role")
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 
-	c.HTML(200, "index.html", gin.H{
+	pageConf := gin.H{
 		"site":           s.Config.Site.DomainUrl,
 		"version":        s.Config.Version,
 		"ccversion":      version.CCVersion,
@@ -39,6 +39,11 @@ func (s *Service) Index(c *gin.Context) {
 		"userName":       userName,
 		"agentAppUrl":    s.Config.AgentAppUrl,
 		"authCenter":     s.Config.AuthCenter,
-		"userManage":     strings.TrimSuffix(s.Config.Site.PaasDomainUrl, "/") + "/api/c/compapi/v2/usermanage/fs_list_users/",
-	})
+	}
+
+	if s.Config.Site.PaasDomainUrl != "" {
+		pageConf["userManage"] = strings.TrimSuffix(s.Config.Site.PaasDomainUrl, "/") + "/api/c/compapi/v2/usermanage/fs_list_users/"
+	}
+
+	c.HTML(200, "index.html", pageConf)
 }

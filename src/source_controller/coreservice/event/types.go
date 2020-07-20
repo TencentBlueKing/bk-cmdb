@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream"
@@ -49,4 +50,9 @@ type FlowOptions struct {
 	watch      stream.Interface
 	db         dal.DB
 	isMaster   discovery.ServiceManageInterface
+}
+
+type hostArchive struct {
+	Oid    string              `bson:"oid"`
+	Detail metadata.HostMapStr `bson:"detail"`
 }

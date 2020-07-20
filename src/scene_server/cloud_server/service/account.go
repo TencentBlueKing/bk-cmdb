@@ -36,7 +36,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	}
 
 	conf := metadata.CloudAccountConf{VendorName: account.CloudVendor, SecretID: account.SecretID, SecretKey: account.SecretKey}
-	err := s.Logics.AccountVerify(conf)
+	err := s.Logics.AccountVerify(ctx.Kit, conf)
 	if err != nil {
 		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
 		errStr := err.Error()
@@ -53,6 +53,42 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// 查询云账户有效性
+func (s *Service) SearchAccountValidity(ctx *rest.Contexts) {
+	option := new(metadata.SearchAccountValidityOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	accountConfs, err := s.Logics.GetCloudAccountConfBatch(ctx.Kit, option.AccountIDs)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrGetCloudAccountConfBatchFailed))
+		return
+	}
+
+	validityInfo := s.Logics.SearchAccountValidity(ctx.Kit, accountConfs)
+	for i, info := range validityInfo {
+		if info.ErrMsg == "" {
+			continue
+		} else if strings.Contains(strings.ToLower(info.ErrMsg), "authfailure") {
+			validityInfo[i].ErrMsg = ctx.Kit.CCError.CCError(common.CCErrCloudAccoutIDSecretWrong).Error()
+		} else if strings.Contains(strings.ToLower(info.ErrMsg), "timeout") {
+			validityInfo[i].ErrMsg = ctx.Kit.CCError.CCError(common.CCErrCloudHttpRequestTimeout).Error()
+		} else {
+			validityInfo[i].ErrMsg = ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed).Error()
+		}
+	}
+
+	ctx.RespEntity(validityInfo)
 }
 
 // 新建云账户

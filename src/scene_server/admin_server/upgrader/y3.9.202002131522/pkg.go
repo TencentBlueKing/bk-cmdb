@@ -46,12 +46,6 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
-	err = updatePlatUniqueKey(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002131522] updatePlatUniqueKey failed, error  %s", err.Error())
-		return err
-	}
-
 	err = upgradeCloudArea(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade y3.9.202002131522] upgradeCloudArea failed, error  %s", err.Error())

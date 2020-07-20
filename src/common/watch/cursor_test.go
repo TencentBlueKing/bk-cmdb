@@ -18,7 +18,7 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
-const cursorSample = "MQ0xDTE1ODg4NTM2NTINMA01ZWIzODU5NzQ3NzBhMTE4ZjQ5MjJhYmU="
+const cursorSample = "MQ0yDTVlYjM4NTk3NDc3MGExMThmNDkyMmFiZQ0xNTg4ODUzNjUyDTA="
 
 func TestCursorEncode(t *testing.T) {
 	cursor := Cursor{

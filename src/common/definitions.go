@@ -1187,10 +1187,28 @@ const (
 	BKCloudLastSyncTime          = "bk_last_sync_time"
 	BKCreator                    = "bk_creator"
 	BKStatus                     = "bk_status"
+	BKStatusDetail               = "bk_status_detail"
 	BKLastEditor                 = "bk_last_editor"
 	BKSecretID                   = "bk_secret_id"
 	BKVpcID                      = "bk_vpc_id"
 	BKVpcName                    = "bk_vpc_name"
 	BKRegion                     = "bk_region"
 	BKCloudSyncVpcs              = "bk_sync_vpcs"
+
+	// 是否为被销毁的云主机
+	IsDestroyedCloudHost = "is_destroyed_cloud_host"
+)
+
+const (
+	BKCloudHostStatusUnknown   = "1"
+	BKCloudHostStatusStarting  = "2"
+	BKCloudHostStatusRunning   = "3"
+	BKCloudHostStatusStopping  = "4"
+	BKCloudHostStatusStopped   = "5"
+	BKCloudHostStatusDestroyed = "6"
+)
+
+const (
+	BKCloudAreaStatusNormal = "1"
+	BKCloudAreaStatusAbnormal = "2"
 )

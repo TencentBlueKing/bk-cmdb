@@ -41,19 +41,18 @@ func NewTmpAccount() map[string]interface{} {
 }
 
 // 清除表数据，保证测试用例之间互不干扰
-func clearData() {
-	//删除云账户表
-	err := test.GetDB().DropTable(context.Background(), common.BKTableNameCloudAccount)
+func clearAccountData() {
+	//清空云账户表
+	err := test.GetDB().Table(common.BKTableNameCloudAccount).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
-	err = test.GetDB().CreateTable(context.Background(), common.BKTableNameCloudAccount)
-	Expect(err).NotTo(HaveOccurred())
+
 	//删除云账户id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudAccount})
 	Expect(err).NotTo(HaveOccurred())
 }
 
 // 准备测试用例需要的数据
-func prepareData() {
+func prepareAccountData() {
 	accountData := []map[string]interface{}{accountData1, accountData2}
 	for i, _ := range accountData {
 		rsp, err := cloudServerClient.CreateAccount(context.Background(), header, accountData[i])
@@ -67,9 +66,10 @@ var _ = Describe("cloud account test", func() {
 
 	BeforeEach(func() {
 		//清空数据
-		clearData()
+		clearAccountData()
+		clearSyncTaskData()
 		//准备数据
-		prepareData()
+		prepareAccountData()
 	})
 
 	var _ = Describe("create cloud account test", func() {

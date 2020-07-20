@@ -120,3 +120,18 @@ func (s *coreService) SearchSyncHistory(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(result)
 }
+
+func (s *coreService) DeleteDestroyedHostRelated(ctx *rest.Contexts) {
+	option := metadata.DeleteDestroyedHostRelatedOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	err := s.core.CloudOperation().DeleteDestroyedHostRelated(ctx.Kit, &option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}

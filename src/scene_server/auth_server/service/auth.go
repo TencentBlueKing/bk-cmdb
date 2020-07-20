@@ -46,13 +46,7 @@ func (s *AuthService) Authorize(ctx *rest.Contexts) {
 		ctx.RespEntity(meta.Decision{Authorized: true})
 		return
 	}
-
-	// TODO: remove this after debug.
-	if skip(one.Type, ctx.Kit.Rid) {
-		ctx.RespEntity(meta.Decision{Authorized: true})
-		return
-	}
-
+	
 	action, resources, err := iam.AdaptAuthOptions(&one)
 	if err != nil {
 		blog.Errorf("adaptor failed, err: %s, rid: %s", err, ctx.Kit.Rid)
@@ -97,10 +91,6 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	// TODO: remove this after debug
-	ctx.RespEntity(meta.Decision{Authorized: true})
-	return
-
 	decisions, err := s.authorizeBatch(ctx.Kit, authAttribute, true)
 	if err != nil {
 		ctx.RespAutoError(err)
@@ -128,10 +118,6 @@ func (s *AuthService) AuthorizeAnyBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(decisions)
 }
 
-func skip(typ meta.ResourceType, rid string) bool {
-	return false
-}
-
 func (s *AuthService) authorizeBatch(kit *rest.Kit, attr *meta.AuthAttribute, exact bool) ([]types.Decision, error) {
 	if !auth.EnableAuthorize() {
 		decisions := make([]types.Decision, len(attr.Resources))
@@ -144,12 +130,6 @@ func (s *AuthService) authorizeBatch(kit *rest.Kit, attr *meta.AuthAttribute, ex
 	authBatchArr := make([]*types.AuthBatch, 0)
 	decisions := make([]types.Decision, len(attr.Resources))
 	for index, resource := range attr.Resources {
-
-		// TODO: remove this after debug.
-		if skip(resource.Type, kit.Rid) {
-			decisions[index].Authorized = true
-			continue
-		}
 
 		if resource.Action == meta.SkipAction {
 			decisions[index].Authorized = true

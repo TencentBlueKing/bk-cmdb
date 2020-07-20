@@ -501,6 +501,7 @@ type DeleteHostFromBizParameter struct {
 type CloudAreaSearchParam struct {
 	SearchCloudOption `json:",inline"`
 	HostCount         bool `json:"host_count"`
+	SyncTaskIDs       bool `json:"sync_task_ids"`
 }
 
 type CreateManyCloudAreaResult struct {

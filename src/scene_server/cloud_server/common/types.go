@@ -16,21 +16,29 @@ import (
 	"errors"
 )
 
-// 云厂商接口请求选项
-type RequestOpt struct {
+const (
+	// MaxLimit 最大数量限制
+	MaxLimit int64 = 999999
+
+	// MaxLoopCnt 最大循环次数
+	MaxLoopCnt int = 10
+)
+
+var (
+	// ErrorLoopCnt 循环过多错误
+	ErrorLoopCnt = errors.New("too much loop")
+)
+
+// BaseOpt 云厂商接口请求条件的公共部分
+type BaseOpt struct {
 	// 请求过滤条件
 	Filters []*Filter
 
-	// 偏移量，默认为0，分页时使用，对于某些云厂商适用，如腾讯云
-	Offset *int64
-
 	// 返回数量限制
-	Limit *int64
-
-	// 用来获取下一页数据时的请求参数，对于某些云厂商适用，如AWS
-	NextToken *string
+	Limit int64
 }
 
+// Filter 过滤条件
 type Filter struct {
 	// 需要过滤的字段。
 	Name *string
@@ -39,23 +47,45 @@ type Filter struct {
 	Values []*string
 }
 
-const (
-	MaxLimit   int64 = 99999
-	MaxLoopCnt int   = 10
-)
+// VpcOpt VPC请求条件
+type VpcOpt struct {
+	BaseOpt
+}
 
-var (
-	ErrorLoopCnt = errors.New("too much loop")
-)
+// InstanceOpt 实例请求条件
+type InstanceOpt struct {
+	BaseOpt
+}
 
+// GetDefaultVpcOpt 获取默认的Vpc请求条件
+func GetDefaultVpcOpt() *VpcOpt {
+	return &VpcOpt{
+		BaseOpt{
+			Limit: MaxLimit,
+		},
+	}
+}
+
+// GetDefaultInstanceOpt 获取默认的Instance请求条件
+func GetDefaultInstanceOpt() *InstanceOpt {
+	return &InstanceOpt{
+		BaseOpt{
+			Limit: MaxLimit,
+		},
+	}
+}
+
+// Int64Ptr 获取int64的指针
 func Int64Ptr(v int64) *int64 {
 	return &v
 }
 
+// StringPtr 获取string的指针
 func StringPtr(v string) *string {
 	return &v
 }
 
+// StringPtrs 获取[]string的指针
 func StringPtrs(vals []string) []*string {
 	ptrs := make([]*string, len(vals))
 	for i := 0; i < len(vals); i++ {

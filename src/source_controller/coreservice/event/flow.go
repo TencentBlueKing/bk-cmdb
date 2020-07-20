@@ -376,23 +376,46 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 	filter := mapstr.MapStr{
 		"oid": e.Oid,
 	}
-	doc := bsonx.Doc{}
-	err = f.db.Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
-	if err != nil {
-		blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
-			f.Collection, e.Oid, err)
-		if strings.Contains(err.Error(), "document not found") {
+
+	if f.Collection == common.BKTableNameBaseHost {
+		doc := new(hostArchive)
+		err = f.db.Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), doc)
+		if err != nil {
+			blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
+				f.Collection, e.Oid, err)
+			if strings.Contains(err.Error(), "document not found") {
+				return false, err
+			}
+			return true, err
+		}
+
+		byt, err := json.Marshal(doc.Detail)
+		if err != nil {
+			blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v", f.Collection, e.Oid, err)
 			return false, err
 		}
-		return true, err
-	}
+		e.DocBytes = byt
 
-	byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
-	if err != nil {
-		blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v", f.Collection, e.Oid, err)
-		return false, err
+	} else {
+
+		doc := bsonx.Doc{}
+		err = f.db.Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
+		if err != nil {
+			blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
+				f.Collection, e.Oid, err)
+			if strings.Contains(err.Error(), "document not found") {
+				return false, err
+			}
+			return true, err
+		}
+
+		byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+		if err != nil {
+			blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v", f.Collection, e.Oid, err)
+			return false, err
+		}
+		e.DocBytes = byt
 	}
-	e.DocBytes = byt
 
 	return f.do(e)
 }

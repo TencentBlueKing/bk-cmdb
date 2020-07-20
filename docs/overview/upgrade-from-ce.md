@@ -10,7 +10,7 @@
 ### 1.1 开源版CMDB与社区版CMDB
 开源版本指的是github上的[开源CMDB项目](https://github.com/Tencent/bk-cmdb)，社区版指的是伴随[蓝鲸智云](https://bk.tencent.com/)产品一起发布出去的社区版。
 
-两者采用的源代码是一致的，比如您在蓝鲸智云[下载页面](https://bk.tencent.com/download/)看到的 CMDB 最新版本是 `3.2.2`，它跟github上 [release-v3.2.2](https://github.com/Tencent/bk-cmdb/releases/tag/release-v3.2.2) 采用相同代码编译结果。
+两者采用的源代码是一致的，比如您在蓝鲸智云[下载页面](https://bk.tencent.com/download/)看到的 CMDB 最新版本是 `3.2.21`，它跟github上 [release-v3.2.21](https://github.com/Tencent/bk-cmdb/releases/tag/release-v3.2.2) 采用相同代码编译结果。
 
 主要区别在于两者的配置文件，社区版本CMDB是蓝鲸社区版的一部分，启动配置文件对接的也是蓝鲸社区版，比如登录对接的蓝鲸统一登录，比如即将推出的细粒度权限版本也会对接蓝鲸权限中心。相对而言，开源版本独立部署，没有蓝鲸统一登录与蓝鲸权限中心等依赖环境，因此二进制包中默认的配置是采用的无登录和内置鉴权方案。
 
@@ -98,23 +98,25 @@ cd bin/build/v3.2.8
 --mongo_pass cc \
 --blueking_cmdb_url http://bk.tencent.com \
 --blueking_paas_url http://bk.tencent.com \
---listen_port 8083
+--listen_port 8083 \
+--user_info admin:admin\
+--auth_enabled false 
 
 ➜  v3.2.8 tree cmdb_adminserver/configures
 cmdb_adminserver/configures
-├── apiserver.conf
-├── auditcontroller.conf
-├── datacollection.conf
-├── eventserver.conf
-├── host.conf
-├── hostcontroller.conf
+├── common.conf
+├── extra.conf
 ├── migrate.conf
-├── objectcontroller.conf
-├── proc.conf
-├── proccontroller.conf
-├── topo.conf
-└── webserver.conf
+├── mongodb.conf
+└── redis.conf
 ```
+|配置文件|用途描述|
+|---|---|
+|common.conf|公共配置信息|
+|extra.conf|扩展配置信息|
+|migrate.conf|启动时加载的配置文件信息|
+|mongodb.conf|mongodb配置信息|
+|redis.conf|redis配置信息|
 
 升级前后的配置文件可以通过对比工具进一步查看升级前后配置的区别，保障生成正确的配置文件。一种比较有效的方式时通过git来管理这些配置，通过pr的方式查看配置升级前后的区别。
 

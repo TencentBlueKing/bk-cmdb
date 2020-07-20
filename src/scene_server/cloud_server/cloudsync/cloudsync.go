@@ -14,16 +14,12 @@ package cloudsync
 
 import (
 	"context"
-	"net/http"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/zkclient"
-	ccom "configcenter/src/scene_server/cloud_server/common"
 	"configcenter/src/scene_server/cloud_server/logics"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -32,14 +28,8 @@ const (
 	syncorNum int = 10
 )
 
-var (
-	header http.Header
-	kit    *rest.Kit
-)
-
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
-	DB        dal.DB
 	Logics    *logics.Logics
 	AddrPort  string
 	MongoConf local.MongoConf
@@ -53,8 +43,6 @@ type CloudSyncInterface interface {
 // 进行云资源同步
 func CloudSync(conf *SyncConf) error {
 	errors.SetGlobalCCError(conf.Logics.CCErr)
-	header = ccom.GetHeader()
-	kit = ccom.GetKit(header)
 	ctx := context.Background()
 
 	schedulerConf := &SchedulerConf{
@@ -91,7 +79,7 @@ func SyncCloudResource(taskChan chan *metadata.CloudSyncTask, conf *SyncConf) {
 
 	// 云主机同步器处理同步任务
 	for i := 1; i <= syncorNum; i++ {
-		syncor := NewHostSyncor(i, conf.Logics, conf.DB)
+		syncor := NewHostSyncor(i, conf.Logics)
 		go func(syncor *HostSyncor) {
 			for {
 				task := <-hostChan

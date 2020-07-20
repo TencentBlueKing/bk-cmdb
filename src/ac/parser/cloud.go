@@ -42,6 +42,13 @@ var cloudAccountConfigs = []AuthConfig{
 		ResourceType:   meta.CloudAccount,
 		ResourceAction: meta.SkipAction,
 	}, {
+		Name:           "searchCloudAccountValidityPattern",
+		Description:    "查询云账户有效性",
+		Pattern:        "/api/v3/findmany/cloud/account/validity",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudAccount,
+		ResourceAction: meta.SkipAction,
+	}, {
 		Name:           "listCloudAccountPattern",
 		Description:    "查询云账户",
 		Pattern:        "/api/v3/findmany/cloud/account",

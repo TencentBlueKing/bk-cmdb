@@ -74,7 +74,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	// 增加账户是否能被删除的信息
+	// 获取账户是否能被删除的信息
 	accountTaskcntMap, err := c.getAcccountTaskcntMap(kit)
 	if err != nil {
 		blog.ErrorJSON("getAcccountTaskcntMap error %s, rid: %s", err, kit.Rid)
