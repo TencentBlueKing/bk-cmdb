@@ -73,6 +73,8 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		set[common.BKAppIDField] = bizID
 
 		var result interface{}
+		// to avoid judging to be nested transaction, need a new header
+		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 			var err error
 			result, err = s.createSet(ctx.Kit, bizID, obj, set, &batchBody.Metadata)
