@@ -32,7 +32,7 @@ type Iam struct {
 
 func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*Iam, error) {
 	blog.V(5).Infof("new iam with parameters tls: %+v, cfg: %+v", tls, cfg)
-	if !auth.IsAuthed() {
+	if !auth.EnableAuthorize() {
 		return new(Iam), nil
 	}
 	client, err := util.NewClient(tls)
@@ -102,8 +102,8 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 
-	existResourceTypeMap := make(map[ResourceTypeID]bool)
-	removedResourceTypeMap := make(map[ResourceTypeID]struct{})
+	existResourceTypeMap := make(map[TypeID]bool)
+	removedResourceTypeMap := make(map[TypeID]struct{})
 	for _, resourceType := range systemResp.Data.ResourceTypes {
 		existResourceTypeMap[resourceType.ID] = true
 		removedResourceTypeMap[resourceType.ID] = struct{}{}
@@ -156,8 +156,8 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 
-	existResourceActionMap := make(map[ResourceActionID]bool)
-	removedResourceActionMap := make(map[ResourceActionID]struct{})
+	existResourceActionMap := make(map[ActionID]bool)
+	removedResourceActionMap := make(map[ActionID]struct{})
 	for _, resourceAction := range systemResp.Data.Actions {
 		existResourceActionMap[resourceAction.ID] = true
 		removedResourceActionMap[resourceAction.ID] = struct{}{}
@@ -185,7 +185,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 
 	// remove redundant actions, redundant instance selections and resource types one by one when dependencies are all deleted
 	if actionLen := len(removedResourceActionMap); actionLen > 0 {
-		removedResourceActionIDs := make([]ResourceActionID, actionLen)
+		removedResourceActionIDs := make([]ActionID, actionLen)
 		idx := 0
 		for resourceActionID, _ := range removedResourceActionMap {
 			removedResourceActionIDs[idx] = resourceActionID
@@ -209,7 +209,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 	if typeLen := len(removedResourceTypeMap); typeLen > 0 {
-		removedResourceTypeIDs := make([]ResourceTypeID, len(removedResourceTypeMap))
+		removedResourceTypeIDs := make([]TypeID, len(removedResourceTypeMap))
 		idx := 0
 		for resourceType, _ := range removedResourceTypeMap {
 			removedResourceTypeIDs[idx] = resourceType

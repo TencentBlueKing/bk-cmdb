@@ -945,7 +945,7 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, obj model.Object, 
 		}
 
 		// get authorized instance ids if auth is enabled
-		if auth.IsAuthed() {
+		if auth.EnableAuthorize() {
 			isMainline, err := c.asst.IsMainlineObject(kit, obj.GetObjectID())
 			if err != nil {
 				blog.Errorf("[operation-inst] check if object(%s) is mainline failed, err: %s, rid: %s", obj.GetObjectID(), err.Error(), kit.Rid)

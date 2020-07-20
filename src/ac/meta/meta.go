@@ -13,12 +13,8 @@
 package meta
 
 type AuthAttribute struct {
-	User UserInfo
-	// the business id that this resource belongs to, but it's not necessary for
-	// a resource that does not belongs to a business.
+	User      UserInfo
 	Resources []ResourceAttribute
-
-	// Permissions
 }
 
 type UserInfo struct {
@@ -35,11 +31,11 @@ type Layers []Item
 type ResourceAttribute struct {
 	Basic
 
-	SupplierAccount string
-	BusinessID      int64 `json:"business_id"`
+	SupplierAccount string `json:"supplier_account"`
+	BusinessID      int64  `json:"business_id"`
 	// if this object belongs to a topology, like mainline topology,
 	// layers means each object's item before this object.
-	Layers Layers
+	Layers Layers `json:"layers"`
 }
 
 // Basic defines the basic info for a resource.
@@ -53,11 +49,12 @@ type Basic struct {
 
 	// the name of the resource, which could be a bk-route, etc.
 	// this filed is not necessary for all the resources.
-	Name string
+	Name string `json:"name"`
 
 	// the instance id of this resource, which could be a model's instance id.
+	InstanceID int64
+
 	// InstanceIDEx is a extend for instanceID which can only be integer, but some resources only have string format id.
-	InstanceID   int64
 	InstanceIDEx string
 }
 

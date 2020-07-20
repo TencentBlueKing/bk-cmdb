@@ -59,7 +59,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &accounts)
 	if err != nil {
-		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %s, err: %s, rid: %s", option, err, kit.Rid)
+		blog.ErrorJSON("search cloud account failed, option: %s, err: %s, rid: %s", option, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// 不返回bk_secret_key的值

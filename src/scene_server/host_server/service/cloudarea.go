@@ -70,13 +70,17 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 	}
 
 	filter := input.Condition
-	if s.AuthManager.Enabled() && !s.AuthManager.SkipReadAuthorization {
+	if s.AuthManager.Enabled() {
 		// auth: get authorized resources
 		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.header, srvData.user)
 		if err != nil {
 			blog.Errorf("FindManyCloudArea failed, ListAuthorizedPlatIDs failed, user: %s, err: %+v, rid: %s", srvData.user, err, rid)
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommListAuthorizedResourceFromIAMFailed)})
 			return
+		}
+
+		if input.Condition == nil {
+			input.Condition = make(map[string]interface{})
 		}
 
 		filter = map[string]interface{}{

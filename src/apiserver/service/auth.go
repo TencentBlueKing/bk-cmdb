@@ -37,7 +37,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(pheader)
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if auth.IsAuthed() == false {
+	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
@@ -79,7 +79,6 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	for i, verifyResult := range verifyResults {
 		resources[i].Passed = verifyResult.Authorized
-		resources[i].Reason = verifyResult.Reason
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
@@ -90,7 +89,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if auth.IsAuthed() == false {
+	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return

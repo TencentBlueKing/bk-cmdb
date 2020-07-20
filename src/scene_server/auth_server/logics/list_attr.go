@@ -22,7 +22,7 @@ import (
 )
 
 // list enumeration attributes of instance type resource
-func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.ResourceTypeID) ([]types.AttrResource, error) {
+func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := GetInstanceResourceObjID(resourceType)
 	if objID == "" && resourceType != iam.SysInstance {

@@ -2553,20 +2553,13 @@ func (ps *parseStream) cloudArea() *parseStream {
 		return ps
 	}
 
-	model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPlat})
-	if err != nil {
-		ps.err = err
-		return ps
-	}
-
 	if ps.hitPattern(findManyCloudAreaPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.FindMany,
+					Type:   meta.CloudAreaInstance,
+					Action: meta.SkipAction,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -2576,10 +2569,9 @@ func (ps *parseStream) cloudArea() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.CloudAreaInstance,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -2589,36 +2581,47 @@ func (ps *parseStream) cloudArea() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.CloudAreaInstance,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
 	}
 
 	if ps.hitRegexp(updateCloudAreaRegexp, http.MethodPut) {
+		id, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse cloud id %s failed", ps.RequestCtx.Elements[5])
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.Update,
+					Type:       meta.CloudAreaInstance,
+					Action:     meta.Update,
+					InstanceID: id,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
 	}
 
 	if ps.hitRegexp(deleteCloudAreaRegexp, http.MethodDelete) {
+
+		id, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse cloud id %s failed", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.Delete,
+					Type:       meta.CloudAreaInstance,
+					Action:     meta.Delete,
+					InstanceID: id,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps

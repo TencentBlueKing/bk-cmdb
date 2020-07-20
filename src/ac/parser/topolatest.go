@@ -740,6 +740,12 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		var modelType = meta.ModelInstance
 		isMainline, err := ps.isMainlineModel(objID)
 		if err != nil {
@@ -761,7 +767,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Type:   modelType,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -806,6 +812,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		objectID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		var modelType = meta.ModelInstance
 		isMainline, err := ps.isMainlineModel(objectID)
@@ -825,7 +836,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objectID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -845,6 +856,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		objectID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ids := make([]int64, 0)
 		gjson.GetBytes(ps.RequestCtx.Body, "update.#.inst_id").ForEach(
@@ -861,7 +877,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.UpdateMany,
 					InstanceID: id,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objectID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			})
 		}
 
@@ -906,6 +922,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		objID := ps.RequestCtx.Elements[5]
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		var modelType = meta.ModelInstance
 		isMainline, err := ps.isMainlineModel(objID)
@@ -930,7 +951,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceIDEx: objID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 
@@ -1037,6 +1058,18 @@ func (ps *parseStream) objectLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		classID := gjson.GetBytes(ps.RequestCtx.Body, common.BKClassificationIDField).String()
+		filter := map[string]interface{}{
+			common.BKClassificationIDField: classID,
+		}
+
+		classification, err := ps.getOneClassification(filter)
+		if err != nil {
+			ps.err = fmt.Errorf("create object, but get classification failed, err:%v", err)
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1044,6 +1077,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 					Type:   meta.Model,
 					Action: meta.Create,
 				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: classification.ID}},
 			},
 		}
 		return ps
@@ -1189,15 +1223,13 @@ func (ps *parseStream) objectLatest() *parseStream {
 	}
 
 	// update object's topology graphic operation.
-	// TODO: confirm if bizID is needed.
 	if ps.hitRegexp(updateObjectTopologyGraphicLatestRegexp, http.MethodPost) {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type: meta.ModelTopology,
-					// Action: meta.Update,
-					Action: meta.SkipAction,
+					Type:   meta.ModelTopology,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -1561,12 +1593,14 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: modelEn})
 		if err != nil {
 			ps.err = err
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1577,6 +1611,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
+
 		return ps
 	}
 
@@ -1599,6 +1634,11 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
+		if len(attr) == 0 {
+			ps.err = errors.New("can not find attribute detail")
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
 		if err != nil {
 			ps.err = err
@@ -1612,6 +1652,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1644,6 +1685,12 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
 		}
+
+		if len(attr) != 0 {
+			ps.err = errors.New("can not find attribute detail")
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
 		if err != nil {
 			ps.err = err
@@ -1657,6 +1704,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1689,6 +1737,12 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
 		}
+
+		if len(attr) != 0 {
+			ps.err = errors.New("can not find attribute detail")
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
 		if err != nil {
 			ps.err = err
@@ -1702,6 +1756,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1735,7 +1790,6 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 		for _, model := range models {
-
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					BusinessID: bizID,
@@ -1758,23 +1812,22 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
 		}
 
-		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDHost})
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDHost})
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-		for _, model := range models {
 
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					BusinessID: bizID,
-					Basic: meta.Basic{
-						Type:   meta.ModelAttribute,
-						Action: meta.FindMany,
-					},
-					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-				})
-		}
+		ps.Attribute.Resources = append(ps.Attribute.Resources,
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelAttribute,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			})
+
 		return ps
 	}
 
@@ -1792,17 +1845,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		if bizID == 0 {
 			blog.Error("biz custom field business id can't be 0")
 			ps.err = fmt.Errorf("create biz custom field failed, business id is 0")
 			return ps
 		}
-		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: modelEn})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1810,7 +1859,6 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1830,6 +1878,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		if bizID == 0 {
 			blog.Error("biz custom field business id can't be 0")
 			ps.err = fmt.Errorf("update biz custom field failed, business id is 0")
@@ -1841,16 +1890,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("update business custom field, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
-		if err != nil {
-			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
-			return ps
-		}
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1859,7 +1899,6 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: attrID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps

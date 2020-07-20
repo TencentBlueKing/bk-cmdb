@@ -167,9 +167,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:         meta.DynamicGrouping,
-					Action:       meta.Find,
-					InstanceIDEx: ps.RequestCtx.Elements[5],
+					Type:   meta.DynamicGrouping,
+					Action: meta.Find,
+					// InstanceIDEx: ps.RequestCtx.Elements[5],
 				},
 			},
 		}
@@ -195,7 +195,7 @@ func (ps *parseStream) userAPI() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Execute,
-					Name:   ps.RequestCtx.Elements[5],
+					// Name:   ps.RequestCtx.Elements[5],
 				},
 			},
 		}

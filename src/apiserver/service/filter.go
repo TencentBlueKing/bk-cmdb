@@ -129,7 +129,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		path := req.Request.URL.Path
 
 		blog.V(7).Infof("authFilter on url: %s, rid: %s", path, rid)
-		if !auth.IsAuthed() {
+		if !auth.EnableAuthorize() {
 			blog.V(7).Infof("auth disabled, skip auth filter, rid: %s", rid)
 			fchain.ProcessFilter(req, resp)
 			return

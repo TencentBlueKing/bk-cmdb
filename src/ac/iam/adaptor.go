@@ -13,7 +13,6 @@
 package iam
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -28,74 +27,31 @@ import (
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
-// convert cc auth attributes to iam resources TODO add resource attributes when attribute filter is enabled
-func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
-	resources := make([]types.Resource, 0)
-	for _, attribute := range attributes {
-		info := types.Resource{
-			System: SystemIDCMDB,
-		}
+func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, *types.Resource, error) {
 
-		resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
-		if err != nil {
-			return nil, err
-		}
+	var action ActionID
 
-		resourceIDArr, err := GenerateResourceID(ResourceTypeID(info.Type), &attribute)
-		if err != nil {
-			return nil, err
-		}
-		resourceIDArrLen := len(resourceIDArr)
-		// no related resource ids means no need to use exact resources for authorization because action may not have related resources
-		if resourceIDArrLen == 0 {
-			// add biz as resource for actions like create custom query that has biz as their related resource instances
-			if attribute.BusinessID > 0 {
-				info.Type = types.ResourceType(Business)
-				info.ID = strconv.FormatInt(attribute.BusinessID, 10)
-				resources = append(resources, info)
-			}
-			continue
-		}
-
-		info.Type = types.ResourceType(*resourceTypeID)
-		// no biz or parent parentPath related, no need to fill parentPath attribute
-		if attribute.BusinessID <= 0 && resourceIDArrLen == 1 {
-			info.ID = resourceIDArr[0].ResourceID
-			resources = append(resources, info)
-			continue
-		}
-
-		// generate iam path attribute by biz and parent layer
-		pathArr := make([]string, 0)
-		if attribute.BusinessID > 0 {
-			businessPath := "/" + string(Business) + "," + strconv.FormatInt(attribute.BusinessID, 10) + "/"
-			pathArr = append(pathArr, businessPath)
-		}
-		var parentPath bytes.Buffer
-		parentPath.WriteByte('/')
-		for i := 0; i < resourceIDArrLen-1; i++ {
-			resourceIDAndType := resourceIDArr[i]
-			parentPath.WriteString(string(resourceIDAndType.ResourceType))
-			parentPath.WriteByte(',')
-			parentPath.WriteString(resourceIDAndType.ResourceID)
-			parentPath.WriteByte('/')
-		}
-		if parentPath.Len() > 0 {
-			pathArr = append(pathArr, parentPath.String())
-		}
-
-		info.Attribute = map[string]interface{}{
-			types.IamPathKey: pathArr,
-		}
-		info.ID = resourceIDArr[resourceIDArrLen-1].ResourceID
-		resources = append(resources, info)
+	action, err := ConvertResourceAction(a.Type, a.Action, a.BusinessID)
+	if err != nil {
+		return "", nil, err
 	}
 
-	return resources, nil
+	// convert different cmdb resource's to resource's registered to iam
+	rscType, err := ConvertResourceType(a.Type, a.BusinessID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	resource, err := genIamResource(action, *rscType, a)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return action, resource, nil
 }
 
-func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
-	var iamResourceType ResourceTypeID
+func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*TypeID, error) {
+	var iamResourceType TypeID
 	switch resourceType {
 	case meta.Business:
 		iamResourceType = Business
@@ -118,14 +74,16 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.AssociationType:
 		iamResourceType = SysAssociationType
 	case meta.ModelAssociation:
-		iamResourceType = SysInstance
+		iamResourceType = SysModel
 	case meta.ModelInstanceAssociation:
 		iamResourceType = SysInstance
 	case meta.MainlineModelTopology:
 		iamResourceType = SysSystemBase
 	case meta.ModelInstance:
 		iamResourceType = SysInstance
-	case meta.Plat:
+	case meta.ModelInstanceTopology:
+		iamResourceType = SkipType
+	case meta.CloudAreaInstance:
 		iamResourceType = SysCloudArea
 	case meta.HostInstance:
 		iamResourceType = Host
@@ -176,7 +134,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	return &iamResourceType, nil
 }
 
-func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (ResourceActionID, error) {
+func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (ActionID, error) {
 	if action == meta.SkipAction {
 		return Skip, nil
 	}
@@ -198,7 +156,7 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 			if businessID > 0 {
 				return EditBusinessCustomField, nil
 			} else {
-				return EditModel, nil
+				return EditSysModel, nil
 			}
 		}
 	}
@@ -211,33 +169,40 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		}
 	}
 
+	if resourceType == meta.ModelAttributeGroup && businessID > 0 {
+		return EditBusinessCustomField, nil
+	}
+
 	if _, exist := resourceActionMap[resourceType]; exist {
 		actionID, ok := resourceActionMap[resourceType][convertAction]
 		if ok && actionID != Unsupported {
 			return actionID, nil
 		}
 	}
-	return Unsupported, fmt.Errorf("unsupported action: %s", action)
+	return Unsupported, fmt.Errorf("unsupported type %s action: %s", resourceType, action)
 }
 
-var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
+var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	meta.ModelInstance: {
-		meta.Delete: DeleteInstance,
-		meta.Update: EditInstance,
-		meta.Create: CreateInstance,
-		meta.Find:   FindInstance,
+		meta.Delete:   DeleteSysInstance,
+		meta.Update:   EditSysInstance,
+		meta.Create:   CreateSysInstance,
+		meta.Find:     FindSysInstance,
+		meta.FindMany: FindSysInstance,
 	},
 	meta.ModelAttributeGroup: {
-		meta.Delete: EditModel,
-		meta.Update: EditModel,
-		meta.Create: EditModel,
-		meta.Find:   Skip,
+		meta.Delete:   EditSysModel,
+		meta.Update:   EditSysModel,
+		meta.Create:   EditSysModel,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.ModelUnique: {
-		meta.Delete: EditModel,
-		meta.Update: EditModel,
-		meta.Create: EditModel,
-		meta.Find:   Skip,
+		meta.Delete:   EditSysModel,
+		meta.Update:   EditSysModel,
+		meta.Create:   EditSysModel,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.Business: {
 		meta.Archive:              ArchiveBusiness,
@@ -247,11 +212,12 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.ViewBusinessResource: ViewBusinessResource,
 	},
 	meta.DynamicGrouping: {
-		meta.Delete:  DeleteBusinessCustomQuery,
-		meta.Update:  EditBusinessCustomQuery,
-		meta.Create:  CreateBusinessCustomQuery,
-		meta.Find:    FindBusinessCustomQuery,
-		meta.Execute: FindBusinessCustomQuery,
+		meta.Delete:   DeleteBusinessCustomQuery,
+		meta.Update:   EditBusinessCustomQuery,
+		meta.Create:   CreateBusinessCustomQuery,
+		meta.Find:     FindBusinessCustomQuery,
+		meta.FindMany: FindBusinessCustomQuery,
+		meta.Execute:  FindBusinessCustomQuery,
 	},
 	meta.MainlineModel: {
 		meta.Find:   Skip,
@@ -296,40 +262,46 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Find:   Skip,
 	},
 	meta.ProcessServiceInstance: {
-		meta.Delete: DeleteBusinessServiceInstance,
-		meta.Update: EditBusinessServiceInstance,
-		meta.Create: CreateBusinessServiceInstance,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteBusinessServiceInstance,
+		meta.Update:   EditBusinessServiceInstance,
+		meta.Create:   CreateBusinessServiceInstance,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.ProcessServiceTemplate: {
-		meta.Delete: DeleteBusinessServiceTemplate,
-		meta.Update: EditBusinessServiceTemplate,
-		meta.Create: CreateBusinessServiceTemplate,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteBusinessServiceTemplate,
+		meta.Update:   EditBusinessServiceTemplate,
+		meta.Create:   CreateBusinessServiceTemplate,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.SetTemplate: {
-		meta.Delete: DeleteBusinessSetTemplate,
-		meta.Update: EditBusinessSetTemplate,
-		meta.Create: CreateBusinessSetTemplate,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteBusinessSetTemplate,
+		meta.Update:   EditBusinessSetTemplate,
+		meta.Create:   CreateBusinessSetTemplate,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.ModelModule: {
-		meta.Delete: DeleteBusinessTopology,
-		meta.Update: EditBusinessTopology,
-		meta.Create: CreateBusinessTopology,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteBusinessTopology,
+		meta.Update:   EditBusinessTopology,
+		meta.Create:   CreateBusinessTopology,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.ModelSet: {
-		meta.Delete: DeleteBusinessTopology,
-		meta.Update: EditBusinessTopology,
-		meta.Create: CreateBusinessTopology,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteBusinessTopology,
+		meta.Update:   EditBusinessTopology,
+		meta.Create:   CreateBusinessTopology,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.MainlineInstance: {
-		meta.Delete: DeleteBusinessTopology,
-		meta.Update: EditBusinessTopology,
-		meta.Create: CreateBusinessTopology,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteBusinessTopology,
+		meta.Update:   EditBusinessTopology,
+		meta.Create:   CreateBusinessTopology,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.MainlineInstanceTopology: {
 		meta.Delete: Skip,
@@ -350,23 +322,26 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.AddHostToResourcePool: CreateResourcePoolHost,
 		meta.Find:                  Skip,
 	},
-	meta.Plat: {
-		meta.Delete: DeleteCloudArea,
-		meta.Update: EditCloudArea,
-		meta.Create: CreateCloudArea,
-		meta.Find:   Skip,
+	meta.CloudAreaInstance: {
+		meta.Delete:   DeleteCloudArea,
+		meta.Update:   EditCloudArea,
+		meta.Create:   CreateCloudArea,
+		meta.Find:     FindCloudArea,
+		meta.FindMany: FindCloudArea,
 	},
 	meta.EventPushing: {
-		meta.Delete: DeleteEventPushing,
-		meta.Update: EditEventPushing,
-		meta.Create: CreateEventPushing,
-		meta.Find:   FindEventPushing,
+		meta.Delete:   DeleteEventPushing,
+		meta.Update:   EditEventPushing,
+		meta.Create:   CreateEventPushing,
+		meta.Find:     FindEventPushing,
+		meta.FindMany: FindEventPushing,
 	},
 	meta.CloudAccount: {
-		meta.Delete: DeleteCloudAccount,
-		meta.Update: EditCloudAccount,
-		meta.Create: CreateCloudAccount,
-		meta.Find:   FindCloudAccount,
+		meta.Delete:   DeleteCloudAccount,
+		meta.Update:   EditCloudAccount,
+		meta.Create:   CreateCloudAccount,
+		meta.Find:     FindCloudAccount,
+		meta.FindMany: FindCloudAccount,
 	},
 	meta.CloudResourceTask: {
 		meta.Delete: DeleteCloudResourceTask,
@@ -375,31 +350,35 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Find:   FindCloudResourceTask,
 	},
 	meta.Model: {
-		meta.Delete: DeleteModel,
-		meta.Update: EditModel,
-		meta.Create: CreateModel,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteSysModel,
+		meta.Update:   EditSysModel,
+		meta.Create:   CreateSysModel,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.AssociationType: {
-		meta.Delete: DeleteAssociationType,
-		meta.Update: EditAssociationType,
-		meta.Create: CreateAssociationType,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteAssociationType,
+		meta.Update:   EditAssociationType,
+		meta.Create:   CreateAssociationType,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.ModelClassification: {
-		meta.Delete: DeleteModelGroup,
-		meta.Update: EditModelGroup,
-		meta.Create: CreateModelGroup,
-		meta.Find:   Skip,
+		meta.Delete:   DeleteModelGroup,
+		meta.Update:   EditModelGroup,
+		meta.Create:   CreateModelGroup,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
 	},
 	meta.OperationStatistic: {
-		meta.Create: EditOperationStatistic,
-		meta.Delete: EditOperationStatistic,
-		meta.Update: EditOperationStatistic,
-		meta.Find:   FindOperationStatistic,
+		meta.Create:   EditOperationStatistic,
+		meta.Delete:   EditOperationStatistic,
+		meta.Update:   EditOperationStatistic,
+		meta.Find:     FindOperationStatistic,
+		meta.FindMany: FindOperationStatistic,
 	},
 	meta.AuditLog: {
-		meta.Find: FindAuditLog,
+		meta.FindMany: FindAuditLog,
 	},
 	meta.SystemBase: {
 		meta.ModelTopologyView:      EditModelTopologyView,
@@ -419,16 +398,18 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelInstanceAssociation: {
-		meta.Find:   Skip,
-		meta.Update: EditInstance,
-		meta.Delete: EditInstance,
-		meta.Create: EditInstance,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
+		meta.Update:   EditSysInstance,
+		meta.Delete:   EditSysInstance,
+		meta.Create:   EditSysInstance,
 	},
 	meta.ModelAssociation: {
-		meta.Find:   Skip,
-		meta.Update: EditModel,
-		meta.Delete: EditModel,
-		meta.Create: EditModel,
+		meta.Find:     Skip,
+		meta.FindMany: Skip,
+		meta.Update:   EditSysModel,
+		meta.Delete:   EditSysModel,
+		meta.Create:   EditSysModel,
 	},
 	meta.ModelInstanceTopology: {
 		meta.Find:   Skip,
@@ -438,9 +419,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 	},
 	meta.ModelAttribute: {
 		meta.Find:   Skip,
-		meta.Update: EditModel,
-		meta.Delete: DeleteModel,
-		meta.Create: CreateModel,
+		meta.Update: EditSysModel,
+		meta.Delete: DeleteSysModel,
+		meta.Create: CreateSysModel,
 	},
 	meta.HostFavorite: {
 		meta.Find:   Skip,
@@ -448,7 +429,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 		meta.Delete: DeleteResourcePoolHost,
 		meta.Create: CreateResourcePoolHost,
 	},
-	// TODO: Confirm
+
 	meta.ProcessTemplate: {
 		meta.Find:   Skip,
 		meta.Delete: DeleteBusinessServiceTemplate,
@@ -471,6 +452,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ResourceActionID{
 	meta.InstallBK: {
 		meta.Update: Skip,
 	},
+	// TODO: confirm this
 	meta.SystemConfig: {
 		meta.Find:   Skip,
 		meta.Update: Skip,
@@ -520,10 +502,12 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 		if err != nil {
 			return nil, err
 		}
-		rscIDs, err := GenerateResourceID(*rscType, &r)
-		if err != nil {
-			return nil, err
-		}
+		// TODO: rearrange this.
+		rscIDs := make([]RscTypeAndID, 0)
+		// rscIDs, err := GenerateResourceID(*rscType, &r)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		// generate iam resource instances by biz id and instance itself
 		instances := make([]metadata.IamResourceInstance, 0)

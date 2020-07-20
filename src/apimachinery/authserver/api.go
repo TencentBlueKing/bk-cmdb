@@ -19,12 +19,14 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
-func (a *authServer) Authorize(ctx context.Context, h http.Header, authAttribute *meta.AuthAttribute) (meta.Decision, error) {
+func (a *authServer) Authorize(ctx context.Context, h http.Header, authAttribute *meta.AuthAttribute) (
+	types.Decision, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
-		Data              meta.Decision `json:"data"`
+		Data              types.Decision `json:"data"`
 	})
 	subPath := "/authorize"
 
@@ -37,23 +39,25 @@ func (a *authServer) Authorize(ctx context.Context, h http.Header, authAttribute
 		Into(response)
 
 	if err != nil {
-		return meta.Decision{}, errors.CCHttpError
+		return types.Decision{}, errors.CCHttpError
 	}
 	if response.Code != 0 {
-		return meta.Decision{}, response.CCError()
+		return types.Decision{}, response.CCError()
 	}
 
 	return response.Data, nil
 }
 
-func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) ([]meta.Decision, error) {
+func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo,
+	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
+
 	input := meta.AuthAttribute{
 		User:      user,
 		Resources: resources,
 	}
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
-		Data              []meta.Decision `json:"data"`
+		Data              []types.Decision `json:"data"`
 	})
 	subPath := "/authorize/batch"
 
@@ -75,14 +79,16 @@ func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, user met
 	return response.Data, nil
 }
 
-func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) ([]meta.Decision, error) {
+func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo,
+	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
+
 	input := meta.AuthAttribute{
 		User:      user,
 		Resources: resources,
 	}
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
-		Data              []meta.Decision `json:"data"`
+		Data              []types.Decision `json:"data"`
 	})
 	subPath := "/authorize/any/batch"
 

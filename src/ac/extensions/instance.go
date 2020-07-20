@@ -219,8 +219,6 @@ func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.He
 	}
 
 	switch objID {
-	case common.BKInnerObjIDPlat:
-		return am.AuthorizeByPlatIDs(ctx, header, action, ids...)
 	case common.BKInnerObjIDHost:
 		return am.AuthorizeByHostsIDs(ctx, header, action, ids...)
 	case common.BKInnerObjIDModule:

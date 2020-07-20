@@ -156,10 +156,10 @@ func (c *iamClient) UpdateResourcesTypes(ctx context.Context, resType ResourceTy
 	return nil
 }
 
-func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []ResourceTypeID) error {
+func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeID) error {
 
 	ids := make([]struct {
-		ID ResourceTypeID `json:"id"`
+		ID TypeID `json:"id"`
 	}, len(resTypeIDs))
 	for idx := range resTypeIDs {
 		ids[idx].ID = resTypeIDs[idx]
@@ -232,9 +232,9 @@ func (c *iamClient) UpdateAction(ctx context.Context, action ResourceAction) err
 	return nil
 }
 
-func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ResourceActionID) error {
+func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ActionID) error {
 	ids := make([]struct {
-		ID ResourceActionID `json:"id"`
+		ID ActionID `json:"id"`
 	}, len(actionIDs))
 	for idx := range actionIDs {
 		ids[idx].ID = actionIDs[idx]
