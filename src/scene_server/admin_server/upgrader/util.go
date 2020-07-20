@@ -17,10 +17,10 @@ import (
 	"errors"
 	"fmt"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 // Upsert inset row but update it without ignores key if exists same value with keys
@@ -111,4 +111,60 @@ func Upsert(ctx context.Context, db dal.RDB, tableName string, row interface{}, 
 		return instID, existOne, fmt.Errorf("update error %v", err)
 	}
 	return instID, existOne, nil
+}
+
+// Insert insert the row to db if it doesn't exist, else do nothing
+// row is the data to insert
+// idField used to be field name of generated instance id
+// uniqueKeys used to judge whether the row exist in db
+func Insert(ctx context.Context, db dal.RDB, tableName string, row interface{}, idField string, uniqueKeys []string) error {
+	if idField == "" {
+		blog.Errorf("idField is empty, it can't be empty")
+		return errors.New("idField can't be empty")
+	}
+
+	data := map[string]interface{}{}
+	switch value := row.(type) {
+	case map[string]interface{}:
+		data = value
+	default:
+		out, err := bson.Marshal(row)
+		if err != nil {
+			blog.Errorf("marshal error:%v", err)
+			return err
+		}
+		if err = bson.Unmarshal(out, data); err != nil {
+			blog.Errorf("unmarshal error:%v", err)
+			return err
+		}
+	}
+
+	condition := map[string]interface{}{}
+	for _, key := range uniqueKeys {
+		condition[key] = data[key]
+	}
+
+	count, err := db.Table(tableName).Find(condition).Count(ctx)
+	if err != nil {
+		blog.Errorf("find count error:%v", err)
+		return err
+	}
+	// if exist, return directly
+	if count > 0 {
+		return nil
+	}
+
+	instID, err := db.NextSequence(ctx, tableName)
+	if err != nil {
+		return err
+	}
+	data[idField] = instID
+
+	err = db.Table(tableName).Insert(ctx, data)
+	if err != nil {
+		blog.Errorf("insert error %v", err)
+		return err
+	}
+
+	return nil
 }

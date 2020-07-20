@@ -136,16 +136,16 @@ func (c Cursor) Encode() (string, error) {
 	pool.WriteString(strconv.Itoa(c.Type.ToInt()))
 	pool.WriteByte('\r')
 
+	// oid field.
+	pool.WriteString(c.Oid)
+	pool.WriteByte('\r')
+
 	// cluster time sec field.
 	pool.WriteString(sec)
 	pool.WriteByte('\r')
 
 	// cluster time nano field
 	pool.WriteString(nano)
-	pool.WriteByte('\r')
-
-	// oid field.
-	pool.WriteString(c.Oid)
 
 	return base64.StdEncoding.EncodeToString(pool.Bytes()), nil
 }
@@ -194,24 +194,23 @@ func (c *Cursor) Decode(cur string) error {
 	cursorType.ParseInt(typ)
 	c.Type = cursorType
 
-	sec, err := strconv.ParseUint(elements[2], 10, 64)
+	_, err = primitive.ObjectIDFromHex(elements[2])
+	if err != nil {
+		return fmt.Errorf("got invalid oid: %s, err: %v", elements[2], err)
+	}
+	c.Oid = elements[2]
+
+	sec, err := strconv.ParseUint(elements[3], 10, 64)
 	if err != nil {
 		return fmt.Errorf("got invalid sec field %s, err: %v", elements[3], err)
 	}
 	c.ClusterTime.Sec = uint32(sec)
 
-	nano, err := strconv.ParseUint(elements[3], 10, 64)
+	nano, err := strconv.ParseUint(elements[4], 10, 64)
 	if err != nil {
-		return fmt.Errorf("got invalid nano field %s, err: %v", elements[3], err)
+		return fmt.Errorf("got invalid nano field %s, err: %v", elements[4], err)
 	}
 	c.ClusterTime.Nano = uint32(nano)
-
-	_, err = primitive.ObjectIDFromHex(elements[4])
-	if err != nil {
-		return fmt.Errorf("got invalid oid: %s, err: %v", elements[4], err)
-	}
-
-	c.Oid = elements[4]
 
 	return nil
 }

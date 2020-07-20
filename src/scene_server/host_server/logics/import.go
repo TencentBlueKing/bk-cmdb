@@ -122,6 +122,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 		if existInDB {
 			// remove unchangeable fields
 			delete(host, common.BKHostInnerIPField)
+			delete(host, common.BKCloudIDField)
 
 			// get host info before really change it
 			preData, _, _ = lgc.GetHostInstanceDetails(ctx, intHostID)
@@ -133,7 +134,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			}
 			action = metadata.AuditUpdate
 		} else {
-			intHostID, err = instance.addHostInstance(appID, moduleIDs, toInternalModule, host)
+			intHostID, err = instance.addHostInstance(iSubAreaVal, index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
 				errMsg = append(errMsg, fmt.Errorf(lgc.ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
 				continue
@@ -259,7 +260,9 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 		}
 		host[common.BKCloudIDField] = cloudIDVal
 
-		hostID, err := instance.addHostInstance(bizID, []int64{hostList.Directory}, toInternalModule, host)
+		hostID, err := instance.addHostInstance(cloudIDVal, int64(index), bizID, []int64{hostList.Directory}, 
+		toInternalModule, 
+		host)
 		if err != nil {
 			res.Error = append(res.Error, metadata.AddOneHostToResourcePoolResult{
 				Index:    index,
@@ -368,6 +371,7 @@ type importInstance struct {
 	ccErr         ccErr.DefaultCCErrorIf
 	ccLang        language.DefaultCCLanguageIf
 	rid           string
+	lgc           *Logics
 }
 
 func NewImportInstance(ctx context.Context, ownerID string, lgc *Logics) *importInstance {
@@ -379,6 +383,7 @@ func NewImportInstance(ctx context.Context, ownerID string, lgc *Logics) *import
 		ccErr:   lgc.ccErr,
 		ccLang:  lgc.ccLang,
 		rid:     lgc.rid,
+		lgc:     lgc,
 	}
 }
 
@@ -404,8 +409,33 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	return nil
 }
 
-func (h *importInstance) addHostInstance(appID int64, moduleIDs []int64, toInternalModule bool, host map[string]interface{}) (int64, error) {
+
+// addHostInstance  add host
+// cloud id：host belong cloud area id
+// index: index number
+// app id : host belong app id
+// module id: host belong module id
+// host : host info
+func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs []int64, toInternalModule bool, host map[string]interface{}) (int64, error) {
 	ip, _ := host[common.BKHostInnerIPField].(string)
+	if cloudID < 0 {
+		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccLang.Language("import_host_cloudID_invalid")))
+	}
+
+	// determine if the cloud area exists
+	// default cloud area must be exist
+	if cloudID != common.BKDefaultDirSubArea {
+		isExist, err := h.lgc.IsPlatExist(h.ctx, mapstr.MapStr{common.BKCloudIDField: cloudID})
+		if nil != err {
+			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
+
+		}
+		if !isExist {
+			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, h.ccErr.Errorf(common.CCErrTopoCloudNotFound).Error()))
+
+		}
+	}
+	host[common.BKCloudIDField] = cloudID
 
 	input := &metadata.CreateModelInstance{
 		Data: host,
