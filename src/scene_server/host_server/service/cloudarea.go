@@ -120,9 +120,9 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 
 	// 查询云区域时附带云同步任务ID信息
 	if input.SyncTaskIDs {
-		err = s.addPlatSyncTaskCount(srvData, &res.Data.Info)
+		err = s.addPlatSyncTaskIDs(srvData, &res.Data.Info)
 		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea failed, addPlatSyncTaskCount err: %v, rid: %s", err, srvData.rid)
+			blog.ErrorJSON("FindManyCloudArea failed, addPlatSyncTaskIDs err: %v, rid: %s", err, srvData.rid)
 			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail)})
 			return
 		}
@@ -548,7 +548,6 @@ func (s *Service) addPlatHostCount(srvData *srvComm, data *[]mapstr.MapStr) erro
 		return srvData.ccErr.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	result := make([]mapstr.MapStr, 0)
 	cloudHost := make(map[int64]int64, 0)
 	for _, info := range rsp.Data.Info {
 		intID, err := info.Int64(common.BKCloudIDField)
@@ -561,12 +560,16 @@ func (s *Service) addPlatHostCount(srvData *srvComm, data *[]mapstr.MapStr) erro
 		}
 		cloudHost[intID] += 1
 	}
-	for cloudID, cloudInfo := range mapCloudIDInfo {
-		cloudInfo["host_count"] = 0
-		if count, ok := cloudHost[cloudID]; ok {
-			cloudInfo["host_count"] = count
+
+	result := make([]mapstr.MapStr, 0)
+	for _, cloudID := range intCloudIDArray {
+		if cloudInfo, ok := mapCloudIDInfo[cloudID]; ok {
+			cloudInfo["host_count"] = 0
+			if count, ok := cloudHost[cloudID]; ok {
+				cloudInfo["host_count"] = count
+			}
+			result = append(result, cloudInfo)
 		}
-		result = append(result, cloudInfo)
 	}
 
 	*data = result
@@ -574,8 +577,8 @@ func (s *Service) addPlatHostCount(srvData *srvComm, data *[]mapstr.MapStr) erro
 	return nil
 }
 
-// addPlatSyncTaskCount add sync task ids to plat info
-func (s *Service) addPlatSyncTaskCount(srvData *srvComm, data *[]mapstr.MapStr) error {
+// addPlatSyncTaskIDs add sync task ids to plat info
+func (s *Service) addPlatSyncTaskIDs(srvData *srvComm, data *[]mapstr.MapStr) error {
 	option := &metadata.SearchCloudOption{
 		Page: meta.BasePage{
 			Limit: common.BKNoLimit,
@@ -584,7 +587,7 @@ func (s *Service) addPlatSyncTaskCount(srvData *srvComm, data *[]mapstr.MapStr) 
 	}
 	result, err := s.CoreAPI.CoreService().Cloud().SearchSyncTask(srvData.ctx, srvData.header, option)
 	if err != nil {
-		blog.Errorf("addPlatSyncTaskCount failed, rid:%s, option:%+v, err:%+v", srvData.rid, option, err)
+		blog.Errorf("addPlatSyncTaskIDs failed, rid:%s, option:%+v, err:%+v", srvData.rid, option, err)
 		return err
 	}
 	cloudIDTasks := make(map[int64][]int64)
@@ -597,7 +600,7 @@ func (s *Service) addPlatSyncTaskCount(srvData *srvComm, data *[]mapstr.MapStr) 
 	for i, area := range *data {
 		cloudID, err := area.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.ErrorJSON("addPlatSyncTaskCount failed, Int64 err: %v, area:%#v, rid: %s", err, area, srvData.rid)
+			blog.ErrorJSON("addPlatSyncTaskIDs failed, Int64 err: %v, area:%#v, rid: %s", err, area, srvData.rid)
 			return err
 		}
 		if _, ok := cloudIDTasks[cloudID]; ok {

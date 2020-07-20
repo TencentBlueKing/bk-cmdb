@@ -2,6 +2,7 @@ package cloudsync
 
 import (
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -36,6 +37,12 @@ func NewHostSyncor(id int, logics *logics.Logics) *HostSyncor {
 
 // 同步云主机
 func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
+	defer func() {
+		if err := recover(); err != nil {
+			blog.Errorf("sync panic err:%#v, rid:%s, debug strace:%s", err, h.kit.Rid, debug.Stack())
+		}
+	}()
+
 	blog.V(4).Infof("hostSyncor%d start sync", h.id)
 	startTime := time.Now()
 	// 每次同步生成新的kit
