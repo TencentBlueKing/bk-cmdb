@@ -23,10 +23,18 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// objectBase is subset of metadata.Object
+type objectBase struct {
+	metadata.Metadata	`field:"metadata" json:"metadata" bson:"metadata"`
+	ID          		int64  `field:"id" json:"id" bson:"id"`
+	ObjCls      		string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
+	ObjectID    		string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+}
+
 // 注意: 最后返回的模型不一定属于 possibleBizID 对应的业务， 可能是个公有模型, 也可能是私有模型(业务下模型)
 // 背景: possibleBizID 是前端传递过来的请求参数，可能只是用于给公有模型创建一个业务私有字段
 // 取名 possibleBizID 是为了显式告诉调用方获取到的模型不一定是私有模型
-func (ps *parseStream) getPublicOrBizModelByObjectID(possibleBizID int64, objectID string) (metadata.Object, error) {
+func (ps *parseStream) getPublicOrBizModelByObjectID(possibleBizID int64, objectID string) (objectBase, error) {
 	filter := map[string]interface{}{
 		common.BKObjIDField: objectID,
 	}
@@ -44,8 +52,9 @@ func (ps *parseStream) getPublicOrBizModelByObjectID(possibleBizID int64, object
 	return ps.getOneModel(filter)
 }
 
-func (ps *parseStream) getOneModel(cond mapstr.MapStr) (metadata.Object, error) {
-	model := metadata.Object{}
+func (ps *parseStream) getOneModel(cond mapstr.MapStr) (objectBase, error) {
+	model := objectBase{}
+
 	models, err := ps.searchModels(cond)
 	if err != nil {
 		return model, err
@@ -56,7 +65,14 @@ func (ps *parseStream) getOneModel(cond mapstr.MapStr) (metadata.Object, error) 
 	if len(models) > 1 {
 		return model, fmt.Errorf("model [%+v] not found", cond)
 	}
-	return models[0], nil
+
+	model = objectBase{
+		Metadata: models[0].Metadata,
+		ID: models[0].ID,
+		ObjCls: models[0].ObjCls,
+		ObjectID: models[0].ObjectID,
+	}
+	return model, nil
 }
 
 func (ps *parseStream) getClassIDWithObject(obj string) (int64, error) {
