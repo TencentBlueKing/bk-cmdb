@@ -14,6 +14,7 @@ package logics
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -27,7 +28,7 @@ import (
 // GetDepartment get department info from paas
 func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metadata.DepartmentData, errors.CCErrorCoder) {
 	// if no esb config, return
-	if _, ok := config.ConfigMap["esb.addr"]; !ok {
+	if !configcenter.IsExist("webServer.esb.addr") {
 		return &metadata.DepartmentData{}, nil
 	}
 
@@ -51,7 +52,7 @@ func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metad
 // GetDepartmentProfile get department profile from paas
 func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) (*metadata.DepartmentProfileData, errors.CCErrorCoder) {
 	// if no esb config, return
-	if _, ok := config.ConfigMap["esb.addr"]; !ok {
+	if !configcenter.IsExist("webServer.esb.addr") {
 		return &metadata.DepartmentProfileData{}, nil
 	}
 

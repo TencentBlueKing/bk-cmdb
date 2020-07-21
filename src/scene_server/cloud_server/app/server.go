@@ -147,14 +147,15 @@ type CloudServer struct {
 }
 
 func (c *CloudServer) onCloudConfigUpdate(previous, current cc.ProcessConfig) {
+
 	if c.Config == nil {
 		c.Config = new(options.Config)
 	}
-	c.Config.SecretKeyUrl = current.ConfigMap["cryptor.secret_key_url"]
-	c.Config.SecretsAddrs = current.ConfigMap["cryptor.secrets_addrs"]
-	c.Config.SecretsToken = current.ConfigMap["cryptor.secrets_token"]
-	c.Config.SecretsProject = current.ConfigMap["cryptor.secrets_project"]
-	c.Config.SecretsEnv = current.ConfigMap["cryptor.secrets_env"]
+	c.Config.SecretKeyUrl, _ = cc.String("cloudServer.cryptor.secretKeyUrl")
+	c.Config.SecretsAddrs, _ = cc.String("cloudServer.cryptor.secretsAddrs")
+	c.Config.SecretsToken, _ = cc.String("cloudServer.cryptor.secretsToken")
+	c.Config.SecretsProject, _ = cc.String("cloudServer.cryptor.secretsProject")
+	c.Config.SecretsEnv, _ = cc.String("cloudServer.cryptor.secretsEnv")
 }
 
 // getSecretKey get the secret key from bk-secrets service

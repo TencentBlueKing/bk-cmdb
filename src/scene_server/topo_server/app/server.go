@@ -40,12 +40,10 @@ type TopoServer struct {
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.configReady = true
-
-	t.Config.ConfigMap = current.ConfigMap
-	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, string(current.ConfigData))
 
 	var err error
-	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
+	t.Config.Es, err = elasticsearch.ParseConfigFromKV("topoServer.es", nil)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
 	}

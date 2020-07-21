@@ -161,10 +161,8 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 
 func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
-
 	o.Config = &options.Config{}
-	o.Config.ConfigMap = current.ConfigMap
-	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
+	o.Config.Timer, err = o.ParseTimerConfigFromKV("operationServer.timer", nil)
 	if err != nil {
 		blog.Errorf("parse timer config failed, err: %v", err)
 		return
@@ -174,13 +172,11 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
 	// 若是timer没配置，或者解析失败，给一个默认的定时时间
 	defaultSpec := "30 0 * * *"
-
-	specStr, ok := configMap[prefix+".spec"]
-	if !ok {
+	specStr, err := cc.String(prefix+".spec")
+	if err != nil {
 		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, set timer-spec default value: 00:30")
 		return defaultSpec, nil
 	}
-
 	spec, err := parseTimerConfig(specStr)
 	if err != nil || spec == "" {
 		blog.Errorf("parse timer config failed, set timer-spec default value: 00:30, err: %v", err)

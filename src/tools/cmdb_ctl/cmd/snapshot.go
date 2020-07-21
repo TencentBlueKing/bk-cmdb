@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/configcenter"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/tools/cmdb_ctl/app/config"
@@ -117,13 +117,11 @@ func (s *snapshotCheckService) checkConf() error {
 		return fmt.Errorf("get path [%s] from zk [%v] failed: %v", path, s.service.ZkCli.ZkHost, err)
 	}
 
-	procConf, err := configcenter.ParseConfigWithData([]byte(strConf))
-	if err != nil {
+	if err := cc.SetRedisFromByte([]byte(strConf)); err != nil {
 		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config failed: %v", path, s.service.ZkCli.ZkHost, err)
 	}
 
-	s.config = procConf.ConfigMap
-	if len(s.config) == 0 {
+	if len(strConf) == 0 {
 		return fmt.Errorf("get path [%s] from regdiscv [%v]  parse config empty", path, s.service.ZkCli.ZkHost)
 	}
 
@@ -132,7 +130,7 @@ func (s *snapshotCheckService) checkConf() error {
 
 func (s *snapshotCheckService) checkCCHostSnaphot() error {
 
-	redisConfig := ccRedis.ParseConfigFromKV("redis", s.config)
+	redisConfig := cc.Redis("redis")
 	client, err := ccRedis.NewFromConfig(redisConfig)
 	if err != nil {
 		return fmt.Errorf("connect redis [%s] failed: %s", redisConfig.Address, err.Error())
@@ -150,7 +148,7 @@ func (s *snapshotCheckService) checkCCHostSnaphot() error {
 
 func (s *snapshotCheckService) checkHostSnapshot() error {
 
-	redisConfig := ccRedis.ParseConfigFromKV("snap-redis", s.config)
+	redisConfig := cc.Redis("redis.snap")
 	client, err := ccRedis.NewFromConfig(redisConfig)
 	if err != nil {
 		return fmt.Errorf("connect redis [%s] failed: %s", redisConfig.Address, err.Error())
