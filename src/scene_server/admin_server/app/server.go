@@ -65,7 +65,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.ProcSrvConfig.CCApiSrvAddr, _ = config.ConfigMap["procsrv.cc_api"]
 
 	process.Config.Iam, err = iam.ParseConfigFromKV("auth", config.ConfigMap)
-	if err != nil && auth.IsAuthed() {
+	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v, config: %+v", err, config.ConfigMap)
 	}
 	service := svc.NewService(ctx)
@@ -116,7 +116,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		process.Service.SetCache(cache)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 
-		if auth.IsAuthed() {
+		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
 
 			iamCli, err := iam.NewIam(nil, process.Config.Iam, engine.Metric().Registry())

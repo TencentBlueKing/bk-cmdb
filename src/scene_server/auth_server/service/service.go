@@ -47,7 +47,7 @@ func NewAuthService(engine *backbone.Engine, auth ac.AuthInterface, lgc *logics.
 
 func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-		if !auth.IsAuthed() {
+		if !auth.EnableAuthorize() {
 			chain.ProcessFilter(req, resp)
 			return
 		}
@@ -136,6 +136,7 @@ func (s *AuthService) initAuth(api *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize", Handler: s.Authorize})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize/batch", Handler: s.AuthorizeBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize/any/batch", Handler: s.AuthorizeAnyBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/authorized_resource", Handler: s.ListAuthorizedResources})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/no_auth_skip_url", Handler: s.GetNoAuthSkipUrl})
 

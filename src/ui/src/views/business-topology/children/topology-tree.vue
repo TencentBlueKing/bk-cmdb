@@ -230,20 +230,20 @@
                 }
             },
             getDefaultNodeId () {
-                // 从其他页面跳转过来需要筛选节点，例如：删除集群模板中的服务模板
-                const keyword = RouterQuery.get('keyword', '')
-                if (keyword) {
-                    const [firstMatchedNode] = this.$refs.tree.filter(keyword.trim())
-                    if (firstMatchedNode) {
-                        return firstMatchedNode.id
-                    }
-                }
                 // 选中指定的节点
                 const queryNodeId = RouterQuery.get('node', '')
                 if (queryNodeId) {
                     const node = this.$refs.tree.getNodeById(queryNodeId)
                     if (node) {
                         return node.id
+                    }
+                }
+                // 从其他页面跳转过来需要筛选节点，例如：删除集群模板中的服务模板
+                const keyword = RouterQuery.get('keyword', '')
+                if (keyword) {
+                    const [firstMatchedNode] = this.$refs.tree.filter(keyword.trim())
+                    if (firstMatchedNode) {
+                        return firstMatchedNode.id
                     }
                 }
                 // 选中第一个节点

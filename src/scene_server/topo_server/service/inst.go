@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -173,6 +174,34 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 			obj.GetInstIDFieldName(): map[string]interface{}{
 				common.BKDBIN: deleteCondition.Delete.InstID,
 			}}}
+
+	// get authorized instance ids if auth is enabled
+	if auth.EnableAuthorize() {
+		isMainline, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, obj.GetObjectID())
+		if err != nil {
+			blog.Errorf("check if object(%s) is mainline failed, err: %s, rid: %s", obj.GetObjectID(), err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if !isMainline {
+			instIDs, err := s.AuthManager.ListAuthorizedInstanceIDs(ctx.Kit.Ctx, ctx.Kit.Header, ctx.Kit.User)
+			if err != nil {
+				blog.ErrorJSON("ListAuthorizedInstanceIDs failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+				ctx.RespAutoError(err)
+				return
+			}
+			input.Condition = map[string]interface{}{
+				common.BKDBAND: []map[string]interface{}{
+					input.Condition,
+					{
+						common.BKInstIDField: map[string]interface{}{
+							common.BKDBIN: instIDs,
+						},
+					},
+				},
+			}
+		}
+	}
 
 	_, insts, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, input, false)
 	if nil != err {
@@ -513,6 +542,35 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 		queryCond.Condition = mapstr.New()
 	}
 	page := metadata.ParsePage(queryCond.Page)
+
+	// get authorized instance ids if auth is enabled
+	if auth.EnableAuthorize() {
+		isMainline, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, obj.GetObjectID())
+		if err != nil {
+			blog.Errorf("check if object(%s) is mainline failed, err: %s, rid: %s", obj.GetObjectID(), err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if !isMainline {
+			instIDs, err := s.AuthManager.ListAuthorizedInstanceIDs(ctx.Kit.Ctx, ctx.Kit.Header, ctx.Kit.User)
+			if err != nil {
+				blog.ErrorJSON("ListAuthorizedInstanceIDs failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+				ctx.RespAutoError(err)
+				return
+			}
+			queryCond.Condition = map[string]interface{}{
+				common.BKDBAND: []map[string]interface{}{
+					queryCond.Condition,
+					{
+						common.BKInstIDField: map[string]interface{}{
+							common.BKDBIN: instIDs,
+						},
+					},
+				},
+			}
+		}
+	}
+
 	query := &metadata.QueryInput{}
 	query.Condition = queryCond.Condition
 	query.Fields = strings.Join(queryCond.Fields, ",")

@@ -28,16 +28,23 @@ func (ps *parseStream) cloudRelated() *parseStream {
 		return ps
 	}
 
-	ps.CloudAccount().CloudResourceTask()
+	ps.cloudAccount().cloudResourceTask().CloudResourceDirectory()
 
 	return ps
 }
 
-var CloudAccountConfigs = []AuthConfig{
+var cloudAccountConfigs = []AuthConfig{
 	{
 		Name:           "verifyCloudAccountPattern",
 		Description:    "测试云账户连通性",
 		Pattern:        "/api/v3/cloud/account/verify",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudAccount,
+		ResourceAction: meta.SkipAction,
+	}, {
+		Name:           "searchCloudAccountValidityPattern",
+		Description:    "查询云账户有效性",
+		Pattern:        "/api/v3/findmany/cloud/account/validity",
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.CloudAccount,
 		ResourceAction: meta.SkipAction,
@@ -47,7 +54,7 @@ var CloudAccountConfigs = []AuthConfig{
 		Pattern:        "/api/v3/findmany/cloud/account",
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.CloudAccount,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "createCloudAccountPattern",
 		Description:    "创建云账户",
@@ -100,12 +107,11 @@ var CloudAccountConfigs = []AuthConfig{
 	},
 }
 
-var CloudResourceTaskConfigs = []AuthConfig{
+var cloudResourceTaskConfigs = []AuthConfig{
 	{
 		Name:           "getCloudAccountVpcRegex",
 		Description:    "查询账户下的vpc数据",
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/cloud/account/vpc/([0-9]+)$`),
-		Pattern:        "/api/v3/cloud/account/verify",
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.CloudResourceTask,
 		ResourceAction: meta.SkipAction,
@@ -183,10 +189,95 @@ var CloudResourceTaskConfigs = []AuthConfig{
 	},
 }
 
-func (ps *parseStream) CloudAccount() *parseStream {
-	return ParseStreamWithFramework(ps, CloudAccountConfigs)
+func (ps *parseStream) cloudAccount() *parseStream {
+	return ParseStreamWithFramework(ps, cloudAccountConfigs)
 }
 
-func (ps *parseStream) CloudResourceTask() *parseStream {
-	return ParseStreamWithFramework(ps, CloudResourceTaskConfigs)
+func (ps *parseStream) cloudResourceTask() *parseStream {
+	return ParseStreamWithFramework(ps, cloudResourceTaskConfigs)
+}
+
+const (
+	getCloudResourceDirectoryPattern    = "/api/v3/findmany/resource/directory"
+	createCloudResourceDirectoryPattern = "/api/v3/create/resource/directory"
+)
+
+var (
+	updateCloudResourceDirectoryRegexp = regexp.MustCompile(`^/api/v3/update/resource/directory/([0-9]+)$`)
+	deleteCloudResourceDirectoryRegexp = regexp.MustCompile(`^/api/v3/delete/resource/directory/([0-9]+)$`)
+)
+
+func (ps *parseStream) CloudResourceDirectory() *parseStream {
+
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	// "查询主机池目录"
+	if ps.hitPattern(getCloudResourceDirectoryPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ResourcePoolDirectory,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// 创建主机池目录
+	if ps.hitPattern(createCloudResourceDirectoryPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ResourcePoolDirectory,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	// 更新主机池目录
+	if ps.hitRegexp(updateCloudResourceDirectoryRegexp, http.MethodPut) {
+		dirID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse resource dir id %s failed, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.ResourcePoolDirectory,
+					Action:     meta.Update,
+					InstanceID: dirID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// 删除主机池目录
+	if ps.hitRegexp(deleteCloudResourceDirectoryRegexp, http.MethodDelete) {
+		dirID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse resource dir id %s failed, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.ResourcePoolDirectory,
+					Action:     meta.Delete,
+					InstanceID: dirID,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
 }

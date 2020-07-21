@@ -13,7 +13,7 @@
                     <span v-else>{{row[column.id] | formatter(column.property)}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" prop="operation" v-if="$parent.isFormMode">
+            <bk-table-column :label="$t('操作')" prop="operation" v-if="showOperation">
                 <template slot-scope="{ row, $index }">
                     <cmdb-auth :auth="auth">
                         <bk-button slot-scope="{ disabled }"
@@ -72,7 +72,8 @@
             loading: {
                 type: Boolean,
                 default: false
-            }
+            },
+            showOperation: Boolean
         },
         data () {
             return {}

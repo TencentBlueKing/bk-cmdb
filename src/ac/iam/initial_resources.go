@@ -19,7 +19,7 @@ var (
 	}
 )
 
-var ResourceTypeIDMap = map[ResourceTypeID]string{
+var ResourceTypeIDMap = map[TypeID]string{
 	Business:                  "业务",
 	SysCloudArea:              "云区域",
 	SysResourcePoolDirectory:  "主机池目录",
@@ -60,8 +60,8 @@ func GenerateResourceTypes() []ResourceType {
 }
 
 // GetResourceParentMap generate resource types' mapping to parents.
-func GetResourceParentMap() map[ResourceTypeID][]ResourceTypeID {
-	resourceParentMap := make(map[ResourceTypeID][]ResourceTypeID, 0)
+func GetResourceParentMap() map[TypeID][]TypeID {
+	resourceParentMap := make(map[TypeID][]TypeID, 0)
 	for _, resourceType := range GenerateResourceTypes() {
 		for _, parent := range resourceType.Parents {
 			resourceParentMap[resourceType.ID] = append(resourceParentMap[resourceType.ID], parent.ResourceID)

@@ -13,132 +13,122 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-
-	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
+func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
 
 	params := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("save user custom failed with decode body err: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err := ctx.DecodeInto(&params); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := s.CoreAPI.CoreService().Host().GetUserCustomByUser(srvData.ctx, srvData.user, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetUserCustomByUser(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("SaveUserCustom GetUserCustomByUser http do error,err:%s,input:%s, rid:%s", err.Error(), params, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		blog.Errorf("SaveUserCustom GetUserCustomByUser http do error,err:%s,input:%s, rid:%s", err.Error(), params, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
 	if !result.Result {
-		blog.Errorf("SaveUserCustom GetUserCustomByUser http response error,err code:%d,err msg:%s,input:%s, rid:%s", result.Code, result.ErrMsg, params, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+		blog.Errorf("SaveUserCustom GetUserCustomByUser http response error,err code:%d,err msg:%s,input:%s, rid:%s", result.Code, result.ErrMsg, params, ctx.Kit.Rid)
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 
 	var res *metadata.BaseResp
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
 		if len(result.Data) == 0 {
-			res, err = s.CoreAPI.CoreService().Host().AddUserCustom(srvData.ctx, srvData.user, srvData.header, params)
+			res, err = s.CoreAPI.CoreService().Host().AddUserCustom(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header, params)
 			if err != nil {
-				blog.Errorf("SaveUserCustom AddUserCustom http do error,err:%s,input:%s, rid:%s", err.Error(), params, srvData.rid)
-				return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+				blog.Errorf("SaveUserCustom AddUserCustom http do error,err:%s,input:%s, rid:%s", err.Error(), params, ctx.Kit.Rid)
+				return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if !res.Result {
-				blog.Errorf("SaveUserCustom AddUserCustom http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, srvData.rid)
-				return srvData.ccErr.New(res.Code, res.ErrMsg)
+				blog.Errorf("SaveUserCustom AddUserCustom http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, ctx.Kit.Rid)
+				return res.CCError()
 			}
 			return nil
 
 		}
 		id := result.Data["id"].(string)
-		res, err = s.CoreAPI.CoreService().Host().UpdateUserCustomByID(srvData.ctx, srvData.user, id, srvData.header, params)
+		res, err = s.CoreAPI.CoreService().Host().UpdateUserCustomByID(ctx.Kit.Ctx, ctx.Kit.User, id, ctx.Kit.Header, params)
 		if err != nil {
-			blog.Errorf("SaveUserCustom UpdateUserCustomByID http do error,err:%s,input:%s, rid:%s", err.Error(), params, srvData.rid)
-			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+			blog.Errorf("SaveUserCustom UpdateUserCustomByID http do error,err:%s,input:%s, rid:%s", err.Error(), params, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !res.Result {
-			blog.Errorf("SaveUserCustom UpdateUserCustomByID http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, srvData.rid)
-			return srvData.ccErr.New(res.Code, res.ErrMsg)
+			blog.Errorf("SaveUserCustom UpdateUserCustomByID http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, ctx.Kit.Rid)
+			return res.CCError()
 		}
 		return nil
 	})
 
 	if txnErr != nil {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
+		ctx.RespAutoError(txnErr)
 		return
 	}
-	_ = resp.WriteEntity(res)
+	ctx.RespEntity(nil)
 }
 
-func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
+func (s *Service) GetUserCustom(ctx *rest.Contexts) {
 
-	result, err := s.CoreAPI.CoreService().Host().GetUserCustomByUser(srvData.ctx, srvData.user, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetUserCustomByUser(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("GetUserCustom http do error,err:%s, rid:%s", err.Error(), srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		blog.Errorf("GetUserCustom http do error,err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
 	if !result.Result {
-		blog.Errorf("GetUserCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+		blog.Errorf("GetUserCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, ctx.Kit.Rid)
+		ctx.RespAutoError(result.CCError())
 		return
 	}
-	_ = resp.WriteEntity(result)
+
+	ctx.RespEntity(result.Data)
 }
 
 // GetModelDefaultCustom 获取模型在列表页面展示字段
-func (s *Service) GetModelDefaultCustom(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
+func (s *Service) GetModelDefaultCustom(ctx *rest.Contexts) {
 
-	result, err := s.CoreAPI.CoreService().Host().GetDefaultUserCustom(srvData.ctx, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetDefaultUserCustom(ctx.Kit.Ctx, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("GetDefaultCustom http do error,err:%s, rid:%s", err.Error(), srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		blog.Errorf("GetDefaultCustom http do error,err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
 	if !result.Result {
-		blog.Errorf("GetDefaultCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+		blog.Errorf("GetDefaultCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, ctx.Kit.Rid)
+		ctx.RespAutoError(result.CCError())
 		return
 	}
 	// ensure return {} by json decode
 	if result.Data == nil {
 		result.Data = make(map[string]interface{}, 0)
 	}
-	_ = resp.WriteEntity(metadata.GetUserCustomResult{
-		BaseResp: metadata.SuccessBaseResp,
-		Data:     result.Data,
-	})
+
+	ctx.RespEntity(result.Data)
 }
 
 // SaveModelDefaultCustom 设置模型在列表页面展示字段
-func (s *Service) SaveModelDefaultCustom(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
+func (s *Service) SaveModelDefaultCustom(ctx *rest.Contexts) {
 
-	objID := req.PathParameter("obj_id")
+	objID := ctx.Request.PathParameter("obj_id")
 
 	input := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
-		blog.Errorf("save user custom failed with decode body err: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
 	if len(input) == 0 {
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPBodyEmpty)})
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
 		return
 	}
 
@@ -149,23 +139,24 @@ func (s *Service) SaveModelDefaultCustom(req *restful.Request, resp *restful.Res
 	}
 
 	var result *metadata.BaseResp
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		result, err = s.CoreAPI.CoreService().Host().UpdateDefaultUserCustom(srvData.ctx, srvData.header, userCustomInput)
+		result, err = s.CoreAPI.CoreService().Host().UpdateDefaultUserCustom(ctx.Kit.Ctx, ctx.Kit.Header, userCustomInput)
 		if err != nil {
-			blog.ErrorJSON("SaveUserCustom GetUserCustomByUser http do error,err:%s,input:%s, rid:%s", err.Error(), input, srvData.rid)
-			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+			blog.ErrorJSON("SaveUserCustom GetUserCustomByUser http do error,err:%s,input:%s, rid:%s", err.Error(), input, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if err := result.CCError(); err != nil {
-			blog.ErrorJSON("SaveUserCustom GetUserCustomByUser http reply error. result: %s, input: %s, rid: %s", result, input, srvData.rid)
+			blog.ErrorJSON("SaveUserCustom GetUserCustomByUser http reply error. result: %s, input: %s, rid: %s", result, input, ctx.Kit.Rid)
 			return err
 		}
 		return nil
 	})
 
 	if txnErr != nil {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
+		ctx.RespAutoError(txnErr)
 		return
 	}
-	_ = resp.WriteEntity(result)
+
+	ctx.RespEntity(nil)
 }

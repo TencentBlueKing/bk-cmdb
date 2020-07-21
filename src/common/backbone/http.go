@@ -25,6 +25,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
@@ -54,6 +55,7 @@ func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.C
 				if err := svcDisc.ClearRegisterPath(); err != nil && err != zkclient.ErrNoNode {
 					break
 				}
+				time.Sleep(time.Second * 5)
 				server.SetKeepAlivesEnabled(false)
 				err := server.Shutdown(context.Background())
 				if err != nil {

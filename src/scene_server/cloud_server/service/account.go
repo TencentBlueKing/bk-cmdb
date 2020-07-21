@@ -17,7 +17,9 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -34,7 +36,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	}
 
 	conf := metadata.CloudAccountConf{VendorName: account.CloudVendor, SecretID: account.SecretID, SecretKey: account.SecretKey}
-	err := s.Logics.AccountVerify(conf)
+	err := s.Logics.AccountVerify(ctx.Kit, conf)
 	if err != nil {
 		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
 		errStr := err.Error()
@@ -51,6 +53,42 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// 查询云账户有效性
+func (s *Service) SearchAccountValidity(ctx *rest.Contexts) {
+	option := new(metadata.SearchAccountValidityOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	accountConfs, err := s.Logics.GetCloudAccountConfBatch(ctx.Kit, option.AccountIDs)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrGetCloudAccountConfBatchFailed))
+		return
+	}
+
+	validityInfo := s.Logics.SearchAccountValidity(ctx.Kit, accountConfs)
+	for i, info := range validityInfo {
+		if info.ErrMsg == "" {
+			continue
+		} else if strings.Contains(strings.ToLower(info.ErrMsg), "authfailure") {
+			validityInfo[i].ErrMsg = ctx.Kit.CCError.CCError(common.CCErrCloudAccoutIDSecretWrong).Error()
+		} else if strings.Contains(strings.ToLower(info.ErrMsg), "timeout") {
+			validityInfo[i].ErrMsg = ctx.Kit.CCError.CCError(common.CCErrCloudHttpRequestTimeout).Error()
+		} else {
+			validityInfo[i].ErrMsg = ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed).Error()
+		}
+	}
+
+	ctx.RespEntity(validityInfo)
 }
 
 // 新建云账户
@@ -71,27 +109,37 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 	if s.cryptor != nil {
 		secretKey, err := s.cryptor.Encrypt(account.SecretKey)
 		if err != nil {
-			blog.Errorf("CreateAccount failed, Encrypt err: %st", err.Error())
+			blog.Errorf("CreateAccount failed, Encrypt err: %s, rid: %d", err, ctx.Kit.Rid)
 			ctx.RespWithError(err, common.CCErrCloudAccountCreateFail, "CreateAccount Encrypt err")
 			return
 		}
 		account.SecretKey = secretKey
 	}
 
-	res, err := s.CoreAPI.CoreService().Cloud().CreateAccount(ctx.Kit.Ctx, ctx.Kit.Header, account)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
+	var res *metadata.CloudAccount
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		res, err = s.CoreAPI.CoreService().Cloud().CreateAccount(ctx.Kit.Ctx, ctx.Kit.Header, account)
+		if err != nil {
+			blog.Errorf("CreateAccount failed, CreateAccount err:%s, rid:%s", err, ctx.Kit.Rid)
+			return err
+		}
 
-	// add auditLog
-	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithCurrent(ctx.Kit, res.AccountID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
-		ctx.RespAutoError(err)
+		// add auditLog
+		auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+		if err := auditLog.WithCurrent(ctx.Kit, res.AccountID); err != nil {
+			blog.Errorf("CreateAccount failed, NewAccountAuditLog err:%s, rid:%s", err, ctx.Kit.Rid)
+			return err
+		}
+		if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
+			blog.Errorf("CreateAccount failed, SaveAuditLog err:%s, rid:%s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 
@@ -133,6 +181,27 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 		}
 	}
 
+	if auth.EnableAuthorize() {
+		list, err := s.Logics.ListAuthorizedResources(ctx.Kit, meta.CloudAccount, meta.FindMany)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		if option.Condition == nil {
+			option.Condition = make(map[string]interface{})
+		}
+		option.Condition = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				option.Condition,
+				{
+					common.BKCloudAccountID: map[string]interface{}{
+						common.BKDBIN: list,
+					},
+				},
+			},
+		}
+	}
+
 	res, err := s.CoreAPI.CoreService().Cloud().SearchAccount(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespAutoError(err)
@@ -152,31 +221,40 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 		return
 	}
 
-	// auditLog preData
-	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
 	option := map[string]interface{}{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	err = s.CoreAPI.CoreService().Cloud().UpdateAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID, option)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 
-	// add auditLog
-	if err := auditLog.WithCurrent(ctx.Kit, accountID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate); err != nil {
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		// auditLog preData
+		auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+		if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
+			blog.Errorf("UpdateAccount failed, NewAccountAuditLog err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
+			return err
+		}
+
+		err = s.CoreAPI.CoreService().Cloud().UpdateAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID, option)
+		if err != nil {
+			blog.Errorf("UpdateAccount failed, UpdateAccount err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
+			return err
+		}
+
+		// add auditLog
+		if err := auditLog.WithCurrent(ctx.Kit, accountID); err != nil {
+			blog.Errorf("UpdateAccount failed, WithCurrent err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
+			return err
+		}
+		if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate); err != nil {
+			blog.Errorf("UpdateAccount failed, SaveAuditLog err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 
@@ -193,20 +271,28 @@ func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 		return
 	}
 
-	// add auditLog
-	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	err = s.CoreAPI.CoreService().Cloud().DeleteAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		// add auditLog
+		auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+		if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
+			blog.Errorf("DeleteAccount failed, WithPrevious err:%s, accountID:%d, rid:%s", err, accountID, ctx.Kit.Rid)
+			return err
+		}
+		err = s.CoreAPI.CoreService().Cloud().DeleteAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID)
+		if err != nil {
+			blog.Errorf("DeleteAccount failed, DeleteAccount err:%s, accountID:%d, rid:%s", err, accountID, ctx.Kit.Rid)
+			return err
+		}
 
-	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete); err != nil {
-		ctx.RespAutoError(err)
+		if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete); err != nil {
+			blog.Errorf("DeleteAccount failed, SaveAuditLog err:%s, accountID:%d, rid:%s", err, accountID, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 

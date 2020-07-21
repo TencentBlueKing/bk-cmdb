@@ -55,7 +55,7 @@ func (ps *parseStream) subscribe() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.EventPushing,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -77,9 +77,9 @@ func (ps *parseStream) subscribe() *parseStream {
 
 	// update a subscription
 	if ps.hitRegexp(updateSubscribeRegexp, http.MethodPut) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		subscribeID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -87,7 +87,7 @@ func (ps *parseStream) subscribe() *parseStream {
 				Basic: meta.Basic{
 					Type:       meta.EventPushing,
 					Action:     meta.Update,
-					InstanceID: bizID,
+					InstanceID: subscribeID,
 				},
 			},
 		}
@@ -98,7 +98,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	if ps.hitRegexp(deleteSubscribeRegexp, http.MethodDelete) {
 		subscribeID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("delete subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

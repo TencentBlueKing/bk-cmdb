@@ -32,6 +32,7 @@ func addCloudHostAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	}
 
 	now := time.Now()
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
 	for _, r := range dataRows {
 		r.OwnerID = conf.OwnerID
 		r.IsPre = true
@@ -42,15 +43,8 @@ func addCloudHostAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		id, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
-		if err != nil {
-			blog.ErrorJSON("NextSequence failed, host attrName: %s, err: %v", r.PropertyName, err)
-			return err
-		}
-		r.ID = int64(id)
-
-		if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, r); err != nil {
-			blog.ErrorJSON("insert failed, host attrName: %s, err: %s", r.PropertyName, err)
+		if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields, []string{}); err != nil {
+			blog.ErrorJSON("addCloudHostAttr failed, Upsert err: %s, attribute: %#v, ", err, r)
 			return err
 		}
 	}
@@ -59,9 +53,10 @@ func addCloudHostAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 }
 
 var cloudInstStatusEnum = []metadata.EnumVal{
-	{ID: "1", Name: "启动中", Type: "text"},
-	{ID: "2", Name: "运行中", Type: "text"},
-	{ID: "3", Name: "停止中", Type: "text"},
-	{ID: "4", Name: "已停止", Type: "text"},
-	{ID: "5", Name: "未知", Type: "text"},
+	{ID: "1", Name: "未知", Type: "text"},
+	{ID: "2", Name: "启动中", Type: "text"},
+	{ID: "3", Name: "运行中", Type: "text"},
+	{ID: "4", Name: "停止中", Type: "text"},
+	{ID: "5", Name: "已停止", Type: "text"},
+	{ID: "6", Name: "已销毁", Type: "text"},
 }

@@ -74,12 +74,11 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params map
 func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
-	subPath := "inst/search/owner/%s/object/%s/detail"
-
+	subPath := "/find/instance/object/%s"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -88,7 +87,7 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, ownerID, o
 
 func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/attr"
+	subPath := "/create/objectattr"
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -102,8 +101,7 @@ func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *met
 
 func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr/%s"
-
+	subPath := "/update/objectattr/%s"
 	err = a.client.Put().
 		WithContext(ctx).
 		Body(data).
@@ -116,7 +114,7 @@ func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.He
 
 func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr/%s"
+	subPath := "/delete/objectattr/%s"
 
 	err = a.client.Delete().
 		WithContext(ctx).
@@ -131,7 +129,7 @@ func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.He
 func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrResult, err error) {
 
 	resp = new(metadata.ObjectAttrResult)
-	subPath := "object/attr/search"
+	subPath := "/find/objectattr"
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -161,11 +159,11 @@ func (a *apiServer) GetHostData(ctx context.Context, h http.Header, params mapst
 func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error) {
 
 	resp = new(metadata.ObjectAttrGroupResult)
-	subPath := "objectatt/group/property/owner/%s/object/%s"
+	subPath := "/find/objectattgroup/object/%s"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -205,8 +203,7 @@ func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr
 func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
-	subPath := "inst/%s/%s"
-
+	subPath := "/create/instance/object/%s"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
@@ -234,7 +231,7 @@ func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, ownerID, 
 
 func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
-	subPath := "/inst/association/action/search"
+	subPath := "/find/instassociation"
 
 	err = a.client.Post().
 		WithContext(ctx).

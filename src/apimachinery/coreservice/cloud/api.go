@@ -259,3 +259,25 @@ func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *me
 
 	return &ret.Data, nil
 }
+
+func (c *cloud) DeleteDestroyedHostRelated(ctx context.Context, h http.Header, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder {
+	ret := new(metadata.DeletedOptionResult)
+	subPath := "/delete/cloud/sync/destroyed_host_related"
+
+	err := c.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}

@@ -130,6 +130,7 @@
                     :loading="processLoading"
                     :properties="properties"
                     :auth="auth"
+                    :show-operation="isFormMode"
                     @on-edit="handleUpdateProcess"
                     @on-delete="handleDeleteProcess"
                     :list="processList">

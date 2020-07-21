@@ -63,6 +63,10 @@ func (l *Limiter) SyncLimiterRules() error {
 func (l *Limiter) syncLimiterRules(path string) error {
 	children, err := l.zkCli.GetChildren(path)
 	if err != nil {
+		if strings.Contains(err.Error(), "node does not exist") {
+			// user not defined rules, which is ok. skip these annoy error.
+			return nil
+		}
 		blog.Errorf("fail to GetChildren for path:%s, err:%s", path, err.Error())
 		return err
 	}

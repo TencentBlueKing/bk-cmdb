@@ -62,11 +62,12 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 		events, err := s.watchWithCursor(key, options, rid)
 		if err != nil {
 			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, rid)
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 			return
 		}
 
-		resp.WriteEntity(s.generateResp(options.Resource, events))
+		// if not events is hit, then we return user's cursor, so that they can watch with this cursor again.
+		resp.WriteEntity(s.generateResp(options.Cursor, options.Resource, events))
 		return
 	}
 
@@ -79,7 +80,7 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 			return
 		}
 
-		resp.WriteEntity(s.generateResp(options.Resource, events))
+		resp.WriteEntity(s.generateResp("", options.Resource, events))
 		return
 	}
 
@@ -91,28 +92,55 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	resp.WriteEntity(s.generateResp(options.Resource, []*watch.WatchEventDetail{events}))
+	resp.WriteEntity(s.generateResp("", options.Resource, []*watch.WatchEventDetail{events}))
 }
 
-func (s *Service) generateResp(rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.Response {
+func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.
+	Response {
 	result := new(watch.WatchResp)
 	if len(events) == 0 {
 		result.Watched = false
-		result.Events = []*watch.WatchEventDetail{
-			{
-				Cursor:   watch.NoEventCursor,
-				Resource: rsc,
-			},
-		}
-	} else {
-		if events[0].Cursor == watch.NoEventCursor {
-			result.Watched = false
+		if len(startCursor) == 0 {
 			result.Events = []*watch.WatchEventDetail{
 				{
 					Cursor:   watch.NoEventCursor,
 					Resource: rsc,
 				},
 			}
+		} else {
+			// if user's watch with a start cursor, but we do not find event after this cursor,
+			// then we return this start cursor directly, so that they can watch with this cursor for next round.
+			result.Events = []*watch.WatchEventDetail{
+				{
+					Cursor:   startCursor,
+					Resource: rsc,
+				},
+			}
+		}
+
+	} else {
+		if events[0].Cursor == watch.NoEventCursor {
+			result.Watched = false
+
+			if len(startCursor) == 0 {
+				// user watch with start form time, or watch from now, then return with NoEventCursor cursor.
+				result.Events = []*watch.WatchEventDetail{
+					{
+						Cursor:   watch.NoEventCursor,
+						Resource: rsc,
+					},
+				}
+			} else {
+				// if user's watch with a start cursor, but hit a NoEventCursor cursor,
+				// then we return this start cursor directly, so that they can watch with this cursor for next round.
+				result.Events = []*watch.WatchEventDetail{
+					{
+						Cursor:   startCursor,
+						Resource: rsc,
+					},
+				}
+			}
+
 		} else {
 			result.Watched = true
 			result.Events = events
@@ -128,6 +156,17 @@ func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 	headTarget, tailTarget, err := s.getHeadTailNodeTargetNode(key)
 	if err != nil {
 		blog.Errorf("get head and tail targeted node detail failed, err: %v, rid: %s", err, rid)
+
+		// tail node is not initialized, which means no events.
+		if err == TailNodeNotExistError {
+			return []*watch.WatchEventDetail{{
+				Cursor:    watch.NoEventCursor,
+				Resource:  opts.Resource,
+				EventType: "",
+				Detail:    nil,
+			}}, nil
+		}
+
 		return nil, err
 	}
 
@@ -173,10 +212,20 @@ func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 
 		}
 
-		// scan event node from head
+		// scan event node from head, returned nodes does not contain tail node.
 		nodes, err := s.getNodesFromCursor(eventStep, nextCursor, key)
 		if err != nil {
 			blog.Errorf("get event from head failed, err: %v, rid: %s", err, rid)
+			if err == HeadNodeNotExistError {
+				resp := &watch.WatchEventDetail{
+					Cursor:    watch.NoEventCursor,
+					Resource:  opts.Resource,
+					EventType: "",
+					Detail:    nil,
+				}
+
+				return []*watch.WatchEventDetail{resp}, nil
+			}
 			return nil, err
 		}
 
@@ -242,6 +291,12 @@ func (s *Service) getEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNod
 		}
 		results = append(results, pipe.Get(key.DetailKey(node.Cursor)))
 	}
+
+	// cursor is end to tail node.
+	if len(results) == 0 {
+		return make([]*watch.WatchEventDetail, 0), nil
+	}
+
 	_, err := pipe.Exec()
 	if err != nil {
 		blog.ErrorJSON("watch with start from: %d, resource: %s, hit events, but get event detail failed, hit nodes: %s, err: %v, rid: %s",
@@ -266,6 +321,17 @@ func (s *Service) watchFromNow(key event.Key, opts *watch.WatchEventOptions, rid
 	node, tailTarget, err := s.getLatestEventDetail(key)
 	if err != nil {
 		blog.Errorf("watch from now, but get latest event failed, key, err: %v, rid: %s", err, rid)
+
+		if err == TailNodeNotExistError || err == NoEventsError {
+			// event chain list is empty, which means no event and not be initialized.
+			return &watch.WatchEventDetail{
+				Cursor:    watch.NoEventCursor,
+				Resource:  opts.Resource,
+				EventType: "",
+				Detail:    nil,
+			}, nil
+		}
+
 		return nil, err
 	}
 
@@ -315,6 +381,19 @@ func (s *Service) watchWithCursor(key event.Key, opts *watch.WatchEventOptions, 
 		nodes, err := s.getNodesFromCursor(eventStep, startCursor, key)
 		if err != nil {
 			blog.Errorf("watch event from cursor: %s, but get cursors failed, err: %v, rid: %s", opts.Cursor, err, rid)
+
+			if err == HeadNodeNotExistError {
+
+				resp := &watch.WatchEventDetail{
+					Cursor:    watch.NoEventCursor,
+					Resource:  opts.Resource,
+					EventType: "",
+					Detail:    nil,
+				}
+
+				return []*watch.WatchEventDetail{resp}, nil
+			}
+
 			return nil, err
 		}
 

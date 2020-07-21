@@ -114,6 +114,7 @@ type MainlineNode struct {
 // cause a host may exists in multiple modules, so it's may have several paths.
 type NodePaths struct {
 	*MainlineNode
+	InstanceName string `json:"bk_inst_name"`
 	// host may have multiple paths
 	Paths [][]Node `json:"bk_paths"`
 }

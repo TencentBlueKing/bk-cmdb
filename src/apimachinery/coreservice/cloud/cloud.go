@@ -35,6 +35,7 @@ type CloudInterface interface {
 	DeleteSyncTask(ctx context.Context, h http.Header, taskID int64) errors.CCErrorCoder
 	CreateSyncHistory(ctx context.Context, h http.Header, history *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder)
 	SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
+	DeleteDestroyedHostRelated(ctx context.Context, h http.Header, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder
 }
 
 func NewCloudInterfaceClient(client rest.ClientInterface) CloudInterface {

@@ -23,7 +23,9 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -343,8 +345,6 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	ownerID := util.GetOwnerID(header)
 
-	blog.Infof("select subscription, rid: %s", rid)
-
 	var data metadata.ParamSubscriptionSearch
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
 		blog.Errorf("search subscription, but decode body failed, err: %v, rid: %s", err, rid)
@@ -358,6 +358,44 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	fields := data.Fields
 	condition := data.Condition
 	condition = util.SetModOwner(condition, ownerID)
+
+	// get authorized event subscription ids if auth is enabled
+	if auth.EnableAuthorize() {
+		authInput := meta.ListAuthorizedResourcesParam{
+			UserName:     util.GetUser(header),
+			ResourceType: meta.EventPushing,
+			Action:       meta.Find,
+		}
+
+		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(util.NewContextFromHTTPHeader(header), header, authInput)
+		if err != nil {
+			blog.ErrorJSON("list authorized subscribe resources failed, err: %v, cond: %s, rid: %s", err, authInput, rid)
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+			return
+		}
+
+		subscriptions := make([]int64, 0)
+		for _, resourceID := range authorizedResources {
+			subscriptionID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("parse resourceID(%s) failed, err: %v, rid: %s", resourceID, err, rid)
+				_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+				return
+			}
+			subscriptions = append(subscriptions, subscriptionID)
+		}
+
+		condition = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				condition,
+				{
+					common.BKSubscriptionIDField: map[string]interface{}{
+						common.BKDBIN: subscriptions,
+					},
+				},
+			},
+		}
+	}
 
 	skip := data.Page.Start
 	limit := data.Page.Limit

@@ -288,6 +288,8 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		}
 		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
+			blog.ErrorJSON("validUpdateInstanceData failed, err: %s, val: %s, key:%s, rid: %s",
+				rawErr.ToCCError(kit.CCError), val, key, kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
 	}

@@ -37,7 +37,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(pheader)
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if auth.IsAuthed() == false {
+	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
@@ -65,12 +65,12 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		attrs[i].InstanceID = res.ResourceID
 		attrs[i].Action = meta.Action(res.Action)
 		for _, item := range res.ParentLayers {
-			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID})
+			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
 		}
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-	verifyResults, err := s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, attrs...)
+	verifyResults, err := s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
 	if err != nil {
 		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
@@ -79,7 +79,6 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	for i, verifyResult := range verifyResults {
 		resources[i].Passed = verifyResult.Authorized
-		resources[i].Reason = verifyResult.Reason
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
@@ -90,7 +89,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
 
-	if auth.IsAuthed() == false {
+	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return

@@ -48,7 +48,7 @@ type AuthConfig struct {
 func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, error) {
 	var cfg AuthConfig
 
-	if !auth.IsAuthed() {
+	if !auth.EnableAuthorize() {
 		return AuthConfig{}, nil
 	}
 
@@ -111,6 +111,7 @@ type RegisteredSystemInfo struct {
 	BaseInfo           System              `json:"base_info"`
 	ResourceTypes      []ResourceType      `json:"resource_types"`
 	Actions            []ResourceAction    `json:"actions"`
+	ActionGroups       []ActionGroup       `json:"action_groups"`
 	InstanceSelections []InstanceSelection `json:"instance_selections"`
 }
 
@@ -131,45 +132,47 @@ func (a *AuthError) Error() string {
 	return fmt.Sprintf("iam request id: %s, err: %s", a.RequestID, a.Reason.Error())
 }
 
-type ResourceTypeID string
+type TypeID string
 
 const (
-	SysSystemBase   ResourceTypeID = "sys_system_base"
-	SysEventPushing ResourceTypeID = "sys_event_pushing"
-	SysModelGroup   ResourceTypeID = "sys_model_group"
+	SysSystemBase   TypeID = "sys_system_base"
+	SysEventPushing TypeID = "sys_event_pushing"
+	SysModelGroup   TypeID = "sys_model_group"
 	// special model resource for selection of instance, not including models whose instances are managed separately
-	SysInstanceModel         ResourceTypeID = "sys_instance_model"
-	SysModel                 ResourceTypeID = "sys_model"
-	SysInstance              ResourceTypeID = "sys_instance"
-	SysAssociationType       ResourceTypeID = "sys_association_type"
-	SysAuditLog              ResourceTypeID = "sys_audit_log"
-	SysOperationStatistic    ResourceTypeID = "sys_operation_statistic"
-	SysResourcePoolDirectory ResourceTypeID = "sys_resource_pool_directory"
-	SysCloudArea             ResourceTypeID = "sys_cloud_area"
-	SysCloudAccount          ResourceTypeID = "sys_cloud_account"
-	SysCloudResourceTask     ResourceTypeID = "sys_cloud_resource_task"
-	SysEventWatch            ResourceTypeID = "event_watch"
-	Host                     ResourceTypeID = "host"
-	UserCustom               ResourceTypeID = "usercustom"
+	SysInstanceModel         TypeID = "sys_instance_model"
+	SysModel                 TypeID = "sys_model"
+	SysInstance              TypeID = "sys_instance"
+	SysAssociationType       TypeID = "sys_association_type"
+	SysAuditLog              TypeID = "sys_audit_log"
+	SysOperationStatistic    TypeID = "sys_operation_statistic"
+	SysResourcePoolDirectory TypeID = "sys_resource_pool_directory"
+	SysCloudArea             TypeID = "sys_cloud_area"
+	SysCloudAccount          TypeID = "sys_cloud_account"
+	SysCloudResourceTask     TypeID = "sys_cloud_resource_task"
+	SysEventWatch            TypeID = "event_watch"
+	Host                     TypeID = "host"
+	UserCustom               TypeID = "usercustom"
+	// for resource type, which is not need to be authorized
+	SkipType TypeID = "skip_type"
 )
 
 const (
-	Business ResourceTypeID = "business"
-	//Set                       ResourceTypeID = "set"
-	//Module                    ResourceTypeID = "module"
-	BizCustomQuery            ResourceTypeID = "biz_custom_query"
-	BizTopology               ResourceTypeID = "biz_topology"
-	BizCustomField            ResourceTypeID = "biz_custom_field"
-	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
-	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
-	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
-	BizSetTemplate            ResourceTypeID = "biz_set_template"
-	BizHostApply              ResourceTypeID = "biz_host_apply"
+	Business TypeID = "biz"
+	// Set                       ResourceTypeID = "set"
+	// Module                    ResourceTypeID = "module"
+	BizCustomQuery            TypeID = "biz_custom_query"
+	BizTopology               TypeID = "biz_topology"
+	BizCustomField            TypeID = "biz_custom_field"
+	BizProcessServiceTemplate TypeID = "biz_process_service_template"
+	BizProcessServiceCategory TypeID = "biz_process_service_category"
+	BizProcessServiceInstance TypeID = "biz_process_service_instance"
+	BizSetTemplate            TypeID = "biz_set_template"
+	BizHostApply              TypeID = "biz_host_apply"
 )
 
 // describe resource type defined and registered to iam.
 type ResourceType struct {
-	ID             ResourceTypeID `json:"id"`
+	ID             TypeID         `json:"id"`
 	Name           string         `json:"name"`
 	NameEn         string         `json:"name_en"`
 	Description    string         `json:"description"`
@@ -187,8 +190,8 @@ type ResourceConfig struct {
 type Parent struct {
 	// only one value for cmdb.
 	// default value: bk_cmdb
-	SystemID   string         `json:"system_id"`
-	ResourceID ResourceTypeID `json:"id"`
+	SystemID   string `json:"system_id"`
+	ResourceID TypeID `json:"id"`
 }
 
 type ActionType string
@@ -201,118 +204,117 @@ const (
 	List   ActionType = "list"
 )
 
-type ResourceActionID string
+type ActionID string
 
 const (
-	EditBusinessHost                   ResourceActionID = "edit_biz_host"
-	BusinessHostTransferToResourcePool ResourceActionID = "unassign_biz_host"
+	EditBusinessHost                   ActionID = "edit_biz_host"
+	BusinessHostTransferToResourcePool ActionID = "unassign_biz_host"
 
-	CreateBusinessCustomQuery ResourceActionID = "create_biz_dynamic_query"
-	EditBusinessCustomQuery   ResourceActionID = "edit_biz_dynamic_query"
-	DeleteBusinessCustomQuery ResourceActionID = "delete_biz_dynamic_query"
-	FindBusinessCustomQuery   ResourceActionID = "find_biz_dynamic_query"
+	CreateBusinessCustomQuery ActionID = "create_biz_dynamic_query"
+	EditBusinessCustomQuery   ActionID = "edit_biz_dynamic_query"
+	DeleteBusinessCustomQuery ActionID = "delete_biz_dynamic_query"
+	FindBusinessCustomQuery   ActionID = "find_biz_dynamic_query"
 
-	EditBusinessCustomField ResourceActionID = "edit_biz_custom_field"
+	EditBusinessCustomField ActionID = "edit_biz_custom_field"
 
-	CreateBusinessServiceCategory ResourceActionID = "create_biz_service_category"
-	EditBusinessServiceCategory   ResourceActionID = "edit_biz_service_category"
-	DeleteBusinessServiceCategory ResourceActionID = "delete_biz_service_category"
+	CreateBusinessServiceCategory ActionID = "create_biz_service_category"
+	EditBusinessServiceCategory   ActionID = "edit_biz_service_category"
+	DeleteBusinessServiceCategory ActionID = "delete_biz_service_category"
 
-	CreateBusinessServiceInstance ResourceActionID = "create_biz_service_instance"
-	EditBusinessServiceInstance   ResourceActionID = "edit_biz_service_instance"
-	DeleteBusinessServiceInstance ResourceActionID = "delete_biz_service_instance"
+	CreateBusinessServiceInstance ActionID = "create_biz_service_instance"
+	EditBusinessServiceInstance   ActionID = "edit_biz_service_instance"
+	DeleteBusinessServiceInstance ActionID = "delete_biz_service_instance"
 
-	CreateBusinessServiceTemplate ResourceActionID = "create_biz_service_template"
-	EditBusinessServiceTemplate   ResourceActionID = "edit_biz_service_template"
-	DeleteBusinessServiceTemplate ResourceActionID = "delete_biz_service_template"
+	CreateBusinessServiceTemplate ActionID = "create_biz_service_template"
+	EditBusinessServiceTemplate   ActionID = "edit_biz_service_template"
+	DeleteBusinessServiceTemplate ActionID = "delete_biz_service_template"
 
-	CreateBusinessSetTemplate ResourceActionID = "create_biz_set_template"
-	EditBusinessSetTemplate   ResourceActionID = "edit_biz_set_template"
-	DeleteBusinessSetTemplate ResourceActionID = "delete_biz_set_template"
+	CreateBusinessSetTemplate ActionID = "create_biz_set_template"
+	EditBusinessSetTemplate   ActionID = "edit_biz_set_template"
+	DeleteBusinessSetTemplate ActionID = "delete_biz_set_template"
 
-	CreateBusinessTopology ResourceActionID = "create_biz_topology"
-	EditBusinessTopology   ResourceActionID = "edit_biz_topology"
-	DeleteBusinessTopology ResourceActionID = "delete_biz_topology"
+	CreateBusinessTopology ActionID = "create_biz_topology"
+	EditBusinessTopology   ActionID = "edit_biz_topology"
+	DeleteBusinessTopology ActionID = "delete_biz_topology"
 
-	EditBusinessHostApply ResourceActionID = "edit_biz_host_apply"
+	EditBusinessHostApply ActionID = "edit_biz_host_apply"
 
-	CreateResourcePoolHost              ResourceActionID = "create_resource_pool_host"
-	EditResourcePoolHost                ResourceActionID = "edit_resource_pool_host"
-	DeleteResourcePoolHost              ResourceActionID = "delete_resource_pool_host"
-	ResourcePoolHostTransferToBusiness  ResourceActionID = "assign_host_to_biz"
-	ResourcePoolHostTransferToDirectory ResourceActionID = "host_transfer_in_resource_pool"
+	CreateResourcePoolHost              ActionID = "create_resource_pool_host"
+	EditResourcePoolHost                ActionID = "edit_resource_pool_host"
+	DeleteResourcePoolHost              ActionID = "delete_resource_pool_host"
+	ResourcePoolHostTransferToBusiness  ActionID = "assign_host_to_biz"
+	ResourcePoolHostTransferToDirectory ActionID = "host_transfer_in_resource_pool"
 
-	CreateResourcePoolDirectory ResourceActionID = "create_resource_pool_directory"
-	EditResourcePoolDirectory   ResourceActionID = "edit_resource_pool_directory"
-	DeleteResourcePoolDirectory ResourceActionID = "delete_resource_pool_directory"
+	CreateResourcePoolDirectory ActionID = "create_resource_pool_directory"
+	EditResourcePoolDirectory   ActionID = "edit_resource_pool_directory"
+	DeleteResourcePoolDirectory ActionID = "delete_resource_pool_directory"
 
-	CreateBusiness       ResourceActionID = "create_business"
-	EditBusiness         ResourceActionID = "edit_business"
-	ArchiveBusiness      ResourceActionID = "archive_business"
-	FindBusiness         ResourceActionID = "find_business"
-	ViewBusinessResource ResourceActionID = "find_business_resource"
+	CreateBusiness       ActionID = "create_business"
+	EditBusiness         ActionID = "edit_business"
+	ArchiveBusiness      ActionID = "archive_business"
+	FindBusiness         ActionID = "find_business"
+	ViewBusinessResource ActionID = "find_business_resource"
 
-	CreateCloudArea ResourceActionID = "create_cloud_area"
-	EditCloudArea   ResourceActionID = "edit_cloud_area"
-	DeleteCloudArea ResourceActionID = "delete_cloud_area"
+	CreateCloudArea ActionID = "create_cloud_area"
+	EditCloudArea   ActionID = "edit_cloud_area"
+	DeleteCloudArea ActionID = "delete_cloud_area"
 
-	CreateInstance ResourceActionID = "create_instance"
-	EditInstance   ResourceActionID = "edit_instance"
-	DeleteInstance ResourceActionID = "delete_instance"
-	FindInstance   ResourceActionID = "find_instance"
+	CreateSysInstance ActionID = "create_sys_instance"
+	EditSysInstance   ActionID = "edit_sys_instance"
+	DeleteSysInstance ActionID = "delete_sys_instance"
 
-	CreateEventPushing ResourceActionID = "create_event_subscription"
-	EditEventPushing   ResourceActionID = "edit_event_subscription"
-	DeleteEventPushing ResourceActionID = "delete_event_subscription"
-	FindEventPushing   ResourceActionID = "find_event_subscription"
+	CreateEventPushing ActionID = "create_event_subscription"
+	EditEventPushing   ActionID = "edit_event_subscription"
+	DeleteEventPushing ActionID = "delete_event_subscription"
+	FindEventPushing   ActionID = "find_event_subscription"
 
-	CreateCloudAccount ResourceActionID = "create_cloud_account"
-	EditCloudAccount   ResourceActionID = "edit_cloud_account"
-	DeleteCloudAccount ResourceActionID = "delete_cloud_account"
-	FindCloudAccount   ResourceActionID = "find_cloud_account"
+	CreateCloudAccount ActionID = "create_cloud_account"
+	EditCloudAccount   ActionID = "edit_cloud_account"
+	DeleteCloudAccount ActionID = "delete_cloud_account"
+	FindCloudAccount   ActionID = "find_cloud_account"
 
-	CreateCloudResourceTask ResourceActionID = "create_cloud_resource_task"
-	EditCloudResourceTask   ResourceActionID = "edit_cloud_resource_task"
-	DeleteCloudResourceTask ResourceActionID = "delete_cloud_resource_task"
-	FindCloudResourceTask   ResourceActionID = "find_cloud_resource_task"
+	CreateCloudResourceTask ActionID = "create_cloud_resource_task"
+	EditCloudResourceTask   ActionID = "edit_cloud_resource_task"
+	DeleteCloudResourceTask ActionID = "delete_cloud_resource_task"
+	FindCloudResourceTask   ActionID = "find_cloud_resource_task"
 
-	CreateModel ResourceActionID = "create_model"
-	EditModel   ResourceActionID = "edit_model"
-	DeleteModel ResourceActionID = "delete_model"
+	CreateSysModel ActionID = "create_sys_model"
+	EditSysModel   ActionID = "edit_sys_model"
+	DeleteSysModel ActionID = "delete_sys_model"
 
-	CreateAssociationType ResourceActionID = "create_association_type"
-	EditAssociationType   ResourceActionID = "edit_association_type"
-	DeleteAssociationType ResourceActionID = "delete_association_type"
+	CreateAssociationType ActionID = "create_association_type"
+	EditAssociationType   ActionID = "edit_association_type"
+	DeleteAssociationType ActionID = "delete_association_type"
 
-	CreateModelGroup ResourceActionID = "create_model_group"
-	EditModelGroup   ResourceActionID = "edit_model_group"
-	DeleteModelGroup ResourceActionID = "delete_model_group"
+	CreateModelGroup ActionID = "create_model_group"
+	EditModelGroup   ActionID = "edit_model_group"
+	DeleteModelGroup ActionID = "delete_model_group"
 
-	EditBusinessLayer ResourceActionID = "edit_business_layer"
+	EditBusinessLayer ActionID = "edit_business_layer"
 
-	EditModelTopologyView ResourceActionID = "edit_model_topology_view"
+	EditModelTopologyView ActionID = "edit_model_topology_view"
 
-	FindOperationStatistic ResourceActionID = "find_operation_statistic"
-	EditOperationStatistic ResourceActionID = "edit_operation_statistic"
+	FindOperationStatistic ActionID = "find_operation_statistic"
+	EditOperationStatistic ActionID = "edit_operation_statistic"
 
-	FindAuditLog ResourceActionID = "find_audit_log"
+	FindAuditLog ActionID = "find_audit_log"
 
-	WatchHostEvent         ResourceActionID = "watch_host_event"
-	WatchHostRelationEvent ResourceActionID = "watch_host_relation_event"
-	WatchBizEvent          ResourceActionID = "watch_biz_event"
-	WatchSetEvent          ResourceActionID = "watch_set_event"
-	WatchModuleEvent       ResourceActionID = "watch_module_event"
-	GlobalSettings         ResourceActionID = "global_settings"
+	WatchHostEvent         ActionID = "watch_host_event"
+	WatchHostRelationEvent ActionID = "watch_host_relation_event"
+	WatchBizEvent          ActionID = "watch_biz_event"
+	WatchSetEvent          ActionID = "watch_set_event"
+	WatchModuleEvent       ActionID = "watch_module_event"
+	GlobalSettings         ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
-	Unsupported ResourceActionID = "unsupported"
+	Unsupported ActionID = "unsupported"
 	// Skip is an action that no need to auth
-	Skip ResourceActionID = "skip"
+	Skip ActionID = "skip"
 )
 
 type ResourceAction struct {
 	// must be a unique id in the whole system.
-	ID ResourceActionID `json:"id"`
+	ID ActionID `json:"id"`
 	// must be a unique name in the whole system.
 	Name                 string               `json:"name"`
 	NameEn               string               `json:"name_en"`
@@ -324,7 +326,7 @@ type ResourceAction struct {
 
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
-	ID                 ResourceTypeID             `json:"id"`
+	ID                 TypeID                     `json:"id"`
 	NameAlias          string                     `json:"name_alias"`
 	NameAliasEn        string                     `json:"name_alias_en"`
 	Scope              *Scope                     `json:"scope"`
@@ -346,6 +348,23 @@ type ScopeContent struct {
 type RelatedInstanceSelection struct {
 	ID       InstanceSelectionID `json:"id"`
 	SystemID string              `json:"system_id"`
+	// if true, then this selected instance with not be calculated to calculate the auth.
+	// as is will be ignored, the only usage for this selection is to support a convenient
+	// way for user to find it's resource instances.
+	IgnoreAuthPath bool `json:"ignore_iam_path"`
+}
+
+// groups related resource actions to make action selection more organized
+type ActionGroup struct {
+	// must be a unique name in the whole system.
+	Name      string         `json:"name"`
+	NameEn    string         `json:"name_en"`
+	SubGroups []ActionGroup  `json:"sub_groups,omitempty"`
+	Actions   []ActionWithID `json:"actions,omitempty"`
+}
+
+type ActionWithID struct {
+	ID ActionID `json:"id"`
 }
 
 type InstanceSelectionID string
@@ -377,8 +396,8 @@ type InstanceSelection struct {
 }
 
 type ResourceChain struct {
-	SystemID string         `json:"system_id"`
-	ID       ResourceTypeID `json:"id"`
+	SystemID string `json:"system_id"`
+	ID       TypeID `json:"id"`
 }
 
 type iamDiscovery struct {
@@ -411,14 +430,14 @@ func (s *iamDiscovery) GetServersChan() chan []string {
 
 // resource type with id, used to represent resource layer from root to leaf
 type RscTypeAndID struct {
-	ResourceType ResourceTypeID `json:"resource_type"`
-	ResourceID   string         `json:"resource_id,omitempty"`
+	ResourceType TypeID `json:"resource_type"`
+	ResourceID   string `json:"resource_id,omitempty"`
 }
 
 // iam resource, system is resource's iam system id, type is resource type, resource id and attribute are used for filtering
 type Resource struct {
 	System    string                 `json:"system"`
-	Type      ResourceTypeID         `json:"type"`
+	Type      TypeID                 `json:"type"`
 	ID        string                 `json:"id,omitempty"`
 	Attribute map[string]interface{} `json:"attribute,omitempty"`
 }

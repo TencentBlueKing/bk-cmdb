@@ -38,7 +38,7 @@ const (
 
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
-func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
+func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy, resourceType iam.TypeID) (map[string]interface{}, error) {
 	if filter == nil || filter.Operator == "" {
 		return nil, nil
 	}
@@ -164,7 +164,7 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 }
 
 // parse iam path filter expression to corresponding resource type's mongo query condition
-func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iam.ResourceTypeID, op operator.OperType, value interface{}) (map[string]interface{}, error) {
+func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iam.TypeID, op operator.OperType, value interface{}) (map[string]interface{}, error) {
 	// generate path condition
 	cond := make(map[string]interface{}, 0)
 	var err error
@@ -283,7 +283,7 @@ func parseIamPathToMongo(iamPath string, op string) (map[string]interface{}, err
 		if idStr == "*" {
 			continue
 		}
-		resourceType := iam.ResourceTypeID(typeAndID[0])
+		resourceType := iam.TypeID(typeAndID[0])
 		idField := GetResourceIDField(resourceType)
 		if isResourceIDStringType(resourceType) {
 			cond[idField] = map[string]interface{}{
@@ -340,20 +340,22 @@ func getValueType(value interface{}) string {
 }
 
 // get resource id's actual field
-func GetResourceIDField(resourceType iam.ResourceTypeID) string {
+func GetResourceIDField(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKHostIDField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionIDField
 	case iam.SysModelGroup:
-		return common.BKClassificationIDField
-	case iam.SysModel, iam.SysInstanceModel:
-		return common.BKObjIDField
+		return common.BKFieldID
+	case iam.SysModel:
+		return common.BKFieldID
+	case iam.SysInstanceModel:
+		return common.BKFieldID
 	case iam.SysInstance:
 		return common.BKInstIDField
 	case iam.SysAssociationType:
-		return common.AssociationKindIDField
+		return common.BKFieldID
 	case iam.SysResourcePoolDirectory:
 		return common.BKModuleIDField
 	case iam.SysCloudArea:
@@ -376,7 +378,7 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 }
 
 // get resource display name's actual field
-func GetResourceNameField(resourceType iam.ResourceTypeID) string {
+func GetResourceNameField(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKHostInnerIPField

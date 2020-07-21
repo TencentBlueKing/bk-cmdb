@@ -31,34 +31,19 @@
                 default: ''
             }
         },
-        data () {
-            return {
-                localValue: this.value
-            }
-        },
         computed: {
             time: {
                 get () {
-                    if (!this.localValue) {
+                    if (!this.value) {
                         return ''
                     }
-                    return new Date(this.localValue)
+                    return new Date(this.value)
                 },
                 set (value) {
-                    this.localValue = this.$tools.formatTime(value, 'YYYY-MM-DD HH:mm:ss')
-                }
-            }
-        },
-        watch: {
-            value (value) {
-                if (value !== this.localValue) {
-                    this.localValue = value
-                }
-            },
-            localValue (value, oldValue) {
-                if (value !== this.value) {
-                    this.$emit('input', value)
-                    this.$emit('change', value, oldValue)
+                    const previousValue = this.value
+                    const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD HH:mm:ss')
+                    this.$emit('input', currentValue)
+                    this.$emit('change', currentValue, previousValue)
                 }
             }
         }

@@ -40,18 +40,18 @@ const (
 
 type Method string
 type PullResourceReq struct {
-	Type   iam.ResourceTypeID `json:"type"`
-	Method Method             `json:"method"`
-	Filter interface{}        `json:"filter,omitempty"`
-	Page   Page               `json:"page,omitempty"`
+	Type   iam.TypeID  `json:"type"`
+	Method Method      `json:"method"`
+	Filter interface{} `json:"filter,omitempty"`
+	Page   Page        `json:"page,omitempty"`
 }
 
 func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 	data := struct {
-		Type   iam.ResourceTypeID `json:"type"`
-		Method Method             `json:"method"`
-		Filter json.RawMessage    `json:"filter,omitempty"`
-		Page   Page               `json:"page,omitempty"`
+		Type   iam.TypeID      `json:"type"`
+		Method Method          `json:"method"`
+		Filter json.RawMessage `json:"filter,omitempty"`
+		Page   Page            `json:"page,omitempty"`
 	}{}
 	err := json.Unmarshal(raw, &data)
 	if err != nil {
@@ -121,19 +121,19 @@ type ListAttrValueFilter struct {
 }
 
 type ListInstanceFilter struct {
-	Parent            *ParentFilter                   `json:"parent,omitempty"`
-	Search            map[iam.ResourceTypeID][]string `json:"search,omitempty"`
-	ResourceTypeChain []ResourceTypeChainFilter       `json:"resource_type_chain,omitempty"`
+	Parent            *ParentFilter             `json:"parent,omitempty"`
+	Search            map[iam.TypeID][]string   `json:"search,omitempty"`
+	ResourceTypeChain []ResourceTypeChainFilter `json:"resource_type_chain,omitempty"`
 }
 
 type ParentFilter struct {
-	Type iam.ResourceTypeID `json:"type"`
-	ID   string             `json:"id"`
+	Type iam.TypeID `json:"type"`
+	ID   string     `json:"id"`
 }
 
 type ResourceTypeChainFilter struct {
-	SystemID string             `json:"system_id"`
-	ID       iam.ResourceTypeID `json:"id"`
+	SystemID string     `json:"system_id"`
+	ID       iam.TypeID `json:"id"`
 }
 
 type FetchInstanceInfoFilter struct {
@@ -198,9 +198,9 @@ type InstanceResource struct {
 }
 
 type InstancePath struct {
-	Type        iam.ResourceTypeID `json:"type"`
-	ID          string             `json:"id"`
-	DisplayName string             `json:"display_name"`
+	Type        iam.TypeID `json:"type"`
+	ID          string     `json:"id"`
+	DisplayName string     `json:"display_name"`
 }
 
 type FetchInstanceInfoResp struct {

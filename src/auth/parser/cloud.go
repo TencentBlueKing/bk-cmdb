@@ -42,6 +42,13 @@ var CloudAccountConfigs = []AuthConfig{
 		ResourceType:   meta.CloudAccount,
 		ResourceAction: meta.SkipAction,
 	}, {
+		Name:           "searchCloudAccountValidityPattern",
+		Description:    "查询云账户有效性",
+		Pattern:        "/api/v3/findmany/cloud/account/validity",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudAccount,
+		ResourceAction: meta.SkipAction,
+	}, {
 		Name:           "listCloudAccountPattern",
 		Description:    "查询云账户",
 		Pattern:        "/api/v3/findmany/cloud/account",
@@ -105,7 +112,6 @@ var CloudResourceTaskConfigs = []AuthConfig{
 		Name:           "getCloudAccountVpcRegex",
 		Description:    "查询账户下的vpc数据",
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/cloud/account/vpc/([0-9]+)$`),
-		Pattern:        "/api/v3/cloud/account/verify",
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.CloudResourceTask,
 		ResourceAction: meta.SkipAction,

@@ -58,6 +58,6 @@ func setEnableAuth(enable bool) {
 	})
 }
 
-func IsAuthed() bool {
+func EnableAuthorize() bool {
 	return enableAuth
 }
