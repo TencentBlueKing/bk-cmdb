@@ -31,7 +31,7 @@ export const translateAuth = auth => {
                     const instanceId = ids[instanceIndex]
                     instanceId && relatedResource.instances.push({
                         type: instance,
-                        id: instanceId
+                        id: String(instanceId)
                     })
                 })
                 action.related_resource_types.push(relatedResource)

@@ -1,7 +1,6 @@
 import { MENU_ANALYSIS_OPERATION } from '@/dictionary/menu-symbol'
-import { OPERATION, TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
+import { OPERATION } from '@/dictionary/iam-auth'
 import Meta from '@/router/meta'
-const [viewAuth] = TRANSFORM_TO_INTERNAL({ type: OPERATION.R_STATISTICAL_REPORT })
 export default {
     name: MENU_ANALYSIS_OPERATION,
     path: 'operation',
@@ -11,7 +10,7 @@ export default {
             i18n: '运营统计'
         },
         auth: {
-            view: viewAuth
+            view: { type: OPERATION.R_STATISTICAL_REPORT }
         }
     })
 }
