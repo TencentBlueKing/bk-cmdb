@@ -293,7 +293,7 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 		}
 	}
 
-	if _, ok := o.UpdateData[common.BKProcessIDField]; ok{
+	if _, ok := o.UpdateData[common.BKProcessIDField]; ok {
 		return cErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"update_data.bk_process_id"},
@@ -525,6 +525,8 @@ type Process struct {
 	GatewayPort     *string       `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port" structs:"bk_gateway_port" mapstructure:"bk_gateway_port"`
 	GatewayProtocol *ProtocolType `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol" structs:"bk_gateway_protocol" mapstructure:"bk_gateway_protocol"`
 	GatewayCity     *string       `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city" structs:"bk_gateway_city" mapstructure:"bk_gateway_city"`
+
+	BindInfo *ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 
 type ServiceCategory struct {
@@ -1186,6 +1188,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 		}
 	}
 
+	bindInfo, bindInfoChanged, bindInfoIsNamePortChanged := t.BindInfo.Value.ExtractChangeInfoBindInfo(i)
+	process[common.BKProcBindInfo] = bindInfo
+	if bindInfoChanged {
+		changed = true
+	}
+	if bindInfoIsNamePortChanged {
+		changed = true
+	}
+
 	return process, changed, isNamePortChanged
 }
 
@@ -1282,6 +1293,8 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) == false {
 		editableFields = append(editableFields, "bk_gateway_city")
 	}
+	//
+	editableFields = append(editableFields, common.BKProcBindInfo)
 	return editableFields
 }
 
@@ -1419,7 +1432,8 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["bk_gateway_city"] = *input.GatewayCity
 		}
 	}
-
+	// bind info 每次都是全量更新
+	data[common.BKProcBindInfo] = pt.Property.BindInfo.ExtractInstanceUpdateData(input)
 	return data
 }
 
@@ -1450,6 +1464,8 @@ type ProcessProperty struct {
 	GatewayPort        PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
 	GatewayProtocol    PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
 	GatewayCity        PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
+
+	BindInfo ProcPropertyBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
@@ -1512,6 +1528,7 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 
 // Update all not nil field from input to pt
 // rawProperty allows us set property field to nil
+//  参数rawProperty，input 数据是一样的，只不过一个是map,一个struct。 因为struct 是有默认行为的。 rawProperty为了获取用户是否输入
 func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]interface{}) {
 	selfType := reflect.TypeOf(pt).Elem()
 	selfVal := reflect.ValueOf(pt).Elem()
@@ -1524,7 +1541,12 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 			continue
 		}
 		fieldTag := selfType.Field(fieldIdx).Tag.Get("json")
+		// 如果rawProperty不存在的字段，表示没有传递该字段，表示的型行为是不修改改字段
 		if _, ok := rawProperty[fieldTag]; ok == false {
+			continue
+		}
+		// bind info 是特有方法更新
+		if fieldTag == common.BKProcBindInfo {
 			continue
 		}
 		inputField := inputVal.Field(fieldIdx)
@@ -1550,6 +1572,9 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 			selfFieldValue.Set(inputFieldValue)
 		}
 	}
+	bindInfo := &pt.BindInfo
+	bindInfo.Update(input, rawProperty)
+
 	return
 }
 
