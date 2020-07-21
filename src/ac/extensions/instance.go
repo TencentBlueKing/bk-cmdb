@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -256,28 +255,4 @@ func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Hea
 	}
 
 	return am.batchAuthorize(ctx, header, resources...)
-}
-
-func (am *AuthManager) ListAuthorizedInstanceIDs(ctx context.Context, header http.Header, username string) ([]int64, error) {
-	rid := util.GetHTTPCCRequestID(header)
-	authInput := meta.ListAuthorizedResourcesParam{
-		UserName:     username,
-		ResourceType: meta.ModelInstance,
-		Action:       meta.Find,
-	}
-	authorizedResources, err := am.clientSet.AuthServer().ListAuthorizedResources(ctx, header, authInput)
-	if err != nil {
-		blog.ErrorJSON("ListAuthorizedResources failed, err: %s, authInput: %s, rid: %s", err.Error(), authInput, rid)
-		return nil, err
-	}
-	instIDs := make([]int64, 0)
-	for _, resourceID := range authorizedResources {
-		subscriptionID, err := strconv.ParseInt(resourceID, 10, 64)
-		if err != nil {
-			blog.Errorf("parse resourceID(%s) failed, err: %v, rid: %s", resourceID, err, rid)
-			return nil, err
-		}
-		instIDs = append(instIDs, subscriptionID)
-	}
-	return instIDs, nil
 }
