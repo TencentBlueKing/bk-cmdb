@@ -5,7 +5,13 @@
         </cmdb-tips>
         <div class="cloud-account-options">
             <div class="options-left">
-                <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+                <cmdb-auth :auth="{ type: $OPERATION.C_CLOUD_RESOURCE_TASK }">
+                    <bk-button theme="primary" slot-scope="{ disabled }"
+                        :disabled="disabled"
+                        @click="handleCreate">
+                        {{$t('新建')}}
+                    </bk-button>
+                </cmdb-auth>
             </div>
             <div class="options-right">
                 <bk-input class="options-filter" clearable
@@ -19,6 +25,7 @@
             v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="list"
             :pagination="pagination"
+            :max-height="$APP.height - 220"
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
@@ -62,8 +69,20 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <link-button class="mr10" @click="handleEdit(row)">{{$t('编辑')}}</link-button>
-                    <link-button @click="handleDelete(row)">{{$t('删除')}}</link-button>
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_CLOUD_RESOURCE_TASK, relation: [row.bk_task_id] }">
+                        <link-button slot-scope="{ disabled }"
+                            :disabled="disabled"
+                            @click="handleEdit(row)">
+                            {{$t('编辑')}}
+                        </link-button>
+                    </cmdb-auth>
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.D_CLOUD_RESOURCE_TASK, relation: [row.bk_task_id] }">
+                        <link-button slot-scope="{ disabled }"
+                            :disabled="disabled"
+                            @click="handleDelete(row)">
+                            {{$t('删除')}}
+                        </link-button>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
         </bk-table>

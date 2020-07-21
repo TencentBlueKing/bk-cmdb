@@ -1,13 +1,17 @@
 <template>
     <div class="cloud-area-input-wrapper" v-if="display === 'input'">
-        <input class="cloud-area-input"
-            v-model.trim="localValue"
-            :readonly="readonly"
-            :class="{
-                'has-tips': hasTips,
-                'has-error': error
-            }"
-            :placeholder="$t('请输入xx', { name: $t('云区域') })">
+        <cmdb-auth :auth="{ type: $OPERATION.C_CLOUD_AREA }">
+            <input class="cloud-area-input"
+                slot-scope="{ disabled }"
+                v-model.trim="localValue"
+                :readonly="readonly"
+                :disabled="disabled"
+                :class="{
+                    'has-tips': hasTips,
+                    'has-error': error
+                }"
+                :placeholder="$t('请输入xx', { name: $t('云区域') })">
+        </cmdb-auth>
         <i class="tips-icon icon icon-cc-tips"
             v-if="readonly"
             v-bk-tooltips="{

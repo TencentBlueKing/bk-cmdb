@@ -47,8 +47,20 @@
         </div>
         <div class="info-options" slot="footer" slot-scope="{ sticky }"
             :class="{ 'is-sticky': sticky }">
-            <bk-button class="mr10" :disabled="$loading(request.delete)" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
-            <bk-button theme="default" :loading="$loading(request.delete)" @click="handleDelete">{{$t('删除')}}</bk-button>
+            <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_CLOUD_RESOURCE_TASK, relation: [task.bk_task_id] }">
+                <bk-button theme="primary" slot-scope="{ disabled }"
+                    :disabled="disabled || $loading(request.delete)"
+                    @click="handleEdit">
+                    {{$t('编辑')}}
+                </bk-button>
+            </cmdb-auth>
+            <cmdb-auth class="mr10" :auth="{ type: $OPERATION.D_CLOUD_RESOURCE_TASK, relation: [task.bk_task_id] }">
+                <bk-button theme="default" slot-scope="{ disabled }"
+                    :disabled="disabled || $loading(request.delete)"
+                    @click="handleDelete">
+                    {{$t('删除')}}
+                </bk-button>
+            </cmdb-auth>
         </div>
     </cmdb-sticky-layout>
 </template>

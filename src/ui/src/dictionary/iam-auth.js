@@ -114,10 +114,10 @@ export const IAM_ACTIONS = {
             const [modelGroupId] = relationIds
             const verifyMeta = basicTransform(cmdbAction, {})
             if (modelGroupId) {
-                verifyMeta.parent_layers = {
+                verifyMeta.parent_layers = [{
                     resource_type: 'modelClassification',
                     resource_id: modelGroupId
-                }
+                }]
             }
             return verifyMeta
         }
@@ -404,10 +404,10 @@ export const IAM_ACTIONS = {
             const verifyMeta = basicTransform(cmdbAction, {})
             const [directoryId] = relationIds
             if (directoryId) {
-                verifyMeta.parent_layers = {
+                verifyMeta.parent_layers = [{
                     resource_type: 'resourcePoolDirectory',
                     resource_id: directoryId
-                }
+                }]
             }
             return verifyMeta
         }
@@ -427,10 +427,10 @@ export const IAM_ACTIONS = {
                 verifyMeta.resource_id = hostId
             }
             if (directoryId) {
-                verifyMeta.parent_layers = {
+                verifyMeta.parent_layers = [{
                     resource_type: 'resourcePoolDirectory',
                     resource_id: directoryId
-                }
+                }]
             }
             return verifyMeta
         }
@@ -450,10 +450,10 @@ export const IAM_ACTIONS = {
                 verifyMeta.resource_id = hostId
             }
             if (directoryId) {
-                verifyMeta.parent_layers = {
+                verifyMeta.parent_layers = [{
                     resource_type: 'resourcePoolDirectory',
                     resource_id: directoryId
-                }
+                }]
             }
             return verifyMeta
         }
@@ -473,10 +473,10 @@ export const IAM_ACTIONS = {
             const [hostRelationIds, bizRelationIds] = relationIds
             const [directoryId] = hostRelationIds
             const hostVerifyMeta = basicTransform(cmdbAction, {
-                parent_layers: {
+                parent_layers: [{
                     resource_type: 'resourcePoolDirectory',
                     resource_id: directoryId
-                }
+                }]
             })
             const [bizId] = bizRelationIds
             const bizVerifyMeta = basicTransform('hostInstance.create', {

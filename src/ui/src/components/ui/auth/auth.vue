@@ -3,7 +3,8 @@
         :is="tag"
         v-cursor="{
             active: !isAuthorized,
-            auth: auth
+            auth: auth,
+            onclick
         }"
         :class="{ disabled }"
         @click="handleClick">
@@ -24,7 +25,8 @@
             tag: {
                 type: String,
                 default: 'span'
-            }
+            },
+            onclick: Function
         },
         data () {
             return {

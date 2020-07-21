@@ -60,11 +60,14 @@
             slot="footer"
             slot-scope="{ sticky }"
             :class="{ 'is-sticky': sticky }">
-            <bk-button theme="primary"
-                :loading="$loading([request.createTask, request.updateTask, request.createArea])"
-                @click="handleSumbit">
-                {{isCreateMode ? $t('提交') : $t('保存')}}
-            </bk-button>
+            <cmdb-auth :auth="auth">
+                <bk-button theme="primary" slot-scope="{ disabled }"
+                    :disabled="disabled"
+                    :loading="$loading([request.createTask, request.updateTask, request.createArea])"
+                    @click="handleSumbit">
+                    {{isCreateMode ? $t('提交') : $t('保存')}}
+                </bk-button>
+            </cmdb-auth>
             <bk-button class="ml10" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
         <cmdb-dialog
@@ -138,6 +141,17 @@
         computed: {
             isCreateMode () {
                 return this.task === null
+            },
+            auth () {
+                if (this.isCreateMode) {
+                    return {
+                        type: this.$OPERATION.C_CLOUD_RESOURCE_TASK
+                    }
+                }
+                return {
+                    type: this.$OPERATION.U_CLOUD_RESOURCE_TASK,
+                    relation: [this.task.bk_task_id]
+                }
             }
         },
         watch: {

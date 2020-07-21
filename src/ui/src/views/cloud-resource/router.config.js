@@ -1,5 +1,6 @@
 import Meta from '@/router/meta'
 import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
+import { OPERATION } from '@/dictionary/iam-auth'
 export default {
     name: MENU_RESOURCE_CLOUD_RESOURCE,
     path: 'cloud-resource',
@@ -9,7 +10,7 @@ export default {
             i18n: '云资源发现'
         },
         auth: {
-            view: null
+            view: { type: OPERATION.R_CLOUD_RESOURCE_TASK }
         }
     })
 }

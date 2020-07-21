@@ -20,10 +20,13 @@
                 <bk-table-column prop="name" :label="$t('需要申请的权限')"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
-                        <div v-for="(resource, index) in row.relation"
-                            :key="index">
-                            {{ resource.instances.map(({ id, name }) => `${name} ID：${id}`).join(' / ') }}
-                        </div>
+                        <template v-if="row.relation.length">
+                            <div v-for="(resource, index) in row.relation"
+                                :key="index">
+                                {{ resource.instances.map(({ id, name }) => `${name} ID：${id}`).join(' / ') }}
+                            </div>
+                        </template>
+                        <span v-else>--</span>
                     </template>
                 </bk-table-column>
             </bk-table>

@@ -9,6 +9,11 @@
             color: $textDisabledColor;
         }
     }
+    &.bk-select-small {
+        .bk-select-loading {
+            top: 4px;
+        }
+    }
 }
 
 .bk-select-dropdown-content {
