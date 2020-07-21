@@ -65,14 +65,6 @@ func getResourceTableName(resourceType iam.TypeID) string {
 	}
 }
 
-func isResourceIDStringType(resourceType iam.TypeID) bool {
-	switch resourceType {
-	case iam.SysModelGroup, iam.SysAssociationType:
-		return true
-	}
-	return false
-}
-
 // get model instance resource's model id
 func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 	switch resourceType {

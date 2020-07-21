@@ -232,8 +232,6 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Find: Skip,
 	},
 	meta.Process: {
-		meta.BoundModuleToProcess:   EditBusinessServiceInstance,
-		meta.UnboundModuleToProcess: EditBusinessServiceInstance,
 		meta.Find:                   Skip,
 		meta.Create:                 EditBusinessServiceInstance,
 		meta.Delete:                 EditBusinessServiceInstance,

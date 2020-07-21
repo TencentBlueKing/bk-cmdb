@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 
 	"github.com/emicklei/go-restful"
 )
@@ -55,6 +56,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	resources := make([]metadata.AuthBathVerifyResult, len(body.Resources), len(body.Resources))
 
+	needExactAuth := false
 	attrs := make([]meta.ResourceAttribute, len(body.Resources))
 	for i, res := range body.Resources {
 		resources[i].AuthResource = res
@@ -66,10 +68,19 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		for _, item := range res.ParentLayers {
 			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
 		}
+		if res.ResourceID > 0 || res.BizID > 0 || len(res.ParentLayers) > 0 {
+			needExactAuth = true
+		}
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-	verifyResults, err := s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
+	var verifyResults []types.Decision
+	var err error
+	if needExactAuth {
+		verifyResults, err = s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, attrs...)
+	} else {
+		verifyResults, err = s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
+	}
 	if err != nil {
 		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})

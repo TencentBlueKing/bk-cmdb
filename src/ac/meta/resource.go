@@ -67,10 +67,7 @@ const (
 )
 
 const (
-	Host                         = "host"
-	ProcessConfigTemplate        = "processConfigTemplate"
-	ProcessConfigTemplateVersion = "processConfigTemplateVersion"
-	ProcessBoundConfig           = "processBoundConfig"
+	Host = "host"
 
 	NetCollector = "netCollector"
 	NetDevice    = "netDevice"
