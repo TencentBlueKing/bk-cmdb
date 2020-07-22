@@ -550,7 +550,40 @@ func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute
 		}
 
 		return resources, nil
+	}
 
+	// edit or delete resource pool host instances
+	if act == EditResourcePoolHost || act == DeleteResourcePoolHost {
+		r := types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(typ),
+		}
+		if a.InstanceID > 0 {
+			r.ID = strconv.FormatInt(a.InstanceID, 10)
+		}
+		if len(a.Layers) > 0 {
+			r.Attribute = map[string]interface{}{
+				types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", SysHostRscPoolDirectory, a.Layers[0].InstanceID)},
+			}
+		}
+		return []types.Resource{r}, nil
+	}
+
+	// edit business host
+	if act == EditBusinessHost {
+		r := types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(typ),
+		}
+		if a.InstanceID > 0 {
+			r.ID = strconv.FormatInt(a.InstanceID, 10)
+		}
+		if len(a.Layers) > 0 {
+			r.Attribute = map[string]interface{}{
+				types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", Business, a.Layers[0].InstanceID)},
+			}
+		}
+		return []types.Resource{r}, nil
 	}
 
 	return []types.Resource{}, nil

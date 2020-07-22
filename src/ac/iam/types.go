@@ -321,7 +321,7 @@ type ResourceAction struct {
 	NameEn               string               `json:"name_en"`
 	Type                 ActionType           `json:"type"`
 	RelatedResourceTypes []RelateResourceType `json:"related_resource_types"`
-	RelatedActions       []string             `json:"related_actions"`
+	RelatedActions       []ActionID           `json:"related_actions"`
 	Version              int                  `json:"version"`
 }
 

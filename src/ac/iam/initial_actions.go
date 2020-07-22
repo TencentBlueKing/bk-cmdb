@@ -98,7 +98,7 @@ func genBusinessHostActions() []ResourceAction {
 		NameEn:               "Edit Business Hosts",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -110,7 +110,7 @@ func genBusinessHostActions() []ResourceAction {
 		NameEn:               "Return Hosts To Pool",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToResourcePoolRelatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -141,7 +141,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		NameEn:               "Create Dynamic Grouping",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -151,7 +151,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		NameEn:               "Edit Dynamic Grouping",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource, FindBusinessCustomQuery},
 		Version:              1,
 	})
 
@@ -161,7 +161,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		NameEn:               "Delete Dynamic Grouping",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource, FindBusinessCustomQuery},
 		Version:              1,
 	})
 
@@ -171,7 +171,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		NameEn:               "View Dynamic Grouping",
 		Type:                 View,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -187,7 +187,7 @@ func genBusinessCustomFieldActions() []ResourceAction {
 		NameEn:               "Edit Custom Field",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -203,7 +203,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		NameEn:               "Create Service Category",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -213,7 +213,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		NameEn:               "Edit Service Category",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -223,7 +223,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		NameEn:               "Delete Service Category",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -239,7 +239,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		NameEn:               "Create Service Instance",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -249,7 +249,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		NameEn:               "Edit Service Instance",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -259,7 +259,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		NameEn:               "Delete Service Instance",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -291,7 +291,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 		NameEn:               "Create Service Template",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -301,7 +301,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 		NameEn:               "Edit Service Template",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -311,7 +311,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 		NameEn:               "Delete Service Template",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -343,7 +343,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 		NameEn:               "Create Set Template",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -353,7 +353,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 		NameEn:               "Edit Set Template",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -363,7 +363,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 		NameEn:               "Delete Set Template",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -379,7 +379,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		NameEn:               "Create Business Topo",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -389,7 +389,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		NameEn:               "Edit Business Topo",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -399,7 +399,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		NameEn:               "Delete Business Topo",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -415,7 +415,7 @@ func genBusinessHostApplyActions() []ResourceAction {
 		NameEn:               "Edit Host Apply",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -559,7 +559,7 @@ func genBusinessActions() []ResourceAction {
 		NameEn:               "Edit Business",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindBusiness},
 		Version:              1,
 	})
 
@@ -569,7 +569,7 @@ func genBusinessActions() []ResourceAction {
 		NameEn:               "Archive Business",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindBusiness},
 		Version:              1,
 	})
 
@@ -755,7 +755,7 @@ func genEventPushingActions() []ResourceAction {
 		NameEn:               "Edit Event Subscription",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindEventPushing},
 		Version:              1,
 	})
 
@@ -765,7 +765,7 @@ func genEventPushingActions() []ResourceAction {
 		NameEn:               "Delete Event Subscription",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindEventPushing},
 		Version:              1,
 	})
 
@@ -816,7 +816,7 @@ func genCloudAccountActions() []ResourceAction {
 		NameEn:               "Edit Cloud Account",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindCloudAccount},
 		Version:              1,
 	})
 
@@ -826,7 +826,7 @@ func genCloudAccountActions() []ResourceAction {
 		NameEn:               "Delete Cloud Account",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindCloudAccount},
 		Version:              1,
 	})
 
@@ -877,7 +877,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 		NameEn:               "Edit Cloud Resource Task",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindCloudResourceTask},
 		Version:              1,
 	})
 
@@ -887,7 +887,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 		NameEn:               "Delete Cloud Resource Task",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindCloudResourceTask},
 		Version:              1,
 	})
 
@@ -1115,7 +1115,7 @@ func genOperationStatisticActions() []ResourceAction {
 		NameEn:               "Edit Operational Statistics",
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{FindOperationStatistic},
 		Version:              1,
 	})
 

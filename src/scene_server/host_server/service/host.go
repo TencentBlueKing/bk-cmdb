@@ -22,7 +22,6 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
 	authmeta "configcenter/src/ac/meta"
-	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -82,7 +81,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
@@ -493,7 +492,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(retData,txnErr)
+		ctx.RespEntityWithError(retData, txnErr)
 		return
 	}
 	ctx.RespEntity(retData)
@@ -525,7 +524,7 @@ func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 	if err != nil {
 		blog.ErrorJSON("add host failed, retData: %s, err: %s, input:%s, rid:%s", retData, err, hostList, ctx.Kit.Rid)
 
-		ctx.RespEntityWithError(retData,err)
+		ctx.RespEntityWithError(retData, err)
 		return
 	}
 	ctx.RespEntity(retData)
@@ -589,7 +588,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(retData,txnErr)
+		ctx.RespEntityWithError(retData, txnErr)
 		return
 	}
 	ctx.RespEntity(success)
@@ -774,7 +773,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
@@ -932,7 +931,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 
 		return
 	}
@@ -1109,7 +1108,7 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(retData,txnErr)
+		ctx.RespEntityWithError(retData, txnErr)
 		return
 	}
 	ctx.RespEntity(success)
@@ -1292,7 +1291,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(exceptionArr,txnErr)
+		ctx.RespEntityWithError(exceptionArr, txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -1379,7 +1378,7 @@ func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
@@ -1424,7 +1423,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	hosts := make(map[int64]map[string]interface{}, 0)
 	indexHostIDMap := make(map[int64]int64, 0)
 	var errMsg, successMsg []string
-	CCLang:=s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
+	CCLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
 	for index, hostInfo := range hostList.HostInfo {
 		if hostInfo == nil {
 			continue
@@ -1462,7 +1461,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 

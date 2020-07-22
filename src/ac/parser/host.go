@@ -540,8 +540,8 @@ func (ps *parseStream) host() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.CleanHostInSetOrModule,
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -700,7 +700,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.Update,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -860,8 +860,8 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostWithinBusiness,
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -918,9 +918,8 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// auth this resource in scene layer, as is host server
-					Action: meta.MoveHostToBizFaultModule,
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -939,9 +938,8 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// auth this resource in scene layer, as is host server
-					Action: meta.MoveHostToBizRecycleModule,
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -960,9 +958,8 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// auth this resource in host server.
-					Action: meta.MoveHostToBizIdleModule,
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -1032,8 +1029,8 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostWithinBusiness,
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Update,
 				},
 			},
 		}
