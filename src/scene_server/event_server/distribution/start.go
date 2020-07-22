@@ -31,7 +31,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apima
 		chErr <- eh.Run()
 	}()
 
-	dh := &DistHandler{cache: cache, db: db, ctx: ctx}
+	dh := &DistHandler{cache: cache, db: db, ctx: ctx, disc: disc}
 	go func() {
 		chErr <- dh.StartDistribute()
 	}()
@@ -50,15 +50,16 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apima
 	return <-chErr
 }
 
-type EventHandler struct{ 
+type EventHandler struct {
 	cache *redis.Client
-	disc discovery.ServiceManageInterface 
+	disc  discovery.ServiceManageInterface
 }
 
 type DistHandler struct {
 	cache *redis.Client
 	db    dal.RDB
 	ctx   context.Context
+	disc  discovery.ServiceManageInterface
 }
 
 type TxnHandler struct {
