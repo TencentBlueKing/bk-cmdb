@@ -292,15 +292,23 @@
                 return property
             },
             getUserPropertyValue (property, originalProperty) {
-                if (
-                    property.operator === '$in'
-                    && ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
+                if (['$in', '$nin', '$multilike'].includes(property.operator)
+                    && Array.isArray(property.value)
+                    && !this.isMultipleProperty(originalProperty)) {
+                    return property.value.join('\n')
+                } else if (property.operator === '$multilike'
+                    && Array.isArray(property.value)
+                    && ['singlechar', 'longchar', 'singleasst', 'multiasst'].includes(originalProperty['bk_property_type'])
                 ) {
-                    return property.value[property.value.length - 1]
-                } else if (property.operator === '$multilike' && Array.isArray(property.value)) {
                     return property.value.join('\n')
                 }
-                return property.value
+                return (property.value === null || property.value === undefined) ? '' : property.value
+            },
+            isMultipleProperty (property) {
+                const propertyType = property.propertyType || property.bk_property_type
+                const propertyId = property.propertyId || property.bk_property_id
+                return ['list', 'enum', 'timezone', 'organization'].includes(propertyType)
+                    || ['bk_cloud_id'].includes(propertyId)
             },
             /* 生成保存自定义API的参数 */
             getApiParams (row, properties) {

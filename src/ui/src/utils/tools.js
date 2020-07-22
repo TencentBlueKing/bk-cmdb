@@ -316,8 +316,8 @@ export function transformHostSearchParams (params) {
         item.condition.forEach(field => {
             const operator = field.operator
             const value = field.value
-            if (['$in', '$multilike'].includes(operator) && !Array.isArray(value)) {
-                field.value = value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+            if (['$in', '$nin', '$multilike'].includes(operator) && !Array.isArray(value)) {
+                field.value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
             }
         })
     })
