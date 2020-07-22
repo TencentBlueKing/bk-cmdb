@@ -181,7 +181,10 @@
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             isPropertyEditable (property) {
-                return property.editable && !property.bk_isapi
+                const isSystemLimited = property.editable && !property.bk_isapi
+                // bk_cloud_inst_id 有值得为云主机，云主机的外网IP不可编辑
+                const isCloudHost = property.bk_property_id === 'bk_host_outerip' && this.host.bk_cloud_inst_id
+                return isSystemLimited || isCloudHost
             },
             setEditState (property) {
                 const value = this.host[property.bk_property_id]
