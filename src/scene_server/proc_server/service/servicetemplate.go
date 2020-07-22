@@ -51,7 +51,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		tpl, err = ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, newTemplate)
 		if err != nil {
 			blog.Errorf("create service template failed, err: %v", err)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		if err := ps.AuthManager.RegisterServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
@@ -130,7 +130,7 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 		tpl, err = ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, option.ID, updateParam)
 		if err != nil {
 			blog.Errorf("update service template failed, err: %v", err)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		if err := ps.AuthManager.UpdateRegisteredServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {

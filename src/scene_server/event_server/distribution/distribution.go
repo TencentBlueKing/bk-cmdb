@@ -233,10 +233,12 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 		blog.Infof("done event dist : %v", dist.DstbID)
 	}()
 
+	now := time.Now()
 	if err = dh.SendCallback(sub, dist.Raw); err != nil {
 		blog.Errorf("send callback error: %v", err)
 		return
 	}
+	blog.Infof("send event to %s, cost: %d ms", sub.SubscriptionName, time.Since(now)/time.Millisecond)
 
 	return
 }
