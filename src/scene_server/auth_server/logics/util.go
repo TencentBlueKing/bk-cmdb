@@ -36,7 +36,7 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameBaseInst
 	case iam.SysAssociationType:
 		return common.BKTableNameAsstDes
-	case iam.SysResourcePoolDirectory:
+	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
 		return common.BKTableNameBaseModule
 	case iam.SysCloudArea:
 		return common.BKTableNameBasePlat
@@ -144,7 +144,7 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 		return condition, nil
 	}
 
-	if resourceType != iam.SysResourcePoolDirectory {
+	if resourceType != iam.SysResourcePoolDirectory && resourceType != iam.SysHostRscPoolDirectory {
 		return condition, nil
 	}
 
@@ -174,14 +174,6 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	defaultBizIDVal = bizResp.Data.Info[0][common.BKAppIDField]
-	//} else {
-	//	for _, biz := range businesses {
-	//		if biz[common.BKDefaultField] == strconv.Itoa(common.DefaultAppFlag) {
-	//			defaultBizIDVal = biz[common.BKAppIDField]
-	//			break
-	//		}
-	//	}
-	//}
 	defaultBizID, err := util.GetInt64ByInterface(defaultBizIDVal)
 	if nil != err {
 		blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", defaultBizIDVal, err.Error(), kit.Rid)

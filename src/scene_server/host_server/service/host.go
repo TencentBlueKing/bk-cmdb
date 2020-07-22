@@ -748,7 +748,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	// TODO: this is a wrong usage, just for compatible the wrong usage before.
-	// delete this, when the frontend use the right request field. not the number.
+	// delete this, when the frontend use the rigListHostInstanceht request field. not the number.
 	id := data[common.BKHostIDField]
 	hostIDStr := ""
 	switch id.(type) {

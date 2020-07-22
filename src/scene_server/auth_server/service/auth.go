@@ -46,7 +46,7 @@ func (s *AuthService) Authorize(ctx *rest.Contexts) {
 		ctx.RespEntity(meta.Decision{Authorized: true})
 		return
 	}
-	
+
 	action, resources, err := iam.AdaptAuthOptions(&one)
 	if err != nil {
 		blog.Errorf("adaptor failed, err: %s, rid: %s", err, ctx.Kit.Rid)
@@ -68,7 +68,7 @@ func (s *AuthService) Authorize(ctx *rest.Contexts) {
 		Action: types.Action{
 			ID: string(action),
 		},
-		Resources: []types.Resource{*resources},
+		Resources: resources,
 	}
 
 	blog.InfoJSON("to authorize: %s, rid: %s", opts, ctx.Kit.Rid)
@@ -152,7 +152,7 @@ func (s *AuthService) authorizeBatch(kit *rest.Kit, attr *meta.AuthAttribute, ex
 
 		authBatchArr = append(authBatchArr, &types.AuthBatch{
 			Action:    types.Action{ID: string(action)},
-			Resources: []types.Resource{*resources},
+			Resources: resources,
 		})
 	}
 

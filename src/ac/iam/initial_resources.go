@@ -23,6 +23,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	Business:                  "业务",
 	SysCloudArea:              "云区域",
 	SysResourcePoolDirectory:  "主机池目录",
+	SysHostRscPoolDirectory:   "主机池主机",
 	SysModelGroup:             "模型分组",
 	SysInstanceModel:          "实例模型",
 	SysModel:                  "模型",
@@ -250,6 +251,18 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Host Pool Directory",
 			Description:   "主机池目录",
 			DescriptionEn: "host pool directory",
+			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/system/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            SysHostRscPoolDirectory,
+			Name:          ResourceTypeIDMap[SysHostRscPoolDirectory],
+			NameEn:        "Host In Host Pool Directory",
+			Description:   "主机池主机",
+			DescriptionEn: "host in host pool directory",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/system/resource",

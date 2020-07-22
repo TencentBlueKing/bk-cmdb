@@ -15,12 +15,14 @@ package parser
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // 注意: 最后返回的模型不一定属于 possibleBizID 对应的业务， 可能是个公有模型, 也可能是私有模型(业务下模型)
@@ -290,4 +292,83 @@ func (ps *parseStream) getModelUnique(cond mapstr.MapStr) (metadata.ObjectUnique
 		return unique, fmt.Errorf("get multiple model unique with [%+v]", cond)
 	}
 	return modelUniqueResult.Data.Info[0], nil
+}
+
+// get hosts relation which these hosts must be in the resource pool
+func (ps *parseStream) getRscPoolHostModuleRelation(hostIDs []int64) (map[int64]int64, error) {
+	opt := &metadata.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
+		Fields:    []string{common.BKAppIDField, common.BKHostIDField, common.BKModuleIDField},
+	}
+
+	result, err := ps.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(),
+		ps.RequestCtx.Header, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	if !result.Result {
+		return nil, errors.New(result.Code, result.ErrMsg)
+	}
+
+	resourceBiz, err := ps.getResourcePoolBusinessID()
+	if err != nil {
+		return nil, err
+	}
+
+	relation := make(map[int64]int64)
+	for _, rel := range result.Data.Info {
+		if rel.AppID != resourceBiz {
+			return nil, errors.New(common.CCErrCommParamsInvalid, "host does not belongs to host pool")
+		}
+
+		relation[rel.HostID] = rel.ModuleID
+	}
+
+	return relation, nil
+}
+
+// TODO: support multiple supplier account.
+var resourcePoolBizID int64
+
+func (ps *parseStream) getResourcePoolBusinessID() (biz int64, err error) {
+	if id := atomic.LoadInt64(&resourcePoolBizID); id != 0 {
+		return id, nil
+	}
+
+	opt := &metadata.QueryCondition{
+		Fields: []string{common.BKAppIDField},
+		Page:   metadata.BasePage{},
+		Condition: mapstr.MapStr{
+			common.BkSupplierAccount: ps.RequestCtx.Header.Get(common.BKHTTPOwnerID),
+			"default":                1,
+		},
+	}
+
+	result, err := ps.engine.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), ps.RequestCtx.Header,
+		common.BKInnerObjIDApp, opt)
+	if err != nil {
+		return 0, err
+	}
+
+	if !result.Result {
+		return 0, errors.New(result.Code, result.ErrMsg)
+	}
+
+	if len(result.Data.Info) == 0 {
+		return 0, errors.New(common.CCErrCommParamsIsInvalid, "")
+	}
+
+	id, err := util.GetInt64ByInterface(result.Data.Info[0][common.BKAppIDField])
+	if err != nil {
+		return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource biz id")
+	}
+
+	atomic.StoreInt64(&resourcePoolBizID, id)
+	return id, nil
+}
+
+type hostPool struct {
+	Business int64   `json:"bk_biz_id"`
+	HostID   []int64 `json:"bk_host_id"`
 }

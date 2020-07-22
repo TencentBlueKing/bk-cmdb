@@ -356,7 +356,7 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 		return common.BKInstIDField
 	case iam.SysAssociationType:
 		return common.BKFieldID
-	case iam.SysResourcePoolDirectory:
+	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
 		return common.BKModuleIDField
 	case iam.SysCloudArea:
 		return common.BKCloudIDField
@@ -392,7 +392,7 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 		return common.BKInstNameField
 	case iam.SysAssociationType:
 		return common.AssociationKindNameField
-	case iam.SysResourcePoolDirectory:
+	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
 		return common.BKModuleNameField
 	case iam.SysCloudArea:
 		return common.BKCloudNameField

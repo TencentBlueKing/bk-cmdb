@@ -420,7 +420,7 @@ func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dst
 func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult, errors.CCError) {
 
 	// auth: check host authorization
-	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveHostFromModuleToResPool, hostIDArr...); err != nil {
+	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveBizHostFromModuleToResPool, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommAuthorizeFailed)
 	}
