@@ -24,6 +24,7 @@ func (ps *parseStream) hostRelated() *parseStream {
 	}
 
 	ps.host().
+		hostTransfer().
 		userAPI().
 		userCustom().
 		hostFavorite().
@@ -300,25 +301,26 @@ func (ps *parseStream) userCustom() *parseStream {
 }
 
 const (
-	deleteHostBatchPattern              = "/api/v3/hosts/batch"
-	addHostsToHostPoolPattern           = "/api/v3/hosts/add"
-	addHostsToResourcePoolPattern       = "/api/v3/hosts/add/resource"
-	moveHostToBusinessModulePattern     = "/api/v3/hosts/modules"
-	moveResPoolToBizIdleModulePattern   = "/api/v3/hosts/modules/resource/idle"
-	moveHostsToBizFaultModulePattern    = "/api/v3/hosts/modules/fault"
-	moveHostsFromModuleToResPoolPattern = "/api/v3/hosts/modules/resource"
-	moveHostsToBizIdleModulePattern     = "/api/v3/hosts/modules/idle"
-	moveHostsToBizRecycleModulePattern  = "/api/v3/hosts/modules/recycle"
-	moveHostsFromRscPoolToAppModule     = "/api/v3/hosts/host/add/module"
-	moveHostAcrossBizPattern            = "/api/v3/hosts/modules/across/biz"
-	cleanHostInSetOrModulePattern       = "/api/v3/hosts/modules/idle/set"
-	findHostTopoRelationPattern         = "/api/v3/host/topo/relation/read"
-	updateHostCloudAreaFieldPattern     = "/api/v3/updatemany/hosts/cloudarea_field"
-	updateImportHostsPattern            = "/api/v3/hosts/update"
-	getHostModuleRelationPattern        = "/api/v3/hosts/modules/read"
-	lockHostPattern                     = "/api/v3/host/lock"
-	unLockHostPattern                   = "/api/v3/host/lock"
-	queryHostLockPattern                = "/api/v3/host/lock/search"
+	deleteHostBatchPattern                = "/api/v3/hosts/batch"
+	addHostsToHostPoolPattern             = "/api/v3/hosts/add"
+	addHostsToResourcePoolPattern         = "/api/v3/hosts/add/resource"
+	moveHostToBusinessModulePattern       = "/api/v3/hosts/modules"
+	moveResPoolHostToBizIdleModulePattern = "/api/v3/hosts/modules/resource/idle"
+	moveHostsToBizFaultModulePattern      = "/api/v3/hosts/modules/fault"
+	moveHostsFromModuleToResPoolPattern   = "/api/v3/hosts/modules/resource"
+	moveHostsToBizIdleModulePattern       = "/api/v3/hosts/modules/idle"
+	moveHostsToBizRecycleModulePattern    = "/api/v3/hosts/modules/recycle"
+	moveHostsFromRscPoolToAppModule       = "/api/v3/hosts/host/add/module"
+	moveHostAcrossBizPattern              = "/api/v3/hosts/modules/across/biz"
+	moveRscPoolHostToRscPoolDir           = "/api/v3/host/transfer/resource/directory"
+	cleanHostInSetOrModulePattern         = "/api/v3/hosts/modules/idle/set"
+	findHostTopoRelationPattern           = "/api/v3/host/topo/relation/read"
+	updateHostCloudAreaFieldPattern       = "/api/v3/updatemany/hosts/cloudarea_field"
+	updateImportHostsPattern              = "/api/v3/hosts/update"
+	getHostModuleRelationPattern          = "/api/v3/hosts/modules/read"
+	lockHostPattern                       = "/api/v3/host/lock"
+	unLockHostPattern                     = "/api/v3/host/lock"
+	queryHostLockPattern                  = "/api/v3/host/lock/search"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -525,184 +527,6 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// TODO: add host clone authorize filter if needed.
-
-	// add new hosts to resource pool
-	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// add hosts to resource pool
-	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// move hosts from a module to resource pool.
-	if ps.hitPattern(moveHostsFromModuleToResPoolPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// move hosts to business module operation.
-	// skip this auth operation, it has already been done
-	// in host server.
-	if ps.hitPattern(moveHostToBusinessModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// move resource pool hosts to a business idle module operation.
-	// authcenter: system->host/resource_pool->edit
-	if ps.hitPattern(moveResPoolToBizIdleModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.Update,
-				},
-			},
-		}
-		return ps
-	}
-
-	// move host to a business fault module.
-	if ps.hitPattern(moveHostsToBizFaultModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// auth this resource in scene layer, as is host server
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// move host to a business recycle module.
-	if ps.hitPattern(moveHostsToBizRecycleModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// auth this resource in scene layer, as is host server
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// move hosts to a business idle module.
-	if ps.hitPattern(moveHostsToBizIdleModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// auth this resource in host server.
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	if ps.hitPattern(moveHostsFromRscPoolToAppModule, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// Action: meta.MoveResPoolHostToBizIdleModule,
-					// auth this resource in scene layer
-					Action: meta.SkipAction,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// transfer host to another business
-	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: 0,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostToAnotherBizModule,
-				},
-			},
-		}
-		return ps
-	}
-
 	// clean the hosts in a set or module, and move these hosts to the business idle module
 	// when these hosts only exist in this set or module. otherwise these hosts will only be
 	// removed from this set or module.
@@ -737,49 +561,6 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	// synchronize hosts directly to a module in a business if this host does not exist.
-	// otherwise, this operation will only change host's attribute.
-	if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostsToBusinessOrModule,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
-		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
-		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
-		bizID, err := util.GetInt64ByInterface(match[1])
-		if err != nil {
-			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s", transferHostWithAutoClearServiceInstanceRegex, err, ps.RequestCtx.Rid)
-			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostsToBusinessOrModule,
 				},
 			},
 		}
@@ -916,11 +697,10 @@ func (ps *parseStream) host() *parseStream {
 	// update hosts batch. but can not get the exactly host id.
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// Action: meta.UpdateMany,
-					Action: meta.SkipAction,
+					Type:   meta.HostInstance,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -1010,6 +790,291 @@ func (ps *parseStream) host() *parseStream {
 				},
 			},
 		}
+		return ps
+	}
+
+	return ps
+}
+
+func (ps *parseStream) hostTransfer() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	// add new hosts to resource pool
+	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.AddHostToResourcePool,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// add hosts to resource pool
+	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.AddHostToResourcePool,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// move hosts from a module to resource pool.
+	if ps.hitPattern(moveHostsFromModuleToResPoolPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveBizHostFromModuleToResPool,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// move hosts to business module operation, transfer host in the same business.
+	if ps.hitPattern(moveHostToBusinessModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostWithinBusiness,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// move resource pool hosts to a business idle module operation.
+	if ps.hitPattern(moveResPoolHostToBizIdleModulePattern, http.MethodPost) {
+		opt := new(hostPool)
+		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+			ps.err = err
+			return ps
+		}
+
+		relation, err := ps.getRscPoolHostModuleRelation(opt.HostID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, id := range opt.HostID {
+			srcModuleID, exist := relation[id]
+			if !exist {
+				ps.err = errors.New("host not exist in resource pool")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					BusinessID: opt.Business,
+					Basic: meta.Basic{
+						Type:       meta.HostInstance,
+						Action:     meta.MoveResPoolHostToBizIdleModule,
+						InstanceID: id,
+					},
+					Layers: []meta.Item{{Type: meta.ModelModule, InstanceID: srcModuleID},
+						{Type: meta.Business, InstanceID: opt.Business}},
+				},
+			}
+		}
+
+		return ps
+	}
+
+	// move host to a business fault module.
+	if ps.hitPattern(moveHostsToBizFaultModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// auth this resource in scene layer, as is host server
+					Action: meta.MoveHostToBizFaultModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// move host to a business recycle module.
+	if ps.hitPattern(moveHostsToBizRecycleModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// auth this resource in scene layer, as is host server
+					Action: meta.MoveHostToBizRecycleModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// move hosts to a business idle module.
+	if ps.hitPattern(moveHostsToBizIdleModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// auth this resource in host server.
+					Action: meta.MoveHostToBizIdleModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(moveHostsFromRscPoolToAppModule, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostToAnotherBizModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// transfer host to another business
+	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostToAnotherBizModule,
+				},
+			},
+		}
+		return ps
+	}
+
+	// synchronize hosts directly to a module in a business if this host does not exist.
+	// otherwise, this operation will only change host's attribute.
+	if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostsToBusinessOrModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
+		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
+		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
+		bizID, err := util.GetInt64ByInterface(match[1])
+		if err != nil {
+			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s",
+				transferHostWithAutoClearServiceInstanceRegex, err, ps.RequestCtx.Rid)
+			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostWithinBusiness,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// move the resource pool host to another dir in resource pool
+	if ps.hitPattern(moveRscPoolHostToRscPoolDir, http.MethodPost) {
+		opt := new(metadata.TransferHostResourceDirectory)
+		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+			ps.err = err
+			return ps
+		}
+
+		relation, err := ps.getRscPoolHostModuleRelation(opt.HostID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, id := range opt.HostID {
+			srcModuleID, exist := relation[id]
+			if !exist {
+				ps.err = errors.New("host not exist in resource pool")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.HostInstance,
+						Action:     meta.MoveResPoolHostToDirectory,
+						InstanceID: id,
+					},
+					Layers: []meta.Item{{Type: meta.ModelModule, InstanceID: srcModuleID},
+						{Type: meta.ModelModule, InstanceID: opt.ModuleID}},
+				},
+			}
+		}
+
 		return ps
 	}
 

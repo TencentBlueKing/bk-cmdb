@@ -38,6 +38,15 @@ func GenerateInstanceSelections() []InstanceSelection {
 			}},
 		},
 		{
+			ID:     SysHostRscPoolDirectorySelection,
+			Name:   "主机池主机选择",
+			NameEn: "Host Pool Directory",
+			ResourceTypeChain: []ResourceChain{{
+				SystemID: SystemIDCMDB,
+				ID:       SysHostRscPoolDirectory,
+			}},
+		},
+		{
 			ID:     BizHostInstanceSelection,
 			Name:   "业务主机列表",
 			NameEn: "Business Host List",
@@ -102,7 +111,7 @@ func GenerateInstanceSelections() []InstanceSelection {
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
-					ID:       SysResourcePoolDirectory,
+					ID:       SysHostRscPoolDirectory,
 				},
 				{
 					SystemID: SystemIDCMDB,

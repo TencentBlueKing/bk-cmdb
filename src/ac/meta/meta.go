@@ -115,15 +115,14 @@ const (
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
 	MoveResPoolHostToDirectory     Action = "moveResPoolHostToDirectory"
 	AddHostToResourcePool          Action = "addHostToResourcePool"
-	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
+	MoveBizHostFromModuleToResPool Action = "moveHostFromModuleToResPool"
 	MoveHostToBizFaultModule       Action = "moveHostToBizFaultModule"
 	MoveHostToBizIdleModule        Action = "moveHostToBizIdleModule"
 	MoveHostToBizRecycleModule     Action = "moveHostToBizRecycleModule"
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
-	MoveBizHostToModule            Action = "moveBizHostToModule"
-	TransferHost                   Action = "transferHost"
+	MoveHostWithinBusiness         Action = "moveHostWithinBusiness"
 
 	// system base
 	ModelTopologyView      Action = "modelTopologyView"

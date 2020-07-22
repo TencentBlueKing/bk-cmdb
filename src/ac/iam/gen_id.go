@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
-func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) (*types.Resource, error) {
+func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
 
 	switch a.Basic.Type {
 	case meta.Business:
@@ -33,7 +33,7 @@ func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) (*t
 	case meta.EventWatch:
 		return genResourceWatch(act, rscType, a)
 	case meta.ProcessServiceTemplate, meta.ProcessTemplate:
-		return genProcessServiceTemplateResource(act, rscType, a)
+		return genServiceTemplateResource(act, rscType, a)
 	case meta.SetTemplate:
 		return genSetTemplateResource(act, rscType, a)
 	case meta.OperationStatistic:
@@ -76,7 +76,7 @@ func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) (*t
 		} else {
 			return genModelAttributeResource(act, rscType, a)
 		}
-	case meta.ModelInstanceTopology, meta.MainlineModelTopology:
+	case meta.ModelInstanceTopology, meta.MainlineModelTopology, meta.UserCustom:
 		return genSkipResource(act, rscType, a)
 	case meta.ConfigAdmin:
 		return genGlobalConfigResource(act, rscType, a)
@@ -84,14 +84,12 @@ func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) (*t
 		return genBusinessLayerResource(act, rscType, a)
 	case meta.ModelTopology:
 		return genModelTopologyViewResource(act, rscType, a)
+	case meta.HostInstance:
+		return genHostInstanceResource(act, rscType, a)
 
-		// case meta.UserCustom:
-		// 	return genHostUserCustomResource(act, rscType, a)
 		// case meta.HostFavorite:
 		// 	return genHostFavoriteResource(act, rscType, a)
 
-		// case meta.HostInstance:
-		// 	return genHostInstanceResource(act, rscType, a)
 		// case meta.SystemBase:
 		// 	return new(types.Resource), nil
 	case meta.ProcessServiceCategory:
@@ -102,16 +100,16 @@ func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) (*t
 }
 
 // generate business related resource id.
-func genBusinessResource(act ActionID, resourceType TypeID, attribute *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
-		Type:      types.ResourceType(resourceType),
+		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
 	// create business do not related to instance authorize
 	if act == CreateBusiness {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	// we have fuzzy authorize for frontend use, so we can not check this.
@@ -121,12 +119,12 @@ func genBusinessResource(act ActionID, resourceType TypeID, attribute *meta.Reso
 
 	r.ID = strconv.FormatInt(attribute.InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
+func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 
-	r := &types.Resource{
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Attribute: nil,
 	}
@@ -139,7 +137,7 @@ func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 	if act == CreateBusinessCustomQuery || act == FindBusinessCustomQuery {
 		r.Type = types.ResourceType(Business)
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.Type = types.ResourceType(typ)
@@ -150,12 +148,12 @@ func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 		types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", Business, att.BusinessID)},
 	}
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
+func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 
-	r := &types.Resource{
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Attribute: nil,
 	}
@@ -168,37 +166,37 @@ func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceA
 	r.Type = types.ResourceType(Business)
 	r.ID = strconv.FormatInt(att.BusinessID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genEventSubscribeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genEventSubscribeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
 	if act == CreateEventPushing {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genResourceWatch(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genResourceWatch(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genProcessServiceTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
+func genServiceTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 
-	r := &types.Resource{
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Attribute: nil,
 	}
@@ -210,17 +208,17 @@ func genProcessServiceTemplateResource(act ActionID, typ TypeID, att *meta.Resou
 		}
 		r.Type = types.ResourceType(Business)
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.Type = types.ResourceType(typ)
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genSetTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genSetTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Attribute: nil,
 	}
@@ -232,52 +230,52 @@ func genSetTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 		}
 		r.Type = types.ResourceType(Business)
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.Type = types.ResourceType(typ)
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genOperationStatisticResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genOperationStatisticResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genAuditLogResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genAuditLogResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
 	if act == CreateCloudArea {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
-	return r, nil
+	return []types.Resource{r}, nil
 
 }
 
-func genHostApplyResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
+func genHostApplyResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 
-	r := &types.Resource{
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Attribute: nil,
 	}
@@ -289,56 +287,56 @@ func genHostApplyResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) (*t
 	r.Type = types.ResourceType(Business)
 	r.ID = strconv.FormatInt(att.BusinessID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genCloudAccountResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genCloudAccountResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
 	if act == CreateCloudAccount {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genCloudResourceTaskResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genCloudResourceTaskResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
 	if act == CreateCloudResourceTask {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genResourcePoolDirectoryResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genResourcePoolDirectoryResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
 	if act == CreateResourcePoolDirectory {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genProcessServiceInstanceResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genProcessServiceInstanceResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
@@ -352,11 +350,11 @@ func genProcessServiceInstanceResource(_ ActionID, typ TypeID, att *meta.Resourc
 	r.Type = types.ResourceType(Business)
 	r.ID = strconv.FormatInt(att.BusinessID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genBusinessTopologyResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genBusinessTopologyResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
@@ -370,11 +368,11 @@ func genBusinessTopologyResource(_ ActionID, typ TypeID, att *meta.ResourceAttri
 	r.Type = types.ResourceType(Business)
 	r.ID = strconv.FormatInt(att.BusinessID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genModelResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genModelResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
@@ -386,18 +384,18 @@ func genModelResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*t
 		if len(att.Layers) > 0 {
 			r.Type = types.ResourceType(SysModelGroup)
 			r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
-			return r, nil
+			return []types.Resource{r}, nil
 		}
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genModelRelatedResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genModelRelatedResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
@@ -409,12 +407,12 @@ func genModelRelatedResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute
 
 	r.Type = types.ResourceType(SysModel)
 	r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
-	return r, nil
+	return []types.Resource{r}, nil
 
 }
 
-func genModelClassificationResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genModelClassificationResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
@@ -422,32 +420,32 @@ func genModelClassificationResource(act ActionID, typ TypeID, att *meta.Resource
 
 	// create model group do not related to instance authorize
 	if act == CreateModelGroup {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genAssociationTypeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genAssociationTypeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
 
 	if act == CreateAssociationType {
-		return r, nil
+		return []types.Resource{r}, nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(EditSysModel),
 		Attribute: nil,
@@ -459,47 +457,107 @@ func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute
 
 	r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genSkipResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genSkipResource(_ ActionID, _ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(Skip),
 		Attribute: nil,
 	}
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genGlobalConfigResource(_ ActionID, _ TypeID, _ *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genGlobalConfigResource(_ ActionID, _ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(""),
 		Attribute: nil,
 	}
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genBusinessLayerResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genBusinessLayerResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genModelTopologyViewResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genModelTopologyViewResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
 	}
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
+
+	// find host instances
+	if act == Skip {
+		r := types.Resource{
+			System:    SystemIDCMDB,
+			Type:      types.ResourceType(typ),
+			Attribute: nil,
+		}
+		return []types.Resource{r}, nil
+	}
+
+	// transfer resource pool's host to it's another directory.
+	if act == ResourcePoolHostTransferToDirectory {
+		if len(a.Layers) != 2 {
+			return nil, NotEnoughLayer
+		}
+
+		resources := make([]types.Resource, 2)
+		resources[0] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(SysHostRscPoolDirectory),
+			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+		}
+
+		resources[1] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(SysResourcePoolDirectory),
+			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+		}
+
+		return resources, nil
+	}
+
+	// transfer host in resource pool to business
+	if act == ResourcePoolHostTransferToBusiness {
+		if len(a.Layers) != 2 {
+			return nil, NotEnoughLayer
+		}
+
+		resources := make([]types.Resource, 2)
+		resources[0] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(SysHostRscPoolDirectory),
+			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+		}
+
+		resources[1] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(Business),
+			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+		}
+
+		return resources, nil
+
+	}
+
+	return []types.Resource{}, nil
+}
+
+func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(EditBusinessCustomField),
 		Attribute: nil,
@@ -511,11 +569,11 @@ func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttrib
 
 	r.ID = strconv.FormatInt(att.BusinessID, 10)
 
-	return r, nil
+	return []types.Resource{r}, nil
 }
 
-func genModelInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) (*types.Resource, error) {
-	r := &types.Resource{
+func genModelInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
@@ -527,7 +585,7 @@ func genModelInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttrib
 		if act == CreateSysInstance {
 			r.Type = types.ResourceType(SysInstanceModel)
 			r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
-			return r, nil
+			return []types.Resource{r}, nil
 		}
 
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -538,5 +596,5 @@ func genModelInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttrib
 		}
 	}
 
-	return r, nil
+	return []types.Resource{r}, nil
 }

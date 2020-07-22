@@ -83,7 +83,7 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 			blog.Errorf("add host module relation, but add config failed, err: %v, %v,input:%+v,rid:%s", err, result.ErrMsg, config, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		
+
 		if !result.Result {
 			blog.Errorf("add host module relation, but add config failed, err: %v, %v.input:%+v,rid:%s", err, result.ErrMsg, config, ctx.Kit.Rid)
 			return result.CCError()
@@ -452,7 +452,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 		ctx.RespAutoError(defErr.Errorf(common.CCErrAddHostToModuleFailStr, moduleFilter[common.BKModuleNameField].(string)+" not foud "))
 		return
 	}
-	
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, action, conf.HostIDs...); err != nil {
 		blog.Errorf("auth host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostIDs, err, ctx.Kit.Rid)
@@ -500,7 +500,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 			return ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 		}
 		return nil
-		})
+	})
 
 	if txnErr != nil {
 		ctx.RespEntityWithError(result.Data,txnErr)

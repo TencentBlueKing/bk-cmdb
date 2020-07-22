@@ -469,7 +469,19 @@ func genResourcePoolHostActions() []ResourceAction {
 		Version:              1,
 	})
 
-	transferToBusinessRelatedResource := append(relatedResource, businessResource)
+	relatedHostResource := []RelateResourceType{{
+		SystemID:    SystemIDCMDB,
+		ID:          SysHostRscPoolDirectory,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       SysHostRscPoolDirectorySelection,
+		}},
+	}}
+
+	transferToBusinessRelatedResource := append(relatedHostResource, businessResource)
 	actions = append(actions, ResourceAction{
 		ID:                   ResourcePoolHostTransferToBusiness,
 		Name:                 "主机池主机分配到业务",
@@ -480,7 +492,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Version:              1,
 	})
 
-	transferToDirectoryRelatedResource := append(relatedResource, resourcePoolDirResource)
+	transferToDirectoryRelatedResource := append(relatedHostResource, resourcePoolDirResource)
 	actions = append(actions, ResourceAction{
 		ID:                   ResourcePoolHostTransferToDirectory,
 		Name:                 "主机池主机分配到目录",

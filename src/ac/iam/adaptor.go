@@ -27,7 +27,7 @@ import (
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
-func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, *types.Resource, error) {
+func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, error) {
 
 	var action ActionID
 
@@ -240,7 +240,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	meta.HostInstance: {
 		meta.MoveResPoolHostToBizIdleModule: ResourcePoolHostTransferToBusiness,
 		meta.MoveResPoolHostToDirectory:     ResourcePoolHostTransferToDirectory,
-		meta.MoveHostFromModuleToResPool:    BusinessHostTransferToResourcePool,
+		meta.MoveBizHostFromModuleToResPool: BusinessHostTransferToResourcePool,
 		meta.AddHostToResourcePool:          CreateResourcePoolHost,
 		meta.Create:                         CreateResourcePoolHost,
 		meta.Delete:                         DeleteResourcePoolHost,
@@ -249,9 +249,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.MoveHostToBizRecycleModule:     EditBusinessHost,
 		meta.MoveHostToAnotherBizModule:     EditBusinessHost,
 		meta.CleanHostInSetOrModule:         EditBusinessHost,
-		meta.TransferHost:                   EditBusinessHost,
-		meta.MoveBizHostToModule:            EditBusinessHost,
+		meta.MoveHostWithinBusiness:         EditBusinessHost,
 		meta.Find:                           Skip,
+		meta.FindMany:                       Skip,
 	},
 	meta.ProcessServiceCategory: {
 		meta.Delete: DeleteBusinessServiceCategory,
