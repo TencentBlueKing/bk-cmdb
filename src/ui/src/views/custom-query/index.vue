@@ -352,29 +352,21 @@
                                 operator: property.operator,
                                 value: property.value === 'true'
                             })
-                        } else if (property.operator === '$multilike') {
+                        } else if (['$in', '$nin', '$multilike'].includes(property.operator) && !Array.isArray(property.value)) {
                             param.condition.push({
                                 field: property.propertyId,
                                 operator: property.operator,
-                                value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+                                value: property.value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
                             })
                         } else {
-                            let operator = property.operator
                             let value = property.value
                             // 多模块与多集群查询
-                            if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
-                                operator = operator === '$regex' ? '$in' : operator
-                                if (operator === '$in') {
-                                    const arr = value.replace('，', ',').split(',')
-                                    const isExist = arr.findIndex(val => {
-                                        return val === value
-                                    }) > -1
-                                    value = isExist ? arr : [...arr, value]
-                                }
+                            if (['bk_set_name', 'bk_module_name'].includes(property.propertyId)) {
+                                value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
                             }
                             param['condition'].push({
                                 field: property.propertyId,
-                                operator: operator,
+                                operator: property.operator,
                                 value: value
                             })
                         }
