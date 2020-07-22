@@ -170,6 +170,11 @@ func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan m
 		case <-done:
 			return
 		default:
+			if !dh.disc.IsMaster() {
+				blog.Infof("not master, skip pop dist event")
+				time.Sleep(10 * time.Second)
+				continue
+			}
 			dist := dh.popDistInst(sub.SubscriptionID)
 			if dist == nil {
 				continue
@@ -183,48 +188,6 @@ func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan m
 
 func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.DistInstCtx) (err error) {
 	blog.Infof("handling dist %s", dist.Raw)
-	distID := fmt.Sprint(dist.DstbID - 1)
-	subscriberID := fmt.Sprint(dist.SubscriptionID)
-	runningKey := types.EventCacheDistRunningPrefix + subscriberID + "_" + distID
-	if err = saveRunning(dh.cache, runningKey, timeout+sub.GetTimeout()); err != nil {
-		if ErrProcessExists == err {
-			blog.Infof("process exist, continue")
-			return nil
-		}
-		return err
-	}
-
-	previousID := fmt.Sprint(dist.DstbID - 1)
-	previousRunningKey := types.EventCacheDistRunningPrefix + subscriberID + "_" + previousID
-	done, err := checkFromDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, previousID)
-	if err != nil {
-		return err
-	}
-	if !done {
-
-		running, checkErr := checkFromRunning(dh.cache, previousRunningKey)
-		if checkErr != nil {
-			return checkErr
-		}
-		if !running {
-
-			time.Sleep(time.Second * 5)
-			running, checkErr = checkFromRunning(dh.cache, previousRunningKey)
-			if checkErr != nil {
-				return checkErr
-			}
-		}
-		if running {
-
-			blog.Infof("waiting previous id: " + previousID)
-			if checkErr = waitPreviousDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, previousID, sub.GetTimeout()); checkErr != nil && checkErr != ErrWaitTimeout {
-				return checkErr
-			}
-			if checkErr == ErrWaitTimeout {
-				blog.Infof("wait timeout previous id: %v, begin send callback", previousID)
-			}
-		}
-	}
 
 	defer func() {
 		if err = dh.saveDistDone(dist); err != nil {
@@ -235,7 +198,7 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 
 	now := time.Now()
 	if err = dh.SendCallback(sub, dist.Raw); err != nil {
-		blog.Errorf("send callback error: %v", err)
+		blog.Errorf("send callback error, send event to %s, cost: %d ms, error: %v ", sub.SubscriptionName, time.Since(now)/time.Millisecond, err)
 		return
 	}
 	blog.Infof("send event to %s, cost: %d ms", sub.SubscriptionName, time.Since(now)/time.Millisecond)
