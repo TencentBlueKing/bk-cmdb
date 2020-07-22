@@ -74,7 +74,8 @@ const cloudResource = {
                         bk_task_id: {
                             $eq: id
                         }
-                    }
+                    },
+                    latest_hostcount: true
                 },
                 config
             }).then(({ info }) => {

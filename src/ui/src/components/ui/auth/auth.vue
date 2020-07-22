@@ -57,6 +57,7 @@
                     })
                 } else {
                     this.disabled = false
+                    this.isAuthorized = true
                     this.$emit('update-auth', true)
                 }
             },

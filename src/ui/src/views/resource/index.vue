@@ -20,8 +20,8 @@
                 :max="480"
                 :disabled="layout.collapse"
                 direction="right">
-                <resource-diractory></resource-diractory>
-                <i class="diractory-collapse-icon bk-icon icon-angle-left"
+                <resource-directory></resource-directory>
+                <i class="directory-collapse-icon bk-icon icon-angle-left"
                     @click="layout.collapse = !layout.collapse">
                 </i>
             </cmdb-resize-layout>
@@ -32,13 +32,13 @@
 </template>
 
 <script>
-    import resourceDiractory from './children/directory.vue'
+    import resourceDirectory from './children/directory.vue'
     import resourceHosts from './children/host-list.vue'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
     export default {
         components: {
-            resourceDiractory,
+            resourceDirectory,
             resourceHosts
         },
         data () {
@@ -94,12 +94,12 @@
             &.is-collapse {
                 width: 0 !important;
                 border-right: none;
-                .diractory-collapse-icon:before {
+                .directory-collapse-icon:before {
                     display: inline-block;
                     transform: rotate(180deg);
                 }
             }
-            .diractory-collapse-icon {
+            .directory-collapse-icon {
                 position: absolute;
                 left: 100%;
                 top: 50%;

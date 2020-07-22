@@ -58,7 +58,9 @@
                 <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
             </bk-table-column>
             <bk-table-column :label="$t('地域')" prop="bk_region">
-                <template slot-scope="{ row }">{{row.bk_region | formatter('singlechar')}}</template>
+                <template slot-scope="{ row }">
+                    <task-region-selector display="info" :account="row.bk_account_id" :value="row.bk_region"></task-region-selector>
+                </template>
             </bk-table-column>
             <bk-table-column label="VPC" prop="bk_vpc_name" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{getVpcInfo(row) | formatter('singlechar')}}</template>
@@ -93,9 +95,11 @@
     import CmdbVendor from '@/components/ui/other/vendor'
     import throttle from 'lodash.throttle'
     import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
+    import TaskRegionSelector from '@/views/cloud-resource/children/task-region-selector'
     export default {
         components: {
-            CmdbVendor
+            CmdbVendor,
+            TaskRegionSelector
         },
         data () {
             return {

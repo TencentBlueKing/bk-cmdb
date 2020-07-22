@@ -1,15 +1,18 @@
 <template>
-    <div class="diractory-layout">
-        <bk-input class="dir-search"
-            v-model.trim="dirSearch"
-            clearable
-            :placeholder="$t('分组目录')">
-        </bk-input>
+    <div class="directory-layout">
+        <div class="directory-options">
+            <bk-input class="dir-search"
+                v-model.trim="dirSearch"
+                clearable
+                right-icon="icon-search"
+                :placeholder="$t('分组目录')">
+            </bk-input>
+            <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
+        </div>
         <div class="dir-header"
             :class="{ 'active': acitveDirId === null }"
             @click="handleResourceClick">
             <span class="title">{{$t('资源池')}}</span>
-            <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
         </div>
         <ul class="dir-list">
             <li class="dir-item edit-status" v-if="createInfo.active">
@@ -46,7 +49,9 @@
                 <template v-else>
                     <i class="icon-cc-memory"></i>
                     <span class="dir-name" :title="dir.bk_module_name">{{dir.bk_module_name}}</span>
-                    <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
+                    <cmdb-dot-menu class="dir-operation" color="#3A84FF"
+                        v-if="dir.default !== 1"
+                        @click.native.stop="handleCloseInput">
                         <div class="dot-content">
                             <bk-button
                                 class="menu-btn"
@@ -54,16 +59,19 @@
                                 @click="handleResetName(dir)">
                                 {{$t('重命名')}}
                             </bk-button>
-                            <bk-button
-                                class="menu-btn"
-                                :text="true"
+                            <div
                                 v-bk-tooltips.right="{
                                     content: $t('主机不为空，不能删除'),
                                     disabled: !dir.host_count
-                                }"
-                                @click="handleDelete(dir, index)">
-                                {{$t('删除')}}
-                            </bk-button>
+                                }">
+                                <bk-button
+                                    class="menu-btn"
+                                    :text="true"
+                                    :disabled="!!dir.host_count"
+                                    @click="handleDelete(dir, index)">
+                                    {{$t('删除')}}
+                                </bk-button>
+                            </div>
                         </div>
                     </cmdb-dot-menu>
                     <span class="host-count">{{dir.host_count}}</span>
@@ -134,6 +142,12 @@
                         }
                     })
                     this.$store.commit('resourceHost/setDirectoryList', info)
+                    let directoryId = RouterQuery.get('directory')
+                    if (directoryId) {
+                        directoryId = Number(directoryId)
+                        const directory = info.find(directory => directory.bk_module_id === directoryId)
+                        directory && this.handleSearchHost(directory, false)
+                    }
                 } catch (error) {
                     console.error(error)
                 }
@@ -153,6 +167,7 @@
                     this.$store.commit('resourceHost/addDirectory', newDir)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreate()
+                    this.handleSearchHost(newDir)
                 } catch (e) {
                     console.error(e)
                 }
@@ -179,10 +194,10 @@
                     console.error(e)
                 }
             },
-            handleSearchHost (active = {}) {
+            handleSearchHost (active = {}, dispatchEvent = true) {
                 this.$store.commit('resourceHost/setActiveDirectory', active)
                 this.acitveDirId = active.bk_module_id
-                Bus.$emit('refresh-resource-list')
+                dispatchEvent && Bus.$emit('refresh-resource-list')
             },
             handleResourceClick () {
                 this.$store.commit('resourceHost/setActiveDirectory', null)
@@ -243,7 +258,7 @@
                                 }
                             })
                             if (dir.bk_module_id === this.acitveDirId) {
-                                this.acitveDirId = this.directoryList[index - 1].bk_module_id
+                                this.handleSearchHost(this.filterDirList[index - 1])
                             }
                             this.$store.commit('resourceHost/deleteDirectory', dir.bk_module_id)
                             this.$success(this.$t('删除成功'))
@@ -258,13 +273,22 @@
 </script>
 
 <style lang="scss" scoped>
-    .diractory-layout {
+    .directory-layout {
         height: 100%;
         overflow: hidden;
-        .dir-search {
-            display: block;
-            width: auto;
-            margin: 18px 20px 14px;
+        .directory-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px 14px;
+            .dir-search {
+                display: block;
+                width: auto;
+            }
+            .icon-cc-plus {
+                flex: 20px 0 0;
+                font-size: 20px;
+            }
         }
         .dir-header {
             @include space-between;
@@ -290,7 +314,7 @@
                 line-height: 18px;
                 text-align: center;
                 color: #FFFFFF;
-                background-color: #C4C6CC;
+                background-color: #979BA5;
                 border-radius: 2px;
                 cursor: pointer;
             }

@@ -223,7 +223,7 @@
                 injectFields(params, this.table.header)
                 injectAsset(params, RouterQuery.get('bk_asset_id'))
                 this.injectScope(params)
-                this.injectDirectory(params)
+                this.scope === 1 && this.injectDirectory(params)
                 return params
             },
             injectScope (params) {
@@ -268,17 +268,18 @@
             handleRowClick (item) {
                 const business = item.biz[0]
                 if (business.default) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: item.host.bk_host_id
                         },
                         query: {
                             from: 'resource'
-                        }
+                        },
+                        history: true
                     })
                 } else {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
                         params: {
                             business: business.bk_biz_id,
@@ -286,7 +287,8 @@
                         },
                         query: {
                             from: 'resource'
-                        }
+                        },
+                        history: true
                     })
                 }
             },

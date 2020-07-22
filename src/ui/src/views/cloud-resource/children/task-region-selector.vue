@@ -57,7 +57,8 @@
             }
         },
         created () {
-            this.getRegions()
+            // 为0时是默认云区域，无地域信息
+            this.account && this.getRegions()
         },
         methods: {
             async getRegions () {
@@ -65,7 +66,7 @@
                     const regions = await this.$store.dispatch('cloud/resource/findRegion', {
                         params: {
                             bk_account_id: this.account,
-                            with_host_count: false
+                            with_host_count: true
                         },
                         config: {
                             requestId: this.request,

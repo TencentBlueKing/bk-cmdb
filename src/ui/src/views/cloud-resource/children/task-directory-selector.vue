@@ -83,6 +83,9 @@
                     this.$emit('input', value)
                     this.$emit('change', value, oldValue)
                 }
+            },
+            useIAM () {
+                return window.CMDB_CONFIG.site.authscheme === 'iam'
             }
         },
         created () {
@@ -91,13 +94,12 @@
         methods: {
             getCursorData (directory) {
                 return {
-                    active: !directory.authorized,
+                    active: this.useIAM ? !directory.authorized : false,
                     auth: { type: this.$OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] },
                     onclick: this.hideSelectorPanel
                 }
             },
             hideSelectorPanel () {
-                console.log('shit')
                 this.$refs.selector.close()
             },
             async getDirectories () {
@@ -112,7 +114,7 @@
                             fromCache: true
                         }
                     })
-                    if (this.display === 'selector') {
+                    if (this.display === 'selector' && this.useIAM) {
                         await this.injectAuth(info)
                     }
                     info.sort((dirA, dirB) => {
