@@ -59,22 +59,6 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 		return
 	}
 
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.MoveBizHostToModule, config.HostID...); err != nil {
-		blog.Errorf("check move host to module authorization failed, hosts: %+v, err: %v", config.HostID, err)
-		if err != ac.NoAuthorizeError {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
-			return
-		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, config.HostID)
-		if err != nil {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
-			return
-		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
-		return
-	}
-
 	var result *metadata.OperaterException
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
@@ -97,7 +81,7 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(result.Data,txnErr)
+		ctx.RespEntityWithError(result.Data, txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -122,14 +106,13 @@ func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 		return
 	}
 
-
 	if 0 == len(conf.HostIDs) {
 		ctx.RespEntity(nil)
 		return
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.MoveHostFromModuleToResPool, conf.HostIDs...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.MoveBizHostFromModuleToResPool, conf.HostIDs...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostIDs, err)
 		if err != ac.NoAuthorizeError {
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
@@ -157,7 +140,7 @@ func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(exceptionArr,txnErr)
+		ctx.RespEntityWithError(exceptionArr, txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -185,7 +168,7 @@ func (s *Service) AssignHostToApp(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(exceptionArr,txnErr)
+		ctx.RespEntityWithError(exceptionArr, txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -381,7 +364,7 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 // DeleteHostFromBusiness delete host from business
 // dangerous operation
 func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
-	
+
 	data := new(metadata.DeleteHostFromBizParameter)
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -401,7 +384,7 @@ func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(exceptionArr,txnErr)
+		ctx.RespEntityWithError(exceptionArr, txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -422,20 +405,16 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 	bizID := conf.ApplicationID
 
 	moduleFilter := make(map[string]interface{})
-	var action authmeta.Action
 	if defaultModuleFlag == common.DefaultResModuleFlag {
 		// 空闲机
-		action = authmeta.MoveHostToBizIdleModule
 		moduleFilter[common.BKDefaultField] = common.DefaultResModuleFlag
 		moduleFilter[common.BKModuleNameField] = common.DefaultResModuleName
 	} else if defaultModuleFlag == common.DefaultFaultModuleFlag {
 		// 故障机器
-		action = authmeta.MoveHostToBizFaultModule
 		moduleFilter[common.BKDefaultField] = common.DefaultFaultModuleFlag
 		moduleFilter[common.BKModuleNameField] = common.DefaultFaultModuleName
 	} else if defaultModuleFlag == common.DefaultRecycleModuleFlag {
 		// 待回收
-		action = authmeta.MoveHostToBizRecycleModule
 		moduleFilter[common.BKDefaultField] = common.DefaultRecycleModuleFlag
 		moduleFilter[common.BKModuleNameField] = common.DefaultRecycleModuleName
 	} else {
@@ -453,29 +432,13 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 		return
 	}
 
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, action, conf.HostIDs...); err != nil {
-		blog.Errorf("auth host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostIDs, err, ctx.Kit.Rid)
-		if err != ac.NoAuthorizeError {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
-			return
-		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, conf.HostIDs)
-		if err != nil {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
-			return
-		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
-		return
-	}
-	
 	audit := lgc.NewHostModuleLog(conf.HostIDs)
 	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 		blog.Errorf("move host to default module s failed, get prev module host config failed, hostIDs: %v, err: %s, rid: %s", conf.HostIDs, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
 		return
 	}
-	
+
 	var result *metadata.OperaterException
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 
@@ -494,7 +457,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 			blog.ErrorJSON("move host to default module failed, TransferHostToDefaultModule response failed. input:%s, transferInput:%s, response:%s, rid:%s", conf, transferInput, result, rid)
 			return defErr.New(result.Code, result.ErrMsg)
 		}
-		
+
 		if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {
 			blog.ErrorJSON("move host to default module failed, save audit log failed, input:%s, err:%s, rid:%s", conf, err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
@@ -503,7 +466,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(result.Data,txnErr)
+		ctx.RespEntityWithError(result.Data, txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
