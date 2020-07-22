@@ -16,8 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -104,39 +102,4 @@ func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Heade
 		return fmt.Errorf("get plat by id failed, err: %+d", err)
 	}
 	return am.AuthorizeByPlat(ctx, header, action, plats...)
-}
-
-func (am *AuthManager) ListAuthorizedPlatIDs(ctx context.Context, header http.Header, username string) ([]int64, error) {
-	input := meta.ListAuthorizedResourcesParam{
-		UserName:     username,
-		ResourceType: meta.CloudAreaInstance,
-		Action:       meta.FindMany,
-	}
-	authorizedResources, err := am.clientSet.AuthServer().ListAuthorizedResources(ctx, header, input)
-	if err != nil {
-		return nil, err
-	}
-
-	authorizedPlatIDs := make([]int64, 0)
-	for _, resourceID := range authorizedResources {
-		// compatible for previous usage
-		if strings.HasPrefix(resourceID, "plat:") {
-			parts := strings.Split(resourceID, ":")
-			if len(parts) < 2 {
-				return nil, fmt.Errorf("parse platID from iamResource failed,  iamResourceID: %s, format error", resourceID)
-			}
-			platID, err := strconv.ParseInt(parts[1], 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("parse platID from iamResource failed, iamResourceID: %s, err: %+v", resourceID, err)
-			}
-			authorizedPlatIDs = append(authorizedPlatIDs, platID)
-		} else {
-			platID, err := strconv.ParseInt(resourceID, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("parse platID from iamResource failed, iamResourceID: %s, err: %+v", resourceID, err)
-			}
-			authorizedPlatIDs = append(authorizedPlatIDs, platID)
-		}
-	}
-	return authorizedPlatIDs, nil
 }

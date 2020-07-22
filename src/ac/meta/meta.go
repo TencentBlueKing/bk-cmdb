@@ -125,10 +125,6 @@ const (
 	MoveBizHostToModule            Action = "moveBizHostToModule"
 	TransferHost                   Action = "transferHost"
 
-	// process actions
-	BoundModuleToProcess   Action = "boundModuleToProcess"
-	UnboundModuleToProcess Action = "unboundModelToProcess"
-
 	// system base
 	ModelTopologyView      Action = "modelTopologyView"
 	ModelTopologyOperation Action = "modelTopologyOperation"

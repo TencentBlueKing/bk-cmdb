@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 
 	"github.com/emicklei/go-restful"
 )
@@ -56,6 +56,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	resources := make([]metadata.AuthBathVerifyResult, len(body.Resources), len(body.Resources))
 
+	needExactAuth := false
 	attrs := make([]meta.ResourceAttribute, len(body.Resources))
 	for i, res := range body.Resources {
 		resources[i].AuthResource = res
@@ -67,10 +68,19 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		for _, item := range res.ParentLayers {
 			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
 		}
+		if res.ResourceID > 0 || res.BizID > 0 || len(res.ParentLayers) > 0 {
+			needExactAuth = true
+		}
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-	verifyResults, err := s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
+	var verifyResults []types.Decision
+	var err error
+	if needExactAuth {
+		verifyResults, err = s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, attrs...)
+	} else {
+		verifyResults, err = s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
+	}
 	if err != nil {
 		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
@@ -170,77 +180,4 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 	}
 
 	_ = resp.WriteEntity(metadata.NewSuccessResp(url))
-}
-
-type ConvertedResource struct {
-	Type   string `json:"type"`
-	Action string `json:"action"`
-}
-
-type ScopeType string
-
-const (
-	Business ScopeType = "biz"
-	System   ScopeType = "system"
-)
-
-type ResourceDetail struct {
-	Attribute meta.ResourceAttribute `json:"attribute"`
-	Scope     ScopeType              `json:"scope"`
-}
-
-type ConvertData struct {
-	Data []ResourceDetail `json:"data"`
-}
-
-// used for web to get auth's resource with cmdb's resource. in a word, it's for converting.
-func (s *service) GetCmdbConvertResources(req *restful.Request, resp *restful.Response) {
-	reqHeader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
-	rid := util.GetHTTPCCRequestID(reqHeader)
-
-	attributes := new(ConvertData)
-	err := json.NewDecoder(req.Request.Body).Decode(attributes)
-	if err != nil {
-		blog.Errorf("convert cmdb resource with iam, but decode request failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
-	converts := make([]ConvertedResource, 0)
-	for _, att := range attributes.Data {
-		var bizID int64
-		switch att.Scope {
-		case Business:
-			// set biz id = 1 means that this resource need to convert to a business resource.
-			bizID = 1
-		case System:
-			// set biz id = 1 means that this resource need to convert to a global resource.
-			bizID = 0
-		default:
-			blog.Errorf("convert cmdb resource with iam, but got invalid scope: %s, rid: %s", att.Scope, rid)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, att.Scope)})
-			return
-		}
-		typ, err := iam.ConvertResourceType(att.Attribute.Type, bizID)
-		if err != nil {
-			blog.Errorf("convert attribute resource type: %+v failed, err: %v", att, err)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})
-			return
-		}
-
-		action, err := iam.ConvertResourceAction(att.Attribute.Type, att.Attribute.Action, att.Attribute.BusinessID)
-		if err != nil {
-			blog.Errorf("convert attribute resource action: %+v failed, err: %v", att, err)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, att.Attribute.Type)})
-			return
-		}
-
-		converts = append(converts, ConvertedResource{
-			Type:   string(*typ),
-			Action: string(action),
-		})
-	}
-
-	resp.WriteEntity(metadata.NewSuccessResp(converts))
 }

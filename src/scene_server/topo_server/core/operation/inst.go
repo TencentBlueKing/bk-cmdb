@@ -22,7 +22,6 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -942,32 +941,6 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, obj model.Object, 
 		if object.ObjectID == keyObjID {
 			// no need to search the association objects
 			continue
-		}
-
-		// get authorized instance ids if auth is enabled
-		if auth.EnableAuthorize() {
-			isMainline, err := c.asst.IsMainlineObject(kit, obj.GetObjectID())
-			if err != nil {
-				blog.Errorf("[operation-inst] check if object(%s) is mainline failed, err: %s, rid: %s", obj.GetObjectID(), err.Error(), kit.Rid)
-				return 0, nil, err
-			}
-			if !isMainline {
-				instIDs, err := c.authManager.ListAuthorizedInstanceIDs(kit.Ctx, kit.Header, kit.User)
-				if err != nil {
-					blog.ErrorJSON("ListAuthorizedInstanceIDs failed, err: %s, rid: %s", err.Error(), kit.Rid)
-					return 0, nil, err
-				}
-				cond = map[string]interface{}{
-					common.BKDBAND: []map[string]interface{}{
-						cond,
-						{
-							common.BKInstIDField: map[string]interface{}{
-								common.BKDBIN: instIDs,
-							},
-						},
-					},
-				}
-			}
 		}
 
 		innerCond := new(metadata.QueryInput)

@@ -65,34 +65,9 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		}
 	}
 
-	filter := input.Condition
-	if s.AuthManager.Enabled() {
-		// auth: get authorized resources
-		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(ctx.Kit.Ctx, ctx.Kit.Header, ctx.Kit.User)
-		if err != nil {
-			blog.Errorf("FindManyCloudArea failed, ListAuthorizedPlatIDs failed, user: %s, err: %+v, rid: %s", ctx.Kit.User, err, rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommListAuthorizedResourceFromIAMFailed))
-			return
-		}
-
-		if input.Condition == nil {
-			input.Condition = make(map[string]interface{})
-		}
-
-		filter = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{
-				input.Condition,
-				{
-					common.BKCloudIDField: map[string]interface{}{
-						common.BKDBIN: authorizedPlatIDs,
-					},
-				},
-			},
-		}
-	}
 	query := &metadata.QueryCondition{
 		Fields:    input.Fields,
-		Condition: filter,
+		Condition: input.Condition,
 		Page:      input.Page,
 	}
 
@@ -500,7 +475,6 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	// response success
 	ctx.RespEntity(nil)
 }
-
 
 // addPlatHostCount add host count to plat info
 func (s *Service) addPlatHostCount(ctx *rest.Contexts, data *[]mapstr.MapStr) error {

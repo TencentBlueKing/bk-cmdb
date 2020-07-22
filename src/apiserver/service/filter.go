@@ -150,11 +150,6 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if path == "/api/v3/auth/convert" {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-
 		// if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
 		// 	blog.Errorf("authFilter failed, can not use super supplier account, rid: %s", rid)
 		// 	rsp := metadata.BaseResp{
