@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
@@ -156,6 +157,11 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 		if err != nil {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
+	}
+
+	// if need create module using service template
+	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
 	}
 
 	if serviceCategoryID == 0 && serviceTemplateID == 0 {
