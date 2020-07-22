@@ -33,37 +33,26 @@
         </div>
         <div class="template-options">
             <template v-if="isViewMode">
-                <cmdb-auth :auth="$authResources({
-                    resource_id: templateId,
-                    type: $OPERATION.U_SET_TEMPLATE
-                })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, templateId] }">
                     <bk-button slot-scope="{ disabled }"
                         class="options-confirm"
                         theme="primary"
                         :disabled="disabled"
-                        @click="handleEdit"
-                    >
+                        @click="handleEdit">
                         {{$t('编辑')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({
-                    resource_id: templateId,
-                    type: $OPERATION.D_SET_TEMPLATE
-                })">
+                <cmdb-auth :auth="{ type: $OPERATION.D_SET_TEMPLATE, relation: [bizId, templateId] }">
                     <bk-button slot-scope="{ disabled }"
                         class="options-confirm"
                         :disabled="disabled"
-                        @click="handleDelete"
-                    >
+                        @click="handleDelete">
                         {{$t('删除')}}
                     </bk-button>
                 </cmdb-auth>
             </template>
             <template v-else>
-                <cmdb-auth :auth="$authResources({
-                    resource_id: templateId,
-                    type: $OPERATION[mode === 'create' ? 'C_SET_TEMPLATE' : 'U_SET_TEMPLATE']
-                })">
+                <cmdb-auth :auth=" mode === 'create' ? { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] } : { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId, templateId] }">
                     <bk-button slot-scope="{ disabled }"
                         class="options-confirm"
                         theme="primary"

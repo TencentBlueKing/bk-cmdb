@@ -7,9 +7,8 @@
             {{$t('关联关系提示')}}
         </cmdb-tips>
         <p class="operation-box clearfix">
-            <cmdb-auth v-if="isAdminView"
-                class="inline-block-middle"
-                :auth="$authResources({ type: $OPERATION.C_RELATION })">
+            <cmdb-auth class="inline-block-middle"
+                :auth="{ type: $OPERATION.C_RELATION }">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     class="create-btn"
@@ -55,7 +54,7 @@
                 prop="operation"
                 :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth class="mr10" :auth="$authResources({ resource_id: row.id, type: $OPERATION.U_RELATION })">
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_RELATION, relation: [row.id] }">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
@@ -64,7 +63,7 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth :auth="$authResources({ resource_id: row.id, type: $OPERATION.D_RELATION })">
+                    <cmdb-auth :auth="{ type: $OPERATION.D_RELATION, relation: [row.id] }">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
@@ -78,7 +77,7 @@
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$authResources({ type: $OPERATION.C_RELATION })"
+                :auth="{ type: $OPERATION.C_RELATION }"
                 @create="createRelation"
             ></cmdb-table-empty>
         </bk-table>

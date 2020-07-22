@@ -1,7 +1,7 @@
 <template>
     <div class="options-layout clearfix">
         <div class="options fl">
-            <cmdb-auth class="option" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <cmdb-auth class="option" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button theme="primary" slot-scope="{ disabled }"
                     :disabled="disabled || !isNormalModuleNode"
                     :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
@@ -9,7 +9,7 @@
                     {{$t('新增')}}
                 </bk-button>
             </cmdb-auth>
-            <cmdb-auth class="option ml10" :auth="$authResources({ type: $OPERATION.U_HOST })">
+            <cmdb-auth class="option ml10" :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     :disabled="disabled || !hasSelection"
                     @click="handleMultipleEdit">
@@ -33,7 +33,7 @@
                     </li>
                     <li class="bk-dropdown-item" @click="handleTransfer($event, 'business', false)">{{$t('业务模块')}}</li>
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
-                        :auth="$authResources({ type: $OPERATION.HOST_TO_RESOURCE })">
+                        :auth="{ type: $OPERATION.HOST_TO_RESOURCE, relation: [bizId] }">
                         <span href="javascript:void(0)" slot-scope="{ disabled }"
                             v-bk-tooltips="isIdleModule ? '' : $t('仅空闲机模块才能转移到资源池')"
                             :class="{ disabled: !isIdleModule || disabled }"
@@ -60,7 +60,7 @@
                 <ul class="bk-dropdown-list" slot="dropdown-content">
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
                         v-if="showRemove"
-                        :auth="$authResources({ type: $OPERATION.D_SERVICE_INSTANCE })">
+                        :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
                         <span href="javascript:void(0)"
                             slot-scope="{ disabled }"
                             :class="{ disabled: !hasSelection || disabled }"
@@ -70,7 +70,7 @@
                     </cmdb-auth>
                     <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出')}}</li>
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
-                        :auth="$authResources({ type: $OPERATION.U_HOST })">
+                        :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
                         <span href="javascript:void(0)"
                             slot-scope="{ disabled }"
                             :class="{ disabled: disabled }"

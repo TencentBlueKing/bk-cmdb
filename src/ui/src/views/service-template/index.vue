@@ -6,7 +6,7 @@
             </i18n>
         </cmdb-tips>
         <div class="template-filter clearfix">
-            <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })">
+            <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.C_SERVICE_TEMPLATE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="disabled"
@@ -71,10 +71,7 @@
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth class="mr10" :auth="$authResources({
-                        resource_id: row.id,
-                        type: $OPERATION.U_SERVICE_TEMPLATE
-                    })">
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             :disabled="disabled"
@@ -83,10 +80,7 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth :auth="$authResources({
-                        resource_id: row.id,
-                        type: $OPERATION.D_SERVICE_TEMPLATE
-                    })">
+                    <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
                         <template slot-scope="{ disabled }">
                             <span class="text-primary"
                                 style="color: #dcdee5 !important; cursor: not-allowed;"
@@ -108,7 +102,7 @@
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })"
+                :auth="{ type: $OPERATION.C_SERVICE_TEMPLATE, relation: [bizId] }"
                 @create="operationTemplate"
             ></cmdb-table-empty>
         </bk-table>
@@ -116,7 +110,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         data () {
@@ -153,6 +147,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             params () {
                 const id = this.categoryId
                     ? this.categoryId

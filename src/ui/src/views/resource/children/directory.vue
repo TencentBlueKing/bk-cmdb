@@ -126,7 +126,7 @@
                     const { info } = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
                         params: {
                             page: {
-                                sort: '-bk_module_name'
+                                sort: 'bk_module_name'
                             }
                         },
                         config: {

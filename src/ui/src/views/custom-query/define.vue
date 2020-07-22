@@ -21,7 +21,7 @@
                 <label class="userapi-label">
                     {{$t('查询名称')}}<span class="color-danger"> * </span>
                 </label>
-                <cmdb-auth style="display: block;" :auth="authResources">
+                <cmdb-auth style="display: block;" :auth="authData">
                     <bk-input slot-scope="{ disabled }"
                         type="text"
                         class="cmdb-form-input"
@@ -45,7 +45,7 @@
                             {{property.objName}} - {{property.propertyName}}
                         </label>
                         <cmdb-auth style="display: block;"
-                            :auth="authResources">
+                            :auth="authData">
                             <template slot-scope="{ disabled }">
                                 <div class="filter-main">
                                     <div class="filter-content clearfix" :class="{ disabled: disabled }">
@@ -121,7 +121,7 @@
                         </cmdb-auth>
                     </li>
                 </ul>
-                <cmdb-auth :auth="authResources">
+                <cmdb-auth :auth="authData">
                     <bk-button slot-scope="{ disabled }"
                         class="add-conditon-btn"
                         theme="primary"
@@ -135,7 +135,7 @@
             </div>
         </div>
         <div class="userapi-btn-group" :class="{ 'sticky': hasScrollbar }">
-            <cmdb-auth :auth="authResources">
+            <cmdb-auth :auth="authData">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     class="userapi-btn"
@@ -260,9 +260,7 @@
             }
         },
         computed: {
-            ...mapGetters([
-                'supplierAccount'
-            ]),
+            ...mapGetters(['supplierAccount']),
             filterList () {
                 return this.filter.allList.filter(item => {
                     return !this.userProperties.some(property => {
@@ -362,11 +360,11 @@
             selectedProperties () {
                 return this.userProperties.map(property => `${property.objId}-${property.propertyId}`)
             },
-            authResources () {
+            authData () {
                 if (this.type === 'update') {
-                    return this.$authResources({ type: this.$OPERATION.U_CUSTOM_QUERY })
+                    return { type: this.$OPERATION.U_CUSTOM_QUERY, relation: [this.bizId, this.id] }
                 }
-                return {}
+                return null
             }
         },
         async created () {

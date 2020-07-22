@@ -1,7 +1,7 @@
 <template>
     <div class="options">
         <div class="left">
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+            <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }" theme="primary"
                     :disabled="disabled || !selection.value.length"
                     @click="handleBatchEdit">
@@ -9,7 +9,7 @@
                 </bk-button>
             </cmdb-auth>
             <cmdb-auth class="ml10" v-if="!serviceTemplateId"
-                :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }" theme="default"
                     :disabled="disabled || !selection.value.length"
                     :loading="$loading(selection.requestId)"

@@ -63,7 +63,7 @@
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$authResources({ type: tableDataPermission })">
+                :auth="tableDataAuth">
             </cmdb-table-empty>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
@@ -211,12 +211,13 @@
             isSource () {
                 return this.currentOption['bk_obj_id'] === this.objId
             },
-            tableDataPermission () {
-                const map = {
-                    host: this.$OPERATION.R_HOST,
-                    biz: this.$OPERATION.R_BUSINESS
+            tableDataAuth () {
+                if (this.currentAsstObj === 'biz') {
+                    return {
+                        type: this.$OPERATION.R_BUSINESS
+                    }
                 }
-                return map[this.currentAsstObj] || this.$OPERATION.R_INST
+                return null
             },
             authResources () {
                 if (this.$route.params.bizId) {

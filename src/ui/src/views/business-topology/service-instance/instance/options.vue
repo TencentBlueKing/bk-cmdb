@@ -1,7 +1,7 @@
 <template>
     <div class="options">
         <div class="left">
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }" theme="primary"
                     :disabled="disabled"
                     @click="handleCreate">
@@ -15,7 +15,7 @@
                 </bk-button>
                 <ul class="menu-list" slot="dropdown-content">
                     <cmdb-auth tag="li" class="menu-item"
-                        :auth="$authResources({ type: $OPERATION.D_SERVICE_INSTANCE })">
+                        :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
                         <span class="menu-option" slot-scope="{ disabled: authDisabled }"
                             :class="{ disabled: authDisabled || !selection.length }"
                             @click="handleBatchDelete(authDisabled || !selection.length)">
@@ -28,7 +28,7 @@
                         </span>
                     </li>
                     <cmdb-auth tag="li" class="menu-item"
-                        :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                        :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
                         <span class="menu-option" slot-scope="{ disabled: authDisabled }"
                             :class="{ disabled: authDisabled || !selection.length }"
                             @click="handleBatchEditLabels(authDisabled || !selection.length)">
@@ -38,7 +38,7 @@
                 </ul>
             </bk-dropdown-menu>
             <cmdb-auth class="options-sync" v-if="withTemplate"
-                :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled: authDisabled }"
                     :disabled="authDisabled || !hasDifference"
                     @click="handleSyncTemplate">

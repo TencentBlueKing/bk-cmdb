@@ -52,7 +52,7 @@
         <div class="main">
             <div class="operation-top">
                 <span class="operation-title">{{$t('主机统计')}}</span>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_STATISTICAL_REPORT })" @update-auth="handleReceiveAuth">
+                <cmdb-auth :auth="{ type: $OPERATION.U_STATISTICAL_REPORT }" @update-auth="handleReceiveAuth">
                     <bk-button slot-scope="{ disabled }"
                         class="icon-btn"
                         theme="primary"
@@ -113,7 +113,7 @@
             </div>
             <div class="operation-top">
                 <span class="operation-title">{{$t('实例统计')}}</span>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_STATISTICAL_REPORT })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_STATISTICAL_REPORT }">
                     <bk-button slot-scope="{ disabled }"
                         class="icon-btn"
                         theme="primary"

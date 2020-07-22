@@ -5,7 +5,8 @@ const state = {
 
 const getters = {
     activeDirectory: state => state.activeDirectory,
-    directoryList: state => state.directoryList
+    directoryList: state => state.directoryList,
+    defaultDirectory: state => state.directoryList.find(directory => directory.default === 1)
 }
 
 const mutations = {

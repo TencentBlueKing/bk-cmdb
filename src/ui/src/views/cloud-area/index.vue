@@ -17,6 +17,7 @@
             v-bkloading="{ isLoading: $loading(request.search) }"
             :data="list"
             :pagination="pagination"
+            :max-height="$APP.height - 220"
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange">
@@ -25,17 +26,19 @@
                 prop="bk_cloud_name"
                 :label="$t('云区域名称')">
                 <template slot-scope="{ row }">
-                    <div class="cell-name"
-                        v-if="row !== rowInEdit"
+                    <cmdb-auth class="cell-name" v-show="row !== rowInEdit"
+                        :auth="{ type: $OPERATION.U_CLOUD_AREA, relation: [row.bk_cloud_id] }"
                         :class="{
                             pending: row._pending_,
                             limited: isLimited(row)
                         }"
                         @click="handleEditName($event, row)">
-                        <span class="cell-name-text" v-bk-overflow-tips>{{row.bk_cloud_name}}</span>
-                        <i class="cell-name-icon icon-cc-edit-shape" v-if="!isLimited(row)"></i>
-                    </div>
-                    <bk-input class="cell-name-input" size="small" font-size="normal" :value="row.bk_cloud_name" v-else
+                        <template slot-scope="{ disabled }">
+                            <span class="cell-name-text" v-bk-overflow-tips>{{row.bk_cloud_name}}</span>
+                            <i :class="['cell-name-icon', 'icon-cc-edit-shape', { disabled }]" v-if="!isLimited(row)"></i>
+                        </template>
+                    </cmdb-auth>
+                    <bk-input class="cell-name-input" size="small" font-size="normal" :value="row.bk_cloud_name" v-if="row === rowInEdit"
                         @enter="handleUpdateName(row, ...arguments)"
                         @blur="handleUpdateName(row, ...arguments)">
                     </bk-input>
@@ -68,15 +71,19 @@
             </bk-table-column>
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
-                <link-button slot-scope="{ row }"
-                    :disabled="!isRemovable(row)"
-                    v-bk-tooltips="{
-                        disabled: isRemovable(row),
-                        content: getRemoveTips(row)
-                    }"
-                    @click="handleDelete(row)">
-                    {{$t('删除')}}
-                </link-button>
+                <template slot-scope="{ row }">
+                    <cmdb-auth :auth="{ type: $OPERATION.D_CLOUD_AREA, relation: [row.bk_cloud_id] }">
+                        <link-button slot-scope="{ disabled }"
+                            :disabled="!isRemovable(row) || disabled"
+                            v-bk-tooltips="{
+                                disabled: isRemovable(row) || !disabled,
+                                content: getRemoveTips(row)
+                            }"
+                            @click="handleDelete(row)">
+                            {{$t('删除')}}
+                        </link-button>
+                    </cmdb-auth>
+                </template>
             </bk-table-column>
         </bk-table>
     </div>
@@ -192,18 +199,20 @@
             },
             async getData () {
                 try {
-                    const data = await this.$store.dispatch('cloud/area/findMany', {
-                        params: {
-                            page: {
-                                ...this.$tools.getPageParams(this.pagination),
-                                sort: this.sort
-                            },
-                            host_count: true,
-                            condition: {
-                                bk_cloud_name: this.filter
-                            },
-                            sync_task_ids: true
+                    const params = {
+                        page: {
+                            ...this.$tools.getPageParams(this.pagination),
+                            sort: this.sort
                         },
+                        host_count: true,
+                        condition: {},
+                        sync_task_ids: true
+                    }
+                    if (this.filter) {
+                        params.condition.bk_cloud_name = this.filter
+                    }
+                    const data = await this.$store.dispatch('cloud/area/findMany', {
+                        params: params,
                         config: {
                             requestId: this.request.search,
                             cancelPrevious: true
@@ -309,6 +318,9 @@
                 cursor: pointer;
                 &:hover {
                     opacity: .75;
+                }
+                &.disabled {
+                    color: $textDisabledColor;
                 }
             }
             .cell-name-text {

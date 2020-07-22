@@ -1,7 +1,7 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.C_BUSINESS })">
+            <cmdb-auth class="fl" :auth="{ type: $OPERATION.C_BUSINESS }">
                 <bk-button slot-scope="{ disabled }"
                     class="fl"
                     theme="primary"
@@ -11,7 +11,7 @@
                 </bk-button>
             </cmdb-auth>
             <div class="options-button fr">
-                <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.BUSINESS_ARCHIVE }">
                     <icon-button slot-scope="{ disabled }"
                         class="mr10"
                         icon="icon-cc-history"
@@ -94,7 +94,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth @click.native.stop :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                    <cmdb-auth @click.native.stop :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.bk_biz_id] }">
                         <template slot-scope="{ disabled }">
                             <span class="text-primary"
                                 style="color: #dcdee5 !important; cursor: not-allowed;"
@@ -117,7 +117,7 @@
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$authResources({ type: $OPERATION.C_BUSINESS })"
+                :auth="{ type: $OPERATION.C_BUSINESS }"
                 @create="handleCreate">
             </cmdb-table-empty>
         </bk-table>

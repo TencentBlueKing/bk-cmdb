@@ -392,10 +392,10 @@
                 return ['bk_host_manage', 'bk_biz_topo', 'bk_organization'].includes(this.curModel.bk_classification_id)
             },
             authResources () {
-                return this.$authResources({
-                    resource_id: this.modelId,
+                return {
+                    relation: [this.modelId],
                     type: this.$OPERATION.U_MODEL
-                })
+                }
             },
             disabledConfig () {
                 const disabled = {

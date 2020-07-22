@@ -30,19 +30,26 @@
                 {{account.last_time | formatter('time')}}
             </bk-form-item>
             <bk-form-item class="details-options">
-                <bk-button class="mr10" theme="primary" :disabled="$loading(request.delete)" @click="handleEdit">{{$t('编辑')}}</bk-button>
-                <span class="inline-block-middle"
+                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_CLOUD_ACCOUNT, relation: [id] }">
+                    <bk-button theme="primary" slot-scope="{ disabled }"
+                        :disabled="disabled || $loading(request.delete)"
+                        @click="handleEdit">
+                        {{$t('编辑')}}
+                    </bk-button>
+                </cmdb-auth>
+                <cmdb-auth class="inline-block-middle"
+                    :auth="{ type: $OPERATION.D_CLOUD_ACCOUNT, relation: [id] }"
                     v-bk-tooltips="{
                         disabled: account.bk_can_delete_account,
                         content: $t('云账户禁止删除提示')
                     }">
-                    <bk-button
-                        :disabled="!account.bk_can_delete_account"
+                    <bk-button slot-scope="{ disabled }"
+                        :disabled="disabled || !account.bk_can_delete_account"
                         :loading="$loading(request.delete)"
                         @click="handleDelete">
                         {{$t('删除')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </bk-form-item>
         </bk-form>
     </div>

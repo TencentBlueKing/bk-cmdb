@@ -1,7 +1,7 @@
 <template>
     <div class="model-relation-wrapper">
         <div class="options">
-            <cmdb-auth :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })" @update-auth="handleReceiveAuth">
+            <cmdb-auth :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }" @update-auth="handleReceiveAuth">
                 <bk-button slot-scope="{ disabled }"
                     class="create-btn"
                     theme="primary"

@@ -5,6 +5,14 @@
     &.is-disabled {
         background-color: #fafbfd !important;
         border-color: #dcdee5 !important;
+        .bk-select-name {
+            color: $textDisabledColor;
+        }
+    }
+    &.bk-select-small {
+        .bk-select-loading {
+            top: 4px;
+        }
     }
 }
 

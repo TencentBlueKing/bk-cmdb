@@ -37,8 +37,7 @@
                                     theme="primary"
                                     slot-scope="{ disabled }"
                                     :disabled="disabled"
-                                    @click="$emit('create')"
-                                >
+                                    @click="$emit('create')">
                                     {{$i18n.locale === 'en' ? `${action} now` : `立即${action}`}}
                                 </bk-button>
                             </cmdb-auth>
@@ -68,7 +67,7 @@
             },
             auth: {
                 type: Object,
-                default: () => ({})
+                default: null
             }
         },
         data () {

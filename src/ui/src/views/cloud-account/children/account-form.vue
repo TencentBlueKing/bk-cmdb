@@ -90,7 +90,13 @@
                 <p class="create-form-error" v-if="errors.has('bk_description')">{{errors.first('bk_description')}}</p>
             </bk-form-item>
             <div class="create-form-options">
-                <bk-button class="mr10" theme="primary" :disabled="!hasChange" @click.stop.prevent="handleSubmit">{{isCreateMode ? $t('提交') : $t('保存')}}</bk-button>
+                <cmdb-auth class="mr10" :auth="auth">
+                    <bk-button theme="primary" slot-scope="{ disabled }"
+                        :disabled="disabled || !hasChange"
+                        @click.stop.prevent="handleSubmit">
+                        {{isCreateMode ? $t('提交') : $t('保存')}}
+                    </bk-button>
+                </cmdb-auth>
                 <bk-button theme="default" @click.stop.prevent="handleCancel(null)">{{$t('取消')}}</bk-button>
             </div>
         </bk-form>
@@ -171,6 +177,17 @@
                     return true
                 }
                 return Object.keys(this.form).some(key => this.form[key] !== this.account[key])
+            },
+            auth () {
+                if (this.isCreateMode) {
+                    return {
+                        type: this.$OPERATION.C_CLOUD_ACCOUNT
+                    }
+                }
+                return {
+                    type: this.$OPERATION.U_CLOUD_ACCOUNT,
+                    relation: [this.account.bk_account_id]
+                }
             }
         },
         created () {

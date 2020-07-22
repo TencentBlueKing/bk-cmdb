@@ -51,7 +51,7 @@
                                     <span class="text link">{{templateInfo.setTemplateName}}</span>
                                     <i class="icon-cc-share"></i>
                                 </div>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                                <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [business] }">
                                     <bk-button slot-scope="{ disabled }"
                                         :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
                                         :disabled="!hasChange || disabled"
@@ -66,7 +66,7 @@
                 </template>
             </div>
             <template slot="details-options">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [business] }">
                     <template slot-scope="{ disabled }">
                         <bk-button class="button-edit"
                             theme="primary"
@@ -76,7 +76,7 @@
                         </bk-button>
                     </template>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
+                <cmdb-auth :auth="{ type: $OPERATION.D_TOPO, relation: [business] }">
                     <template slot-scope="{ disabled }">
                         <span class="inline-block-middle" v-if="moduleFromSetTemplate"
                             v-bk-tooltips="$t('由集群模板创建的模块无法删除')">

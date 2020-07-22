@@ -3,7 +3,8 @@
         :is="tag"
         v-cursor="{
             active: !isAuthorized,
-            auth: resources
+            auth: auth,
+            onclick
         }"
         :class="{ disabled }"
         @click="handleClick">
@@ -12,58 +13,62 @@
 </template>
 
 <script>
-    import resourceOperation, { deepEqual } from './auth-queue'
+    import AuthProxy from './auth-queue'
+    import deepEqual from 'deep-equal'
     export default {
         name: 'cmdb-auth',
         props: {
             auth: {
-                type: Object,
+                type: [Object, Array],
                 required: true
             },
             tag: {
                 type: String,
                 default: 'span'
-            }
+            },
+            onclick: Function
         },
         data () {
             return {
-                isAuthorized: true,
+                authResults: null,
+                authMetas: null,
+                isAuthorized: false,
                 disabled: true,
-                turnOnVerify: window.CMDB_CONFIG.site.authscheme === 'iam'
-            }
-        },
-        computed: {
-            resources () {
-                if (!this.auth.type) return []
-                const types = Array.isArray(this.auth.type) ? this.auth.type : [this.auth.type]
-                return types.map(type => {
-                    return {
-                        ...this.auth,
-                        type: type
-                    }
-                })
+                useIAM: window.CMDB_CONFIG.site.authscheme === 'iam'
             }
         },
         watch: {
             auth: {
-                immediate: true,
                 deep: true,
                 handler (value, oldValue) {
-                    if (!this.turnOnVerify || !Object.keys(this.auth).length) {
-                        this.disabled = false
-                        this.$emit('update-auth', true)
-                    } else if (!deepEqual(value, oldValue)) {
-                        resourceOperation.pushQueue({
-                            component: this,
-                            data: this.auth
-                        })
-                    }
+                    !deepEqual(value, oldValue) && this.setAuthProxy()
                 }
             }
         },
+        mounted () {
+            this.setAuthProxy()
+        },
         methods: {
-            updateAuth (auths) {
-                const isPass = auths.every(auth => auth.is_pass)
+            setAuthProxy () {
+                if (this.useIAM && this.auth) {
+                    AuthProxy.add({
+                        component: this,
+                        data: this.auth
+                    })
+                } else {
+                    this.disabled = false
+                    this.$emit('update-auth', true)
+                }
+            },
+            updateAuth (authResults, authMetas) {
+                let isPass
+                if (!authResults.length && authMetas.length) { // 鉴权失败
+                    isPass = false
+                } else {
+                    isPass = authResults.every(result => result.is_pass)
+                }
+                this.authResults = authResults
+                this.authMetas = authMetas
                 this.isAuthorized = isPass
                 this.disabled = !isPass
                 this.$emit('update-auth', isPass)

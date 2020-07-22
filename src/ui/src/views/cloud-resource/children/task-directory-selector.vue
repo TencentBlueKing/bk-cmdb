@@ -6,41 +6,49 @@
         searchable
         size="small"
         font-size="small"
+        :loading="loading"
+        :popover-width="260"
         :clearable="false"
         :placeholder="$t('请选择xx', { name: $t('资源目录') })"
         @toggle="handleSelectToggle">
         <bk-option v-for="directory in directories"
             :key="directory.bk_module_id"
             :id="directory.bk_module_id"
+            :disabled="!directory.authorized"
             :name="directory.bk_module_name">
+            <div v-cursor="getCursorData(directory)">
+                {{directory.bk_module_name}}
+            </div>
         </bk-option>
         <bk-option class="create-option"
+            v-if="createMode"
             ref="createOptionComponent"
             :id="createDirectoryId"
             :name="$t('新增目录')"
             :disabled="true"
-            @click.native.stop="handleCreateClick">
-            <template v-if="!createMode">{{$t('新增目录')}}</template>
-            <template v-else>
-                <bk-input ref="input"
-                    size="small"
-                    font-size="small"
-                    :placeholder="$t('请输入目录名称，回车结束')"
-                    v-model.trim="newDirectory"
-                    @enter="handleConfirmCreate">
-                </bk-input>
-            </template>
+            @click.native.stop>
+            <bk-input ref="input"
+                size="small"
+                font-size="small"
+                :placeholder="$t('请输入目录名称，回车结束')"
+                v-model.trim="newDirectory"
+                @enter="handleConfirmCreate">
+            </bk-input>
         </bk-option>
-        <a href="javascript:void(0)" class="extension-link" slot="extension">
+        <cmdb-auth tag="a" href="javascript:void(0)" class="extension-link" slot="extension"
+            :auth="{ type: $OPERATION.C_RESOURCE_DIRECTORY }"
+            :onclick="hideSelectorPanel"
+            @click="handleCreateDirectory">
             <i class="bk-icon icon-plus-circle"></i>
-            {{$t('申请其他目录权限')}}
-        </a>
+            {{$t('新增目录')}}
+        </cmdb-auth>
     </bk-select>
     <span v-else>{{getInfo()}}</span>
 </template>
 
 <script>
     import symbols from '../common/symbol'
+    import AuthProxy from '@/components/ui/auth/auth-queue'
     export default {
         name: 'task-directory-selector',
         props: {
@@ -55,6 +63,7 @@
         },
         data () {
             return {
+                loading: true,
                 createMode: false,
                 createDirectoryId: 'createDirectoryId',
                 newDirectory: '',
@@ -80,18 +89,37 @@
             this.getDirectories()
         },
         methods: {
+            getCursorData (directory) {
+                return {
+                    active: !directory.authorized,
+                    auth: { type: this.$OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] },
+                    onclick: this.hideSelectorPanel
+                }
+            },
+            hideSelectorPanel () {
+                console.log('shit')
+                this.$refs.selector.close()
+            },
             async getDirectories () {
                 try {
+                    this.loading = true
                     const { info } = await this.$store.dispatch('resource/directory/findMany', {
                         params: {
-                            sort: 'bk_module_id'
+                            sort: 'bk_module_name'
                         },
                         config: {
                             requestId: this.request.findMany,
                             fromCache: true
                         }
                     })
-                    // 直接进行赋值，后面新增目录后，其他的地方也能获得相同的数据
+                    if (this.display === 'selector') {
+                        await this.injectAuth(info)
+                    }
+                    info.sort((dirA, dirB) => {
+                        const aAuth = dirA.authorized ? 1 : 0
+                        const bAuth = dirB.authorized ? 1 : 0
+                        return bAuth - aAuth
+                    })
                     this.directories = info
                     if (!this.selected && info.length) {
                         this.selected = info[0].bk_module_id
@@ -99,14 +127,34 @@
                 } catch (e) {
                     this.directories = []
                     console.error(e)
+                } finally {
+                    this.loading = false
                 }
+            },
+            injectAuth (directories) {
+                return new Promise(resolve => {
+                    const fakeComponent = {
+                        auth: directories.map(directory => ({ type: this.$OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] })),
+                        updateAuth: results => {
+                            directories.forEach(directory => {
+                                const result = results.find(result => result.parent_layers[0].resource_id === directory.bk_module_id)
+                                this.$set(directory, 'authorized', result ? result.is_pass : false)
+                            })
+                            resolve()
+                        }
+                    }
+                    AuthProxy.add({
+                        component: fakeComponent,
+                        data: fakeComponent.auth
+                    })
+                })
             },
             handleSelectToggle (isVisible) {
                 if (!isVisible) {
                     this.toggleCreate(false)
                 }
             },
-            handleCreateClick () {
+            handleCreateDirectory () {
                 this.toggleCreate(true)
             },
             toggleCreate (isCreateMode) {
@@ -158,5 +206,8 @@
     .create-option.is-disabled {
         cursor: pointer;
         color: $textColor;
+    }
+    .extension-link.disabled {
+        color: $textDisabledColor;
     }
 </style>

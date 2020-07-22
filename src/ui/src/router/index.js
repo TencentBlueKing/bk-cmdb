@@ -158,16 +158,16 @@ const setupStatus = {
 }
 
 router.beforeEach((to, from, next) => {
-    cancelRequest(router.app)
-    router.app.$store.commit('setTitle', '')
-    if (to.meta.view !== 'permission') {
-        Vue.set(to.meta, 'view', 'default')
-    }
-    if (to.name === from.name) {
-        return next()
-    }
     Vue.nextTick(async () => {
         try {
+            cancelRequest(router.app)
+            router.app.$store.commit('setTitle', '')
+            if (to.meta.view !== 'permission') {
+                Vue.set(to.meta, 'view', 'default')
+            }
+            if (to.name === from.name) {
+                return next()
+            }
             if (setupStatus.preload) {
                 setLoading(true)
                 setupStatus.preload = false
@@ -187,7 +187,6 @@ router.beforeEach((to, from, next) => {
             await checkViewAuthorize(to)
             return next()
         } catch (e) {
-            console.error('shit')
             console.error(e)
             setupStatus.preload = true
             if (e.__CANCEL__) {
