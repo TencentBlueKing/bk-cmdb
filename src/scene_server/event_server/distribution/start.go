@@ -26,7 +26,7 @@ import (
 func Start(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apimachinery.ClientSetInterface, disc discovery.ServiceManageInterface) error {
 	chErr := make(chan error, 1)
 
-	eh := &EventHandler{cache: cache}
+	eh := &EventHandler{cache: cache, disc: disc}
 	go func() {
 		chErr <- eh.Run()
 	}()
@@ -50,7 +50,10 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apima
 	return <-chErr
 }
 
-type EventHandler struct{ cache *redis.Client }
+type EventHandler struct{ 
+	cache *redis.Client
+	disc discovery.ServiceManageInterface 
+}
 
 type DistHandler struct {
 	cache *redis.Client

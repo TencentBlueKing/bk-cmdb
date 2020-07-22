@@ -52,11 +52,19 @@ func (eh *EventHandler) Run() (err error) {
 
 	blog.Info("event inst handle process started")
 	for {
+		
+		if !eh.disc.IsMaster() {
+			blog.Infof("not master, skip pop event")
+			time.Sleep(10 * time.Second)
+			continue
+		}
+		
 		event := eh.popEvent()
 		if event == nil {
 			time.Sleep(time.Second * 2)
 			continue
 		}
+		
 		if err := eh.handleEvent(event); err != nil {
 			blog.Errorf("handle event failed, err: %+v, event: %+v", err, event)
 		}
@@ -66,45 +74,6 @@ func (eh *EventHandler) Run() (err error) {
 func (eh *EventHandler) handleEvent(event *metadata.EventInstCtx) (err error) {
 	blog.Infof("handling event inst : %v", event.Raw)
 	defer blog.Infof("done event inst : %d", event.ID)
-
-	// check and set running status on, if event is being deal, then simple ignore this event
-	if err = saveRunning(eh.cache, types.EventCacheEventRunningPrefix+fmt.Sprint(event.ID), timeout); err != nil {
-		if ErrProcessExists == err {
-			blog.Infof("%v process exist, continue", event.ID)
-			return nil
-		}
-		blog.Infof("save runtime error: %v, raw = %s", err, event.Raw)
-		return err
-	}
-
-	// check and wait previous event finished handling
-	previousID := strconv.FormatInt(event.ID-1, 10)
-	done, err := checkFromDone(eh.cache, types.EventCacheEventDoneKey, previousID)
-	if err != nil {
-		return err
-	}
-	if !done {
-		previousRunningKey := types.EventCacheEventRunningPrefix + previousID
-		running, checkErr := checkFromRunning(eh.cache, previousRunningKey)
-		if checkErr != nil {
-			return checkErr
-		}
-		if !running {
-			time.Sleep(time.Second * 3)
-			running, checkErr = checkFromRunning(eh.cache, previousRunningKey)
-			if checkErr != nil {
-				return checkErr
-			}
-		}
-		if running {
-			if checkErr = waitPreviousDone(eh.cache, types.EventCacheEventDoneKey, previousID, timeout); checkErr != nil {
-				if checkErr == ErrWaitTimeout {
-					return nil
-				}
-				return checkErr
-			}
-		}
-	}
 
 	defer func() {
 		if err != nil {
