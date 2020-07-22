@@ -700,7 +700,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.Update,
+					Action: meta.SkipAction,
 				},
 			},
 		}

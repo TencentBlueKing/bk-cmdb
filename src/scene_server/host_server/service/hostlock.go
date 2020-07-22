@@ -15,7 +15,6 @@ package service
 import (
 	"configcenter/src/ac"
 	"configcenter/src/ac/meta"
-	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -24,7 +23,7 @@ import (
 )
 
 func (s *Service) LockHost(ctx *rest.Contexts) {
-	
+
 	input := &metadata.HostLockRequest{}
 
 	if err := ctx.DecodeInto(&input); nil != err {
@@ -50,7 +49,7 @@ func (s *Service) LockHost(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
@@ -72,7 +71,7 @@ func (s *Service) LockHost(ctx *rest.Contexts) {
 }
 
 func (s *Service) UnlockHost(ctx *rest.Contexts) {
-	
+
 	input := &metadata.HostLockRequest{}
 	if err := ctx.DecodeInto(&input); nil != err {
 		ctx.RespAutoError(err)
@@ -97,7 +96,7 @@ func (s *Service) UnlockHost(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
@@ -118,7 +117,7 @@ func (s *Service) UnlockHost(ctx *rest.Contexts) {
 }
 
 func (s *Service) QueryHostLock(ctx *rest.Contexts) {
-	
+
 	input := &metadata.QueryHostLockRequest{}
 	if err := ctx.DecodeInto(&input); nil != err {
 		ctx.RespAutoError(err)
@@ -144,7 +143,7 @@ func (s *Service) QueryHostLock(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 

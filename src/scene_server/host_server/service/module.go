@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/ac"
 	authmeta "configcenter/src/ac/meta"
-	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -123,7 +122,7 @@ func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		ctx.RespEntityWithError(perm, auth.NoAuthorizeError)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
 
