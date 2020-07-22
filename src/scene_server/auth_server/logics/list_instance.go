@@ -568,10 +568,14 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, req types.PullResourceReq) (*
 		if req.Type != iam.Host {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
-		if filter.Parent.Type != iam.SysResourcePoolDirectory && filter.Parent.Type != iam.Business /* iam.Module */ {
+		if filter.Parent.Type != iam.SysHostRscPoolDirectory && filter.Parent.Type != iam.Business /* iam.Module */ {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
-		relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}}
+		if filter.Parent.Type == iam.Business {
+			relationReq = &metadata.HostModuleRelationRequest{ApplicationID: parentID}
+		} else {
+			relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}}
+		}
 		hostIDs := make([]int64, 0)
 		hostRsp, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
 		if err != nil {
