@@ -164,7 +164,6 @@ func (eh *EventHandler) nextDistID(eventType string) (nextid int64, err error) {
 func (eh *EventHandler) SaveEventDone(event *metadata.EventInstCtx) (err error) {
 	_, err = eh.cache.Pipelined(func(pipe *redis.Pipeline) error {
 		pipe.HSet(types.EventCacheEventDoneKey, strconv.FormatInt(event.ID, 10), event.Raw)
-		pipe.Del(types.EventCacheEventRunningPrefix + strconv.FormatInt(event.ID, 10))
 		return nil
 	})
 	if err != nil {
