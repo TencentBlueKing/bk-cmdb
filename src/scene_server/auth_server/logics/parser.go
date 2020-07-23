@@ -358,7 +358,7 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 		return common.BKCloudAccountID
 	case iam.SysCloudResourceTask:
 		return common.BKCloudTaskID
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKAppIDField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
@@ -394,7 +394,7 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 		return common.BKCloudAccountName
 	case iam.SysCloudResourceTask:
 		return common.BKCloudSyncTaskName
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKAppNameField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName

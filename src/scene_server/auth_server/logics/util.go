@@ -44,7 +44,7 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameCloudAccount
 	case iam.SysCloudResourceTask:
 		return common.BKTableNameCloudSyncTask
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKTableNameBaseApp
 	case iam.BizCustomQuery:
 		return common.BKTableNameUserAPI
@@ -72,7 +72,7 @@ func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 		return common.BKInnerObjIDHost
 	case iam.SysCloudArea:
 		return common.BKInnerObjIDPlat
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKInnerObjIDApp
 	//case iam.Set:
 	//	return common.BKInnerObjIDSet
@@ -90,7 +90,7 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 	}
 
 	// not include default business
-	if resourceType == iam.Business {
+	if resourceType == iam.Business || resourceType == iam.BusinessForHostTrans {
 		condition[common.BKDefaultField] = map[string]interface{}{
 			common.BKDBNE: common.DefaultAppFlag,
 		}

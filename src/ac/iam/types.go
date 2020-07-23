@@ -158,7 +158,8 @@ const (
 )
 
 const (
-	Business TypeID = "biz"
+	Business             TypeID = "biz"
+	BusinessForHostTrans TypeID = "biz_for_host_trans"
 	// Set                       ResourceTypeID = "set"
 	// Module                    ResourceTypeID = "module"
 	BizCustomQuery            TypeID = "biz_custom_query"
@@ -210,6 +211,7 @@ type ActionID string
 const (
 	EditBusinessHost                   ActionID = "edit_biz_host"
 	BusinessHostTransferToResourcePool ActionID = "unassign_biz_host"
+	HostTransferAcrossBusiness         ActionID = "host_transfer_across_business"
 
 	CreateBusinessCustomQuery ActionID = "create_biz_dynamic_query"
 	EditBusinessCustomQuery   ActionID = "edit_biz_dynamic_query"
@@ -371,7 +373,9 @@ type ActionWithID struct {
 type InstanceSelectionID string
 
 const (
+	// 业务的两种视图，管理的资源也相同，仅名称做区分
 	BusinessSelection                  InstanceSelectionID = "business"
+	BusinessHostTransferSelection      InstanceSelectionID = "business_host_transfer"
 	BizHostInstanceSelection           InstanceSelectionID = "biz_host_instance"
 	BizCustomQuerySelection            InstanceSelectionID = "biz_custom_query"
 	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"

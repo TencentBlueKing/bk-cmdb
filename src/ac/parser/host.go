@@ -310,7 +310,6 @@ const (
 	moveHostsFromModuleToResPoolPattern   = "/api/v3/hosts/modules/resource"
 	moveHostsToBizIdleModulePattern       = "/api/v3/hosts/modules/idle"
 	moveHostsToBizRecycleModulePattern    = "/api/v3/hosts/modules/recycle"
-	moveHostsFromRscPoolToAppModule       = "/api/v3/hosts/host/add/module"
 	moveHostAcrossBizPattern              = "/api/v3/hosts/modules/across/biz"
 	moveRscPoolHostToRscPoolDir           = "/api/v3/host/transfer/resource/directory"
 	cleanHostInSetOrModulePattern         = "/api/v3/hosts/modules/idle/set"
@@ -323,15 +322,15 @@ const (
 	queryHostLockPattern                  = "/api/v3/host/lock/search"
 
 	// used in sync framework.
-	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern     = "/api/v3/hosts/search"
-	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
-	findResourcePoolHostsPattern      = "/api/v3/hosts/list_resource_pool_hosts"
-	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
-	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
-	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
-	cloneHostPropertyBatchPattern     = "/api/v3/hosts/property/clone"
-	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
+	// moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
+	findHostsWithConditionPattern  = "/api/v3/hosts/search"
+	findBizHostsWithoutAppPattern  = "/api/v3/hosts/list_hosts_without_app"
+	findResourcePoolHostsPattern   = "/api/v3/hosts/list_resource_pool_hosts"
+	findHostsDetailsPattern        = "/api/v3/hosts/search/asstdetail"
+	updateHostInfoBatchPattern     = "/api/v3/hosts/batch"
+	updateHostPropertyBatchPattern = "/api/v3/hosts/property/batch"
+	cloneHostPropertyBatchPattern  = "/api/v3/hosts/property/clone"
+	findHostsWithModulesPattern    = "/api/v3/findmany/modulehost"
 
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
@@ -803,11 +802,22 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// add new hosts to resource pool
 	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
+		dirID, err := ps.getResourcePoolDefaultDirID()
+		if err != nil {
+			ps.err = errors.New("invalid directory id value")
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.AddHostToResourcePool,
+				},
+				Layers: []meta.Item{
+					{
+						Type:       meta.ResourcePoolDirectory,
+						InstanceID: dirID,
+					},
 				},
 			},
 		}
@@ -817,11 +827,26 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// add hosts to resource pool
 	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
+		dirID := gjson.GetBytes(ps.RequestCtx.Body, "directory").Int()
+		if dirID == 0 {
+			var err error
+			dirID, err = ps.getResourcePoolDefaultDirID()
+			if err != nil {
+				ps.err = errors.New("invalid directory id value")
+				return ps
+			}
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.AddHostToResourcePool,
+				},
+				Layers: []meta.Item{
+					{
+						Type:       meta.ResourcePoolDirectory,
+						InstanceID: dirID,
+					},
 				},
 			},
 		}
@@ -836,12 +861,29 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		dirID, err := ps.getResourcePoolDefaultDirID()
+		if err != nil {
+			ps.err = errors.New("invalid directory id value")
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveBizHostFromModuleToResPool,
+				},
+				Layers: []meta.Item{
+					{
+						Type:       meta.Business,
+						InstanceID: bizID,
+					},
+					{
+						Type:       meta.ResourcePoolDirectory,
+						InstanceID: dirID,
+					},
 				},
 			},
 		}
@@ -967,27 +1009,34 @@ func (ps *parseStream) hostTransfer() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(moveHostsFromRscPoolToAppModule, http.MethodPost) {
+	// transfer host to another business
+	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
+		srcBizID := gjson.GetBytes(ps.RequestCtx.Body, "src_bk_biz_id").Int()
+		if srcBizID == 0 {
+			ps.err = errors.New("src_bk_biz_id invalid")
+			return ps
+		}
+		dstBizID := gjson.GetBytes(ps.RequestCtx.Body, "dst_bk_biz_id").Int()
+		if dstBizID == 0 {
+			ps.err = errors.New("dst_bk_biz_id invalid")
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: srcBizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToAnotherBizModule,
 				},
-			},
-		}
-
-		return ps
-	}
-
-	// transfer host to another business
-	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: 0,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostToAnotherBizModule,
+				Layers: []meta.Item{
+					{
+						Type:       meta.Business,
+						InstanceID: srcBizID,
+					},
+					{
+						Type:       meta.Business,
+						InstanceID: dstBizID,
+					},
 				},
 			},
 		}
@@ -996,24 +1045,24 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// synchronize hosts directly to a module in a business if this host does not exist.
 	// otherwise, this operation will only change host's attribute.
-	if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostsToBusinessOrModule,
-				},
-			},
-		}
-
-		return ps
-	}
+	//if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
+	//	bizID, err := ps.parseBusinessID()
+	//	if err != nil {
+	//		ps.err = err
+	//		return ps
+	//	}
+	//	ps.Attribute.Resources = []meta.ResourceAttribute{
+	//		{
+	//			BusinessID: bizID,
+	//			Basic: meta.Basic{
+	//				Type:   meta.HostInstance,
+	//				Action: meta.MoveHostsToBusinessOrModule,
+	//			},
+	//		},
+	//	}
+	//
+	//	return ps
+	//}
 
 	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
 		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {

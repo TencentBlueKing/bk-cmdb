@@ -552,6 +552,62 @@ func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute
 		return resources, nil
 	}
 
+	// transfer host from business to resource pool
+	if act == BusinessHostTransferToResourcePool {
+		if len(a.Layers) != 2 {
+			return nil, NotEnoughLayer
+		}
+
+		resources := make([]types.Resource, 2)
+		resources[0] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(Business),
+			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+		}
+
+		resources[1] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(SysResourcePoolDirectory),
+			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+		}
+
+		return resources, nil
+	}
+
+	// transfer host from one business to another
+	if act == HostTransferAcrossBusiness {
+		if len(a.Layers) != 2 {
+			return nil, NotEnoughLayer
+		}
+
+		resources := make([]types.Resource, 2)
+		resources[0] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(BusinessForHostTrans),
+			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+		}
+
+		resources[1] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(Business),
+			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+		}
+
+		return resources, nil
+	}
+
+	// import host
+	if act == CreateResourcePoolHost {
+		r := types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(SysResourcePoolDirectory),
+		}
+		if len(a.Layers) > 0 {
+			r.ID = strconv.FormatInt(a.Layers[0].InstanceID, 10)
+		}
+		return []types.Resource{r}, nil
+	}
+
 	// edit or delete resource pool host instances
 	if act == EditResourcePoolHost || act == DeleteResourcePoolHost {
 		r := types.Resource{

@@ -467,15 +467,6 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
-		err := s.AuthManager.AuthorizeByResourceDirectoryID(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.AddHostToResourcePool, moduleID)
-		if err != nil {
-			blog.Errorf("add host, but authorize failed, err: %s, moduleID: %d, rid: %s", err.Error(), moduleID, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-			return
-		}
-	}
-
 	retData := make(map[string]interface{})
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		_, success, updateErrRow, errRow, err := lgc.AddHost(ctx.Kit.Ctx, appID, []int64{moduleID},
@@ -523,7 +514,6 @@ func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 
 	if err != nil {
 		blog.ErrorJSON("add host failed, retData: %s, err: %s, input:%s, rid:%s", retData, err, hostList, ctx.Kit.Rid)
-
 		ctx.RespEntityWithError(retData, err)
 		return
 	}

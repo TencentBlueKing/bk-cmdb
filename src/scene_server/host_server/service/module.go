@@ -13,16 +13,10 @@
 package service
 
 import (
-	"fmt"
-
-	"configcenter/src/ac"
-	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
 )
 
@@ -110,22 +104,6 @@ func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 		return
 	}
 
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.MoveBizHostFromModuleToResPool, conf.HostIDs...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostIDs, err)
-		if err != ac.NoAuthorizeError {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
-			return
-		}
-		perm, err := s.AuthManager.GenMoveBizHostToResPoolNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, conf.HostIDs)
-		if err != nil {
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed))
-			return
-		}
-		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
-		return
-	}
-
 	var exceptionArr []metadata.ExceptionResult
 	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
@@ -168,127 +146,6 @@ func (s *Service) AssignHostToApp(ctx *rest.Contexts) {
 
 	if txnErr != nil {
 		ctx.RespEntityWithError(exceptionArr, txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
-func (s *Service) AssignHostToAppModule(ctx *rest.Contexts) {
-	data := new(metadata.HostToAppModule)
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	appID, _, moduleID, err := lgc.GetTopoIDByName(ctx.Kit.Ctx, data)
-	if nil != err {
-		blog.Errorf("get app  topology id by name error:%s, msg: applicationName:%s, setName:%s, moduleName:%s,input;%+v,rid:%s", err.Error(), data.AppName, data.SetName, data.ModuleName, data, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrAddHostToModuleFailStr, "search application module not found "))
-		return
-	}
-
-	if 0 == appID || 0 == moduleID {
-		// get default app
-		ownerAppID, err := lgc.GetDefaultAppID(ctx.Kit.Ctx)
-		if err != nil {
-			blog.Errorf("assign host to app module, but get resource pool failed, err: %v,input:%+v,rid:%s", err, data, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		if 0 == ownerAppID {
-			blog.Errorf("assign host to app module, but get resource pool failed, err: %v,input:%+v,rid:%s", err, data, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrAddHostToModuleFailStr, "not found resource pool business"))
-			return
-		}
-
-		// get idle module
-		mConds := mapstr.New()
-		mConds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-		mConds.Set(common.BKModuleNameField, common.DefaultResModuleName)
-		mConds.Set(common.BKAppIDField, ownerAppID)
-		ownerModuleID, err := lgc.GetResourcePoolModuleID(ctx.Kit.Ctx, mConds)
-		if nil != err {
-			blog.Errorf("assign host to app module, but get unused host pool failed, ownerid[%v], err: %v,input:%+v,param:%+v,rid:%s", ownerModuleID, err, data, mConds, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrAddHostToModuleFailStr, err.Error()))
-			return
-		}
-		appID = ownerAppID
-		moduleID = ownerModuleID
-		data.AppName = common.DefaultAppName
-		data.SetName = ""
-		data.ModuleName = common.DefaultResModuleName
-
-	}
-
-	// TODO host can not exist, not exist create
-	// check authorization
-	hostIDArr := make([]int64, 0)
-	existNewAddHost := false
-	for _, ip := range data.Ips {
-		hostID, err := s.ip2hostID(ctx, ip, data.PlatID)
-		if err != nil {
-			blog.Errorf("invalid ip:%v, err:%v, rid:%s", ip, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrAddHostToModuleFailStr, err.Error()))
-			return
-		}
-
-		if hostID == 0 {
-			existNewAddHost = true
-			continue
-		}
-
-		hostIDArr = append(hostIDArr, hostID)
-	}
-
-	// auth: check authorization
-	if existNewAddHost == true {
-		/*
-			// 检查注册到资源池的权限
-			if err := s.AuthManager.AuthorizeAddToResourcePool(ctx.Kit.Ctx, ctx.Kit.Header); err != nil {
-				blog.Errorf("check host authorization for add to resource pool failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed)})
-				return
-			}
-		*/
-		// 检查转移主机到目标业务的权限
-		// auth: check target business update priority
-		// if err := s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, appID); err != nil {
-		// 	blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", appID, err, ctx.Kit.Rid)
-		// 	resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: ctx.Kit.CCError.Error(common.CCErrCommAuthorizeFailed)})
-		// 	return
-		// }
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		var errmsg []string
-		for index, ip := range data.Ips {
-			host := make(map[string]interface{})
-			if index < len(data.HostName) {
-				host[common.BKHostNameField] = data.HostName[index]
-			}
-			if "" != data.OsType {
-				host[common.BKOSTypeField] = data.OsType
-			}
-			host[common.BKCloudIDField] = data.PlatID
-
-			// dispatch to app
-			err := lgc.EnterIP(ctx.Kit.Ctx, util.GetOwnerID(ctx.Request.Request.Header), appID, moduleID, ip, data.PlatID, host, data.IsIncrement)
-			if nil != err {
-				blog.Errorf("%s add host error: %s,input:%+v,rid:%s", ip, err.Error(), data, ctx.Kit.Rid)
-				errmsg = append(errmsg, fmt.Sprintf("%s add host error: %s", ip, err.Error()))
-			}
-		}
-		if 0 == len(errmsg) {
-			return nil
-		}
-
-		blog.Errorf("assign host to app module failed, err: %v,rid:%s", errmsg, ctx.Kit.Rid)
-		return ctx.Kit.CCError.Error(common.CCErrAddHostToModuleFailStr)
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)

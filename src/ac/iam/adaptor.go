@@ -244,7 +244,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.AddHostToResourcePool:          CreateResourcePoolHost,
 		meta.Create:                         CreateResourcePoolHost,
 		meta.Delete:                         DeleteResourcePoolHost,
-		meta.MoveHostToAnotherBizModule:     EditBusinessHost,
+		meta.MoveHostToAnotherBizModule:     HostTransferAcrossBusiness,
 		meta.Find:                           Skip,
 		meta.FindMany:                       Skip,
 	},

@@ -313,20 +313,6 @@ func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *m
 	return
 }
 
-func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat *metadata.HostToAppModule) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/host/add/module"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/usercustom"

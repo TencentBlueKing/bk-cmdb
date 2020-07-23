@@ -39,16 +39,12 @@ func genBusinessManageActionGroups() []ActionGroup {
 		{
 			Name:   "业务管理",
 			NameEn: "Business Manage",
-			SubGroups: []ActionGroup{
+			Actions: []ActionWithID{
 				{
-					Name:   "业务访问",
-					NameEn: "Business Access",
-					Actions: []ActionWithID{
-						{
-							ID: ViewBusinessResource,
-						},
-					},
+					ID: ViewBusinessResource,
 				},
+			},
+			SubGroups: []ActionGroup{
 				{
 					Name:   "业务主机",
 					NameEn: "Business Host",
@@ -58,6 +54,9 @@ func genBusinessManageActionGroups() []ActionGroup {
 						},
 						{
 							ID: BusinessHostTransferToResourcePool,
+						},
+						{
+							ID: HostTransferAcrossBusiness,
 						},
 					},
 				},
