@@ -53,8 +53,8 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	data.Set(common.BKBakOperatorField, "")
 	data[common.BKChildStr] = nil
 
-	// 资源池目录的default设置为4
-	data[common.BKDefaultField] = 4
+	// 设置资源池自定义目录的default值
+	data[common.BKDefaultField] = common.DefaultResSelfDefinedModuleFlag
 	input := &metadata.CreateModelInstance{Data: data}
 	rsp, err := s.Engine.CoreAPI.CoreService().Instance().CreateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, input)
 	if err != nil {
