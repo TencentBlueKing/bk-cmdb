@@ -1,34 +1,33 @@
 <template>
     <div class="options-layout clearfix">
         <div class="options-left">
-            <template v-if="scope === 1 && activeDirectory">
-                <cmdb-auth class="mr10"
-                    :auth="[
-                        { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
-                        { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
-                    ]">
-                    <bk-button slot-scope="{ disabled }"
-                        theme="primary"
-                        style="margin-left: 0"
-                        :disabled="disabled"
-                        @click="importInst.show = true">
-                        {{$t('导入主机')}}
-                    </bk-button>
-                </cmdb-auth>
-                <bk-select
-                    class="assign-selector mr10"
-                    font-size="medium"
-                    :popover-width="180"
-                    :disabled="!table.checked.length"
-                    :clearable="false"
-                    :placeholder="$t('分配到')"
-                    v-model="assign.curSelected"
-                    @selected="handleAssignHosts">
-                    <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
-                    <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
-                    <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
-                </bk-select>
-            </template>
+            <cmdb-auth class="mr10"
+                :ignore="!!activeDirectory"
+                :auth="[
+                    { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
+                    { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
+                ]">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    style="margin-left: 0"
+                    :disabled="disabled"
+                    @click="importInst.show = true">
+                    {{$t('导入主机')}}
+                </bk-button>
+            </cmdb-auth>
+            <bk-select
+                class="assign-selector mr10"
+                font-size="medium"
+                :popover-width="180"
+                :disabled="!table.checked.length"
+                :clearable="false"
+                :placeholder="$t('分配到')"
+                v-model="assign.curSelected"
+                @selected="handleAssignHosts">
+                <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
+                <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
+                <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
+            </bk-select>
             <cmdb-clipboard-selector class="options-clipboard mr10"
                 :list="clipboardList"
                 :disabled="!table.checked.length"
@@ -71,6 +70,17 @@
                         :import-url="importInst.importUrl"
                         @success="$parent.getHostList(true)"
                         @partialSuccess="$parent.getHostList(true)">
+                        <bk-form class="import-prepend" slot="prepend">
+                            <bk-form-item :label="$t('主机池目录')" required>
+                                <bk-select v-model="importInst.directory" style="display: block;">
+                                    <bk-option v-for="directory in directoryList"
+                                        :key="directory.bk_module_id"
+                                        :id="directory.bk_module_id"
+                                        :name="directory.bk_module_name">
+                                    </bk-option>
+                                </bk-select>
+                            </bk-form-item>
+                        </bk-form>
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
                             {{$t('说明：内网IP为必填列')}}
                         </span>
@@ -191,7 +201,8 @@
                     show: false,
                     active: 'import',
                     templateUrl: `${window.API_HOST}importtemplate/host`,
-                    importUrl: `${window.API_HOST}hosts/import`
+                    importUrl: `${window.API_HOST}hosts/import`,
+                    directory: ''
                 },
                 businessList: [],
                 objectUnique: [],
@@ -290,6 +301,8 @@
             'importInst.show' (show) {
                 if (!show) {
                     this.importInst.active = 'import'
+                } else {
+                    this.importInst.directory = this.directoryId
                 }
             }
         },
@@ -354,7 +367,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
-                            relation: [[this.directoryId], [item.bk_biz_id]]
+                            relation: [[this.directoryId || '*'], [item.bk_biz_id]]
                         }
                     }))
                 } else {
@@ -364,7 +377,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
-                            relation: [[this.directoryId], [item.bk_module_id]]
+                            relation: [[this.directoryId] || '*', [item.bk_module_id]]
                         }
                     }))
                 }
@@ -592,6 +605,21 @@
     .options-right {
         float: right;
         overflow: hidden;
+    }
+    .import-prepend {
+        margin: 20px 29px -10px 33px;
+        /deep/ {
+            .bk-form-item {
+                display: flex;
+            }
+            .bk-label {
+                width: auto !important;
+            }
+            .bk-form-content {
+                flex: 1;
+                margin-left: auto !important;
+            }
+        }
     }
     .automatic-import{
         padding:40px 30px 0 30px;
