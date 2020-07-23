@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/auth_server/sdk/types"
 
 	"github.com/emicklei/go-restful"
 )
@@ -56,40 +55,68 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	resources := make([]metadata.AuthBathVerifyResult, len(body.Resources), len(body.Resources))
 
-	needExactAuth := false
-	attrs := make([]meta.ResourceAttribute, len(body.Resources))
+	attrs := make([]meta.ResourceAttribute, 0)
+	needExactAuthAttrs := make([]meta.ResourceAttribute, 0)
+	needExactAuthMap := make(map[int]bool)
+
 	for i, res := range body.Resources {
 		resources[i].AuthResource = res
-		attrs[i].BusinessID = res.BizID
-		attrs[i].SupplierAccount = ownerID
-		attrs[i].Type = meta.ResourceType(res.ResourceType)
-		attrs[i].InstanceID = res.ResourceID
-		attrs[i].Action = meta.Action(res.Action)
-		for _, item := range res.ParentLayers {
-			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
+		attr := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:       meta.ResourceType(res.ResourceType),
+				Action:     meta.Action(res.Action),
+				InstanceID: res.ResourceID,
+			},
+			SupplierAccount: ownerID,
+			BusinessID:      res.BizID,
 		}
+		for _, item := range res.ParentLayers {
+			attr.Layers = append(attr.Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
+		}
+		// contains exact resource info, need exact authorize
 		if res.ResourceID > 0 || res.BizID > 0 || len(res.ParentLayers) > 0 {
-			needExactAuth = true
+			needExactAuthMap[i] = true
+			needExactAuthAttrs = append(needExactAuthAttrs, attr)
+		} else {
+			attrs = append(attrs, attr)
 		}
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-	var verifyResults []types.Decision
-	var err error
-	if needExactAuth {
-		verifyResults, err = s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, attrs...)
-	} else {
-		verifyResults, err = s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
-	}
-	if err != nil {
-		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
-		return
+
+
+	if len(needExactAuthAttrs) > 0 {
+		verifyResults, err := s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)
+		if err != nil {
+			blog.ErrorJSON("get user's resource auth verify status, but authorize batch failed, err: %s, attrs: %s, rid: %s", err, needExactAuthAttrs, rid)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			return
+		}
+		index := 0
+		resourceLen := len(body.Resources)
+		for i := 0; i < resourceLen; i++ {
+			if needExactAuthMap[i] {
+				resources[i].Passed = verifyResults[index].Authorized
+				index++
+			}
+		}
 	}
 
-	for i, _ := range verifyResults {
-		// TODO: for debug use
-		resources[i].Passed = true
+	if len(attrs) > 0 {
+		verifyResults, err := s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
+		if err != nil {
+			blog.ErrorJSON("get user's resource auth verify status, but authorize any batch failed, err: %s, attrs: %s, rid: %s", err, attrs, rid)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			return
+		}
+		index := 0
+		resourceLen := len(body.Resources)
+		for i := 0; i < resourceLen; i++ {
+			if !needExactAuthMap[i] {
+				resources[i].Passed = verifyResults[index].Authorized
+				index++
+			}
+		}
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
