@@ -246,7 +246,6 @@ type BkHostInfo struct {
 
 type DefaultModuleHostConfigParams struct {
 	ApplicationID int64    `json:"bk_biz_id"`
-	ModuleID      int64    `json:"bk_module_id"`
 	HostIDs       []int64  `json:"bk_host_id"`
 	Metadata      Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }

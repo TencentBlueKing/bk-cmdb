@@ -205,7 +205,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), lgc.rid)
 		return nil, err
 	}
-	errHostID, err := lgc.notExistAppModuleHost(ctx, conf.ApplicationID, moduleID, conf.HostIDs)
+	errHostID, err := lgc.notExistAppModuleHost(ctx, conf.ApplicationID, []int64{moduleID}, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, err: %v, owneAppID: %d, input:%#v, rid:%s", err, ownerAppID, conf, lgc.rid)
 		return nil, err
@@ -255,12 +255,11 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 	return nil, nil
 }
 
-// notExistAppModuleHost get hostID in the module that does not exist
-// 获取不在moduleID中的hostID
-func (lgc *Logics) notExistAppModuleHost(ctx context.Context, appID, moduleID int64, hostIDArr []int64) ([]int64, error) {
+// notExistAppModuleHost get hostIDs those don't exist in the modules
+func (lgc *Logics) notExistAppModuleHost(ctx context.Context, appID int64, moduleIDs []int64, hostIDArr []int64) ([]int64, error) {
 	hostModuleInput := &metadata.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: []int64{appID},
-		ModuleIDArr:      []int64{moduleID},
+		ModuleIDArr:      moduleIDs,
 		HostIDArr:        hostIDArr,
 	}
 
@@ -313,36 +312,26 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	if ownerAppID == conf.ApplicationID {
 		return nil, nil
 	}
-
-	resourceModuleID := conf.ModuleID
-	// if not resource default diretory module
-	if resourceModuleID != 0 {
-		filter := mapstr.MapStr{common.BKModuleIDField: conf.ModuleID}
-		moduleInfo, err := lgc.GetModuleMapByCond(ctx, []string{}, filter)
-		if err != nil {
-			blog.Errorf("assign host to app failed, err: %v, moduleID:%d, input:%+v,rid:%s", err, resourceModuleID, conf, lgc.rid)
-			return nil, err
-		}
-		if 0 == len(moduleInfo) {
-			blog.Errorf("assign host to app error, not foud app moduleID: %d,input:%+v,rid:%s", resourceModuleID, conf, lgc.rid)
-			return nil, lgc.ccErr.Error(common.CCErrCommNotFound)
-		}
-
-	} else {
-		conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
-		ownerModuleID, err := lgc.GetResourcePoolModuleID(ctx, conds.MapStr())
-		if err != nil {
-			blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), lgc.rid)
-			return nil, err
-		}
-		if 0 == ownerModuleID {
-			blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)
-		}
-		resourceModuleID = ownerModuleID
+	moduleCond := []metadata.ConditionItem{
+		{
+			Field:    common.BKAppIDField,
+			Operator: common.BKDBEQ,
+			Value:    ownerAppID,
+		},
+		{
+			Field:    common.BKDefaultField,
+			Operator: common.BKDBIN,
+			Value:    []int{common.DefaultResModuleFlag, common.DefaultResSelfDefinedModuleFlag},
+		},
 	}
 
-	errHostID, err := lgc.notExistAppModuleHost(ctx, ownerAppID, resourceModuleID, conf.HostIDs)
+	resourceModuleIDs, err := lgc.GetModuleIDByCond(ctx, moduleCond)
+	if err != nil {
+		blog.Errorf("assign host to app failed, GetModuleIDByCond err: %v, moduleCond:%+v, rid:%s", err, moduleCond, lgc.rid)
+		return nil, err
+	}
+
+	errHostID, err := lgc.notExistAppModuleHost(ctx, ownerAppID, resourceModuleIDs, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("assign host to app, notExistAppModuleHost error, err: %v, input:%+v, rid:%s", err, conf, lgc.rid)
 		return nil, err
