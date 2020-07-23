@@ -66,10 +66,10 @@ type IamAction struct {
 }
 
 type IamResourceType struct {
-	SystemID   string                 `json:"system_id"`
-	Type       string                 `json:"type"`
-	Instances  []IamResourceInstance  `json:"instances"`
-	Attributes []IamResourceAttribute `json:"attributes"`
+	SystemID   string                  `json:"system_id"`
+	Type       string                  `json:"type"`
+	Instances  [][]IamResourceInstance `json:"instances"`
+	Attributes []IamResourceAttribute  `json:"attributes"`
 }
 
 type IamResourceInstance struct {
