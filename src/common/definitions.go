@@ -707,8 +707,11 @@ const (
 	// NormalSetDefaultFlag user create set default field value
 	NormalSetDefaultFlag int64 = 0
 
-	// default recycle module flat
+	// DefaultRecycleModuleFlag default recycle module flag
 	DefaultRecycleModuleFlag int = 3
+
+	// DefaultResSelfDefinedModuleFlag the default resource self-defined module flag
+	DefaultResSelfDefinedModuleFlag int = 4
 )
 
 const (
@@ -1209,6 +1212,6 @@ const (
 )
 
 const (
-	BKCloudAreaStatusNormal = "1"
+	BKCloudAreaStatusNormal   = "1"
 	BKCloudAreaStatusAbnormal = "2"
 )
