@@ -91,11 +91,11 @@ func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 	case meta.HostInstance:
 		return genHostInstanceResource(act, rscType, a)
 
-		// case meta.HostFavorite:
-		// 	return genHostFavoriteResource(act, rscType, a)
+	// case meta.HostFavorite:
+	// 	return genHostFavoriteResource(act, rscType, a)
 
-		// case meta.SystemBase:
-		// 	return new(types.Resource), nil
+	case meta.SystemBase:
+		return make([]types.Resource, 0), nil
 	case meta.ProcessServiceCategory:
 		return genProcessServiceCategoryResource(act, rscType, a)
 	}
@@ -451,7 +451,7 @@ func genAssociationTypeResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{
 		System:    SystemIDCMDB,
-		Type:      types.ResourceType(EditSysModel),
+		Type:      types.ResourceType(SysModel),
 		Attribute: nil,
 	}
 
@@ -652,7 +652,7 @@ func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute
 func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{
 		System:    SystemIDCMDB,
-		Type:      types.ResourceType(EditBusinessCustomField),
+		Type:      types.ResourceType(Business),
 		Attribute: nil,
 	}
 

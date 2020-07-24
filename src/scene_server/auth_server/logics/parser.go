@@ -285,6 +285,12 @@ func parseIamPathToMongo(iamPath string, op string) (map[string]interface{}, err
 		}
 		resourceType := iam.TypeID(typeAndID[0])
 		idField := GetResourceIDField(resourceType)
+		if isResourceIDStringType(resourceType) {
+			cond[idField] = map[string]interface{}{
+				op: idStr,
+			}
+			continue
+		}
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("id %s parse int failed, error: %s", idStr, err.Error())

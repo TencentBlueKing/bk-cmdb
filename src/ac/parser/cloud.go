@@ -121,7 +121,7 @@ var cloudResourceTaskConfigs = []AuthConfig{
 		Pattern:        "/api/v3/findmany/cloud/sync/task",
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.CloudResourceTask,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "createCloudResourceTaskPattern",
 		Description:    "创建云资源同步任务",

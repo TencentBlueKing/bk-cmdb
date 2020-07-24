@@ -20,6 +20,7 @@ type AuthResource struct {
 	BizID        int64  `json:"bk_biz_id"`
 	ResourceType string `json:"resource_type"`
 	ResourceID   int64  `json:"resource_id"`
+	ResourceIDEx string `json:"resource_id_ex"`
 	Action       string `json:"action"`
 	ParentLayers []struct {
 		ResourceType string `json:"resource_type"`

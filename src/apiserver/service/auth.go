@@ -63,9 +63,10 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		resources[i].AuthResource = res
 		attr := meta.ResourceAttribute{
 			Basic: meta.Basic{
-				Type:       meta.ResourceType(res.ResourceType),
-				Action:     meta.Action(res.Action),
-				InstanceID: res.ResourceID,
+				Type:         meta.ResourceType(res.ResourceType),
+				Action:       meta.Action(res.Action),
+				InstanceID:   res.ResourceID,
+				InstanceIDEx: res.ResourceIDEx,
 			},
 			SupplierAccount: ownerID,
 			BusinessID:      res.BizID,
@@ -74,7 +75,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 			attr.Layers = append(attr.Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
 		}
 		// contains exact resource info, need exact authorize
-		if res.ResourceID > 0 || res.BizID > 0 || len(res.ParentLayers) > 0 {
+		if res.ResourceID > 0 || res.ResourceIDEx != "" || res.BizID > 0 || len(res.ParentLayers) > 0 {
 			needExactAuthMap[i] = true
 			needExactAuthAttrs = append(needExactAuthAttrs, attr)
 		} else {
@@ -83,7 +84,6 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	}
 
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
-
 
 	if len(needExactAuthAttrs) > 0 {
 		verifyResults, err := s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)

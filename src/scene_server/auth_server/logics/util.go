@@ -65,6 +65,14 @@ func getResourceTableName(resourceType iam.TypeID) string {
 	}
 }
 
+func isResourceIDStringType(resourceType iam.TypeID) bool {
+	switch resourceType {
+	case iam.BizCustomQuery:
+		return true
+	}
+	return false
+}
+
 // get model instance resource's model id
 func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 	switch resourceType {
@@ -134,6 +142,18 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 			common.BKDBNIN: excludedObjIDs,
 		}
 		return condition, nil
+	}
+
+	if resourceType == iam.SysAssociationType {
+		condition[common.BKIsPre] = map[string]interface{}{
+			common.BKDBNE: true,
+		}
+	}
+
+	if resourceType == iam.SysCloudArea {
+		condition[common.BKCloudIDField] = map[string]interface{}{
+			common.BKDBNE: 0,
+		}
 	}
 
 	if resourceType != iam.SysResourcePoolDirectory && resourceType != iam.SysHostRscPoolDirectory {

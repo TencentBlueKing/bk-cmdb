@@ -149,7 +149,7 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		convertAction = meta.Update
 	}
 
-	if resourceType == meta.ModelAttribute && businessID > 0 {
+	if resourceType == meta.ModelAttribute || resourceType == meta.ModelAttributeGroup {
 		if convertAction == meta.Delete || convertAction == meta.Update || convertAction == meta.Create {
 			if businessID > 0 {
 				return EditBusinessCustomField, nil
@@ -165,10 +165,6 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		} else {
 			return EditResourcePoolHost, nil
 		}
-	}
-
-	if resourceType == meta.ModelAttributeGroup && businessID > 0 {
-		return EditBusinessCustomField, nil
 	}
 
 	if _, exist := resourceActionMap[resourceType]; exist {
@@ -374,7 +370,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 	meta.SystemBase: {
 		meta.ModelTopologyView:      EditModelTopologyView,
-		meta.ModelTopologyOperation: EditBusinessTopology,
+		meta.ModelTopologyOperation: EditBusinessLayer,
 	},
 	meta.EventWatch: {
 		meta.WatchHost:         WatchHostEvent,
