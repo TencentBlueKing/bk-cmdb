@@ -10,41 +10,43 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
-                            <li class="property-item"
-                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                                v-if="checkEditable(property)"
-                                :key="propertyIndex">
-                                <div class="property-name clearfix">
-                                    <bk-checkbox class="form-checkbox"
-                                        v-if="property['isLocking'] !== undefined"
-                                        v-model="values[property['bk_property_id']]['as_default_value']"
-                                        @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
-                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    </bk-checkbox>
-                                    <span v-else class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    <i class="property-name-tooltips icon-cc-tips"
-                                        v-if="property['placeholder']"
-                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
-                                    </i>
-                                </div>
-                                <div class="property-value">
-                                    <component class="form-component"
-                                        :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :disabled="getPropertyEditStatus(property)"
-                                        :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :unit="property.unit"
-                                        :row="2"
-                                        :options="property.option || []"
-                                        :data-vv-name="property['bk_property_id']"
-                                        :data-vv-as="property['bk_property_name']"
-                                        :placeholder="getPlaceholder(property)"
-                                        :auto-select="false"
-                                        v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]['value']">
-                                    </component>
-                                    <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
-                                </div>
-                            </li>
+                            <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
+                                <li :class="['property-item', property['bk_property_type']]"
+                                    v-if="checkEditable(property)"
+                                    :key="propertyIndex">
+                                    <div class="property-name clearfix">
+                                        <bk-checkbox class="form-checkbox"
+                                            v-if="property['isLocking'] !== undefined"
+                                            v-model="values[property['bk_property_id']]['as_default_value']"
+                                            @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
+                                            <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        </bk-checkbox>
+                                        <span v-else class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <i class="property-name-tooltips icon-cc-tips"
+                                            v-if="property['placeholder']"
+                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                        </i>
+                                    </div>
+                                    <div class="property-value">
+                                        <component class="form-component"
+                                            :is="`cmdb-form-${property['bk_property_type']}`"
+                                            :disabled="getPropertyEditStatus(property)"
+                                            :class="{ error: errors.has(property['bk_property_id']) }"
+                                            :unit="property.unit"
+                                            :row="2"
+                                            :options="property.option || []"
+                                            :data-vv-name="property['bk_property_id']"
+                                            :data-vv-as="property['bk_property_name']"
+                                            :placeholder="getPlaceholder(property)"
+                                            :auto-select="false"
+                                            mode="update"
+                                            v-validate="getValidateRules(property)"
+                                            v-model.trim="values[property['bk_property_id']]['value']">
+                                        </component>
+                                        <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                    </div>
+                                </li>
+                            </template>
                         </ul>
                     </cmdb-collapse>
                 </div>
@@ -256,7 +258,7 @@
                         value: formValues[key],
                         as_default_value: this.type === 'update'
                             ? this.inst[key] ? this.inst[key]['as_default_value'] : false
-                            : ['bk_func_name', 'bk_process_name'].includes(key)
+                            : ['bk_func_name', 'bk_process_name', 'bind_info'].includes(key)
                     })
                 })
                 if (this.isCreatedService && this.type === 'update') {
@@ -365,34 +367,34 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-layout{
+    .form-layout {
         height: 100%;
         @include scrollbar-y;
     }
     .process-tips {
         margin: 10px 20px 0;
     }
-    .form-groups{
+    .form-groups {
         padding: 0 20px;
     }
-    .property-group{
+    .property-group {
         padding: 20px 0 10px 0;
         &:first-child {
         padding: 15px 0 10px 0;
         }
     }
-    .group-name{
+    .group-name {
         font-size: 14px;
         font-weight: bold;
         line-height: 14px;
         color: #63656e;
         overflow: visible;
     }
-    .property-list{
+    .property-list {
         padding: 4px 0;
         display: flex;
         flex-wrap: wrap;
-        .property-item{
+        .property-item {
             width: 50%;
             margin: 12px 0 0;
             font-size: 12px;
@@ -403,14 +405,14 @@
             &:nth-child(even) {
                 padding-left: 30px;
             }
-            .property-name{
+            .property-name {
                 display: block;
                 margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
             }
-            .property-name-text{
+            .property-name-text {
                 position: relative;
                 display: inline-block;
                 vertical-align: middle;
@@ -429,7 +431,7 @@
                     }
                 }
             }
-            .property-name-tooltips{
+            .property-name-tooltips {
                 display: inline-block;
                 vertical-align: middle;
                 width: 16px;
@@ -437,7 +439,7 @@
                 font-size: 16px;
                 color: #c3cdd7;
             }
-            .property-value{
+            .property-value {
                 font-size: 0;
                 position: relative;
                 /deep/ .control-append-group {
@@ -449,9 +451,18 @@
             .form-checkbox {
                 outline: 0;
             }
+
+            &.table {
+                flex: 1;
+                padding-right: 0;
+                width: 100%;
+                .property-name {
+                    display: none;
+                }
+            }
         }
     }
-    .form-options{
+    .form-options {
         position: sticky;
         bottom: 0;
         left: 0;
@@ -464,11 +475,11 @@
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
         }
-        .button-save{
+        .button-save {
             min-width: 76px;
             margin-right: 4px;
         }
-        .button-cancel{
+        .button-cancel {
             min-width: 76px;
             margin: 0 4px;
             background-color: #fff;

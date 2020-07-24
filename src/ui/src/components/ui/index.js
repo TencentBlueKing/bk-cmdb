@@ -31,6 +31,7 @@ import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
 import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
+import table from './form/table.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
 import textButton from './button/link-button.vue'
 import stickyLayout from './other/sticky-layout.vue'
@@ -73,6 +74,7 @@ const install = (Vue, opts = {}) => {
         auth,
         tableEmpty,
         list,
+        table,
         leaveConfirm,
         textButton,
         stickyLayout,
@@ -120,6 +122,7 @@ export default {
     auth,
     tableEmpty,
     list,
+    table,
     leaveConfirm,
     textButton,
     stickyLayout,
