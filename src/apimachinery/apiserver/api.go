@@ -207,7 +207,7 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResourcef(subPath, ownerID, objID).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
