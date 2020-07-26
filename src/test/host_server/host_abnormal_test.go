@@ -164,6 +164,23 @@ var _ = Describe("host abnormal test", func() {
 			faultModuleId = rsp.Data.Module[1].ModuleID
 			recycleModuleId = rsp.Data.Module[1].ModuleID
 		})
+
+		// 云区域ID不存在新加主机报错
+		It("add host using api with noexist cloud_id", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"host_info": map[string]interface{}{
+					"4": map[string]interface{}{
+						"bk_host_innerip": "127.0.1.1",
+						"bk_cloud_id":     noExistID,
+					},
+				},
+			}
+			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+		})
 	})
 
 	Describe("add host test", func() {
@@ -312,23 +329,6 @@ var _ = Describe("host abnormal test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 				Expect(rsp.Data.Count).To(Equal(1))
-			})
-
-			// 云区域ID不存在不会影响添加主机
-			It("add host using api with noexist cloud_id", func() {
-				input := map[string]interface{}{
-					"bk_biz_id": bizId,
-					"host_info": map[string]interface{}{
-						"4": map[string]interface{}{
-							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     noExistID,
-						},
-					},
-				}
-				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			})
 
 			// 如果云区域ID没有给出，默认是0
@@ -553,23 +553,6 @@ var _ = Describe("host abnormal test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 				Expect(rsp.Data.Count).To(Equal(1))
-			})
-
-			It("add host using excel with noexist cloud_id", func() {
-				input := map[string]interface{}{
-					"bk_biz_id": bizId,
-					"host_info": map[string]interface{}{
-						"4": map[string]interface{}{
-							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     noExistID,
-						},
-					},
-					"input_type": "excel",
-				}
-				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
 			})
 
 			It("add host using excel with no bk_cloud_id", func() {

@@ -3,9 +3,8 @@
         class="form-bool"
         size="small"
         theme="primary"
-        :value="localValue"
-        :disabled="disabled"
-        @change="handleChange">
+        v-model="localValue"
+        :disabled="disabled">
     </bk-switcher>
 </template>
 
@@ -14,7 +13,7 @@
         name: 'cmdb-form-bool',
         props: {
             value: {
-                type: [Boolean, String], // String是为了兼容初始数据为空的情况
+                type: [String, Boolean], // String是为了兼容初始数据为空的情况
                 default: false
             },
             disabled: {
@@ -22,20 +21,21 @@
                 default: false
             }
         },
-        data () {
-            return {
-                localValue: typeof this.value === 'boolean' ? this.value : false
-            }
-        },
-        watch: {
-            value (value) {
-                this.localValue = typeof value === 'boolean' ? value : false
-            }
-        },
-        methods: {
-            handleChange (selected) {
-                this.$emit('input', selected, this)
-                this.$emit('change', selected, this)
+        computed: {
+            localValue: {
+                get () {
+                    if (typeof this.value === 'boolean') {
+                        return this.value
+                    }
+                    if (this.value === 'true') {
+                        return true
+                    }
+                    return false
+                },
+                set (value) {
+                    this.$emit('input', value, this)
+                    this.$emit('change', value, this)
+                }
             }
         }
     }

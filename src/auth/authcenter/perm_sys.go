@@ -290,11 +290,6 @@ var expectSystemResourceType = []ResourceType{
 				ActionName:        "编辑",
 				IsRelatedResource: false,
 			},
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: false,
-			},
 		},
 	},
 }

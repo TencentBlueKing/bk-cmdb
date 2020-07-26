@@ -35,7 +35,7 @@ var ConfigAdminConfigs = []AuthConfig{
 		Pattern:        "/api/v3/admin/find/system/config_admin",
 		HTTPMethod:     http.MethodGet,
 		ResourceType:   meta.ConfigAdmin,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "updateConfigAdmin",
 		Description:    "更新配置管理",

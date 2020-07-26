@@ -50,10 +50,10 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 	}
 
 	// fill process
-	for _, process := range identifier.Process {
-		err = fillProcess(&process, ctx, cache, clientSet, db)
+	for index := range identifier.Process {
+		err = fillProcess(&identifier.Process[index], ctx, cache, clientSet, db)
 		if err != nil {
-			blog.ErrorJSON("identifier: fillProcess error %s, process: %s", err, process)
+			blog.ErrorJSON("identifier: fillProcess error %s, process: %s", err, identifier.Process[index])
 			return nil, err
 		}
 	}

@@ -3,6 +3,18 @@
   <head>
     <meta charset="utf-8">
     <title><%= htmlWebpackPlugin.options.config.BUILD_TITLE %></title>
+    <script>
+      (function () {
+        // 直调PaaS接口时，如果本平台为https,PaaS为http，则需要在head中声明如下的meta才能避免被csp拦截
+        if (window.location.protocol.startsWith('https')) {
+          var meta = document.createElement('meta')
+          meta.setAttribute('http-equiv', 'Content-Security-Policy')
+          meta.setAttribute('content', 'upgrade-insecure-requests')
+          document.head.appendChild(meta)
+        }
+      })();
+    </script>
+
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
   </head>
   <body>

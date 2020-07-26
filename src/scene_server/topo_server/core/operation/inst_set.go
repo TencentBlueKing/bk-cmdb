@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
@@ -104,11 +105,13 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 			}
 			setTemplate = st
 		}
-	} else {
-		data[common.BKSetTemplateIDField] = common.SetTemplateIDNotSet
 	}
 
-	// TODO: run in transaction
+	// if need create set using set template
+	if setTemplate.ID == common.SetTemplateIDNotSet && !version.CanCreateSetModuleWithoutTemplate {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "set_template_id can not be 0")
+	}
+
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
 	data.Set(common.BKSetTemplateVersionField, setTemplate.Version)
 	data.Remove(common.MetadataField)

@@ -328,7 +328,7 @@
                             operator: property.operator,
                             value: property.value === 'true'
                         })
-                    } else if (property.operator === '$multilike' && !Array.isArray(property.value)) {
+                    } else if (['$in', '$nin', '$multilike'].includes(property.operator) && !Array.isArray(property.value)) {
                         param.condition.push({
                             field: property.propertyId,
                             operator: property.operator,
@@ -482,10 +482,9 @@
                 })
             },
             getUserPropertyValue (property, originalProperty) {
-                if (
-                    property.operator === '$in'
-                    && ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
-                ) {
+                if (['$in', '$nin', '$multilike'].includes(property.operator)
+                    && Array.isArray(property.value)
+                    && !this.isMultipleProperty(originalProperty)) {
                     return property.value.join('\n')
                 } else if (property.operator === '$multilike'
                     && Array.isArray(property.value)
