@@ -879,8 +879,9 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(1))
 		})
 
-		It("sync host", func() {
+		It("add host", func() {
 			input := map[string]interface{}{
+				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.0.6",
@@ -888,15 +889,11 @@ var _ = Describe("host test", func() {
 						"bk_cloud_id":     0,
 					},
 				},
-				"bk_biz_id": bizId,
-				"bk_module_id": []int64{
-					idleModuleId,
-				},
 			}
-			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
+			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search idle host", func() {
@@ -1400,7 +1397,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		input := &metadata.CreateModelInstance{
 			Data: map[string]interface{}{
 				"bk_host_innerip": "1.0.0.1,1.0.0.2",
-				"bk_cloud_id" : 0,
+				"bk_cloud_id":     0,
 			},
 		}
 		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
