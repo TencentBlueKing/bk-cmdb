@@ -11,11 +11,10 @@
             :key="region.bk_region"
             :name="region.bk_region_name"
             :id="region.bk_region">
-            <div class="region-info">
+            <div :class="['region-info', { selected: selected === region.bk_region }]">
                 <span class="region-name" v-bk-overflow-tips>{{region.bk_region_name}}</span>
                 <span class="region-host-count">
                     {{region.bk_host_count}}
-                    <i class="icon-cc-host"></i>
                 </span>
             </div>
         </bk-option>
@@ -94,17 +93,26 @@
         justify-content: space-between;
         align-items: center;
         font-size: 14px;
+        &.selected,
+        &:hover {
+            .region-host-count {
+                background-color: #a2c5fd;
+                color: #fff;
+            }
+        }
         .region-name {
             @include ellipsis;
         }
         .region-host-count {
             display: flex;
-            margin-left: 15px;
+            height: 18px;
+            padding: 0 5px;
             align-items: center;
-            color: #C4C6CC;
-            .icon-cc-host {
-                margin-left: 6px;
-            }
+            margin-left: 15px;
+            border-radius: 2px;
+            background-color: #f0f1f5;
+            color: #979ba5;
+            font-size: 12px;
         }
     }
 </style>

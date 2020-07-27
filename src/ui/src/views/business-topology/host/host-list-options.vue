@@ -32,7 +32,9 @@
                         {{$t('空闲模块')}}
                     </li>
                     <li class="bk-dropdown-item" @click="handleTransfer($event, 'business', false)">{{$t('业务模块')}}</li>
+                    <!-- 暂忽略鉴权，交互待调整，需要选择目录 -->
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+                        ignore
                         :auth="{ type: $OPERATION.HOST_TO_RESOURCE, relation: [bizId] }">
                         <span href="javascript:void(0)" slot-scope="{ disabled }"
                             v-bk-tooltips="isIdleModule ? '' : $t('仅空闲机模块才能转移到资源池')"

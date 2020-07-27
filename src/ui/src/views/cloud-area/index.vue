@@ -77,11 +77,13 @@
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="{ type: $OPERATION.D_CLOUD_AREA, relation: [row.bk_cloud_id] }">
+                    <cmdb-auth
+                        :ignore="row.bk_account_id === 0"
+                        :auth="{ type: $OPERATION.D_CLOUD_AREA, relation: [row.bk_cloud_id] }">
                         <link-button slot-scope="{ disabled }"
                             :disabled="!isRemovable(row) || disabled"
                             v-bk-tooltips="{
-                                disabled: isRemovable(row) || !disabled,
+                                disabled: isRemovable(row) || disabled,
                                 content: getRemoveTips(row)
                             }"
                             @click="handleDelete(row)">

@@ -13,18 +13,18 @@
                 @click="handleShowCreate">
             </cmdb-auth>
         </div>
-        <ul class="dir-list">
+        <ul class="dir-list" ref="dirList">
             <li
                 :class="{
                     'dir-item': true,
+                    'dir-item-resource': true,
                     'selected': acitveDirId === null
                 }"
                 @click="handleResourceClick">
-                <i class="icon-cc-folder"></i>
                 <span class="dir-name" :title="$t('资源池')">{{$t('资源池')}}</span>
                 <span class="host-count">{{totalCount}}</span>
             </li>
-            <li class="dir-item edit-status" v-if="createInfo.active">
+            <li class="dir-item edit-status" v-if="createInfo.active" ref="createDirItem">
                 <bk-input
                     ref="createdDir"
                     v-click-outside="handleCancelCreate"
@@ -40,8 +40,10 @@
                 :class="{
                     'dir-item': true,
                     'edit-status': editDir.id === dir.bk_module_id,
-                    'selected': acitveDirId === dir.bk_module_id
+                    'selected': acitveDirId === dir.bk_module_id,
+                    'is-sticky': isSticky(dir)
                 }"
+                :data-default="dir.default"
                 @click="handleSearchHost(dir)">
                 <template v-if="editDir.id === dir.bk_module_id">
                     <bk-input
@@ -60,7 +62,7 @@
                     <span class="dir-name" :title="dir.bk_module_name">{{dir.bk_module_name}}</span>
                     <template v-if="dir.default !== 1">
                         <i :class="['dir-sticky-icon', isSticky(dir) ? 'icon-cc-cancel-sticky' : 'icon-cc-sticky']"
-                            v-bk-tooltips.top="isSticky(dir) ? $t('置于顶部') : $t('取消置顶')"
+                            v-bk-tooltips.top="isSticky(dir) ? $t('取消置顶') : $t('置顶')"
                             @click="handleToggleSticky(dir)">
                         </i>
                         <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
@@ -136,11 +138,6 @@
 
                     return (stickyIndexA || (count + 1)) - (stickyIndexB || (count + 1))
                 })
-                const idleIndex = list.findIndex(idle => idle.default === 1)
-                if (idleIndex > -1) {
-                    const [idle] = list.splice(idleIndex, 1)
-                    return [idle, ...list]
-                }
                 return list
             },
             totalCount () {
@@ -200,7 +197,7 @@
                     await this.$store.dispatch('userCustom/saveUsercustom', {
                         [CUSTOM_STICKY_KEY]: current
                     })
-                    this.$success(isSticky ? this.$t('已置顶') : this.$t('已取消置顶'))
+                    this.$success(isSticky ? this.$t('已取消置顶') : this.$t('已置顶'))
                 } catch (error) {
                     console.error(error)
                 }
@@ -264,6 +261,9 @@
             handleShowCreate () {
                 this.createInfo.active = true
                 this.$nextTick(() => {
+                    const createDirItem = this.$refs.createDirItem
+                    const idleNextItem = this.$refs.dirList.querySelector('[data-default="1"]').nextElementSibling
+                    this.$refs.dirList.insertBefore(createDirItem, idleNextItem)
                     this.$refs.createdDir.$refs.input.focus()
                 })
             },
@@ -361,8 +361,14 @@
             align-items: center;
             height: 36px;
             padding: 0 20px;
-            margin: 6px 0;
+            margin: 1px 0;
             cursor: pointer;
+            &.dir-item-resource {
+                background-color: #F0F1F5;
+            }
+            &.is-sticky {
+                background-color: #F0F1F5;
+            }
             &:first-child {
                 margin-top: 0;
             }
@@ -407,9 +413,18 @@
                 @include ellipsis;
             }
             .dir-operation {
-                width: 20px;
+                display: flex;
+                width: 28px;
+                height: 28px;
+                line-height: 28px;
+                align-items: center;
+                justify-content: center;
                 margin-right: 8px;
                 opacity: 0;
+                border-radius: 50%;
+                &:hover {
+                    background-color: #fff;
+                }
             }
             .host-count {
                 height: 18px;

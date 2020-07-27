@@ -264,8 +264,12 @@
                 }
             },
             async useFrontendTest () {
-                const isValid = await this.$validator.validateAll()
-                if (!isValid) {
+                const results = await Promise.all([
+                    this.$validator.validate('bk_cloud_vendor'),
+                    this.$validator.validate('bk_secret_id'),
+                    this.$validator.validate('bk_secret_key')
+                ])
+                if (results.some(valid => !valid)) {
                     return false
                 }
                 const params = { ...this.verifyParams }

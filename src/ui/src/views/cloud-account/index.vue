@@ -64,7 +64,7 @@
                         <link-button slot-scope="{ disabled }"
                             :disabled="!row.bk_can_delete_account || disabled"
                             v-bk-tooltips="{
-                                disabled: row.bk_can_delete_account || !disabled,
+                                disabled: row.bk_can_delete_account || disabled,
                                 content: $t('云账户禁止删除提示')
                             }"
                             @click="handleDelete(row)">

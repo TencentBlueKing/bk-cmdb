@@ -159,7 +159,7 @@
                             :id="option.id"
                             :name="option.name"
                             :disabled="option.disabled">
-                            <cmdb-auth style="display: block;" :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
+                            <cmdb-auth style="display: block;" ignore :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
                         </bk-option>
                     </bk-select>
                 </div>
@@ -503,6 +503,7 @@
                                 page: 1,
                                 _t: Date.now()
                             })
+                            Bus.$emit('refresh-dir-count')
                         })
                     }
                 })
