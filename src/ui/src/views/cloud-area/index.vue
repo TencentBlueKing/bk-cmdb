@@ -32,13 +32,16 @@
                             pending: row._pending_,
                             limited: isLimited(row)
                         }"
-                        @click="handleEditName($event, row)">
+                        @click="handleEditName(row)">
                         <template slot-scope="{ disabled }">
                             <span class="cell-name-text" v-bk-overflow-tips>{{row.bk_cloud_name}}</span>
                             <i :class="['cell-name-icon', 'icon-cc-edit-shape', { disabled }]" v-if="!isLimited(row)"></i>
                         </template>
                     </cmdb-auth>
-                    <bk-input class="cell-name-input" size="small" font-size="normal" :value="row.bk_cloud_name" v-if="row === rowInEdit"
+                    <bk-input class="cell-name-input" size="small" font-size="normal"
+                        v-if="row === rowInEdit"
+                        :id="`input-${row.bk_cloud_id}`"
+                        :value="row.bk_cloud_name"
                         @enter="handleUpdateName(row, ...arguments)"
                         @blur="handleUpdateName(row, ...arguments)">
                     </bk-input>
@@ -123,11 +126,11 @@
             this.getData()
         },
         methods: {
-            handleEditName (event, row) {
-                const cell = event.currentTarget.parentElement
+            handleEditName (row) {
                 this.rowInEdit = row
                 this.$nextTick(() => {
-                    cell.querySelector('input').focus()
+                    const input = this.$el.querySelector(`#input-${row.bk_cloud_id}`).querySelector('input')
+                    input.focus()
                 })
             },
             async handleUpdateName (row, value) {
