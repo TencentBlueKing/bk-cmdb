@@ -15,10 +15,8 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -77,29 +75,6 @@ func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
-	}
-
-	if auth.EnableAuthorize() {
-		list, err := s.ListAuthorizedResources(ctx.Kit, meta.CloudResourceTask, meta.Find)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-
-		if option.Condition == nil {
-			option.Condition = make(map[string]interface{})
-		}
-
-		option.Condition = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{
-				option.Condition,
-				{
-					common.BKCloudSyncTaskID: map[string]interface{}{
-						common.BKDBIN: list,
-					},
-				},
-			},
-		}
 	}
 
 	result, err := s.Logics.SearchSyncTask(ctx.Kit, &option)

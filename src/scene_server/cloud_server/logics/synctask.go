@@ -16,7 +16,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -148,6 +150,29 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 					"$options":      "i",
 				}
 			}
+		}
+	}
+
+	if auth.EnableAuthorize() {
+		list, err := lgc.ListAuthorizedResources(kit, meta.CloudResourceTask, meta.Find)
+		if err != nil {
+			blog.Errorf("SearchSyncTask failed, rid:%s, option:%+v, ListAuthorizedResources err:%+v", kit.Rid, option, err)
+			return nil, err
+		}
+
+		if option.Condition == nil {
+			option.Condition = make(map[string]interface{})
+		}
+
+		option.Condition = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				option.Condition,
+				{
+					common.BKCloudSyncTaskID: map[string]interface{}{
+						common.BKDBIN: list,
+					},
+				},
+			},
 		}
 	}
 
