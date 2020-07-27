@@ -62,12 +62,11 @@
                 :key="classIndex">
                 <div class="group-title">
                     <div class="title-info"
-                        v-if="classification.bk_classification_type === 'inner'"
-                        v-bk-tooltips="groupToolTips">
-                        <span class="mr5">{{classification['bk_classification_name']}}</span>
-                        <span class="number">({{classification['bk_objects'].length}})</span>
-                    </div>
-                    <div class="title-info" v-else>
+                        v-bk-tooltips="{
+                            disabled: isEditable(classification),
+                            content: $t('内置模型组不支持添加和修改'),
+                            placement: 'right'
+                        }">
                         <span class="mr5">{{classification['bk_classification_name']}}</span>
                         <span class="number">({{classification['bk_objects'].length}})</span>
                     </div>
@@ -243,10 +242,6 @@
                 sucessDialog: {
                     isShow: false
                 },
-                groupToolTips: {
-                    content: this.$t('内置模型组不支持添加和修改'),
-                    placement: 'right'
-                },
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -386,16 +381,7 @@
                 this.topPadding = this.$refs.mainInject.$el.offsetHeight
             },
             isEditable (classification) {
-                if (classification['bk_classification_type'] === 'inner') {
-                    return false
-                }
-                if (this.isAdminView) {
-                    return true
-                }
-                return !!this.$tools.getMetadataBiz(classification)
-            },
-            isInner (model) {
-                return !this.$tools.getMetadataBiz(model)
+                return !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classification.bk_classification_id)
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
