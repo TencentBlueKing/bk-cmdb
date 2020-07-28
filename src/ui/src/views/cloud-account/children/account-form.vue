@@ -52,7 +52,6 @@
             <bk-form-item class="create-form-item clearfix" label="Key" required>
                 <bk-button class="create-form-button fr"
                     :loading="$loading(request.verify)"
-                    :disabled="form.bk_secret_key === fakeSecret"
                     @click="handleTest">
                     {{$t('连通测试')}}
                 </bk-button>
@@ -238,8 +237,39 @@
                 this.form.bk_secret_key = this.fakeSecret
             },
             async handleTest () {
-                const isValid = await this.$validator.validateAll()
-                if (!isValid) {
+                if (!this.isCreateMode && this.form.bk_secret_key === this.fakeSecret) {
+                    this.useBackendTest()
+                } else {
+                    this.useFrontendTest()
+                }
+            },
+            async useBackendTest () {
+                try {
+                    const [result] = await this.$store.dispatch('cloud/account/getStatus', {
+                        params: {
+                            account_ids: [this.account.bk_account_id]
+                        },
+                        config: {
+                            cancelPrevious: true,
+                            requestId: this.request.verify
+                        }
+                    })
+                    this.verifyResult = {
+                        done: true,
+                        connected: !result.err_msg,
+                        msg: result.err_msg
+                    }
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            async useFrontendTest () {
+                const results = await Promise.all([
+                    this.$validator.validate('bk_cloud_vendor'),
+                    this.$validator.validate('bk_secret_id'),
+                    this.$validator.validate('bk_secret_key')
+                ])
+                if (results.some(valid => !valid)) {
                     return false
                 }
                 const params = { ...this.verifyParams }

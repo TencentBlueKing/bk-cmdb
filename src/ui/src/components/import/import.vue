@@ -1,5 +1,6 @@
 <template>
     <div class="import-wrapper">
+        <slot name="prepend"></slot>
         <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
             <img src="../../assets/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />

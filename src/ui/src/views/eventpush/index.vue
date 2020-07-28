@@ -68,7 +68,6 @@
             <cmdb-table-empty slot="empty" :stuff="table.stuff">
                 <template>
                     <p>{{$t('暂时没有数据')}}</p>
-                    <p>{{$t('事件推送功能提示')}}</p>
                 </template>
             </cmdb-table-empty>
         </bk-table>

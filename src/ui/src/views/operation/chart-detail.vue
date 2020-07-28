@@ -155,7 +155,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
 
     export default {
         name: 'chart-detail',
@@ -231,6 +231,7 @@
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             filterList () {
                 return this.demList.filter(item => {
                     if (this.hostType === 'host') {
@@ -309,7 +310,8 @@
             async getDemList (id) {
                 this.demList = await this.getStaticDimeObj({
                     params: {
-                        bk_obj_id: id
+                        bk_obj_id: id,
+                        bk_supplier_account: this.supplierAccount
                     }
                 })
                 this.$validator.reset()

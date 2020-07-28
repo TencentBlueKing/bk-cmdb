@@ -32,13 +32,16 @@
                             pending: row._pending_,
                             limited: isLimited(row)
                         }"
-                        @click="handleEditName($event, row)">
+                        @click="handleEditName(row)">
                         <template slot-scope="{ disabled }">
                             <span class="cell-name-text" v-bk-overflow-tips>{{row.bk_cloud_name}}</span>
                             <i :class="['cell-name-icon', 'icon-cc-edit-shape', { disabled }]" v-if="!isLimited(row)"></i>
                         </template>
                     </cmdb-auth>
-                    <bk-input class="cell-name-input" size="small" font-size="normal" :value="row.bk_cloud_name" v-if="row === rowInEdit"
+                    <bk-input class="cell-name-input" size="small" font-size="normal"
+                        v-if="row === rowInEdit"
+                        :id="`input-${row.bk_cloud_id}`"
+                        :value="row.bk_cloud_name"
                         @enter="handleUpdateName(row, ...arguments)"
                         @blur="handleUpdateName(row, ...arguments)">
                     </bk-input>
@@ -58,7 +61,9 @@
                 <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
             </bk-table-column>
             <bk-table-column :label="$t('地域')" prop="bk_region">
-                <template slot-scope="{ row }">{{row.bk_region | formatter('singlechar')}}</template>
+                <template slot-scope="{ row }">
+                    <task-region-selector display="info" :account="row.bk_account_id" :value="row.bk_region"></task-region-selector>
+                </template>
             </bk-table-column>
             <bk-table-column label="VPC" prop="bk_vpc_name" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{getVpcInfo(row) | formatter('singlechar')}}</template>
@@ -72,11 +77,13 @@
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="{ type: $OPERATION.D_CLOUD_AREA, relation: [row.bk_cloud_id] }">
+                    <cmdb-auth
+                        :ignore="row.bk_account_id === 0"
+                        :auth="{ type: $OPERATION.D_CLOUD_AREA, relation: [row.bk_cloud_id] }">
                         <link-button slot-scope="{ disabled }"
                             :disabled="!isRemovable(row) || disabled"
                             v-bk-tooltips="{
-                                disabled: isRemovable(row) || !disabled,
+                                disabled: isRemovable(row) || disabled,
                                 content: getRemoveTips(row)
                             }"
                             @click="handleDelete(row)">
@@ -93,9 +100,11 @@
     import CmdbVendor from '@/components/ui/other/vendor'
     import throttle from 'lodash.throttle'
     import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
+    import TaskRegionSelector from '@/views/cloud-resource/children/task-region-selector'
     export default {
         components: {
-            CmdbVendor
+            CmdbVendor,
+            TaskRegionSelector
         },
         data () {
             return {
@@ -119,11 +128,11 @@
             this.getData()
         },
         methods: {
-            handleEditName (event, row) {
-                const cell = event.currentTarget.parentElement
+            handleEditName (row) {
                 this.rowInEdit = row
                 this.$nextTick(() => {
-                    cell.querySelector('input').focus()
+                    const input = this.$el.querySelector(`#input-${row.bk_cloud_id}`).querySelector('input')
+                    input.focus()
                 })
             },
             async handleUpdateName (row, value) {

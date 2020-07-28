@@ -9,7 +9,11 @@
             </bk-date-picker>
         </div>
         <div class="history-table" v-bkloading="{ isLoading: $loading(requestId) }">
-            <bk-table ref="table" :data="histories" :max-height="$APP.height - 180">
+            <bk-table ref="table"
+                :data="histories"
+                :max-height="$APP.height - 180"
+                :row-style="{ cursor: 'pointer' }"
+                @cell-click="handleView">
                 <bk-table-column type="expand" width="30" align="center">
                     <task-details-history-content
                         slot-scope="{ row }"
@@ -30,11 +34,6 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('时间')" prop="create_time">
                     <template slot-scope="{ row }">{{row.create_time | formatter('time')}}</template>
-                </bk-table-column>
-                <bk-table-column :label="$t('详情')" width="80">
-                    <template slot-scope="{ row }">
-                        <link-button @click="handleView(row)">{{$t('查看详情')}}</link-button>
-                    </template>
                 </bk-table-column>
             </bk-table>
         </div>
@@ -89,8 +88,8 @@
             getCount (row, type) {
                 return (row.bk_detail[type] || {}).count || 0
             },
-            handleView (row) {
-                this.$refs.table.toggleRowExpansion(row)
+            handleView (row, column) {
+                column.type !== 'expand' && this.$refs.table.toggleRowExpansion(row)
             }
         }
     }

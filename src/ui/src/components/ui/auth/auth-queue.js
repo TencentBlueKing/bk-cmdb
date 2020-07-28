@@ -4,15 +4,14 @@ import debounce from 'lodash.debounce'
 import $http from '@/api'
 import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
 
-const validCompareKey = ['resource_type', 'action', 'bk_biz_id', 'parent_layers', 'resource_id']
-const uselessKey = ['resource_id_ex']
-function filterUselessKey (data) {
+function filterUselssKey (data, uselessKeys) {
     return JSON.parse(JSON.stringify(data), (key, value) => {
         if (key === '') return value
-        if (uselessKey.includes(key)) return undefined
+        if (uselessKeys.includes(key)) return undefined
         return value
     })
 }
+
 export default new Vue({
     data () {
         return {
@@ -43,8 +42,7 @@ export default new Vue({
             const authComponents = this.authComponents.splice(0)
             let authData = []
             try {
-                const response = await $http.post('auth/verify', { resources: queue })
-                authData = filterUselessKey(response)
+                authData = await $http.post('auth/verify', { resources: queue })
             } catch (error) {
                 console.error(error)
             } finally {
@@ -55,9 +53,11 @@ export default new Vue({
                         const result = authData.find(result => {
                             const source = {}
                             const target = {}
-                            validCompareKey.forEach(key => {
-                                if (meta.hasOwnProperty(key)) {
-                                    source[key] = meta[key]
+                            Object.keys(meta).forEach(key => {
+                                source[key] = meta[key]
+                                if (key === 'parent_layers') {
+                                    target[key] = filterUselssKey(result[key], ['resource_id_ex'])
+                                } else {
                                     target[key] = result[key]
                                 }
                             })

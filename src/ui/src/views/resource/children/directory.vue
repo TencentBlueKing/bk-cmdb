@@ -1,18 +1,30 @@
 <template>
-    <div class="diractory-layout">
-        <bk-input class="dir-search"
-            v-model.trim="dirSearch"
-            clearable
-            :placeholder="$t('分组目录')">
-        </bk-input>
-        <div class="dir-header"
-            :class="{ 'active': acitveDirId === null }"
-            @click="handleResourceClick">
-            <span class="title">{{$t('资源池')}}</span>
-            <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
+    <div class="directory-layout">
+        <div class="directory-options">
+            <bk-input class="dir-search"
+                v-model.trim="dirSearch"
+                clearable
+                right-icon="icon-search"
+                :placeholder="$t('分组目录')">
+            </bk-input>
+            <cmdb-auth class="icon-cc-plus"
+                :auth="{ type: $OPERATION.C_RESOURCE_DIRECTORY }"
+                v-bk-tooltips.top="$t('新建目录')"
+                @click="handleShowCreate">
+            </cmdb-auth>
         </div>
-        <ul class="dir-list">
-            <li class="dir-item edit-status" v-if="createInfo.active">
+        <ul class="dir-list" ref="dirList">
+            <li
+                :class="{
+                    'dir-item': true,
+                    'dir-item-resource': true,
+                    'selected': acitveDirId === null
+                }"
+                @click="handleResourceClick">
+                <span class="dir-name" :title="$t('资源池')">{{$t('资源池')}}</span>
+                <span class="host-count">{{totalCount}}</span>
+            </li>
+            <li class="dir-item edit-status" v-if="createInfo.active" ref="createDirItem">
                 <bk-input
                     ref="createdDir"
                     v-click-outside="handleCancelCreate"
@@ -28,8 +40,10 @@
                 :class="{
                     'dir-item': true,
                     'edit-status': editDir.id === dir.bk_module_id,
-                    'selected': acitveDirId === dir.bk_module_id
+                    'selected': acitveDirId === dir.bk_module_id,
+                    'is-sticky': isSticky(dir)
                 }"
+                :data-default="dir.default"
                 @click="handleSearchHost(dir)">
                 <template v-if="editDir.id === dir.bk_module_id">
                     <bk-input
@@ -44,28 +58,37 @@
                     </bk-input>
                 </template>
                 <template v-else>
-                    <i class="icon-cc-memory"></i>
+                    <i class="icon-cc-folder"></i>
                     <span class="dir-name" :title="dir.bk_module_name">{{dir.bk_module_name}}</span>
-                    <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
-                        <div class="dot-content">
-                            <bk-button
-                                class="menu-btn"
-                                :text="true"
-                                @click="handleResetName(dir)">
-                                {{$t('重命名')}}
-                            </bk-button>
-                            <bk-button
-                                class="menu-btn"
-                                :text="true"
-                                v-bk-tooltips.right="{
-                                    content: $t('主机不为空，不能删除'),
-                                    disabled: !dir.host_count
-                                }"
-                                @click="handleDelete(dir, index)">
-                                {{$t('删除')}}
-                            </bk-button>
-                        </div>
-                    </cmdb-dot-menu>
+                    <template v-if="dir.default !== 1">
+                        <i :class="['dir-sticky-icon', isSticky(dir) ? 'icon-cc-cancel-sticky' : 'icon-cc-sticky']"
+                            v-bk-tooltips.top="isSticky(dir) ? $t('取消置顶') : $t('置顶')"
+                            @click="handleToggleSticky(dir)">
+                        </i>
+                        <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
+                            <div class="dot-content">
+                                <bk-button
+                                    class="menu-btn"
+                                    :text="true"
+                                    @click="handleResetName(dir)">
+                                    {{$t('重命名')}}
+                                </bk-button>
+                                <div
+                                    v-bk-tooltips.right="{
+                                        content: $t('主机不为空，不能删除'),
+                                        disabled: !dir.host_count
+                                    }">
+                                    <bk-button
+                                        class="menu-btn"
+                                        :text="true"
+                                        :disabled="!!dir.host_count"
+                                        @click="handleDelete(dir, index)">
+                                        {{$t('删除')}}
+                                    </bk-button>
+                                </div>
+                            </div>
+                        </cmdb-dot-menu>
+                    </template>
                     <span class="host-count">{{dir.host_count}}</span>
                 </template>
             </li>
@@ -77,6 +100,7 @@
     import { mapGetters } from 'vuex'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
+    const CUSTOM_STICKY_KEY = 'sticky-directory'
     export default {
         data () {
             return {
@@ -94,14 +118,32 @@
             }
         },
         computed: {
+            ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('resourceHost', [
                 'directoryList'
             ]),
+            stickyDirectory () {
+                return this.usercustom[CUSTOM_STICKY_KEY] || []
+            },
             filterDirList () {
+                let list = [...this.directoryList]
                 if (this.dirSearch) {
-                    return this.directoryList.filter(module => module.bk_module_name.indexOf(this.dirSearch) > -1)
+                    const lowerCaseSearch = this.dirSearch.toLowerCase()
+                    list = this.directoryList.filter(module => module.bk_module_name.toLowerCase().indexOf(lowerCaseSearch) > -1)
                 }
-                return this.directoryList
+                const count = this.stickyDirectory.length
+                list.sort((dirA, dirB) => {
+                    const stickyIndexA = this.stickyDirectory.indexOf(dirA.bk_module_id) + 1
+                    const stickyIndexB = this.stickyDirectory.indexOf(dirB.bk_module_id) + 1
+
+                    return (stickyIndexA || (count + 1)) - (stickyIndexB || (count + 1))
+                })
+                return list
+            },
+            totalCount () {
+                return this.directoryList.reduce((accumulator, directory) => {
+                    return accumulator + directory.host_count
+                }, 0)
             }
         },
         watch: {
@@ -134,6 +176,28 @@
                         }
                     })
                     this.$store.commit('resourceHost/setDirectoryList', info)
+                    let directoryId = RouterQuery.get('directory')
+                    if (directoryId) {
+                        directoryId = Number(directoryId)
+                        const directory = info.find(directory => directory.bk_module_id === directoryId)
+                        directory && this.handleSearchHost(directory, false)
+                    }
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            isSticky (dir) {
+                return this.stickyDirectory.includes(dir.bk_module_id)
+            },
+            async handleToggleSticky (dir) {
+                try {
+                    const previous = this.stickyDirectory
+                    const isSticky = this.isSticky(dir)
+                    const current = isSticky ? previous.filter(id => id !== dir.bk_module_id) : [...previous, dir.bk_module_id]
+                    await this.$store.dispatch('userCustom/saveUsercustom', {
+                        [CUSTOM_STICKY_KEY]: current
+                    })
+                    this.$success(isSticky ? this.$t('已取消置顶') : this.$t('已置顶'))
                 } catch (error) {
                     console.error(error)
                 }
@@ -153,6 +217,7 @@
                     this.$store.commit('resourceHost/addDirectory', newDir)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreate()
+                    this.handleSearchHost(newDir)
                 } catch (e) {
                     console.error(e)
                 }
@@ -179,10 +244,10 @@
                     console.error(e)
                 }
             },
-            handleSearchHost (active = {}) {
+            handleSearchHost (active = {}, dispatchEvent = true) {
                 this.$store.commit('resourceHost/setActiveDirectory', active)
                 this.acitveDirId = active.bk_module_id
-                Bus.$emit('refresh-resource-list')
+                dispatchEvent && Bus.$emit('refresh-resource-list')
             },
             handleResourceClick () {
                 this.$store.commit('resourceHost/setActiveDirectory', null)
@@ -196,6 +261,9 @@
             handleShowCreate () {
                 this.createInfo.active = true
                 this.$nextTick(() => {
+                    const createDirItem = this.$refs.createDirItem
+                    const idleNextItem = this.$refs.dirList.querySelector('[data-default="1"]').nextElementSibling
+                    this.$refs.dirList.insertBefore(createDirItem, idleNextItem)
                     this.$refs.createdDir.$refs.input.focus()
                 })
             },
@@ -243,7 +311,7 @@
                                 }
                             })
                             if (dir.bk_module_id === this.acitveDirId) {
-                                this.acitveDirId = this.directoryList[index - 1].bk_module_id
+                                this.handleSearchHost(this.filterDirList[index - 1])
                             }
                             this.$store.commit('resourceHost/deleteDirectory', dir.bk_module_id)
                             this.$success(this.$t('删除成功'))
@@ -258,41 +326,29 @@
 </script>
 
 <style lang="scss" scoped>
-    .diractory-layout {
+    .directory-layout {
         height: 100%;
         overflow: hidden;
-        .dir-search {
-            display: block;
-            width: auto;
-            margin: 18px 20px 14px;
-        }
-        .dir-header {
-            @include space-between;
-            padding: 0 20px;
-            height: 42px;
-            line-height: 42px;
-            background-color: #F0F1F5;
-            cursor: pointer;
-            &:hover,
-            &.active {
-                background-color: #E1ECFF;
-                .icon-cc-plus {
-                    background-color: #3A84FF;
-                }
-            }
-            .title {
-                font-weight: bold;
-                font-size: 14px;
+        .directory-options {
+            display: flex;
+            align-items: center;
+            padding: 18px 20px 14px;
+            .dir-search {
+                flex: 1;
+                display: block;
+                width: auto;
             }
             .icon-cc-plus {
-                width: 18px;
-                height: 18px;
-                line-height: 18px;
-                text-align: center;
-                color: #FFFFFF;
-                background-color: #C4C6CC;
-                border-radius: 2px;
+                flex: 20px 0 0;
+                font-size: 20px;
+                margin-left: 10px;
                 cursor: pointer;
+                &:hover {
+                    color: $primaryColor;
+                }
+                &.disabled {
+                    color: $textDisabledColor;
+                }
             }
         }
         .dir-list {
@@ -305,15 +361,21 @@
             align-items: center;
             height: 36px;
             padding: 0 20px;
-            margin: 6px 0;
+            margin: 1px 0;
             cursor: pointer;
+            &.dir-item-resource {
+                background-color: #F0F1F5;
+            }
+            &.is-sticky {
+                background-color: #F0F1F5;
+            }
             &:first-child {
                 margin-top: 0;
             }
             &:not(.edit-status):not(.disabled):hover,
             &:not(.edit-status).selected {
                 background-color: #E1ECFF;
-                .icon-cc-memory {
+                .icon-cc-folder {
                     color: #3A84FF;
                 }
                 .dir-name {
@@ -327,16 +389,19 @@
                     color: #FFFFFF;
                     background-color: #A2C5FD;
                 }
+                .dir-sticky-icon {
+                    display: inline-block;
+                }
             }
             &.disabled {
-                .icon-cc-memory {
+                .icon-cc-folder {
                     color: #DCDEE5 !important;
                 }
                 .dir-name {
                     color: #C4C6CC;
                 }
             }
-            .icon-cc-memory {
+            .icon-cc-folder {
                 font-size: 16px;
                 margin-right: 10px;
                 color: #C4C6CC;
@@ -348,9 +413,18 @@
                 @include ellipsis;
             }
             .dir-operation {
-                width: 20px;
+                display: flex;
+                width: 28px;
+                height: 28px;
+                line-height: 28px;
+                align-items: center;
+                justify-content: center;
                 margin-right: 8px;
                 opacity: 0;
+                border-radius: 50%;
+                &:hover {
+                    background-color: #fff;
+                }
             }
             .host-count {
                 height: 18px;
@@ -365,6 +439,19 @@
             .icon-cc-lock {
                 font-size: 14px;
                 color: #C4C6CC;
+            }
+            .dir-sticky-icon {
+                display: none;
+                width: 28px;
+                height: 28px;
+                margin: 0 0 0 5px;
+                line-height: 28px;
+                text-align: center;
+                color: $primaryColor;
+                border-radius: 50%;
+                &:hover {
+                    background-color: #fff;
+                }
             }
         }
     }

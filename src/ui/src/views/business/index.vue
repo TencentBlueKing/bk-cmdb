@@ -234,11 +234,11 @@
             saveAuth () {
                 const type = this.attribute.type
                 if (type === 'create') {
-                    return this.$OPERATION.C_BUSINESS
+                    return { type: this.$OPERATION.C_BUSINESS }
                 } else if (type === 'update') {
-                    return this.$OPERATION.U_BUSINESS
+                    return { type: this.$OPERATION.U_BUSINESS }
                 }
-                return ''
+                return null
             },
             model () {
                 return this.getModelById('biz') || {}

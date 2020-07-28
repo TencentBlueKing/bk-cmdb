@@ -655,9 +655,14 @@
         margin: 14px 0 0 0;
         .filter-add-button {
             /deep/ {
-                span {
-                    display: inline-block;
-                    vertical-align: middle;
+                > div {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .bk-icon {
+                    position: initial;
+                    font-size: 20px;
                 }
             }
         }

@@ -20,10 +20,9 @@
                 <bk-table-column prop="name" :label="$t('需要申请的权限')"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
-                        <template v-if="row.relation.length">
-                            <div v-for="(resource, index) in row.relation"
-                                :key="index">
-                                {{ resource.instances.map(({ id, name }) => `${name} ID：${id}`).join(' / ') }}
+                        <template v-if="row.relations.length">
+                            <div v-for="(relation, index) in row.relations" :key="index">
+                                {{relation}}
                             </div>
                         </template>
                         <span v-else>--</span>
@@ -84,18 +83,21 @@
                 const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
                 this.permission.actions.forEach(action => {
                     const definition = Object.values(IAM_ACTIONS).find(definition => definition.id === action.id)
-                    const data = {
-                        id: definition.id,
-                        name: definition.name[languageIndex],
-                        relation: action.related_resource_types.map(({ type, instances }) => {
-                            return {
-                                id: type,
-                                name: IAM_VIEWS_NAME[type][languageIndex],
-                                instances: instances.map(instance => ({ id: instance.id, name: IAM_VIEWS_NAME[instance.type][languageIndex] }))
-                            }
-                        })
-                    }
-                    list.push(data)
+                    action.related_resource_types.forEach(({ type, instances }) => {
+                        const listItem = {
+                            id: definition.id,
+                            name: definition.name[languageIndex],
+                            relations: instances.map(instance => {
+                                return instance.map(data => {
+                                    if (data.name) {
+                                        return `${IAM_VIEWS_NAME[data.type][languageIndex]}：${data.name || data.id}`
+                                    }
+                                    return `${IAM_VIEWS_NAME[data.type][languageIndex]}ID：${data.id}`
+                                }).join(' / ')
+                            })
+                        }
+                        list.push(listItem)
+                    })
                 })
                 this.list = list
             },

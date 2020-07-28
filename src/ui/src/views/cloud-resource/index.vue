@@ -208,18 +208,20 @@
             },
             async getData () {
                 try {
+                    const params = {
+                        fields: [],
+                        condition: {},
+                        exact: false,
+                        page: {
+                            ...this.$tools.getPageParams(this.pagination),
+                            sort: this.sort
+                        }
+                    }
+                    if (this.filter) {
+                        params.condition.bk_task_name = this.filter
+                    }
                     const data = await this.$store.dispatch('cloud/resource/findTask', {
-                        params: {
-                            fields: [],
-                            condition: {
-                                bk_task_name: this.filter
-                            },
-                            exact: false,
-                            page: {
-                                ...this.$tools.getPageParams(this.pagination),
-                                sort: this.sort
-                            }
-                        },
+                        params: params,
                         config: {
                             requestId: this.request.findTask
                         }

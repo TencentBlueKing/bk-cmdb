@@ -18,6 +18,7 @@
     export default {
         name: 'cmdb-auth',
         props: {
+            ignore: Boolean,
             auth: {
                 type: [Object, Array],
                 required: true
@@ -50,13 +51,14 @@
         },
         methods: {
             setAuthProxy () {
-                if (this.useIAM && this.auth) {
+                if (this.useIAM && this.auth && !this.ignore) {
                     AuthProxy.add({
                         component: this,
                         data: this.auth
                     })
                 } else {
                     this.disabled = false
+                    this.isAuthorized = true
                     this.$emit('update-auth', true)
                 }
             },

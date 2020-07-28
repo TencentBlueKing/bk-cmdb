@@ -167,7 +167,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-auth="attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST"
+                        :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
                         :object-unique="objectUnique"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">

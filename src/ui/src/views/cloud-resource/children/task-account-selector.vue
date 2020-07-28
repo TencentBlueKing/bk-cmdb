@@ -9,8 +9,12 @@
         <bk-option v-for="account in accounts"
             :key="account.bk_account_id"
             :name="account.bk_account_name"
-            :id="account.bk_account_id">
-            <cmdb-vendor :type="account.bk_cloud_vendor">{{account.bk_account_name}}</cmdb-vendor>
+            :id="account.bk_account_id"
+            :disabled="!account.bk_can_delete_account"
+            v-bk-tooltips.top="{ disabled: account.bk_can_delete_account, content: $t('该账户已被任务使用') }">
+            <cmdb-vendor :type="account.bk_cloud_vendor">
+                {{account.bk_account_name}}
+            </cmdb-vendor>
         </bk-option>
     </bk-select>
     <span v-else>{{selectedAccount ? selectedAccount.bk_account_name : '--'}}</span>

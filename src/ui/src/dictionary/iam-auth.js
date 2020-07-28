@@ -65,6 +65,7 @@ function basicTransform (cmdbAction, meta = {}) {
     return inejctedMeta
 }
 
+// relation数组表示的是视图拓扑的定义
 export const IAM_ACTIONS = {
     // 模型分组
     C_MODEL_GROUP: {
@@ -103,7 +104,7 @@ export const IAM_ACTIONS = {
 
     // 模型
     C_MODEL: {
-        id: 'create_model',
+        id: 'create_sys_model',
         name: ['模型创建', 'Create Model'],
         cmdb_action: 'model.create',
         relation: [{
@@ -123,7 +124,7 @@ export const IAM_ACTIONS = {
         }
     },
     U_MODEL: {
-        id: 'edit_model',
+        id: 'edit_sys_model',
         name: ['模型编辑', 'Update Model'],
         cmdb_action: 'model.update',
         relation: [{
@@ -137,7 +138,7 @@ export const IAM_ACTIONS = {
         }
     },
     D_MODEL: {
-        id: 'delete_model',
+        id: 'delete_sys_model',
         name: ['模型删除', 'Delete Model'],
         cmdb_action: 'model.delete',
         relation: [{
@@ -153,7 +154,7 @@ export const IAM_ACTIONS = {
 
     // 实例
     C_INST: {
-        id: 'create_instance',
+        id: 'create_sys_instance',
         name: ['实例创建', 'Create Instance'],
         cmdb_action: 'modelInstance.create',
         relation: [{
@@ -173,7 +174,7 @@ export const IAM_ACTIONS = {
         }
     },
     U_INST: {
-        id: 'edit_instance',
+        id: 'edit_sys_instance',
         name: ['实例编辑', 'Update Instance'],
         cmdb_action: 'modelInstance.update',
         relation: [{
@@ -196,7 +197,7 @@ export const IAM_ACTIONS = {
         }
     },
     D_INST: {
-        id: 'delete_instance',
+        id: 'delete_sys_instance',
         name: ['实例删除', 'Delete Instance'],
         cmdb_action: 'modelInstance.delete',
         relation: [{
@@ -219,7 +220,7 @@ export const IAM_ACTIONS = {
         }
     },
     R_INST: {
-        id: 'find_instance',
+        id: 'find_sys_instance',
         name: ['实例查询', 'Search Instance'],
         cmdb_action: 'modelInstance.findMany',
         relation: [{
@@ -269,7 +270,7 @@ export const IAM_ACTIONS = {
             const [bizId, customQueryId] = relationIds
             return basicTransform(cmdbAction, {
                 bk_biz_id: bizId,
-                resource_id: customQueryId
+                resource_id_ex: customQueryId // resource_id需要int，用resource_id_ex传string
             })
         }
     },
@@ -285,7 +286,7 @@ export const IAM_ACTIONS = {
             const [bizId, customQueryId] = relationIds
             return basicTransform(cmdbAction, {
                 bk_biz_id: bizId,
-                resource_id: customQueryId
+                resource_id_ex: customQueryId // resource_id需要int，用resource_id_ex传string
             })
         }
     },
@@ -301,7 +302,7 @@ export const IAM_ACTIONS = {
             const [bizId, customQueryId] = relationIds
             return basicTransform(cmdbAction, {
                 bk_biz_id: bizId,
-                resource_id: customQueryId
+                resource_id_ex: customQueryId // resource_id需要int，用resource_id_ex传string
             })
         }
     },
@@ -381,12 +382,11 @@ export const IAM_ACTIONS = {
             instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds) => {
-            const [hostRelationIds, directoryRelationIds] = relationIds
-            const [bizId] = hostRelationIds
+            const [bizId] = relationIds
             const hostVerifyMeta = basicTransform(cmdbAction, {
                 bk_biz_id: bizId
             })
-            const directoryVerifyMeta = IAM_ACTIONS.C_RESOURCE_HOST.transform(IAM_ACTIONS.C_RESOURCE_HOST.cmdb_action, directoryRelationIds)
+            const directoryVerifyMeta = IAM_ACTIONS.C_RESOURCE_HOST.transform(IAM_ACTIONS.C_RESOURCE_HOST.cmdb_action, [1]) // 主机池空闲机ID为1，交互待调整
             return [hostVerifyMeta, directoryVerifyMeta]
         }
     },
@@ -400,9 +400,9 @@ export const IAM_ACTIONS = {
             view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
             instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
         }],
-        transform: (cmdbAction, relationIds) => {
+        transform: (cmdbAction, relationIds = []) => {
             const verifyMeta = basicTransform(cmdbAction, {})
-            const [directoryId] = relationIds
+            const [directoryId = 1] = relationIds
             if (directoryId) {
                 verifyMeta.parent_layers = [{
                     resource_type: 'resourcePoolDirectory',
