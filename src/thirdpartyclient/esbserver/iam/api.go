@@ -54,3 +54,38 @@ func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metada
 
 	return resp.Data.Url, nil
 }
+
+// register iam resource instance with creator, returns related actions with policy id that the creator gained
+func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
+	[]metadata.IamCreatorActionPolicy, error) {
+
+	resp := new(struct {
+		metadata.EsbBaseResponse `json:",inline"`
+		Data                     []metadata.IamCreatorActionPolicy `json:"data"`
+	})
+	url := "/v2/iam/authorization/resource_creator_action/"
+	type esbParams struct {
+		*esbutil.EsbCommParams
+		metadata.IamInstanceWithCreator `json:",inline"`
+	}
+	params := &esbParams{
+		EsbCommParams:          esbutil.GetEsbRequestParams(i.config.GetConfig(), header),
+		IamInstanceWithCreator: instance,
+	}
+
+	err := i.client.Post().
+		SubResourcef(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(params).
+		Do().
+		Into(&resp)
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

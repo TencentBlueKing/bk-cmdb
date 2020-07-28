@@ -22,6 +22,8 @@ import (
 
 type IamClientInterface interface {
 	GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error)
+	RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
+		[]metadata.IamCreatorActionPolicy, error)
 }
 
 func NewIamClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) IamClientInterface {

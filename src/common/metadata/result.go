@@ -83,7 +83,29 @@ type IamResourceAttribute struct {
 }
 
 type IamResourceAttributeValue struct {
-	ID   string `json:"id"`
+	ID string `json:"id"`
+}
+
+type IamInstanceWithCreator struct {
+	System    string                `json:"system"`
+	Type      string                `json:"type"`
+	ID        string                `json:"id"`
+	Name      string                `json:"name"`
+	Creator   string                `json:"creator"`
+	Ancestors []IamInstanceAncestor `json:"ancestors,omitempty"`
+}
+
+type IamInstanceAncestor struct {
+	System string `json:"system"`
+	Type   string `json:"type"`
+	ID     string `json:"id"`
+}
+
+type IamCreatorActionPolicy struct {
+	Action struct {
+		ID string `json:"id"`
+	} `json:"action"`
+	PolicyID int64 `json:"policy_id"`
 }
 
 // Permission  describes all the authorities that a user
