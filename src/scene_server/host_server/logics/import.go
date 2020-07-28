@@ -19,8 +19,10 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -251,9 +253,9 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 		}
 		host[common.BKCloudIDField] = cloudIDVal
 
-		hostID, err := instance.addHostInstance(cloudIDVal, int64(index), bizID, []int64{hostList.Directory}, 
-		toInternalModule, 
-		host)
+		hostID, err := instance.addHostInstance(cloudIDVal, int64(index), bizID, []int64{hostList.Directory},
+			toInternalModule,
+			host)
 		if err != nil {
 			res.Error = append(res.Error, metadata.AddOneHostToResourcePoolResult{
 				Index:    index,
@@ -400,7 +402,6 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	return nil
 }
 
-
 // addHostInstance  add host
 // cloud id：host belong cloud area id
 // index: index number
@@ -479,6 +480,21 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 			return 0, h.ccErr.New(int(hResult.Data[0].Code), hResult.Data[0].Message)
 		}
 		return 0, hResult.CCError()
+	}
+
+	// register host resource creator action to iam
+	if auth.EnableAuthorize() {
+		iamInstance := metadata.IamInstanceWithCreator{
+			Type:    string(iam.Host),
+			ID:      strconv.FormatInt(hostID, 10),
+			Name:    ip,
+			Creator: util.GetUser(h.pheader),
+		}
+		_, err = h.CoreAPI.AuthServer().RegisterResourceCreatorAction(h.ctx, h.pheader, iamInstance)
+		if err != nil {
+			blog.Errorf("register created host to iam failed, err: %s, rid: %s", err, h.rid)
+			return 0, err
+		}
 	}
 
 	return hostID, nil

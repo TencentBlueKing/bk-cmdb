@@ -17,8 +17,10 @@ import (
 	"reflect"
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -124,6 +126,22 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		blog.ErrorJSON("CreateResourceDirectory success, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
 		ctx.RespWithError(ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed), auditResult.Code, "CreateResourceDirectory success, but add host audit log failed")
 		return
+	}
+
+	// register resource directory resource creator action to iam
+	if auth.EnableAuthorize() {
+		iamInstance := metadata.IamInstanceWithCreator{
+			Type:    string(iam.SysResourcePoolDirectory),
+			ID:      strconv.FormatUint(rsp.Data.Created.ID, 10),
+			Name:    util.GetStrByInterface(readInstanceResult.Data.Info[0][common.BKModuleNameField]),
+			Creator: ctx.Kit.User,
+		}
+		_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+		if err != nil {
+			blog.Errorf("register created resource directory to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
 	}
 
 	ctx.RespEntity(rsp.Data)

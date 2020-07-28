@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -134,6 +135,21 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 		if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
 			blog.Errorf("CreateAccount failed, SaveAuditLog err:%s, rid:%s", err, ctx.Kit.Rid)
 			return err
+		}
+
+		// register cloud account resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysCloudAccount),
+				ID:      strconv.FormatInt(res.AccountID, 10),
+				Name:    res.AccountName,
+				Creator: res.Creator,
+			}
+			_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created cloud account to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 
 		return nil

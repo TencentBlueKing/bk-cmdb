@@ -14,9 +14,12 @@ package service
 
 import (
 	"reflect"
+	"strconv"
 
+	"configcenter/src/ac/iam"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -182,6 +185,23 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 			return err
 		}
 
+		// register cloud area resource creator action to iam
+		for _, created := range res.Data.Created {
+			if auth.EnableAuthorize() {
+				iamInstance := metadata.IamInstanceWithCreator{
+					Type:    string(iam.SysCloudArea),
+					ID:      strconv.FormatUint(created.ID, 10),
+					Name:    util.GetStrByInterface(input.Data[created.OriginIndex][common.BKCloudNameField]),
+					Creator: user,
+				}
+				_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+				if err != nil {
+					blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+					return err
+				}
+			}
+		}
+
 		return nil
 	})
 
@@ -246,6 +266,21 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditCreate); err != nil {
 			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
+		}
+
+		// register cloud area resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysCloudArea),
+				ID:      strconv.FormatInt(platID, 10),
+				Name:    util.GetStrByInterface(input[common.BKCloudNameField]),
+				Creator: user,
+			}
+			_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 
 		return nil

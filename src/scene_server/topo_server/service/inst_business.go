@@ -19,8 +19,10 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -57,6 +59,31 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
+		}
+
+		// register business resource creator action to iam
+		if auth.EnableAuthorize() {
+			var bizID int64
+			if bizID, err = business.GetBizID(); err != nil {
+				blog.ErrorJSON("get biz id failed, err: %s, biz: %s, rid: %s", err, business, ctx.Kit.Rid)
+				return err
+			}
+			var bizName string
+			if bizName, err = business.GetInstName(); err != nil {
+				blog.ErrorJSON("get biz name failed, err: %s, biz: %s, rid: %s", err, business, ctx.Kit.Rid)
+				return err
+			}
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.Business),
+				ID:      strconv.FormatInt(bizID, 10),
+				Name:    bizName,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created business to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})

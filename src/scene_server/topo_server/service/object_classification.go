@@ -15,6 +15,8 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac/iam"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -37,6 +39,21 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 		cls, err = s.Core.ClassificationOperation().CreateClassification(ctx.Kit, data)
 		if nil != err {
 			return err
+		}
+
+		// register object classification resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysModelGroup),
+				ID:      strconv.FormatInt(cls.Classify().ID, 10),
+				Name:    cls.Classify().ClassificationName,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created object classification to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})
