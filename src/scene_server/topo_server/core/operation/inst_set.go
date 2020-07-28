@@ -87,6 +87,12 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
+	defaultVal, err := data.Int64(common.BKDefaultField)
+	if err != nil {
+		blog.Errorf("parse default field into int failed, data: %+v, rid: %s", data, kit.Rid)
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
+		return nil, err
+	}
 
 	setTemplate := metadata.SetTemplate{}
 	// validate foreign key
@@ -108,7 +114,7 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	}
 
 	// if need create set using set template
-	if setTemplate.ID == common.SetTemplateIDNotSet && !version.CanCreateSetModuleWithoutTemplate {
+	if setTemplate.ID == common.SetTemplateIDNotSet && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "set_template_id can not be 0")
 	}
 

@@ -127,6 +127,12 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
+	defaultVal, err := data.Int64(common.BKDefaultField)
+	if err != nil {
+		blog.Errorf("parse default field into int failed, data: %+v, rid: %s", data, kit.Rid)
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
+		return nil, err
+	}
 
 	if err := m.validBizSetID(kit, bizID, setID); err != nil {
 		return nil, err
@@ -150,7 +156,6 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	}
 
 	var serviceTemplateID int64
-	var err error
 	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
 	if serviceTemplateFieldExist == true {
 		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
@@ -160,7 +165,7 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	}
 
 	// if need create module using service template
-	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate {
+	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
 	}
 
