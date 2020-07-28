@@ -50,7 +50,6 @@ type HostServerClientInterface interface {
 	MoveHostToResourcePool(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
 
 	AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
-	AssignHostToAppModule(ctx context.Context, h http.Header, dat *metadata.HostToAppModule) (resp *metadata.Response, err error)
 	SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetUserCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)

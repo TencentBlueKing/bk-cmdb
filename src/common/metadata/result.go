@@ -66,27 +66,24 @@ type IamAction struct {
 }
 
 type IamResourceType struct {
-	SystemID   string                 `json:"system_id"`
-	Type       string                 `json:"type"`
-	Instances  []IamResourceInstance  `json:"instances"`
-	Attributes []IamResourceAttribute `json:"attributes"`
+	SystemID   string                  `json:"system_id"`
+	Type       string                  `json:"type"`
+	Instances  [][]IamResourceInstance `json:"instances,omitempty"`
+	Attributes []IamResourceAttribute  `json:"attributes,omitempty"`
 }
 
 type IamResourceInstance struct {
 	Type string `json:"type"`
 	ID   string `json:"id"`
-	Name string `json:"name"`
 }
 
 type IamResourceAttribute struct {
 	ID     string                      `json:"id"`
-	Name   string                      `json:"name"`
 	Values []IamResourceAttributeValue `json:"values"`
 }
 
 type IamResourceAttributeValue struct {
 	ID   string `json:"id"`
-	Name string `json:"name"`
 }
 
 // Permission  describes all the authorities that a user

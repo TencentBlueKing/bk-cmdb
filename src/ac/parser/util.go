@@ -372,3 +372,42 @@ type hostPool struct {
 	Business int64   `json:"bk_biz_id"`
 	HostID   []int64 `json:"bk_host_id"`
 }
+
+var resourcePoolDefaultDirID int64
+
+func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
+	if id := atomic.LoadInt64(&resourcePoolDefaultDirID); id != 0 {
+		return id, nil
+	}
+
+	opt := &metadata.QueryCondition{
+		Fields: []string{common.BKModuleIDField},
+		Page:   metadata.BasePage{},
+		Condition: mapstr.MapStr{
+			common.BkSupplierAccount: ps.RequestCtx.Header.Get(common.BKHTTPOwnerID),
+			common.BKDefaultField:                common.DefaultResModuleFlag,
+		},
+	}
+
+	result, err := ps.engine.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), ps.RequestCtx.Header,
+		common.BKInnerObjIDModule, opt)
+	if err != nil {
+		return 0, err
+	}
+
+	if !result.Result {
+		return 0, result.CCError()
+	}
+
+	if len(result.Data.Info) == 0 {
+		return 0, errors.New(common.CCErrCommParamsIsInvalid, common.BKModuleIDField)
+	}
+
+	id, err := util.GetInt64ByInterface(result.Data.Info[0][common.BKModuleIDField])
+	if err != nil {
+		return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource pool default directory id")
+	}
+
+	atomic.StoreInt64(&resourcePoolDefaultDirID, id)
+	return id, nil
+}

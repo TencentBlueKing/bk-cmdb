@@ -72,19 +72,24 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 		}
 	}
 
-	ids := make([]int64, len(filter.IDs))
-	for idx, idStr := range filter.IDs {
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			blog.Errorf("id %s parse int failed, error: %s, rid: %s, skip it", idStr, err.Error(), kit.Rid)
-			continue
+	cond := make(map[string]interface{})
+	if isResourceIDStringType(req.Type) {
+		cond[idField] = map[string]interface{}{
+			common.BKDBIN: filter.IDs,
 		}
-		ids[idx] = id
-	}
-	cond := map[string]interface{}{
-		idField: map[string]interface{}{
+	} else {
+		ids := make([]int64, len(filter.IDs))
+		for idx, idStr := range filter.IDs {
+			id, err := strconv.ParseInt(idStr, 10, 64)
+			if err != nil {
+				blog.Errorf("id %s parse int failed, error: %s, rid: %s, skip it", idStr, err.Error(), kit.Rid)
+				continue
+			}
+			ids[idx] = id
+		}
+		cond[idField] = map[string]interface{}{
 			common.BKDBIN: ids,
-		},
+		}
 	}
 
 	param := metadata.PullResourceParam{

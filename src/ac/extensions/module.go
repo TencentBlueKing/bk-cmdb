@@ -111,15 +111,8 @@ func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 	permission := &metadata.IamPermission{
 		SystemID: iam.SystemIDCMDB,
 		Actions: []metadata.IamAction{{
-			ID: string(iam.EditBusinessLayer),
-			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID: iam.SystemIDCMDB,
-				Type:     string(iam.SysSystemBase),
-				Instances: []metadata.IamResourceInstance{{
-					Type: string(iam.SysSystemBase),
-					Name: iam.ResourceTypeIDMap[iam.SysSystemBase],
-				}},
-			}},
+			ID:                   string(iam.EditBusinessLayer),
+			RelatedResourceTypes: nil,
 		}},
 	}
 	resp := metadata.NewNoPermissionResp(permission)

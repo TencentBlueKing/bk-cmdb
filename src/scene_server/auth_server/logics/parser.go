@@ -285,6 +285,12 @@ func parseIamPathToMongo(iamPath string, op string) (map[string]interface{}, err
 		}
 		resourceType := iam.TypeID(typeAndID[0])
 		idField := GetResourceIDField(resourceType)
+		if isResourceIDStringType(resourceType) {
+			cond[idField] = map[string]interface{}{
+				op: idStr,
+			}
+			continue
+		}
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("id %s parse int failed, error: %s", idStr, err.Error())
@@ -358,7 +364,7 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 		return common.BKCloudAccountID
 	case iam.SysCloudResourceTask:
 		return common.BKCloudTaskID
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKAppIDField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
@@ -394,7 +400,7 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 		return common.BKCloudAccountName
 	case iam.SysCloudResourceTask:
 		return common.BKCloudSyncTaskName
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKAppNameField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName

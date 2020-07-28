@@ -1050,6 +1050,9 @@ var HostApplyFieldMap = map[string]bool{
 	common.CreateTimeField:              false,
 	common.LastTimeField:                false,
 	common.BKImportFrom:                 false,
+	common.BKCloudInstIDField:           false,
+	common.BKCloudHostStatusField:       false,
+	common.BKCloudVendor:                false,
 }
 
 // CheckAllowHostApplyOnField 检查字段是否能用于主机属性自动应用

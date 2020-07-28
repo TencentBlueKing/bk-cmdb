@@ -102,14 +102,36 @@ func genBusinessHostActions() []ResourceAction {
 		Version:              1,
 	})
 
-	transferToResourcePoolRelatedResource := append(relatedResource, resourcePoolDirResource)
 	// business host transfer to resource pool actions
 	actions = append(actions, ResourceAction{
 		ID:                   BusinessHostTransferToResourcePool,
 		Name:                 "主机归还主机池",
 		NameEn:               "Return Hosts To Pool",
 		Type:                 Edit,
-		RelatedResourceTypes: transferToResourcePoolRelatedResource,
+		RelatedResourceTypes: []RelateResourceType{businessResource, resourcePoolDirResource},
+		RelatedActions:       []ActionID{ViewBusinessResource},
+		Version:              1,
+	})
+
+	businessHostResource := RelateResourceType{
+		SystemID:    SystemIDCMDB,
+		ID:          BusinessForHostTrans,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       BusinessHostTransferSelection,
+		}},
+	}
+
+	// business host transfer to another business actions
+	actions = append(actions, ResourceAction{
+		ID:                   HostTransferAcrossBusiness,
+		Name:                 "主机转移到其他业务",
+		NameEn:               "Assigned Host To Other Business",
+		Type:                 Edit,
+		RelatedResourceTypes: []RelateResourceType{businessHostResource, businessResource},
 		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
@@ -585,7 +607,7 @@ func genBusinessActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:     ViewBusinessResource,
-		Name:   "业务资源查看",
+		Name:   "业务访问",
 		NameEn: "View Business Resource",
 		Type:   View,
 		// TODO add business collection resource

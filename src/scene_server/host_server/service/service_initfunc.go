@@ -8,7 +8,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func(s *Service) initService(web *restful.WebService) {
+func (s *Service) initService(web *restful.WebService) {
 
 	s.initCloudarea(web)
 	s.initFavourite(web)
@@ -97,7 +97,8 @@ func (s *Service) initHost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search/asstdetail", Handler: s.SearchHostWithAsstDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/batch", Handler: s.UpdateHostBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/batch", Handler: s.UpdateHostPropertyBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/sync/new/host", Handler: s.NewHostSyncAppTopo})
+	// TODO: Deprecated, delete this api, used in framework
+	// utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/sync/new/host", Handler: s.NewHostSyncAppTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle/set", Handler: s.MoveSetHost2IdleModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/clone", Handler: s.CloneHostProperty})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/update", Handler: s.UpdateImportHosts})
@@ -155,13 +156,12 @@ func (s *Service) initModule(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/recycle", Handler: s.MoveHost2RecycleModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/resource", Handler: s.MoveHostToResourcePool})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/resource/idle", Handler: s.AssignHostToApp})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/add/module", Handler: s.AssignHostToAppModule})
 	// get host module relation in app
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/read", Handler: s.GetHostModuleRelation})
 	// transfer host to other business
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/across/biz", Handler: s.TransferHostAcrossBusiness})
-	//  delete host from business, used for framework
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/module/biz/delete", Handler: s.DeleteHostFromBusiness})
+	// TODO: Deprecated, delete this api. delete host from business, used for framework
+	//utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/module/biz/delete", Handler: s.DeleteHostFromBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/topo/relation/read", Handler: s.GetAppHostTopoRelation})
 	// 主机在资源池目录之间转移
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer/resource/directory", Handler: s.TransferHostResourceDirectory})
@@ -230,4 +230,3 @@ func (s *Service) initUsercustom(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 
 }
-

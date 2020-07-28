@@ -44,7 +44,7 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameCloudAccount
 	case iam.SysCloudResourceTask:
 		return common.BKTableNameCloudSyncTask
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKTableNameBaseApp
 	case iam.BizCustomQuery:
 		return common.BKTableNameUserAPI
@@ -65,6 +65,14 @@ func getResourceTableName(resourceType iam.TypeID) string {
 	}
 }
 
+func isResourceIDStringType(resourceType iam.TypeID) bool {
+	switch resourceType {
+	case iam.BizCustomQuery:
+		return true
+	}
+	return false
+}
+
 // get model instance resource's model id
 func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 	switch resourceType {
@@ -72,7 +80,7 @@ func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 		return common.BKInnerObjIDHost
 	case iam.SysCloudArea:
 		return common.BKInnerObjIDPlat
-	case iam.Business:
+	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKInnerObjIDApp
 	//case iam.Set:
 	//	return common.BKInnerObjIDSet
@@ -83,6 +91,8 @@ func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 	}
 }
 
+var defaultBizID int64
+
 // generate condition for resource type that have special constraints
 func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.TypeID, condition map[string]interface{}) (map[string]interface{}, error) {
 	if condition == nil {
@@ -90,7 +100,7 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 	}
 
 	// not include default business
-	if resourceType == iam.Business {
+	if resourceType == iam.Business || resourceType == iam.BusinessForHostTrans {
 		condition[common.BKDefaultField] = map[string]interface{}{
 			common.BKDBNE: common.DefaultAppFlag,
 		}
@@ -136,17 +146,27 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 		return condition, nil
 	}
 
+	if resourceType == iam.SysAssociationType {
+		condition[common.BKIsPre] = map[string]interface{}{
+			common.BKDBNE: true,
+		}
+	}
+
+	if resourceType == iam.SysCloudArea {
+		condition[common.BKCloudIDField] = map[string]interface{}{
+			common.BKDBNE: 0,
+		}
+	}
+
 	if resourceType != iam.SysResourcePoolDirectory && resourceType != iam.SysHostRscPoolDirectory {
 		return condition, nil
 	}
 
-	// TODO use cache
-	// get resource pool biz id from cache TODO confirm if it need a separate key
-	var defaultBizIDVal interface{}
-	//businesses, err := cache.GetCacheItemsByKeyRegex(common.BKCacheKeyV3Prefix+common.BKInnerObjIDApp+":id:*", lgc.cache)
-	//if err != nil {
-	// get biz from db if get it from cache encounters error
-	//blog.Errorf("get business from cache failed, try to get from db, error: %s", err.Error())
+	if defaultBizID != 0 {
+		condition[common.BKAppIDField] = defaultBizID
+		return condition, nil
+	}
+
 	input := &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.BKDefaultField: common.DefaultAppFlag},
 		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKAppIDField},
@@ -165,10 +185,9 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 		blog.Errorf("find no resource pool biz, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	defaultBizIDVal = bizResp.Data.Info[0][common.BKAppIDField]
-	defaultBizID, err := util.GetInt64ByInterface(defaultBizIDVal)
+	defaultBizID, err = util.GetInt64ByInterface(bizResp.Data.Info[0][common.BKAppIDField])
 	if nil != err {
-		blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", defaultBizIDVal, err.Error(), kit.Rid)
+		blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", bizResp.Data.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 	}
 	condition[common.BKAppIDField] = defaultBizID

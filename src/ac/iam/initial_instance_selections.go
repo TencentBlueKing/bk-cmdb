@@ -29,6 +29,15 @@ func GenerateInstanceSelections() []InstanceSelection {
 			ResourceTypeChain: []ResourceChain{businessChain},
 		},
 		{
+			ID:     BusinessHostTransferSelection,
+			Name:   "业务主机选择",
+			NameEn: "Business",
+			ResourceTypeChain: []ResourceChain{{
+				SystemID: SystemIDCMDB,
+				ID:       BusinessForHostTrans,
+			}},
+		},
+		{
 			ID:     SysResourcePoolDirectorySelection,
 			Name:   "主机池目录列表",
 			NameEn: "Host Pool Directory List",

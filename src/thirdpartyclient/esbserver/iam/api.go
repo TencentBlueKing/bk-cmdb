@@ -31,11 +31,11 @@ func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metada
 	url := "/v2/iam/application/"
 	type esbParams struct {
 		*esbutil.EsbCommParams
-		Permission metadata.IamPermission `json:"permission"`
+		metadata.IamPermission `json:",inline"`
 	}
 	params := &esbParams{
 		EsbCommParams: esbutil.GetEsbRequestParams(i.config.GetConfig(), header),
-		Permission:    p,
+		IamPermission: p,
 	}
 
 	err := i.client.Post().

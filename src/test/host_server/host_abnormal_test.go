@@ -1432,7 +1432,7 @@ var _ = Describe("host abnormal test", func() {
 		})
 	})
 
-	Describe("sync host test", func() {
+	PDescribe("sync host test", func() {
 
 		// 清空数据
 		BeforeEach(func() {
@@ -1740,7 +1740,9 @@ var _ = Describe("host abnormal test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
+	})
 
+	Describe("clone host host", func() {
 		It("clone host less biz", func() {
 			input := &metadata.CloneHostPropertyParams{
 				OrgIP:   "127.0.1.1",

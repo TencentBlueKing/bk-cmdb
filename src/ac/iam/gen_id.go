@@ -22,6 +22,10 @@ import (
 )
 
 func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
+	// skip actions do not need to relate to resources
+	if act == Skip {
+		return genSkipResource(act, rscType, a)
+	}
 
 	switch a.Basic.Type {
 	case meta.Business:
@@ -87,11 +91,11 @@ func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 	case meta.HostInstance:
 		return genHostInstanceResource(act, rscType, a)
 
-		// case meta.HostFavorite:
-		// 	return genHostFavoriteResource(act, rscType, a)
+	// case meta.HostFavorite:
+	// 	return genHostFavoriteResource(act, rscType, a)
 
-		// case meta.SystemBase:
-		// 	return new(types.Resource), nil
+	case meta.SystemBase:
+		return make([]types.Resource, 0), nil
 	case meta.ProcessServiceCategory:
 		return genProcessServiceCategoryResource(act, rscType, a)
 	}
@@ -447,7 +451,7 @@ func genAssociationTypeResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{
 		System:    SystemIDCMDB,
-		Type:      types.ResourceType(EditSysModel),
+		Type:      types.ResourceType(SysModel),
 		Attribute: nil,
 	}
 
@@ -552,6 +556,62 @@ func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute
 		return resources, nil
 	}
 
+	// transfer host from business to resource pool
+	if act == BusinessHostTransferToResourcePool {
+		if len(a.Layers) != 2 {
+			return nil, NotEnoughLayer
+		}
+
+		resources := make([]types.Resource, 2)
+		resources[0] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(Business),
+			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+		}
+
+		resources[1] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(SysResourcePoolDirectory),
+			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+		}
+
+		return resources, nil
+	}
+
+	// transfer host from one business to another
+	if act == HostTransferAcrossBusiness {
+		if len(a.Layers) != 2 {
+			return nil, NotEnoughLayer
+		}
+
+		resources := make([]types.Resource, 2)
+		resources[0] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(BusinessForHostTrans),
+			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+		}
+
+		resources[1] = types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(Business),
+			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+		}
+
+		return resources, nil
+	}
+
+	// import host
+	if act == CreateResourcePoolHost {
+		r := types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(SysResourcePoolDirectory),
+		}
+		if len(a.Layers) > 0 {
+			r.ID = strconv.FormatInt(a.Layers[0].InstanceID, 10)
+		}
+		return []types.Resource{r}, nil
+	}
+
 	// edit or delete resource pool host instances
 	if act == EditResourcePoolHost || act == DeleteResourcePoolHost {
 		r := types.Resource{
@@ -592,7 +652,7 @@ func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute
 func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{
 		System:    SystemIDCMDB,
-		Type:      types.ResourceType(EditBusinessCustomField),
+		Type:      types.ResourceType(Business),
 		Attribute: nil,
 	}
 

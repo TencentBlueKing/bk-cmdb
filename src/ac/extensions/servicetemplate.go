@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -91,25 +90,6 @@ func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header 
 		return fmt.Errorf("get service templates by id failed, err: %+v", err)
 	}
 	return am.AuthorizeByServiceTemplates(ctx, header, action, templates...)
-}
-
-func (am *AuthManager) GenServiceTemplateNoPermissionResp() *metadata.BaseResp {
-	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
-		Actions: []metadata.IamAction{{
-			ID: string(iam.EditBusinessLayer),
-			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID: iam.SystemIDCMDB,
-				Type:     string(iam.SysSystemBase),
-				Instances: []metadata.IamResourceInstance{{
-					Type: string(iam.SysSystemBase),
-					Name: iam.ResourceTypeIDMap[iam.SysSystemBase],
-				}},
-			}},
-		}},
-	}
-	resp := metadata.NewNoPermissionResp(permission)
-	return &resp
 }
 
 func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header http.Header, action meta.Action, templates ...metadata.ServiceTemplate) error {
