@@ -153,12 +153,10 @@ func (am *AuthManager) GenAuthorizeAuditReadNoPermissionsResponse(ctx context.Co
 		instances = append(instances, []metadata.IamResourceInstance{{
 			Type: string(iam.Business),
 			ID:   strconv.FormatInt(businessID, 10),
-			Name: businesses[0].BKAppNameField,
 		}})
 	}
 	instances = append(instances, []metadata.IamResourceInstance{{
 		Type: string(iam.SysAuditLog),
-		Name: iam.ResourceTypeIDMap[iam.SysAuditLog],
 	}})
 	permission := &metadata.IamPermission{
 		SystemID: iam.SystemIDCMDB,

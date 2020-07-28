@@ -136,10 +136,8 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 				Instances: [][]metadata.IamResourceInstance{{{
 					Type: string(iam.Business),
 					ID:   strconv.FormatInt(businessID, 10),
-					Name: businesses[0].BKAppNameField,
 				}, {
 					Type: string(iam.SysAuditLog),
-					Name: iam.ResourceTypeIDMap[iam.SysAuditLog],
 				}}},
 			}},
 		}},

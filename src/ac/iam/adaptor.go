@@ -486,23 +486,22 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 		// generate iam resource instances by its paths and itself
 		for _, res := range resource {
 			instance := make([]metadata.IamResourceInstance, 0)
-			// TODO confirm whether parent layers should be used
-			//if res.Attribute != nil {
-			//	iamPath, ok := res.Attribute[types.IamPathKey].([]string)
-			//	if !ok {
-			//		return nil, fmt.Errorf("iam path(%v) is not string array type", res.Attribute[types.IamPathKey])
-			//	}
-			//	ancestors, err := parseIamPathToAncestors(iamPath)
-			//	if err != nil {
-			//		return nil, err
-			//	}
-			//	instance = append(instance, ancestors...)
-			//}
+			if res.Attribute != nil {
+				iamPath, ok := res.Attribute[types.IamPathKey].([]string)
+				if !ok {
+					return nil, fmt.Errorf("iam path(%v) is not string array type", res.Attribute[types.IamPathKey])
+				}
+				ancestors, err := parseIamPathToAncestors(iamPath)
+				if err != nil {
+					return nil, err
+				}
+				instance = append(instance, ancestors...)
+			}
 			instance = append(instance, metadata.IamResourceInstance{
 				Type: string(res.Type),
 				ID:   res.ID,
 			})
-			permissionMap[string(actionID)][string(*rscType)] = append(permissionMap[string(actionID)][string(*rscType)], instance)
+			permissionMap[string(actionID)][string(res.Type)] = append(permissionMap[string(actionID)][string(res.Type)], instance)
 		}
 	}
 
