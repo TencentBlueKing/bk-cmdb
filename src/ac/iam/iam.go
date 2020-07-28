@@ -235,6 +235,20 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		return err
 	}
 
+	// register or update resource creator actions
+	resourceCreatorActions := GenerateResourceCreatorActions()
+	if len(systemResp.Data.ResourceCreatorActions.Config) == 0 {
+		if err = i.client.RegisterResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
+			blog.ErrorJSON("register resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
+			return err
+		}
+		return nil
+	}
+	if err = i.client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
+		blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
+		return err
+	}
+
 	return nil
 }
 

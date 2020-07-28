@@ -65,7 +65,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
-		WithParam("fields", "base_info,resource_types,actions,action_groups,instance_selections").
+		WithParam("fields", "base_info,resource_types,actions,action_groups,instance_selections,resource_creator_actions").
 		Body(nil).Do()
 	err := result.Into(resp)
 	if err != nil {
@@ -376,6 +376,52 @@ func (c *iamClient) DeleteInstanceSelection(ctx context.Context, instanceSelecti
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("delete instance selections %v failed, code: %d, msg:%s", instanceSelectionIDs, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error {
+
+	resp := new(BaseResponse)
+	result := c.client.Post().
+		SubResourcef("/api/v1/model/systems/%s/configs/resource_creator_actions", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(resourceCreatorActions).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("register resource creator actions %v failed, code: %d, msg:%s", resourceCreatorActions, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error {
+
+	resp := new(BaseResponse)
+	result := c.client.Put().
+		SubResourcef("/api/v1/model/systems/%s/configs/resource_creator_actions", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(resourceCreatorActions).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("update resource creator actions %v failed, code: %d, msg:%s", resourceCreatorActions, resp.Code, resp.Message),
 		}
 	}
 
