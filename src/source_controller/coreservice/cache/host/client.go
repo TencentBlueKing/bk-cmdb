@@ -80,18 +80,18 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 // if a host is not exist in cache and still can not find in mongodb,
 // then it will not be return. so the returned array may not equal to
 // the request host ids length and the sequence is also may not same.
-func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListHostWithIDOption) ([]string, error) {
+func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
-	if len(opt.HostIDs) > 500 {
-		return nil, errors.New("host id length is overflow")
+	if len(opt.IDs) > 500 {
+		return nil, errors.New("host id length is over limit")
 	}
 
-	if len(opt.HostIDs) == 0 {
+	if len(opt.IDs) == 0 {
 		return nil, errors.New("host id array is empty")
 	}
 
-	keys := make([]string, len(opt.HostIDs))
-	for i, id := range opt.HostIDs {
+	keys := make([]string, len(opt.IDs))
+	for i, id := range opt.IDs {
 		keys[i] = hostKey.HostDetailKey(id)
 	}
 
@@ -125,7 +125,7 @@ func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListHost
 		// can not found in the cache, need refresh the cache
 		ids := make([]int64, len(needRefreshIdx))
 		for i, idx := range needRefreshIdx {
-			ids[i] = opt.HostIDs[idx]
+			ids[i] = opt.IDs[idx]
 		}
 
 		toAdd, err := listHostDetailsFromMongoWithHostID(c.db, ids)
@@ -165,4 +165,87 @@ func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHos
 	} else {
 		return *json.CutJsonDataWithFields(detail, opt.Fields), nil
 	}
+}
+
+// ListHostIDsWithPage get host id list sorted with host id with forward sort.
+// this id list has a ttl life cycle, and triggered with update with user's request.
+func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWithPage) (int64, []string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	if len(opt.HostIDs) != 0 {
+		// find with host id directly.
+		total, err := c.countHost(ctx, nil)
+		if err != nil {
+			blog.Errorf("list host with page, but count failed, err: %v, rid: %v", err, rid)
+			return 0, nil, err
+		}
+
+		options := metadata.ListWithIDOption{
+			IDs:    opt.HostIDs,
+			Fields: opt.Fields,
+		}
+		list, err := c.ListHostWithHostIDs(ctx, &options)
+
+		return int64(total), list, err
+	}
+
+	// validate the page limit
+	if opt.Page.Limit > common.BKMaxPageSize {
+		return 0, nil, errors.New("page size is over limit")
+	}
+
+	cnt, idList, details, err := c.getPagedHostDetailList(opt.Page)
+	if err != nil {
+		if err != keyNotExistError {
+			return 0, nil, err
+		}
+
+		// force refresh the host id list
+		c.forceRefreshHostIDList(ctx)
+
+		// zset key is not exist, then we get it from mongodb.
+		return c.getHostsWithPage(ctx, opt)
+	}
+
+	// try to refresh host id list in cache.
+	c.tryRefreshHostIDList(ctx)
+
+	// check details and find those which needs to be refreshed
+	all := make([]string, 0)
+	toRefreshIds := make([]int64, 0)
+	for idx, h := range details {
+		if len(h) == 0 {
+			toRefreshIds = append(toRefreshIds, idList[idx])
+			continue
+		}
+
+		if len(opt.Fields) != 0 {
+			// only return with user needed fields.
+			all = append(all, *json.CutJsonDataWithFields(&h, opt.Fields))
+		} else {
+			all = append(all, h)
+		}
+	}
+
+	if len(toRefreshIds) != 0 {
+
+		refresh, err := listHostDetailsFromMongoWithHostID(c.db, toRefreshIds)
+		if err != nil {
+			blog.Errorf("list host with ids, but get from db failed, host: %v, rid: %s", toRefreshIds, rid)
+			return 0, nil, err
+		}
+
+		for _, host := range refresh {
+			c.tryRefreshHostDetail(host.id, host.ip, host.cloudID, []byte(host.detail))
+
+			if len(opt.Fields) != 0 {
+				// only return with user needed fields.
+				all = append(all, *json.CutJsonDataWithFields(&host.detail, opt.Fields))
+			} else {
+				all = append(all, host.detail)
+			}
+		}
+	}
+
+	return cnt, all, nil
 }

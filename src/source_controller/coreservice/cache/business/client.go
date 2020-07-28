@@ -14,11 +14,14 @@ package business
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
@@ -90,6 +93,181 @@ func (c *Client) GetBusiness(bizID int64) (string, error) {
 
 	// get from db
 	return c.getBusinessFromMongo(bizID)
+}
+
+func (c *Client) ListBusiness(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	keys := make([]string, len(opt.IDs))
+	for idx, bizID := range opt.IDs {
+		keys[idx] = bizKey.detailKey(bizID)
+
+		// try to refresh cache.
+		c.tryRefreshInstanceDetail(bizID, refreshInstance{
+			mainKey:        bizKey.detailKey(bizID),
+			lockKey:        bizKey.detailLockKey(bizID),
+			expireKey:      bizKey.detailExpireKey(bizID),
+			expireDuration: bizKey.detailExpireDuration,
+			getDetail:      c.getBusinessFromMongo,
+		})
+	}
+
+	bizList, err := c.rds.MGet(keys...).Result()
+	if err != nil {
+		blog.Errorf("get business %d info from cache failed, get from db directly, err: %v, rid: %v", opt.IDs, err, rid)
+		return c.listBusinessFromMongo(ctx, opt.IDs, opt.Fields)
+	}
+
+	all := make([]string, 0)
+	toAdd := make([]int64, 0)
+	for idx, biz := range bizList {
+		if biz == nil {
+			// can not find in cache
+			toAdd = append(toAdd, opt.IDs[idx])
+			continue
+		}
+
+		detail, ok := biz.(string)
+		if !ok {
+			blog.Errorf("got invalid biz cache %v, rid: %v", biz, rid)
+			return nil, fmt.Errorf("got invalid biz cache %v", biz)
+		}
+
+		if len(opt.Fields) != 0 {
+			all = append(all, *json.CutJsonDataWithFields(&detail, opt.Fields))
+		} else {
+			all = append(all, detail)
+		}
+
+	}
+
+	if len(toAdd) != 0 {
+		details, err := c.listBusinessFromMongo(ctx, toAdd, opt.Fields)
+		if err != nil {
+			blog.Errorf("get business list from db failed, err: %v, rid: %v", err, rid)
+			return nil, err
+		}
+
+		all = append(all, details...)
+	}
+
+	return all, nil
+}
+
+func (c *Client) ListModules(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	keys := make([]string, len(opt.IDs))
+	for idx, id := range opt.IDs {
+		keys[idx] = moduleKey.detailKey(id)
+
+		// try to refresh cache.
+		c.tryRefreshInstanceDetail(id, refreshInstance{
+			mainKey:        moduleKey.detailKey(id),
+			lockKey:        moduleKey.detailLockKey(id),
+			expireKey:      moduleKey.detailExpireKey(id),
+			expireDuration: moduleKey.detailExpireDuration,
+			getDetail:      c.getModuleDetailFromMongo,
+		})
+	}
+
+	list, err := c.rds.MGet(keys...).Result()
+	if err != nil {
+		blog.Errorf("list module %d info from cache failed, get from db directly, err: %v, rid: %v", opt.IDs, err, rid)
+		return c.listModuleFromMongo(ctx, opt.IDs, opt.Fields)
+	}
+
+	all := make([]string, 0)
+	toAdd := make([]int64, 0)
+	for idx, module := range list {
+		if module == nil {
+			// can not find in cache
+			toAdd = append(toAdd, opt.IDs[idx])
+			continue
+		}
+
+		detail, ok := module.(string)
+		if !ok {
+			blog.Errorf("got invalid module cache %v, rid: %v", module, rid)
+			return nil, fmt.Errorf("got invalid module cache %v", module)
+		}
+
+		if len(opt.Fields) != 0 {
+			all = append(all, *json.CutJsonDataWithFields(&detail, opt.Fields))
+		} else {
+			all = append(all, detail)
+		}
+	}
+
+	if len(toAdd) != 0 {
+		details, err := c.listModuleFromMongo(ctx, toAdd, opt.Fields)
+		if err != nil {
+			blog.Errorf("get module list from db failed, err: %v, rid: %v", err, rid)
+			return nil, err
+		}
+
+		all = append(all, details...)
+	}
+
+	return all, nil
+}
+
+func (c *Client) ListSets(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	keys := make([]string, len(opt.IDs))
+	for idx, id := range opt.IDs {
+		keys[idx] = setKey.detailKey(id)
+
+		// try to refresh cache.
+		c.tryRefreshInstanceDetail(id, refreshInstance{
+			mainKey:        setKey.detailKey(id),
+			lockKey:        setKey.detailLockKey(id),
+			expireKey:      setKey.detailExpireKey(id),
+			expireDuration: setKey.detailExpireDuration,
+			getDetail:      c.getSetDetailFromMongo,
+		})
+	}
+
+	list, err := c.rds.MGet(keys...).Result()
+	if err != nil {
+		blog.Errorf("list set %d info from cache failed, get from db directly, err: %v, rid: %v", opt.IDs, err, rid)
+		return c.listSetFromMongo(ctx, opt.IDs, opt.Fields)
+	}
+
+	all := make([]string, 0)
+	toAdd := make([]int64, 0)
+	for idx, set := range list {
+		if set == nil {
+			// can not find in cache
+			toAdd = append(toAdd, opt.IDs[idx])
+			continue
+		}
+
+		detail, ok := set.(string)
+		if !ok {
+			blog.Errorf("got invalid set cache %v, rid: %v", set, rid)
+			return nil, fmt.Errorf("got invalid set cache %v", set)
+		}
+
+		if len(opt.Fields) != 0 {
+			all = append(all, *json.CutJsonDataWithFields(&detail, opt.Fields))
+		} else {
+			all = append(all, detail)
+		}
+	}
+
+	if len(toAdd) != 0 {
+		details, err := c.listSetFromMongo(ctx, toAdd, opt.Fields)
+		if err != nil {
+			blog.Errorf("get set list from db failed, err: %v, rid: %v", err, rid)
+			return nil, err
+		}
+
+		all = append(all, details...)
+	}
+
+	return all, nil
 }
 
 func (c *Client) GetModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {

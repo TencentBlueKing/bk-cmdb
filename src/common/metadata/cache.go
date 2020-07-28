@@ -25,9 +25,9 @@ type SearchHostWithIDOption struct {
 	Fields []string `json:"fields"`
 }
 
-type ListHostWithIDOption struct {
+type ListWithIDOption struct {
 	// length range is [1,500]
-	HostIDs []int64 `json:"bk_host_ids"`
+	IDs []int64 `json:"ids"`
 	// only return these fields in hosts.
 	Fields []string `json:"fields"`
 }
@@ -35,4 +35,16 @@ type ListHostWithIDOption struct {
 type DeleteArchive struct {
 	Oid    string      `json:"oid" bson:"oid"`
 	Detail interface{} `json:"detail" bson:"detail"`
+}
+
+// list hosts with page in cache, which page info is in redis cache.
+// store in a zset.
+type ListHostWithPage struct {
+	// length range is [1,1000]
+	HostIDs []int64 `json:"bk_host_ids"`
+	// only return these fields in hosts.
+	Fields []string `json:"fields"`
+	// sort field is not used.
+	// max page limit is 1000
+	Page BasePage `json:"page"`
 }
