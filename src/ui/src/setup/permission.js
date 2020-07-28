@@ -42,7 +42,7 @@ export const translateAuth = auth => {
                 id: definition.id,
                 related_resource_types: []
             }
-            if (!definition.relation || !relation.length) {
+            if (!definition.relation) {
                 return action
             }
             definition.relation.forEach(viewDefinition => {
@@ -52,19 +52,23 @@ export const translateAuth = auth => {
                     type: view,
                     instances: []
                 }
-                relation.forEach(levelOneData => { // convert后的第一层数据[[1, 2], [3, 4]]
-                    levelOneData.forEach(levelTwoData => { // convert后的第二层数据[1, 2]
-                        const childInstances = []
-                        levelTwoData.forEach((levelThreeData, levelThreeIndex) => { // convert后的第三层数据 1
-                            childInstances.push({
-                                type: instances[levelThreeIndex],
-                                id: String(levelThreeData)
+                if (relation.length) {
+                    relation.forEach(levelOneData => { // convert后的第一层数据[[1, 2], [3, 4]]
+                        levelOneData.forEach(levelTwoData => { // convert后的第二层数据[1, 2]
+                            const childInstances = []
+                            levelTwoData.forEach((levelThreeData, levelThreeIndex) => { // convert后的第三层数据 1
+                                childInstances.push({
+                                    type: instances[levelThreeIndex],
+                                    id: String(levelThreeData)
+                                })
                             })
+                            relatedResource.instances.push(childInstances)
                         })
-                        relatedResource.instances.push(childInstances)
+                        action.related_resource_types.push(relatedResource)
                     })
+                } else {
                     action.related_resource_types.push(relatedResource)
-                })
+                }
             })
             return action
         })

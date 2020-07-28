@@ -13,8 +13,10 @@ export const IAM_VIEWS = {
     BIZ: 'biz',
     // 主机列表
     HOST: 'host',
-    // 主机池目录列表
-    RESOURCE_POOL_DIRECTORY: 'sys_resource_pool_directory',
+    // 主机池目录列表(作为源目录时使用的视图)
+    RESOURCE_SOURCE_POOL_DIRECTORY: 'sys_host_rsc_pool_directory',
+    // 主机池目录列表(作为目标目录时使用的视图)
+    RESOURCE_TARGET_POOL_DIRECTORY: 'sys_resource_pool_directory',
     // 关联类型列表
     ASSOCIATION_TYPE: 'sys_association_type',
     // 事件订阅列表
@@ -39,7 +41,8 @@ export const IAM_VIEWS_NAME = {
     [IAM_VIEWS.CUSTOM_QUERY]: ['动态分组', 'Custom Query'],
     [IAM_VIEWS.BIZ]: ['业务', 'Business'],
     [IAM_VIEWS.HOST]: ['主机', 'Host'],
-    [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
+    [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
+    [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
     [IAM_VIEWS.ASSOCIATION_TYPE]: ['关联类型', 'Association Type'],
     [IAM_VIEWS.EVENT_PUSHING]: ['事件订阅', 'Event Pushing'],
     [IAM_VIEWS.SERVICE_TEMPLATE]: ['服务模板', 'Service Template'],
@@ -378,8 +381,8 @@ export const IAM_ACTIONS = {
             view: IAM_VIEWS.BIZ,
             instances: [IAM_VIEWS.BIZ]
         }, {
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds) => {
             const [bizId] = relationIds
@@ -397,8 +400,8 @@ export const IAM_ACTIONS = {
         name: ['主机池主机创建', 'Create Resource Pool Host'],
         cmdb_action: 'hostInstance.create',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds = []) => {
             const verifyMeta = basicTransform(cmdbAction, {})
@@ -417,8 +420,8 @@ export const IAM_ACTIONS = {
         name: ['主机池主机编辑', 'Update Resource Pool Host'],
         cmdb_action: 'hostInstance.update',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY, IAM_VIEWS.HOST]
+            view: IAM_VIEWS.HOST,
+            instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY, IAM_VIEWS.HOST]
         }],
         transform: (cmdbAction, relationIds) => {
             const verifyMeta = basicTransform(cmdbAction, {})
@@ -440,8 +443,8 @@ export const IAM_ACTIONS = {
         name: ['主机池主机删除', 'Delete Resource Pool Host'],
         cmdb_action: 'hostInstance.delete',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY, IAM_VIEWS.HOST]
+            view: IAM_VIEWS.HOST,
+            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY, IAM_VIEWS.HOST]
         }],
         transform: (cmdbAction, relationIds) => {
             const verifyMeta = basicTransform(cmdbAction, {})
@@ -463,8 +466,8 @@ export const IAM_ACTIONS = {
         name: ['主机池主机分配到业务', 'Transfer Resource Pool Host To Business'],
         cmdb_action: 'hostInstance.moveResPoolHostToBizIdleModule',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }, {
             view: IAM_VIEWS.BIZ,
             instances: [IAM_VIEWS.BIZ]
@@ -490,11 +493,11 @@ export const IAM_ACTIONS = {
         name: ['主机池主机分配到目录', 'Change Resource Pool Host\'s Directory'],
         cmdb_action: 'hostInstance.moveResPoolHostToDirectory',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]
         }, {
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds) => {
             const [[currentDirectoryId], [targetDirectoryId]] = relationIds
@@ -520,8 +523,8 @@ export const IAM_ACTIONS = {
         name: ['主机池目录编辑', 'Update Resource Pool Directory'],
         cmdb_action: 'resourcePoolDirectory.update',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds) => {
             return basicTransform(cmdbAction, {
@@ -534,8 +537,8 @@ export const IAM_ACTIONS = {
         name: ['主机池目录删除', 'Delete Resource Pool Directory'],
         cmdb_action: 'resourcePoolDirectory.delete',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds) => {
             return basicTransform(cmdbAction, {
