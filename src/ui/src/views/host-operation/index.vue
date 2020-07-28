@@ -391,6 +391,7 @@
                     this.loading = false
                     if (e.code === 9900403) {
                         this.$route.meta.view = 'permission'
+                        this.$route.meta.auth.view = { type: this.$OPERATION.U_SERVICE_INSTANCE, relation: [this.bizId] }
                     }
                 }
             },
