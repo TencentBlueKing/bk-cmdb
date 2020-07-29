@@ -85,7 +85,7 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 	template.SupplierAccount = kit.SupplierAccount
 
 	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Insert(kit.Ctx, &template); nil != err {
-		blog.Errorf("CreateProcessTemplate failed, mongodb failed, table: %s, template: %+v, err: %+v, rid: %s", common.BKTableNameProcessTemplate, template, err, kit.Rid)
+		blog.ErrorJSON("CreateProcessTemplate failed, mongodb failed, table: %s, template: %s, err: %s, rid: %s", common.BKTableNameProcessTemplate, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	return &template, nil
