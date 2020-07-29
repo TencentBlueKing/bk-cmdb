@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -88,34 +89,60 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	if common.InputTypeExcel != batchInfo.InputType || nil == batchInfo.BatchInfo {
 		return results, nil
 	}
-
 	for errIdx, err := range rowErr {
 		results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
 	}
-
-	// all the instances's name should not be same,
-	// so we need to check first.
-	instNameMap := make(map[string]struct{})
-	for line, inst := range *batchInfo.BatchInfo {
-		iName, exist := inst[common.BKInstNameField]
-		if !exist {
-			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field.", obj.GetID())
-			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceMissingInstanceNameField, line)
+	// we need to check unique first.
+	uniqueList, err := obj.GetUniques()
+	if err != nil {
+		blog.Errorf("failed to search the object unique, error info is %s", err.Error())
+		return nil, err
+	}
+	objAttrList, err := obj.GetAttributes()
+	if err != nil {
+		blog.Errorf("failed to search the object attributes, error info is %s", err.Error())
+		return nil, err
+	}
+	uniKeyList := []int64{}
+	for _, unique := range uniqueList {
+		if unique.GetMustCheck() == true {
+			for _, uniKey := range unique.GetKeys() {
+				uniKeyList = append(uniKeyList, int64(uniKey.ID))
+			}
 		}
-
-		name, can := iName.(string)
-		if !can {
-			blog.Errorf("create object[%s] instance batch failed, because  bk_inst_name value type is not string.", obj.GetID())
-			return nil, params.Err.Errorf(common.CCErrorTopoInvalidObjectInstanceNameFieldValue, line)
+	}
+	uniqueProperList := []string{}
+	for _, objAttr := range objAttrList {
+		for _, key := range uniKeyList {
+			if objAttr.GetIID() == key {
+				uniqueProperList = append(uniqueProperList, objAttr.GetID())
+			}
 		}
+	}
 
-		// check if this instance name is already exist.
-		if _, ok := instNameMap[name]; ok {
-			blog.Errorf("create object[%s] instance batch, but bk_inst_name %s is duplicated.", obj.GetID(), name)
-			return nil, params.Err.Errorf(common.CCErrorTopoMutipleObjectInstanceName, name)
+	objUniList := map[string]int64{}
+	for line, instance := range *batchInfo.BatchInfo {
+		uniStr := ""
+		for _, uniProper := range uniqueProperList {
+			//it should be exist.
+			iName, exist := instance[uniProper]
+			if !exist {
+				blog.Errorf("create object[%s] instance batch failed, because missing must check field.", obj.GetID())
+				return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceMissingInstanceNameField, line)
+			}
+
+			name, can := iName.(string)
+			if !can {
+				blog.Errorf("create object[%s] instance batch failed, because  musk_check property id value type is not string.", obj.GetID())
+				return nil, params.Err.Errorf(common.CCErrorTopoInvalidObjectInstanceNameFieldValue, line)
+			}
+			//it's wrong when the unique property is totally same,some of them are same will be OK.
+			uniStr = fmt.Sprintf("%s,%s", uniStr, name)
 		}
-
-		instNameMap[name] = struct{}{}
+		if objUniList[uniStr] != 0 {
+			return nil, params.Err.Errorf(common.CCErrorTopoMutipleObjectInstanceName, line)
+		}
+		objUniList[uniStr] = line
 	}
 
 	for colIdx, colInput := range *batchInfo.BatchInfo {

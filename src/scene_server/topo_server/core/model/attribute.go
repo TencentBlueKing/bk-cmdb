@@ -45,6 +45,8 @@ type Attribute interface {
 	SetID(attributeID string)
 	GetID() string
 
+	GetIID() int64
+
 	SetName(attributeName string)
 	GetName() string
 
@@ -375,6 +377,10 @@ func (a *attribute) SetID(attributeID string) {
 
 func (a *attribute) GetID() string {
 	return a.attr.PropertyID
+}
+
+func (a *attribute) GetIID() int64 {
+	return a.attr.ID
 }
 
 func (a *attribute) SetName(attributeName string) {
