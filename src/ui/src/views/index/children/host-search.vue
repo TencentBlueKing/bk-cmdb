@@ -8,7 +8,8 @@
                 :rows="rows"
                 v-model="searchContent"
                 @focus="handleFocus"
-                @blur="handleBlur">
+                @blur="handleBlur"
+                @keypress="handleKeypress">
             </bk-input>
             <bk-button theme="primary" class="search-btn"
                 :loading="$loading(request.search)"
@@ -78,6 +79,11 @@
                     this.rows = 1
                     this.textareaDom && (this.textareaDom.scrollTop = 0)
                 })
+            },
+            handleKeypress (content, event) {
+                if (event.ctrlKey && event.code.toLowerCase() === 'enter') {
+                    this.handleSearch()
+                }
             },
             handleSearchInput () {
                 this.showEllipsis = false

@@ -86,6 +86,7 @@
                 ref="collectionSelector"
                 v-model="selectedCollection"
                 font-size="medium"
+                searchable
                 :loading="$loading(request.collection)"
                 :placeholder="$t('请选择收藏条件')"
                 @selected="handleCollectionSelect"
@@ -309,21 +310,26 @@
                     this.$refs.hostFilter.$refs.filterPopper.instance.hide()
                 }
             },
-            async handleDeleteCollection (collection) {
-                try {
-                    await this.$store.dispatch('hostFavorites/deleteFavorites', {
-                        id: collection.id,
-                        config: {
-                            requestId: 'deleteFavorites'
+            handleDeleteCollection (collection) {
+                this.$bkInfo({
+                    title: this.$t('确定删除收藏条件', { name: collection.name }),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('hostFavorites/deleteFavorites', {
+                                id: collection.id,
+                                config: {
+                                    requestId: 'deleteFavorites'
+                                }
+                            })
+                            this.$success(this.$t('删除成功'))
+                            this.selectedCollection = ''
+                            this.$store.commit('hosts/deleteCollection', collection.id)
+                            this.handleCollectionClear()
+                        } catch (error) {
+                            console.error(error)
                         }
-                    })
-                    this.$success(this.$t('删除成功'))
-                    this.selectedCollection = ''
-                    this.$store.commit('hosts/deleteCollection', collection.id)
-                    this.handleCollectionClear()
-                } catch (e) {
-                    console.error(e)
-                }
+                    }
+                })
             },
             handleCreateCollection () {
                 this.$store.commit('hosts/clearFilter')
