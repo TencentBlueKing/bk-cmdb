@@ -156,17 +156,17 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 		}
 	} else {
 		// 检查同步状态，如果为异常，则更新为正常, 以在没有主机差异要同步时也可以恢复某些问题导致的状态异常；已经是正常的情况下不需要更新
-		opt := &metadata.SearchSyncTaskOption{
-			SearchCloudOption: metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudSyncTaskID: task.TaskID}},
+		opt := &metadata.SearchCloudOption{
+			Condition: mapstr.MapStr{common.BKCloudSyncTaskID: task.TaskID},
 		}
 
-		ret, err := h.logics.SearchSyncTask(h.kitNoTxn, opt)
+		ret, err := h.logics.CoreAPI.CoreService().Cloud().SearchSyncTask(h.kitNoTxn.Ctx, h.kitNoTxn.Header, opt)
 		if err != nil {
-			blog.Errorf("hostSyncor%d SearchSyncTask failed, taskid: %v, opt: err: %s, rid:%s", h.id, task.TaskID, opt, err.Error(), h.kit.Rid)
+			blog.Errorf("hostSyncor%d SearchSyncTask failed, taskid: %v, opt:%#v, err: %s, rid:%s", h.id, task.TaskID, opt, err.Error(), h.kit.Rid)
 			return err
 		}
 		if len(ret.Info) == 0 {
-			blog.Errorf("hostSyncor%d SearchSyncTask failed, opt: err: taskid %d is not found, rid:%s", h.id, opt, task.TaskID, h.kit.Rid)
+			blog.Errorf("hostSyncor%d SearchSyncTask failed, taskid %d is not found, opt:%#v, rid:%s", h.id, task.TaskID, opt, h.kit.Rid)
 			return fmt.Errorf("taskID %d is not found", task.TaskID)
 		}
 		if ret.Info[0].SyncStatus == metadata.CloudSyncFail {
@@ -892,11 +892,11 @@ func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 
 // 更新同步任务里的vpc状态为被销毁
 func (h *HostSyncor) updateDestroyedTaskVpc(taskID int64, vpcs map[string]bool) error {
-	opt := &metadata.SearchSyncTaskOption{
-		SearchCloudOption: metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudSyncTaskID: taskID}},
+	opt := &metadata.SearchCloudOption{
+		Condition: mapstr.MapStr{common.BKCloudSyncTaskID: taskID},
 	}
 
-	ret, err := h.logics.SearchSyncTask(h.kit, opt)
+	ret, err := h.logics.CoreAPI.CoreService().Cloud().SearchSyncTask(h.kit.Ctx, h.kit.Header, opt)
 	if err != nil {
 		blog.Errorf("updateDestroyedTaskVpc failed, taskID: %v, opt: err: %s, rid:%s", taskID, opt, err.Error(), h.kit.Rid)
 		return err
