@@ -485,6 +485,11 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 
 		// generate iam resource instances by its paths and itself
 		for _, res := range resource {
+			if len(res.ID) == 0 && res.Attribute == nil {
+				permissionMap[string(actionID)][string(res.Type)] = nil
+				continue
+			}
+
 			instance := make([]metadata.IamResourceInstance, 0)
 			if res.Attribute != nil {
 				iamPath, ok := res.Attribute[types.IamPathKey].([]string)

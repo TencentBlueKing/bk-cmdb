@@ -186,8 +186,8 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 		}
 
 		// register cloud area resource creator action to iam
-		for _, created := range res.Data.Created {
-			if auth.EnableAuthorize() {
+		if auth.EnableAuthorize() {
+			for _, created := range res.Data.Created {
 				iamInstance := metadata.IamInstanceWithCreator{
 					Type:    string(iam.SysCloudArea),
 					ID:      strconv.FormatUint(created.ID, 10),
