@@ -55,6 +55,19 @@ type JsonStringResp struct {
 	Data string
 }
 
+// JsonCntInfoResp defines a response that do not parse the data's count and info fields
+// to a struct but decode it to a json string if possible
+type JsonCntInfoResp struct {
+	BaseResp
+	Data CntInfoString `json:"data"`
+}
+
+type CntInfoString struct {
+	Count int64 `json:"count"`
+	// info is a json array string field.
+	Info string `json:"info"`
+}
+
 // Permission  describes all the authorities that a user
 // is need, when he attempts to operate a resource.
 // Permission is used only when a user do not have the authority to

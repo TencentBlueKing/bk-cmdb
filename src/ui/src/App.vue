@@ -9,7 +9,7 @@
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
         <the-header></the-header>
-        <router-view class="views-layout" :name="topView"></router-view>
+        <router-view class="views-layout" :name="topView" ref="topView"></router-view>
         <the-permission-modal ref="permissionModal"></the-permission-modal>
         <the-login-modal ref="loginModal"
             v-if="loginUrl"

@@ -311,6 +311,11 @@ func (s *Service) createOrUpdateServiceInstance(srvData *srvComm, bizID int64, h
 			process[common.BKProcessIDField] = processID
 			processes = append(processes, process)
 		}
+
+		if len(processes) == 0 {
+			return nil
+		}
+
 		updateProcessOption := map[string]interface{}{
 			"bk_biz_id": bizID,
 			"processes": processes,

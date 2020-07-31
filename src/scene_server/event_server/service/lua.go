@@ -179,6 +179,11 @@ func (s *Service) runScriptsWithArrayChainNode(script string, keys []string, arg
 
 		nodes := make([]*watch.ChainNode, len(arrays))
 		for idx, ele := range arrays {
+
+			if ele == nil {
+				return nil, errors.New("got nil chain node detail")
+			}
+
 			element, ok := ele.(string)
 			if !ok {
 				return nil, fmt.Errorf("invalid chain node details: %v", ele)
@@ -302,6 +307,11 @@ func (s *Service) runScriptsWithArrayString(script string, keys []string, args .
 
 		details := make([]string, len(arrays))
 		for idx, ele := range arrays {
+
+			if ele == nil {
+				return nil, errors.New("got nil array element")
+			}
+
 			element, ok := ele.(string)
 			if !ok {
 				return nil, fmt.Errorf("invalid element type: %v", ele)
