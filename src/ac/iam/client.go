@@ -427,30 +427,3 @@ func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCr
 
 	return nil
 }
-
-func (c *iamClient) GetSystemToken(ctx context.Context) (string, error) {
-	resp := new(struct {
-		BaseResponse
-		Data struct {
-			Token string `json:"token"`
-		} `json:"data"`
-	})
-	result := c.client.Get().
-		SubResourcef("/api/v1/model/systems/%s/token", c.Config.SystemID).
-		WithContext(ctx).
-		WithHeaders(c.basicHeader).
-		Body(nil).Do()
-	err := result.Into(resp)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.Code != 0 {
-		return "", &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("get system token failed, code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return resp.Data.Token, nil
-}

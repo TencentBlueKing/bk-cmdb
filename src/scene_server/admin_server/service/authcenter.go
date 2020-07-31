@@ -30,11 +30,8 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rid := util.GetHTTPCCRequestID(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	if !auth.EnableAuthorize() {
-		blog.Errorf("received iam initialization request, but auth not enabled, rid: %s", rid)
-		result := &metadata.RespError{
-			Msg: defErr.CCError(common.CCErrCommAuthCenterIsNotEnabled),
-		}
-		_ = resp.WriteError(http.StatusBadRequest, result)
+		blog.Warnf("received iam initialization request, but auth not enabled, rid: %s", rid)
+		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 		return
 	}
 

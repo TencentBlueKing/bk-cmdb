@@ -13,17 +13,20 @@
 package service
 
 import (
+	"context"
 	"net/http"
+	"time"
 
-	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/logics"
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
+	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/types"
 
 	"github.com/emicklei/go-restful"
@@ -31,15 +34,15 @@ import (
 
 type AuthService struct {
 	engine     *backbone.Engine
-	auth       ac.AuthInterface
+	iamClient  client.Interface
 	lgc        *logics.Logics
 	authorizer sdkauth.Authorizer
 }
 
-func NewAuthService(engine *backbone.Engine, auth ac.AuthInterface, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
+func NewAuthService(engine *backbone.Engine, iamClient client.Interface, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
 	return &AuthService{
 		engine:     engine,
-		auth:       auth,
+		iamClient:  iamClient,
 		lgc:        lgc,
 		authorizer: authorizer,
 	}
@@ -52,7 +55,7 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 			return
 		}
 
-		isAuthorized, err := s.auth.CheckRequestAuthorization(req.Request)
+		isAuthorized, err := checkRequestAuthorization(s.iamClient, req.Request)
 		if err != nil {
 			rsp := types.BaseResp{
 				Code:    types.InternalServerErrorCode,
@@ -87,6 +90,36 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 		chain.ProcessFilter(req, resp)
 		return
 	}
+}
+
+var iamToken = struct {
+	token            string
+	tokenRefreshTime time.Time
+}{}
+
+func checkRequestAuthorization(iamClient client.Interface, req *http.Request) (bool, error) {
+	rid := req.Header.Get(iam.IamRequestHeader)
+	name, pwd, ok := req.BasicAuth()
+	if !ok || name != iam.SystemIDIAM {
+		blog.Errorf("request have no basic authorization, rid: %s", rid)
+		return false, nil
+	}
+	// if cached token is set within a minute, use it to check request authorization
+	if iamToken.token != "" && time.Since(iamToken.tokenRefreshTime) <= time.Minute && pwd == iamToken.token {
+		return true, nil
+	}
+	var err error
+	iamToken.token, err = iamClient.GetSystemToken(context.Background())
+	if err != nil {
+		blog.Errorf("check request authorization get system token failed, error: %s, rid: %s", err.Error(), rid)
+		return false, err
+	}
+	iamToken.tokenRefreshTime = time.Now()
+	if pwd == iamToken.token {
+		return true, nil
+	}
+	blog.Errorf("request password not match system token, rid: %s", rid)
+	return false, nil
 }
 
 func (s *AuthService) WebService() *restful.Container {
