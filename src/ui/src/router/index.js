@@ -22,6 +22,7 @@ import {
 import {
     indexViews,
     adminViews,
+    hostLandingViews,
     businessViews,
     resourceViews,
     modelViews,
@@ -58,6 +59,7 @@ const router = new Router({
     routes: [
         ...redirectRouters,
         ...statusRouters,
+        ...hostLandingViews,
         {
             name: MENU_ENTRY,
             component: dynamicRouterView,
