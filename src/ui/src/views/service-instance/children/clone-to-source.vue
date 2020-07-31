@@ -55,22 +55,19 @@
             :before-close="handleBeforeClose">
             <cmdb-form slot="content"
                 ref="processForm"
+                type="update"
                 v-if="processForm.show"
                 :properties="properties"
                 :property-groups="propertyGroups"
                 :object-unique="processForm.type === 'single' ? [] : propertyUnique"
                 :inst="processForm.instance"
+                :invisible-name-properties="invisibleNameProperties"
+                :flex-properties="flexProperties"
+                :uneditable-properties="uneditableProperties"
                 @on-submit="handleSubmit"
                 @on-cancel="handleBeforeClose">
-                <template slot="bind_ip">
-                    <cmdb-input-select
-                        :disabled="checkDisabled"
-                        :name="'bindIp'"
-                        :placeholder="$t('请选择或输入IP')"
-                        :options="processBindIp"
-                        :validate="validateRules"
-                        v-model="bindIp">
-                    </cmdb-input-select>
+                <template slot="bind_info">
+                    <process-bind-table v-bind="processTableProps" @change="handleProcessTableChange"></process-bind-table>
                 </template>
             </cmdb-form>
         </bk-sideslider>
@@ -80,8 +77,12 @@
 <script>
     import { processTableHeader } from '@/dictionary/table-header'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+    import ProcessBindTable from '@/components/service/form/process-bind-table'
     export default {
         name: 'clone-to-source',
+        components: {
+            ProcessBindTable
+        },
         props: {
             sourceProcesses: {
                 type: Array,
@@ -103,9 +104,10 @@
                     title: '',
                     instance: {}
                 },
-                processBindIp: [],
-                bindIp: '',
-                hasScrollbar: false
+                hasScrollbar: false,
+                invisibleNameProperties: ['bind_info'],
+                flexProperties: ['bind_info'],
+                uneditableProperties: []
             }
         },
         computed: {
@@ -134,34 +136,20 @@
                         })
                 })
             },
-            bindIpProperty () {
-                return this.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
-            },
             hostId () {
                 return parseInt(this.$route.params.hostId)
             },
-            validateRules () {
-                const rules = {}
-                if (this.bindIpProperty.isrequired) {
-                    rules['required'] = true
+            processTableProps () {
+                return {
+                    hostId: this.hostId,
+                    properties: this.properties,
+                    list: this.processForm.instance ? this.processForm.instance['bind_info'] : []
                 }
-                rules['regex'] = this.bindIpProperty.option
-                return rules
-            },
-            checkDisabled () {
-                const property = this.bindIpProperty
-                if (this.processForm.type === 'create') {
-                    return false
-                }
-                return !property.editable || property.isreadonly
             }
         },
         watch: {
             sourceProcesses (source) {
                 this.cloneProcesses = this.$tools.clone(source)
-            },
-            bindIp (value) {
-                this.$refs.processForm.values.bind_ip = value
             }
         },
         mounted () {
@@ -227,13 +215,13 @@
                 this.checked = selection.map(row => row.bk_process_id)
             },
             handleBatchEdit () {
-                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'batch'
                 this.processForm.title = this.$t('批量编辑')
                 this.processForm.instance = {}
                 this.processForm.show = true
+                // 绑定信息暂不支持批量编辑
+                this.uneditableProperties.push('bind_info')
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -245,13 +233,15 @@
                 })
             },
             handleEditProcess (item) {
-                this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'single'
                 this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
                 this.processForm.instance = item
                 this.processForm.show = true
+                const index = this.uneditableProperties.findIndex(property => 'bind_info')
+                if (index !== -1) {
+                    this.uneditableProperties.splice(index, 1)
+                }
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -261,32 +251,6 @@
                         }
                     })
                 })
-            },
-            async getInstanceIpByHost (hostId) {
-                try {
-                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
-                    let res = null
-                    if (instanceIpMap.hasOwnProperty(hostId)) {
-                        res = instanceIpMap[hostId]
-                    } else {
-                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
-                            hostId,
-                            config: {
-                                requestId: 'getInstanceIpByHost'
-                            }
-                        })
-                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
-                    }
-                    this.processBindIp = res.options.map(ip => {
-                        return {
-                            id: ip,
-                            name: ip
-                        }
-                    })
-                } catch (e) {
-                    this.processBindIp = []
-                    console.error(e)
-                }
             },
             handleSubmit (values, changedValues) {
                 if (this.processForm.type === 'single') {
@@ -359,6 +323,15 @@
                 this.$nextTick(() => {
                     const scroller = this.$el.parentElement
                     this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+                })
+            },
+            handleProcessTableChange (list) {
+                this.$refs.processForm.values.bind_info = list.map(item => {
+                    const row = {}
+                    Object.keys(item).forEach(key => {
+                        row[key] = item[key].value
+                    })
+                    return row
                 })
             }
         }

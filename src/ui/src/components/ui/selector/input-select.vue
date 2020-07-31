@@ -5,6 +5,7 @@
             :searchable="searchable"
             :disabled="disabled"
             :value="localValue"
+            v-bind="$attrs"
             @change="handleSelected">
             <div class="input-box" slot="trigger">
                 <input :class="['input-text', { 'custom-error': errors.has(name) }]"
@@ -101,6 +102,16 @@
         .select-box {
             width: 100%;
             border: none !important;
+
+            &.bk-select-small {
+                .input-box {
+                    .input-text {
+                        height: 26px;
+                        font-size: 12px;
+                        line-height: 26px;
+                    }
+                }
+            }
         }
         .input-box {
             position: relative;

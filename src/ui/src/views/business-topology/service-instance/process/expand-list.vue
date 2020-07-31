@@ -33,7 +33,6 @@
                         :disabled="disabled"
                         @click="handleEdit(row)">
                         {{$t('编辑')}}
-         
                     </bk-button>
                 </cmdb-auth>
                 <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!row.relation.process_template_id">

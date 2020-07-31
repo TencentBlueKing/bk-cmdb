@@ -1,41 +1,46 @@
 <template>
     <bk-table class="cmdb-form-table" :data="list">
-        <bk-table-column v-for="property in header"
-            :key="property.bk_property_id"
-            :prop="property.bk_property_id"
-            :label="property.bk_property_name"
-            :width="property.bk_property_type === 'bool' ? '90px' : ''"
-            show-overflow-tooltip>
-            <template slot-scope="{ row: values, $index }">
+        <bk-table-column v-for="col in header"
+            :key="col.bk_property_id"
+            :prop="col.bk_property_id"
+            :label="col.bk_property_name"
+            :width="col.bk_property_type === 'bool' ? '90px' : ''">
+            <template slot-scope="{ row, $index }">
                 <div class="form-item-content">
                     <div class="form-item">
-                        <bk-checkbox
-                            v-if="mode === 'create'"
-                            class="form-checkbox"
-                            v-model="values[property['bk_property_id']]['as_default_value']"
-                            @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
-                        </bk-checkbox>
-                        <component class="form-component"
-                            :is="`cmdb-form-${property['bk_property_type']}`"
-                            :disabled="!values[property['bk_property_id']]['as_default_value']"
-                            :class="{ error: errors.has(`${property['bk_property_id']}_${$index}`) }"
-                            :unit="property.unit"
-                            :row="2"
-                            :options="property.option || []"
-                            :data-vv-name="`${property['bk_property_id']}_${$index}`"
-                            :data-vv-as="property['bk_property_name']"
-                            :placeholder="getPlaceholder(property)"
-                            :auto-select="false"
-                            v-bind="sizes"
-                            v-validate="getValidateRules(property)"
-                            v-model.trim="values[property['bk_property_id']]['value']">
-                        </component>
+                        <slot name="switch" v-bind="{ row, col, $index }"></slot>
+                        <slot name="disabled-tips" v-bind="{ row, col, $index, disabled: checkDisabled(row[col['bk_property_id']], col, $index) }"></slot>
+                        <slot
+                            :name="`col-${col.bk_property_id}`"
+                            v-bind="{ row, sizes, col, disabled: checkDisabled(row[col['bk_property_id']], col, $index), $index }">
+                            <component class="form-component"
+                                :is="`cmdb-form-${col['bk_property_type']}`"
+                                :disabled="checkDisabled(row[col['bk_property_id']], col, $index)"
+                                :class="{ error: errors.has(`${col['bk_property_id']}_${$index}`) }"
+                                :unit="col.unit"
+                                :row="2"
+                                :options="col.option || []"
+                                :data-vv-name="`${col['bk_property_id']}_${$index}`"
+                                :data-vv-as="col['bk_property_name']"
+                                :placeholder="getPlaceholder(col)"
+                                :auto-select="mode === 'create'"
+                                v-bind="sizes"
+                                v-validate="getValidateRules(col)"
+                                v-model.trim="row[col['bk_property_id']]['value']"
+                                v-bk-tooltips="{
+                                    disabled: checkTipsDisabled(row[col['bk_property_id']], col, $index),
+                                    allowHtml: true,
+                                    content: `#disabled-tips-${col['bk_property_id']}_${$index}`,
+                                    placement: 'top'
+                                }">
+                            </component>
+                        </slot>
                     </div>
-                    <span class="form-item-error">{{errors.first(`${property['bk_property_id']}_${$index}`)}}</span>
+                    <span class="form-item-error">{{errors.first(`${col['bk_property_id']}_${$index}`)}}</span>
                 </div>
             </template>
         </bk-table-column>
-        <bk-table-column :label="$t('操作')" v-if="!readonly">
+        <bk-table-column :label="$t('操作')" v-if="operation.show">
             <template slot-scope="{ row, $index }">
                 <bk-button
                     class="mr10"
@@ -54,12 +59,14 @@
             </template>
         </bk-table-column>
         <div slot="empty">
-            <bk-button
+            <button
+                class="add-row-button text-primary"
                 theme="primary"
                 :text="true"
                 @click.stop="handleAdd()">
-                {{$t('立即添加')}}
-            </bk-button>
+                <i class="bk-icon icon-plus"></i>
+                <span>{{$t('立即添加')}}</span>
+            </button>
         </div>
     </bk-table>
 </template>
@@ -99,13 +106,13 @@
                 type: String,
                 default: 'create',
                 validator (val) {
-                    return ['update', 'create', 'readonly'].includes(val)
+                    // input自由输入模式
+                    // update不允许添加删除行
+                    return ['input', 'update', 'create'].includes(val)
                 }
             },
-            extra: {
-                type: Object,
-                default: () => ({})
-            }
+            disabledCheck: Function,
+            newRowValue: Function
         },
         data () {
             return {
@@ -121,7 +128,8 @@
                     disabled: {
                         add: this.list.length >= this.maxlength,
                         remove: this.list.length <= this.minlength
-                    }
+                    },
+                    show: ['input', 'create'].includes(this.mode)
                 }
             },
             sizes () {
@@ -130,9 +138,6 @@
                     size: this.size,
                     fontSize: fontSizeMap[this.size] || 'medium'
                 }
-            },
-            readonly () {
-                return this.mode === 'readonly'
             }
         },
         watch: {
@@ -156,17 +161,29 @@
             handleRemove (i) {
                 this.list.splice(i, 1)
             },
-            handleResetValue (a, b) {
+            checkDisabled (field, property, index) {
+                const mode = this.mode
+                if (mode === 'input') {
+                    return false
+                }
+
+                if (this.disabledCheck) {
+                    return this.disabledCheck(field, property, index)
+                }
             },
             getNewRow () {
                 const row = {}
                 this.header.forEach(prop => {
-                    row[prop.bk_property_id] = {
-                        value: '',
-                        as_default_value: false
+                    let value = { value: this.getDefaultValue(prop) }
+                    if (this.newRowValue) {
+                        value = this.newRowValue(prop)
                     }
+                    row[prop.bk_property_id] = value
                 })
                 return row
+            },
+            getDefaultValue (property) {
+                return (['enum', 'list'].includes(property.bk_property_type) || ['ip'].includes(property.bk_property_id)) ? '' : null
             },
             getPlaceholder (property) {
                 const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
@@ -174,6 +191,10 @@
             },
             getValidateRules (property) {
                 return this.$tools.getValidateRules(property)
+            },
+            checkTipsDisabled (field, property, index) {
+                const disabled = this.checkDisabled(field, property, index)
+                return this.mode === 'create' || !disabled
             }
         }
     }
@@ -202,8 +223,27 @@
             color: #ff5656;
         }
 
-        /deep/ .bk-table-empty-text {
-            padding: 0;
+        /deep/ .bk-table-empty-block {
+            min-height: 42px;
+            .bk-table-empty-text {
+                padding: 0;
+            }
+        }
+
+        .add-row-button {
+            line-height: 32px;
+            .bk-icon,
+            span {
+                @include inlineBlock;
+            }
+            .icon-plus {
+                font-size: 20px;
+                margin-right: -4px;
+            }
+        }
+
+        /deep/ .custom-form-error {
+            position: relative !important;
         }
     }
 </style>

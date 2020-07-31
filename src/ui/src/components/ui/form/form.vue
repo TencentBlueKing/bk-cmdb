@@ -11,10 +11,10 @@
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
                             <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                                <li class="property-item"
+                                <li :class="['property-item', { flex: flexProperties.includes(property['bk_property_id']) }]"
                                     v-if="checkEditable(property)"
                                     :key="propertyIndex">
-                                    <div class="property-name">
+                                    <div class="property-name" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
                                         <span class="property-name-text" :class="{ required: isRequired(property) }">{{property['bk_property_name']}}</span>
                                         <i class="property-name-tooltips icon-cc-tips"
                                             v-if="property['placeholder']"
@@ -35,6 +35,7 @@
                                                 :data-vv-as="property['bk_property_name']"
                                                 :placeholder="getPlaceholder(property)"
                                                 :auto-select="false"
+                                                v-bind="$attrs"
                                                 v-validate="getValidateRules(property)"
                                                 v-model.trim="values[property['bk_property_id']]">
                                             </component>
@@ -107,7 +108,15 @@
                 type: [String, Array],
                 default: ''
             },
-            renderTips: Function
+            renderTips: Function,
+            flexProperties: {
+                type: Array,
+                default: () => []
+            },
+            invisibleNameProperties: {
+                type: Array,
+                default: () => []
+            }
         },
         data () {
             return {
@@ -279,7 +288,7 @@
             flex: 0 0 50%;
             max-width: 50%;
             // flex: 0 1 auto;
-            .property-name{
+            .property-name {
                 display: block;
                 margin: 2px 0 6px;
                 color: $cmdbTextColor;
@@ -320,6 +329,13 @@
                         flex: 1;
                     }
                 }
+            }
+
+            &.flex {
+                flex: 1;
+                padding-right: 54px;
+                width: 100%;
+                max-width: unset;
             }
         }
     }

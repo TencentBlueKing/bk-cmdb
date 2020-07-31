@@ -11,10 +11,10 @@
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
                             <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                                <li :class="['property-item', property['bk_property_type']]"
+                                <li :class="['property-item', { flex: flexProperties.includes(property['bk_property_id']) }]"
                                     v-if="checkEditable(property)"
                                     :key="propertyIndex">
-                                    <div class="property-name clearfix">
+                                    <div class="property-name clearfix" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
                                         <bk-checkbox class="form-checkbox"
                                             v-if="property['isLocking'] !== undefined"
                                             v-model="values[property['bk_property_id']]['as_default_value']"
@@ -28,7 +28,7 @@
                                         </i>
                                     </div>
                                     <div class="property-value">
-                                        <component class="form-component"
+                                        <component class="form-component" v-if="property['bk_property_type'] !== 'table'"
                                             :is="`cmdb-form-${property['bk_property_type']}`"
                                             :disabled="getPropertyEditStatus(property)"
                                             :class="{ error: errors.has(property['bk_property_id']) }"
@@ -39,10 +39,35 @@
                                             :data-vv-as="property['bk_property_name']"
                                             :placeholder="getPlaceholder(property)"
                                             :auto-select="false"
-                                            mode="update"
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]['value']">
                                         </component>
+                                        <cmdb-form-table
+                                            v-else
+                                            :options="property.option || []"
+                                            :disabled-check="getDisabled"
+                                            :new-row-value="getNewRowValue"
+                                            v-model.trim="values[property['bk_property_id']]['value']">
+                                            <template slot="switch" slot-scope="{ row, col }">
+                                                <bk-checkbox
+                                                    class="form-checkbox"
+                                                    v-model="row[col['bk_property_id']]['as_default_value']"
+                                                    @change="handleSwitchChange(row[col['bk_property_id']], col)">
+                                                </bk-checkbox>
+                                            </template>
+                                            <template slot="col-ip" slot-scope="{ row, sizes }">
+                                                <cmdb-form-enum
+                                                    size="small"
+                                                    font-size="normal"
+                                                    :disabled="!row['ip']['as_default_value']"
+                                                    :placeholder="$t('请选择或输入IP')"
+                                                    :options="ipOption"
+                                                    :auto-select="true"
+                                                    v-bind="sizes"
+                                                    v-model="row['ip'].value">
+                                                </cmdb-form-enum>
+                                            </template>
+                                        </cmdb-form-table>
                                         <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
                                     </div>
                                 </li>
@@ -133,24 +158,14 @@
                         'type': 'text',
                         'is_default': false
                     }
-                    // {
-                    //     'name': '第一内网IP',
-                    //     'type': 'text',
-                    //     'is_default': false,
-                    //     'id': '3'
-                    // },
-                    // {
-                    //     'name': '第一外网IP',
-                    //     'type': 'text',
-                    //     'is_default': false,
-                    //     'id': '4'
-                    // }
                 ],
                 values: {
                     bk_func_name: ''
                 },
                 refrenceValues: {},
-                scrollbar: false
+                scrollbar: false,
+                invisibleNameProperties: ['bind_info'],
+                flexProperties: ['bind_info']
             }
         },
         computed: {
@@ -161,10 +176,6 @@
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
                         }
-                        // if (['bind_ip'].includes(property['bk_property_id'])) {
-                        //     property.bk_property_type = 'enum'
-                        //     property.option = this.ipOption
-                        // }
                     })
                     return filterProperties
                 })
@@ -206,10 +217,6 @@
             changedValues () {
                 const changedValues = {}
                 if (!Object.keys(this.refrenceValues).length) return {}
-                if (!this.values['bind_ip']['value']) {
-                    this.$set(this.values.bind_ip, 'value', '')
-                    this.$set(this.refrenceValues.bind_ip, 'value', '')
-                }
                 Object.keys(this.values).forEach(propertyId => {
                     let isChange = false
                     if (!['sign_id', 'process_id'].includes(propertyId)) {
@@ -245,14 +252,7 @@
                         }
                     })
                 }
-                const properties = this.properties.map(property => {
-                    if (['bind_ip'].includes(property['bk_property_id'])) {
-                        property.bk_property_type = 'enum'
-                        property.option = this.ipOption
-                    }
-                    return property
-                })
-                const formValues = this.$tools.getInstFormValues(properties, inst, this.type === 'create')
+                const formValues = this.$tools.getInstFormValues(this.properties, inst, this.type === 'create')
                 Object.keys(formValues).forEach(key => {
                     this.$set(this.values, key, {
                         value: formValues[key],
@@ -361,6 +361,30 @@
                         this.values[property['bk_property_id']]['value'] = ''
                     }
                 }
+            },
+            handleSwitchChange (field, property) {
+                if (!field.as_default_value) {
+                    const type = property['bk_property_type']
+                    if (['bool'].includes(type)) {
+                        field.value = false
+                    } else if (['int'].includes(type)) {
+                        field.value = null
+                    } else {
+                        field.value = ''
+                    }
+                }
+            },
+            getDisabled (field, property) {
+                return !field.as_default_value
+            },
+            getNewRowValue (property) {
+                return {
+                    value: this.getDefaultValue(property),
+                    as_default_value: false
+                }
+            },
+            getDefaultValue (property) {
+                return (['enum', 'list'].includes(property.bk_property_type) || ['ip'].includes(property.bk_property_id)) ? '' : null
             }
         }
     }
@@ -452,13 +476,10 @@
                 outline: 0;
             }
 
-            &.table {
+            &.flex {
                 flex: 1;
                 padding-right: 0;
                 width: 100%;
-                .property-name {
-                    display: none;
-                }
             }
         }
     }
