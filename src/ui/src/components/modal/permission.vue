@@ -83,21 +83,29 @@
                 const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
                 this.permission.actions.forEach(action => {
                     const definition = Object.values(IAM_ACTIONS).find(definition => definition.id === action.id)
-                    action.related_resource_types.forEach(({ type, instances }) => {
-                        const listItem = {
+                    if (action.related_resource_types.length) {
+                        action.related_resource_types.forEach(({ type, instances = [] }) => {
+                            const listItem = {
+                                id: definition.id,
+                                name: definition.name[languageIndex],
+                                relations: instances.map(instance => {
+                                    return instance.map(data => {
+                                        if (data.name) {
+                                            return `${IAM_VIEWS_NAME[data.type][languageIndex]}：${data.name || data.id}`
+                                        }
+                                        return `${IAM_VIEWS_NAME[data.type][languageIndex]}ID：${data.id}`
+                                    }).join(' / ')
+                                })
+                            }
+                            list.push(listItem)
+                        })
+                    } else {
+                        list.push({
                             id: definition.id,
                             name: definition.name[languageIndex],
-                            relations: instances.map(instance => {
-                                return instance.map(data => {
-                                    if (data.name) {
-                                        return `${IAM_VIEWS_NAME[data.type][languageIndex]}：${data.name || data.id}`
-                                    }
-                                    return `${IAM_VIEWS_NAME[data.type][languageIndex]}ID：${data.id}`
-                                }).join(' / ')
-                            })
-                        }
-                        list.push(listItem)
-                    })
+                            relations: []
+                        })
+                    }
                 })
                 this.list = list
             },

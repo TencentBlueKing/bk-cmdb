@@ -709,7 +709,7 @@ export const IAM_ACTIONS = {
     },
     R_STATISTICAL_REPORT: {
         id: 'find_operation_statistic',
-        name: ['运营统计产线', 'Search Operation Statistic'],
+        name: ['运营统计查询', 'Search Operation Statistic'],
         cmdb_action: 'operationStatistic.findMany'
     },
 
