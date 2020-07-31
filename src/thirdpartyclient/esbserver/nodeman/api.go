@@ -230,6 +230,11 @@ type UpgradePluginHostField struct {
 	InnerIPs string `json:"inner_ips"` // 支持多台机器使用同一配置文件 机器ip必须在hosts参数中存在 否则不操作
 }
 
+type esbUpgradePluginParams struct {
+	*esbutil.EsbCommParams
+	*UpgradePluginRequest
+}
+
 type UpgradePluginResult struct {
 	ESBBaseResult
 	Data struct {

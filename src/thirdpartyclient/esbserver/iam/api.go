@@ -22,18 +22,9 @@ import (
 
 // returns the url which can helps to launch the bk-iam when user do not have the authority to access resource(s).
 func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error) {
-	resp := new(struct {
-		Data struct {
-			Url string `json:"url"`
-		} `json:"data"`
-		metadata.EsbBaseResponse `json:",inline"`
-	})
+	resp := new(esbIamPermissionURLResp)
 	url := "/v2/iam/application/"
-	type esbParams struct {
-		*esbutil.EsbCommParams
-		metadata.IamPermission `json:",inline"`
-	}
-	params := &esbParams{
+	params := &esbIamPermissionParams{
 		EsbCommParams: esbutil.GetEsbRequestParams(i.config.GetConfig(), header),
 		IamPermission: p,
 	}
@@ -59,16 +50,9 @@ func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metada
 func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 
-	resp := new(struct {
-		metadata.EsbBaseResponse `json:",inline"`
-		Data                     []metadata.IamCreatorActionPolicy `json:"data"`
-	})
+	resp := new(esbIamCreatorActionResp)
 	url := "/v2/iam/authorization/resource_creator_action/"
-	type esbParams struct {
-		*esbutil.EsbCommParams
-		metadata.IamInstanceWithCreator `json:",inline"`
-	}
-	params := &esbParams{
+	params := &esbIamInstanceParams{
 		EsbCommParams:          esbutil.GetEsbRequestParams(i.config.GetConfig(), header),
 		IamInstanceWithCreator: instance,
 	}

@@ -37,3 +37,24 @@ type iam struct {
 	config *esbutil.EsbConfigSrv
 	client rest.ClientInterface
 }
+
+type esbIamPermissionParams struct {
+	*esbutil.EsbCommParams
+	metadata.IamPermission `json:",inline"`
+}
+
+type esbIamInstanceParams struct {
+	*esbutil.EsbCommParams
+	metadata.IamInstanceWithCreator `json:",inline"`
+}
+type esbIamPermissionURLResp struct {
+	Data struct {
+		Url string `json:"url"`
+	} `json:"data"`
+	metadata.EsbBaseResponse `json:",inline"`
+}
+
+type esbIamCreatorActionResp struct {
+	metadata.EsbBaseResponse `json:",inline"`
+	Data                     []metadata.IamCreatorActionPolicy `json:"data"`
+}
