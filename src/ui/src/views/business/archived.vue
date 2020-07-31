@@ -121,8 +121,7 @@
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: 'post_searchObjectAttribute_biz',
-                        fromCache: true
+                        requestId: 'post_searchObjectAttribute_biz'
                     }
                 })
                 // 配合全文检索过滤列表
