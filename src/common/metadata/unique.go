@@ -21,12 +21,12 @@ import (
 )
 
 type ObjectUnique struct {
-	ID        uint64      `json:"id" bson:"id"`
-	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
-	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UniqueKey `json:"keys" bson:"keys"`
-	Ispre     bool        `json:"ispre" bson:"ispre"`
-	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ID        uint64      `field:"id" json:"id" bson:"id"`
+	ObjID     string      `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool        `field:"must_check" json:"must_check" bson:"must_check"`
+	Keys      []UniqueKey `field:"keys" json:"keys" bson:"keys"`
+	Ispre     bool        `field:"ispre" json:"ispre" bson:"ispre"`
+	OwnerID   string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 	LastTime  Time `json:"last_time" bson:"last_time"`
 }
@@ -105,4 +105,8 @@ type SearchUniqueResult struct {
 type QueryUniqueResult struct {
 	Count uint64         `json:"count"`
 	Info  []ObjectUnique `json:"info"`
+}
+
+func (cli ObjectUnique) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(cli)
 }

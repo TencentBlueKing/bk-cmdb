@@ -103,8 +103,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 	//package audit response
 	err = NewObjectClsAudit(kit, c.clientSet, class.ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
 	if err != nil {
-		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
-		return nil, err
+		blog.Errorf("[operation-cls] create object classification %s success, but update audit log failed: %v, rid: %s", class.ClassificationName, err, kit.Rid)
 	}
 	return cls, nil
 }
@@ -161,10 +160,8 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	//saveAuditLog
 	err = objAudit.SaveAuditLog(metadata.AuditDelete)
 	if err != nil {
-		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
-		return err
+		blog.Errorf("[operation-cls] delete object classification %d success, but update audit log failed: %v, rid: %s", id, err, kit.Rid)
 	}
-
 	return nil
 }
 
@@ -291,8 +288,7 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	//get CurData and saveAuditLog
 	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 	if err != nil {
-		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", id, err, kit.Rid)
-		return err
+		blog.Errorf("[operation-cls] update object classification %s success, but update audit log failed: %v, rid: %s", class.ClassificationName, err, kit.Rid)
 	}
 	return nil
 }

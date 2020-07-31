@@ -70,12 +70,12 @@ func (log *ObjectClsAudit) SaveAuditLog(auditAction metadata.ActionType) errors.
 	}
 	auditResult, err := log.clientSet.CoreService().Audit().SaveAuditLog(log.kit.Ctx, log.kit.Header, auditLog)
 	if err != nil {
-		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %+v,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+		blog.ErrorJSON("%s %s audit log failed, err: %s, result: %+v,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
+		return err
 	}
 	if auditResult.Result != true {
-		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+		blog.ErrorJSON("%s %s audit log failed, err: %s, result: %+v,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
+		return errors.New(common.CCErrAuditSaveLogFailed, auditResult.ErrMsg)
 	}
 	return nil
 }
@@ -84,16 +84,16 @@ func (log *ObjectClsAudit) buildSnapshotForPre() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
 	rsp, err := log.clientSet.CoreService().Model().ReadModelClassification(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to build the objClsData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		blog.Errorf("[audit] failed to get object classification info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		return log
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to build the objClsData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		blog.Errorf("[audit] failed to get object classification info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to build the objClsData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		blog.Errorf("[audit] failed to get object classification info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		return log
 	}
 	log.preData = rsp.Data.Info[0]
 	log.objClsID = log.preData.ClassificationID
@@ -105,16 +105,16 @@ func (log *ObjectClsAudit) buildSnapshotForCur() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
 	rsp, err := log.clientSet.CoreService().Model().ReadModelClassification(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to build the objClsData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		blog.Errorf("[audit] failed to get object classification info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		return log
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to build the objClsData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		blog.Errorf("[audit] failed to get object classification info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to build the objClsData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		blog.Errorf("[audit] failed to get object classification info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		return log
 	}
 	log.curData = rsp.Data.Info[0]
 	log.objClsID = log.curData.ClassificationID

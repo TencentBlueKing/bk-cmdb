@@ -59,17 +59,17 @@ func (log *ObjectAttrGroupAudit) SaveAuditLog(auditAction metadata.ActionType) e
 	case metadata.AuditUpdate:
 		//do nothing
 	}
-	//get objectName
-	err := log.getObjectInfo(log.kit, log.bkObjectID)
-	if err != nil {
-		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
-	}
 	var bizName string
+	var err error
+	//get objectName
+	err = log.getObjectInfo(log.kit, log.bkObjectID)
+	if err != nil {
+		blog.Errorf("[audit] failed to get object name, err: %s", err)
+	}
 	if log.bizID != 0 {
 		bizName, err = auditlog.NewAudit(log.clientSet, log.kit.Header).GetInstNameByID(log.kit.Ctx, common.BKInnerObjIDApp, log.bizID)
 		if err != nil {
 			blog.Errorf("[audit] failed to get biz name by id: %d,err: %s", log.bizID, err)
-			return err
 		}
 	}
 	//make auditLog
@@ -92,15 +92,14 @@ func (log *ObjectAttrGroupAudit) SaveAuditLog(auditAction metadata.ActionType) e
 			},
 		},
 	}
-
 	auditResult, err := log.clientSet.CoreService().Audit().SaveAuditLog(log.kit.Ctx, log.kit.Header, auditLog)
 	if err != nil {
-		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %+v,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+		blog.ErrorJSON("%s %s audit log failed, err: %s, result: %+v, rid: %s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
+		return err
 	}
 	if auditResult.Result != true {
-		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+		blog.ErrorJSON("%s %s audit log failed, err: %s, result: %+v, rid: %s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
+		return errors.New(common.CCErrAuditSaveLogFailed, auditResult.ErrMsg)
 	}
 	return nil
 }
@@ -109,16 +108,16 @@ func (log *ObjectAttrGroupAudit) buildSnapshotForPre() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
 	rsp, err := log.clientSet.CoreService().Model().ReadAttributeGroupByCondition(log.kit.Ctx, log.kit.Header, metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to build the objAttrGroupData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		blog.Errorf("[audit] failed to get object attribute group info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		return log
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to build the objAttrGroupData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		blog.Errorf("[audit] failed to get object attribute group info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to build the objAttrGroupData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		blog.Errorf("[audit] failed to get object attribute group info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		return log
 	}
 	log.preData = rsp.Data.Info[0]
 	log.bkObjectID = log.preData.ObjectID
@@ -132,22 +131,22 @@ func (log *ObjectAttrGroupAudit) buildSnapshotForCur() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
 	rsp, err := log.clientSet.CoreService().Model().ReadAttributeGroupByCondition(log.kit.Ctx, log.kit.Header, metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to build the objAttrGroupData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		blog.Errorf("[audit] failed to get object attribute group info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		return log
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to build the objAttrGroupData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		blog.Errorf("[audit] failed to get object attribute group info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to build the objAttrGroupData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		blog.Errorf("[audit] failed to get object attribute group info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		return log
 	}
 	log.curData = rsp.Data.Info[0]
 	log.bkObjectID = log.curData.ObjectID
 	log.bkGroupID = log.curData.GroupID
 	log.bkGroupName = log.curData.GroupName
-	log.bizID, _ = log.preData.Metadata.ParseBizID()
+	log.bizID, _ = log.curData.Metadata.ParseBizID()
 	return log
 }
 
@@ -162,12 +161,15 @@ func (log *ObjectAttrGroupAudit) getObjectInfo(kit *rest.Kit, bkObjectID string)
 	//get objectName
 	resp, err := log.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
+		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
 		return err
 	}
 	if resp.Result != true {
+		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", resp.ErrMsg, log.kit.Rid)
 		return kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 	if len(resp.Data.Info) <= 0 {
+		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", resp.ErrMsg, log.kit.Rid)
 		return kit.CCError.CCError(common.CCErrorModelNotFound)
 	}
 	log.bkObjectName = resp.Data.Info[0].Spec.ObjectName

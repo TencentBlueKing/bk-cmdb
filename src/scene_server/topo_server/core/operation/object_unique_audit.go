@@ -22,13 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type ObjAuditLog interface {
-	buildSnapshotForPre() ObjAuditLog
-	buildSnapshotForCur() ObjAuditLog
-	SaveAuditLog(metadata.ActionType) errors.CCError
-}
-
-type ObjectAudit struct {
+type ObjectUniqueAudit struct {
 	kit          *rest.Kit
 	clientSet    apimachinery.ClientSetInterface
 	auditType    metadata.AuditType
@@ -36,22 +30,21 @@ type ObjectAudit struct {
 	id           int64
 	bkObjID      string
 	bkObjName    string
-	bkIsPaused   bool
-	preData      metadata.Object
-	curData      metadata.Object
+	preData      metadata.ObjectUnique
+	curData      metadata.ObjectUnique
 }
 
-func NewObjectAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, ID int64) ObjAuditLog {
-	return &ObjectAudit{
+func NewObjectUniqueAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, ID int64) ObjAuditLog {
+	return &ObjectUniqueAudit{
 		kit:          kit,
 		clientSet:    clientSet,
 		auditType:    metadata.ModelType,
-		resourceType: metadata.ModelRes,
+		resourceType: metadata.ModelUniqueRes,
 		id:           ID,
 	}
 }
 
-func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
+func (log *ObjectUniqueAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
 	preData := log.preData.ToMapStr()
 	curData := log.curData.ToMapStr()
 	switch auditAction {
@@ -62,16 +55,12 @@ func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCE
 	case metadata.AuditUpdate:
 		//do nothing
 	}
-	//检测是否为停用/启用模型
-	if !log.preData.IsPaused {
-		if log.curData.IsPaused {
-			auditAction = metadata.AuditPause
-		}
-	} else {
-		if !log.curData.IsPaused {
-			auditAction = metadata.AuditReuse
-		}
+	//get objectName
+	err := log.getObjectInfo(log.kit, log.bkObjID)
+	if err != nil {
+		blog.Errorf("[audit] failed to get object name, err: %s", err)
 	}
+	//make auditLog
 	auditLog := metadata.AuditLog{
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
@@ -97,46 +86,67 @@ func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCE
 	return nil
 }
 
-func (log *ObjectAudit) buildSnapshotForPre() ObjAuditLog {
+func (log *ObjectUniqueAudit) buildSnapshotForPre() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
-	rsp, err := log.clientSet.CoreService().Model().ReadModel(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
+	//get repData
+	rsp, err := log.clientSet.CoreService().Model().ReadModelAttrUnique(log.kit.Ctx, log.kit.Header, metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		blog.Errorf("[audit] failed to get unique info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
 		return log
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to get object info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[audit] failed to get unique info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
 		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to get object info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		blog.Errorf("[audit] failed to get unique info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
 		return log
 	}
-	log.preData = rsp.Data.Info[0].Spec
-	log.bkObjID = log.preData.ObjectID
-	log.bkObjName = log.preData.ObjectName
-	log.bkIsPaused = log.preData.IsPaused
+	log.preData = rsp.Data.Info[0]
+	log.bkObjID = log.preData.ObjID
 	return log
 }
 
-func (log *ObjectAudit) buildSnapshotForCur() ObjAuditLog {
+func (log *ObjectUniqueAudit) buildSnapshotForCur() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
-	rsp, err := log.clientSet.CoreService().Model().ReadModel(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
+	//get repData
+	rsp, err := log.clientSet.CoreService().Model().ReadModelAttrUnique(log.kit.Ctx, log.kit.Header, metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		blog.Errorf("[audit] failed to get unique info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
 		return log
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to get object info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[audit] failed to get unique info, rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
 		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to get object info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		blog.Errorf("[audit] failed to get unique info, err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
 		return log
 	}
-	log.curData = rsp.Data.Info[0].Spec
-	log.bkObjID = log.curData.ObjectID
-	log.bkObjName = log.curData.ObjectName
-	log.bkIsPaused = log.curData.IsPaused
+	log.curData = rsp.Data.Info[0]
+	log.bkObjID = log.curData.ObjID
 	return log
+}
+
+//search DB to get bkObjName by bkObjID.
+func (log *ObjectUniqueAudit) getObjectInfo(kit *rest.Kit, bkObjectID string) errors.CCError {
+	query := make(map[string]interface{})
+	if bkObjectID == "" {
+		query = mapstr.MapStr{"bk_obj_id": log.bkObjID}
+	} else {
+		query = mapstr.MapStr{"bk_obj_id": bkObjectID}
+	}
+	//get objectName
+	resp, err := log.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+	if err != nil {
+		return err
+	}
+	if resp.Result != true {
+		return kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+	if len(resp.Data.Info) <= 0 {
+		return kit.CCError.CCError(common.CCErrorModelNotFound)
+	}
+	log.bkObjName = resp.Data.Info[0].Spec.ObjectName
+	return nil
 }

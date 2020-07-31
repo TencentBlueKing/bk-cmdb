@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// UniqueOperationInterface group operation methods
+// Unique OperationInterface group operation methods
 type UniqueOperationInterface interface {
 	Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest, metaData *metadata.Metadata) (uniqueID *metadata.RspID, err error)
 	Update(kit *rest.Kit, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error)
@@ -32,7 +32,7 @@ type UniqueOperationInterface interface {
 	Search(kit *rest.Kit, objectID string, metaData *metadata.Metadata) (objectUniques []metadata.ObjectUnique, err error)
 }
 
-// NewUniqueOperation create a new group operation instance
+// NewUnique Operation create a new group operation instance
 func NewUniqueOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) UniqueOperationInterface {
 	return &unique{
 		clientSet:   client,
@@ -58,11 +58,17 @@ func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.Create
 	}
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), kit.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
 	if err != nil {
-		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, kit.Rid)
+		blog.Errorf("[operation-unique] create for %s, %#v failed %v, rid: %s", objectID, request, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueCreateFailed)
 	}
 	if !resp.Result {
 		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	//package audit response
+	err = NewObjectUniqueAudit(kit, a.clientSet, int64(resp.Data.Created.ID)).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
+	if err != nil {
+		blog.Errorf("[operation-unique] create %s unique item success, but update audit log failed: %v, rid: %s", objectID, err, kit.Rid)
 	}
 
 	return &metadata.RspID{ID: int64(resp.Data.Created.ID)}, nil
@@ -72,9 +78,12 @@ func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *meta
 	update := metadata.UpdateModelAttrUnique{
 		Data: *request,
 	}
+	//get PreData
+	objAudit := NewObjectUniqueAudit(kit, a.clientSet, int64(id)).buildSnapshotForPre()
+
 	resp, err := a.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), kit.Header, objectID, id, update)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v, rid: %s", objectID, id, request, err, kit.Rid)
+		blog.Errorf("[operation-unique] update for %s, %d, %#v failed %v, rid: %s", objectID, id, request, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniqueUpdateFailed)
 	}
 	if !resp.Result {
@@ -86,6 +95,12 @@ func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *meta
 		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, kit.Rid)
 		return err
 	}
+
+	//get CurData and saveAuditLog
+	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
+	if err != nil {
+		blog.Errorf("[operation-unique] update %s unique item success, but update audit log failed: %v, rid: %s", objectID, err, kit.Rid)
+	}
 	return nil
 }
 
@@ -94,9 +109,12 @@ func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64, metaData *met
 	if metaData != nil {
 		meta = *metaData
 	}
+	//get PreData
+	objAudit := NewObjectUniqueAudit(kit, a.clientSet, int64(id)).buildSnapshotForPre()
+
 	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), kit.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
 	if err != nil {
-		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v, rid: %s", objectID, id, err, kit.Rid)
+		blog.Errorf("[operation-unique] delete for %s, %d failed %v, rid: %s", objectID, id, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniqueDeleteFailed)
 	}
 	if !resp.Result {
@@ -106,6 +124,11 @@ func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64, metaData *met
 	if err := a.authManager.DeregisterModelUniqueByID(kit.Ctx, kit.Header, int64(id)); err != nil {
 		blog.V(2).Infof("deregister unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, kit.Rid)
 		return err
+	}
+	//saveAuditLog
+	err = objAudit.SaveAuditLog(metadata.AuditDelete)
+	if err != nil {
+		blog.Errorf("[operation-unique] delete %s unique item success, but update audit log failed: %v, rid: %s", objectID, err, kit.Rid)
 	}
 	return nil
 }
@@ -124,7 +147,7 @@ func (a *unique) Search(kit *rest.Kit, objectID string, metaData *metadata.Metad
 	}
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), kit.Header, cond)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] search for %s, failed %v, rid: %s", objectID, err, kit.Rid)
+		blog.Errorf("[operation-unique] search for %s, failed %v, rid: %s", objectID, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
 	if !resp.Result {

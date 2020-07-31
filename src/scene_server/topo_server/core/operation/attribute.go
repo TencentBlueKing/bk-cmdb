@@ -139,8 +139,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 				//audit the CreateObjectGroup action
 				err = NewObjectAttrGroupAudit(kit, a.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
 				if err != nil {
-					blog.Errorf("create object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", grp.Group().GroupName, err, kit.Rid)
-					return nil, err
+					blog.Errorf("[operation-attr] create object attribute group %s success, but update audit log failed: %v, rid: %s", grp.Group().GroupName, err, kit.Rid)
 				}
 			}
 			att.Attribute().PropertyGroup = common.BKBizDefault
@@ -159,10 +158,8 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 	//package audit response
 	err = NewObjectAttrAudit(kit, a.clientSet, att.Attribute().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
 	if err != nil {
-		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", att.Attribute().PropertyName, err, kit.Rid)
-		return nil, err
+		blog.Errorf("[operation-attr] create object attribute %s success, but update audit log failed: %v, rid: %s", att.Attribute().PropertyID, err, kit.Rid)
 	}
-
 	return att, nil
 }
 
@@ -204,8 +201,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 		//saveAuditLog
 		err = objAudit.SaveAuditLog(metadata.AuditDelete)
 		if err != nil {
-			blog.Errorf("Delete object attribute success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
-			return err
+			blog.Errorf("[operation-attr] delete object attribute %s success, but update audit log failed: %v, rid: %s", attrItem.Attribute().PropertyID, err, kit.Rid)
 		}
 	}
 
@@ -335,10 +331,8 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	//get CurData and saveAuditLog
 	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 	if err != nil {
-		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", attID, err, kit.Rid)
-		return err
+		blog.Errorf("[operation-attr] update object attribute %s success, but update audit log failed: %v, rid: %s", attID, err, kit.Rid)
 	}
-
 	return nil
 }
 

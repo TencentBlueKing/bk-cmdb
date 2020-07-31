@@ -83,10 +83,8 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, metaData *m
 	//package audit response
 	err = NewObjectAttrGroupAudit(kit, g.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
 	if err != nil {
-		blog.Errorf("create object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", grp.Group().GroupName, err, kit.Rid)
-		return nil, err
+		blog.Errorf("[operation-grp] create object group %s success, but update audit log failed: %v, rid: %s", grp.Group().ObjectID, err, kit.Rid)
 	}
-
 	return grp, nil
 }
 
@@ -98,20 +96,19 @@ func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
 
 	rsp, err := g.clientSet.CoreService().Model().DeleteAttributeGroupByCondition(context.Background(), kit.Header, metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[operation-grp]failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-grp] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-grp]failed to delete the group(%d), err: %s, rid: %s", groupID, rsp.ErrMsg, kit.Rid)
+		blog.Errorf("[operation-grp] failed to delete the group(%d), err: %s, rid: %s", groupID, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 
 	//saveAuditLog
 	err = objAudit.SaveAuditLog(metadata.AuditDelete)
 	if err != nil {
-		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
-		return err
+		blog.Errorf("[operation-grp] delete object group %s success, but update audit log failed: %v, rid: %s", groupID, err, kit.Rid)
 	}
 	return nil
 }
@@ -252,9 +249,7 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 	//get CurData and saveAuditLog
 	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 	if err != nil {
-		blog.Errorf("update object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", cond.Data.Name, err, kit.Rid)
-		return err
+		blog.Errorf("[operation-grp] delete object group %s success, but update audit log failed: %v, rid: %s", cond.Data.Name, err, kit.Rid)
 	}
-
 	return nil
 }

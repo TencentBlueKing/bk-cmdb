@@ -241,6 +241,12 @@ func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.
 	}
 
 	data.ID = int64(rspAsst.Data.Created.ID)
+
+	//package audit response
+	err = NewObjectAsstAudit(kit, assoc.clientSet, data.ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
+	if err != nil {
+		blog.Errorf("[operation-asst] create object association %s success, but update audit log failed: %v, rid: %s", rsp.Data.Info[0].AssociationName, err, kit.Rid)
+	}
 	return data, nil
 }
 
@@ -378,6 +384,10 @@ func (assoc *association) DeleteAssociation(kit *rest.Kit, cond condition.Condit
 		return kit.CCError.Error(common.CCErrorTopoDeletePredefinedAssociation)
 	}
 
+	//get PreData
+	objAudit := NewObjectAsstAudit(kit, assoc.clientSet, rsp.Data.Info[0].ID)
+	objAudit.transInfoToPre(rsp.Data.Info[0])
+
 	// delete the object association
 	result, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
@@ -390,6 +400,11 @@ func (assoc *association) DeleteAssociation(kit *rest.Kit, cond condition.Condit
 		return kit.CCError.Error(result.Code)
 	}
 
+	//package audit response
+	err = objAudit.SaveAuditLog(metadata.AuditDelete)
+	if err != nil {
+		blog.Errorf("[operation-asst] delete object association %s success, but update audit log failed: %v, rid: %s", rsp.Data.Info[0].AssociationName, err, kit.Rid)
+	}
 	return nil
 }
 
@@ -442,6 +457,10 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 		return err
 	}
 
+	//get PreData
+	objAudit := NewObjectAsstAudit(kit, assoc.clientSet, rsp.Data.Info[0].ID)
+	objAudit.transInfoToPre(rsp.Data.Info[0])
+
 	updateopt := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
 		Data:      data,
@@ -453,10 +472,15 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 	}
 
 	if !rspAsst.Result {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s, rid: %s", data, rspAsst.ErrMsg, kit.Rid)
+		blog.Errorf("[operation-asst] failed to Update the association (%#v) , err: %s, rid: %s", data, rspAsst.ErrMsg, kit.Rid)
 		return kit.CCError.Error(rspAsst.Code)
 	}
 
+	//package audit response
+	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
+	if err != nil {
+		blog.Errorf("[operation-asst] update object association %s success, but update audit log failed: %v, rid: %s", rsp.Data.Info[0].AssociationName, err, kit.Rid)
+	}
 	return nil
 }
 

@@ -133,7 +133,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		}
 		auditLog.OperationDetail = operationDetail
 	case ModelAssociationRes:
-		operationDetail := new(ModelAssociationOpDetail)
+		operationDetail := new(ModelAsstOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -189,7 +189,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		}
 		auditLog.OperationDetail = operationDetail
 	case ModelAssociationRes:
-		operationDetail := new(ModelAssociationOpDetail)
+		operationDetail := new(ModelAsstOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -258,6 +258,18 @@ func (op *ModelAttrOpDetail) WithName() string {
 	return "ModelAttrDetail"
 }
 
+type ModelAsstOpDetail struct {
+	BasicOpDetail `bson:",inline"`
+	BkObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
+	BkObjName     string `json:"bk_obj_name" bson:"bk_obj_name"`
+	BkAsstObjID   string `json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	BkAsstObjName string `json:"bk_asst_obj_name" bson:"bk_asst_obj_name"`
+}
+
+func (op *ModelAsstOpDetail) WithName() string {
+	return "ModelAsstDetail"
+}
+
 type InstanceOpDetail struct {
 	BasicOpDetail `bson:",inline"`
 	ModelID       string `json:"bk_obj_id" bson:"bk_obj_id"`
@@ -304,20 +316,6 @@ type InstanceAssociationOpDetail struct {
 
 func (ao *InstanceAssociationOpDetail) WithName() string {
 	return "InstanceAssociationOpDetail"
-}
-
-type ModelAssociationOpDetail struct {
-	AssociationOpDetail AssociationOpDetail       `json:"basic_asst_detail" bson:"basic_asst_detail"`
-	AssociationName     string                    `json:"asst_name" bson:"asst_name"`
-	Mapping             AssociationMapping        `json:"mapping" bson:"mapping"`
-	OnDelete            AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`
-	IsPre               *bool                     `json:"is_pre" bson:"is_pre"`
-	SourceModelName     string                    `json:"src_model_name" bson:"src_model_name"`
-	TargetModelName     int64                     `json:"target_model_name" bson:"target_model_name"`
-}
-
-func (ao *ModelAssociationOpDetail) WithName() string {
-	return "ModelAssociationOpDetail"
 }
 
 // Content contains the details information with in a user's operation.
@@ -447,6 +445,10 @@ const (
 	AuditArchive ActionType = "archive"
 	// recover a resource
 	AuditRecover ActionType = "recover"
+	// pause a resource
+	AuditPause ActionType = "pause"
+	// reuse a resource
+	AuditReuse ActionType = "reuse"
 )
 
 const (
