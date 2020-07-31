@@ -511,7 +511,7 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 	}
 
 	for actionID, permissionTypeMap := range permissionMap {
-		action := metadata.IamAction{ID: actionID}
+		action := metadata.IamAction{ID: actionID, RelatedResourceTypes: make([]metadata.IamResourceType, 0)}
 		for rscType, instances := range permissionTypeMap {
 			action.RelatedResourceTypes = append(action.RelatedResourceTypes, metadata.IamResourceType{
 				SystemID:  SystemIDCMDB,
