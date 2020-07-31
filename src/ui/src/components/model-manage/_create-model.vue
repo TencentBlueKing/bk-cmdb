@@ -19,16 +19,21 @@
                         <span class="label-title">{{$t('所属分组')}}</span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelGroup') }">
-                            <bk-select style="width: 100%;"
-                                v-model="modelDialog.data.bk_classification_id"
+                            <bk-select style="width: 100%;" ref="groupSelector"
                                 v-validate="'required'"
                                 name="modelGroup"
-                                :scroll-height="200"
-                                :empty-text="isAdminView ? '' : $t('无自定义分组')">
+                                :value="modelDialog.data.bk_classification_id"
+                                :scroll-height="200">
                                 <bk-option v-for="(option, index) in localClassifications"
                                     :key="index"
                                     :id="option.bk_classification_id"
                                     :name="option.bk_classification_name">
+                                    <cmdb-auth class="group-auth" tag="div"
+                                        :auth="{ type: $OPERATION.C_MODEL, relation: [option.id] }"
+                                        @click.native.stop
+                                        @click="handleSelectGroup(option)">
+                                        {{option.bk_classification_name}}
+                                    </cmdb-auth>
                                 </bk-option>
                             </bk-select>
                             <p class="form-error" :title="errors.first('modelGroup')">{{errors.first('modelGroup')}}</p>
@@ -122,23 +127,9 @@
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
-            ...mapGetters(['isAdminView']),
             localClassifications () {
-                const localClassifications = []
-                this.classifications.forEach(classification => {
-                    if (!['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classification['bk_classification_id'])) {
-                        const localClassification = {
-                            ...classification,
-                            isModelShow: false
-                        }
-                        if (this.isAdminView) {
-                            localClassifications.push(localClassification)
-                        } else if (this.$tools.getMetadataBiz(classification)) {
-                            localClassifications.push(localClassification)
-                        }
-                    }
-                })
-                return localClassifications
+                const filterGroups = ['bk_biz_topo', 'bk_host_manage', 'bk_organization']
+                return this.classifications.filter(group => !filterGroups.includes(group.bk_classification_id))
             }
         },
         watch: {
@@ -156,6 +147,10 @@
             }
         },
         methods: {
+            handleSelectGroup (group) {
+                this.modelDialog.data.bk_classification_id = group.bk_classification_id
+                this.$refs.groupSelector.close()
+            },
             async confirm () {
                 if (!await this.$validator.validateAll()) {
                     return
@@ -259,6 +254,15 @@
             width: 100%;
             background: #fff;
             z-index: 99;
+        }
+    }
+    .group-auth {
+        display: block;
+        margin: 0 -16px;
+        padding: 0 16px;
+        &.disabled {
+            background-color: #fff;
+            color: $textDisabledColor;
         }
     }
 </style>
