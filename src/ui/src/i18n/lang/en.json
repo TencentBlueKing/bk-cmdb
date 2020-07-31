@@ -803,6 +803,7 @@
     "模块名称提示": "The module name must be the same as the service template name.",
     "请为主机添加进程": "Please add process to the host",
     "请输入实例名称或选择标签": "Enter instance name or select tag",
+    "服务实例标签值搜索提示语": "Incomplete tag value search criteria ignored",
     "标签键": "Label key",
     "标签值": "Label value",
     "已有标签": "Existing tag",
