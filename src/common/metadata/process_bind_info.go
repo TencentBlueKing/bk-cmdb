@@ -13,6 +13,9 @@ package metadata
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"configcenter/src/common"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -34,165 +37,289 @@ UBSON  bson 反序列化的方法， 用于数据库存储,将数据解析到不
 */
 
 var (
+	// 标准字段，不论在什么环境上都需要使用的
+	ignoreField = map[string]struct{}{"template_row_id": struct{}{}, common.BKIP: struct{}{}, common.BKPort: struct{}{}, common.BKProtocol: struct{}{}, common.BKEnable: struct{}{}}
+)
+var (
 	//  内部变量，不允许改变，改变值请用对应的Register 方案
-	defaultPropertyBindInfoHandle ProcPropertyBindInfoInterface = &openVersionPropertyBindInfo{}
+	defaultPropertyBindInfoHandle ProcPropertyExtraBindInfoInterface = &openVersionPropertyBindInfo{}
 	//  内部变量，不允许改变，改变值请用对应的Register 方案
-	defaultProcBindInfoHandle ProcBindInfoInterface = &openVersionProcBindInfo{}
+	defaultProcBindInfoHandle ProcExtraBindInfoInterface = &openVersionProcBindInfo{}
 )
 
 // TODO 等待实现， 替换已有的进程，进程模板中进程绑定信息实际结构的处理对象
-func Register(propertyBindInfo ProcPropertyBindInfoInterface, procBindInfo ProcBindInfoInterface) {
+func Register(propertyBindInfo ProcPropertyExtraBindInfoInterface, procBindInfo ProcExtraBindInfoInterface) {
 	defaultPropertyBindInfoHandle = propertyBindInfo
 	defaultProcBindInfoHandle = procBindInfo
 }
 
-// ProcPropertyBindInfoInterface 用来处理进程模板中bind info 数据的反序列化，
+// ProcPropertyExtraBindInfoInterface 用来处理进程模板中bind info 数据的反序列化，
 // 序列号使用默认的方法，目前只支持json, bson, 如果需要其他请新加
-type ProcPropertyBindInfoInterface interface {
-	UJSON(data []byte) (*ProcPropertyBindInfoValue, error)
-	UBSON(data []byte) (*ProcPropertyBindInfoValue, error)
-	/* 	JSON() ([]byte, error)
-	   	BSON() ([]byte, error) */
+type ProcPropertyExtraBindInfoInterface interface {
+	UJSON(data []byte, bindInfo *ProcPropertyBindInfoValue) error
+	UBSON(data []byte, bindInfo *ProcPropertyBindInfoValue) error
 }
 
-// ProcBindInfoInterface 用来处理进程中bind info 数据的序反序列化，
+// ProcExtraBindInfoInterface 用来处理进程中bind info 数据的序反序列化，
 // 序列号使用默认的方法，目前只支持json, bson, 如果需要其他请新加
-type ProcBindInfoInterface interface {
-	UJSON(data []byte) (*ProcBindInfo, error)
-	UBSON(data []byte) (*ProcBindInfo, error)
-	/* 	JSON() ([]byte, error)
-	   	BSON() ([]byte, error) */
-}
-
-// ProcPropertyBindInfoRaw 用来限定进程模板中的校验和通过模板来限定进程实例的数据内容
-type ProcPropertyBindInfoRaw interface {
-	ExtractChangeInfoBindInfo(i *Process) (*ProcBindInfo, bool, bool)
-	ExtractInstanceUpdateData(i *Process) *ProcBindInfo
-	Validate() error
-	// 留做扩招使用
-	//Update(input ProcessProperty, rawProperty map[string]interface{})
-	Datas() []interface{}
+type ProcExtraBindInfoInterface interface {
+	UJSON(data []byte, bindInfo *ProcBindInfo) error
+	UBSON(data []byte, bindInfo *ProcBindInfo) error
 }
 
 // ProcPropertyBindInfo 给服务模板使用的，来存储，校验服务模板中进程绑定的信息
 type ProcPropertyBindInfo struct {
 	// 通过Unmarshal 方法实现不同的数据类型
-	Value ProcPropertyBindInfoValue
+	Value []ProcPropertyBindInfoValue `field:"value" json:"value" bson:"value"`
 	// 给前端做兼容
 	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
-// ProcPropertyBindInfoValue 给服务模板使用的，来存储，校验服务模板中进程绑定的信息
+// ProcPropertyBindInfoValue 给服务模板使用的，来存储，校验服务模板中进程绑定的信息, 用来做管理的
 type ProcPropertyBindInfoValue struct {
-	// 通过Unmarshal 方法实现不同的数据类型
-	raw ProcPropertyBindInfoRaw `field:"value" json:"value" bson:"value"`
+	// 标准属性
+	Std *stdProcPropertyBindInfoValue
+
+	// 通过Unmarshal 方法实现不同版本中数据不一样
+	extra propertyBindInfoValueInterface
+}
+
+// stdProcPropertyBindInfoValue 这个是标准的进程模板的绑定信息
+type stdProcPropertyBindInfoValue struct {
+	RowID    int64            `field:"row_id" json:"row_id" bson:"row_id"`
+	IP       PropertyBindIP   `field:"ip" json:"ip" bson:"ip"`
+	Port     PropertyPort     `field:"port" json:"port" bson:"port"`
+	Protocol PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
+	Enable   PropertyBool     `field:"enable" json:"enable" bson:"enable"`
+}
+
+type propertyBindInfoValueInterface interface {
+	Validate() (string, error)
+	ExtractChangeInfoBindInfo(i *ProcBindInfo) (map[string]interface{}, bool, bool)
+
+	// ExtractInstanceUpdateData extra 主机进程bind_info中某一行的extra
+	ExtractInstanceUpdateData(extra map[string]interface{}) map[string]interface{}
+
+	// toMap  获取要保持格式的数据
+	toMap() map[string]interface{}
 }
 
 // ProcBindInfo 给服务模板使用的，来存储，校验服务实例中进程绑定的信息
 type ProcBindInfo struct {
-	// 通过Unmarshal 方法实现不同的数据类型
-	raw interface{}
+	// 标准属性
+	Std *stdProcBindInfo
+
+	// 通过Unmarshal 方法实现不同版本中数据不一样
+	extra map[string]interface{}
 }
 
-func (ppb *ProcPropertyBindInfoValue) UnmarshalJSON(data []byte) error {
-	val, err := defaultPropertyBindInfoHandle.UJSON(data)
-	if err != nil {
-		return err
+// stdProcBindInfo 这个是标准的进程实例的绑定信息
+type stdProcBindInfo struct {
+	TemplateRowID int64   `field:"template_row_id" json:"template_row_id" bson:"template_row_id"`
+	IP            *string `field:"ip" json:"ip" bson:"ip"`
+	Port          *string `field:"port" json:"port" bson:"port"`
+	Protocol      *string `field:"protocol" json:"protocol" bson:"protocol"`
+	Enable        *bool   `field:"enable" json:"enable" bson:"enable"`
+}
+
+/*** ProcPropertyBindInfo 依赖的方法  ****/
+
+func (pbi *ProcPropertyBindInfo) Validate() (string, error) {
+	maxRowID := int64(0)
+	for idx, property := range pbi.Value {
+		if property.Std == nil {
+			return common.BKProcBindInfo, fmt.Errorf("not set value")
+		}
+
+		if property.Std.RowID > maxRowID {
+			maxRowID = property.Std.RowID
+		}
+
+		if err := property.Std.IP.Validate(); err != nil {
+			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKIP), err
+		}
+		if err := property.Std.Port.Validate(); err != nil {
+			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKPort), err
+		}
+		if err := property.Std.Protocol.Validate(); err != nil {
+			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKProtocol), err
+		}
+		if err := property.Std.Enable.Validate(); err != nil {
+			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKEnable), err
+		}
+		if property.extra != nil {
+			if fieldName, err := property.extra.Validate(); err != nil {
+				return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, fieldName), err
+			}
+		}
+
 	}
-	ppb.raw = val.raw
-
-	return nil
-}
-
-func (ppb *ProcPropertyBindInfoValue) UnmarshalBSON(data []byte) error {
-	val, err := defaultPropertyBindInfoHandle.UBSON(data)
-	if err != nil {
-		return err
+	for idx, property := range pbi.Value {
+		if property.Std.RowID == 0 {
+			maxRowID += 1
+			pbi.Value[idx].Std.RowID = maxRowID
+		}
 	}
-	ppb.raw = val.raw
-	return nil
+	return "", nil
 }
 
-func (ppb *ProcPropertyBindInfoValue) MarshalJSON() ([]byte, error) {
-	b, err := json.Marshal(ppb.raw)
+func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process) ([]ProcBindInfo, bool, bool) {
+	var changed, isNamePortChanged bool
 
-	return b, err
-}
-
-func (ppb ProcPropertyBindInfo) MarshalBSON() ([]byte, error) {
-	data := make(map[string]interface{}, 0)
-	data["as_default_value"] = ppb.AsDefaultValue
-	if ppb.Value.raw != nil && len(ppb.Value.raw.Datas()) > 0 {
-		data["value"] = ppb.Value.raw.Datas()
-
+	procBindInfoMap := make(map[int64]ProcBindInfo, len(i.BindInfo))
+	for _, item := range i.BindInfo {
+		procBindInfoMap[item.Std.TemplateRowID] = item
 	}
-	return bson.Marshal(data)
-}
 
-func (ppb ProcPropertyBindInfo) MarshalJSON() ([]byte, error) {
-	data := make(map[string]interface{}, 0)
-	data["as_default_value"] = ppb.AsDefaultValue
-	if ppb.Value.raw != nil && len(ppb.Value.raw.Datas()) > 0 {
-		data["value"] = ppb.Value.raw.Datas()
+	procBindInfoArr := make([]ProcBindInfo, 0)
+	for _, row := range pbi.Value {
+		inputProcBindInfo := procBindInfoMap[row.Std.RowID]
 
+		if inputProcBindInfo.Std == nil {
+			inputProcBindInfo.Std = &stdProcBindInfo{}
+		}
+		inputProcBindInfo.Std.TemplateRowID = row.Std.RowID
+
+		if IsAsDefaultValue(row.Std.IP.AsDefaultValue) {
+			if row.Std.IP.Value == nil && inputProcBindInfo.Std.IP != nil {
+				inputProcBindInfo.Std.IP = nil
+				changed = true
+			} else if row.Std.IP.Value != nil && inputProcBindInfo.Std.IP == nil {
+				ip := row.Std.IP.Value.IP()
+				inputProcBindInfo.Std.IP = &ip
+				changed = true
+			} else if row.Std.IP.Value != nil && inputProcBindInfo.Std.IP != nil && row.Std.IP.Value.IP() != *inputProcBindInfo.Std.IP {
+				ip := row.Std.IP.Value.IP()
+				inputProcBindInfo.Std.IP = &ip
+				changed = true
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Port.AsDefaultValue) {
+			if row.Std.Port.Value == nil && inputProcBindInfo.Std.Port != nil {
+				inputProcBindInfo.Std.Port = nil
+				changed = true
+				isNamePortChanged = true
+			} else if row.Std.Port.Value != nil && inputProcBindInfo.Std.Port == nil {
+				inputProcBindInfo.Std.Port = row.Std.Port.Value
+				changed = true
+				isNamePortChanged = true
+			} else if row.Std.Port.Value != nil && inputProcBindInfo.Std.Port != nil && *row.Std.Port.Value != *inputProcBindInfo.Std.Port {
+				inputProcBindInfo.Std.Port = row.Std.Port.Value
+				changed = true
+				isNamePortChanged = true
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Protocol.AsDefaultValue) {
+			if row.Std.Protocol.Value == nil && inputProcBindInfo.Std.Protocol != nil {
+				inputProcBindInfo.Std.Protocol = nil
+				changed = true
+			} else if row.Std.Protocol.Value != nil && inputProcBindInfo.Std.Protocol == nil {
+				protocol := string(*row.Std.Protocol.Value)
+				inputProcBindInfo.Std.Protocol = &protocol
+				changed = true
+			} else if row.Std.Protocol.Value != nil && inputProcBindInfo.Std.Protocol != nil && string(*row.Std.Protocol.Value) != *inputProcBindInfo.Std.Protocol {
+				protocol := string(*row.Std.Protocol.Value)
+				inputProcBindInfo.Std.Protocol = &protocol
+				changed = true
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Enable.AsDefaultValue) {
+			if row.Std.Enable.Value == nil && inputProcBindInfo.Std.Enable != nil {
+				inputProcBindInfo.Std.Enable = nil
+				changed = true
+			} else if row.Std.Enable.Value != nil && inputProcBindInfo.Std.Enable == nil {
+				inputProcBindInfo.Std.Enable = row.Std.Enable.Value
+				changed = true
+			} else if row.Std.Enable.Value != nil && inputProcBindInfo.Std.Enable != nil && *row.Std.Enable.Value != *inputProcBindInfo.Std.Enable {
+				inputProcBindInfo.Std.Enable = row.Std.Enable.Value
+				changed = true
+			}
+		}
+		if row.extra != nil {
+			extraMap, extraChanged, isExtraNamePortChanged := row.extra.ExtractChangeInfoBindInfo(&inputProcBindInfo)
+			if extraChanged {
+				changed = extraChanged
+			}
+			if isExtraNamePortChanged {
+				isNamePortChanged = isExtraNamePortChanged
+			}
+			inputProcBindInfo.extra = extraMap
+		}
+
+		procBindInfoArr = append(procBindInfoArr, inputProcBindInfo)
 	}
-	return json.Marshal(data)
+
+	return procBindInfoArr, changed, isNamePortChanged
 
 }
 
-// Validate 校验数据是否合法
-func (pbi *ProcPropertyBindInfo) Validate() error {
-	if pbi == nil || pbi.Value.raw == nil {
-		return nil
+func (pbi *ProcPropertyBindInfo) ExtractInstanceUpdateData(input *Process) []ProcBindInfo {
+	return pbi.changeInstanceBindInfo(input.BindInfo)
+}
+
+// changeInstanceBindInfo 根据模板和进程中的绑定信息来组成真正的进程绑定信息
+func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindInfo) []ProcBindInfo {
+	procBindInfoMap := make(map[int64]ProcBindInfo, 0)
+
+	for _, item := range bindInfoArr {
+		procBindInfoMap[item.Std.TemplateRowID] = item
 	}
-	return pbi.Value.Validate()
-}
 
-func (pbi *ProcPropertyBindInfo) ExtractInstanceUpdateData(input *Process) *ProcBindInfo {
-	return pbi.Value.raw.ExtractInstanceUpdateData(input)
-}
+	procBindInfoArr := make([]ProcBindInfo, 0)
+	for _, row := range pbi.Value {
+		inputProcBindInfo := procBindInfoMap[row.Std.RowID]
+		if inputProcBindInfo.Std == nil {
+			inputProcBindInfo.Std = &stdProcBindInfo{}
+		}
 
-// Validate 校验数据是否合法
-func (pbi *ProcPropertyBindInfoValue) Validate() error {
-	if pbi == nil || pbi.raw == nil {
-		return nil
+		if row.Std == nil {
+			row.Std = &stdProcPropertyBindInfoValue{}
+		}
+
+		inputProcBindInfo.Std.TemplateRowID = row.Std.RowID
+
+		/*** 处理标准字段 ***/
+
+		if IsAsDefaultValue(row.Std.IP.AsDefaultValue) == true {
+			if row.Std.IP.Value == nil {
+				inputProcBindInfo.Std.IP = nil
+			} else {
+				ip := row.Std.IP.Value.IP()
+				inputProcBindInfo.Std.IP = &ip
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Port.AsDefaultValue) == true {
+			inputProcBindInfo.Std.Port = row.Std.Port.Value
+		}
+
+		if IsAsDefaultValue(row.Std.Protocol.AsDefaultValue) == true {
+			if row.Std.Protocol.Value == nil {
+				inputProcBindInfo.Std.Protocol = nil
+			} else {
+				protocol := string(*row.Std.Protocol.Value)
+				inputProcBindInfo.Std.Protocol = &protocol
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Enable.AsDefaultValue) == true {
+			if row.Std.Enable.Value == nil {
+				inputProcBindInfo.Std.Enable = nil
+			} else {
+				inputProcBindInfo.Std.Enable = row.Std.Enable.Value
+			}
+		}
+		if row.extra != nil {
+			inputProcBindInfo.extra = row.extra.ExtractInstanceUpdateData(inputProcBindInfo.extra)
+		}
+
+		procBindInfoArr = append(procBindInfoArr, inputProcBindInfo)
 	}
-	return pbi.raw.Validate()
-}
 
-// ExtractChangeInfoBindInfo 生成对应环境中存储数据的对象
-func (pbi *ProcPropertyBindInfoValue) ExtractChangeInfoBindInfo(i *Process) (*ProcBindInfo, bool, bool) {
-	return pbi.raw.ExtractChangeInfoBindInfo(i)
-}
-
-func (pbi *ProcBindInfo) UnmarshalJSON(data []byte) error {
-	val, err := defaultProcBindInfoHandle.UJSON(data)
-	if err != nil {
-		return err
-	}
-	pbi.raw = val.raw
-	return nil
-}
-
-func (pbi *ProcBindInfo) UnmarshalBSON(data []byte) error {
-	val, err := defaultProcBindInfoHandle.UBSON(data)
-	if err != nil {
-		return err
-	}
-	pbi.raw = val.raw
-	return nil
-}
-
-func (pbi ProcBindInfo) MarshalJSON() ([]byte, error) {
-	return json.Marshal(pbi.raw)
-}
-
-func (pbi ProcBindInfo) MarshalBSON() ([]byte, error) {
-	if pbi.raw == nil {
-		// 避免bson marshal nil 出现问题
-		return bson.Marshal([]struct{}{})
-	}
-	return bson.Marshal(pbi.raw)
+	return procBindInfoArr
 }
 
 // Update  bind info 每次更新采用的是全量更新
@@ -202,260 +329,334 @@ func (pbi *ProcPropertyBindInfo) Update(input ProcessProperty, rawProperty map[s
 	return
 }
 
-/* 公开版本的进程bind 信息处理的方法 */
+func cloneProcBindInfoArr(procBindInfoArr []ProcBindInfo) (newData []ProcBindInfo) {
+	newData = make([]ProcBindInfo, len(procBindInfoArr))
+	for idx, bindInfo := range procBindInfoArr {
+		extra := make(map[string]interface{}, 0)
+		for key, val := range bindInfo.extra {
+			extra[key] = val
+		}
 
-type openVersionPropertyBindInfo struct {
+		newData[idx] = ProcBindInfo{
+			Std: &stdProcBindInfo{
+				IP:       bindInfo.Std.IP,
+				Port:     bindInfo.Std.Port,
+				Protocol: bindInfo.Std.Protocol,
+				Enable:   bindInfo.Std.Enable,
+			},
+			extra: extra,
+		}
+	}
+
+	return
 }
 
-func (ov *openVersionPropertyBindInfo) UJSON(data []byte) (*ProcPropertyBindInfoValue, error) {
-	if data == nil || len(data) == 0 {
-		return nil, nil
+// Compare 对比模板和实例数据，发现数据是否变化
+func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcBindInfo) (newBindInfoArr []ProcBindInfo, change bool) {
+	tmpBindInfoArr := cloneProcBindInfoArr(procBindInfoArr)
+	newBindInfoArr = pbi.changeInstanceBindInfo(tmpBindInfoArr)
+
+	if len(procBindInfoArr) != len(newBindInfoArr) {
+		change = true
+		return
 	}
-	bindInfo := &processPropertyBindInfo{}
-	err := json.Unmarshal(data, bindInfo)
-	return &ProcPropertyBindInfoValue{raw: bindInfo}, err
+
+	newBindInfoKv := make(map[int64]ProcBindInfo, len(newBindInfoArr))
+	for _, row := range newBindInfoArr {
+		newBindInfoKv[row.Std.TemplateRowID] = row
+	}
+
+	for _, row := range procBindInfoArr {
+		tmpBindInfo, ok := newBindInfoKv[row.Std.TemplateRowID]
+		if !ok {
+			change = true
+			return
+		}
+		if row.Std == nil && tmpBindInfo.Std != nil ||
+			row.Std != nil && tmpBindInfo.Std == nil {
+			change = true
+			return
+		}
+		if (row.Std.IP == nil && tmpBindInfo.Std.IP != nil) ||
+			(row.Std.IP != nil && tmpBindInfo.Std.IP == nil) ||
+			(row.Std.IP != nil && tmpBindInfo.Std.IP != nil && *row.Std.IP != *tmpBindInfo.Std.IP) {
+			change = true
+			return
+		}
+		if (row.Std.Port == nil && tmpBindInfo.Std.Port != nil) ||
+			(row.Std.Port != nil && tmpBindInfo.Std.Port == nil) ||
+			(row.Std.Port != nil && tmpBindInfo.Std.Port != nil && *row.Std.Port != *tmpBindInfo.Std.Port) {
+			change = true
+			return
+		}
+		if (row.Std.Protocol == nil && tmpBindInfo.Std.Protocol != nil) ||
+			(row.Std.Protocol != nil && tmpBindInfo.Std.Protocol == nil) ||
+			(row.Std.Protocol != nil && tmpBindInfo.Std.Protocol != nil && *row.Std.Protocol != *tmpBindInfo.Std.Protocol) {
+			change = true
+			return
+		}
+		if (row.Std.Enable == nil && tmpBindInfo.Std.Enable != nil) ||
+			(row.Std.Enable != nil && tmpBindInfo.Std.Enable == nil) ||
+			(row.Std.Enable != nil && tmpBindInfo.Std.Enable != nil && *row.Std.Enable != *tmpBindInfo.Std.Enable) {
+			change = true
+			return
+		}
+
+		if row.extra == nil && tmpBindInfo.extra != nil ||
+			row.extra != nil && tmpBindInfo.extra == nil {
+			change = true
+			return
+		}
+		if len(row.extra) != len(tmpBindInfo.extra) {
+			change = true
+			return
+		}
+		for key, val := range row.extra {
+			tmpVal, exist := tmpBindInfo.extra[key]
+			if !exist {
+				change = true
+				return
+			}
+			if val == nil && tmpVal != nil ||
+				val != nil && tmpVal == nil ||
+				(val != nil && tmpVal != nil && val != tmpVal) {
+				change = true
+				return
+			}
+		}
+
+	}
+
+	return
 }
 
-func (ov *openVersionPropertyBindInfo) UBSON(data []byte) (*ProcPropertyBindInfoValue, error) {
-	if data == nil || len(data) == 0 {
-		return nil, nil
-	}
-	var ret interface{}
-	bson.Unmarshal(data, &ret)
-	bindInfo1 := make(map[string]processPropertyBindInfoRow, 0)
-	err := bson.Unmarshal(data, &bindInfo1)
+/*** ProcPropertyBindInfoValue 依赖的方法  ****/
+
+func (pbi *ProcPropertyBindInfoValue) UnmarshalJSON(data []byte) error {
+	err := defaultPropertyBindInfoHandle.UJSON(data, pbi)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	// TODO 找出为什么是map[string]processPropertyBindInfoRow 原因
-	// bson 怀疑是因为bson 不支持数组做为顶级节点，
-	var bindInfo []processPropertyBindInfoRow
-	for _, item := range bindInfo1 {
-		bindInfo = append(bindInfo, item)
-	}
-	tmp := processPropertyBindInfo(bindInfo)
-	/*bindInfo := &processPropertyBindInfo{}
-	err := bson.Unmarshal(data, bindInfo)*/
-
-	return &ProcPropertyBindInfoValue{raw: &tmp}, err
+	return nil
 }
+
+func (pbi *ProcPropertyBindInfoValue) UnmarshalBSON(data []byte) error {
+	err := defaultPropertyBindInfoHandle.UBSON(data, pbi)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pbi ProcPropertyBindInfoValue) MarshalJSON() ([]byte, error) {
+	stdData := pbi.Std.toKV()
+	if pbi.extra != nil {
+		stdData = merge(stdData, pbi.extra.toMap())
+	}
+	return json.Marshal(stdData)
+}
+
+func (pbi ProcPropertyBindInfoValue) MarshalBSON() ([]byte, error) {
+
+	stdData := pbi.Std.toKV()
+	if pbi.extra != nil {
+		stdData = merge(stdData, pbi.extra.toMap())
+	}
+	return bson.Marshal(stdData)
+}
+
+func (pbi *ProcPropertyBindInfoValue) Validate() (string, error) {
+	if err := pbi.Std.IP.Validate(); err != nil {
+		return common.BKIP, err
+	}
+	if err := pbi.Std.Port.Validate(); err != nil {
+		return common.BKPort, err
+	}
+	if err := pbi.Std.Protocol.Validate(); err != nil {
+		return common.BKProtocol, err
+	}
+	if err := pbi.Std.Enable.Validate(); err != nil {
+		return common.BKEnable, err
+	}
+	if pbi.extra != nil {
+		return pbi.extra.Validate()
+	}
+
+	return "", nil
+
+}
+
+func (pbi stdProcPropertyBindInfoValue) toKV() map[string]interface{} {
+
+	data := make(map[string]interface{}, 0)
+
+	data["row_id"] = pbi.RowID
+	data[common.BKIP] = pbi.IP
+	data[common.BKPort] = pbi.Port
+	data[common.BKProtocol] = pbi.Protocol
+	data[common.BKEnable] = pbi.Enable
+	return data
+}
+
+/*** ProcBindInfo 依赖的方法  ****/
+
+func (pbi *ProcBindInfo) UnmarshalJSON(data []byte) error {
+	err := defaultProcBindInfoHandle.UJSON(data, pbi)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pbi *ProcBindInfo) UnmarshalBSON(data []byte) error {
+	err := defaultProcBindInfoHandle.UBSON(data, pbi)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pbi ProcBindInfo) MarshalJSON() ([]byte, error) {
+	stdData := pbi.toKV()
+	if pbi.extra != nil {
+		stdData = merge(stdData, pbi.extra)
+	}
+	return json.Marshal(stdData)
+}
+
+func (pbi ProcBindInfo) MarshalBSON() ([]byte, error) {
+
+	stdData := pbi.toKV()
+	if pbi.extra != nil {
+		stdData = merge(stdData, pbi.extra)
+	}
+	return bson.Marshal(stdData)
+}
+
+func (pbi ProcBindInfo) toKV() map[string]interface{} {
+	data := make(map[string]interface{}, 0)
+
+	data["template_row_id"] = pbi.Std.TemplateRowID
+	data[common.BKIP] = pbi.Std.IP
+	data[common.BKPort] = pbi.Std.Port
+	data[common.BKProtocol] = pbi.Std.Protocol
+	data[common.BKEnable] = pbi.Std.Enable
+	return data
+}
+
+func merge(merge, merged map[string]interface{}) map[string]interface{} {
+	if merge == nil {
+		merge = make(map[string]interface{}, 0)
+	}
+	for key, val := range merged {
+		merge[key] = val
+	}
+
+	return merge
+}
+
+/* 公开版本的进程bind 信息处理的方法 */
 
 type openVersionProcBindInfo struct {
 }
 
-func (ov *openVersionProcBindInfo) UJSON(data []byte) (*ProcBindInfo, error) {
+type openVersionPropertyBindInfo struct {
+}
+
+type processPropertyBindInfo struct {
+}
+
+func (ov *openVersionProcBindInfo) UJSON(data []byte, bindInfo *ProcBindInfo) error {
 	if data == nil || len(data) == 0 {
-		return nil, nil
-	}
-	bindInfo := &processBindInfo{}
-	err := json.Unmarshal(data, bindInfo)
-	return &ProcBindInfo{raw: bindInfo}, err
-}
-
-func (ov *openVersionProcBindInfo) UBSON(data []byte) (*ProcBindInfo, error) {
-	if data == nil || len(data) == 0 {
-		return nil, nil
-	}
-	bindInfo := &processBindInfo{}
-	err := bson.Unmarshal(data, bindInfo)
-	return &ProcBindInfo{raw: bindInfo}, err
-}
-
-type processBindInfoRow struct {
-	IP       *string `field:"ip" json:"ip" bson:"ip"`
-	Port     *string `field:"port" json:"port" bson:"port"`
-	Protocol *string `field:"protocol" json:"protocol" bson:"protocol"`
-	Enable   *bool   `field:"enable" json:"enable" bson:"enable"`
-}
-
-type processPropertyBindInfoRow struct {
-	IP       PropertyBindIP   `field:"ip" json:"ip" bson:"ip"`
-	Port     PropertyPort     `field:"port" json:"port" bson:"port"`
-	Protocol PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
-	Enable   PropertyBool     `field:"enable" json:"enable" bson:"enable"`
-}
-
-type processBindInfo []processBindInfoRow
-type processPropertyBindInfo []processPropertyBindInfoRow
-
-func (pbi *processPropertyBindInfo) Validate() (err error) {
-	// call all field's Validate method one by one
-	for _, row := range *pbi {
-		if err := row.IP.Validate(); err != nil {
-			return err
-		}
-		if err := row.Port.Validate(); err != nil {
-			return err
-		}
-		if err := row.Protocol.Validate(); err != nil {
-			return err
-		}
-		if err := row.Enable.Validate(); err != nil {
-			return err
-		}
+		return nil
 	}
 
+	bindInfo.Std = &stdProcBindInfo{}
+	// 公开版没有额外地址，直接解析到标准定义的结构中即可，不要就需要接到自定义结构中
+	if err := json.Unmarshal(data, bindInfo.Std); err != nil {
+		return err
+	}
 	return nil
 }
 
-// ExtractChangeInfo get bind info changes that will be applied to process instance,
-func (pbi *processPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process) (*ProcBindInfo, bool, bool) {
-	var changed, isNamePortChanged bool
-
-	preProcBindInfoMap := make(map[int]processBindInfoRow, 0)
-	if i.BindInfo != nil {
-		preProcBindInfoArr, ok := i.BindInfo.raw.(*processBindInfo)
-		if !ok {
-			// 这个地方出现panic， 证明在代码处理上面出现问题了
-			panic("ExtractChangeInfoBindInfo bind info panic, reason: not open version process bind info struct")
-		}
-		for idx, row := range *preProcBindInfoArr {
-			preProcBindInfoMap[idx] = row
-		}
+func (ov *openVersionProcBindInfo) UBSON(data []byte, bindInfo *ProcBindInfo) error {
+	if data == nil || len(data) == 0 {
+		return nil
 	}
 
-	for idx, row := range *pbi {
-		preRow, ok := preProcBindInfoMap[idx]
-		if !ok {
-			preRow = processBindInfoRow{}
-		}
-		if IsAsDefaultValue(row.IP.AsDefaultValue) {
-			if row.IP.Value == nil && preRow.IP != nil {
-				preRow.IP = nil
-				changed = true
-			} else if row.IP.Value != nil && preRow.IP == nil {
-				*preRow.IP = row.IP.Value.IP()
-				changed = true
-			} else if row.IP.Value != nil && preRow.IP != nil && row.IP.Value.IP() != *preRow.IP {
-				*preRow.IP = row.IP.Value.IP()
-				changed = true
-			}
-		}
-
-		if IsAsDefaultValue(row.Port.AsDefaultValue) {
-			if row.Port.Value == nil && preRow.Port != nil {
-				preRow.Port = nil
-				changed = true
-				isNamePortChanged = true
-			} else if row.Port.Value != nil && preRow.Port == nil {
-				*preRow.Port = *row.Port.Value
-				isNamePortChanged = true
-				changed = true
-			} else if row.Port.Value != nil && preRow.Port != nil && *row.Port.Value != *preRow.Port {
-				*preRow.Port = *row.Port.Value
-				isNamePortChanged = true
-				changed = true
-			}
-		}
-
-		if IsAsDefaultValue(row.Protocol.AsDefaultValue) {
-			if row.Protocol.Value == nil && preRow.Protocol != nil {
-				preRow.Protocol = nil
-				changed = true
-			} else if row.Protocol.Value != nil && preRow.Protocol == nil {
-				*preRow.Protocol = row.Protocol.Value.String()
-				changed = true
-			} else if row.Protocol.Value != nil && preRow.Protocol != nil && row.Protocol.Value.String() != *preRow.Protocol {
-				*preRow.Protocol = row.Protocol.Value.String()
-				changed = true
-			}
-		}
-
-		if IsAsDefaultValue(row.Enable.AsDefaultValue) {
-			if row.Enable.Value == nil && preRow.Enable != nil {
-				preRow.Enable = nil
-				changed = true
-			} else if row.Enable.Value != nil && preRow.Enable == nil {
-				*preRow.Enable = *row.Enable.Value
-				changed = true
-			} else if row.Enable.Value != nil && preRow.Enable != nil && *row.Enable.Value != *preRow.Enable {
-				*preRow.Enable = *row.Enable.Value
-				changed = true
-			}
-		}
-	}
-	newProBindInfo := make([]processBindInfoRow, len(*pbi))
-	for idx, row := range preProcBindInfoMap {
-		newProBindInfo[idx] = row
-	}
-	if len(newProBindInfo) == 0 {
-		return nil, changed, isNamePortChanged
-	}
-
-	return &ProcBindInfo{raw: newProBindInfo}, false, false
+	bindInfo.Std = &stdProcBindInfo{}
+	// 公开版没有额外地址，直接解析到标准定义的结构中即可，不要就需要接到自定义结构中
+	err := bson.Unmarshal(data, bindInfo.Std)
+	return err
 }
 
-// ExtractChangeInfo get bind info changes that will be applied to process instance,
-func (pbi *processPropertyBindInfo) ExtractInstanceUpdateData(i *Process) *ProcBindInfo {
-	// 用户输入的进程绑定的信息
-	procBindInfoMap := make(map[int]processBindInfoRow, 0)
-	if i.BindInfo != nil && i.BindInfo.raw != nil {
-		procBindInfoArr, ok := i.BindInfo.raw.(*processBindInfo)
-		if !ok {
-			// 这个地方出现panic， 证明在代码处理上面出现问题了
-			panic("ExtractChangeInfoBindInfo bind info panic, reason: not open version process bind info struct")
-		}
-		for idx, row := range *procBindInfoArr {
-			procBindInfoMap[idx] = row
-		}
+func (ov *openVersionPropertyBindInfo) UJSON(data []byte, bindInfo *ProcPropertyBindInfoValue) error {
+	if data == nil || len(data) == 0 {
+		return nil
 	}
 
-	//	注意 process bind info 更新必须是全量
-	// 数据已模板为主
-	var newProBindInfo []processBindInfoRow
-	for idx, row := range *pbi {
-		// 用户输入进程绑定信息中的一行
-		procBindInfoItem, ok := procBindInfoMap[idx]
-		if !ok {
-			//
-			continue
-		}
-
-		// 通过模板处理后，存储到db中process bind info 中的一行
-		newbProcBindInfoItem := processBindInfoRow{}
-
-		if IsAsDefaultValue(row.IP.AsDefaultValue) == false {
-			if procBindInfoItem.IP != nil {
-				newbProcBindInfoItem.IP = procBindInfoItem.IP
-			}
-		} else {
-			if row.IP.Value != nil {
-				ip := row.IP.Value.String()
-				newbProcBindInfoItem.IP = &ip
-			}
-		}
-
-		if IsAsDefaultValue(row.Port.AsDefaultValue) == false {
-			if procBindInfoItem.Port != nil {
-				newbProcBindInfoItem.Port = procBindInfoItem.Port
-			}
-		} else {
-			if row.Port.Value != nil {
-				newbProcBindInfoItem.Port = row.Port.Value
-			}
-		}
-
-		if IsAsDefaultValue(row.Protocol.AsDefaultValue) == false {
-			if procBindInfoItem.Protocol != nil {
-				newbProcBindInfoItem.Protocol = procBindInfoItem.Protocol
-			}
-		} else {
-			if row.Protocol.Value != nil {
-				protocol := row.Protocol.Value.String()
-				newbProcBindInfoItem.Protocol = &protocol
-			}
-		}
-
-		newProBindInfo = append(newProBindInfo, newbProcBindInfoItem)
+	// 公开版没有额外地址，直接解析到标准定义的结构中即可，不要就需要接到自定义结构中
+	bindInfo.Std = &stdProcPropertyBindInfoValue{}
+	err := json.Unmarshal(data, bindInfo.Std)
+	if err != nil {
+		return err
 	}
 
-	return &ProcBindInfo{raw: newProBindInfo}
+	// 公开版没有额外数据无需再次解析，这里是做示例用的
+	/*
+		bindInfoExtra := &processPropertyBindInfo{}
+		err := json.Unmarshal(data, &bindInfoExtra)
+		if err != nil {
+			return err
+		}
+		bindInfo.extra = bindInfoExtra
+	*/
+	return nil
 }
 
-func (ov processPropertyBindInfo) Datas() []interface{} {
-	var ret []interface{}
-	for _, item := range ov {
-		ret = append(ret, item)
+func (ov *openVersionPropertyBindInfo) UBSON(data []byte, bindInfo *ProcPropertyBindInfoValue) error {
+	if data == nil || len(data) == 0 {
+		return nil
 	}
-	return ret
+
+	// 公开版没有额外地址，直接解析到标准定义的结构中即可，不要就需要接到自定义结构中
+	bindInfo.Std = &stdProcPropertyBindInfoValue{}
+	err := bson.Unmarshal(data, &bindInfo.Std)
+	if err != nil {
+		return err
+	}
+
+	// 公开版没有额外数据无需再次解析，这里是做示例用的
+	/*
+		bindInfoExtra := &processPropertyBindInfo{}
+		err := bson.Unmarshal(data, &bindInfoExtra)
+		if err != nil {
+			return err
+		}
+		bindInfo.extra = bindInfoExtra
+	*/
+
+	return err
+}
+
+/*** 非标准属性需要实现的方法 ***/
+
+func (ppbi *processPropertyBindInfo) Validate() (string, error) {
+	// 公开版没有需要校验的额外字段
+	return "", nil
+}
+
+func (ppbi *processPropertyBindInfo) ExtractChangeInfoBindInfo(i *ProcBindInfo) (map[string]interface{}, bool, bool) {
+	// 公开版没有需要校验的额外字段
+	return nil, false, false
+}
+
+func (ppbi *processPropertyBindInfo) ExtractInstanceUpdateData(extra map[string]interface{}) map[string]interface{} {
+	// 公开版没有需要校验的额外字段
+	return nil
+}
+
+func (ppbi *processPropertyBindInfo) toMap() map[string]interface{} {
+	// 公开版没有需要校验的额外字段
+	return nil
 }

@@ -501,6 +501,12 @@ const (
 	// BKProtocol the protocol
 	BKProtocol = "protocol"
 
+	// BKIP the ip
+	BKIP = "ip"
+
+	// BKEnable the enable
+	BKEnable = "enable"
+
 	// the process object name
 	BKProcessObjectName = "process"
 
