@@ -120,15 +120,23 @@
                             :z-index="1002"
                             :tippy-options="{
                                 interactive: true,
-                                hideOnClick: false
+                                hideOnClick: false,
+                                onShown: focusCollectionName,
+                                onHidden: clearCollectionName
                             }">
                             <bk-button theme="default" @click="handleCreateCollection">{{$t('收藏此条件')}}</bk-button>
                             <section class="collection" slot="content">
                                 <label class="collection-title">{{$t('收藏此条件')}}</label>
                                 <bk-input class="collection-name"
+                                    ref="collectionName"
                                     :placeholder="$t('请填写名称')"
-                                    v-model="collectionName">
+                                    :data-vv-as="$t('名称')"
+                                    data-vv-name="collectionName"
+                                    v-model="collectionName"
+                                    v-validate="'required|length:256'"
+                                    @enter="handleSaveCollection">
                                 </bk-input>
+                                <p class="collection-error" v-if="errors.has('collectionName')">{{errors.first('collectionName')}}</p>
                                 <div class="collection-options">
                                     <bk-button
                                         theme="primary"
@@ -331,6 +339,7 @@
             },
             handleCreateCollection () {
                 const instance = this.$refs.collectionPopover.instance
+                this.errors.clear()
                 instance.show()
             },
             async handleUpdateCollection () {
@@ -354,6 +363,10 @@
             },
             async handleSaveCollection () {
                 try {
+                    const isValid = await this.$validator.validate('collectionName')
+                    if (!isValid) {
+                        return false
+                    }
                     const data = this.getCollectionParams()
                     const result = await this.$store.dispatch('hostFavorites/createFavorites', {
                         params: data,
@@ -389,10 +402,15 @@
                     is_default: 2
                 }
             },
+            focusCollectionName () {
+                this.$refs.collectionName.$refs.input.focus()
+            },
+            clearCollectionName () {
+                this.collectionName = ''
+            },
             handleCancelCollection () {
                 const instance = this.$refs.collectionPopover.instance
                 instance.hide()
-                this.collectionName = ''
             },
             handleReset () {
                 this.ip = { ...this.defaultIpConfig }
@@ -716,6 +734,9 @@
         }
         .collection-name {
             margin-top: 13px;
+        }
+        .collection-error {
+            color: $dangerColor;
         }
         .collection-options {
             padding: 20px 0 10px;

@@ -23,23 +23,17 @@ const (
 	EventCacheEventIDKey             = common.BKCacheKeyV3Prefix + "event:inst_id"
 	EventCacheEventQueueKey          = common.BKCacheKeyV3Prefix + "event:inst_queue"
 	EventCacheEventQueueDuplicateKey = common.BKCacheKeyV3Prefix + "event:inst_queue_duplicate"
-	EventCacheEventPendingKey        = common.BKCacheKeyV3Prefix + "event:inst_pending"
-	EventCacheEventRunningPrefix     = common.BKCacheKeyV3Prefix + "event:inst_running_"
-	EventCacheEventTimeoutKey        = common.BKCacheKeyV3Prefix + "event:inst_timeout"
 	EventCacheEventDoneKey           = common.BKCacheKeyV3Prefix + "event:inst_done"
 
 	EventCacheDistIDPrefix      = common.BKCacheKeyV3Prefix + "event:dist_id_"
 	EventCacheDistQueuePrefix   = common.BKCacheKeyV3Prefix + "event:dist_queue_"
-	EventCacheDistPendingPrefix = common.BKCacheKeyV3Prefix + "event:dist_pending_"
 	EventCacheDistRunningPrefix = common.BKCacheKeyV3Prefix + "event:dist_running_"
-	EventCacheDistTimeoutPrefix = common.BKCacheKeyV3Prefix + "event:dist_timeout_"
 	EventCacheDistDonePrefix    = common.BKCacheKeyV3Prefix + "event:dist_done_"
 
 	EventCacheDistCallBackCountPrefix = common.BKCacheKeyV3Prefix + "event:dist_callback_"
 
 	// EventCacheSubscribeFormKey the key prefix in cache
 	EventCacheSubscribeFormKey = common.BKCacheKeyV3Prefix + "event:subscribeform:"
-	EventCacheSubscribesKey    = common.BKCacheKeyV3Prefix + "event:subscribers"
 	EventCacheProcessChannel   = common.BKCacheKeyV3Prefix + "event_process_channel"
 
 	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"

@@ -1,7 +1,7 @@
 <template>
     <div class="clearfix">
         <dynamic-navigation class="main-navigation" v-show="!isEntry"></dynamic-navigation>
-        <dynamic-breadcrumbs class="main-breadcrumbs" v-if="showBreadcrumbs"></dynamic-breadcrumbs>
+        <dynamic-breadcrumbs class="main-breadcrumbs" ref="breadcrumbs" v-if="showBreadcrumbs"></dynamic-breadcrumbs>
         <div class="main-layout">
             <div class="main-scroller" ref="scroller">
                 <router-view class="main-views" :name="view" ref="view"></router-view>

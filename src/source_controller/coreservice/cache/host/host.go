@@ -139,6 +139,9 @@ func (h *hostCache) onDelete(e *types.Event) {
 
 	// delete host details
 	pipe.Del(h.key.HostDetailKey(hostID))
+	// remove host id from host id list.
+	pipe.ZRem(h.key.HostIDListKey(), hostID)
+
 	_, err = pipe.Exec()
 	if err != nil {
 		blog.Errorf("received host delete event, oid: %s, but delete oid and detail failed, err: %v", e.Oid, err)
@@ -177,6 +180,7 @@ func refreshHostDetailCache(rds *redis.Client, hostID int64, ips string, cloudID
 
 	// we have get the lock, and now we can refresh the cache.
 	pipeline := rds.Pipeline()
+
 	// upsert host ip and cloud id relation
 	// a host can have multiple host inner ips
 	ttl := hostKey.WithRandomExpireSeconds()
@@ -186,6 +190,14 @@ func refreshHostDetailCache(rds *redis.Client, hostID int64, ips string, cloudID
 
 	// update host details
 	pipeline.Set(hostKey.HostDetailKey(hostID), hostDetail, ttl)
+
+	// add host id to id list.
+	pipeline.ZAddNX(hostKey.HostIDListKey(), redis.Z{
+		// set host id as it's score number
+		Score:  float64(hostID),
+		Member: hostID,
+	})
+
 	_, err = pipeline.Exec()
 	if err != nil {
 		blog.Errorf("upsert host: %d, ip: %s cache, but upsert to redis failed, err: %v", hostID, ips, err)
@@ -236,7 +248,7 @@ func listHostDetailsFromMongoWithHostID(db dal.DB, hostID []int64) (list []*host
 		},
 	}
 	host := make([]metadata.HostMapStr, 0)
-	err = db.Table(common.BKTableNameBaseHost).Find(filter).All(context.Background(), &host)
+	err = db.Table(common.BKTableNameBaseHost).Find(filter).Sort(common.BKHostIDField).All(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb for cache failed, err: %v", err)
 		return nil, err

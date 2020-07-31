@@ -45,6 +45,10 @@ func (h hostKeyGenerator) HostDetailKey(hostID int64) string {
 	return h.namespace + ":detail:" + strconv.FormatInt(hostID, 10)
 }
 
+func (h hostKeyGenerator) HostDetailKeyPrefix() string {
+	return h.namespace + ":detail:"
+}
+
 func (h hostKeyGenerator) HostDetailLockKey(hostID int64) string {
 	return h.namespace + ":detail:lock:" + strconv.FormatInt(hostID, 10)
 }
@@ -59,6 +63,34 @@ func (h hostKeyGenerator) IPCloudIDKey(ip string, cloudID int64) string {
 
 func (h hostKeyGenerator) ListDoneKey() string {
 	return h.namespace + ":listdone"
+}
+
+// A redis zset(sorted set) key to store all the host ids, which is used to paged host id quickly,
+// without use mongodb's sort method, which is much more expensive.
+// this key has a expired ttl.
+// We use the host id as the default zset key's score, so that we can use host id as score and page's
+// sort fields to sort host.
+func (h hostKeyGenerator) HostIDListKey() string {
+	return h.namespace + ":id_list"
+}
+
+// this key is used to store the host id list during refresh, it will be rename to HostIDListKey() after
+// all the host id has been write to temp key.
+func (h hostKeyGenerator) HostIDListTempKey() string {
+	return h.namespace + ":id_list_temp"
+}
+
+func (h hostKeyGenerator) HostIDListKeyExpireSeconds() int64 {
+	// expire after 30 minutes
+	return 30 * 60
+}
+
+func (h hostKeyGenerator) HostIDListExpireKey() string {
+	return h.namespace + ":id_list:expire"
+}
+
+func (h hostKeyGenerator) HostIDListLockKey() string {
+	return h.namespace + ":id_list:lock"
 }
 
 func (h hostKeyGenerator) WithRandomExpireSeconds() time.Duration {

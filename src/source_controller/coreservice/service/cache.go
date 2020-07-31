@@ -79,7 +79,7 @@ func (s *coreService) SearchHostWithHostIDInCache(ctx *rest.Contexts) {
 // then it will not be return. so the returned array may not equal to
 // the request host ids length and the sequence is also may not same.
 func (s *coreService) ListHostWithHostIDInCache(ctx *rest.Contexts) {
-	opt := new(metadata.ListHostWithIDOption)
+	opt := new(metadata.ListWithIDOption)
 	if err := ctx.DecodeInto(&opt); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -91,6 +91,69 @@ func (s *coreService) ListHostWithHostIDInCache(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespStringArray(host)
+}
+
+func (s *coreService) ListHostWithPageInCache(ctx *rest.Contexts) {
+	opt := new(metadata.ListHostWithPage)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	cnt, host, err := s.cacheSet.Host.ListHostsWithPage(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list host with id in cache, but get host failed, err: %v", err)
+		return
+	}
+	ctx.RespCountInfoString(cnt, host)
+}
+
+// ListBusiness list business with id from cache, if not exist in cache, then get from mongodb directly.
+func (s *coreService) ListBusinessInCache(ctx *rest.Contexts) {
+	opt := new(metadata.ListWithIDOption)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	details, err := s.cacheSet.Business.ListBusiness(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list business with id in cache failed, err: %v", err)
+		return
+	}
+	ctx.RespStringArray(details)
+}
+
+// ListModules list modules with id from cache, if not exist in cache, then get from mongodb directly.
+func (s *coreService) ListModulesInCache(ctx *rest.Contexts) {
+	opt := new(metadata.ListWithIDOption)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	details, err := s.cacheSet.Business.ListModules(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list modules with id in cache failed, err: %v", err)
+		return
+	}
+	ctx.RespStringArray(details)
+}
+
+// ListSets list sets with id from cache, if not exist in cache, then get from mongodb directly.
+func (s *coreService) ListSetsInCache(ctx *rest.Contexts) {
+	opt := new(metadata.ListWithIDOption)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	details, err := s.cacheSet.Business.ListSets(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list sets with id in cache failed, err: %v", err)
+		return
+	}
+	ctx.RespStringArray(details)
 }
 
 func (s *coreService) SearchBusinessInCache(ctx *rest.Contexts) {

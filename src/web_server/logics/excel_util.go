@@ -259,6 +259,29 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			} else {
 				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], err.Error(), rid)
 			}
+		case common.FieldTypeOrganization:
+			org := util.GetStrByInterface(host[fieldName])
+			if len(org) >= 2 && strings.HasPrefix(org, "[") && strings.HasSuffix(org, "]") {
+				if strings.TrimSpace(org[1:len(org)-1]) == "" {
+					host[fieldName] = []int64{}
+					break
+				}
+				orgItems := strings.Split(org[1:len(org)-1], ",")
+				orgSlice := make([]int64, len(orgItems))
+				var err error
+				for i, v := range orgItems {
+					orgSlice[i], err = strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+					if err != nil {
+						blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], "not a valid organization type", rid)
+						break
+					}
+				}
+				if err == nil {
+					host[fieldName] = orgSlice
+				}
+			} else {
+				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], "not a valid organization type", rid)
+			}
 		default:
 			if util.IsStrProperty(field.PropertyType) {
 				host[fieldName] = strings.TrimSpace(cell.Value)
