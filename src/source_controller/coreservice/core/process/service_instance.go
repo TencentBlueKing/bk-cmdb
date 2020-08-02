@@ -543,9 +543,12 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 		if process.ProcessName != nil && len(*process.ProcessName) > 0 {
 			instanceName += fmt.Sprintf("_%s", *process.ProcessName)
 		}
-		if process.Port != nil && len(*process.Port) > 0 {
-			instanceName += fmt.Sprintf("_%s", *process.Port)
+		for _, bindInfo := range process.BindInfo {
+			if bindInfo.Std != nil && bindInfo.Std.Port != nil {
+				instanceName += fmt.Sprintf("_%s", *bindInfo.Std.Port)
+			}
 		}
+
 	}
 	return instanceName, nil
 }
