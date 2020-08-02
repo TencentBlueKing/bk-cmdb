@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/apimachinery"
@@ -892,4 +893,49 @@ func getInstCacheKey(objType string, instID int64) string {
 
 func NewIdentifierHandler(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apimachinery.ClientSetInterface) *IdentifierHandler {
 	return &IdentifierHandler{ctx: ctx, cache: cache, db: db, clientSet: clientSet}
+}
+
+func getBindInfo(value interface{}) (ip, port, protocol string, enable bool) {
+	if value == nil {
+		return "", "", "", false
+	}
+	switch arr := value.(type) {
+	case []interface{}:
+		for _, row := range arr {
+			rowMap, ok := row.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if ip == "" && getString(rowMap[common.BKIP]) != "" {
+				ip = getString(rowMap[common.BKIP])
+			}
+			if port == "" && getString(rowMap[common.BKPort]) != "" {
+				port = getString(rowMap[common.BKPort])
+			}
+			if protocol == "" && getString(rowMap[common.BKProtocol]) != "" {
+				ip = getString(rowMap[common.BKProtocol])
+			}
+			if strings.ToLower(getString(rowMap[common.BKIP])) == "true" {
+				enable = true
+
+			}
+		}
+	case []map[string]interface{}:
+		for _, row := range arr {
+			if ip == "" && getString(row[common.BKIP]) != "" {
+				ip = getString(row[common.BKIP])
+			}
+			if port == "" && getString(row[common.BKPort]) != "" {
+				port = getString(row[common.BKPort])
+			}
+			if protocol == "" && getString(row[common.BKProtocol]) != "" {
+				ip = getString(row[common.BKProtocol])
+			}
+			if strings.ToLower(getString(row[common.BKIP])) == "true" {
+				enable = true
+
+			}
+		}
+	}
+	return "", "", "", false
 }

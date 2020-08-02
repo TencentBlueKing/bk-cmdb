@@ -67,12 +67,15 @@ func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache 
 		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
 		return err
 	}
+
+	ip, port, protocol, enable := getBindInfo(proc.data[common.BKProcBindInfo])
 	process.ProcessName = getString(proc.data[common.BKProcessNameField])
 	process.FuncID = getString(proc.data[common.BKFuncIDField])
 	process.FuncName = getString(proc.data[common.BKFuncName])
-	process.BindIP = getString(proc.data[common.BKBindIP])
-	process.Protocol = getString(proc.data[common.BKProtocol])
-	process.Port = getString(proc.data[common.BKPort])
+	process.BindIP = ip         //getString(proc.data[common.BKBindIP])
+	process.Protocol = protocol // getString(proc.data[common.BKProtocol])
+	process.Port = port         // getString(proc.data[common.BKPort])
+	process.PortEnable = enable
 	process.StartParamRegex = getString(proc.data[common.BKStartParamRegex])
 	return nil
 }
