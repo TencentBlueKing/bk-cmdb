@@ -1686,7 +1686,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		if len(attr) != 0 {
+		if len(attr) == 0 {
 			ps.err = errors.New("can not find attribute detail")
 			return ps
 		}
@@ -1738,7 +1738,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		if len(attr) != 0 {
+		if len(attr) == 0 {
 			ps.err = errors.New("can not find attribute detail")
 			return ps
 		}

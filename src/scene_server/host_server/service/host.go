@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -75,8 +74,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail))
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, iam.Delete,
-			iHostIDArr)
+		perm, err := s.AuthManager.GenHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Delete, iHostIDArr)
 		if err != nil {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail))
 			return
@@ -757,7 +755,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, iam.Edit, hostIDArr)
+		perm, err := s.AuthManager.GenHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr)
 		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
@@ -915,7 +913,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, iam.Edit, hostIDArr)
+		perm, err := s.AuthManager.GenHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr)
 		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
@@ -1445,7 +1443,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, iam.Edit, hostIDArr)
+		perm, err := s.AuthManager.GenHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr)
 		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
