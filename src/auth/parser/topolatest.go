@@ -1969,6 +1969,7 @@ var (
 	deleteMainlineObjectLatestRegexp                       = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
 	findBusinessInstanceTopologyLatestRegexp               = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
 	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
+	findCustomMainlineRelationRegex                        = regexp.MustCompile(`^/api/v3/find/topo/mainline/custom/relation/biz/[0-9]+/?$`)
 	findHostApplyRelatedObjectTopologyRegex                = regexp.MustCompile(`^/api/v3/find/topoinst/bk_biz_id/([0-9]+)/host_apply_rule_related/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
 )
@@ -2080,6 +2081,30 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		if err != nil {
 			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
 			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find custom mainline relation operation.
+	if ps.hitRegexp(findCustomMainlineRelationRegex, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 9 {
+			ps.err = errors.New("find custom mainline relation, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[8], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find custom mainline relation, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

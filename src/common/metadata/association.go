@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -495,4 +497,45 @@ type NodeTopoPath struct {
 	BizID int64                       `json:"bk_biz_id" mapstructure:"bk_biz_id"`
 	Node  TopoNode                    `json:"topo_node" mapstructure:"topo_node"`
 	Path  []*TopoInstanceNodeSimplify `json:"topo_path" mapstructure:"topo_path"`
+}
+
+// SearchCustomMainlineRelationParam search custom mainline model relation param
+type SearchCustomMainlineRelationParam struct {
+	// custom mainline model ID
+	ObjectID string `json:"bk_obj_id"`
+	// custom mainline model instance ID
+	InstID int64    `json:"bk_inst_id"`
+	Page   BasePage `json:"page"`
+}
+
+// Validate validates the input param
+func (s *SearchCustomMainlineRelationParam) Validate() (rawError errors.RawErrorInfo) {
+	if s.ObjectID == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_obj_id"},
+		}
+	}
+
+	if s.InstID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_inst_id"},
+		}
+	}
+
+	if s.Page.Limit <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	if s.Page.Limit > common.BKAuditLogPageLimit && s.Page.Limit != common.BKNoLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

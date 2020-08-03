@@ -137,6 +137,7 @@ type DataSynchronizeOperation interface {
 type TopoOperation interface {
 	SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, error)
 	SearchMainlineInstanceTopo(ctx context.Context, header http.Header, objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
+	SearchMainlineInstanceTopoBeforeSet(ctx context.Context, header http.Header, objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
 }
 
 // HostOperation methods

@@ -67,3 +67,33 @@ func (s *coreService) SearchMainlineInstanceTopo(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(result)
 }
+
+func (s *coreService) SearchMainlineInstanceTopoBeforeSet(ctx *rest.Contexts) {
+	bkBizID := ctx.Request.PathParameter(common.BKAppIDField)
+	if len(bkBizID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField))
+		return
+	}
+	bizID, err := strconv.ParseInt(bkBizID, 10, 64)
+	if err != nil {
+		blog.Errorf("field %s with value:%s invalid, %v, rid: %s", common.BKAppIDField, bkBizID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	detail := struct {
+		WithDetail bool `json:"with_detail"`
+	}{}
+	if err := ctx.DecodeInto(&detail); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.TopoOperation().SearchMainlineInstanceTopoBeforeSet(ctx.Kit.Ctx, ctx.Kit.Header, bizID, detail.WithDetail)
+	if err != nil {
+		blog.Errorf("search mainline instance topo before set by business:%d failed, %+v, rid: %s", bizID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoMainlineSelectFailed))
+		return
+	}
+	ctx.RespEntity(result)
+}

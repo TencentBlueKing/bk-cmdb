@@ -75,3 +75,29 @@ func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, header http.H
 
 	return &ret.Data, nil
 }
+
+func (m *mainline) SearchMainlineInstanceTopoBeforeSet(ctx context.Context, header http.Header, bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, errors.CCErrorCoder) {
+	rid := util.GetHTTPCCRequestID(header)
+	input := map[string]bool{}
+	input["with_detail"] = withDetail
+
+	ret := new(metadata.SearchTopoInstanceNodeResult)
+	subPath := "/read/mainline/instance/before_set/%d"
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, bkBizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("SearchMainlineInstanceTopoBeforeSet failed, http failed, err: %s, rid: %s", err.Error(), rid)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}

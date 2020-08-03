@@ -162,6 +162,7 @@ func (s *coreService) initMainline(web *restful.WebService) {
 	// add handler for model topo and business topo
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/mainline/model", Handler: s.SearchMainlineModelTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/mainline/instance/{bk_biz_id}", Handler: s.SearchMainlineInstanceTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/mainline/instance/before_set/{bk_biz_id}", Handler: s.SearchMainlineInstanceTopoBeforeSet})
 
 	utility.AddToRestfulWebService(web)
 }

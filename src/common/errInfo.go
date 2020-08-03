@@ -466,6 +466,11 @@ const (
 	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
 
 	CCErrorModelNotFound = 1101102
+
+	CCErrorNotCustomMainlineModel   = 1101103
+	CCErrorMainlineInstTopoNotFound = 1101104
+	CCErrorMainlineInstIDNotFound   = 1101105
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group

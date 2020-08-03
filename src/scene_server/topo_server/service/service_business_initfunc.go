@@ -124,6 +124,7 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst_with_statistics/biz/{bk_biz_id}", Handler: s.SearchBusinessTopoWithStatistics})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related", Handler: s.SearchRuleRelatedTopoNodes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topopath/biz/{bk_biz_id}", Handler: s.SearchTopoPath})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/mainline/custom/relation/biz/{bk_biz_id}", Handler: s.SearchCustomMainlineRelation})
 
 	// association type methods ,NOT SUPPORT BUSINESS
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoassociationtype", Handler: s.SearchObjectAssocWithAssocKindList})

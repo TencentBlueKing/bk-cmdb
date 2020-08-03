@@ -523,3 +523,170 @@ func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 
 	ctx.RespEntity(result)
 }
+
+// SearchCustomMainlineRelation search set module relation below one custom mainline instance
+func (s *Service) SearchCustomMainlineRelation(ctx *rest.Contexts) {
+	rid := ctx.Kit.Rid
+
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if nil != err {
+		blog.Errorf("SearchCustomMainlineRelation failed, bizIDStr: %s, err: %s, rid: %s", bizIDStr, err.Error(), rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+	if bizID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+	}
+
+	input := metadata.SearchCustomMainlineRelationParam{}
+	if err := ctx.DecodeInto(&input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// find the mainline topo before set
+	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopoBeforeSet(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
+	if err != nil {
+		blog.Errorf("SearchCustomMainlineRelation failed, bizID:%d, SearchMainlineInstanceTopoBeforeSet err:%s, rid:%s", bizID, err.Error(), rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if topoRoot == nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrorMainlineInstTopoNotFound, bizID))
+		return
+	}
+
+	// check objID,instID and get set parent instance IDs
+	isCustomMainlineObj := false
+	var targetNode *metadata.TopoInstanceNode
+
+	topoRoot.DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
+		if node.ObjectID == input.ObjectID {
+			if node.ObjectID != common.BKInnerObjIDApp && node.ObjectID != common.BKInnerObjIDSet &&
+				node.ObjectID != common.BKInnerObjIDModule && node.ObjectID != common.BKInnerObjIDHost {
+				// input.ObjectID may not be any topo node.ObjectID, program never arrive here, this is why isCustomMainlineObj is set false at beginning
+				isCustomMainlineObj = true
+			}
+			if node.InstanceID == input.InstID {
+				targetNode = node
+			}
+		}
+	})
+
+	if !isCustomMainlineObj {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrorNotCustomMainlineModel, input.ObjectID))
+		return
+	}
+
+	if targetNode == nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrorMainlineInstIDNotFound, input.InstID))
+		return
+	}
+
+	setParentInstIDs := make([]int64, 0)
+	targetNode.DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
+		if len(node.Children) == 0 {
+			setParentInstIDs = append(setParentInstIDs, node.InstanceID)
+		}
+	})
+
+	if len(setParentInstIDs) == 0 {
+		ctx.RespEntityWithCount(0, []map[string]interface{}{})
+		return
+	}
+
+	setQuery := &metadata.QueryCondition{
+		Fields: []string{common.BKSetIDField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKParentIDField: map[string]interface{}{
+				common.BKDBIN: setParentInstIDs,
+			},
+		},
+		Page: metadata.BasePage{
+			Sort:  common.BKSetIDField,
+			Limit: input.Page.Limit,
+			Start: input.Page.Start,
+		},
+	}
+	setResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, setQuery)
+	if err != nil {
+		blog.Errorf("failed to get set, setQuery: %#v, err: %s, rid: %s", setQuery, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(setResult.Data.Info) == 0 {
+		ctx.RespEntityWithCount(0, []map[string]interface{}{})
+		return
+	}
+
+	setIDs := make([]int64, len(setResult.Data.Info))
+	for i, set := range setResult.Data.Info {
+		setID, err := set.Int64(common.BKSetIDField)
+		if err != nil {
+			blog.Errorf("failed to parse setID into int64, set: %#v, err: %s, rid: %s", set, err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int64", err.Error()))
+			return
+		}
+		setIDs[i] = setID
+	}
+
+	moduleQuery := &metadata.QueryCondition{
+		Fields: []string{common.BKSetIDField, common.BKModuleIDField},
+		Condition: map[string]interface{}{
+			common.BKSetIDField: map[string]interface{}{
+				common.BKDBIN: setIDs,
+			},
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleQuery)
+	if err != nil {
+		blog.Errorf("failed to get module, moduleQuery: %#v, err: %s, rid: %s", moduleQuery, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(moduleResult.Data.Info) == 0 {
+		ctx.RespEntityWithCount(0, []map[string]interface{}{})
+		return
+	}
+
+	setModuleMap := make(map[int64][]int64)
+	for _, module := range moduleResult.Data.Info {
+		setID, err := module.Int64(common.BKSetIDField)
+		if err != nil {
+			blog.Errorf("failed to parse setID into int64, set: %#v, err: %s, rid: %s", module, err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int64", err.Error()))
+			return
+		}
+		moduleID, err := module.Int64(common.BKModuleIDField)
+		if err != nil {
+			blog.Errorf("failed to parse moduleID into int64, set: %#v, err: %s, rid: %s", module, err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int64", err.Error()))
+			return
+		}
+		if _, ok := setModuleMap[setID]; !ok {
+			setModuleMap[setID] = []int64{}
+		}
+		setModuleMap[setID] = append(setModuleMap[setID], moduleID)
+	}
+
+	result := make([]map[string]interface{}, 0)
+	for setID, moduleIDs := range setModuleMap {
+		relation := map[string]interface{}{}
+		relation["bk_set_id"] = setID
+		relation["bk_module_ids"] = moduleIDs
+		result = append(result, relation)
+	}
+
+	ctx.RespEntityWithCount(int64(len(setIDs)), result)
+}
