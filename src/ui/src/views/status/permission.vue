@@ -20,9 +20,9 @@
         methods: {
             async handleApplyPermission () {
                 try {
-                    const permission = translateAuth(this.$route.meta.auth.view)
+                    const { view, permission } = this.$route.meta.auth || {}
                     const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
-                        params: permission,
+                        params: view ? translateAuth(view) : permission,
                         config: {
                             requestId: 'getSkipUrl'
                         }

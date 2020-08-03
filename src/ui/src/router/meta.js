@@ -15,7 +15,8 @@ export default class Meta {
 
         this.auth = Object.assign({
             view: null,
-            operation: null
+            operation: null,
+            permission: null
         }, data.auth)
 
         this.layout = Object.assign({

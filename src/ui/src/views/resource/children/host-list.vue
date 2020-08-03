@@ -59,6 +59,7 @@
                 scope: 1,
                 table: {
                     checked: [],
+                    selection: [],
                     header: Array(8).fill({}),
                     list: [],
                     pagination: {
@@ -263,6 +264,7 @@
                 }
             },
             handleSelectionChange (selection) {
+                this.table.selection = selection
                 this.table.checked = selection.map(item => item.host.bk_host_id)
             },
             handleRowClick (item) {

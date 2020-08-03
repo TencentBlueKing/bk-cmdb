@@ -9,13 +9,11 @@
                     {{$t('新增')}}
                 </bk-button>
             </cmdb-auth>
-            <cmdb-auth class="option ml10" :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
-                <bk-button slot-scope="{ disabled }"
-                    :disabled="disabled || !hasSelection"
-                    @click="handleMultipleEdit">
-                    {{$t('编辑')}}
-                </bk-button>
-            </cmdb-auth>
+            <bk-button class="ml10"
+                :disabled="!hasSelection"
+                @click="handleMultipleEdit">
+                {{$t('编辑')}}
+            </bk-button>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="medium"
                 :disabled="!hasSelection"
