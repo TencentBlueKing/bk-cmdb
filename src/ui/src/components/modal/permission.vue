@@ -31,12 +31,18 @@
             </bk-table>
         </div>
         <div class="permission-footer" slot="footer">
-            <bk-button theme="primary"
-                :loading="$loading('getSkipUrl')"
-                @click="handleApplyPermission">
-                {{ i18n.apply }}
-            </bk-button>
-            <bk-button theme="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
+            <template v-if="applied">
+                <bk-button theme="primary" @click="handleRefresh">{{ i18n.applied }}</bk-button>
+                <bk-button class="ml10" @click="onCloseDialog">{{ i18n.close }}</bk-button>
+            </template>
+            <template v-else>
+                <bk-button theme="primary"
+                    :loading="$loading('getSkipUrl')"
+                    @click="handleApply">
+                    {{ i18n.apply }}
+                </bk-button>
+                <bk-button class="ml10" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
+            </template>
         </div>
     </bk-dialog>
 </template>
@@ -49,6 +55,7 @@
         props: {},
         data () {
             return {
+                applied: false,
                 isModalShow: false,
                 permission: [],
                 list: [],
@@ -59,7 +66,9 @@
                     requiredPermissions: this.$t('需要申请的权限'),
                     noData: this.$t('无数据'),
                     apply: this.$t('去申请'),
-                    cancel: this.$t('取消')
+                    applied: this.$t('已完成'),
+                    cancel: this.$t('取消'),
+                    close: this.$t('关闭')
                 }
             }
         },
@@ -76,6 +85,7 @@
             show (permission) {
                 this.permission = permission
                 this.setList()
+                this.applied = false
                 this.isModalShow = true
             },
             setList () {
@@ -111,6 +121,15 @@
             },
             onCloseDialog () {
                 this.isModalShow = false
+            },
+            async handleApply () {
+                try {
+                    await this.handleApplyPermission()
+                    this.applied = true
+                } catch (error) {}
+            },
+            handleRefresh () {
+                window.location.reload()
             }
         }
     }
