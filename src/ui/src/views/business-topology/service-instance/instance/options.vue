@@ -292,8 +292,10 @@
                         }
                     } else if (data.id === 'tagValue') {
                         const [{ name }] = data.values
-                        if (name) {
+                        if (data.condition && name) {
                             transformedFilters.push(data)
+                        } else {
+                            this.$warn(this.$t('服务实例标签值搜索提示语'))
                         }
                     } else {
                         transformedFilters.push(data)

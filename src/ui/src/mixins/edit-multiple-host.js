@@ -20,6 +20,23 @@ export default {
             }
         }
     },
+    computed: {
+        saveAuth () {
+            return this.selection.map(({ host, biz, module }) => {
+                const isBizHost = biz[0].default === 0
+                if (isBizHost) {
+                    return {
+                        type: this.$OPERATION.U_HOST,
+                        relation: [biz[0].bk_biz_id, host.bk_host_id]
+                    }
+                }
+                return {
+                    type: this.$OPERATION.U_RESOURCE_HOST,
+                    relation: [module[0].bk_module_id, host.bk_host_id]
+                }
+            })
+        }
+    },
     methods: {
         async handleMultipleEdit () {
             try {
@@ -30,6 +47,7 @@ export default {
                 this.slider.props.objectUnique = objectUnique
                 this.slider.props.propertyGroups = groups
                 this.slider.props.properties = this.properties
+                this.slider.props.saveAuth = this.saveAuth
                 this.slider.title = this.$t('主机属性')
                 this.slider.component = 'cmdb-form-multiple'
                 this.slider.show = true

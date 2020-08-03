@@ -102,6 +102,7 @@
                 :disabled-properties="disabledProperties"
                 :inst="instance"
                 :type="type"
+                :save-auth="{ type: $OPERATION.U_TOPO, relation: [business] }"
                 @on-submit="handleSubmit"
                 @on-cancel="handleCancel">
                 <div class="service-category" v-if="!withTemplate && isModuleNode" slot="prepend">

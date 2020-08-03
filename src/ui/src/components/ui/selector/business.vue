@@ -64,12 +64,10 @@
         methods: {
             async handleApplyPermission () {
                 try {
-                    const permission = []
-                    const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
-                    if (Object.keys(operation).length) {
-                        const translated = await translateAuth(Object.values(operation))
-                        permission.push(...translated)
-                    }
+                    const permission = translateAuth({
+                        type: this.$OPERATION.R_BIZ_RESOURCE,
+                        relation: []
+                    })
                     const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
                     window.open(url)
                 } catch (e) {

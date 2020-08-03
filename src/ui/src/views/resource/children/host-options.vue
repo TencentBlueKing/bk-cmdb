@@ -1,33 +1,35 @@
 <template>
     <div class="options-layout clearfix">
         <div class="options-left">
-            <cmdb-auth class="mr10"
-                :ignore="!!activeDirectory"
-                :auth="[
-                    { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
-                    { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
-                ]">
-                <bk-button slot-scope="{ disabled }"
-                    theme="primary"
-                    style="margin-left: 0"
-                    :disabled="disabled"
-                    @click="importInst.show = true">
-                    {{$t('导入主机')}}
-                </bk-button>
-            </cmdb-auth>
-            <bk-select
-                class="assign-selector mr10"
-                font-size="medium"
-                :popover-width="180"
-                :disabled="!table.checked.length"
-                :clearable="false"
-                :placeholder="$t('分配到')"
-                v-model="assign.curSelected"
-                @selected="handleAssignHosts">
-                <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
-                <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
-                <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
-            </bk-select>
+            <template v-if="scope === 1">
+                <cmdb-auth class="mr10"
+                    :ignore="!!activeDirectory"
+                    :auth="[
+                        { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
+                        { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
+                    ]">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        style="margin-left: 0"
+                        :disabled="disabled"
+                        @click="importInst.show = true">
+                        {{$t('导入主机')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-select
+                    class="assign-selector mr10"
+                    font-size="medium"
+                    :popover-width="180"
+                    :disabled="!table.checked.length"
+                    :clearable="false"
+                    :placeholder="$t('分配到')"
+                    v-model="assign.curSelected"
+                    @selected="handleAssignHosts">
+                    <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
+                    <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
+                    <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
+                </bk-select>
+            </template>
             <cmdb-clipboard-selector class="options-clipboard mr10"
                 :list="clipboardList"
                 :disabled="!table.checked.length"
@@ -110,6 +112,7 @@
                 :properties="properties.host"
                 :property-groups="propertyGroups"
                 :object-unique="objectUnique"
+                :save-auth="saveAuth"
                 @on-submit="handleMultipleSave"
                 @on-cancel="handleSliderBeforeClose">
             </cmdb-form-multiple>
@@ -268,14 +271,12 @@
                     id: 'edit',
                     text: this.$t('编辑'),
                     handler: this.handleMultipleEdit,
-                    disabled: !this.table.checked.length,
-                    auth: { type: this.$OPERATION.U_RESOURCE_HOST, relation: [this.directoryId] }
+                    disabled: !this.table.checked.length
                 }, {
                     id: 'delete',
                     text: this.$t('删除'),
                     handler: this.handleMultipleDelete,
-                    disabled: !this.table.checked.length,
-                    auth: { type: this.$OPERATION.D_RESOURCE_HOST, relation: [this.directoryId] }
+                    disabled: !this.table.checked.length
                 }, {
                     id: 'export',
                     text: this.$t('导出'),
@@ -295,6 +296,14 @@
                     module,
                     set
                 }
+            },
+            saveAuth () {
+                return this.table.selection.map(({ host, module }) => {
+                    return {
+                        type: this.$OPERATION.U_RESOURCE_HOST,
+                        relation: [module[0].bk_module_id, host.bk_host_id]
+                    }
+                })
             }
         },
         watch: {

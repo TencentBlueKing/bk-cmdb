@@ -26,7 +26,7 @@
                 try {
                     const permission = translateAuth({
                         type: this.$OPERATION.R_BIZ_RESOURCE,
-                        relation: [this.bizId]
+                        relation: this.bizId ? [this.bizId] : []
                     })
                     const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
                         params: permission,

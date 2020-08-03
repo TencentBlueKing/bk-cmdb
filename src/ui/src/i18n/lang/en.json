@@ -804,6 +804,7 @@
     "模块名称提示": "The module name must be the same as the service template name.",
     "请为主机添加进程": "Please add process to the host",
     "请输入实例名称或选择标签": "Enter instance name or select tag",
+    "服务实例标签值搜索提示语": "Incomplete tag value search criteria ignored",
     "标签键": "Label key",
     "标签值": "Label value",
     "已有标签": "Existing tag",
@@ -1317,5 +1318,17 @@
     "实例操作": "Instance Operation",
     "所属实例": "Instance",
     "确定删除N个进程": "Confirm to delete {count} selected process?",
-    "确定删除该进程": "Confirm to delete this process?"
+    "确定删除该进程": "Confirm to delete this process?",
+    "关联的资源实例": "Related Resource Instance",
+    "业务空闲机": "Business Idle",
+    "资源池其他目录": "Other Directory",
+    "未分配": "Unassigned",
+    "已分配": "Assigned",
+    "新建目录": "Create directory",
+    "分组目录": "Directory",
+    "业务列表": "Business list",
+    "分配到业务空闲机": "Assign to business idle",
+    "取消置顶": "Cancel topping",
+    "重命名": "Rename",
+    "目录名": "Directory"
 }

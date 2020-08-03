@@ -392,6 +392,12 @@
                 return ['bk_host_manage', 'bk_biz_topo', 'bk_organization'].includes(this.curModel.bk_classification_id)
             },
             authResources () {
+                if (this.customObjId) { // 业务自定义字段
+                    return {
+                        type: this.$OPERATION.U_BIZ_MODEL_CUSTOM_FIELD,
+                        relation: [this.$store.getters['objectBiz/bizId']]
+                    }
+                }
                 return {
                     relation: [this.modelId],
                     type: this.$OPERATION.U_MODEL

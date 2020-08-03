@@ -363,14 +363,36 @@ export const IAM_ACTIONS = {
             instances: [IAM_VIEWS.BIZ, IAM_VIEWS.HOST]
         }],
         transform: (cmdbAction, relationIds) => {
-            const [bizId, hostId] = relationIds
-            const verifyMeta = basicTransform(cmdbAction, {
-                bk_biz_id: bizId
-            })
-            if (hostId) {
-                verifyMeta.resource_id = hostId
+            const isBatch = Array.isArray(relationIds[0])
+            if (isBatch) { // 批量编辑的场景
+                const metas = relationIds.map(([bizId, hostId]) => {
+                    const verifyMeta = basicTransform(cmdbAction, {
+                        bk_biz_id: bizId,
+                        parent_layers: [{
+                            resource_type: 'biz',
+                            resource_id: bizId
+                        }]
+                    })
+                    if (hostId) {
+                        verifyMeta.resource_id = hostId
+                    }
+                    return verifyMeta
+                })
+                return metas
+            } else { // 单个编辑的场景
+                const [bizId, hostId] = relationIds
+                const verifyMeta = basicTransform(cmdbAction, {
+                    bk_biz_id: bizId,
+                    parent_layers: [{
+                        resource_type: 'biz',
+                        resource_id: bizId
+                    }]
+                })
+                if (hostId) {
+                    verifyMeta.resource_id = hostId
+                }
+                return verifyMeta
             }
-            return verifyMeta
         }
     },
     HOST_TO_RESOURCE: {
@@ -709,7 +731,7 @@ export const IAM_ACTIONS = {
     },
     R_STATISTICAL_REPORT: {
         id: 'find_operation_statistic',
-        name: ['运营统计产线', 'Search Operation Statistic'],
+        name: ['运营统计查询', 'Search Operation Statistic'],
         cmdb_action: 'operationStatistic.findMany'
     },
 
