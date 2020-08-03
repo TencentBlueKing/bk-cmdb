@@ -445,6 +445,79 @@ func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
 	return resp, nil
 }
 
+func (r *Result) IntoJsonCntInfoString() (*metadata.JsonCntInfoResp, error) {
+	if nil != r.Err {
+		return nil, r.Err
+	}
+
+	if 0 == len(r.Body) {
+		return nil, fmt.Errorf("http request failed: %s", r.Status)
+	}
+	elements := gjson.GetManyBytes(r.Body, "result", "bk_error_code", "bk_error_msg", "permission", "data")
+
+	// check result
+	if !elements[0].Exists() {
+		blog.Errorf("invalid http response, no result field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check error code
+	if !elements[1].Exists() {
+		blog.Errorf("invalid http response, no bk_error_code field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check error message
+	if !elements[2].Exists() {
+		blog.Errorf("invalid http response, no bk_error_msg field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check data
+	if !elements[4].Exists() {
+		blog.Errorf("invalid http response, no data field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check data.count
+	if !elements[4].Get("count").Exists() {
+		blog.Errorf("invalid http response, no data.count field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	// check data.info
+	if !elements[4].Get("info").Exists() {
+		blog.Errorf("invalid http response, no data.info field, body: %s, rid: %s", r.Body, r.Rid)
+		return nil, fmt.Errorf("invalid http response, body: %s", r.Body)
+	}
+
+	resp := new(metadata.JsonCntInfoResp)
+	resp.Result = elements[0].Bool()
+	resp.Code = int(elements[1].Int())
+	resp.ErrMsg = elements[2].String()
+
+	// parse permission field
+	if elements[3].Exists() {
+		raw := elements[3].Raw
+		if len(raw) != 0 {
+			perm := new(metadata.IamPermission)
+			if err := json.Unmarshal([]byte(raw), perm); err != nil {
+				blog.Errorf("invalid http response, invalid permission field, body: %s, rid: %s", r.Body, r.Rid)
+				return nil, fmt.Errorf("http response with invalid permission field, body: %s", r.Body)
+			}
+			resp.Permissions = perm
+		}
+	}
+
+	// set count field
+	resp.Data.Count = elements[4].Get("count").Int()
+
+	// set info field
+	resp.Data.Info = elements[4].Get("info").Raw
+
+	return resp, nil
+}
+
 func (r *Request) handleMockResult() *Result {
 	if r.capability.Mock.SetMockData {
 		if r.capability.Mock.MockData == nil {

@@ -91,7 +91,99 @@ func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header, opt
 	return resp.Data, nil
 }
 
-func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListHostWithIDOption) (jsonString string, err error) {
+// ListHostWithPage list hosts with page or id list, and returned with a json array string
+func (b *baseCache) ListHostWithPage(ctx context.Context, h http.Header, opt *metadata.ListHostWithPage) (cnt int64,
+	jsonArray string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/findmany/cache/host/with_page").
+		WithHeaders(h).
+		Do().
+		IntoJsonCntInfoString()
+
+	if err != nil {
+		return 0, "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return 0, "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data.Count, resp.Data.Info, nil
+}
+
+// ListBusiness list business with id list and return with a json array string which is []string json.
+func (b *baseCache) ListBusiness(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (
+	jsonArray string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/findmany/cache/biz").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}
+
+// ListModules list modules with id list and return with a json array string which is []string json.
+func (b *baseCache) ListModules(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (
+	jsonArray string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/findmany/cache/module").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}
+
+// ListSets list sets with id list and return with a json array string which is []string json.
+func (b *baseCache) ListSets(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (
+	jsonArray string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/findmany/cache/set").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}
+
+func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().
 		WithContext(ctx).

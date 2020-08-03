@@ -267,9 +267,14 @@
                     this.insideMode = null
                     this.$refs.templateTree.recoveryService()
                 } else {
-                    this.$routerActions.redirect({
-                        name: MENU_BUSINESS_SET_TEMPLATE
-                    })
+                    const breadcrumbs = window.CMDB_APP.$children[0].$refs.topView.$refs.breadcrumbs
+                    if (breadcrumbs.from) {
+                        breadcrumbs.handleClick()
+                    } else {
+                        this.$routerActions.redirect({
+                            name: MENU_BUSINESS_SET_TEMPLATE
+                        })
+                    }
                 }
             },
             handleServiceChange (value) {

@@ -308,9 +308,13 @@ func (s *coreService) initCache(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_inner_ip", Handler: s.SearchHostWithInnerIPInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_host_id", Handler: s.SearchHostWithHostIDInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/host/with_host_id", Handler: s.ListHostWithHostIDInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/host/with_page", Handler: s.ListHostWithPageInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/biz/{bk_biz_id}", Handler: s.SearchBusinessInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/biz", Handler: s.ListBusinessInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/set/{bk_set_id}", Handler: s.SearchSetInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/set", Handler: s.ListSetsInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/module/{bk_module_id}", Handler: s.SearchModuleInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/module", Handler: s.ListModulesInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/{bk_obj_id}/{bk_inst_id}", Handler: s.SearchCustomLayerInCache})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topo/node_path",
 		Handler: s.SearchTopologyNodePath})

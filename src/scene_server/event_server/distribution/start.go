@@ -26,12 +26,12 @@ import (
 func Start(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apimachinery.ClientSetInterface, disc discovery.ServiceManageInterface) error {
 	chErr := make(chan error, 1)
 
-	eh := &EventHandler{cache: cache}
+	eh := &EventHandler{cache: cache, disc: disc}
 	go func() {
 		chErr <- eh.Run()
 	}()
 
-	dh := &DistHandler{cache: cache, db: db, ctx: ctx}
+	dh := &DistHandler{cache: cache, db: db, ctx: ctx, disc: disc}
 	go func() {
 		chErr <- dh.StartDistribute()
 	}()
@@ -50,12 +50,16 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apima
 	return <-chErr
 }
 
-type EventHandler struct{ cache *redis.Client }
+type EventHandler struct {
+	cache *redis.Client
+	disc  discovery.ServiceManageInterface
+}
 
 type DistHandler struct {
 	cache *redis.Client
 	db    dal.RDB
 	ctx   context.Context
+	disc  discovery.ServiceManageInterface
 }
 
 type TxnHandler struct {

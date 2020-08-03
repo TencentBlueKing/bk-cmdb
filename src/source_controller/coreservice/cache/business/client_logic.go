@@ -41,30 +41,79 @@ func (c *Client) getBusinessFromMongo(bizID int64) (string, error) {
 	return string(js), nil
 }
 
-func (c *Client) listBusinessFromMongo(bizIDs []int64) ([]string, error) {
-	all := make([]map[string]interface{}, 0)
+func (c *Client) listBusinessFromMongo(ctx context.Context, ids []int64, fields []string) ([]string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	list := make([]map[string]interface{}, 0)
 	filter := mapstr.MapStr{
 		common.BKAppIDField: mapstr.MapStr{
-			common.BKDBIN: bizIDs,
+			common.BKDBIN: ids,
 		},
 	}
 
-	err := c.db.Table(common.BKTableNameBaseApp).Find(filter).All(context.Background(), &all)
+	err := c.db.Table(common.BKTableNameBaseApp).Find(filter).Fields(fields...).All(context.Background(), &list)
 	if err != nil {
-		blog.Errorf("get business %v info from db, but failed, err: %v", bizIDs, err)
+		blog.Errorf("list business info from db failed, err: %v, rid: %v", err, rid)
 		return nil, ccError.New(common.CCErrCommDBSelectFailed, err.Error())
 	}
 
-	list := make([]string, len(all))
-	for idx, biz := range all {
-		js, err := json.Marshal(biz)
-		if err != nil {
-			return nil, err
-		}
-		list[idx] = string(js)
+	all := make([]string, len(list))
+	for idx, biz := range list {
+		js, _ := json.Marshal(biz)
+		all[idx] = string(js)
 	}
 
-	return list, nil
+	return all, nil
+}
+
+func (c *Client) listModuleFromMongo(ctx context.Context, ids []int64, fields []string) ([]string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	list := make([]map[string]interface{}, 0)
+	filter := mapstr.MapStr{
+		common.BKModuleIDField: mapstr.MapStr{
+			common.BKDBIN: ids,
+		},
+	}
+
+	err := c.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(fields...).All(context.Background(), &list)
+	if err != nil {
+		blog.Errorf("list module info from db failed, err: %v, rid: %v", err, rid)
+		return nil, ccError.New(common.CCErrCommDBSelectFailed, err.Error())
+	}
+
+	all := make([]string, len(list))
+	for idx, biz := range list {
+		js, _ := json.Marshal(biz)
+		all[idx] = string(js)
+	}
+
+	return all, nil
+}
+
+func (c *Client) listSetFromMongo(ctx context.Context, ids []int64, fields []string) ([]string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	list := make([]map[string]interface{}, 0)
+	filter := mapstr.MapStr{
+		common.BKSetIDField: mapstr.MapStr{
+			common.BKDBIN: ids,
+		},
+	}
+
+	err := c.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(fields...).All(context.Background(), &list)
+	if err != nil {
+		blog.Errorf("list set info from db failed, err: %v, rid: %v", err, rid)
+		return nil, ccError.New(common.CCErrCommDBSelectFailed, err.Error())
+	}
+
+	all := make([]string, len(list))
+	for idx, biz := range list {
+		js, _ := json.Marshal(biz)
+		all[idx] = string(js)
+	}
+
+	return all, nil
 }
 
 // if expireKey is "", then it means you can not use the list array, you need to get

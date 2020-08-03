@@ -701,7 +701,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 	switch val.(type) {
 	case []interface{}:
 	default:
-		blog.Errorf("params should be type organization, rid: %s", rid)
+		blog.Errorf("params should be type organization,but its type is %T, rid: %s", val, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},

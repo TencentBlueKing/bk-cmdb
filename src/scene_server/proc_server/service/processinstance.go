@@ -157,6 +157,11 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 		raws = append(raws, process)
 	}
 
+	if len(raws) == 0 {
+		ctx.RespEntity([]int64{})
+		return
+	}
+
 	updateInput := metadata.UpdateRawProcessInstanceInput{
 		BizID: input.BizID,
 		Raw:   raws,
@@ -183,6 +188,11 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	input := metadata.UpdateRawProcessInstanceInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(input.Raw) == 0 {
+		ctx.RespEntity([]int64{})
 		return
 	}
 

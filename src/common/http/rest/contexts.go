@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/ac"
 	"configcenter/src/common"
@@ -96,6 +97,14 @@ func (c *Contexts) RespStringArray(jsonArray []string) {
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+
+	if len(jsonArray) == 0 {
+		jsonBuffer := bytes.Buffer{}
+		jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": []")
+		c.resp.Write(jsonBuffer.Bytes())
+		return
+	}
+
 	last := len(jsonArray) - 1
 	jsonBuffer := bytes.Buffer{}
 	jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": ")
@@ -110,7 +119,44 @@ func (c *Contexts) RespStringArray(jsonArray []string) {
 	jsonBuffer.WriteByte(']')
 	// end of json
 	jsonBuffer.WriteByte('}')
-	c.resp.Write(jsonBuffer.Bytes())
+	_, err := c.resp.Write(jsonBuffer.Bytes())
+	if err != nil {
+		blog.ErrorfDepthf(1, "write response failed, err: %v, rid :%s", err, c.Kit.Rid)
+		return
+	}
+}
+
+func (c *Contexts) RespCountInfoString(count int64, infoArray []string) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+
+	// format data field
+	last := len(infoArray) - 1
+	dataBuffer := bytes.Buffer{}
+	dataBuffer.WriteByte('{')
+	dataBuffer.WriteString("\"count\":")
+	dataBuffer.WriteString(strconv.FormatInt(count, 10))
+	dataBuffer.WriteString(",\"info\":[")
+	for idx, val := range infoArray {
+		dataBuffer.WriteString(val)
+		if idx != last {
+			dataBuffer.WriteByte(',')
+		}
+	}
+	dataBuffer.WriteString("]}")
+
+	jsonBuffer := bytes.Buffer{}
+	jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": ")
+	jsonBuffer.Write(dataBuffer.Bytes())
+	jsonBuffer.WriteByte('}')
+	_, err := c.resp.Write(jsonBuffer.Bytes())
+	if err != nil {
+		blog.ErrorfDepthf(1, "write response failed, err: %v, rid :%s", err, c.Kit.Rid)
+		return
+	}
 }
 
 func (c *Contexts) RespEntityWithError(data interface{}, err error) {

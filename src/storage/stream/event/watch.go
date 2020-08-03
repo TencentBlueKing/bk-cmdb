@@ -99,6 +99,23 @@ func (e *Event) loopWatch(ctx context.Context,
 			}
 
 			base := newStruct.Field(0).Interface().(types.EventStream)
+
+			// if we received a invalid event, which is caused by collection drop, rename or drop database operation,
+			// we have to try re-watch again. otherwise, this may cause this process CPU high because of continue
+			// for loop cursor.
+			// https://docs.mongodb.com/manual/reference/change-events/#invalidate-event
+			if base.OperationType == types.Invalidate {
+				blog.ErrorJSON("mongodb watch received a invalid event, will retry watch again, options: %s", *opts)
+
+				// clean the last resume token to force the next try watch from the beginning. otherwise we will
+				// receive the invalid event again.
+				currentToken.Data = ""
+
+				stream.Close(ctx)
+				retry = true
+				break
+			}
+
 			currentToken.Data = base.Token.Data
 			byt, _ := json.Marshal(newStruct.Field(1).Addr().Interface())
 
@@ -116,7 +133,7 @@ func (e *Event) loopWatch(ctx context.Context,
 		}
 
 		if err := stream.Err(); err != nil {
-			blog.Errorf("mongodb watch encountered a error, conf: %v, err: %v", *opts, err)
+			blog.ErrorJSON("mongodb watch encountered a error, conf: %s, err: %v", *opts, err)
 			stream.Close(ctx)
 			retry = true
 			continue
