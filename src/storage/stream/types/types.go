@@ -214,6 +214,15 @@ type Event struct {
 
 	// event token for resume after.
 	Token EventToken
+
+	// changed fields details in this event, describes which fields is updated or removed.
+	ChangeDesc *ChangeDescription
+}
+
+type ChangeDescription struct {
+	// updated details's value is the current value, not the previous value.
+	UpdatedFields map[string]interface{}
+	RemovedFields []string
 }
 
 func (e *Event) String() string {
@@ -234,6 +243,7 @@ type EventStream struct {
 	ClusterTime   primitive.Timestamp `bson:"clusterTime"`
 	Namespace     Namespace           `bson:"ns"`
 	DocumentKey   Key                 `bson:"documentKey"`
+	UpdateDesc    UpdateDescription   `bson:"updateDescription"`
 }
 
 type Key struct {
@@ -244,4 +254,11 @@ type Key struct {
 type Namespace struct {
 	Database   string `bson:"db"`
 	Collection string `bson:"coll"`
+}
+
+type UpdateDescription struct {
+	// document's fields which is updated in a change stream
+	UpdatedFields map[string]interface{} `json:"updatedFields" bson:"updatedFields"`
+	// document's fields which is removed in a change stream
+	RemovedFields []string `json:"removedFields" bson:"removedFields"`
 }

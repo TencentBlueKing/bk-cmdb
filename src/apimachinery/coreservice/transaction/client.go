@@ -15,6 +15,7 @@ package transaction
 import (
 	"context"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"configcenter/src/apimachinery/rest"
@@ -159,7 +160,24 @@ func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) error
 	return nil
 }
 
-func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() error) error {
+func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() error) (err error) {
+	rid := util.GetHTTPCCRequestID(h)
+
+	defer func() {
+		// if panic ,abort the transaction to avoid WriteConflict when the uncommitted data was processed in another transaction
+		if panicErr := recover(); panicErr != nil {
+			blog.ErrorfDepthf(3, "run transaction,but server panic, err: %v, rid: %s, debug strace:%s", panicErr, rid, debug.Stack())
+			err = ccErr.New(common.CCErrCommInternalServerError, common.GetIdentification()+" Internal Server Error")
+
+			abortErr := t.AbortTransaction(ctx, h)
+			if abortErr != nil {
+				blog.ErrorfDepthf(3, "abort the transaction failed, err: %v, rid: %s", abortErr, rid)
+				return
+			}
+			blog.V(4).InfoDepthf(3, "abort the transaction success. rid: %s", rid)
+		}
+	}()
+
 	if run == nil {
 		return errors.New("run function can not be nil")
 	}
@@ -172,7 +190,6 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	if !t.enableTxn {
 		return run()
 	}
-	rid := util.GetHTTPCCRequestID(h)
 	// revise the locked to false, so that we can commit or abort the transaction.
 	t.locked = false
 
@@ -191,7 +208,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	}
 
 	// run() logic success, then commit the transaction.
-	err := t.CommitTransaction(ctx, h)
+	err = t.CommitTransaction(ctx, h)
 	if err != nil {
 		blog.ErrorfDepthf(2, "commit the transaction failed, err: %v, rid: %s", err, rid)
 		return err
