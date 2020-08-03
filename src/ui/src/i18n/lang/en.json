@@ -1317,5 +1317,17 @@
     "实例操作": "Instance Operation",
     "所属实例": "Instance",
     "确定删除N个进程": "Confirm to delete {count} selected process?",
-    "确定删除该进程": "Confirm to delete this process?"
+    "确定删除该进程": "Confirm to delete this process?",
+    "关联的资源实例": "Related Resource Instance",
+    "业务空闲机": "Business Idle",
+    "资源池其他目录": "Other Directory",
+    "未分配": "Unassigned",
+    "已分配": "Assigned",
+    "新建目录": "Create directory",
+    "分组目录": "Directory",
+    "业务列表": "Business list",
+    "分配到业务空闲机": "Assign to business idle",
+    "取消置顶": "Cancel topping",
+    "重命名": "Rename",
+    "目录名": "Directory"
 }
