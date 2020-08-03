@@ -15,7 +15,9 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -83,6 +85,21 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
 		if nil != err {
 			return err
+		}
+
+		// register object resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysModel),
+				ID:      strconv.FormatInt(rsp.Object().ID, 10),
+				Name:    rsp.Object().ObjectName,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})

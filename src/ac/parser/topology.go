@@ -2481,8 +2481,7 @@ func (ps *parseStream) audit() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type: meta.AuditLog,
-					// audit authorization in topo scene layer
-					Action: meta.SkipAction,
+					Action: meta.Find,
 				},
 			},
 		}

@@ -26,6 +26,7 @@ import (
 type Interface interface {
 	GetUserPolicy(ctx context.Context, opt *types.GetPolicyOption) (*operator.Policy, error)
 	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*types.ActionPolicy, error)
+	GetSystemToken(ctx context.Context) (string, error)
 }
 
 func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {
@@ -64,6 +65,7 @@ func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {
 	return &authClient{
 		client:      rest.NewRESTClient(c, ""),
 		basicHeader: header,
+		config:      conf,
 	}, nil
 }
 
@@ -72,6 +74,8 @@ type authClient struct {
 	client rest.ClientInterface
 	// http header info
 	basicHeader http.Header
+	// iam config
+	config types.IamConfig
 }
 
 func (ac *authClient) cloneHeader(ctx context.Context) http.Header {

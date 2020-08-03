@@ -166,7 +166,7 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
-func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, header http.Header, action iam.ActionType, hostIDs []int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action, hostIDs []int64) (*metadata.BaseResp, error) {
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return nil, err
@@ -177,6 +177,7 @@ func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, hea
 	}
 	bizHosts := make([][]metadata.IamResourceInstance, 0)
 	resourceHosts := make([][]metadata.IamResourceInstance, 0)
+	var bizID int64
 	for _, host := range hosts {
 		if host.BKAppIDField == resPoolBizID {
 			resourceHosts = append(resourceHosts, []metadata.IamResourceInstance{{
@@ -187,6 +188,7 @@ func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, hea
 				ID:   strconv.FormatInt(host.BKHostIDField, 10),
 			}})
 		} else {
+			bizID = host.BKAppIDField
 			bizHosts = append(bizHosts, []metadata.IamResourceInstance{{
 				Type: string(iam.Business),
 				ID:   strconv.FormatInt(host.BKAppIDField, 10),
@@ -199,8 +201,12 @@ func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, hea
 
 	permission := &metadata.IamPermission{SystemID: iam.SystemIDCMDB}
 	if len(bizHosts) > 0 {
+		action, err := iam.ConvertResourceAction(meta.HostInstance, action, bizID)
+		if err != nil {
+			return nil, err
+		}
 		permission.Actions = append(permission.Actions, metadata.IamAction{
-			ID: string(iam.EditBusinessHost),
+			ID: string(action),
 			RelatedResourceTypes: []metadata.IamResourceType{{
 				SystemID:  iam.SystemIDCMDB,
 				Type:      string(iam.Host),
@@ -209,8 +215,12 @@ func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, hea
 		})
 	}
 	if len(resourceHosts) > 0 {
+		action, err := iam.ConvertResourceAction(meta.HostInstance, action, 0)
+		if err != nil {
+			return nil, err
+		}
 		permission.Actions = append(permission.Actions, metadata.IamAction{
-			ID: string(iam.EditResourcePoolHost),
+			ID: string(action),
 			RelatedResourceTypes: []metadata.IamResourceType{{
 				SystemID:  iam.SystemIDCMDB,
 				Type:      string(iam.Host),

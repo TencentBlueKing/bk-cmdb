@@ -14,7 +14,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/meta"
@@ -217,43 +216,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 			cond[common.BKDBAND] = andCond
 		}
 		query.Condition = cond
-	}
-
-	// switch between two different control mechanism
-	// TODO use global authorization for now, need more specific auth control
-	if s.AuthManager.RegisterAuditCategoryEnabled == false {
-		if err := s.AuthManager.AuthorizeAuditRead(ctx.Kit.Ctx, ctx.Kit.Header, 0); err != nil {
-			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			resp, err := s.AuthManager.GenAuthorizeAuditReadNoPermissionsResponse(ctx.Kit.Ctx, ctx.Kit.Header, 0)
-			if err != nil {
-				ctx.RespAutoError(fmt.Errorf("try authorize failed, err: %v", err))
-				return
-			}
-			ctx.RespEntityWithError(resp, ac.NoAuthorizeError)
-			return
-		}
-	} else {
-		var hasAuthorize bool
-		for _, bizID := range []int64{businessID, 0} {
-			authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-			if err != nil {
-				blog.Errorf("AuditQuery failed, make audit query condition from auth failed, %+v, rid: %s", err, ctx.Kit.Rid)
-				ctx.RespAutoError(fmt.Errorf("make audit query condition from auth failed, %+v", err))
-				return
-			}
-
-			if hasAuthorization == true {
-				query.Condition[common.BKDBOR] = authCondition
-				blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, ctx.Kit.Rid)
-				hasAuthorize = hasAuthorization
-				break
-			}
-		}
-		if hasAuthorize == false {
-			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit, rid: %s", ctx.Kit.User, ctx.Kit.Rid)
-			ctx.RespAutoError(ac.NoAuthorizeError)
-			return
-		}
 	}
 
 	blog.V(5).Infof("AuditQuery, AuditOperation parameter: %+v, rid: %s", query, ctx.Kit.Rid)

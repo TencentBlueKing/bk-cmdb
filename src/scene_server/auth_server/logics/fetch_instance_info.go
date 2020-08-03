@@ -51,6 +51,10 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
 	}
 
+	if len(filter.Attrs) == 0 {
+		return make([]map[string]interface{}, 0), nil
+	}
+
 	// if attribute filter is set, add id attribute and convert display_name to the real name field
 	var attrs []string
 	needPath := false

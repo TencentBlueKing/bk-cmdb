@@ -572,9 +572,9 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, req types.PullResourceReq) (*
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		if filter.Parent.Type == iam.Business {
-			relationReq = &metadata.HostModuleRelationRequest{ApplicationID: parentID}
+			relationReq = &metadata.HostModuleRelationRequest{ApplicationID: parentID, Fields: []string{common.BKHostIDField}}
 		} else {
-			relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}}
+			relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}, Fields: []string{common.BKHostIDField}}
 		}
 		hostIDs := make([]int64, 0)
 		hostRsp, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)

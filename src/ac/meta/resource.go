@@ -67,8 +67,6 @@ const (
 )
 
 const (
-	Host = "host"
-
 	NetCollector = "netCollector"
 	NetDevice    = "netDevice"
 	NetProperty  = "netProperty"

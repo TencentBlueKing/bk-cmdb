@@ -28,6 +28,7 @@ import (
 	"configcenter/src/scene_server/auth_server/app/options"
 	"configcenter/src/scene_server/auth_server/logics"
 	"configcenter/src/scene_server/auth_server/sdk/auth"
+	"configcenter/src/scene_server/auth_server/sdk/client"
 	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/service"
 )
@@ -62,22 +63,27 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		iamCli, err := iam.NewIam(nil, authServer.Config.Auth, engine.Metric().Registry())
+		authConf := authServer.Config.Auth
+		iamConf := sdktypes.IamConfig{
+			Address:   authConf.Address,
+			AppCode:   authConf.AppCode,
+			AppSecret: authConf.AppSecret,
+			SystemID:  authConf.SystemID,
+			TLS:       authServer.Config.TLS,
+		}
+		opt := sdktypes.Options{
+			Metric: engine.Metric().Registry(),
+		}
+
+		iamCli, err := client.NewClient(iamConf, opt)
 		if err != nil {
 			blog.Errorf("new iam client, err: %s", err.Error())
 			return err
 		}
 
-		authConf := authServer.Config.Auth
 		authConfig := sdktypes.Config{
-			Iam: sdktypes.IamConfig{
-				Address:   authConf.Address,
-				AppCode:   authConf.AppCode,
-				AppSecret: authConf.AppSecret,
-				SystemID:  authConf.SystemID,
-				TLS:       authServer.Config.TLS,
-			},
-			Options: sdktypes.Options{Metric: engine.Metric().Registry()},
+			Iam:     iamConf,
+			Options: opt,
 		}
 		lgc := logics.NewLogics(engine.CoreAPI)
 		authorizer, err := auth.NewAuth(authConfig, lgc)

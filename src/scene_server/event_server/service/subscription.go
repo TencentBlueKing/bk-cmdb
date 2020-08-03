@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -136,6 +137,23 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	msg, _ := json.Marshal(&sub)
 	s.cache.Publish(types.EventCacheProcessChannel, "create"+string(msg))
 	s.cache.Del(types.EventCacheDistCallBackCountPrefix + strconv.FormatInt(sub.SubscriptionID, 10))
+
+	// register cloud sync task resource creator action to iam
+	if auth.EnableAuthorize() {
+		iamInstance := metadata.IamInstanceWithCreator{
+			Type:    string(iam.SysEventPushing),
+			ID:      strconv.FormatInt(sub.SubscriptionID, 10),
+			Name:    sub.SubscriptionName,
+			Creator: sub.Operator,
+		}
+		_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(s.ctx, header, iamInstance)
+		if err != nil {
+			blog.Errorf("register created event subscription to iam failed, err: %s, rid: %s", err, rid)
+			result := &metadata.RespError{Msg: err}
+			_ = resp.WriteError(http.StatusInternalServerError, result)
+			return
+		}
+	}
 
 	result := NewCreateSubscriptionResult(sub.SubscriptionID)
 	resp.WriteEntity(result)

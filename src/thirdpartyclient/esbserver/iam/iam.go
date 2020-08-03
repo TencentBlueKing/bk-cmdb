@@ -22,6 +22,8 @@ import (
 
 type IamClientInterface interface {
 	GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error)
+	RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
+		[]metadata.IamCreatorActionPolicy, error)
 }
 
 func NewIamClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) IamClientInterface {
@@ -34,4 +36,25 @@ func NewIamClientInterface(client rest.ClientInterface, config *esbutil.EsbConfi
 type iam struct {
 	config *esbutil.EsbConfigSrv
 	client rest.ClientInterface
+}
+
+type esbIamPermissionParams struct {
+	*esbutil.EsbCommParams
+	metadata.IamPermission `json:",inline"`
+}
+
+type esbIamInstanceParams struct {
+	*esbutil.EsbCommParams
+	metadata.IamInstanceWithCreator `json:",inline"`
+}
+type esbIamPermissionURLResp struct {
+	Data struct {
+		Url string `json:"url"`
+	} `json:"data"`
+	metadata.EsbBaseResponse `json:",inline"`
+}
+
+type esbIamCreatorActionResp struct {
+	metadata.EsbBaseResponse `json:",inline"`
+	Data                     []metadata.IamCreatorActionPolicy `json:"data"`
 }

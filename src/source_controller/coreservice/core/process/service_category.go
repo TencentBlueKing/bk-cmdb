@@ -216,7 +216,7 @@ func (p *processOperation) ListServiceCategories(kit *rest.Kit, bizID int64, wit
 		}
 		serviceTemplates := make([]metadata.ServiceTemplate, 0)
 		if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(templateFilter).All(kit.Ctx, &serviceTemplates); nil != err {
-			blog.Errorf("ListServiceCategories failed, find reference templates failed, mongodb failed, filter: %+v, table: %s, err: %+v, rid: %s", common.BKTableNameServiceTemplate, serviceTemplates, err, kit.Rid)
+			blog.Errorf("ListServiceCategories failed, find reference templates failed, mongodb failed, filter: %+v, table: %s, err: %+v, rid: %s", templateFilter, common.BKTableNameServiceTemplate, err, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 		for _, tpl := range serviceTemplates {
@@ -226,6 +226,20 @@ func (p *processOperation) ListServiceCategories(kit *rest.Kit, bizID int64, wit
 				continue
 			}
 			usageMap[tpl.ServiceCategoryID] = count + 1
+		}
+
+		modules := make([]metadata.ModuleInst, 0)
+		if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(templateFilter).All(kit.Ctx, &modules); nil != err {
+			blog.Errorf("ListServiceCategories failed, find reference modules failed, mongodb failed, filter: %+v, table: %s, err: %+v, rid: %s", templateFilter, common.BKTableNameBaseModule, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		}
+		for _, module := range modules {
+			count, exist := usageMap[module.ServiceCategoryID]
+			if !exist {
+				usageMap[module.ServiceCategoryID] = 1
+				continue
+			}
+			usageMap[module.ServiceCategoryID] = count + 1
 		}
 	}
 

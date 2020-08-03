@@ -108,11 +108,12 @@ type SystemResp struct {
 }
 
 type RegisteredSystemInfo struct {
-	BaseInfo           System              `json:"base_info"`
-	ResourceTypes      []ResourceType      `json:"resource_types"`
-	Actions            []ResourceAction    `json:"actions"`
-	ActionGroups       []ActionGroup       `json:"action_groups"`
-	InstanceSelections []InstanceSelection `json:"instance_selections"`
+	BaseInfo               System                 `json:"base_info"`
+	ResourceTypes          []ResourceType         `json:"resource_types"`
+	Actions                []ResourceAction       `json:"actions"`
+	ActionGroups           []ActionGroup          `json:"action_groups"`
+	InstanceSelections     []InstanceSelection    `json:"instance_selections"`
+	ResourceCreatorActions ResourceCreatorActions `json:"resource_creator_actions"`
 }
 
 type BaseResponse struct {
@@ -447,4 +448,20 @@ type Resource struct {
 	Type      TypeID                 `json:"type"`
 	ID        string                 `json:"id,omitempty"`
 	Attribute map[string]interface{} `json:"attribute,omitempty"`
+}
+
+// specifies resource creation actions' related actions that resource creator will have permissions to
+type ResourceCreatorActions struct {
+	Config []ResourceCreatorAction `json:"config"`
+}
+
+type ResourceCreatorAction struct {
+	ResourceID       TypeID                  `json:"id"`
+	Actions          []CreatorRelatedAction  `json:"actions"`
+	SubResourceTypes []ResourceCreatorAction `json:"sub_resource_types,omitempty"`
+}
+
+type CreatorRelatedAction struct {
+	ID         ActionID `json:"id"`
+	IsRequired bool     `json:"required"`
 }

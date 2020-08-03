@@ -15,7 +15,6 @@ package iam
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
@@ -235,32 +234,19 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		return err
 	}
 
+	// register or update resource creator actions
+	resourceCreatorActions := GenerateResourceCreatorActions()
+	if len(systemResp.Data.ResourceCreatorActions.Config) == 0 {
+		if err = i.client.RegisterResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
+			blog.ErrorJSON("register resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
+			return err
+		}
+		return nil
+	}
+	if err = i.client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
+		blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
+		return err
+	}
+
 	return nil
-}
-
-var token string
-var tokenRefreshTime time.Time
-
-func (i Iam) CheckRequestAuthorization(req *http.Request) (bool, error) {
-	name, pwd, ok := req.BasicAuth()
-	if !ok || name != SystemIDIAM {
-		blog.Errorf("request have no basic authorization")
-		return false, nil
-	}
-	// if cached token is set within a minute, use it to check request authorization
-	if token != "" && time.Since(tokenRefreshTime) <= time.Minute && pwd == token {
-		return true, nil
-	}
-	var err error
-	token, err = i.client.GetSystemToken(context.Background())
-	if err != nil {
-		blog.Errorf("check request authorization get system token failed, error: %s", err.Error())
-		return false, err
-	}
-	tokenRefreshTime = time.Now()
-	if pwd == token {
-		return true, nil
-	}
-	blog.Errorf("request password not match system token")
-	return false, nil
 }

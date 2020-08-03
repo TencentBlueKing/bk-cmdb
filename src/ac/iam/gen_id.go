@@ -113,7 +113,7 @@ func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttri
 
 	// create business do not related to instance authorize
 	if act == CreateBusiness {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	// we have fuzzy authorize for frontend use, so we can not check this.
@@ -181,7 +181,7 @@ func genEventSubscribeResource(act ActionID, typ TypeID, att *meta.ResourceAttri
 	}
 
 	if act == CreateEventPushing {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -190,12 +190,7 @@ func genEventSubscribeResource(act ActionID, typ TypeID, att *meta.ResourceAttri
 }
 
 func genResourceWatch(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-	return []types.Resource{r}, nil
+	return make([]types.Resource, 0), nil
 }
 
 func genServiceTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
@@ -244,21 +239,11 @@ func genSetTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 }
 
 func genOperationStatisticResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-	return []types.Resource{r}, nil
+	return make([]types.Resource, 0), nil
 }
 
 func genAuditLogResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-	return []types.Resource{r}, nil
+	return make([]types.Resource, 0), nil
 }
 
 func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
@@ -269,7 +254,7 @@ func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Res
 	}
 
 	if act == CreateCloudArea {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -302,7 +287,7 @@ func genCloudAccountResource(act ActionID, typ TypeID, att *meta.ResourceAttribu
 	}
 
 	if act == CreateCloudAccount {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -317,7 +302,7 @@ func genCloudResourceTaskResource(act ActionID, typ TypeID, att *meta.ResourceAt
 	}
 
 	if act == CreateCloudResourceTask {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -332,7 +317,7 @@ func genResourcePoolDirectoryResource(act ActionID, typ TypeID, att *meta.Resour
 	}
 
 	if act == CreateResourcePoolDirectory {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -424,7 +409,7 @@ func genModelClassificationResource(act ActionID, typ TypeID, att *meta.Resource
 
 	// create model group do not related to instance authorize
 	if act == CreateModelGroup {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -440,7 +425,7 @@ func genAssociationTypeResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 	}
 
 	if act == CreateAssociationType {
-		return []types.Resource{r}, nil
+		return make([]types.Resource, 0), nil
 	}
 
 	r.ID = strconv.FormatInt(att.InstanceID, 10)
@@ -465,39 +450,19 @@ func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute
 }
 
 func genSkipResource(_ ActionID, _ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(Skip),
-		Attribute: nil,
-	}
-	return []types.Resource{r}, nil
+	return make([]types.Resource, 0), nil
 }
 
 func genGlobalConfigResource(_ ActionID, _ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(""),
-		Attribute: nil,
-	}
-	return []types.Resource{r}, nil
+	return make([]types.Resource, 0), nil
 }
 
 func genBusinessLayerResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-	return []types.Resource{r}, nil
+	return make([]types.Resource, 0), nil
 }
 
 func genModelTopologyViewResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-	return []types.Resource{r}, nil
+	return make([]types.Resource, 0), nil
 }
 
 func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {

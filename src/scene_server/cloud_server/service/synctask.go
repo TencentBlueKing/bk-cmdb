@@ -15,7 +15,9 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -58,6 +60,21 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("CreateSyncTask failed, err:%s, task:%#v, rid:%s", err, task, ctx.Kit.Rid)
 			return err
+		}
+
+		// register cloud sync task resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysCloudResourceTask),
+				ID:      strconv.FormatInt(result.TaskID, 10),
+				Name:    result.TaskName,
+				Creator: result.Creator,
+			}
+			_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created cloud sync task to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 
 		return nil

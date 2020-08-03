@@ -22,11 +22,7 @@ import (
 func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/operate_proc/"
-	type esbParams struct {
-		*esbutil.EsbCommParams
-		*metadata.GseProcRequest `"json:inline"`
-	}
-	params := &esbParams{
+	params := &esbGseProcParams{
 		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
 		GseProcRequest: data,
 	}
@@ -45,11 +41,7 @@ func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.
 func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID string) (resp *metadata.GseProcessOperateTaskResult, err error) {
 	resp = new(metadata.GseProcessOperateTaskResult)
 	subPath := "/v2/gse/get_proc_operate_result/"
-	type esbParams struct {
-		*esbutil.EsbCommParams
-		TaskID string `json:"task_id"`
-	}
-	params := &esbParams{
+	params := &esbTaskIDParams{
 		EsbCommParams: esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
 		TaskID:        taskID,
 	}
@@ -68,11 +60,7 @@ func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID 
 func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/get_proc_status/"
-	type esbParams struct {
-		*esbutil.EsbCommParams
-		*metadata.GseProcRequest `"json:inline"`
-	}
-	params := &esbParams{
+	params := &esbGseProcParams{
 		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
 		GseProcRequest: data,
 	}
@@ -90,11 +78,7 @@ func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata
 func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/register_proc_info/"
-	type esbParams struct {
-		*esbutil.EsbCommParams
-		*metadata.GseProcRequest `"json:inline"`
-	}
-	params := &esbParams{
+	params := &esbGseProcParams{
 		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
 		GseProcRequest: data,
 	}
@@ -113,11 +97,7 @@ func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadat
 func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/unregister_proc_info/"
-	type esbParams struct {
-		*esbutil.EsbCommParams
-		*metadata.GseProcRequest `"json:inline"`
-	}
-	params := &esbParams{
+	params := &esbGseProcParams{
 		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
 		GseProcRequest: data,
 	}

@@ -159,3 +159,29 @@ func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input 
 
 	return response.Data, nil
 }
+
+func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
+	[]metadata.IamCreatorActionPolicy, error) {
+	response := new(struct {
+		metadata.BaseResp `json:",inline"`
+		Data              []metadata.IamCreatorActionPolicy `json:"data"`
+	})
+	subPath := "/register/resource_creator_action"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(response)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if response.Code != 0 {
+		return nil, response.CCError()
+	}
+
+	return response.Data, nil
+}

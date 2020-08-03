@@ -485,6 +485,11 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 
 		// generate iam resource instances by its paths and itself
 		for _, res := range resource {
+			if len(res.ID) == 0 && res.Attribute == nil {
+				permissionMap[string(actionID)][string(res.Type)] = nil
+				continue
+			}
+
 			instance := make([]metadata.IamResourceInstance, 0)
 			if res.Attribute != nil {
 				iamPath, ok := res.Attribute[types.IamPathKey].([]string)
@@ -506,7 +511,7 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 	}
 
 	for actionID, permissionTypeMap := range permissionMap {
-		action := metadata.IamAction{ID: actionID}
+		action := metadata.IamAction{ID: actionID, RelatedResourceTypes: make([]metadata.IamResourceType, 0)}
 		for rscType, instances := range permissionTypeMap {
 			action.RelatedResourceTypes = append(action.RelatedResourceTypes, metadata.IamResourceType{
 				SystemID:  SystemIDCMDB,

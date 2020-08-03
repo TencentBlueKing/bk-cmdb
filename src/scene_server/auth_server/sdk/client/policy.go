@@ -84,3 +84,32 @@ func (ac *authClient) ListUserPolicies(ctx context.Context, opts *types.ListPoli
 
 	return resp.Data, nil
 }
+
+// GetSystemToken get system token from iam, used to validate if request is from iam
+func (ac *authClient) GetSystemToken(ctx context.Context) (string, error) {
+	resp := new(struct {
+		types.BaseResp
+		Data struct {
+			Token string `json:"token"`
+		} `json:"data"`
+	})
+	result := ac.client.Get().
+		SubResourcef("/api/v1/model/systems/%s/token", ac.config.SystemID).
+		WithContext(ctx).
+		WithHeaders(ac.basicHeader).
+		Body(nil).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.Code != 0 {
+		return "", &types.AuthError{
+			Rid:     result.Header.Get(types.RequestIDHeaderKey),
+			Code:    resp.Code,
+			Message: resp.Message,
+		}
+	}
+
+	return resp.Data.Token, nil
+}

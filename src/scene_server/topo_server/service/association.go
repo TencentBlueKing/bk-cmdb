@@ -18,7 +18,9 @@ import (
 	"sort"
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -291,6 +293,21 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 
 		if ret.Code != 0 {
 			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
+		}
+
+		// register association type resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysAssociationType),
+				ID:      strconv.FormatInt(ret.Data.ID, 10),
+				Name:    request.AssociationKindName,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created association type to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})

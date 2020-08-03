@@ -265,3 +265,23 @@ func (s *AuthService) GetNoAuthSkipUrl(ctx *rest.Contexts) {
 
 	ctx.RespEntity(url)
 }
+
+// RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
+	input := new(metadata.IamInstanceWithCreator)
+	err := ctx.DecodeInto(input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	input.System = iam.SystemIDCMDB
+
+	policies, err := esb.EsbClient().IamSrv().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	if err != nil {
+		blog.ErrorJSON("register resource creator action failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(policies)
+}
