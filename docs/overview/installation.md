@@ -6,7 +6,7 @@
 * Redis   >= 3.2.11
 * MongoDB >= 4.2
 * Elasticsearch >= 5.0.0 & < 7 (用于全文检索功能，推荐使用5.x的版本)
-* Mongo-connector >= 2.5.0 (用于全文检索功能，推荐3.1.1)
+* Monstache >= 5.0.0 (用于全文检索功能，推荐5.7.0)
 
 ## CMDB 微服务进程清单
 
@@ -126,94 +126,74 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 
 如果想部署高可用可扩展的ES，可参考官方文档[ES-Guide](https://www.elastic.co/guide/index.html)
 
-### 7. 部署mongo-connector (用于全文检索, 可选, 控制开关见第9步的full_text_search)
+### 7.  部署Monstache (用于全文检索, 可选, 控制开关见第9步的full_text_search)
 
-官方仓库 [Mongo-connector](https://github.com/yougov/mongo-connector)
-推荐使用pip安装：
+官方仓库 [Monstache](https://github.com/rwynn/monstache/releases)
+
+**Monstache-Mongodb-Es 版本关系:**
+
+| Monstache version | Git branch (used to build plugin) | Docker tag                         | Description             | Elasticsearch    | MongoDB   |
+| ----------------- | --------------------------------- | ---------------------------------- | ----------------------- | ---------------- | --------- |
+| 3                 | rel3                              | rel3                               | mgo community go driver | Versions 2 and 5 | Version 3 |
+| 4                 | master                            | rel4 (note this used to be latest) | mgo community go driver | Version 6        | Version 3 |
+| 5                 | rel5                              | rel5                               | MongoDB, Inc. go driver | Version 6        | Version 4 |
+| 6                 | rel6                              | rel6, latest                       | MongoDB, Inc. go driver | Version 7        | Version 4 |
+
+**Monstache配置解释**
+
+| 参数                     | 说明                                                         |
+| ------------------------ | ------------------------------------------------------------ |
+| mongo-url                | MongoDB实例的主节点访问地址。详情请参见。[mongo-url](https://rwynn.github.io/monstache-site/config/#mongo-url) |
+| elasticsearch-urls       | Elasticsearch的访问地址。详情请参见 [elasticsearch-urls](https://rwynn.github.io/monstache-site/config/#elasticsearch-urls) |
+| direct-read-namespaces   | 指定待同步的集合，详情请参见[direct-read-namespaces](https://rwynn.github.io/monstache-site/config/#direct-read-namespaces)。 |
+| change-stream-namespaces | 如果要使用MongoDB变更流功能，需要指定此参数。启用此参数后，oplog追踪会被设置为无效，详情请参见[change-stream-namespaces](https://rwynn.github.io/monstache-site/config/#change-stream-namespaces)。 |
+| namespace-regex          | 通过正则表达式指定需要监听的集合。此设置可以用来监控符合正则表达式的集合中数据的变化。 |
+| elasticsearch-user       | 访问Elasticsearch的用户名。                                  |
+| elasticsearch-password   | 访问Elasticsearch的用户密码。                                |
+| elasticsearch-max-conns  | 定义连接ES的线程数。默认为4，即使用4个Go线程同时将数据同步到ES。 |
+| dropped-collections      | 默认为true，表示当删除MongoDB集合时，会同时删除ES中对应的索引。 |
+| dropped-databases        | 默认为true，表示当删除MongoDB数据库时，会同时删除ES中对应的索引。 |
+| resume                   | 默认为false。设置为true，Monstache会将已成功同步到ES的MongoDB操作的时间戳写入monstache.monstache集合中。当Monstache因为意外停止时，可通过该时间戳恢复同步任务，避免数据丢失。如果指定了cluster-name，该参数将自动开启，详情请参见[resume](https://rwynn.github.io/monstache-site/config/#resume)。 |
+| resume-strategy          | 指定恢复策略。仅当resume为true时生效，详情请参见[resume-strategy](https://rwynn.github.io/monstache-site/config/#resume-strategy)。 |
+| verbose                  | 默认为false，表示不启用调试日志。                            |
+| cluster-name             | 指定集群名称。指定后，Monstache将进入高可用模式，集群名称相同的进程将进行协调，详情请参见[cluster-name](https://rwynn.github.io/monstache-site/config/#cluster-name)。 |
+| mapping                  | 指定ES索引映射。默认情况下，数据从MongoDB同步到ES时，索引会自动映射为`数据库名.集合名`。如果需要修改索引名称，可通过该参数设置，详情请参见[Index Mapping](https://rwynn.github.io/monstache-site/advanced/#index-mapping)。 |
+
+**config.toml 内容举例如下：**
 
 ```
-pip install elastic2-doc-manager elasticsearch
-pip install 'mongo-connector[elastic5]'
+mongo-url = "mongodb://localhost:27017"
+elasticsearch-urls = ["http://localhost:9200"]
+direct-read-namespaces = ["cmdb.cc_ApplicationBase","cmdb.cc_HostBase","cmdb.cc_ObjectBase"]
+elasticsearch-max-conns = 4
+dropped-collections = true
+dropped-databases = true
+resume = true
+resume-strategy = 0
+verbose=true
+
+[[mapping]]
+namespace = "cmdb.cc_ApplicationBase"
+index = "cmdb"
+type = "cc_ApplicationBase"
+
+[[mapping]]
+namespace = "cmdb.cc_HostBase"
+index = "cmdb"
+type = "cc_HostBase"
+
+[[mapping]]
+namespace = "cmdb.cc_ObjectBase"
+index = "cmdb"
+type = "cc_ObjectBase"
 ```
+添加新的 direct-read-namespaces 需要添加对应的 mapping，默认 index 和 type 无法支持全文索引。
 
-下载后请检查python包版本，尤其python elasticsearch大版本要和下载的elasticsearch一致
+**启动：**
 
-创建并配置配置文件config.json(配置说明参见[config](https://github.com/yougov/mongo-connector/wiki/Configuration%20Options)):
-
-主要配置
-key前面添加__代表忽略此配置
-mainAddress指定mongo，如果是mongo集群，可以指向slave节点
-authentication暂时先别配置，认证有问题
-namespaces里面配置要同步的mongo里的table，false代表不同步，true代表同步,
-可以自行配置需要同步哪些table用于全文检索
-
-内容举例如下：
 ```
-{
-    "__comment__": "Configuration options starting with '__' are disabled",
-    "__comment__": "To enable them, remove the preceding '__'",
-
-    "mainAddress": "127.0.0.1:27017",
-    "oplogFile": "/var/log/mongo-connector/oplog.timestamp",
-    "noDump": false,
-    "batchSize": -1,
-    "verbosity": 3,
-    "continueOnError": true,
-
-    "logging": {
-        "type": "file",
-        "filename": "/var/log/mongo-connector/mongo-connector.log",
-        "format": "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d - %(message)s",
-        "rotationWhen": "D",
-        "rotationInterval": 1,
-        "rotationBackups": 10,
-
-        "__type": "syslog",
-        "__host": "localhost:514"
-    },
-
-    "__authentication": {
-        "adminUsername": "cc",
-        "password": "cc",
-        "__passwordFile": "mongo-connector.pwd"
-    },
-
-    "__fields": ["field1", "field2", "field3"],
-    
-    "exclude_fields": ["create_time", "last_time"],
-
-    "namespaces": {
-        "cmdb.cc_HostBase": true,
-        "cmdb.cc_ObjectBase": true,
-        "cmdb.cc_ObjDes": true,
-        "cmdb.cc_ApplicationBase": true,
-        "cmdb.cc_OperationLog": false
-    },
-
-    "docManagers": [
-        {
-            "docManager": "elastic2_doc_manager",
-            "targetURL": "127.0.0.1:9200",
-            "__bulkSize": 1000,
-            "uniqueKey": "_id",
-            "autoCommitInterval": 0
-        }
-    ]
-}
+./monstache -f config.toml
 ```
-**注: mainAddress处根据实际情况写上本机的ip，举例若按上面的配置，需要创建/var/log/mongo-connector目录,也可通过修改logging filename自定义目录**
-```
-  mkdir -p /var/log/mongo-connector 
-```
-
-
-
-然后运行命令启动：
-```
-mongo-connector -c config.json
-```
-
-也可以自己写成system服务来运行
 
 ### 8. 部署CMDB
 
