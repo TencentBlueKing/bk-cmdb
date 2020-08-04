@@ -42,12 +42,18 @@
                         </div>
                         <div class="process-info clearfix"
                             v-else-if="current.type === 'changed'">
-                            <div class="info-item fl"
+                            <div :class="['info-item fl', { table: changed.property.bk_property_type === 'table' }]"
                                 v-for="(changed, index) in changedProperties"
                                 :key="index"
                                 v-bk-overflow-tips>
                                 {{changed.property.bk_property_name}}：
-                                <span class="info-item-value">{{getChangedValue(changed)}}</span>
+                                <span class="info-item-value">
+                                    <cmdb-property-value
+                                        :show-title="false"
+                                        :value="getChangedValue(changed)"
+                                        :property="changed.property">
+                                    </cmdb-property-value>
+                                </span>
                             </div>
                         </div>
                         <div class="process-info"
@@ -316,7 +322,7 @@
             getChangedValue (changed) {
                 const property = changed.property
                 let value = changed.template_property_value
-                value = typeof value === 'object' ? value.value : value
+                value = Object.prototype.toString.call(value) === '[object Object]' ? value.value : value
                 return formatter(value, property)
             },
             getModuleTopoPath (moduleId) {
@@ -495,7 +501,6 @@
             }
         }
     }
-    .change-details {}
     .details-info {
         .process-info {
             padding: 0 0 0 22px;
@@ -506,6 +511,13 @@
                 @include ellipsis;
                 .info-item-value {
                     color: #313238;
+                }
+
+                &.table {
+                    width: 100%;
+                    /deep/ .table-value {
+                        width: 800px;
+                    }
                 }
             }
         }

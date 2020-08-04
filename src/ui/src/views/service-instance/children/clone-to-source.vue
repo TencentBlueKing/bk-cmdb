@@ -17,8 +17,19 @@
                     :key="column.id"
                     :prop="column.id"
                     :label="column.name"
-                    show-overflow-tooltip>
-                    <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+                    :show-overflow-tooltip="column.id !== 'bind_info'">
+                    <template slot-scope="{ row }">
+                        <cmdb-property-value v-if="column.id !== 'bind_info'"
+                            :value="row[column.id]"
+                            :show-unit="false"
+                            :show-title="true"
+                            :property="column.property">
+                        </cmdb-property-value>
+                        <process-bind-info-value v-else
+                            :value="row[column.id]"
+                            :property="column.property">
+                        </process-bind-info-value>
+                    </template>
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')" fixed="right">
                     <template slot-scope="{ row }">
@@ -78,10 +89,12 @@
     import { processTableHeader } from '@/dictionary/table-header'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import ProcessBindTable from '@/components/service/form/process-bind-table'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     export default {
         name: 'clone-to-source',
         components: {
-            ProcessBindTable
+            ProcessBindTable,
+            ProcessBindInfoValue
         },
         props: {
             sourceProcesses: {

@@ -11,8 +11,19 @@
                 :key="head.id"
                 :prop="head.id"
                 :label="head.name"
-                show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row[head.id] | formatter(head.property)}}</template>
+                :show-overflow-tooltip="head.id !== 'bind_info'">
+                <template slot-scope="{ row }">
+                    <cmdb-property-value v-if="head.id !== 'bind_info'"
+                        :value="row[head.id]"
+                        :show-unit="false"
+                        :show-title="false"
+                        :property="head.property">
+                    </cmdb-property-value>
+                    <process-bind-info-value v-else
+                        :value="row[head.id]"
+                        :property="head.property">
+                    </process-bind-info-value>
+                </template>
             </bk-table-column>
         </bk-table>
     </section>
@@ -20,8 +31,12 @@
 
 <script>
     import { processTableHeader } from '@/dictionary/table-header'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     export default {
         name: 'serviceTemplateInfo',
+        components: {
+            ProcessBindInfoValue
+        },
         props: {
             id: {
                 type: Number,

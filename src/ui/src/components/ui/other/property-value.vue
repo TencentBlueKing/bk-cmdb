@@ -1,6 +1,12 @@
 <template>
     <user-value :value="value" v-if="isUser"></user-value>
-    <table-value :value="value" :property="property" v-else-if="isTable"></table-value>
+    <table-value
+        :value="value"
+        :show-on="showOn"
+        :format-cell-value="formatCellValue"
+        :property="property"
+        v-else-if="isTable">
+    </table-value>
     <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`" v-else>{{displayValue}}</compmoent>
 </template>
 
@@ -49,7 +55,15 @@
                 validator (value) {
                     return ['primary', 'default'].includes(value)
                 }
-            }
+            },
+            showOn: {
+                type: String,
+                default: 'default',
+                validator (value) {
+                    return ['default', 'cell'].includes(value)
+                }
+            },
+            formatCellValue: Function
         },
         data () {
             return {
