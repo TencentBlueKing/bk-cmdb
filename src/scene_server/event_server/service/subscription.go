@@ -146,7 +146,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 			Name:    sub.SubscriptionName,
 			Creator: sub.Operator,
 		}
-		_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(s.ctx, header, iamInstance)
+		_, err = s.authorizer.RegisterResourceCreatorAction(s.ctx, header, iamInstance)
 		if err != nil {
 			blog.Errorf("register created event subscription to iam failed, err: %s, rid: %s", err, rid)
 			result := &metadata.RespError{Msg: err}
@@ -385,7 +385,7 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 			Action:       meta.Find,
 		}
 
-		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(util.NewContextFromHTTPHeader(header), header, authInput)
+		authorizedResources, err := s.authorizer.ListAuthorizedResources(util.NewContextFromHTTPHeader(header), header, authInput)
 		if err != nil {
 			blog.ErrorJSON("list authorized subscribe resources failed, err: %v, cond: %s, rid: %s", err, authInput, rid)
 			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})

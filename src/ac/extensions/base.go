@@ -77,33 +77,12 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 
 }
 
-func (am *AuthManager) authorize(ctx context.Context, header http.Header, businessID int64, resources ...meta.ResourceAttribute) error {
-	commonInfo, err := parser.ParseCommonInfo(&header)
-	if err != nil {
-		return fmt.Errorf("authentication failed, parse user info from header failed, %+v", err)
-	}
-	authAttribute := &meta.AuthAttribute{
-		User:      commonInfo.User,
-		Resources: resources,
-	}
-
-	decision, err := am.clientSet.AuthServer().Authorize(ctx, header, authAttribute)
-	if err != nil {
-		return fmt.Errorf("authorize failed, err: %+v", err)
-	}
-	if !decision.Authorized {
-		return ac.NoAuthorizeError
-	}
-
-	return nil
-}
-
 func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, resources ...meta.ResourceAttribute) error {
 	commonInfo, err := parser.ParseCommonInfo(&header)
 	if err != nil {
 		return fmt.Errorf("authentication failed, parse user info from header failed, err: %+v", err)
 	}
-	decisions, err := am.clientSet.AuthServer().AuthorizeBatch(ctx, header, commonInfo.User, resources...)
+	decisions, err := am.Authorizer.AuthorizeBatch(ctx, header, commonInfo.User, resources...)
 	if err != nil {
 		return fmt.Errorf("authorize failed, err: %+v", err)
 	}

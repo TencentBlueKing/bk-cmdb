@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"configcenter/src/ac"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/cryptor"
 	"configcenter/src/storage/dal"
@@ -23,16 +24,18 @@ import (
 // Logics framwork need
 type Logics struct {
 	*backbone.Engine
-	db      dal.RDB
-	cache   *redis.Client
-	cryptor cryptor.Cryptor
+	db         dal.RDB
+	cache      *redis.Client
+	cryptor    cryptor.Cryptor
+	authorizer ac.AuthorizeInterface
 }
 
-func NewLogics(engine *backbone.Engine, db dal.RDB, cache *redis.Client, cryptor cryptor.Cryptor) *Logics {
+func NewLogics(engine *backbone.Engine, db dal.RDB, cache *redis.Client, cryptor cryptor.Cryptor, authorizer ac.AuthorizeInterface) *Logics {
 	return &Logics{
-		Engine:  engine,
-		db:      db,
-		cache:   cache,
-		cryptor: cryptor,
+		Engine:     engine,
+		db:         db,
+		cache:      cache,
+		cryptor:    cryptor,
+		authorizer: authorizer,
 	}
 }

@@ -22,44 +22,14 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
-func (a *authServer) Authorize(ctx context.Context, h http.Header, authAttribute *meta.AuthAttribute) (
-	types.Decision, error) {
-	response := new(struct {
-		metadata.BaseResp `json:",inline"`
-		Data              types.Decision `json:"data"`
-	})
-	subPath := "/authorize"
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(authAttribute).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(response)
-
-	if err != nil {
-		return types.Decision{}, errors.CCHttpError
-	}
-	if response.Code != 0 {
-		return types.Decision{}, response.CCError()
-	}
-
-	return response.Data, nil
+type authorizeBatchResp struct {
+	metadata.BaseResp `json:",inline"`
+	Data              []types.Decision `json:"data"`
 }
 
-func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo,
-	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
-
-	input := meta.AuthAttribute{
-		User:      user,
-		Resources: resources,
-	}
-	response := new(struct {
-		metadata.BaseResp `json:",inline"`
-		Data              []types.Decision `json:"data"`
-	})
+func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error) {
 	subPath := "/authorize/batch"
+	response := new(authorizeBatchResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
@@ -79,18 +49,9 @@ func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, user met
 	return response.Data, nil
 }
 
-func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo,
-	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
-
-	input := meta.AuthAttribute{
-		User:      user,
-		Resources: resources,
-	}
-	response := new(struct {
-		metadata.BaseResp `json:",inline"`
-		Data              []types.Decision `json:"data"`
-	})
+func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error) {
 	subPath := "/authorize/any/batch"
+	response := new(authorizeBatchResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
@@ -167,6 +128,32 @@ func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.H
 		Data              []metadata.IamCreatorActionPolicy `json:"data"`
 	})
 	subPath := "/register/resource_creator_action"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(response)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if response.Code != 0 {
+		return nil, response.CCError()
+	}
+
+	return response.Data, nil
+}
+
+func (a *authServer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
+	[]metadata.IamCreatorActionPolicy, error) {
+	response := new(struct {
+		metadata.BaseResp `json:",inline"`
+		Data              []metadata.IamCreatorActionPolicy `json:"data"`
+	})
+	subPath := "/register/batch_resource_creator_action"
 
 	err := a.client.Post().
 		WithContext(ctx).

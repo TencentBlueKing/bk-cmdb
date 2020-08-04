@@ -109,5 +109,5 @@ func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header h
 	// make auth resources
 	resources := am.MakeResourcesByServiceTemplate(header, action, bizID, templates...)
 
-	return am.authorize(ctx, header, bizID, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }

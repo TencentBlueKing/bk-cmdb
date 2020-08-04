@@ -15,6 +15,7 @@ package service
 import (
 	"context"
 
+	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -30,9 +31,10 @@ import (
 
 type Service struct {
 	*backbone.Engine
-	db    dal.RDB
-	cache *redis.Client
-	ctx   context.Context
+	db         dal.RDB
+	cache      *redis.Client
+	ctx        context.Context
+	authorizer ac.AuthorizeInterface
 }
 
 func NewService(ctx context.Context) *Service {
@@ -47,6 +49,10 @@ func (s *Service) SetDB(db dal.RDB) {
 
 func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
+}
+
+func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
+	s.authorizer = authorizer
 }
 
 func (s *Service) WebService() *restful.Container {

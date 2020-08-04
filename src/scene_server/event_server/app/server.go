@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -51,6 +52,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	service.Engine = engine
+	service.SetAuthorizer(iam.NewAuthorizer(engine.CoreAPI))
 	process.Core = engine
 	process.Service = service
 	errCh := make(chan error, 1)

@@ -13,6 +13,8 @@
 package extensions
 
 import (
+	"configcenter/src/ac"
+	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
@@ -20,7 +22,8 @@ import (
 )
 
 type AuthManager struct {
-	clientSet apimachinery.ClientSetInterface
+	clientSet  apimachinery.ClientSetInterface
+	Authorizer ac.AuthorizeInterface
 
 	RegisterModuleEnabled        bool
 	RegisterSetEnabled           bool
@@ -31,6 +34,7 @@ type AuthManager struct {
 func NewAuthManager(clientSet apimachinery.ClientSetInterface) *AuthManager {
 	return &AuthManager{
 		clientSet:                    clientSet,
+		Authorizer:                   iam.NewAuthorizer(clientSet),
 		RegisterModuleEnabled:        false,
 		RegisterSetEnabled:           false,
 		SkipReadAuthorization:        true,

@@ -70,7 +70,7 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 				Name:    result.TaskName,
 				Creator: result.Creator,
 			}
-			_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created cloud sync task to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err

@@ -104,5 +104,5 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 		BusinessID:      businessID,
 	}
 
-	return am.authorize(ctx, header, businessID, resource)
+	return am.batchAuthorize(ctx, header, resource)
 }

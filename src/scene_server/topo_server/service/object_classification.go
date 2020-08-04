@@ -49,7 +49,7 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 				Name:    cls.Classify().ClassificationName,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created object classification to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err

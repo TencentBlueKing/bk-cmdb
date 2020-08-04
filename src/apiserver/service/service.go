@@ -13,6 +13,8 @@
 package service
 
 import (
+	"configcenter/src/ac"
+	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/auth"
@@ -37,12 +39,13 @@ func NewService() Service {
 }
 
 type service struct {
-	engine    *backbone.Engine
-	client    HTTPClient
-	discovery discovery.DiscoveryInterface
-	clientSet apimachinery.ClientSetInterface
-	cache     *redis.Client
-	limiter   *Limiter
+	engine     *backbone.Engine
+	client     HTTPClient
+	discovery  discovery.DiscoveryInterface
+	clientSet  apimachinery.ClientSetInterface
+	authorizer ac.AuthorizeInterface
+	cache      *redis.Client
+	limiter    *Limiter
 }
 
 func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
@@ -53,6 +56,7 @@ func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, disc
 	s.clientSet = clientSet
 	s.cache = cache
 	s.limiter = limiter
+	s.authorizer = iam.NewAuthorizer(clientSet)
 }
 
 func (s *service) WebServices() []*restful.WebService {

@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"configcenter/src/ac/meta"
-	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
@@ -458,7 +457,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 }
 
 // AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
-func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) (*metadata.IamPermission, error) {
+func AdoptPermissions(h http.Header, rs []meta.ResourceAttribute) (*metadata.IamPermission, error) {
 	permission := new(metadata.IamPermission)
 	permission.SystemID = SystemIDCMDB
 	// permissionMap maps ResourceActionID and ResourceTypeID to ResourceInstances

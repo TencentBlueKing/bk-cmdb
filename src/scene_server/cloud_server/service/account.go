@@ -145,7 +145,7 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 				Name:    res.AccountName,
 				Creator: res.Creator,
 			}
-			_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created cloud account to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err

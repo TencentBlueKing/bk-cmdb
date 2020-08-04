@@ -95,7 +95,7 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 				Name:    rsp.Object().ObjectName,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err

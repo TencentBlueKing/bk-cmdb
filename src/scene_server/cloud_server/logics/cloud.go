@@ -429,7 +429,7 @@ func (lgc *Logics) ListAuthorizedResources(kit *rest.Kit, typ meta.ResourceType,
 		Action:       act,
 	}
 
-	authList, err := lgc.CoreAPI.AuthServer().ListAuthorizedResources(kit.Ctx, kit.Header, authInput)
+	authList, err := lgc.authorizer.ListAuthorizedResources(kit.Ctx, kit.Header, authInput)
 	if err != nil {
 		blog.ErrorJSON("list authorized %s failed, options: %s, err: %v, rid: %s", typ, authInput, err, kit.Rid)
 		return nil, err

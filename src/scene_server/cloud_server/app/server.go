@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -114,7 +115,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Service.SetEncryptor(accountCryptor)
 	process.Service.EnableTxn = op.EnableTxn
 
-	process.Service.Logics = logics.NewLogics(service.Engine, db, cache, accountCryptor)
+	authorizer := iam.NewAuthorizer(engine.CoreAPI)
+	service.SetAuthorizer(authorizer)
+
+	process.Service.Logics = logics.NewLogics(service.Engine, db, cache, accountCryptor, authorizer)
 
 	syncConf := cloudsync.SyncConf{
 		ZKClient:  service.Engine.ServiceManageClient().Client(),

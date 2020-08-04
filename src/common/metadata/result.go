@@ -108,6 +108,19 @@ type IamInstanceWithCreator struct {
 	Ancestors []IamInstanceAncestor `json:"ancestors,omitempty"`
 }
 
+type IamInstancesWithCreator struct {
+	System    string        `json:"system"`
+	Type      string        `json:"type"`
+	Creator   string        `json:"creator"`
+	Instances []IamInstance `json:"instances"`
+}
+
+type IamInstance struct {
+	ID        string                `json:"id"`
+	Name      string                `json:"name"`
+	Ancestors []IamInstanceAncestor `json:"ancestors,omitempty"`
+}
+
 type IamInstanceAncestor struct {
 	System string `json:"system"`
 	Type   string `json:"type"`
