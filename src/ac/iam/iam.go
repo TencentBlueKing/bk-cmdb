@@ -388,3 +388,9 @@ func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.H
 
 	return a.authClientSet.RegisterResourceCreatorAction(ctx, h, input)
 }
+
+func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
+	[]metadata.IamCreatorActionPolicy, error) {
+
+	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
+}

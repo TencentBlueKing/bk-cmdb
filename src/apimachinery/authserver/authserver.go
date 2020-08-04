@@ -31,6 +31,8 @@ type AuthServerClientInterface interface {
 	GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error)
 	RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
+	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
+		[]metadata.IamCreatorActionPolicy, error)
 }
 
 func NewAuthServerClientInterface(c *util.Capability, version string) AuthServerClientInterface {

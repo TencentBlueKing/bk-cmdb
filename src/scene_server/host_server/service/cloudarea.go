@@ -187,18 +187,22 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 
 		// register cloud area resource creator action to iam
 		if auth.EnableAuthorize() {
-			for _, created := range res.Data.Created {
-				iamInstance := metadata.IamInstanceWithCreator{
-					Type:    string(iam.SysCloudArea),
-					ID:      strconv.FormatUint(created.ID, 10),
-					Name:    util.GetStrByInterface(input.Data[created.OriginIndex][common.BKCloudNameField]),
-					Creator: user,
+			iamInstances := make([]metadata.IamInstance, len(res.Data.Created))
+			for index, created := range res.Data.Created {
+				iamInstances[index] = metadata.IamInstance{
+					ID:   strconv.FormatUint(created.ID, 10),
+					Name: util.GetStrByInterface(input.Data[created.OriginIndex][common.BKCloudNameField]),
 				}
-				_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
-				if err != nil {
-					blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-					return err
-				}
+			}
+			iamInstancesWithCreator := metadata.IamInstancesWithCreator{
+				Type:      string(iam.SysCloudArea),
+				Instances: iamInstances,
+				Creator:   user,
+			}
+			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstancesWithCreator)
+			if err != nil {
+				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
 			}
 		}
 
@@ -270,13 +274,15 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 
 		// register cloud area resource creator action to iam
 		if auth.EnableAuthorize() {
-			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.SysCloudArea),
-				ID:      strconv.FormatInt(platID, 10),
-				Name:    util.GetStrByInterface(input[common.BKCloudNameField]),
+			iamInstance := metadata.IamInstancesWithCreator{
+				Type: string(iam.SysCloudArea),
+				Instances: []metadata.IamInstance{{
+					ID:   strconv.FormatInt(platID, 10),
+					Name: util.GetStrByInterface(input[common.BKCloudNameField]),
+				}},
 				Creator: user,
 			}
-			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err

@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -72,6 +71,8 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
+
+	iamInstances := make([]metadata.IamInstance, 0)
 
 	for index, host := range hostInfos {
 		if nil == host {
@@ -144,6 +145,14 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			host[common.BKHostIDField] = intHostID
 			hostIDMap[generateHostCloudKey(innerIP, iSubAreaVal)] = intHostID
 			action = metadata.AuditCreate
+
+			// record created host instance that would be registered to iam
+			if auth.EnableAuthorize() {
+				iamInstances = append(iamInstances, metadata.IamInstance{
+					ID:   strconv.FormatInt(intHostID, 10),
+					Name: innerIP,
+				})
+			}
 		}
 		// add current host operate result to  batch add result
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
@@ -196,6 +205,20 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 		return hostIDs, successMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
 	}
 
+	// register host resource creator action to iam
+	if auth.EnableAuthorize() && len(iamInstances) > 0 {
+		iamInstance := metadata.IamInstancesWithCreator{
+			Type:      string(iam.Host),
+			Instances: iamInstances,
+			Creator:   lgc.user,
+		}
+		_, err = lgc.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx, lgc.header, iamInstance)
+		if err != nil {
+			blog.Errorf("register created hosts to iam failed, err: %s, rid: %s", err, lgc.rid)
+			return hostIDs, successMsg, updateErrMsg, errMsg, err
+		}
+	}
+
 	return hostIDs, successMsg, updateErrMsg, errMsg, nil
 }
 
@@ -220,6 +243,8 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 	if err != nil {
 		return nil, nil, err
 	}
+
+	iamInstances := make([]metadata.IamInstance, 0)
 
 	for index, host := range hostList.HostInfo {
 		if nil == host {
@@ -303,6 +328,14 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 				ModelID: common.BKInnerObjIDHost,
 			},
 		})
+
+		// record created host instance that would be registered to iam
+		if auth.EnableAuthorize() {
+			iamInstances = append(iamInstances, metadata.IamInstance{
+				ID:   strconv.FormatInt(hostID, 10),
+				Name: innerIP,
+			})
+		}
 	}
 
 	if len(logContents) > 0 {
@@ -315,6 +348,21 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 	if 0 < len(res.Error) {
 		return hostIDs, res, lgc.ccErr.CCErrorf(common.CCErrHostCreateFail)
 	}
+
+	// register host resource creator action to iam
+	if auth.EnableAuthorize() && len(iamInstances) > 0 {
+		iamInstance := metadata.IamInstancesWithCreator{
+			Type:      string(iam.Host),
+			Instances: iamInstances,
+			Creator:   lgc.user,
+		}
+		_, err = lgc.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx, lgc.header, iamInstance)
+		if err != nil {
+			blog.ErrorJSON("register created hosts to iam failed, err: %s, rid: %s", err, lgc.rid)
+			return hostIDs, res, err
+		}
+	}
+
 	return hostIDs, res, nil
 }
 
@@ -366,20 +414,18 @@ type importInstance struct {
 	ccLang        language.DefaultCCLanguageIf
 	rid           string
 	lgc           *Logics
-	authorizer    ac.AuthorizeInterface
 }
 
 func NewImportInstance(ctx context.Context, ownerID string, lgc *Logics) *importInstance {
 	return &importInstance{
-		pheader:    lgc.header,
-		Engine:     lgc.Engine,
-		ownerID:    ownerID,
-		ctx:        ctx,
-		ccErr:      lgc.ccErr,
-		ccLang:     lgc.ccLang,
-		rid:        lgc.rid,
-		lgc:        lgc,
-		authorizer: iam.NewAuthorizer(lgc.CoreAPI),
+		pheader: lgc.header,
+		Engine:  lgc.Engine,
+		ownerID: ownerID,
+		ctx:     ctx,
+		ccErr:   lgc.ccErr,
+		ccLang:  lgc.ccLang,
+		rid:     lgc.rid,
+		lgc:     lgc,
 	}
 }
 
@@ -483,21 +529,6 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 			return 0, h.ccErr.New(int(hResult.Data[0].Code), hResult.Data[0].Message)
 		}
 		return 0, hResult.CCError()
-	}
-
-	// register host resource creator action to iam
-	if auth.EnableAuthorize() {
-		iamInstance := metadata.IamInstanceWithCreator{
-			Type:    string(iam.Host),
-			ID:      strconv.FormatInt(hostID, 10),
-			Name:    ip,
-			Creator: util.GetUser(h.pheader),
-		}
-		_, err = h.authorizer.RegisterResourceCreatorAction(h.ctx, h.pheader, iamInstance)
-		if err != nil {
-			blog.Errorf("register created host to iam failed, err: %s, rid: %s", err, h.rid)
-			return 0, err
-		}
 	}
 
 	return hostID, nil
