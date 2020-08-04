@@ -33,17 +33,17 @@ func (a *Authorize) calculatePolicy(
 	rid := ctx.Value(common.ContextRequestIDField)
 	blog.InfoJSON("calculate policy, resource: %s, policy: %s, rid: %s", resources, p, rid)
 
-	// at least have one resources
-	if len(resources) == 0 {
-		return false, errors.New("auth options at least have one resource")
-	}
-
 	if p == nil || p.Operator == "" {
 		return false, nil
 	}
 
 	if p.Operator == operator.Any {
 		return true, nil
+	}
+
+	// at least have one resources
+	if len(resources) == 0 {
+		return false, errors.New("auth options at least have one resource")
 	}
 
 	rscMap := make(map[string]*types.Resource)
@@ -365,13 +365,24 @@ func getIamPath(attr types.ResourceAttributes) ([]string, error) {
 			return nil, errors.New("have iam path key, but it's value is nil")
 		}
 
-		// must be a array string
-		p, ok := path.([]string)
-		if ok {
-			// we got a iam path.
-			return p, nil
+		// iam path must be a string array
+		wKind := reflect.TypeOf(path).Kind()
+		if !(wKind == reflect.Slice || wKind == reflect.Array) {
+			return nil, errors.New("iam path value is not array or slice type")
 		}
-		return nil, errors.New("iam path value is not an array string type")
+
+		pathVal := reflect.ValueOf(path)
+		pathLen := pathVal.Len()
+		iamPathArr := make([]string, pathLen)
+
+		for i := 0; i < pathLen; i++ {
+			p, ok := pathVal.Index(i).Interface().(string)
+			if !ok {
+				return nil, errors.New("iam path value is not an array string type")
+			}
+			iamPathArr[i] = p
+		}
+		return iamPathArr, nil
 	}
 	// iam path is not exist.
 	return make([]string, 0), nil

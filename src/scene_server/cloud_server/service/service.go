@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/ac"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
@@ -35,7 +36,8 @@ type Service struct {
 	ctx     context.Context
 	cryptor cryptor.Cryptor
 	*logics.Logics
-	EnableTxn bool
+	EnableTxn  bool
+	authorizer ac.AuthorizeInterface
 }
 
 func NewService(ctx context.Context) *Service {
@@ -54,6 +56,10 @@ func (s *Service) SetCache(db *redis.Client) {
 
 func (s *Service) SetEncryptor(cryptor cryptor.Cryptor) {
 	s.cryptor = cryptor
+}
+
+func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
+	s.authorizer = authorizer
 }
 
 func (s *Service) WebService() *restful.Container {

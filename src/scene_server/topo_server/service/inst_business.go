@@ -79,7 +79,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 				Name:    bizName,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created business to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -288,7 +288,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 			ResourceType: meta.Business,
 			Action:       meta.ViewBusinessResource,
 		}
-		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
 		if err != nil {
 			blog.Errorf("[api-biz] SearchReducedBusinessList failed, ListAuthorizedResources failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoGetAuthorizedBusinessListFailed))
@@ -483,7 +483,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 			ResourceType: meta.Business,
 			Action:       meta.Find,
 		}
-		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+		authorizedResources, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
 		if err != nil {
 			blog.Errorf("[api-biz] SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
 			ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")

@@ -89,7 +89,7 @@ func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, 
 		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
 	}
 
-	return am.authorize(ctx, header, 0, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Header, action meta.Action, platIDs ...int64) error {

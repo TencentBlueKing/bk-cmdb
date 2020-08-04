@@ -107,7 +107,7 @@ func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Hea
 	// make auth resources
 	resources := am.MakeResourcesByProcesses(header, action, bizID, processes...)
 
-	return am.authorize(ctx, header, bizID, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {

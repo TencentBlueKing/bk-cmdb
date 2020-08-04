@@ -127,5 +127,5 @@ func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, a
 	// make auth resources
 	resources := am.MakeResourcesBySet(header, action, bizID, sets...)
 
-	return am.authorize(ctx, header, bizID, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }

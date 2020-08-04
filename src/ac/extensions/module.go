@@ -147,5 +147,5 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 	// make auth resources
 	resources := am.MakeResourcesByModule(header, action, bizID, modules...)
 
-	return am.authorize(ctx, header, bizID, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }

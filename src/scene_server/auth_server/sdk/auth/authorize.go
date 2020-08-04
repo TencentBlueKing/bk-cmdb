@@ -49,14 +49,6 @@ func (a *Authorize) Authorize(ctx context.Context, opts *types.AuthOptions) (*ty
 		return nil, err
 	}
 
-	if policy == nil || policy.Operator == "" {
-		return &types.Decision{Authorized: false}, nil
-	}
-
-	if policy.Operator == operator.Any {
-		return &types.Decision{Authorized: true}, nil
-	}
-
 	authorized, err := a.calculatePolicy(ctx, opts.Resources, policy)
 	if err != nil {
 		return nil, fmt.Errorf("calculate user's auth policy failed, err: %v", err)

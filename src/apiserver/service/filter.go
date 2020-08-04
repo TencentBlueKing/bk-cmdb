@@ -175,7 +175,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		blog.V(7).Infof("auth filter parse attribute result: %v, rid: %s", attribute, rid)
-		decision, err := s.clientSet.AuthServer().Authorize(req.Request.Context(), req.Request.Header, attribute)
+		decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User, attribute.Resources...)
 		if err != nil {
 			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
 			rsp := metadata.BaseResp{
@@ -187,9 +187,17 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if !decision.Authorized {
+		authorized := true
+		for _, decision := range decisions {
+			if !decision.Authorized {
+				authorized = false
+				break
+			}
+		}
+
+		if !authorized {
 			blog.V(4).Infof("iam.AdoptPermissions attribute: %+v, rid: %s", attribute, rid)
-			permissions, err := iam.AdoptPermissions(req.Request.Header, s.engine.CoreAPI, attribute.Resources)
+			permissions, err := iam.AdoptPermissions(req.Request.Header, attribute.Resources)
 			if err != nil {
 				blog.Errorf("adopt permission failed, err: %v, rid: %s", err, rid)
 				rsp := metadata.BaseResp{
@@ -200,7 +208,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 				resp.WriteAsJson(rsp)
 				return
 			}
-			blog.Warnf("authFilter failed, url: %s, reason: %+v, permissions: %+v, rid: %s", path, decision, permissions, rid)
+			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permissions: %s, rid: %s", path, attribute, permissions, rid)
 			rsp := metadata.BaseResp{
 				Code:        common.CCNoPermission,
 				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),

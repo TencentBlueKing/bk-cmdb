@@ -86,7 +86,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
 
 	if len(needExactAuthAttrs) > 0 {
-		verifyResults, err := s.clientSet.AuthServer().AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)
+		verifyResults, err := s.authorizer.AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)
 		if err != nil {
 			blog.ErrorJSON("get user's resource auth verify status, but authorize batch failed, err: %s, attrs: %s, rid: %s", err, needExactAuthAttrs, rid)
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
@@ -103,7 +103,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	}
 
 	if len(attrs) > 0 {
-		verifyResults, err := s.clientSet.AuthServer().AuthorizeAnyBatch(ctx, pheader, user, attrs...)
+		verifyResults, err := s.authorizer.AuthorizeAnyBatch(ctx, pheader, user, attrs...)
 		if err != nil {
 			blog.ErrorJSON("get user's resource auth verify status, but authorize any batch failed, err: %s, attrs: %s, rid: %s", err, attrs, rid)
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
@@ -143,7 +143,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 		ResourceType: meta.Business,
 		Action:       meta.ViewBusinessResource,
 	}
-	authorizedResources, err := s.clientSet.AuthServer().ListAuthorizedResources(req.Request.Context(), pheader, authInput)
+	authorizedResources, err := s.authorizer.ListAuthorizedResources(req.Request.Context(), pheader, authInput)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
@@ -200,7 +200,7 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	url, err := s.engine.CoreAPI.AuthServer().GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
+	url, err := s.authorizer.GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})

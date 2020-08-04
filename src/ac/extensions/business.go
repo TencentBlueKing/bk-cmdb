@@ -77,32 +77,15 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 	return resources
 }
 
-func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSimplify) (int64, error) {
-	var bizID int64
-	for idx, business := range businesses {
-		if idx != 0 && business.BKAppIDField != bizID {
-			return 0, fmt.Errorf("get multiple business id[%d:%d] from businesses", bizID, business.BKAppIDField)
-		}
-		bizID = business.BKAppIDField
-	}
-	return bizID, nil
-}
-
 func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action, businesses ...BusinessSimplify) error {
 	if !am.Enabled() {
 		return nil
 	}
 
-	// extract business id
-	bizID, err := am.extractBusinessIDFromBusinesses(businesses...)
-	if err != nil {
-		return fmt.Errorf("authorize instances failed, extract business id from instance failed, err: %+v", err)
-	}
-
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, action, businesses...)
 
-	return am.authorize(ctx, header, bizID, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {

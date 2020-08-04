@@ -140,7 +140,7 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 				Name:    instName,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.Engine.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created instance to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err

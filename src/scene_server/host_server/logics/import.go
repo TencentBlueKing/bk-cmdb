@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -365,18 +366,20 @@ type importInstance struct {
 	ccLang        language.DefaultCCLanguageIf
 	rid           string
 	lgc           *Logics
+	authorizer    ac.AuthorizeInterface
 }
 
 func NewImportInstance(ctx context.Context, ownerID string, lgc *Logics) *importInstance {
 	return &importInstance{
-		pheader: lgc.header,
-		Engine:  lgc.Engine,
-		ownerID: ownerID,
-		ctx:     ctx,
-		ccErr:   lgc.ccErr,
-		ccLang:  lgc.ccLang,
-		rid:     lgc.rid,
-		lgc:     lgc,
+		pheader:    lgc.header,
+		Engine:     lgc.Engine,
+		ownerID:    ownerID,
+		ctx:        ctx,
+		ccErr:      lgc.ccErr,
+		ccLang:     lgc.ccLang,
+		rid:        lgc.rid,
+		lgc:        lgc,
+		authorizer: iam.NewAuthorizer(lgc.CoreAPI),
 	}
 }
 
@@ -490,7 +493,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 			Name:    ip,
 			Creator: util.GetUser(h.pheader),
 		}
-		_, err = h.CoreAPI.AuthServer().RegisterResourceCreatorAction(h.ctx, h.pheader, iamInstance)
+		_, err = h.authorizer.RegisterResourceCreatorAction(h.ctx, h.pheader, iamInstance)
 		if err != nil {
 			blog.Errorf("register created host to iam failed, err: %s, rid: %s", err, h.rid)
 			return 0, err

@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"configcenter/src/ac"
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
@@ -85,8 +87,8 @@ func (c *authConf) addFlags(cmd *cobra.Command) {
 }
 
 type authService struct {
-	clientSet apimachinery.ClientSetInterface
-	resource  []meta.ResourceAttribute
+	authorizer ac.AuthorizeInterface
+	resource   []meta.ResourceAttribute
 }
 
 func newAuthService(c *authConf) (*authService, error) {
@@ -116,7 +118,7 @@ func newAuthService(c *authConf) (*authService, error) {
 		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 	service := &authService{
-		clientSet: clientSet,
+		authorizer: iam.NewAuthorizer(clientSet),
 	}
 
 	if c.resource != "" {
@@ -148,26 +150,26 @@ func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error
 	if err != nil {
 		return err
 	}
-	a := &meta.AuthAttribute{
-		Resources: srv.resource,
-		User: meta.UserInfo{
-			UserName:        userName,
-			SupplierAccount: supplierAccount,
-		},
-	}
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
 	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
 	header.Add("Content-Type", "application/json")
-	decision, err := srv.clientSet.AuthServer().Authorize(context.Background(), header, a)
+
+	userInfo := meta.UserInfo{
+		UserName:        userName,
+		SupplierAccount: supplierAccount,
+	}
+	decisions, err := srv.authorizer.AuthorizeBatch(context.Background(), header, userInfo, srv.resource...)
 	if err != nil {
 		return err
 	}
-	if decision.Authorized {
-		_, _ = fmt.Fprintln(os.Stdout, WithGreenColor("Authorized"))
-	} else {
-		_, _ = fmt.Fprintln(os.Stdout, WithRedColor("Unauthorized"))
+	for _, decision := range decisions {
+		if !decision.Authorized {
+			_, _ = fmt.Fprintln(os.Stdout, WithGreenColor("Unauthorized"))
+			return nil
+		}
 	}
+	_, _ = fmt.Fprintln(os.Stdout, WithGreenColor("Authorized"))
 	return nil
 }

@@ -16,10 +16,28 @@ package ac
 import (
 	"context"
 	"errors"
+	"net/http"
+
+	"configcenter/src/ac/meta"
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
 var NoAuthorizeError = errors.New("no authorize")
 
 type AuthInterface interface {
 	RegisterSystem(ctx context.Context, host string) error
+}
+
+type AuthorizeInterface interface {
+	AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) (
+		[]types.Decision, error)
+
+	AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) (
+		[]types.Decision, error)
+
+	ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error)
+	GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error)
+	RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
+		[]metadata.IamCreatorActionPolicy, error)
 }

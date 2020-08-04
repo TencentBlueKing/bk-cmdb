@@ -167,7 +167,6 @@ func (s *AuthService) initAuth(api *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize", Handler: s.Authorize})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize/batch", Handler: s.AuthorizeBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize/any/batch", Handler: s.AuthorizeAnyBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/authorized_resource", Handler: s.ListAuthorizedResources})

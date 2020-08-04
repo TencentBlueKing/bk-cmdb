@@ -194,7 +194,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 					Name:    util.GetStrByInterface(input.Data[created.OriginIndex][common.BKCloudNameField]),
 					Creator: user,
 				}
-				_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+				_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 				if err != nil {
 					blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 					return err
@@ -276,7 +276,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 				Name:    util.GetStrByInterface(input[common.BKCloudNameField]),
 				Creator: user,
 			}
-			_, err = s.CoreAPI.AuthServer().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err

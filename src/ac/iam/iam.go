@@ -16,11 +16,18 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/ac"
+	"configcenter/src/ac/meta"
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/authserver"
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	commonutil "configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -249,4 +256,135 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	}
 
 	return nil
+}
+
+type authorizer struct {
+	authClientSet authserver.AuthServerClientInterface
+}
+
+func NewAuthorizer(clientSet apimachinery.ClientSetInterface) ac.AuthorizeInterface {
+	return &authorizer{authClientSet: clientSet.AuthServer()}
+}
+
+func (a *authorizer) AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo,
+	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
+	return a.authorizeBatch(ctx, h, true, user, resources...)
+}
+
+func (a *authorizer) AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo,
+	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
+	return a.authorizeBatch(ctx, h, false, user, resources...)
+}
+
+func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bool, user meta.UserInfo,
+	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
+
+	rid := commonutil.GetHTTPCCRequestID(h)
+
+	opts, decisions, err := parseAttributesToBatchOptions(rid, user, resources...)
+	if err != nil {
+		return nil, err
+	}
+
+	// all resources are skipped
+	if opts == nil {
+		return decisions, nil
+	}
+
+	var authDecisions []types.Decision
+	if exact {
+		authDecisions, err = a.authClientSet.AuthorizeBatch(ctx, h, opts)
+		if err != nil {
+			blog.ErrorJSON("authorize batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
+			return nil, err
+		}
+	} else {
+		authDecisions, err = a.authClientSet.AuthorizeAnyBatch(ctx, h, opts)
+		blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	index := 0
+	for _, decision := range authDecisions {
+		// skip resources' decisions are already set as authorized
+		for decisions[index].Authorized {
+			index++
+		}
+		decisions[index].Authorized = decision.Authorized
+		index++
+	}
+
+	return decisions, nil
+}
+
+func parseAttributesToBatchOptions(rid string, user meta.UserInfo, resources ...meta.ResourceAttribute) (*types.AuthBatchOptions, []types.Decision, error) {
+	if !auth.EnableAuthorize() {
+		decisions := make([]types.Decision, len(resources))
+		for i := range decisions {
+			decisions[i].Authorized = true
+		}
+		return nil, decisions, nil
+	}
+
+	authBatchArr := make([]*types.AuthBatch, 0)
+	decisions := make([]types.Decision, len(resources))
+	for index, resource := range resources {
+
+		// this resource should be skipped, do not need to verify in auth center.
+		if resource.Action == meta.SkipAction {
+			decisions[index].Authorized = true
+			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", resource, rid)
+			continue
+		}
+
+		action, resources, err := AdaptAuthOptions(&resource)
+		if err != nil {
+			blog.Errorf("adaptor cmdb resource to iam failed, err: %s, rid: %s", err, rid)
+			return nil, nil, err
+		}
+
+		// this resource should be skipped, do not need to verify in auth center.
+		if action == Skip {
+			decisions[index].Authorized = true
+			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", resource, rid)
+			continue
+		}
+
+		authBatchArr = append(authBatchArr, &types.AuthBatch{
+			Action:    types.Action{ID: string(action)},
+			Resources: resources,
+		})
+	}
+
+	// all resources are skipped
+	if len(authBatchArr) == 0 {
+		return nil, decisions, nil
+	}
+
+	ops := &types.AuthBatchOptions{
+		System: SystemIDCMDB,
+		Subject: types.Subject{
+			Type: "user",
+			ID:   user.UserName,
+		},
+		Batch: authBatchArr,
+	}
+	return ops, decisions, nil
+}
+
+func (a *authorizer) ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error) {
+	return a.authClientSet.ListAuthorizedResources(ctx, h, input)
+}
+
+func (a *authorizer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error) {
+	return a.authClientSet.GetNoAuthSkipUrl(ctx, h, input)
+}
+
+func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
+	[]metadata.IamCreatorActionPolicy, error) {
+
+	return a.authClientSet.RegisterResourceCreatorAction(ctx, h, input)
 }

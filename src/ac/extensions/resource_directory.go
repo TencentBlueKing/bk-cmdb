@@ -100,5 +100,5 @@ func (am *AuthManager) AuthorizeByResourceDirectory(ctx context.Context, header 
 	// make auth resources
 	resources := am.MakeResourcesByResourceDirectory(header, action, directoryArr...)
 
-	return am.authorize(ctx, header, 0, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
