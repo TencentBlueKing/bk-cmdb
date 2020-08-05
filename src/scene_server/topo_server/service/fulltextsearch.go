@@ -10,7 +10,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 )
 
 type SearchResult struct {
@@ -80,9 +80,9 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 		return
 	}
 	// get query and search types
-	esQuery, searchTypes := query.toEsQueryAndSearchTypes()
+	esQuery := query.toEsQueryAndSearchTypes()
 
-	result, err := s.Es.Search(ctx.Kit.Ctx, esQuery, searchTypes, query.Paging.Start, query.Paging.Limit)
+	result, err := s.Es.Search(ctx.Kit.Ctx, esQuery, query.Paging.Start, query.Paging.Limit)
 	if err != nil {
 		blog.Errorf("full_text_find failed, es search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
@@ -92,7 +92,7 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 	// result is hits and aggregations
 	searchResults := new(SearchResults)
 
-	searchResults.Total = result.Hits.TotalHits
+	searchResults.Total = result.Hits.TotalHits.Value
 	// set hits
 	for _, hit := range result.Hits.Hits {
 		// ignore not correct cmdb table data
@@ -168,7 +168,7 @@ func (query Query) checkQueryString() (string, bool) {
 	}
 }
 
-func (query Query) toEsQueryAndSearchTypes() (elastic.Query, []string) {
+func (query Query) toEsQueryAndSearchTypes() elastic.Query {
 	qBool := elastic.NewBoolQuery()
 
 	// if set bk_biz_id
@@ -192,27 +192,7 @@ func (query Query) toEsQueryAndSearchTypes() (elastic.Query, []string) {
 
 	// if set bk_obj_id
 	qString := elastic.NewQueryStringQuery(query.QueryString)
-	if query.BkObjId == "" {
-		// get search types from filter
-		indexTypes := getEsIndexTypes(query.TypeFilter)
-		// add search cc_ApplicationBase type
-		indexTypes = append(indexTypes, common.BKTableNameBaseApp)
-		return qBool.Must(qString), indexTypes
-	} else if query.BkObjId == common.TypeHost {
-		// if bk_obj_id is host, we search only from type cc_HostBase
-		indexTypes := []string{common.BKTableNameBaseHost}
-		return qBool.Must(qString), indexTypes
-	} else if query.BkObjId == common.TypeApplication {
-		// if bk_obj_id is biz, we search only from type cc_ApplicationBase
-		indexTypes := []string{common.BKTableNameBaseApp}
-		return qBool.Must(qString), indexTypes
-	} else {
-		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
-		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
-		qBool.Must(qString)
-		indexTypes := getEsIndexTypes(query.TypeFilter)
-		return qBool, indexTypes
-	}
+	return qBool.Must(qString)
 }
 
 func getEsIndexTypes(typesFilter []string) []string {
@@ -280,7 +260,7 @@ func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit
 	}
 
 	// sr.Highlight = searchHit.Highlight
-	err := json.Unmarshal(*searchHit.Source, &(sr.Source))
+	err := json.Unmarshal(searchHit.Source, &(sr.Source))
 	if err != nil {
 		blog.Warnf("full_text_find unmarshal search result source err: %+v, rid: %s", err, rid)
 		sr.Source = nil

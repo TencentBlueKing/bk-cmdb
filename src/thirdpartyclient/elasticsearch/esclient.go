@@ -13,7 +13,7 @@ import (
 	"configcenter/src/common/ssl"
 	"configcenter/src/common/util"
 
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 )
 
 type EsSrv struct {
@@ -70,7 +70,7 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 	return client, nil
 }
 
-func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string, from, size int) (*elastic.SearchResult, error) {
+func (es *EsSrv) Search(ctx context.Context, query elastic.Query, from, size int) (*elastic.SearchResult, error) {
 	// Starting with elastic.v5, you must pass a context to execute each service
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -94,11 +94,9 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string
 	searchResult, err := es.Client.Search().
 		// search from es indexes
 		Index(common.CMDBINDEX).
-		// search from es types of index
-		Type(types...).
-		SearchSource(searchSource). // search in index like "cmdb" and paging
+		SearchSource(searchSource).        // search in index like "cmdb" and paging
 		Query(query).Highlight(highlight). // specify the query and highlight
-		Pretty(true). // pretty print request and response JSON
+		Pretty(true).                      // pretty print request and response JSON
 		// search result with aggregations
 		Aggregation(common.BkObjIdAggName, bkObjIdAgg).Aggregation(common.TypeAggName, typeAgg).
 		Do(ctx) // execute

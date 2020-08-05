@@ -5,8 +5,8 @@
 * ZooKeeper >= 3.4.11
 * Redis   >= 3.2.11
 * MongoDB >= 4.2
-* Elasticsearch >= 5.0.0 & < 7 (用于全文检索功能，推荐使用5.x的版本)
-* Monstache >= 5.0.0 (用于全文检索功能，推荐5.7.0)
+* Elasticsearch >= 7.0.0 (用于全文检索功能)
+* Monstache >= 6.0.0 (用于全文检索功能)
 
 ## CMDB 微服务进程清单
 
@@ -116,7 +116,7 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 ### 6. 部署Elasticsearch (用于全文检索, 可选, 控制开关见第9步的full_text_search)
 
 官方下载 [ElasticSearch](https://www.elastic.co/cn/downloads/past-releases)
-搜索5.x的版本下载，推荐下载5.0.2, 5.6.16
+搜索7.x的版本下载，推荐下载7.0.0
 下载后解压即可，解压后找到配置文件config/elasticsearch.yml，可以配置指定network.host为
 具体的host的地址
 然后到目录的bin目录下运行(注意，不能使用root权限运行，**要普通用户**)：
@@ -175,19 +175,16 @@ verbose=true
 [[mapping]]
 namespace = "cmdb.cc_ApplicationBase"
 index = "cmdb"
-type = "cc_ApplicationBase"
 
 [[mapping]]
 namespace = "cmdb.cc_HostBase"
 index = "cmdb"
-type = "cc_HostBase"
 
 [[mapping]]
 namespace = "cmdb.cc_ObjectBase"
 index = "cmdb"
-type = "cc_ObjectBase"
 ```
-添加新的 direct-read-namespaces 需要添加对应的 mapping，默认 index 和 type 无法支持全文索引。
+添加新的 direct-read-namespaces 需要添加对应的 mapping，默认 index 无法支持全文索引。
 
 **启动：**
 
