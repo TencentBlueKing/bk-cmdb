@@ -183,7 +183,8 @@
                 return row
             },
             getDefaultValue (property) {
-                return (['enum', 'list'].includes(property.bk_property_type) || ['ip'].includes(property.bk_property_id)) ? '' : null
+                const formValues = this.$tools.getInstFormValues([property])
+                return formValues[property.bk_property_id]
             },
             getPlaceholder (property) {
                 const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'

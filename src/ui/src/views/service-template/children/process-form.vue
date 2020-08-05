@@ -378,13 +378,11 @@
                 return !field.as_default_value
             },
             getNewRowValue (property) {
+                const formValues = this.$tools.getInstFormValues([property])
                 return {
-                    value: this.getDefaultValue(property),
+                    value: formValues[property.bk_property_id],
                     as_default_value: false
                 }
-            },
-            getDefaultValue (property) {
-                return (['enum', 'list'].includes(property.bk_property_type) || ['ip'].includes(property.bk_property_id)) ? '' : null
             }
         }
     }
