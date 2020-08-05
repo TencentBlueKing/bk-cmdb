@@ -78,7 +78,7 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 
 func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 
-	//if the loaded local file is migrate, skip the loading of other files,load only error and language.
+	// if the loaded local file is migrate, skip the loading of other files,load only error and language.
 	split := strings.Split(confPath, "/")
 	fileName := split[len(split)-1]
 	if fileName == types.CC_MODULE_MIGRATE {
@@ -90,12 +90,14 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 	// load local error and language
 	errorres := confPath + "/errors"
 	languageres := confPath + "/language"
-	loadErrorAndLanguage(errorres, languageres, handler)
+	if err := loadErrorAndLanguage(errorres, languageres, handler); err != nil {
+		return err
+	}
 
 	// load local common
 	commonPath := confPath + "/" + types.CCConfigureCommon
 	if err := SetCommonFromFile(commonPath); err != nil {
-		blog.Warnf("load config from file[%s], but can not found common config", commonPath)
+		blog.Errorf("load config from file[%s], but can not found common config", commonPath)
 		return err
 	}
 	if handler.OnProcessUpdate != nil {
@@ -105,7 +107,7 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 	// load local extra
 	extraPath := confPath + "/" + types.CCConfigureExtra
 	if err := SetExtraFromFile(extraPath); err != nil {
-		blog.Warnf("load config from file[%s], but can not found extra config", extraPath)
+		blog.Errorf("load config from file[%s], but can not found extra config", extraPath)
 		return err
 	}
 	if handler.OnExtraUpdate != nil {
@@ -134,13 +136,14 @@ func SetRedisFromByte(data []byte) error {
 	if redisParser != nil {
 		err := redisParser.parser.ReadConfig(bytes.NewBuffer(data))
 		if err != nil {
-			blog.Warnf("fail to read configure from redis")
+			blog.Errorf("fail to read configure from redis")
 			return err
 		}
 		return nil
 	}
 	redisParser,err = newViperParser(data)
 	if err != nil {
+		blog.Errorf("fail to read configure from redis")
 		return err
 	}
 	return nil
@@ -152,6 +155,7 @@ func SetRedisFromFile(target string) error {
 	defer confLock.Unlock()
 	redisParser,err = newViperParserFromFile(target)
 	if err != nil {
+		blog.Errorf("fail to read configure from redis")
 		return err
 	}
 	return nil
@@ -164,13 +168,14 @@ func SetMongodbFromByte(data []byte) error {
 	if mongodbParser != nil {
 		err = mongodbParser.parser.ReadConfig(bytes.NewBuffer(data))
 		if err != nil {
-			blog.Warnf("fail to read configure from mongodb")
+			blog.Errorf("fail to read configure from mongodb")
 			return err
 		}
 		return nil
 	}
 	mongodbParser,err = newViperParser(data)
 	if err != nil {
+		blog.Errorf("fail to read configure from mongodb")
 		return err
 	}
 	return nil
@@ -182,6 +187,7 @@ func SetMongodbFromFile(target string) error {
 	defer confLock.Unlock()
 	mongodbParser,err = newViperParserFromFile(target)
 	if err != nil {
+		blog.Errorf("fail to read configure from mongodb")
 		return err
 	}
 	return nil
@@ -195,13 +201,14 @@ func SetCommonFromByte(data []byte) error {
 	if commonParser != nil {
 		err = commonParser.parser.ReadConfig(bytes.NewBuffer(data))
 		if err != nil {
-			blog.Warnf("fail to read configure from common")
+			blog.Errorf("fail to read configure from common")
 			return err
 		}
 		return nil
 	}
 	commonParser,err = newViperParser(data)
 	if err != nil {
+		blog.Errorf("fail to read configure from common")
 		return err
 	}
 	return nil
@@ -213,6 +220,7 @@ func SetCommonFromFile(target string) error {
 	defer confLock.Unlock()
 	commonParser,err = newViperParserFromFile(target)
 	if err != nil {
+		blog.Errorf("fail to read configure from common")
 		return err
 	}
 	return nil
@@ -226,13 +234,14 @@ func SetExtraFromByte(data []byte) error {
 	if extraParser != nil {
 		err = extraParser.parser.ReadConfig(bytes.NewBuffer(data))
 		if err != nil {
-			blog.Warnf("fail to read configure from extra")
+			blog.Errorf("fail to read configure from extra")
 			return err
 		}
 		return nil
 	}
 	extraParser,err = newViperParser(data)
 	if err != nil {
+		blog.Errorf("fail to read configure from extra")
 		return err
 	}
 	return nil
@@ -244,6 +253,7 @@ func SetExtraFromFile(target string) error {
 	defer confLock.Unlock()
 	extraParser,err = newViperParserFromFile(target)
 	if err != nil {
+		blog.Errorf("fail to read configure from extra")
 		return err
 	}
 	return nil
@@ -256,13 +266,14 @@ func SetMigrateFromByte(data []byte) error{
 	if migrateParser != nil {
 		err := migrateParser.parser.ReadConfig(bytes.NewBuffer(data))
 		if err != nil {
-			blog.Warnf("fail to read configure from migrate")
+			blog.Errorf("fail to read configure from migrate")
 			return err
 		}
 		return nil
 	}
 	migrateParser,err = newViperParser(data)
 	if err != nil {
+		blog.Errorf("fail to read configure from migrate")
 		return err
 	}
 	return  nil
@@ -274,6 +285,7 @@ func SetMigrateFromFile(target string) error {
 	defer confLock.Unlock()
 	migrateParser,err = newViperParserFromFile(target)
 	if err != nil {
+		blog.Errorf("fail to read configure from migrate")
 		return err
 	}
 	return nil

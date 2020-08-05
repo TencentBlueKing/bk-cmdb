@@ -282,8 +282,8 @@ func (e *Engine) onErrorUpdate(previous, current map[string]errors.ErrorCode) {
 func (e *Engine) onMongodbUpdate(previous, current cc.ProcessConfig) {
 	e.Lock()
 	defer e.Unlock()
-	if err := cc.SetMongodbFromByte(current.ConfigData); err!= nil {
-		blog.V(3).Infof("parse mongo config failed, err: %s, data: %s", err.Error(), current.ConfigData)
+	if err := cc.SetMongodbFromByte(current.ConfigData); err != nil {
+		blog.Errorf("parse mongo config failed, err: %s, data: %s", err.Error(), string(current.ConfigData))
 	}
 }
 
@@ -291,7 +291,7 @@ func (e *Engine) onRedisUpdate(previous, current cc.ProcessConfig) {
 	e.Lock()
 	defer e.Unlock()
 	if err := cc.SetRedisFromByte(current.ConfigData); err != nil {
-		blog.V(3).Infof("parse redis config failed, err: %s, data: %s", err.Error(), current.ConfigData)
+		blog.Errorf("parse redis config failed, err: %s, data: %s", err.Error(), string(current.ConfigData))
 	}
 }
 
