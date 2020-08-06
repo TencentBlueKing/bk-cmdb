@@ -25,7 +25,6 @@ const state = {
     headerTitle: '',
     permission: [],
     appHeight: window.innerHeight,
-    isAdminView: true,
     title: null,
     businessSelectorVisible: false,
     businessSelectorPromise: null,
@@ -44,7 +43,6 @@ const getters = {
     user: state => state.user,
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
-    isAdminView: state => state.isAdminView,
     isBusinessSelected: (state, getters, rootState, rootGetters) => {
         return rootGetters['objectBiz/bizId'] !== null
     },
@@ -103,9 +101,6 @@ const mutations = {
     },
     setUserList (state, list) {
         state.userList = list
-    },
-    setAdminView (state, isAdminView) {
-        state.isAdminView = isAdminView
     },
     setPermission (state, permission) {
         state.permission = permission

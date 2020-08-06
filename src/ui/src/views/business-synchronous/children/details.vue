@@ -16,6 +16,7 @@
 
 <script>
     import formatter from '@/filters/formatter'
+    import { mapGetters } from 'vuex'
     export default {
         props: {
             module: Object,
@@ -30,6 +31,9 @@
             return {
                 detailsData: []
             }
+        },
+        computed: {
+            ...mapGetters('objectBiz', ['bizId'])
         },
         created () {
             switch (this.type) {
@@ -53,9 +57,10 @@
             async initTemplateData () {
                 try {
                     const { info } = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             service_template_id: this.instance.service_instance.service_template_id
-                        }, { injectBizId: true })
+                        }
                     })
                     const process = info.find(process => process.id === this.module.process_template_id)
                     const details = []

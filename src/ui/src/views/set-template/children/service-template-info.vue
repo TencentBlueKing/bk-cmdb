@@ -20,6 +20,7 @@
 
 <script>
     import { processTableHeader } from '@/dictionary/table-header'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'serviceTemplateInfo',
         props: {
@@ -36,6 +37,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             header () {
                 const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
@@ -80,9 +82,10 @@
             async getServiceProcesses () {
                 try {
                     const result = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             service_template_id: this.id
-                        }),
+                        },
                         config: {
                             requestId: 'getServiceProcesses'
                         }
@@ -125,7 +128,7 @@
             },
             getServiceCategory () {
                 return this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
-                    params: this.$injectMetadata({}),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: 'getServiceCategoryWithoutAmount'
                     }

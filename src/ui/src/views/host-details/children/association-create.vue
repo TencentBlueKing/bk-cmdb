@@ -439,12 +439,7 @@
                     return exist['bk_inst_id'] === instId
                 })
                 return this.deleteInstAssociation({
-                    id: (instAssociation || {}).id,
-                    config: {
-                        data: {
-                            inject: !!this.$tools.getMetadataBiz(instAssociation)
-                        }
-                    }
+                    id: (instAssociation || {}).id
                 })
             },
             beforeUpdate (event, instId, updateType = 'new') {

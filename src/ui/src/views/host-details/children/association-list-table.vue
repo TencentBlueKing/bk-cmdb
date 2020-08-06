@@ -124,9 +124,6 @@
                 }
                 return null
             },
-            isBusinessModel () {
-                return !!this.$tools.getMetadataBiz(this.model)
-            },
             title () {
                 const desc = this.type === 'source' ? this.associationType.src_des : this.associationType.dest_des
                 return `${desc}-${this.model.bk_obj_name}`
@@ -257,7 +254,7 @@
                     }
                 })
                 return this.$store.dispatch('hostSearch/searchHost', {
-                    params: this.$injectMetadata({
+                    params: {
                         bk_biz_id: -1,
                         condition,
                         id: {
@@ -269,7 +266,7 @@
                             ...this.page,
                             sort: 'bk_host_id'
                         }
-                    }),
+                    },
                     config
                 }).then(data => {
                     return {

@@ -389,10 +389,11 @@
             },
             getProperties () {
                 return this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_obj_id: 'process',
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: this.request.properties,
                         fromCache: true
@@ -402,7 +403,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'process',
-                    params: this.$injectMetadata(),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: this.request.propertyGroups,
                         fromCache: true
@@ -421,7 +422,7 @@
             },
             getServiceClassification () {
                 return this.searchServiceCategory({
-                    params: this.$injectMetadata({}, { injectBizId: true }),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: this.request.category
                     }
@@ -430,9 +431,10 @@
             getProcessList () {
                 this.processLoading = true
                 this.getBatchProcessTemplate({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         service_template_id: Number(this.templateId)
-                    }, { injectBizId: true }),
+                    },
                     config: {
                         requestId: this.request.processList
                     }
@@ -475,22 +477,24 @@
                 const processValues = this.formatSubmitData(data)
                 if (type === 'create') {
                     this.createProcessTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             service_template_id: this.originTemplateValues['id'],
                             processes: [{
                                 spec: processValues
                             }]
-                        }, { injectBizId: true })
+                        }
                     }).then(() => {
                         this.getProcessList()
                         this.handleCancelProcess()
                     })
                 } else {
                     this.updateProcessTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             process_template_id: values['process_id'],
                             process_property: processValues
-                        }, { injectBizId: true })
+                        }
                     }).then(() => {
                         this.getProcessList()
                         this.handleCancelProcess()
@@ -527,9 +531,10 @@
                         } else {
                             this.deleteProcessTemplate({
                                 params: {
-                                    data: this.$injectMetadata({
+                                    data: {
+                                        bk_biz_id: this.bizId,
                                         process_templates: [template['process_id']]
-                                    }, { injectBizId: true })
+                                    }
                                 }
                             }).then(() => {
                                 this.$success(this.$t('删除成功'))
@@ -541,7 +546,8 @@
             },
             handleSubmitProcessList () {
                 this.createProcessTemplate({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         service_template_id: this.formData.templateId,
                         processes: this.processList.map(process => {
                             delete process.sign_id
@@ -549,7 +555,7 @@
                                 spec: this.formatSubmitData(process)
                             }
                         })
-                    }, { injectBizId: true })
+                    }
                 }).then(() => {
                     this.$success(this.$t('创建成功'))
                     this.handleCancelOperation()
@@ -557,11 +563,10 @@
                     // 新建进程失败静默删除服务模板
                     await this.deleteServiceTemplate({
                         params: {
-                            data: this.$injectMetadata({
+                            data: {
+                                bk_biz_id: this.bizId,
                                 service_template_id: this.formData.templateId
-                            }, {
-                                injectBizId: true
-                            })
+                            }
                         }
                     })
                     this.formData.templateId = ''
@@ -575,11 +580,12 @@
                 if (!await this.$validator.validateAll()) return
                 if (this.formData.templateId) {
                     this.updateServiceTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             id: this.formData.templateId,
                             name: this.formData.templateName,
                             service_category_id: this.formData.secondaryClassification
-                        }, { injectBizId: true })
+                        }
                     }).then(() => {
                         if (this.isCreateMode) {
                             this.handleSubmitProcessList()
@@ -604,10 +610,11 @@
             },
             handleCreateTemplate () {
                 this.createServiceTemplate({
-                    params: this.$injectMetadata({
+                    params: {
                         name: this.formData.templateName,
+                        bk_biz_id: this.bizId,
                         service_category_id: this.formData.secondaryClassification
-                    }, { injectBizId: true })
+                    }
                 }).then(data => {
                     if (this.processList.length) {
                         this.formData.templateId = data.id
@@ -691,10 +698,11 @@
                     }
                     this.isEditNameLoading = true
                     await this.updateServiceTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             id: this.formData.templateId,
                             name: this.formData.templateName
-                        }, { injectBizId: true })
+                        }
                     })
                     this.isEditName = false
                     this.isEditNameLoading = false
@@ -707,10 +715,11 @@
                 try {
                     this.isEditCategoryLoading = true
                     await this.updateServiceTemplate({
-                        params: this.$injectMetadata({
+                        params: {
                             id: this.formData.templateId,
+                            bk_biz_id: this.bizId,
                             service_category_id: this.formData.secondaryClassification
-                        }, { injectBizId: true })
+                        }
                     })
                     this.isEditCategory = false
                     this.isEditCategoryLoading = false

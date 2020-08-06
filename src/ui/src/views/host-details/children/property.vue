@@ -205,10 +205,10 @@
                     this.loadingState.push(property)
                     this.exitForm()
                     await this.$store.dispatch('hostUpdate/updateHost', {
-                        params: this.$injectMetadata({
+                        params: {
                             [property.bk_property_id]: value,
                             bk_host_id: String(this.host.bk_host_id)
-                        }),
+                        },
                         config: {
                             requestId: 'updateHostInfo'
                         }

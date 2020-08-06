@@ -215,20 +215,20 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    })
+                    }
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_asst_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    })
+                    }
                 })
             },
             async saveRelation () {
@@ -242,7 +242,7 @@
                     }
                 }
                 const res = await this.createObjectAssociation({
-                    params: this.$injectMetadata(params),
+                    params: params,
                     config: {
                         requestId: 'createObjectAssociation'
                     }

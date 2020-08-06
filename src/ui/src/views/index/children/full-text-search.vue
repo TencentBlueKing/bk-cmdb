@@ -120,7 +120,11 @@
                 this.modelClassify.forEach(model => {
                     this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
                 })
-                await this.processArray(modelData)
+                if (modelData.length) {
+                    await this.getProperties({
+                        $in: modelData.map(model => model.key)
+                    })
+                }
                 this.searchData = hitsData.filter(hits => !['model'].includes(hits.type)).map(hits => {
                     const hit = {
                         ...hits.source,
@@ -133,50 +137,13 @@
                     return hit
                 })
             },
-            isPublicModel (objId) {
-                const model = this.models.find(model => model['bk_obj_id'] === objId) || {}
-                return !this.$tools.getMetadataBiz(model)
-            },
-            async getPublicModelProperties (objId) {
-                this.propertyMap = await this.batchSearchObjectAttribute({
-                    params: this.$injectMetadata({
-                        bk_obj_id: objId,
-                        bk_supplier_account: this.supplierAccount
-                    }, { inject: false }),
-                    config: {
-                        requestId: `post_batchSearchObjectAttribute_${objId['$in'].join('_')}`,
-                        requestGroup: objId['$in'].map(id => `post_searchObjectAttribute_${id}`)
-                    }
-                })
-            },
             async getProperties (objId) {
-                const properties = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                this.propertyMap = await this.batchSearchObjectAttribute({
+                    params: {
                         bk_obj_id: objId,
                         bk_supplier_account: this.supplierAccount
-                    }, { inject: true }),
-                    config: {
-                        requestId: `post_searchObjectAttribute_${objId}`,
-                        fromCache: false
                     }
                 })
-                this.$set(this.propertyMap, objId, properties)
-            },
-            async processArray (data) {
-                this.propertyMap = {}
-                const publicObj = data.filter(aggregation => this.isPublicModel(aggregation.key)).map(model => model.key)
-                const privateObj = data.filter(aggregation => !this.isPublicModel(aggregation.key)).map(model => model.key)
-                if (publicObj.length) {
-                    const objId = {
-                        '$in': publicObj
-                    }
-                    await this.getPublicModelProperties(objId)
-                }
-                if (privateObj.length) {
-                    for (let i = 0; i < privateObj.length; i++) {
-                        await this.getProperties(privateObj[i])
-                    }
-                }
             },
             jumpPage (source) {
                 if (source['hitsType'] === 'host') {

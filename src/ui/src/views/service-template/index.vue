@@ -153,6 +153,7 @@
                     ? this.categoryId
                     : this.maincategoryId ? this.maincategoryId : 0
                 return {
+                    bk_biz_id: this.bizId,
                     service_category_id: id,
                     search: this.filter.templateName,
                     page: {
@@ -213,7 +214,7 @@
             },
             getTemplateData () {
                 return this.searchServiceTemplate({
-                    params: this.$injectMetadata(this.params, { injectBizId: true }),
+                    params: this.params,
                     config: {
                         requestId: 'get_proc_service_template',
                         cancelPrevious: true,
@@ -223,7 +224,7 @@
             },
             async getServiceClassification () {
                 const res = await this.searchServiceCategory({
-                    params: this.$injectMetadata({}, { injectBizId: true }),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: 'get_proc_services_categories'
                     }
@@ -260,11 +261,10 @@
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
                             params: {
-                                data: this.$injectMetadata({
+                                data: {
+                                    bk_biz_id: this.bizId,
                                     service_template_id: template.id
-                                }, {
-                                    injectBizId: true
-                                })
+                                }
                             },
                             config: {
                                 requestId: 'delete_proc_service_template'

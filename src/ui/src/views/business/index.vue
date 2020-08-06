@@ -213,18 +213,16 @@
                     show: false,
                     selected: [],
                     disabledColumns: ['bk_biz_id', 'bk_biz_name']
-                }
+                },
+                columnsConfigKey: 'biz_custom_table_columns'
             }
         },
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['getModelById']),
-            columnsConfigKey () {
-                return `${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
-            },
             customBusinessColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -262,10 +260,10 @@
             try {
                 this.properties = await this.searchObjectAttribute({
                     injectId: 'biz',
-                    params: this.$injectMetadata({
+                    params: {
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
@@ -300,7 +298,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'biz',
-                    params: this.$injectMetadata(),
+                    params: {},
                     config: {
                         fromCache: true,
                         requestId: 'post_searchGroup_biz'

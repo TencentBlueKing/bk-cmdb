@@ -51,7 +51,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('objectModelClassify', ['getModelById']),
             bizId () {
                 return parseInt(this.$route.params.bizId)
@@ -111,10 +111,10 @@
             async getProperties () {
                 try {
                     const properties = await this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_biz',
                             fromCache: true
@@ -130,7 +130,7 @@
                 try {
                     const propertyGroups = this.searchGroup({
                         objId: this.objId,
-                        params: this.$injectMetadata(),
+                        params: {},
                         config: {
                             fromCache: true,
                             requestId: 'post_searchGroup_biz'

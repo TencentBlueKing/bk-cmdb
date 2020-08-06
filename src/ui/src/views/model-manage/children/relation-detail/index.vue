@@ -194,8 +194,7 @@
                 'getModelById'
             ]),
             ...mapGetters('objectModel', [
-                'activeModel',
-                'isInjectable'
+                'activeModel'
             ]),
             usefulRelationList () {
                 return this.relationList.filter(relation => relation.id !== 'bk_mainline')
@@ -312,20 +311,14 @@
                 if (this.isEdit) {
                     await this.updateObjectAssociation({
                         id: this.relationInfo.id,
-                        params: this.$injectMetadata(this.updateParams, {
-                            clone: true,
-                            inject: this.isInjectable
-                        }),
+                        params: this.updateParams,
                         config: {
                             requestId: 'updateObjectAssociation'
                         }
                     })
                 } else {
                     await this.createObjectAssociation({
-                        params: this.$injectMetadata(this.createParams, {
-                            clone: true,
-                            inject: this.isInjectable
-                        }),
+                        params: this.createParams,
                         config: {
                             requestId: 'createObjectAssociation'
                         }
