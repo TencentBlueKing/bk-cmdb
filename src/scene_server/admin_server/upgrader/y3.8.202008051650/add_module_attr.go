@@ -28,7 +28,9 @@ func addModuleAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	dataRows := []*Attribute{
 		{ObjectID: objID, PropertyID: "bk_parent_id", PropertyName: "父ID", IsRequired: true, IsOnly: false, IsEditable: false, PropertyGroup: mCommon.BaseInfo, PropertyType: common.FieldTypeInt, Option: ""},
 	}
+
 	now := time.Now()
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
 	for _, r := range dataRows {
 		r.OwnerID = conf.OwnerID
 		r.IsPre = true
@@ -40,15 +42,8 @@ func addModuleAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		id, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
-		if err != nil {
-			blog.ErrorJSON("NextSequence failed, module attrName: %s, err: %v", r.PropertyName, err)
-			return err
-		}
-		r.ID = int64(id)
-
-		if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, r); err != nil {
-			blog.ErrorJSON("insert failed, module attrName: %s, err: %s", r.PropertyName, err)
+		if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields); err != nil {
+			blog.ErrorJSON("addModuleAttr failed, Insert err: %s, attribute: %#v, ", err, r)
 			return err
 		}
 	}
