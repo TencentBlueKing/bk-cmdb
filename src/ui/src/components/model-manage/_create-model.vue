@@ -28,7 +28,7 @@
                                     :key="index"
                                     :id="option.bk_classification_id"
                                     :name="option.bk_classification_name">
-                                    <cmdb-auth class="group-auth" tag="div"
+                                    <cmdb-auth class="group-auth" tag="div" style="display: block;"
                                         :auth="{ type: $OPERATION.C_MODEL, relation: [option.id] }"
                                         @click.native.stop
                                         @click="handleSelectGroup(option)">
@@ -257,7 +257,6 @@
         }
     }
     .group-auth {
-        display: block;
         margin: 0 -16px;
         padding: 0 16px;
         &.disabled {
