@@ -175,7 +175,7 @@ router.beforeEach((to, from, next) => {
                 setLoading(true)
                 setupStatus.preload = false
                 await preload(router.app)
-                setupValidator()
+                setupValidator(router.app)
             }
             await runBeforeHooks()
             const shouldContinue = await businessBeforeInterceptor(router.app, to, from, next)
