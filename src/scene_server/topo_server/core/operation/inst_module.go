@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
@@ -126,6 +127,12 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
+	defaultVal, err := data.Int64(common.BKDefaultField)
+	if err != nil {
+		blog.Errorf("parse default field into int failed, data: %+v, rid: %s", data, kit.Rid)
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
+		return nil, err
+	}
 
 	if err := m.validBizSetID(kit, bizID, setID); err != nil {
 		return nil, err
@@ -149,13 +156,17 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 	}
 
 	var serviceTemplateID int64
-	var err error
 	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
 	if serviceTemplateFieldExist == true {
 		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
 		if err != nil {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
+	}
+
+	// if need create module using service template
+	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
 	}
 
 	if serviceCategoryID == 0 && serviceTemplateID == 0 {

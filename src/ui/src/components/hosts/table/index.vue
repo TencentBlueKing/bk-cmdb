@@ -429,10 +429,16 @@
                 return injectFields(params, this.table.header)
             },
             handlePageChange (current, event) {
-                RouterQuery.set('page', current)
+                RouterQuery.set({
+                    page: current,
+                    _t: Date.now()
+                })
             },
             handleSizeChange (limit) {
-                RouterQuery.set('limit', limit)
+                RouterQuery.set({
+                    limit: limit,
+                    _t: Date.now()
+                })
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)

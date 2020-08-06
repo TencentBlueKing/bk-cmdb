@@ -11,7 +11,7 @@
                 <bk-input class="row-content"
                     data-vv-name="name"
                     font-size="medium"
-                    v-validate="'required|singlechar|length:20'"
+                    v-validate="'required|singlechar|length:256'"
                     v-model.trim="templateName"
                     :placeholder="$t('请输入xx', { name: $t('模板名称') })">
                 </bk-input>
@@ -278,9 +278,14 @@
                     this.insideMode = null
                     this.$refs.templateTree.recoveryService()
                 } else {
-                    this.$routerActions.redirect({
-                        name: MENU_BUSINESS_SET_TEMPLATE
-                    })
+                    const breadcrumbs = window.CMDB_APP.$children[0].$refs.topView.$refs.breadcrumbs
+                    if (breadcrumbs.from) {
+                        breadcrumbs.handleClick()
+                    } else {
+                        this.$routerActions.redirect({
+                            name: MENU_BUSINESS_SET_TEMPLATE
+                        })
+                    }
                 }
             },
             handleServiceChange (value) {

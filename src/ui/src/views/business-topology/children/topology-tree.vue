@@ -32,12 +32,17 @@
                     <template slot-scope="{ disabled }">
                         <i v-if="isBlueKing && !editable"
                             class="node-button disabled-node-button"
-                            v-bk-tooltips="{ content: $t('蓝鲸业务拓扑节点提示'), placement: 'top', interactive: false }">
+                            v-bk-tooltips.top="{ content: $t('蓝鲸业务拓扑节点提示'), interactive: false }">
                             {{$t('新建')}}
                         </i>
                         <i v-else-if="data.set_template_id"
                             class="node-button disabled-node-button"
-                            v-bk-tooltips="{ content: $t('需在集群模板中新建'), placement: 'top', interactive: false }">
+                            v-bk-tooltips.top="{
+                                content: getSetNodeTips(node),
+                                interactive: true,
+                                onShow: handleSetNodeTipsToggle,
+                                onHide: handleSetNodeTipsToggle
+                            }">
                             {{$t('新建')}}
                         </i>
                         <bk-button v-else class="node-button"
@@ -309,6 +314,37 @@
                 } catch (_) {
                     this.editable = false
                 }
+            },
+            getSetNodeTips (node) {
+                const tips = document.createElement('div')
+                const span = document.createElement('span')
+                span.innerText = this.$t('需在集群模板中新建')
+                const link = document.createElement('a')
+                link.innerText = this.$t('立即跳转')
+                link.href = 'javascript:void(0)'
+                link.style.color = '#3a84ff'
+                link.addEventListener('click', () => {
+                    this.$routerActions.redirect({
+                        name: 'setTemplateConfig',
+                        params: {
+                            mode: 'edit',
+                            templateId: node.data.set_template_id
+                        },
+                        history: true
+                    })
+                })
+                tips.appendChild(span)
+                tips.appendChild(link)
+                return tips
+            },
+            handleSetNodeTipsToggle (tips) {
+                const element = tips.reference.parentElement
+                if (tips.state.isVisible) {
+                    element.classList.remove('hovering')
+                } else {
+                    element.classList.add('hovering')
+                }
+                return true
             },
             async showCreateDialog (node) {
                 const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
@@ -593,6 +629,12 @@
         .info-create-trigger {
             display: none;
             font-size: 0;
+            &.hovering {
+                display: inline-block;
+                & ~ .node-count {
+                    display: none;
+                }
+            }
         }
         .node-button {
             height: 24px;

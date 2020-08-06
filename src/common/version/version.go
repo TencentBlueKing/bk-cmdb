@@ -37,6 +37,11 @@ var (
 	CCRunModeDev     = "dev"
 )
 
+var (
+	// CanCreateSetModuleWithoutTemplate means whether user can create set and module without template
+	CanCreateSetModuleWithoutTemplate = true
+)
+
 // ShowVersion is the default handler which match the --version flag
 func ShowVersion() {
 	fmt.Printf("%s", GetVersion())
