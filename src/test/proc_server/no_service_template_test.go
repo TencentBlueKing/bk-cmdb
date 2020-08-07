@@ -881,9 +881,7 @@ var _ = Describe("no service template test", func() {
 			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(int64(1)))
 			Expect(data.Info[0].Property[common.BKProcessNameField]).To(Equal("p3"))
-			Expect(data.Info[0].Property[common.BKProcPortEnable]).To(Equal(true))
 			Expect(data.Info[0].Property[common.BKDescriptionField]).To(Equal("aaa"))
-			Expect(data.Info[0].Property[common.BKProtocol]).To(Equal("1"))
 			bindInfo := map[string]interface{}{
 				"ip":       "127.0.0.1",
 				"port":     "1024",
@@ -892,8 +890,9 @@ var _ = Describe("no service template test", func() {
 			}
 			ExpectBindInfoArr, err := commonutil.GetMapInterfaceByInerface(data.Info[0].Property[common.BKProcBindInfo])
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(ExpectBindInfoArr)).To(Equal(int64(1)))
+			Expect(len(ExpectBindInfoArr)).To(Equal(int(1)))
 			expectBindInfo, ok := ExpectBindInfoArr[0].(map[string]interface{})
+			delete(expectBindInfo, "template_row_id")
 			Expect(ok).To(Equal(true))
 			Expect(expectBindInfo).To(Equal(bindInfo))
 

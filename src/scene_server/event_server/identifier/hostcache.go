@@ -68,7 +68,7 @@ func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache 
 		return err
 	}
 
-	ip, port, protocol, enable := getBindInfo(proc.data[common.BKProcBindInfo])
+	ip, port, protocol, enable, bindInfoArr := getBindInfo(proc.data[common.BKProcBindInfo])
 	process.ProcessName = getString(proc.data[common.BKProcessNameField])
 	process.FuncID = getString(proc.data[common.BKFuncIDField])
 	process.FuncName = getString(proc.data[common.BKFuncName])
@@ -76,12 +76,14 @@ func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache 
 	process.Protocol = protocol // getString(proc.data[common.BKProtocol])
 	process.Port = port         // getString(proc.data[common.BKPort])
 	process.PortEnable = enable
+	process.BindInfo = bindInfoArr
 	process.StartParamRegex = getString(proc.data[common.BKStartParamRegex])
 	return nil
 }
 
 func fillModule(identifier *metadata.HostIdentifier, hostIdentModule *metadata.HostIdentModule, customLayers []string,
 	ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+
 	biz, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDApp, hostIdentModule.BizID)
 	if err != nil {
 		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDApp, hostIdentModule.BizID, err.Error())
