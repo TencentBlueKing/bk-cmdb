@@ -113,7 +113,7 @@
                         }
                     })
                     const names = (res.results || []).map(item => item.full_name)
-                    displayValue = names.join('; ')
+                    displayValue = names.join('; ') || '--'
                 }
 
                 ORG_CACHES[cacheKey] = displayValue
