@@ -25,33 +25,37 @@ import (
 
 func addModuleAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	objID := common.BKInnerObjIDModule
-	dataRows := []*Attribute{
-		{ObjectID: objID, PropertyID: "bk_parent_id", PropertyName: "父ID", IsRequired: true, IsOnly: false, IsEditable: false, PropertyGroup: mCommon.BaseInfo, PropertyType: common.FieldTypeInt, Option: ""},
-	}
-
 	now := time.Now()
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
-	for _, r := range dataRows {
-		r.OwnerID = conf.OwnerID
-		r.IsPre = true
-		r.IsReadOnly = false
-		r.IsSystem = true
-		r.CreateTime = &now
-		r.LastTime = &now
-		r.Creator = common.CCSystemOperatorUserName
-		r.LastEditor = common.CCSystemOperatorUserName
-		r.Description = ""
-
-		if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields); err != nil {
-			blog.ErrorJSON("addModuleAttr failed, Insert err: %s, attribute: %#v, ", err, r)
-			return err
-		}
+	row := attribute{
+		ObjectID: objID,
+		PropertyID: "bk_parent_id",
+		PropertyName: "模块实例的父节点ID",
+		IsRequired: true,
+		IsOnly: false,
+		IsEditable: false,
+		PropertyGroup: mCommon.BaseInfo,
+		PropertyType: common.FieldTypeInt,
+		Option: "",
+		OwnerID: conf.OwnerID,
+		IsPre: true,
+		IsReadOnly: false,
+		IsSystem: true,
+		IsAPI: true,
+		CreateTime: &now,
+		LastTime: &now,
+		Creator: common.CCSystemOperatorUserName,
+		LastEditor: common.CCSystemOperatorUserName,
+		Description: "",
 	}
-
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, row, "id", uniqueFields); err != nil {
+		blog.ErrorJSON("add module field bk_parent_id failed, Insert err: %s, attribute: %#v, ", err, row)
+		return err
+	}
 	return nil
 }
 
-type Attribute struct {
+type attribute struct {
 	ID                int64       `field:"id" json:"id" bson:"id"`
 	OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ObjectID          string      `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`

@@ -29,7 +29,7 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 
 	err = addModuleAttr(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.8.202008051650] addModuleAttr error  %s", err.Error())
+		blog.Errorf("[upgrade y3.8.202008051650] add module field bk_parent_id error  %s", err.Error())
 		return err
 	}
 
