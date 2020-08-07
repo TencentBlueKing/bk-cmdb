@@ -1017,7 +1017,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 		changed = true
 	}
 	if bindInfoIsNamePortChanged {
-		changed = true
+		bindInfoIsNamePortChanged = true
 	}
 
 	return process, changed, isNamePortChanged

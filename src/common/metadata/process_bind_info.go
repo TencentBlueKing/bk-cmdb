@@ -38,7 +38,7 @@ UBSON  bson 反序列化的方法， 用于数据库存储,将数据解析到不
 
 var (
 	// 标准字段，不论在什么环境上都需要使用的
-	ignoreField = map[string]struct{}{"template_row_id": struct{}{}, common.BKIP: struct{}{}, common.BKPort: struct{}{}, common.BKProtocol: struct{}{}, common.BKEnable: struct{}{}}
+	ignoreField = map[string]struct{}{"template_row_id": struct{}{}, "row_id": struct{}{}, common.BKIP: struct{}{}, common.BKPort: struct{}{}, common.BKProtocol: struct{}{}, common.BKEnable: struct{}{}}
 )
 var (
 	//  内部变量，不允许改变，改变值请用对应的Register 方案
@@ -47,7 +47,7 @@ var (
 	defaultProcBindInfoHandle ProcExtraBindInfoInterface = &openVersionProcBindInfo{}
 )
 
-// TODO 等待实现， 替换已有的进程，进程模板中进程绑定信息实际结构的处理对象
+// Register 实现， 替换已有的进程，进程模板中进程绑定信息实际结构的处理对象
 func Register(propertyBindInfo ProcPropertyExtraBindInfoInterface, procBindInfo ProcExtraBindInfoInterface) {
 	defaultPropertyBindInfoHandle = propertyBindInfo
 	defaultProcBindInfoHandle = procBindInfo
@@ -109,7 +109,7 @@ type ProcBindInfo struct {
 	// 标准属性
 	Std *stdProcBindInfo
 
-	// 通过Unmarshal 方法实现不同版本中数据不一样
+	// extra 通过Unmarshal 方法实现不同版本中数据不一样
 	extra map[string]interface{}
 }
 
@@ -238,6 +238,7 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process) ([]ProcBi
 				changed = true
 			}
 		}
+
 		if row.extra != nil {
 			extraMap, extraChanged, isExtraNamePortChanged := row.extra.ExtractChangeInfoBindInfo(&inputProcBindInfo)
 			if extraChanged {
@@ -248,7 +249,6 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process) ([]ProcBi
 			}
 			inputProcBindInfo.extra = extraMap
 		}
-
 		procBindInfoArr = append(procBindInfoArr, inputProcBindInfo)
 	}
 
@@ -312,6 +312,7 @@ func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindIn
 				inputProcBindInfo.Std.Enable = row.Std.Enable.Value
 			}
 		}
+
 		if row.extra != nil {
 			inputProcBindInfo.extra = row.extra.ExtractInstanceUpdateData(inputProcBindInfo.extra)
 		}
@@ -324,8 +325,10 @@ func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindIn
 
 // Update  bind info 每次更新采用的是全量更新
 func (pbi *ProcPropertyBindInfo) Update(input ProcessProperty, rawProperty map[string]interface{}) {
-	pbi.AsDefaultValue = input.BindInfo.AsDefaultValue
-	pbi.Value = input.BindInfo.Value
+	if _, ok := rawProperty[common.BKProcBindInfo]; ok {
+		pbi.AsDefaultValue = input.BindInfo.AsDefaultValue
+		pbi.Value = input.BindInfo.Value
+	}
 	return
 }
 
@@ -407,13 +410,22 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 			change = true
 			return
 		}
+
 		if len(row.extra) != len(tmpBindInfo.extra) {
+			if len(row.extra) == 0 && allFieldValIsNil(tmpBindInfo.extra) {
+				return
+			}
+
 			change = true
 			return
 		}
+
 		for key, val := range row.extra {
 			tmpVal, exist := tmpBindInfo.extra[key]
 			if !exist {
+				if val == nil {
+					continue
+				}
 				change = true
 				return
 			}
@@ -428,6 +440,18 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 	}
 
 	return
+}
+
+// allFieldValIsNil 判断所有的字段是否为nil
+func allFieldValIsNil(extra map[string]interface{}) bool {
+	isValAllNil := true
+	for _, val := range extra {
+		if val != nil {
+			isValAllNil = false
+			break
+		}
+	}
+	return isValAllNil
 }
 
 /*** ProcPropertyBindInfoValue 依赖的方法  ****/
