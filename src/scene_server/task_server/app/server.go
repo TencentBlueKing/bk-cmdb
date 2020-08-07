@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -26,17 +25,15 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/scene_server/task_server/app/options"
 	tasksvc "configcenter/src/scene_server/task_server/service"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		blog.Errorf("wrap server info failed, err: %v", err)
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -59,7 +56,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" != taskSrv.Config.Redis.Address {
+		if nil != taskSrv.Config {
 			configReady = true
 			break
 		}
@@ -70,19 +67,27 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Infof("waiting config timeout.")
 		return errors.New("configuration item not found")
 	}
+	taskSrv.Config.Mongo, err = engine.WithMongo()
+	if err != nil {
+		return err
+	}
+	taskSrv.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
+	}
 	cacheDB, err := redis.NewFromConfig(taskSrv.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
-	db, err := taskSrv.Config.Mongo.GetMongoClient(engine)
+	db, err := taskSrv.Config.Mongo.GetMongoClient()
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %s", err.Error())
 		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 	}
 
 	service.Engine = engine
-	service.Config = &taskSrv.Config
+	service.Config = taskSrv.Config
 	service.CacheDB = cacheDB
 	service.DB = db
 	taskSrv.Core = engine
@@ -103,7 +108,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 type TaskServer struct {
 	Core      *backbone.Engine
-	Config    options.Config
+	Config    *options.Config
 	Service   *tasksvc.Service
 	taskQueue map[string]tasksvc.TaskInfo
 }
@@ -113,15 +118,9 @@ func (h *TaskServer) WebService() *restful.Container {
 }
 
 func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-
-	h.Config.Redis.Address = current.ConfigMap["redis.host"]
-	h.Config.Redis.Database = current.ConfigMap["redis.database"]
-	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
-	h.Config.Redis.Port = current.ConfigMap["redis.port"]
-	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
-
-	h.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-
+	if h.Config == nil {
+		h.Config = &options.Config{}
+	}
 	taskNameArr := strings.Split(current.ConfigMap["task.name"], ",")
 
 	for _, name := range taskNameArr {
@@ -157,31 +156,4 @@ func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.taskQueue[name] = task
 	}
 
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

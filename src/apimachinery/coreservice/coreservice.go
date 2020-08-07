@@ -17,7 +17,8 @@ import (
 
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
-	"configcenter/src/apimachinery/coreservice/cloudsync"
+	"configcenter/src/apimachinery/coreservice/cache"
+	"configcenter/src/apimachinery/coreservice/count"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
@@ -30,6 +31,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
 	"configcenter/src/apimachinery/coreservice/topographics"
+	"configcenter/src/apimachinery/coreservice/transaction"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -44,12 +46,14 @@ type CoreServiceClientInterface interface {
 	Audit() auditlog.AuditClientInterface
 	Process() process.ProcessInterface
 	Operation() operation.OperationClientInterface
-	Cloud() cloudsync.CloudSyncClientInterface
 	Label() label.LabelInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
 	SetTemplate() settemplate.SetTemplateInterface
 	HostApplyRule() hostapplyrule.HostApplyRuleInterface
 	System() ccSystem.SystemClientInterface
+	Txn() transaction.Interface
+	Count() count.CountClientInterface
+	Cache() cache.Interface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -100,10 +104,6 @@ func (c *coreService) Operation() operation.OperationClientInterface {
 	return operation.NewOperationClientInterface(c.restCli)
 }
 
-func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
-	return cloudsync.NewCloudSyncClientInterface(c.restCli)
-}
-
 func (c *coreService) Label() label.LabelInterface {
 	return label.NewLabelInterfaceClient(c.restCli)
 }
@@ -122,4 +122,16 @@ func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
 
 func (c *coreService) HostApplyRule() hostapplyrule.HostApplyRuleInterface {
 	return hostapplyrule.NewHostApplyRuleClient(c.restCli)
+}
+
+func (c *coreService) Txn() transaction.Interface {
+	return transaction.NewTxn(c.restCli)
+}
+
+func (c *coreService) Count() count.CountClientInterface {
+	return count.NewCountClientInterface(c.restCli)
+}
+
+func (c *coreService) Cache() cache.Interface {
+	return cache.NewCacheClient(c.restCli)
 }

@@ -19,9 +19,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
+	cErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -72,11 +73,19 @@ type DeleteServiceTemplatesInput struct {
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata  *Metadata                     `json:"metadata"`
-	BizID     int64                         `json:"bk_biz_id"`
-	Name      string                        `json:"name"`
-	ModuleID  int64                         `json:"bk_module_id"`
-	Instances []CreateServiceInstanceDetail `json:"instances"`
+	Metadata                   *Metadata                     `json:"metadata"`
+	BizID                      int64                         `json:"bk_biz_id"`
+	Name                       string                        `json:"name"`
+	ModuleID                   int64                         `json:"bk_module_id"`
+	Instances                  []CreateServiceInstanceDetail `json:"instances"`
+	HostApplyConflictResolvers []HostApplyConflictResolver   `json:"host_apply_conflict_resolvers"`
+}
+
+type CreateServiceInstancePreviewInput struct {
+	Metadata *Metadata `json:"metadata"`
+	BizID    int64     `json:"bk_biz_id"`
+	ModuleID int64     `json:"bk_module_id"`
+	HostIDs  []int64   `json:"bk_host_ids"`
 }
 
 type CreateRawProcessInstanceInput struct {
@@ -248,6 +257,52 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	Page                BasePage  `json:"page" field:"page" bson:"page"`
 }
 
+type UpdateProcessByIDsInput struct {
+	BizID      int64                  `json:"bk_biz_id"`
+	ProcessIDs []int64                `json:"process_ids"`
+	UpdateData map[string]interface{} `json:"update_data"`
+}
+
+// Validate validates the input param
+func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
+	if o.BizID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if len(o.ProcessIDs) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"process_ids"},
+		}
+	}
+
+	if len(o.ProcessIDs) > common.BKMaxPageSize {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrExceedMaxOperationRecordsAtOnce,
+			Args:    []interface{}{common.BKMaxPageSize},
+		}
+	}
+
+	if len(o.UpdateData) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"update_data"},
+		}
+	}
+
+	if _, ok := o.UpdateData[common.BKProcessIDField]; ok{
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"update_data.bk_process_id"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 type SyncServiceInstanceByTemplateOption struct {
 	Metadata  *Metadata `json:"metadata"`
 	BizID     int64     `json:"bk_biz_id"`
@@ -280,6 +335,71 @@ type ListProcessInstancesWithHostOption struct {
 	BizID   int64    `json:"bk_biz_id"`
 	HostIDs []int64  `json:"bk_host_ids"`
 	Page    BasePage `json:"page"`
+}
+
+type ListProcessInstancesNameIDsOption struct {
+	BizID       int64    `json:"bk_biz_id"`
+	ModuleID    int64    `json:"bk_module_id"`
+	ProcessName string   `json:"process_name"`
+	Page        BasePage `json:"page"`
+}
+
+// Validate validates the input param
+func (o *ListProcessInstancesNameIDsOption) Validate() (rawError cErr.RawErrorInfo) {
+	if o.BizID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if o.ModuleID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_module_id"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
+type ListProcessInstancesDetailsByIDsOption struct {
+	BizID      int64    `json:"bk_biz_id"`
+	ProcessIDs []int64  `json:"process_ids"`
+	Page       BasePage `json:"page"`
+}
+
+// Validate validates the input param
+func (o *ListProcessInstancesDetailsByIDsOption) Validate() (rawError cErr.RawErrorInfo) {
+	if o.BizID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if len(o.ProcessIDs) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"process_ids"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
 }
 
 type RemoveTemplateBindingOnModuleOption struct {
@@ -401,6 +521,10 @@ type Process struct {
 	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
 	PortEnable      *bool         `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	GatewayIP       *string       `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip" structs:"bk_gateway_ip" mapstructure:"bk_gateway_ip"`
+	GatewayPort     *string       `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port" structs:"bk_gateway_port" mapstructure:"bk_gateway_port"`
+	GatewayProtocol *ProtocolType `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol" structs:"bk_gateway_protocol" mapstructure:"bk_gateway_protocol"`
+	GatewayCity     *string       `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city" structs:"bk_gateway_city" mapstructure:"bk_gateway_city"`
 }
 
 type ServiceCategory struct {
@@ -421,9 +545,15 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 	if len(sc.Name) == 0 {
 		return "name", errors.New("name can't be empty")
 	}
-
-	if len(sc.Name) > common.NameFieldMaxLength {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(sc.Name), common.NameFieldMaxLength)
+	if common.ServiceCategoryMaxLength < utf8.RuneCountInString(sc.Name) {
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", utf8.RuneCountInString(sc.Name), common.ServiceCategoryMaxLength)
+	}
+	match, err := regexp.MatchString(common.FieldTypeServiceCategoryRegexp, sc.Name)
+	if nil != err {
+		return "name", err
+	}
+	if !match {
+		return "name", fmt.Errorf("name not match regex, input: %s", sc.Name)
 	}
 	return "", nil
 }
@@ -635,6 +765,27 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) {
 		processInstance.PortEnable = property.PortEnable.Value
 	}
+
+	processInstance.GatewayIP = nil
+	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) {
+		processInstance.GatewayIP = property.GatewayIP.Value
+	}
+
+	processInstance.GatewayPort = nil
+	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) {
+		processInstance.GatewayPort = property.GatewayPort.Value
+	}
+
+	processInstance.GatewayProtocol = nil
+	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) {
+		processInstance.GatewayProtocol = property.GatewayProtocol.Value
+	}
+
+	processInstance.GatewayCity = nil
+	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) {
+		processInstance.GatewayCity = property.GatewayCity.Value
+	}
+
 	return processInstance
 }
 
@@ -674,16 +825,20 @@ func GetAllProcessPropertyFields() []string {
 	fields = append(fields, "priority")
 	fields = append(fields, "start_cmd")
 	fields = append(fields, common.BKProcPortEnable)
+	fields = append(fields, "bk_gateway_ip")
+	fields = append(fields, "bk_gateway_port")
+	fields = append(fields, "bk_gateway_protocol")
+	fields = append(fields, "bk_gateway_city")
 
 	return fields
 }
 
 // ExtractChangeInfo get changes that will be applied to process instance
-func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, bool) {
 	t := pt.Property
-	var changed bool
+	var changed, isNamePortChanged bool
 	if t == nil || i == nil {
-		return nil, false
+		return nil, false, false
 	}
 
 	process := make(mapstr.MapStr)
@@ -808,12 +963,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		if t.ProcessName.Value == nil && i.ProcessName != nil {
 			process["bk_process_name"] = nil
 			changed = true
+			isNamePortChanged = true
 		} else if t.ProcessName.Value != nil && i.ProcessName == nil {
 			process["bk_process_name"] = *t.ProcessName.Value
 			changed = true
+			isNamePortChanged = true
 		} else if t.ProcessName.Value != nil && i.ProcessName != nil && *t.ProcessName.Value != *i.ProcessName {
 			process["bk_process_name"] = *t.ProcessName.Value
 			changed = true
+			isNamePortChanged = true
 		}
 	}
 
@@ -821,12 +979,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		if t.Port.Value == nil && i.Port != nil {
 			process["port"] = nil
 			changed = true
+			isNamePortChanged = true
 		} else if t.Port.Value != nil && i.Port == nil {
 			process["port"] = *t.Port.Value
 			changed = true
+			isNamePortChanged = true
 		} else if t.Port.Value != nil && i.Port != nil && *t.Port.Value != *i.Port {
 			process["port"] = *t.Port.Value
 			changed = true
+			isNamePortChanged = true
 		}
 	}
 
@@ -973,7 +1134,59 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		}
 	}
 
-	return process, changed
+	if IsAsDefaultValue(t.GatewayIP.AsDefaultValue) {
+		if t.GatewayIP.Value == nil && i.GatewayIP != nil {
+			process["bk_gateway_ip"] = nil
+			changed = true
+		} else if t.GatewayIP.Value != nil && i.GatewayIP == nil {
+			process["bk_gateway_ip"] = *t.GatewayIP.Value
+			changed = true
+		} else if t.GatewayIP.Value != nil && i.GatewayIP != nil && *t.GatewayIP.Value != *i.GatewayIP {
+			process["bk_gateway_ip"] = *t.GatewayIP.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.GatewayPort.AsDefaultValue) {
+		if t.GatewayPort.Value == nil && i.GatewayPort != nil {
+			process["bk_gateway_port"] = nil
+			changed = true
+		} else if t.GatewayPort.Value != nil && i.GatewayPort == nil {
+			process["bk_gateway_port"] = *t.GatewayPort.Value
+			changed = true
+		} else if t.GatewayPort.Value != nil && i.GatewayPort != nil && *t.GatewayPort.Value != *i.GatewayPort {
+			process["bk_gateway_port"] = *t.GatewayPort.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.GatewayProtocol.AsDefaultValue) {
+		if t.GatewayProtocol.Value == nil && i.GatewayProtocol != nil {
+			process["bk_gateway_protocol"] = nil
+			changed = true
+		} else if t.GatewayProtocol.Value != nil && i.GatewayProtocol == nil {
+			process["bk_gateway_protocol"] = *t.GatewayProtocol.Value
+			changed = true
+		} else if t.GatewayProtocol.Value != nil && i.GatewayProtocol != nil && *t.GatewayProtocol.Value != *i.GatewayProtocol {
+			process["bk_gateway_protocol"] = *t.GatewayProtocol.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.GatewayCity.AsDefaultValue) {
+		if t.GatewayCity.Value == nil && i.GatewayCity != nil {
+			process["bk_gateway_city"] = nil
+			changed = true
+		} else if t.GatewayCity.Value != nil && i.GatewayCity == nil {
+			process["bk_gateway_city"] = *t.GatewayCity.Value
+			changed = true
+		} else if t.GatewayCity.Value != nil && i.GatewayCity != nil && *t.GatewayCity.Value != *i.GatewayCity {
+			process["bk_gateway_city"] = *t.GatewayCity.Value
+			changed = true
+		}
+	}
+
+	return process, changed, isNamePortChanged
 }
 
 // FilterEditableFields only return editable fields
@@ -1056,6 +1269,18 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	}
 	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) == false {
 		editableFields = append(editableFields, common.BKProcPortEnable)
+	}
+	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_ip")
+	}
+	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_port")
+	}
+	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_protocol")
+	}
+	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_city")
 	}
 	return editableFields
 }
@@ -1174,6 +1399,27 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data[common.BKProcPortEnable] = *input.PortEnable
 		}
 	}
+	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) == false {
+		if input.GatewayIP != nil {
+			data["bk_gateway_ip"] = *input.GatewayIP
+		}
+	}
+	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) == false {
+		if input.GatewayPort != nil {
+			data["bk_gateway_port"] = *input.GatewayPort
+		}
+	}
+	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) == false {
+		if input.GatewayProtocol != nil {
+			data["bk_gateway_protocol"] = *input.GatewayProtocol
+		}
+	}
+	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) == false {
+		if input.GatewayCity != nil {
+			data["bk_gateway_city"] = *input.GatewayCity
+		}
+	}
+
 	return data
 }
 
@@ -1200,6 +1446,10 @@ type ProcessProperty struct {
 	Description        PropertyString   `field:"description" json:"description" bson:"description"`
 	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
 	PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	GatewayIP          PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
+	GatewayPort        PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
+	GatewayProtocol    PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
+	GatewayCity        PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
@@ -1372,15 +1622,6 @@ func (ti *PropertyString) Validate() error {
 		if len(value) == 0 {
 			return nil
 		}
-		matched, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
-		if err != nil {
-			blog.Errorf("Validate failed, regex:[%s], value:[%s]", common.FieldTypeSingleCharRegexp, value)
-			return fmt.Errorf("value:[%s] doesn't match regex:[%s], err: %+v", value, common.FieldTypeSingleCharRegexp, err)
-		}
-		if matched == false {
-			return fmt.Errorf("value:[%s] doesn't match regex:[%s]", value, common.FieldTypeSingleCharRegexp)
-		}
-
 	}
 	return nil
 }
@@ -1443,8 +1684,8 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
-	HostID            int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
+	HostID            int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
@@ -1511,6 +1752,18 @@ type HostProcessInstance struct {
 	BindIP    string       `json:"bind_ip"`
 	Port      string       `json:"port"`
 	Protocol  ProtocolType `json:"protocol"`
+}
+
+type ProcessInstanceNameIDs struct {
+	ProcessName string  `json:"bk_process_name"`
+	ProcessIDs  []int64 `json:"process_ids"`
+}
+
+type ProcessInstanceDetailByID struct {
+	ProcessID           int64                   `json:"process_id"`
+	ServiceInstanceName string                  `json:"service_instance_name"`
+	Property            mapstr.MapStr           `json:"property"`
+	Relation            ProcessInstanceRelation `json:"relation"`
 }
 
 type ProcessInstance struct {

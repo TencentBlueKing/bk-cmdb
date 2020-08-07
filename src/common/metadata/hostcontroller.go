@@ -93,6 +93,15 @@ type GetHostSnapResult struct {
 	Data     HostSnap `json:"data"`
 }
 
+type HostSnapBatchInput struct {
+	HostIDs []int64 `json:"host_ids"`
+}
+
+type GetHostSnapBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     map[int64]string `json:"data"`
+}
+
 type GetHostModuleIDsResult struct {
 	BaseResp `json:",inline"`
 	Data     []int64 `json:"data"`
@@ -212,35 +221,18 @@ type AddConfigQuery struct {
 	CreateUser string `json:"create_user,omitempty"`
 }
 
-type CloudTaskSearch struct {
-	Count uint64          `json:"count"`
-	Info  []CloudTaskInfo `json:"info"`
-}
-
-type CloudTaskInfo struct {
-	User            string `json:"bk_user" bson:"bk_user"`
-	TaskName        string `json:"bk_task_name" bson:"bk_task_name"`
-	TaskID          int64  `json:"bk_task_id" bson:"bk_task_id"`
-	AccountType     string `json:"bk_account_type" bson:"bk_account_type"`
-	AccountAdmin    string `json:"bk_account_admin" bson:"bk_account_admin"`
-	PeriodType      string `json:"bk_period_type" bson:"bk_period_type"`
-	Period          string `json:"bk_period" bson:"bk_period"`
-	LastSyncTime    string `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
-	ObjID           string `json:"bk_obj_id" bson:"bk_obj_id"`
-	Status          bool   `json:"bk_status" bson:"bk_status"`
-	ResourceConfirm bool   `json:"bk_confirm" bson:"bk_confirm"`
-	AttrConfirm     bool   `json:"bk_attr_confirm" bson:"bk_attr_confirm"`
-	SecretID        string `json:"bk_secret_id" bson:"bk_secret_id"`
-	SecretKey       string `json:"bk_secret_key" bson:"bk_secret_key"`
-	SyncStatus      string `json:"bk_sync_status" bson:"bk_sync_status"`
-	NewAdd          int64  `json:"new_add" bson:"new_add"`
-	AttrChanged     int64  `json:"attr_changed" bson:"attr_changed"`
-	OwnerID         string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
 // TransferHostToInnerModule transfer host to inner module eg:idle module ,fault module
 type TransferHostToInnerModule struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	ModuleID      int64   `json:"bk_module_id"`
 	HostID        []int64 `json:"bk_host_id"`
+}
+
+type DistinctIDResponse struct {
+	BaseResp `json:",inline"`
+	Data     DistinctID `json:"data"`
+}
+
+type DistinctID struct {
+	IDArr []int64 `json:"id_arr"`
 }

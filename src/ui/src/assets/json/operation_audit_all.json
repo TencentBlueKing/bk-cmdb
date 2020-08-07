@@ -1,0 +1,376 @@
+{
+    "business": [
+        {
+            "id": "dynamic_group",
+            "name": "动态分组",
+            "operations": [
+                {
+                    "id": "dynamic_group-create",
+                    "name": "新增动态分组"
+                }, {
+                    "id": "dynamic_group-update",
+                    "name": "修改动态分组"
+                }, {
+                    "id": "dynamic_group-delete",
+                    "name": "删除动态分组"
+                }
+            ]
+        }, {
+            "id": "set_template",
+            "name": "集群模板",
+            "operations": [
+                {
+                    "id": "set_template-create",
+                    "name": "新增集群模板"
+                }, {
+                    "id": "set_template-update",
+                    "name": "修改集群模板"
+                }, {
+                    "id": "set_template-delete",
+                    "name": "删除集群模板"
+                }
+            ]
+        }, {
+            "id": "service_template",
+            "name": "服务模板",
+            "operations": [
+                {
+                    "id": "service_template-create",
+                    "name": "新增服务模板"
+                }, {
+                    "id": "service_template-update",
+                    "name": "修改服务模板"
+                }, {
+                    "id": "service_template-delete",
+                    "name": "删除服务模板"
+                }
+            ]
+        }, {
+            "id": "service_category",
+            "name": "服务分类",
+            "operations": [
+                {
+                    "id": "service_category-create",
+                    "name": "新增服务分类"
+                }, {
+                    "id": "service_category-update",
+                    "name": "修改服务分类"
+                }, {
+                    "id": "service_category-delete",
+                    "name": "删除服务分类"
+                }
+            ]
+        }, {
+            "id": "biz_topology",
+            "name": "业务拓扑",
+            "operations": [
+                {
+                    "id": "module-create-biz_topology",
+                    "name": "新增模块"
+                }, {
+                    "id": "module-update-biz_topology",
+                    "name": "修改模块"
+                }, {
+                    "id": "module-delete-biz_topology",
+                    "name": "删除模块"
+                }, {
+                    "id": "set-create-biz_topology",
+                    "name": "新增集群"
+                }, {
+                    "id": "set-update-biz_topology",
+                    "name": "修改集群"
+                }, {
+                    "id": "set-delete-biz_topology",
+                    "name": "删除集群"
+                }, {
+                    "id": "node-create-biz_topology",
+                    "name": "新增节点"
+                }, {
+                    "id": "node-update-biz_topology",
+                    "name": "修改节点"
+                }, {
+                    "id": "node-delete",
+                    "name": "删除节点"
+                }
+            ]
+        }, {
+            "id": "service_instance",
+            "name": "服务实例",
+            "operations": [
+                {
+                    "id": "service_instance-create-service_instance",
+                    "name": "新增服务实例"
+                }, {
+                    "id": "service_instance-update-service_instance",
+                    "name": "修改服务实例"
+                }, {
+                    "id": "service_instance-delete-service_instance",
+                    "name": "删除服务实例"
+                }, {
+                    "id": "process-create-service_instance",
+                    "name": "新增进程"
+                }, {
+                    "id": "process-update-service_instance",
+                    "name": "修改进程"
+                }, {
+                    "id": "process-delete-service_instance",
+                    "name": "删除进程"
+                }, {
+                    "id": "label-update-service_instance",
+                    "name": "修改标签"
+                }
+            ]
+        }, {
+            "id": "host",
+            "name": "主机",
+            "operations": [
+                {
+                    "id": "host-transfer_host_module",
+                    "name": "修改主机模块"
+                }, {
+                    "id": "host-unassign_host",
+                    "name": "归还主机"
+                }, {
+                    "id": "host-update",
+                    "name": "修改主机属性"
+                }
+            ]
+        }, {
+            "id": "host_apply",
+            "name": "主机自动应用",
+            "operations": [
+                {
+                    "id": "host_apply-create",
+                    "name": "新增主机自动应用策略"
+                }, {
+                    "id": "host_apply-update",
+                    "name": "修改主机自动应用策略"
+                }, {
+                    "id": "host_apply-delete",
+                    "name": "删除主机自动应用策略"
+                }
+            ]
+        }, {
+            "id": "custom_fields",
+            "name": "自定义字段",
+            "operations": [
+                {
+                    "id": "custom_fields-create",
+                    "name": "新增自定义字段"
+                }, {
+                    "id": "custom_fields-update",
+                    "name": "修改自定义字段"
+                }, {
+                    "id": "custom_fields-delete",
+                    "name": "删除自定义字段"
+                }
+            ]
+        }
+    ],
+    "resource": [
+        {
+            "id": "business",
+            "name": "业务",
+            "operations": [
+                {
+                    "id": "business-create",
+                    "name": "新增"
+                }, {
+                    "id": "business-update",
+                    "name": "修改"
+                }, {
+                    "id": "business-archive",
+                    "name": "归档"
+                }, {
+                    "id": "business-recover",
+                    "name": "还原"
+                }
+            ]
+        }, {
+            "id": "host",
+            "name": "主机",
+            "operations": [
+                {
+                    "id": "host-create",
+                    "name": "新增"
+                }, {
+                    "id": "host-update",
+                    "name": "修改"
+                }, {
+                    "id": "host-delete",
+                    "name": "删除"
+                }, {
+                    "id": "host-assign_host",
+                    "name": "分配到业务"
+                }
+            ]
+        }, {
+            "id": "cloud_area",
+            "name": "云区域",
+            "operations": [
+                {
+                    "id": "cloud_area-create",
+                    "name": "新增"
+                }, {
+                    "id": "cloud_area-update",
+                    "name": "修改"
+                }, {
+                    "id": "cloud_area-delete",
+                    "name": "删除"
+                }
+            ]
+        }, {
+            "id": "model_instance",
+            "name": "自定义模型",
+            "operations": [
+                {
+                    "id": "model_instance-create",
+                    "name": "新增实例"
+                }, {
+                    "id": "model_instance-update",
+                    "name": "修改实例"
+                }, {
+                    "id": "model_instance-delete",
+                    "name": "删除实例"
+                }
+            ]
+        }, {
+            "id": "instance_association",
+            "name": "关联关系",
+            "operations": [{
+                    "id": "instance_association-create",
+                    "name": "新增关联"
+                }, {
+                    "id": "instance_association-delete",
+                    "name": "删除关联"
+                }
+            ]
+        }
+    ],
+    "other": [
+        {
+            "id": "model_group",
+            "name": "模型分组",
+            "operations": [
+                {
+                    "id": "model_group-create",
+                    "name": "新增模型分组"
+                }, {
+                    "id": "model_group-update",
+                    "name": "修改模型分组"
+                }, {
+                    "id": "model_group-delete",
+                    "name": "删除模型分组"
+                }
+            ]
+        }, {
+            "id": "model",
+            "name": "模型",
+            "operations": [
+                {
+                    "id": "model-create",
+                    "name": "新增模型"
+                }, {
+                    "id": "model-update",
+                    "name": "修改模型"
+                }, {
+                    "id": "model-delete",
+                    "name": "删除模型"
+                }, {
+                    "id": "model-disabled",
+                    "name": "停用模型"
+                }, {
+                    "id": "model_field-create",
+                    "name": "新增字段"
+                }, {
+                    "id": "model_field-update",
+                    "name": "修改字段"
+                }, {
+                    "id": "model_field-delete",
+                    "name": "删除字段"
+                }, {
+                    "id": "model_unique-update",
+                    "name": "修改唯一校验"
+                }, {
+                    "id": "model_association-create",
+                    "name": "新增关联"
+                }, {
+                    "id": "model_association-update",
+                    "name": "修改关联"
+                }, {
+                    "id": "model_association-delete",
+                    "name": "删除关联"
+                }, {
+                    "id": "model_group-create",
+                    "name": "新增字段分组"
+                }, {
+                    "id": "model_group-update",
+                    "name": "修改字段分组"
+                }, {
+                    "id": "model_group-delete",
+                    "name": "删除字段分组"
+                }
+            ]
+        }, {
+            "id": "event",
+            "name": "事件订阅",
+            "operations": [
+                {
+                    "id": "event-create",
+                    "name": "新增订阅"
+                }, {
+                    "id": "event-update",
+                    "name": "修改订阅"
+                }, {
+                    "id": "event-delete",
+                    "name": "删除订阅"
+                }
+            ]
+        }, {
+            "id": "association_kind",
+            "name": "关联类型",
+            "operations": [
+                {
+                    "id": "association_kind-create",
+                    "name": "新增关联类型"
+                }, {
+                    "id": "association_kind-update",
+                    "name": "修改关联类型"
+                }, {
+                    "id": "association_kind-delete",
+                    "name": "删除关联类型"
+                }
+            ]
+        }, {
+            "id": "cloud_account",
+            "name": "云账户",
+            "operations": [
+                {
+                    "id": "cloud_account-create",
+                    "name": "新增账户"
+                }, {
+                    "id": "cloud_account-update",
+                    "name": "修改账户"
+                }, {
+                    "id": "cloud_account-delete",
+                    "name": "删除账户"
+                }
+            ]
+        }, {
+            "id": "cloud_sync_task",
+            "name": "云资源同步任务",
+            "operations": [
+                {
+                    "id": "cloud_sync_task-create",
+                    "name": "新增任务"
+                }, {
+                    "id": "cloud_sync_task-update",
+                    "name": "修改任务"
+                }, {
+                    "id": "cloud_sync_task-delete",
+                    "name": "删除任务"
+                }
+            ]
+        }
+    ]
+}

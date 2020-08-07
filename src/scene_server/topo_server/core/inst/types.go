@@ -13,13 +13,13 @@
 package inst
 
 import (
+	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // Factory used to all inst
 type Factory interface {
-	CreateInst(params types.ContextParams, obj model.Object) Inst
+	CreateInst(kit *rest.Kit, obj model.Object) Inst
 }
 
 // ObjectWithInsts the object with insts

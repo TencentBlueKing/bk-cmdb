@@ -70,8 +70,8 @@ type topoInstance struct {
 	Default          int64
 }
 
-func newTopoCheckService(mongoURI string, bizID int64) (*topoCheckService, error) {
-	service, err := config.NewMongoService(mongoURI)
+func newTopoCheckService(mongoURI string, mongoRsName string, bizID int64) (*topoCheckService, error) {
+	service, err := config.NewMongoService(mongoURI, mongoRsName)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func newTopoCheckService(mongoURI string, bizID int64) (*topoCheckService, error
 }
 
 func runTopoCheck(c *topoCheckConf) error {
-	srv, err := newTopoCheckService(config.Conf.MongoURI, c.bizID)
+	srv, err := newTopoCheckService(config.Conf.MongoURI, config.Conf.MongoRsName, c.bizID)
 	if err != nil {
 		return err
 	}

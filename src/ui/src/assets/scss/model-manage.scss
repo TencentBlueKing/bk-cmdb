@@ -10,7 +10,6 @@
             position: relative;
             display: block;
             padding-right: 10px;
-            width: 110px;
             line-height: 36px;
             font-size: 14px;
             @include ellipsis;
@@ -21,7 +20,7 @@
             width: 100%;
             vertical-align: middle;
         }
-        textarea {
+        textarea.raw {
             padding: 6px;
             width: 100%;
             height: 84px;

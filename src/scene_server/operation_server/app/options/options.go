@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -29,7 +28,6 @@ type ServerOption struct {
 type Config struct {
 	ConfigMap map[string]string
 	Mongo     mongo.Config
-	Redis     redis.Config
 	Auth      authcenter.AuthConfig
 	Timer     string
 }
@@ -56,5 +54,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60021", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "127.0.0.1:2181", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
+	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }

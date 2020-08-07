@@ -13,171 +13,63 @@
 package distribution
 
 import (
-	"fmt"
-	"runtime/debug"
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
 	ccredis "configcenter/src/storage/dal/redis"
-	daltypes "configcenter/src/storage/types"
-
-	"gopkg.in/redis.v5"
 )
 
 /*
 TxnHandler commit all event at db transaction commits, elsewhere clear cached events if db transaction abort
 */
 
-func (th *TxnHandler) Run() (err error) {
-	th.shouldClose.UnSet()
-	defer func() {
-		th.shouldClose.Set()
-		sysError := recover()
-		if sysError != nil {
-			err = fmt.Errorf("system error: %v", sysError)
-		}
-		if err != nil {
-			blog.Infof("event inst handle process stopped by %v", err)
-			blog.Errorf("%s", debug.Stack())
-		}
-		th.wg.Wait()
-	}()
+func (th *TxnHandler) Run() {
+	blog.Info("txn handle process started")
+	go th.handleCommit()
+	go th.handleAbort()
+}
 
-	blog.Info("transaction handle process started")
-	th.wg.Add(1)
-	go th.fetchTimeout()
-	th.wg.Add(1)
-	go th.watchTransaction()
-outer:
-	for txnID := range th.committed {
-		blog.V(4).Infof("transaction %v committed", txnID)
+// handleCommit to handle the txn which is committed
+func (th *TxnHandler) handleCommit() {
+	for {
+		// eventStrs format is []string{key, event}
+		eventStrs := th.cache.BRPop(time.Second*60, common.EventCacheEventTxnCommitQueueKey).Val()
+		if len(eventStrs) == 0 || eventStrs[1] == nilStr || len(eventStrs[1]) == 0 {
+			continue
+		}
+
+		txnID := eventStrs[1]
 		for {
-			err = th.cache.RPopLPush(common.EventCacheEventTxnQueuePrefix+txnID, common.EventCacheEventQueueKey).Err()
+			err := th.cache.RPopLPush(common.EventCacheEventTxnQueuePrefix+txnID, common.EventCacheEventQueueKey).Err()
 			if ccredis.IsNilErr(err) {
 				break
 			}
 			if err != nil {
-				blog.Warnf("move committed event to event queue failed: %v, we will try again later", err)
-				continue outer
+				blog.Errorf("handleCommit RPopLPush failed, txnID:%s, err: %v", txnID, err)
+				continue
 			}
 		}
-		if err = th.cache.Del(common.EventCacheEventTxnQueuePrefix + txnID).Err(); err != nil {
-			blog.Warnf("remove [%s] transaction queue failed: %v, we will try again later", txnID, err)
-			continue
-		}
-		if err = th.cache.ZRem(common.EventCacheEventTxnSet, txnID).Err(); err != nil {
-			blog.Warnf("remove [%s] from transaction set failed: %v, we will try again later", txnID, err)
-		}
-	}
-	return nil
-}
 
-func (th *TxnHandler) watchTransaction() {
-	defer th.wg.Done()
-	if th.rc == nil {
-		return
-	}
-
-	for !th.shouldClose.IsSet() {
-		stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
-		if err != nil {
-			blog.Errorf("WatchTransaction failed %v", err)
-			return
-		}
-		txn := daltypes.Transaction{}
-		var recvErr error
-		for recvErr = stream.Recv(&txn); recvErr == nil && !th.shouldClose.IsSet(); recvErr = stream.Recv(&txn) {
-			go th.handleTxn(txn)
-		}
-		if recvErr != nil {
-			blog.Errorf("watch stream stopped with error: %v", recvErr)
-		}
-		stream.Close()
+		blog.V(4).Infof("handleCommit success for txnID:%s", txnID)
 	}
 }
 
-func (th *TxnHandler) fetchTimeout() {
-	defer th.wg.Done()
-	ticker := util.NewTicker(time.Second * 60)
-	opt := redis.ZRangeBy{
-		Min: "-inf",
-	}
-	ticker.Tick()
-	for now := range ticker.C {
-		if th.shouldClose.IsSet() {
-			ticker.Stop()
-			break
-		}
-		txnIDs := make([]string, 0)
-		// TODO: 如果保证集群中多个结点的服务器时间一致
-		opt.Max = strconv.FormatInt(now.UTC().Unix(), 10)
-
-		if err := th.cache.ZRangeByScore(common.EventCacheEventTxnSet, opt).ScanSlice(&txnIDs); err != nil {
-			blog.Warnf("fetch timeout txnID from redis failed: %v, we will try again later", err)
+// handleAbort to handle the txn which is aborted
+func (th *TxnHandler) handleAbort() {
+	for {
+		// eventStrs format is []string{key, event}
+		eventStrs := th.cache.BRPop(time.Second*60, common.EventCacheEventTxnAbortQueueKey).Val()
+		if len(eventStrs) == 0 || eventStrs[1] == nilStr || len(eventStrs[1]) == 0 {
 			continue
 		}
-		// Transaction
-		txns := make([]daltypes.Transaction, 0)
-		tranCond := mongo.NewCondition()
-		tranCond.Element(&mongo.In{Key: common.BKTxnIDField, Val: txnIDs})
-		if err := th.db.Table(common.BKTableNameTransaction).Find(tranCond.ToMapStr()).All(th.ctx, &txns); err != nil {
-			blog.Warnf("fetch transaction from mongo failed: %v, we will try again later", err)
+
+		txnID := eventStrs[1]
+		if err := th.cache.Del(common.EventCacheEventTxnQueuePrefix + txnID).Err(); err != nil {
+			blog.Errorf("handleAbort Del failed, txnID:%s, err:%v", txnID, err)
 			continue
 		}
-		blog.V(4).Infof("fetch transaction by score %v, txnIDs %v, txns: %v", opt.Max, txnIDs, txns)
-		if len(txnIDs) != len(txns) {
-			m := map[string]bool{}
-			for index := range txns {
-				m[txns[index].TxnID] = true
-			}
-			for _, txnID := range txnIDs {
-				if !m[txnID] {
-					txns = append(txns, daltypes.Transaction{TxnID: txnID, Status: daltypes.TxStatusException})
-				}
-			}
-		}
-		go th.handleTxn(txns...)
-	}
-}
 
-func (th *TxnHandler) handleTxn(txns ...daltypes.Transaction) {
-	dropped := make([]string, 0)
-	for _, txn := range txns {
-		switch txn.Status {
-		case daltypes.TxStatusOnProgress:
-			continue
-		case daltypes.TxStatusCommitted:
-			th.committed <- txn.TxnID
-		case daltypes.TxStatusAborted, daltypes.TxStatusException:
-			dropped = append(dropped, txn.TxnID)
-		default:
-			blog.Warnf("unknown transaction status %#v", txn.Status)
-		}
-	}
-
-	th.dropTransaction(dropped)
-}
-
-func (th *TxnHandler) dropTransaction(txnIDs []string) {
-	if len(txnIDs) <= 0 {
-		return
-	}
-	blog.V(4).Infof("transaction %v should drop", txnIDs)
-	dropKeys := make([]string, len(txnIDs))
-	dropTxnIDs := make([]interface{}, len(txnIDs))
-	for index, txnID := range txnIDs {
-		dropTxnIDs[index] = txnID
-		dropKeys[index] = common.EventCacheEventTxnQueuePrefix + txnID
-	}
-	if err := th.cache.Del(dropKeys...).Err(); err != nil {
-		blog.Warnf("drop transaction queue [%v] failed: %v, we will try again later", dropKeys, err)
-		return
-	}
-	if err := th.cache.ZRem(common.EventCacheEventTxnSet, dropTxnIDs...).Err(); err != nil {
-		blog.Warnf("drop [%v] from transaction set failed: %v, we will try again later", dropTxnIDs, err)
+		blog.V(4).Infof("handleAbort success for txnID:%s", txnID)
 	}
 }

@@ -85,7 +85,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header htt
 		blog.Errorf("json encode instanceMap:%+v failed, %+v, rid: %s", instanceMap, err, rid)
 		return nil, fmt.Errorf("json encode instanceMap:%+v failed, %+v", instanceMap, err)
 	}
-	blog.V(3).Infof("instanceMap before check is: %s, rid: %s", instanceMapStr, rid)
+	blog.V(5).Infof("instanceMap before check is: %s, rid: %s", instanceMapStr, rid)
 
 	if err := im.CheckAndFillingMissingModels(ctx, header, withDetail); err != nil {
 		blog.Errorf("check and filling missing models failed, business:%d %+v, rid: %s", bkBizID, err, rid)
@@ -97,7 +97,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header htt
 		blog.Errorf("json encode instanceMap failed, %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("json encode instanceMap failed, %+v", err)
 	}
-	blog.V(3).Infof("instanceMap after check: %s, rid: %s", instanceMapStr, rid)
+	blog.V(5).Infof("instanceMap after check: %s, rid: %s", instanceMapStr, rid)
 
 	if err := im.ConstructInstanceTopoTree(ctx, header, withDetail); err != nil {
 		blog.Errorf("get other mainline instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)

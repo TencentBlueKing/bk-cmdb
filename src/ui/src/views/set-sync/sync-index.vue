@@ -207,7 +207,7 @@
                         }
                     })
                     this.$success(this.$t('提交同步成功'))
-                    this.$router.replace({
+                    this.$routerActions.redirect({
                         name: 'setTemplateConfig',
                         params: {
                             templateId: this.setTemplateId,
@@ -236,14 +236,14 @@
             handleGoback () {
                 const moduleId = this.$route.params['moduleId']
                 if (moduleId) {
-                    this.$router.replace({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
                             node: 'set-' + moduleId
                         }
                     })
                 } else {
-                    this.$router.replace({
+                    this.$routerActions.redirect({
                         name: 'setTemplateConfig',
                         params: {
                             templateId: this.setTemplateId,

@@ -16,11 +16,25 @@ import (
 	"context"
 	"strings"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
+
+var needTranslateObjMap = map[string]bool{
+	common.BKInnerObjIDApp:      true,
+	common.BKInnerObjIDSet:      true,
+	common.BKInnerObjIDModule:   true,
+	common.BKInnerObjIDProc:     true,
+	common.BKInnerObjIDHost:     true,
+	common.BKInnerObjIDPlat:     true,
+	common.BKInnerObjIDSwitch:   true,
+	common.BKInnerObjIDRouter:   true,
+	common.BKInnerObjIDBlance:   true,
+	common.BKInnerObjIDFirewall: true,
+}
 
 func (s *coreService) TranslateObjectName(defLang language.DefaultCCLanguageIf, obj *metadata.Object) string {
 	return util.FirstNotEmptyString(defLang.Language("object_"+obj.ObjectID), obj.ObjectName, obj.ObjectID)

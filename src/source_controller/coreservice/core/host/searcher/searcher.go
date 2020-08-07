@@ -49,12 +49,14 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	if option.BizID != 0 {
 		relationFilter[common.BKAppIDField] = option.BizID
 	}
-	if option.ModuleIDs != nil {
+
+	if len(option.ModuleIDs) != 0 {
 		relationFilter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
 		}
 	}
-	if option.SetIDs != nil {
+
+	if len(option.SetIDs) != 0 {
 		relationFilter[common.BKSetIDField] = map[string]interface{}{
 			common.BKDBIN: option.SetIDs,
 		}
@@ -93,7 +95,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		filters = append(filters, propertyFilter)
 	}
 	finalFilter := map[string]interface{}{}
-	util.SetQueryOwner(&finalFilter, util.ExtractOwnerFromContext(ctx))
+	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(ctx))
 	if len(filters) > 0 {
 		finalFilter[common.BKDBAND] = filters
 	}
@@ -108,18 +110,21 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
-	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start)
+	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start).Fields(option.Fields...)
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	} else {
 		query = query.Sort(common.BKHostIDField)
 	}
 
-	hosts := make([]map[string]interface{}, 0)
+	hosts := make([]metadata.HostMapStr, 0)
 	if err := query.All(ctx, &hosts); err != nil {
 		blog.Errorf("ListHosts failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
 		return nil, err
 	}
-	searchResult.Info = hosts
+	searchResult.Info = make([]map[string]interface{}, len(hosts))
+	for index, host := range hosts {
+		searchResult.Info[index] = host
+	}
 	return searchResult, nil
 }

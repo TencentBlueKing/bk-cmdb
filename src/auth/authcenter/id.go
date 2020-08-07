@@ -89,6 +89,10 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return operationStatisticResourceID(resourceType, attribute)
 	case meta.HostApply:
 		return hostApplyResourceID(resourceType, attribute)
+	case meta.EventWatch:
+		return resourceWatch(resourceType, attribute)
+	case meta.ConfigAdmin:
+		return configAdminResourceID(resourceType, attribute)
 	}
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 }
@@ -475,4 +479,14 @@ func hostApplyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAt
 			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 		},
 	}, nil
+}
+
+func resourceWatch(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return make([]RscTypeAndID, 0), nil
+}
+
+func configAdminResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return make([]RscTypeAndID, 0), nil
 }

@@ -2,16 +2,9 @@
     <div class="history-details-wrapper">
         <template v-if="details">
             <div class="history-info">
-                <div :class="['info-group', info.key]" v-for="(info, index) in informations" :key="index">
-                    <label class="info-label">{{info.label}}：</label>
-                    <span class="info-value">
-                        <template v-if="info.key === 'op_time'">
-                            {{$tools.formatTime(details[info.key])}}
-                        </template>
-                        <template v-else>
-                            {{info.hasOwnProperty('optionKey') ? options[info.optionKey][details[info.key]] : details[info.key]}}
-                        </template>
-                    </span>
+                <div :class="['info-group', item.key]" v-for="(item, index) in informations" :key="index">
+                    <label class="info-label">{{item.label}}：</label>
+                    <span class="info-value">{{displayInfo[item.key]}}</span>
                 </div>
             </div>
             <bk-table
@@ -22,8 +15,8 @@
                 :row-border="true"
                 :col-border="true"
                 :cell-style="getCellStyle">
-                <bk-table-column prop="bk_property_name"></bk-table-column>
-                <bk-table-column v-if="details.op_type !== 1"
+                <bk-table-column prop="bk_property_name" :label="$t('属性')"></bk-table-column>
+                <bk-table-column v-if="!['create'].includes(details.action)"
                     prop="pre_data"
                     :label="$t('变更前')"
                     :show-overflow-tooltip="{ allowHTML: true }">
@@ -31,7 +24,7 @@
                         <span v-html="row.pre_data"></span>
                     </template>
                 </bk-table-column>
-                <bk-table-column v-if="details.op_type !== 3"
+                <bk-table-column v-if="!['delete'].includes(details.action)"
                     prop="cur_data"
                     :label="$t('变更后')"
                     :show-overflow-tooltip="{ allowHTML: true }">
@@ -40,7 +33,7 @@
                     </template>
                 </bk-table-column>
             </bk-table>
-            <p class="field-btn" @click="toggleFields" v-if="isShowToggle && details.op_type !== 1 && details.op_type !== 3">
+            <p class="field-btn" @click="toggleFields" v-if="isShowToggle && !['create', 'delete'].includes(details.action)">
                 {{isShowAllFields ? $t('收起') : $t('展开')}}
             </p>
         </template>
@@ -48,66 +41,111 @@
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapState } from 'vuex'
     export default {
         props: {
             details: Object,
             height: Number,
             width: Number,
-            isShow: Boolean
+            isShow: Boolean,
+            showBusiness: {
+                type: Boolean,
+                default: false
+            }
         },
         data () {
             return {
                 isShowAllFields: false,
                 informations: [{
-                    label: this.$t('操作账号'),
-                    key: 'operator'
+                    label: this.$t('动作'),
+                    key: 'action'
                 }, {
-                    label: this.$t('所属业务'),
-                    key: 'bk_biz_id',
-                    optionKey: 'biz'
+                    label: this.$t('功能板块'),
+                    key: 'resourceType'
                 }, {
-                    label: this.$t('IP'),
-                    key: 'ext_key'
+                    label: this.$t('操作实例'),
+                    key: 'instance'
                 }, {
-                    label: this.$t('类型'),
-                    key: 'op_type',
-                    optionKey: 'opType'
-                }, {
-                    label: this.$t('对象'),
-                    key: 'op_target'
+                    label: this.$t('操作描述'),
+                    key: 'desc'
                 }, {
                     label: this.$t('操作时间'),
-                    key: 'op_time'
+                    key: 'time'
                 }, {
-                    label: this.$t('描述'),
-                    key: 'op_desc'
+                    label: this.$t('操作账号'),
+                    key: 'user'
                 }],
-                colWidth: [130, 280, 280]
+                colWidth: [130, 280, 280],
+                hostOperations: ['assign_host', 'unassign_host', 'transfer_host_module']
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['authorizedBusiness']),
-            options () {
-                const biz = {}
-                this.authorizedBusiness.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
-                    biz[bkBizId] = bkBizName
+            ...mapState('operationAudit', ['funcActions']),
+            operationDetail () {
+                return this.details.operation_detail
+            },
+            actionList () {
+                const funcMap = []
+                Object.keys(this.funcActions).forEach(key => {
+                    funcMap.push(...this.funcActions[key])
                 })
-                const opType = {
-                    1: this.$t('新增'),
-                    2: this.$t('修改'),
-                    3: this.$t('删除'),
-                    100: this.$t('关系变更')
+                return funcMap
+            },
+            funcModules () {
+                const modules = {}
+                this.actionList.forEach(item => {
+                    modules[item.id] = this.$t(item.name)
+                })
+                return modules
+            },
+            actionSet () {
+                const actionSet = {}
+                const operations = this.actionList.reduce((acc, item) => acc.concat(item.operations), [])
+                operations.forEach(action => {
+                    actionSet[action.id] = this.$t(action.name)
+                })
+                return actionSet
+            },
+            displayInfo () {
+                const info = {}
+                info.action = this.getResourceAction()
+                info.resourceType = this.getResourceType()
+                info.instance = this.getResourceName()
+                info.desc = `${info.action}"${info.instance}"`
+                info.time = this.$tools.formatTime(this.details.operation_time)
+                info.user = this.details.user
+                if (this.showBusiness) {
+                    info.bizName = this.operationDetail && this.operationDetail.bk_biz_name
                 }
-                return {
-                    biz,
-                    opType
-                }
+                return info
             },
             tableList () {
                 const list = []
-                const attribute = this.details.content.header
-                if (this.details.op_type !== 100) {
+                const type = this.details.resource_type
+                if (type === 'instance_association') {
+                    const keys = Object.keys(this.operationDetail.basic_asst_detail || {})
+                    const attributes = [...keys, 'src_instance_id', 'src_instance_name', 'target_instance_id', 'target_instance_name']
+                    const details = {
+                        ...this.operationDetail,
+                        ...this.operationDetail.basic_asst_detail
+                    }
+                    attributes.forEach(name => {
+                        const data = details[name]
+                        list.push({
+                            'bk_property_name': name,
+                            'pre_data': data,
+                            'cur_data': data
+                        })
+                    })
+                } else if (this.hostOperations.includes(this.details.action)) {
+                    const content = this.operationDetail
+                    list.push({
+                        'bk_property_name': this.$t('关联关系'),
+                        'pre_data': this.getTopoPath(content.pre_data),
+                        'cur_data': this.getTopoPath(content.cur_data)
+                    })
+                } else {
+                    const attribute = this.operationDetail.details.properties
                     attribute.forEach(property => {
                         const preData = this.getCellValue(property, 'pre_data')
                         const curData = this.getCellValue(property, 'cur_data')
@@ -116,25 +154,6 @@
                             'pre_data': preData,
                             'cur_data': curData
                         })
-                    })
-                } else {
-                    const content = this.details.content
-                    const preModule = content['pre_data']['module'] || []
-                    const curModule = content['cur_data']['module'] || []
-                    const pre = []
-                    const cur = []
-                    preModule.forEach(module => {
-                        pre.push(this.getTopoPath(module, content.pre_data))
-                    })
-                    curModule.forEach(module => {
-                        cur.push(this.getTopoPath(module, content.cur_data))
-                    })
-                    const preData = pre.join('<br>')
-                    const curData = cur.join('<br>')
-                    list.push({
-                        'bk_property_name': this.$t('关联关系'),
-                        'pre_data': preData,
-                        'cur_data': curData
                     })
                 }
                 return list
@@ -150,14 +169,50 @@
             }
         },
         mounted () {
-            this.isShowAllFields = this.details.op_type === 1 || this.details.op_type === 3
+            this.isShowAllFields = ['create', 'delete'].includes(this.details.action)
+            if (this.showBusiness) {
+                this.informations.push({
+                    label: this.$t('所属业务'),
+                    key: 'bizName'
+                })
+            }
         },
         methods: {
+            getResourceType () {
+                if (this.details.label === null) {
+                    const type = this.details.resource_type
+                    if (type === 'model_instance') {
+                        const model = this.$store.getters['objectModelClassify/getModelById'](this.operationDetail.bk_obj_id) || {}
+                        return model.bk_obj_name || '--'
+                    }
+                    return this.funcModules[type] || '--'
+                }
+                const key = Object.keys(this.details.label)
+                return this.funcModules[key[0]] || '--'
+            },
+            getResourceName () {
+                const data = this.operationDetail
+                if (this.hostOperations.includes(this.details.action)) {
+                    return data.bk_host_innerip || '--'
+                }
+                if (['instance_association'].includes(this.details.resource_type)) {
+                    return data.target_instance_name || '--'
+                }
+                return data.resource_name || '--'
+            },
+            getResourceAction () {
+                const data = this.details
+                if (data.label) {
+                    const label = Object.keys(data.label)[0]
+                    return this.actionSet[`${data.resource_type}-${data.action}-${label}`]
+                }
+                return this.actionSet[`${data.resource_type}-${data.action}`]
+            },
             toggleFields () {
                 this.isShowAllFields = !this.isShowAllFields
             },
             getCellValue (property, type) {
-                const data = this.details.content[type]
+                const data = this.operationDetail.details[type]
                 let value
                 if (data) {
                     value = data[property.bk_property_id]
@@ -165,7 +220,8 @@
                 return [undefined, null, ''].includes(value) ? '--' : value
             },
             hasChanged (item) {
-                if ([2, 100].includes(this.details['op_type'])) {
+                const action = ['update', 'archive', 'recover'].concat(this.hostOperations)
+                if (action.includes(this.details['action'])) {
                     return item['pre_data'] !== item['cur_data']
                 }
                 return false
@@ -178,17 +234,15 @@
                 }
                 return {}
             },
-            getTopoPath (module, data) {
-                const bizName = data.bk_biz_name || this.options.biz[data.bk_biz_id] || `业务ID：${data.bk_biz_id}`
-                const path = [bizName]
-                const set = ((module.set || [])[0] || {}).ref_name
-                if (set) {
-                    path.push(set)
-                }
-                if (module.ref_name) {
-                    path.push(module.ref_name)
-                }
-                return path.join('→')
+            getTopoPath (data) {
+                const paths = []
+                data.set.forEach(set => {
+                    const path = [data.bk_biz_name, set.bk_set_name]
+                    set.module.forEach(module => {
+                        paths.push([...path, module.bk_module_name].join('→'))
+                    })
+                })
+                return paths.join('<br>')
             }
         }
     }

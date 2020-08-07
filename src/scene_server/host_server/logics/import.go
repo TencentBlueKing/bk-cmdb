@@ -17,9 +17,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -67,8 +68,8 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	}
 
 	var errMsg, updateErrMsg, successMsg []string
-	logContents := make([]metadata.SaveAuditLogParams, 0)
-	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
+	logContents := make([]metadata.AuditLog, 0)
+	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, metadata.BizLabelNotExist)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -113,10 +114,11 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			existInDB = true
 		} else {
 			// try to get hostID from db
-			key := generateHostCloudKey(innerIP, iSubArea)
+			key := generateHostCloudKey(innerIP, iSubAreaVal)
 			intHostID, existInDB = hostIDMap[key]
 		}
 		var preData mapstr.MapStr
+		var action metadata.ActionType
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
 		if existInDB {
@@ -124,13 +126,14 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			delete(host, common.BKHostInnerIPField)
 
 			// get host info before really change it
-			preData, _, _ = lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
+			preData, _, _ = lgc.GetHostInstanceDetails(ctx, intHostID)
 
 			// update host instance.
 			if err := instance.updateHostInstance(index, host, intHostID); err != nil {
 				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
+			action = metadata.AuditUpdate
 		} else {
 			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
@@ -138,30 +141,45 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 				continue
 			}
 			host[common.BKHostIDField] = intHostID
-			hostIDMap[generateHostCloudKey(innerIP, iSubArea)] = intHostID
+			hostIDMap[generateHostCloudKey(innerIP, iSubAreaVal)] = intHostID
+			action = metadata.AuditCreate
 		}
 		// add current host operate result to  batch add result
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
 		// host info after it changed
-		curData, _, err := lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
+		curData, _, err := lgc.GetHostInstanceDetails(ctx, intHostID)
 		if err != nil {
 			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 
+		bizName := ""
+		if appID > 0 {
+			bizName, err = auditlog.NewAudit(lgc.CoreAPI, lgc.header).GetInstNameByID(ctx, common.BKInnerObjIDApp, appID)
+			if err != nil {
+				return nil, nil, nil, nil, err
+			}
+		}
+
 		// add audit log
-		logContents = append(logContents, metadata.SaveAuditLogParams{
-			ID: intHostID,
-			Content: metadata.Content{
-				PreData: preData,
-				CurData: curData,
-				Headers: auditHeaders,
+		logContents = append(logContents, metadata.AuditLog{
+			AuditType:    metadata.HostType,
+			ResourceType: metadata.HostRes,
+			Action:       action,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
+					BusinessID:   appID,
+					BusinessName: bizName,
+					ResourceID:   intHostID,
+					ResourceName: innerIP,
+					Details: &metadata.BasicContent{
+						PreData:    preData,
+						CurData:    curData,
+						Properties: auditHeaders,
+					},
+				},
+				ModelID: common.BKInnerObjIDHost,
 			},
-			ExtKey: innerIP,
-			OpType: auditoplog.AuditOpTypeAdd,
-			BizID:  appID,
-			OpDesc: "import host",
-			Model:  common.BKInnerObjIDHost,
 		})
 		hostIDs = append(hostIDs, intHostID)
 	}
@@ -342,14 +360,24 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	}
 
 	// step2. query host info by innerIPs
+	ipCond := make([]map[string]interface{}, len(ipArr))
+	for index, innerIP := range ipArr {
+		innerIPArr := strings.Split(innerIP, ",")
+		ipCond[index] = map[string]interface{}{
+			common.BKHostInnerIPField: map[string]interface{}{
+				common.BKDBAll:  innerIPArr,
+				common.BKDBSize: len(innerIPArr),
+			},
+		}
+	}
 	filter := map[string]interface{}{
-		common.BKHostInnerIPField: common.KvMap{common.BKDBIN: ipArr},
+		common.BKDBOR: ipCond,
 	}
 	query := &metadata.QueryCondition{
 		Condition: filter,
-		Limit: metadata.SearchLimit{
-			Offset: 0,
-			Limit:  common.BKNoLimit,
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: common.BKNoLimit,
 		},
 	}
 	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.pheader, common.BKInnerObjIDHost, query)

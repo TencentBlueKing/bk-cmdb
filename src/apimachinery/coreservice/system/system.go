@@ -23,6 +23,8 @@ import (
 
 type SystemClientInterface interface {
 	GetUserConfig(ctx context.Context, h http.Header) (*metadata.ResponseSysUserConfigData, errors.CCErrorCoder)
+
+	SearchConfigAdmin(ctx context.Context, h http.Header) (*metadata.ConfigAdminResult, error)
 }
 
 func NewSystemClientInterface(client rest.ClientInterface) SystemClientInterface {

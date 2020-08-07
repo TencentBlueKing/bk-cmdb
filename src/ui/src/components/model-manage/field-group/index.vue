@@ -1,7 +1,11 @@
 <template>
     <div class="group-layout" v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }">
         <div class="layout-header">
-            <bk-button @click="previewShow = true" :disabled="!preview.properties.length">{{$t('字段预览')}}</bk-button>
+            <bk-button @click="previewShow = true" :disabled="!properties.length">{{$t('字段预览')}}</bk-button>
+            <bk-button text class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
+                <i class="icon-cc-setting"></i>
+                {{$t('表格排序设置')}}
+            </bk-button>
         </div>
         <div class="layout-content">
             <div class="group"
@@ -9,9 +13,9 @@
                 :key="index">
                 <cmdb-collapse
                     :collapse.sync="groupState[group.info['bk_group_id']]">
-                    <div class="group-header clearfix" slot="title">
-                        <div class="header-title fl">
-                            <div class="group-name">
+                    <div class="group-header" slot="title">
+                        <div class="header-title">
+                            <div class="group-name" :title="group.info.bk_group_name">
                                 {{group.info['bk_group_name']}}
                                 <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
                             </div>
@@ -178,7 +182,7 @@
                         <bk-input v-model.trim="groupForm.groupName"
                             :placeholder="$t('请输入xx', { name: $t('分组名称') })"
                             name="groupName"
-                            v-validate="'required'">
+                            v-validate="'required|length:128'">
                         </bk-input>
                         <p class="form-error">{{errors.first('groupName')}}</p>
                     </div>
@@ -191,8 +195,18 @@
                 </div>
             </div>
             <div class="group-dialog-footer" slot="footer">
-                <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('提交')}}</bk-button>
-                <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('保存')}}</bk-button>
+                <bk-button theme="primary"
+                    v-if="groupDialog.type === 'create'"
+                    :disabled="errors.has('groupName')"
+                    @click="handleCreateGroup">
+                    {{$t('提交')}}
+                </bk-button>
+                <bk-button theme="primary"
+                    v-else
+                    :disabled="errors.has('groupName')"
+                    @click="handleUpdateGroup">
+                    {{$t('保存')}}
+                </bk-button>
                 <bk-button @click="groupDialog.isShow = false">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
@@ -223,6 +237,7 @@
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 :group="slider.curGroup"
+                :custom-obj-id="customObjId"
                 @save="handleFieldSave"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
@@ -235,9 +250,26 @@
             :is-show.sync="previewShow">
             <preview-field v-if="previewShow"
                 slot="content"
-                :properties="preview.properties"
-                :property-groups="preview.groups">
+                :properties="properties"
+                :property-groups="groups">
             </preview-field>
+        </bk-sideslider>
+
+        <bk-sideslider
+            v-transfer-dom
+            :is-show.sync="configProperty.show"
+            :width="676"
+            :title="$t('实例表格字段排序设置')">
+            <cmdb-columns-config slot="content"
+                v-if="configProperty.show"
+                :properties="properties"
+                :selected="configProperty.selected"
+                :disabled-columns="disabledConfig"
+                :show-reset="false"
+                :confirm-text="$t('确定')"
+                @on-cancel="configProperty.show = false"
+                @on-apply="handleApplyConfig">
+            </cmdb-columns-config>
         </bk-sideslider>
     </div>
 </template>
@@ -247,13 +279,15 @@
     import theFieldDetail from './field-detail'
     import previewField from './preview-field'
     import fieldDetailsView from './field-view'
-    import { mapGetters, mapActions } from 'vuex'
+    import CmdbColumnsConfig from '@/components/columns-config/columns-config'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     export default {
         components: {
             vueDraggable,
             theFieldDetail,
             previewField,
-            fieldDetailsView
+            fieldDetailsView,
+            CmdbColumnsConfig
         },
         props: {
             customObjId: String
@@ -261,6 +295,8 @@
         data () {
             return {
                 updateAuth: false,
+                properties: [],
+                groups: [],
                 groupedProperties: [],
                 previewShow: false,
                 groupState: {},
@@ -276,7 +312,8 @@
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
                     'bool': 'bool',
-                    'list': this.$t('列表')
+                    'list': this.$t('列表'),
+                    'organization': this.$t('组织')
                 },
                 dialog: {
                     isShow: false,
@@ -309,13 +346,14 @@
                     fieldIndex: null,
                     backView: ''
                 },
-                preview: {
-                    properties: [],
-                    groups: []
+                configProperty: {
+                    show: false,
+                    selected: []
                 }
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', ['isInjectable', 'activeModel']),
             objId () {
@@ -358,12 +396,25 @@
                     resource_id: this.modelId,
                     type: this.$OPERATION.U_MODEL
                 })
+            },
+            disabledConfig () {
+                const disabled = {
+                    host: ['bk_host_innerip', 'bk_cloud_id'],
+                    biz: ['bk_biz_name']
+                }
+                return disabled[this.objId] || ['bk_inst_name']
+            },
+            curGlobalCustomTableColumns () {
+                return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
+            },
+            canEditSort () {
+                return !this.customObjId && this.curModel['bk_classification_id'] !== 'bk_biz_topo'
             }
         },
         async created () {
             const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
-            this.preview.properties = properties
-            this.preview.groups = groups
+            this.properties = properties
+            this.groups = groups
             this.init(properties, groups)
         },
         methods: {
@@ -384,8 +435,8 @@
                 }
                 return false
             },
-            isFieldEditable (item) {
-                if (item.ispre || this.isReadOnly) {
+            isFieldEditable (item, checkIspre = true) {
+                if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -438,8 +489,8 @@
                         this.handleSliderHidden()
                     }
                 }
-                this.preview.properties = properties
-                this.preview.groups = groups
+                this.properties = properties
+                this.groups = groups
                 this.init(properties, groups)
             },
             init (properties, groups) {
@@ -459,6 +510,8 @@
                         })
                     }
                 })
+                const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
+                this.configProperty.selected = this.curGlobalCustomTableColumns || seletedProperties.map(property => property.bk_property_id)
                 this.initGroupState = this.$tools.clone(groupState)
                 this.groupState = Object.assign({}, groupState, this.groupState)
                 this.groupedProperties = groupedProperties
@@ -589,6 +642,10 @@
                 this.groupForm.groupName = group.info['bk_group_name']
             },
             async handleUpdateGroup () {
+                const valid = await this.$validator.validate('groupName')
+                if (!valid) {
+                    return
+                }
                 const curGroup = this.groupDialog.group
                 const isExist = this.groupedProperties.some(originalGroup => originalGroup !== curGroup && originalGroup.info['bk_group_name'] === this.groupForm.groupName)
                 if (isExist) {
@@ -629,12 +686,14 @@
                 this.groupDialog.isShow = false
             },
             async handleCreateGroup () {
+                const valid = await this.$validator.validate('groupName')
+                if (!valid) {
+                    return
+                }
                 const groupedProperties = this.groupedProperties
                 const isExist = groupedProperties.some(group => group.info['bk_group_name'] === this.groupForm.groupName)
                 if (isExist) {
                     this.$error(this.$t('该名字已经存在'))
-                    return
-                } else if (!await this.$validator.validateAll()) {
                     return
                 }
                 const groupId = Date.now().toString()
@@ -742,7 +801,7 @@
                     }
                 })
                 const properties = await this.getProperties()
-                this.init(properties, this.preview.groups)
+                this.init(properties, this.groups)
             },
             handleAddField (group) {
                 this.slider.isEditField = false
@@ -842,6 +901,18 @@
             },
             handleReceiveAuth (auth) {
                 this.updateAuth = auth
+            },
+            handleApplyConfig (properties) {
+                const setProperties = properties.map(property => property.bk_property_id)
+                this.$store.dispatch('userCustom/saveGlobalUsercustom', {
+                    objId: this.objId,
+                    params: {
+                        global_custom_table_columns: setProperties
+                    }
+                }).then(() => {
+                    this.configProperty.selected = setProperties
+                    this.configProperty.show = false
+                })
             }
         }
     }
@@ -856,6 +927,17 @@
     }
     .layout-header {
         margin: 0 0 14px;
+        .setting-btn {
+            float: right;
+            height: 32px;
+            line-height: 32px;
+            color: #63656e;
+            .icon-cc-setting {
+                font-size: 18px;
+                color: #979ba5;
+                vertical-align: unset;
+            }
+        }
     }
     .group {
         margin-bottom: 19px;
@@ -873,6 +955,8 @@
     }
     .group-header {
         .header-title {
+            display: flex;
+            align-items: center;
             height: 21px;
             padding: 0 21px 0 0;
             line-height: 21px;
@@ -895,10 +979,11 @@
                 color: $modelHighlightColor;
             }
             .group-name {
+                flex: none;
+                max-width: 500px;
                 font-size: 16px;
                 font-weight: normal;
-                display: inline-block;
-                vertical-align: middle;
+                @include ellipsis;
                 span {
                     @include inlineBlock;
                     font-size: 12px;
@@ -912,7 +997,7 @@
                 color: #c3cdd7;
             }
             .title-icon-btn {
-                @include inlineBlock;
+                flex: none;
             }
             .icon-btn {
                 @include inlineBlock;

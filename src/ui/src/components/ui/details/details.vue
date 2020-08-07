@@ -18,12 +18,18 @@
                                 <slot :name="property['bk_property_id']">
                                     <span class="property-value clearfix fl"
                                         v-if="property.unit"
-                                        :title="`${getValue(property)} ${property.unit}`">
+                                        v-bk-overflow-tips>
                                         <span class="property-value-text fl">{{getValue(property)}}</span>
                                         <span class="property-value-unit fl" v-if="getValue(property) !== '--'">{{property.unit}}</span>
                                     </span>
-                                    <span class="property-value fl" v-else-if="property.bk_property_type === 'objuser'" v-user.title="getValue(property)"></span>
-                                    <span class="property-value fl" v-else :title="getValue(property)">{{getValue(property)}}</span>
+                                    <cmdb-property-value
+                                        v-else
+                                        v-bk-overflow-tips
+                                        :show-title="false"
+                                        :class="'property-value fl'"
+                                        :value="inst[property.bk_property_id]"
+                                        :property="property">
+                                    </cmdb-property-value>
                                 </slot>
                             </li>
                         </ul>
@@ -92,11 +98,11 @@
                 default: true
             },
             editAuth: {
-                type: [String, Array],
+                type: [String, Array, Object],
                 default: ''
             },
             deleteAuth: {
-                type: [String, Array],
+                type: [String, Array, Object],
                 default: ''
             }
         },
@@ -125,6 +131,7 @@
             authResources (auth) {
                 if (!auth) return {}
                 if (Array.isArray(auth) && !auth.length) return {}
+                if (typeof auth === 'object') return auth
                 return this.$authResources({ type: auth })
             },
             checkScrollbar () {

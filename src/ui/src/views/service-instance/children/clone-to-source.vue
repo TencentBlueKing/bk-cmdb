@@ -8,32 +8,34 @@
                 {{$t('批量编辑')}}
             </bk-button>
         </div>
-        <bk-table class="source-table"
-            :data="cloneProcesses"
-            @selection-change="handleSelectChange">
-            <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
-            <bk-table-column v-for="column in header"
-                :key="column.id"
-                :prop="column.id"
-                :label="column.name"
-                show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
-            </bk-table-column>
-            <bk-table-column :label="$t('操作')" fixed="right">
-                <template slot-scope="{ row }">
-                    <button class="text-primary mr10" v-if="isRepeat(row)"
-                        @click="handleEditProcess(row)">
-                        <i class="bk-icon icon-exclamation-circle"></i>
-                        {{$t('请编辑')}}
-                    </button>
-                    <button class="text-primary mr10" v-else
-                        @click="handleEditProcess(row)">
-                        {{$t('编辑')}}
-                    </button>
-                </template>
-            </bk-table-column>
-        </bk-table>
-        <div class="page-options">
+        <div class="source-table" ref="sourceTables">
+            <bk-table
+                :data="cloneProcesses"
+                @selection-change="handleSelectChange">
+                <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
+                <bk-table-column v-for="column in header"
+                    :key="column.id"
+                    :prop="column.id"
+                    :label="column.name"
+                    show-overflow-tooltip>
+                    <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+                </bk-table-column>
+                <bk-table-column :label="$t('操作')" fixed="right">
+                    <template slot-scope="{ row }">
+                        <button class="text-primary mr10" v-if="isRepeat(row)"
+                            @click="handleEditProcess(row)">
+                            <i class="bk-icon icon-exclamation-circle"></i>
+                            {{$t('请编辑')}}
+                        </button>
+                        <button class="text-primary mr10" v-else
+                            @click="handleEditProcess(row)">
+                            {{$t('编辑')}}
+                        </button>
+                    </template>
+                </bk-table-column>
+            </bk-table>
+        </div>
+        <div class="page-options" :class="{ 'is-sticky': hasScrollbar }">
             <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
                 <bk-button slot-scope="{ disabled }"
                     class="options-button"
@@ -76,7 +78,8 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import { processTableHeader } from '@/dictionary/table-header'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         name: 'clone-to-source',
         props: {
@@ -101,23 +104,13 @@
                     instance: {}
                 },
                 processBindIp: [],
-                bindIp: ''
+                bindIp: '',
+                hasScrollbar: false
             }
         },
         computed: {
             header () {
-                const display = [
-                    'bk_func_name',
-                    'bk_process_name',
-                    'bk_start_param_regex',
-                    'bind_ip',
-                    'port',
-                    'bk_port_enable',
-                    'protocol',
-                    'work_path',
-                    'user'
-                ]
-                const header = display.map(id => {
+                const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
@@ -170,6 +163,12 @@
             bindIp (value) {
                 this.$refs.processForm.values.bind_ip = value
             }
+        },
+        mounted () {
+            addResizeListener(this.$refs.sourceTables, this.resizeHandler)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.sourceTables, this.resizeHandler)
         },
         async created () {
             try {
@@ -354,12 +353,12 @@
                 })
             },
             backToModule () {
-                this.$router.replace({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: {
-                        node: 'module-' + this.$route.params.moduleId,
-                        tab: 'serviceInstance'
-                    }
+                this.$routerActions.back()
+            },
+            resizeHandler () {
+                this.$nextTick(() => {
+                    const scroller = this.$el.parentElement
+                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
                 })
             }
         }
@@ -377,12 +376,23 @@
     }
     .table-options {
         margin: 10px 0 0 0;
+        padding: 0 20px;
     }
     .page-options {
         margin: 30px 0 0 0;
+        padding: 10px 0 10px 20px;
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        &.is-sticky {
+            background-color: #FFF;
+            border-top: 1px solid $borderColor;
+            z-index: 100;
+        }
     }
     .source-table {
         margin: 10px 0 0 0;
+        padding: 0 20px;
     }
     .text-primary {
         .icon-exclamation-circle {

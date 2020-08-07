@@ -36,6 +36,7 @@ var (
 	createSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/?$`)
 	updateSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
 	deleteSubscribeRegexp = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
+	watchResourceRegexp   = regexp.MustCompile(`^/api/v3/event/watch/resource/\S+/?$`)
 )
 
 const (
@@ -132,6 +133,25 @@ func (ps *parseStream) subscribe() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.EventPushing,
 					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// watch resource.
+	if ps.hitRegexp(watchResourceRegexp, http.MethodPost) {
+		resource := ps.RequestCtx.Elements[5]
+		if len(resource) == 0 {
+			ps.err = fmt.Errorf("watch event resource, but got empty resource: %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.EventWatch,
+					Action: meta.Action(resource),
 				},
 			},
 		}

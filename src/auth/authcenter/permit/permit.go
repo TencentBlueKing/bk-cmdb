@@ -105,7 +105,7 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 	case rsc.Type == meta.ModelInstance && IsReadAction(rsc.Action):
 		return true
 	case rsc.Type == meta.SystemConfig:
-    return true
+		return true
 	case rsc.Type == meta.Plat && IsReadAction(rsc.Action):
 		return true
 	default:

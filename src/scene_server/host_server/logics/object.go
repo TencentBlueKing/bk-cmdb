@@ -249,7 +249,7 @@ func (lgc *Logics) GetObjectInstByCond(ctx context.Context, objID string, cond [
 
 	query := &meta.QueryCondition{
 		Condition: mapstr.NewFromMap(condc),
-		SortArr:   meta.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+		Page:      meta.BasePage{Sort: common.BKAppIDField},
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, objType, query)
 	if err != nil {

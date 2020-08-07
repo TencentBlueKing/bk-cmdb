@@ -46,3 +46,17 @@ func (s *system) GetUserConfig(ctx context.Context, h http.Header) (*metadata.Re
 
 	return &resp.Data, nil
 }
+
+func (s *system) SearchConfigAdmin(ctx context.Context, h http.Header) (resp *metadata.ConfigAdminResult, err error) {
+	resp = new(metadata.ConfigAdminResult)
+	subPath := "/find/system/config_admin"
+
+	err = s.client.Get().
+		WithContext(ctx).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}

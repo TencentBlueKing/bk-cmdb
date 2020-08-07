@@ -49,14 +49,21 @@ func (s *Service) CreateHostApplyRule(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	rule, err := s.CoreAPI.CoreService().HostApplyRule().CreateHostApplyRule(srvData.ctx, srvData.header, bizID, option)
-	if err != nil {
-		blog.ErrorJSON("CreateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
-		result := &metadata.RespError{Msg: err}
-		_ = resp.WriteError(http.StatusBadRequest, result)
+	var rule metadata.HostApplyRule
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		var err error
+		rule, err = s.CoreAPI.CoreService().HostApplyRule().CreateHostApplyRule(srvData.ctx, srvData.header, bizID, option)
+		if err != nil {
+			blog.ErrorJSON("CreateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
-
 	_ = resp.WriteEntity(metadata.NewSuccessResp(rule))
 }
 
@@ -90,14 +97,21 @@ func (s *Service) UpdateHostApplyRule(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	rule, err := s.CoreAPI.CoreService().HostApplyRule().UpdateHostApplyRule(srvData.ctx, srvData.header, bizID, ruleID, option)
-	if err != nil {
-		blog.ErrorJSON("UpdateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
-		result := &metadata.RespError{Msg: err}
-		_ = resp.WriteError(http.StatusBadRequest, result)
+	var rule metadata.HostApplyRule
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		var err error
+		rule, err = s.CoreAPI.CoreService().HostApplyRule().UpdateHostApplyRule(srvData.ctx, srvData.header, bizID, ruleID, option)
+		if err != nil {
+			blog.ErrorJSON("UpdateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
-
 	_ = resp.WriteEntity(metadata.NewSuccessResp(rule))
 }
 
@@ -129,13 +143,18 @@ func (s *Service) DeleteHostApplyRule(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	if err := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(srvData.ctx, srvData.header, bizID, option); err != nil {
-		blog.ErrorJSON("DeleteHostApplyRule failed, core service DeleteHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
-		result := &metadata.RespError{Msg: err}
-		_ = resp.WriteError(http.StatusBadRequest, result)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		if err := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(srvData.ctx, srvData.header, bizID, option); err != nil {
+			blog.ErrorJSON("DeleteHostApplyRule failed, core service DeleteHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
-
 	_ = resp.WriteEntity(metadata.NewSuccessResp(make(map[string]interface{})))
 }
 
@@ -232,11 +251,19 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(req *restful.Request, resp *r
 		return
 	}
 
-	batchResult, err := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(srvData.ctx, srvData.header, bizID, option)
-	if err != nil {
-		blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, coreservice BatchUpdateHostApplyRule failed, option: %s, result: %s, err: %s, rid:%s", option, batchResult, err, rid)
-		result := &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)}
-		_ = resp.WriteError(http.StatusBadRequest, result)
+	var batchResult metadata.BatchCreateOrUpdateHostApplyRuleResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		var err error
+		batchResult, err = s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(srvData.ctx, srvData.header, bizID, option)
+		if err != nil {
+			blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, coreservice BatchUpdateHostApplyRule failed, option: %s, result: %s, err: %s, rid:%s", option, batchResult, err, rid)
+			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
 
@@ -329,33 +356,12 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+	if planRequest.HostIDs != nil {
+		relationRequest.HostIDArr = planRequest.HostIDs
 	}
 	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationRequest)
-	if err != nil {
-		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
-		return planResult, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if hostRelations.Code != 0 {
-		blog.ErrorJSON("generateApplyPlan failed, response failed, filter: %s, response: %s, err: %s, rid: %s", relationRequest, hostRelations, err, rid)
-		return planResult, errors.New(hostRelations.Code, hostRelations.ErrMsg)
-	}
-	hostIDs := make([]int64, 0)
-	for _, item := range hostRelations.Data.Info {
-		if planRequest.HostIDs != nil {
-			if util.InArray(item.HostID, planRequest.HostIDs) == false {
-				continue
-			}
-		}
-		hostIDs = append(hostIDs, item.HostID)
-	}
-	relationRequest = &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		HostIDArr:     hostIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	hostRelations, err = s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationRequest)
 	if err != nil {
 		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
 		return planResult, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -367,9 +373,6 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 	hostModuleMap := make(map[int64][]int64)
 	moduleIDs := make([]int64, 0)
 	for _, item := range hostRelations.Data.Info {
-		if util.InArray(item.HostID, hostIDs) == false {
-			continue
-		}
 		if _, exist := hostModuleMap[item.HostID]; exist == false {
 			hostModuleMap[item.HostID] = make([]int64, 0)
 		}
@@ -482,114 +485,109 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	// enable host apply on module
-	moduleUpdateOption := &metadata.UpdateOption{
-		Condition: map[string]interface{}{
-			common.BKModuleIDField: map[string]interface{}{
-				common.BKDBIN: planRequest.ModuleIDs,
-			},
-		},
-		Data: map[string]interface{}{
-			common.HostApplyEnabledField: true,
-		},
-	}
-	updateModuleResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, moduleUpdateOption)
-	if err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module http failed, option: %s, err: %v, rid:%s", moduleUpdateOption, err, rid)
-		result := &metadata.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)}
-		_ = resp.WriteError(http.StatusBadRequest, result)
-		return
-	}
-	if ccErr := updateModuleResult.CCError(); ccErr != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module failed, option: %s, result: %s, rid:%s", moduleUpdateOption, updateModuleResult, rid)
-		result := &metadata.RespError{Msg: ccErr}
-		_ = resp.WriteError(http.StatusBadRequest, result)
-		return
-	}
-
-	// save rules to database
-	rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
-	for _, rule := range planResult.Rules {
-		rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
-			AttributeID:   rule.AttributeID,
-			ModuleID:      rule.ModuleID,
-			PropertyValue: rule.PropertyValue,
-		})
-	}
-	saveRuleOption := metadata.BatchCreateOrUpdateApplyRuleOption{
-		Rules: rulesOption,
-	}
-	if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(srvData.ctx, srvData.header, bizID, saveRuleOption); ccErr != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, BatchUpdateHostApplyRule failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, saveRuleOption, ccErr, rid)
-		result := &metadata.RespError{Msg: ccErr}
-		_ = resp.WriteError(http.StatusBadRequest, result)
-		return
-	}
-
-	// delete rules
-	if len(planRequest.RemoveRuleIDs) > 0 {
-		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
-			RuleIDs: planRequest.RemoveRuleIDs,
-		}
-		if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(srvData.ctx, srvData.header, bizID, deleteRuleOption); ccErr != nil {
-			blog.ErrorJSON("GenerateApplyPlan failed, DeleteHostApplyRule failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, deleteRuleOption, ccErr, rid)
-			result := &metadata.RespError{Msg: ccErr}
-			_ = resp.WriteError(http.StatusBadRequest, result)
-			return
-		}
-	}
-
 	hostApplyResults := make([]metadata.HostApplyResult, 0)
-	for _, plan := range planResult.Plans {
-		hostApplyResult := metadata.HostApplyResult{
-			HostID: plan.HostID,
-		}
-		if len(plan.UpdateFields) == 0 {
-			continue
-		}
-		updateOption := &metadata.UpdateOption{
-			Data: plan.GetUpdateData(),
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		// enable host apply on module
+		moduleUpdateOption := &metadata.UpdateOption{
 			Condition: map[string]interface{}{
-				common.BKHostIDField: plan.HostID,
+				common.BKModuleIDField: map[string]interface{}{
+					common.BKDBIN: planRequest.ModuleIDs,
+				},
+			},
+			Data: map[string]interface{}{
+				common.HostApplyEnabledField: true,
 			},
 		}
-		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
+		updateModuleResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, moduleUpdateOption)
 		if err != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
-			ccErr := srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-			hostApplyResult.SetError(ccErr)
-			hostApplyResults = append(hostApplyResults, hostApplyResult)
-			continue
+			blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module http failed, option: %s, err: %v, rid:%s", moduleUpdateOption, err, rid)
+			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if ccErr := updateResult.CCError(); ccErr != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-			hostApplyResult.SetError(ccErr)
-			hostApplyResults = append(hostApplyResults, hostApplyResult)
-			continue
+		if ccErr := updateModuleResult.CCError(); ccErr != nil {
+			blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module failed, option: %s, result: %s, rid:%s", moduleUpdateOption, updateModuleResult, rid)
+			return ccErr
 		}
-		hostApplyResults = append(hostApplyResults, hostApplyResult)
-	}
 
-	var ccErr errors.CCErrorCoder
-	for _, item := range hostApplyResults {
-		if err := item.GetError(); err != nil {
-			ccErr = err
-			break
+		// save rules to database
+		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
+		for _, rule := range planResult.Rules {
+			rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
+				AttributeID:   rule.AttributeID,
+				ModuleID:      rule.ModuleID,
+				PropertyValue: rule.PropertyValue,
+			})
 		}
-	}
-	if ccErr != nil {
-		result := &metadata.RespError{Msg: ccErr}
-		result.Data = hostApplyResults
-		_ = resp.WriteError(http.StatusBadRequest, result)
+		saveRuleOption := metadata.BatchCreateOrUpdateApplyRuleOption{
+			Rules: rulesOption,
+		}
+		if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(srvData.ctx, srvData.header, bizID, saveRuleOption); ccErr != nil {
+			blog.ErrorJSON("GenerateApplyPlan failed, BatchUpdateHostApplyRule failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, saveRuleOption, ccErr, rid)
+			return ccErr
+		}
+
+		// delete rules
+		if len(planRequest.RemoveRuleIDs) > 0 {
+			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+				RuleIDs: planRequest.RemoveRuleIDs,
+			}
+			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(srvData.ctx, srvData.header, bizID, deleteRuleOption); ccErr != nil {
+				blog.ErrorJSON("GenerateApplyPlan failed, DeleteHostApplyRule failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, deleteRuleOption, ccErr, rid)
+				return ccErr
+			}
+		}
+
+		for _, plan := range planResult.Plans {
+			hostApplyResult := metadata.HostApplyResult{
+				HostID: plan.HostID,
+			}
+			if len(plan.UpdateFields) == 0 {
+				continue
+			}
+			updateOption := &metadata.UpdateOption{
+				Data: plan.GetUpdateData(),
+				Condition: map[string]interface{}{
+					common.BKHostIDField: plan.HostID,
+				},
+			}
+			updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
+			if err != nil {
+				blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
+				ccErr := srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+				hostApplyResult.SetError(ccErr)
+				hostApplyResults = append(hostApplyResults, hostApplyResult)
+				continue
+			}
+			if ccErr := updateResult.CCError(); ccErr != nil {
+				blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
+				hostApplyResult.SetError(ccErr)
+				hostApplyResults = append(hostApplyResults, hostApplyResult)
+				continue
+			}
+			hostApplyResults = append(hostApplyResults, hostApplyResult)
+		}
+
+		var ccErr errors.CCErrorCoder
+		for _, item := range hostApplyResults {
+			if err := item.GetError(); err != nil {
+				ccErr = err
+				break
+			}
+		}
+		if ccErr != nil {
+			return ccErr
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr, Data: hostApplyResults})
 		return
 	}
-
 	result := metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
 		Data:     hostApplyResults,
 	}
 	_ = resp.WriteEntity(result)
-	return
 }
 
 // ListHostRelatedApplyRule 返回主机关联的规则信息（仅返回启用模块的规则）
@@ -635,6 +633,7 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationOption)
 	if err != nil {
@@ -657,7 +656,7 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 
 	// filter enabled modules
 	moduleFilter := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{

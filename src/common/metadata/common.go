@@ -108,25 +108,39 @@ type ResponseDataMapStr struct {
 }
 
 type QueryInput struct {
-	Condition interface{} `json:"condition"`
-	Fields    string      `json:"fields,omitempty"`
-	Start     int         `json:"start,omitempty"`
-	Limit     int         `json:"limit,omitempty"`
-	Sort      string      `json:"sort,omitempty"`
+	Condition map[string]interface{} `json:"condition"`
+	Fields    string                 `json:"fields,omitempty"`
+	Start     int                    `json:"start,omitempty"`
+	Limit     int                    `json:"limit,omitempty"`
+	Sort      string                 `json:"sort,omitempty"`
+}
+
+// Validate validates the input param
+func (o *QueryInput) Validate() (rawError errors.RawErrorInfo) {
+	if o.Limit <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"limit"},
+		}
+	}
+
+	if o.Limit > common.BKAuditLogPageLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 // ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
-	conds, ok := o.Condition.(map[string]interface{})
-	if true != ok && nil != conds {
-		return nil
-	}
-	for key, item := range conds {
+	for key, item := range o.Condition {
 		convItem, err := o.convTimeItem(item)
 		if nil != err {
 			continue
 		}
-		conds[key] = convItem
+		o.Condition[key] = convItem
 	}
 
 	return nil
@@ -256,4 +270,27 @@ type UpdateParams struct {
 type ListHostWithoutAppResponse struct {
 	BaseResp `json:",inline"`
 	Data     ListHostResult `json:"data"`
+}
+
+type SearchInstBatchOption struct {
+	IDs    []int64  `json:"bk_ids"`
+	Fields []string `json:"fields"`
+}
+
+func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
+	if len(s.IDs) == 0 || len(s.IDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(s.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

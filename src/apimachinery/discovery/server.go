@@ -32,7 +32,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 	svr := &server{
 		path:         path,
 		name:         name,
-		servers:      make([]string, 0),
+		servers:      make([]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
 	}
 
@@ -46,7 +46,8 @@ type server struct {
 	// server's name
 	name         string
 	path         string
-	servers      []string
+	servers      []*types.ServerInfo
+	uuids        []string
 	discoverChan <-chan *registerdiscover.DiscoverEvent
 }
 
@@ -54,32 +55,36 @@ func (s *server) GetServers() ([]string, error) {
 	if s == nil {
 		return []string{}, nil
 	}
-	s.RLock()
-	defer s.RUnlock()
 
+	s.Lock()
 	num := len(s.servers)
 	if num == 0 {
+		s.Unlock()
 		return []string{}, fmt.Errorf("oops, there is no %s can be used", s.name)
 	}
 
 	if s.index < num-1 {
 		s.index = s.index + 1
-		return append(s.servers[s.index-1:], s.servers[:s.index-1]...), nil
+		s.servers = append(s.servers[s.index-1:], s.servers[:s.index-1]...)
 	} else {
 		s.index = 0
-		return append(s.servers[num-1:], s.servers[:num-1]...), nil
+		s.servers = append(s.servers[num-1:], s.servers[:num-1]...)
 	}
+	s.Unlock()
+
+	return s.GetRegAddrs(), nil
 }
 
 // IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
-func (s *server) IsMaster(strAddrs string) bool {
+// 注册地址不能作为区分标识，因为不同的机器可能用一样的域名作为注册地址，所以用uuid区分
+func (s *server) IsMaster(UUID string) bool {
 	if s == nil {
 		return false
 	}
 	s.RLock()
 	defer s.RUnlock()
 	if 0 < len(s.servers) {
-		return s.servers[0] == strAddrs
+		return s.servers[0].UUID == UUID
 	}
 	return false
 
@@ -109,11 +114,11 @@ func (s *server) run() {
 func (s *server) resetServer() {
 	s.Lock()
 	defer s.Unlock()
-	s.servers = make([]string, 0)
+	s.servers = make([]*types.ServerInfo, 0)
 }
 
 func (s *server) updateServer(svrs []string) {
-	newSvr := make([]string, 0)
+	servers := make([]*types.ServerInfo, 0)
 
 	for _, svr := range svrs {
 		server := new(types.ServerInfo)
@@ -131,20 +136,32 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		if len(server.IP) == 0 {
+		if len(server.RegisterIP) == 0 {
 			blog.Errorf("invalid ip with zk path: %s", s.path)
 			continue
 		}
 
-		host := server.Address()
-		newSvr = append(newSvr, host)
+		servers = append(servers, server)
 	}
 
-	s.Lock()
-	defer s.Unlock()
+	if len(servers) != 0 {
+		s.Lock()
+		s.servers = servers
+		s.Unlock()
 
-	if len(newSvr) != 0 {
-		s.servers = newSvr
-		blog.V(5).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
+		if blog.V(5) {
+			blog.Infof("update component with new server instance[%s] about path: %s", strings.Join(s.GetRegAddrs(), "; "), s.path)
+		}
 	}
+}
+
+// 获取注册地址
+func (s *server) GetRegAddrs() []string {
+	s.RLock()
+	regAddrs := make([]string, 0)
+	for _, server := range s.servers {
+		regAddrs = append(regAddrs, server.RegisterAddress())
+	}
+	s.RUnlock()
+	return regAddrs
 }

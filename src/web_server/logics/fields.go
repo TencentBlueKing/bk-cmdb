@@ -76,7 +76,7 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 	rid := util.GetHTTPCCRequestID(header)
 	ownerID := util.GetOwnerID(header)
 	condition := mapstr.MapStr{
-		common.BKObjIDField:   objID,
+		common.BKObjIDField: objID,
 		"page": mapstr.MapStr{
 			"start": 0,
 			"limit": common.BKNoLimit,
@@ -142,16 +142,28 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 	}
 
 	fields := make([]Property, 0)
-	noRequiredField := make([]Property, 0)
-	index := 0
-	// 第一步，根据字段分组，对必填字段排序；并选出非必填字段
+	noUniqueFields := make([]Property, 0)
+	noRequiredFields := make([]Property, 0)
+	index := 1
+	// 第一步，选出唯一校验字段；
+	for _, field := range sortedFields {
+		if field.IsOnly == true {
+			field.ExcelColIndex = index
+			index++
+			fields = append(fields, field)
+		} else {
+			noUniqueFields = append(noUniqueFields, field)
+		}
+	}
+
+	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
 	for _, group := range groups {
-		for _, field := range sortedFields {
+		for _, field := range noUniqueFields {
 			if field.Group != group.ID {
 				continue
 			}
 			if field.IsRequire != true {
-				noRequiredField = append(noRequiredField, field)
+				noRequiredFields = append(noRequiredFields, field)
 				continue
 			}
 			field.ExcelColIndex = index
@@ -160,9 +172,9 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 		}
 	}
 
-	// 第二步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
+	// 第三步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
 	for _, group := range groups {
-		for _, field := range noRequiredField {
+		for _, field := range noRequiredFields {
 			if field.Group != group.ID {
 				continue
 			}
@@ -178,7 +190,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
-		common.BKObjIDField:   objID,
+		common.BKObjIDField: objID,
 		metadata.PageName: mapstr.MapStr{
 			"start": 0,
 			"limit": common.BKNoLimit,
@@ -200,9 +212,9 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	}
 
 	inputParam := metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
-			Offset: 0,
-			Limit:  common.BKNoLimit,
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: common.BKNoLimit,
 		},
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKObjIDField: objID,
@@ -262,6 +274,7 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 	case common.FieldTypeDate:
 	case common.FieldTypeTime:
 	case common.FieldTypeUser:
+	case common.FieldTypeOrganization:
 	case common.FieldTypeBool:
 	case common.FieldTypeTimeZone:
 
@@ -284,7 +297,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		Name:          "",
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
-		ExcelColIndex: 0,
+		ExcelColIndex: 1, // why set ExcelColIndex=1? because ExcelColIndex=0 used by tip column
 	}
 
 	switch objID {

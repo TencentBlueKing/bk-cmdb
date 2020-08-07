@@ -17,6 +17,8 @@ import "configcenter/src/common/mapstr"
 type UpdateOption struct {
 	Data      mapstr.MapStr `json:"data" mapstructure:"data"`
 	Condition mapstr.MapStr `json:"condition" mapstructure:"condition"`
+	// can edit all fields, including not editable properties, used by collectors
+	CanEditAll bool `json:"can_edit_all" mapstructure:"can_edit_all"`
 }
 
 // UpdatedOptionResult common update result

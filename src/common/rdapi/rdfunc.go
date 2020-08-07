@@ -54,7 +54,8 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 			}
 
 		}()
-		generateHttpHeaderRID(req, resp)
+
+		GenerateHttpHeaderRID(req.Request, resp.ResponseWriter)
 
 		whiteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
 		for _, url := range whiteListSuffix {
@@ -75,19 +76,27 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 			return
 		}
 
-		if 1 < len(fchain.Filters) {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
+		fchain.ProcessFilter(req, resp)
+		return
+	}
+}
+
+func RequestLogFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		header := req.Request.Header
+		body, _ := util.PeekRequest(req.Request)
+		blog.Infof("code: %s, user: %s, rip: %s, uri: %s, body: %s, rid: %s",
+			header.Get("Bk-App-Code"), header.Get("Bk_user"), header.Get("X-Real-Ip"),
+			req.Request.RequestURI, body, util.GetHTTPCCRequestID(header))
 
 		fchain.ProcessFilter(req, resp)
 		return
 	}
 }
 
-func HTTPRequestIDFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func HTTPRequestIDFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		generateHttpHeaderRID(req, resp)
+		GenerateHttpHeaderRID(req.Request, resp.ResponseWriter)
 		if 1 < len(fchain.Filters) {
 			fchain.ProcessFilter(req, resp)
 			return
@@ -115,20 +124,18 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 	return string(s), err
 }
 
-func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
-	cid := util.GetHTTPCCRequestID(req.Request.Header)
+func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
+	cid := util.GetHTTPCCRequestID(req.Header)
 	if "" == cid {
-		cid = GetHTTPOtherRequestID(req.Request.Header)
+		cid = GetHTTPOtherRequestID(req.Header)
 		if cid == "" {
 			cid = util.GenerateRID()
-		} else {
-			content, _ := util.PeekRequest(req.Request)
-			blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.Request.RequestURI, req.Request.Header, content)
 		}
-
-		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
+		req.Header.Set(common.BKHTTPCCRequestID, cid)
+		resp.Header().Set(common.BKHTTPCCRequestID, cid)
 	}
-	resp.Header().Set(common.BKHTTPCCRequestID, cid)
+
+	return
 }
 
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {

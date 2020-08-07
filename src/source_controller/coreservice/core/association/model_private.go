@@ -15,72 +15,72 @@ package association
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *associationModel) isValid(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) error {
+func (m *associationModel) isValid(kit *rest.Kit, inputParam metadata.CreateModelAssociation) error {
 
 	if 0 == len(inputParam.Spec.AssociationName) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the associationID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAsstID)
-		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAsstID)
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the associationID (%s) is not set", kit.Rid, metadata.AssociationFieldAsstID)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAsstID)
 	}
 
 	if 0 == len(inputParam.Spec.ObjectID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the objectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldObjectID)
-		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldObjectID)
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the objectID (%s) is not set", kit.Rid, metadata.AssociationFieldObjectID)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldObjectID)
 	}
 
 	if 0 == len(inputParam.Spec.AsstObjID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationObjectID)
-		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", kit.Rid, metadata.AssociationFieldAssociationObjectID)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
 	}
 
 	if 0 == len(inputParam.Spec.AsstKindID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationKind)
-		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", kit.Rid, metadata.AssociationFieldAssociationKind)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
 	}
 
 	return nil
 }
 
-func (m *associationModel) isExistsAssociationID(ctx core.ContextParams, associationID string) (bool, error) {
+func (m *associationModel) isExistsAssociationID(kit *rest.Kit, associationID string) (bool, error) {
 
 	existsCheckCond := mongo.NewCondition()
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAsstID, Val: associationID})
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
+	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: kit.SupplierAccount})
 
-	cnt, err := m.count(ctx, existsCheckCond)
+	cnt, err := m.count(kit, existsCheckCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check whether the associationID (%s) is exists, error info is %s", ctx.ReqID, associationID, err.Error())
+		blog.Errorf("request(%s): it is to failed to check whether the associationID (%s) is exists, error info is %s", kit.Rid, associationID, err.Error())
 		return false, err
 	}
 	return 0 != cnt, err
 }
 
-func (m *associationModel) isExistsAssociationObjectWithAnotherObject(ctx core.ContextParams, targetObjectID, anotherObjectID string, AssociationKind string) (bool, error) {
+func (m *associationModel) isExistsAssociationObjectWithAnotherObject(kit *rest.Kit, targetObjectID, anotherObjectID string, AssociationKind string) (bool, error) {
 
 	existsCheckCond := mongo.NewCondition()
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
+	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: kit.SupplierAccount})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldObjectID, Val: targetObjectID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationObjectID, Val: anotherObjectID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationKind, Val: AssociationKind})
 
-	cnt, err := m.count(ctx, existsCheckCond)
+	cnt, err := m.count(kit, existsCheckCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%#v), error info is %s", ctx.ReqID, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%#v), error info is %s", kit.Rid, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
 		return false, err
 	}
 	return 0 != cnt, err
 }
 
-func (m *associationModel) usedInSomeInstanceAssociation(ctx core.ContextParams, associationIDS []string) (bool, error) {
+func (m *associationModel) usedInSomeInstanceAssociation(kit *rest.Kit, associationIDS []string) (bool, error) {
 	// TODO: need to implement
 	return false, nil
 }
 
-func (m *associationModel) cascadeInstanceAssociation(ctx core.ContextParams, associationIDS []string) error {
+func (m *associationModel) cascadeInstanceAssociation(kit *rest.Kit, associationIDS []string) error {
 	// TODO: need to implement
 	return nil
 }

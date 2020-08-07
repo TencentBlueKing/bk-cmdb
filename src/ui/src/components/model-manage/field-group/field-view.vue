@@ -51,12 +51,6 @@
                     <span class="property-value">{{field.option.max || (field.option.max === 0 ? 0 : '--')}}</span>
                 </div>
             </template>
-            <div class="property-item" v-else-if="['enum', 'list'].includes(field.bk_property_type)">
-                <div class="property-name">
-                    <span>{{$t('枚举值')}}</span>：
-                </div>
-                <span class="property-value">{{getEnumValue()}}</span>
-            </div>
             <div class="property-item">
                 <div class="property-name">
                     <span>{{$t('单位')}}</span>：
@@ -68,6 +62,12 @@
                     <span>{{$t('用户提示')}}</span>：
                 </div>
                 <span class="property-value">{{field.placeholder || '--'}}</span>
+            </div>
+            <div class="property-item enum-list" v-if="['enum', 'list'].includes(field.bk_property_type)">
+                <div class="property-name">
+                    <span>{{$t('枚举值')}}</span>：
+                </div>
+                <span class="property-value" v-html="getEnumValue()"></span>
             </div>
         </div>
         <div class="btns" :class="{ 'sticky-layout': scrollbar }" v-if="canEdit">
@@ -100,7 +100,8 @@
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
                     'bool': 'bool',
-                    'list': this.$t('列表')
+                    'list': this.$t('列表'),
+                    'organization': this.$t('组织')
                 },
                 scrollbar: false
             }
@@ -119,13 +120,13 @@
                     if (type === 'enum') {
                         const arr = value.map(item => {
                             if (item.is_default) {
-                                return `${item.name}(${this.$t('默认值')})`
+                                return `${item.name}(${item.id}, ${this.$t('默认值')})`
                             }
-                            return item.name
+                            return `${item.name}(${item.id})`
                         })
-                        return arr.length ? arr.join(' / ') : '--'
+                        return arr.length ? arr.join('<br>') : '--'
                     } else if (type === 'list') {
-                        return value.length ? value.join(' / ') : '--'
+                        return value.length ? value.join('<br>') : '--'
                     }
                 }
                 return '--'
@@ -160,6 +161,14 @@
         .property-item {
             min-width: 48%;
             padding-top: 20px;
+            &.enum-list {
+                flex: 100%;
+                .property-name,
+                .property-value {
+                    display: inline-block;
+                    vertical-align: top;
+                }
+            }
         }
         .property-name {
             display: inline-block;

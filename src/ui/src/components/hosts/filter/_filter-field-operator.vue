@@ -34,17 +34,27 @@
                         id: '$multilike',
                         name: this.$t('包含')
                     }, {
-                        id: '$eq',
+                        id: '$in',
                         name: this.$t('等于')
                     }, {
                         id: '$ne',
                         name: this.$t('不等于')
                     }],
                     'name': [{
+                        id: '$multilike',
+                        name: this.$t('包含')
+                    }, {
                         id: '$in',
                         name: this.$t('等于')
                     }, {
-                        id: '$ne',
+                        id: '$nin',
+                        name: this.$t('不等于')
+                    }],
+                    'enum': [{
+                        id: '$in',
+                        name: this.$t('等于')
+                    }, {
+                        id: '$nin',
                         name: this.$t('不等于')
                     }]
                 },

@@ -13,8 +13,8 @@
 package model
 
 import (
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
 
@@ -22,38 +22,38 @@ type modelAttrUnique struct {
 	dbProxy dal.RDB
 }
 
-func (m *modelAttrUnique) CreateModelAttrUnique(ctx core.ContextParams, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error) {
-	id, err := m.createModelAttrUnique(ctx, objID, data)
+func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error) {
+	id, err := m.createModelAttrUnique(kit, objID, data)
 	if err != nil {
 		return nil, err
 	}
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
 
-func (m *modelAttrUnique) UpdateModelAttrUnique(ctx core.ContextParams, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error) {
-	err := m.updateModelAttrUnique(ctx, objID, id, data)
+func (m *modelAttrUnique) UpdateModelAttrUnique(kit *rest.Kit, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error) {
+	err := m.updateModelAttrUnique(kit, objID, id, data)
 	if err != nil {
 		return nil, err
 	}
 	return &metadata.UpdatedCount{Count: 1}, nil
 }
 
-func (m *modelAttrUnique) DeleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (*metadata.DeletedCount, error) {
-	err := m.deleteModelAttrUnique(ctx, objID, id, meta)
+func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (*metadata.DeletedCount, error) {
+	err := m.deleteModelAttrUnique(kit, objID, id, meta)
 	if err != nil {
 		return nil, err
 	}
 	return &metadata.DeletedCount{Count: 1}, nil
 }
 
-func (m *modelAttrUnique) SearchModelAttrUnique(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error) {
+func (m *modelAttrUnique) SearchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error) {
 
-	uniqueItems, err := m.searchModelAttrUnique(ctx, inputParam)
+	uniqueItems, err := m.searchModelAttrUnique(kit, inputParam)
 	if nil != err {
 		return &metadata.QueryUniqueResult{Info: []metadata.ObjectUnique{}}, err
 	}
 	dataResult := &metadata.QueryUniqueResult{Info: []metadata.ObjectUnique{}}
-	dataResult.Count, err = m.countModelAttrUnique(ctx, inputParam.Condition)
+	dataResult.Count, err = m.countModelAttrUnique(kit, inputParam.Condition)
 	if nil != err {
 		return &metadata.QueryUniqueResult{Info: []metadata.ObjectUnique{}}, err
 	}

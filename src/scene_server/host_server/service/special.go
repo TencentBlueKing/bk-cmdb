@@ -57,13 +57,19 @@ func (s *Service) BKSystemInstall(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	err := srvData.lgc.NewSpecial().BkSystemInstall(srvData.ctx, common.BKAppName, input)
-	if err != nil {
-		blog.Errorf("BkSystemInstall handle err: %v, rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		err := srvData.lgc.NewSpecial().BkSystemInstall(srvData.ctx, common.BKAppName, input)
+		if err != nil {
+			blog.Errorf("BkSystemInstall handle err: %v, rid:%s", err, srvData.rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
-
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     "",

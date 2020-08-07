@@ -100,3 +100,9 @@ func ContainsAnyString(s string, subs ...string) bool {
 	}
 	return false
 }
+
+// Normalize to trim space of the str and get it's upper format
+// for example, Normalize(" hello world") ==> "HELLO WORLD"
+func Normalize(str string) string {
+	return strings.ToUpper(strings.TrimSpace(str))
+}

@@ -1,5 +1,5 @@
 <template>
-    <div class="multi-module-config">
+    <div class="multi-module-config" v-bkloading="{ isLoading: $loading(['getHostApplyConfigs']) }">
         <div class="config-bd">
             <div class="config-item">
                 <div class="item-label">
@@ -93,10 +93,11 @@
         </host-property-modal>
         <leave-confirm
             v-bind="leaveConfirmConfig"
-            :title="$t('是否放弃')"
-            :content="$t('启用步骤未完成，是否放弃当前配置')"
-            :ok-text="$t('留在当前页')"
-            :cancel-text="$t('确认放弃')"
+            reverse
+            :title="$t('是否退出配置')"
+            :content="$t('启用步骤未完成，退出将会丢失当前配置')"
+            :ok-text="$t('退出')"
+            :cancel-text="$t('取消')"
         >
         </leave-confirm>
     </div>
@@ -231,7 +232,7 @@
                 this.leaveConfirmConfig.active = !this.isDel
                 this.$nextTick(function () {
                     // 回到入口页
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_APPLY
                     })
                 })
@@ -265,12 +266,13 @@
 
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
                         query: {
                             batch: 1,
                             mid: this.$route.query.mid
-                        }
+                        },
+                        history: true
                     })
                 })
             },

@@ -48,6 +48,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return OperationType, nil
 	case u.WithTask(req):
 		return TaskType, nil
+	case u.WithAdmin(req):
+		return AdminType, nil
 	default:
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
@@ -182,7 +184,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	return false
 }
 
-// hostCloudAreaURLRegexp host server opeator cloud area api regex
+// hostCloudAreaURLRegexp host server operator cloud area api regex
 var hostCloudAreaURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(cloudarea|cloudarea/.*)$", verbs))
 var hostURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(host|hosts|host_apply_rule|host_apply_plan)/.*$", verbs))
 
@@ -220,6 +222,9 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/system/config"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/findmany/module_relation/bk_biz_id/"):
 		from, to, isHit = rootPath, hostRoot, true
 	default:
 		isHit = false
@@ -297,15 +302,18 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 	return false
 }
 
+var operationUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/operation/.*$", verbs))
+
 // WithOperation transform OperationStatistic's url
 func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 	statisticsRoot := "/operation/v3"
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.Contains(string(*u), "/operation/"):
+	case strings.HasPrefix(string(*u), rootPath+"/operation/"):
 		from, to, isHit = rootPath, statisticsRoot, true
-
+	case operationUrlRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, statisticsRoot, true
 	default:
 		isHit = false
 	}
@@ -323,8 +331,28 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.Contains(string(*u), "/task/"):
+	case strings.HasPrefix(string(*u), rootPath+"/task/"):
 		from, to, isHit = rootPath, statisticsRoot, true
+
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+// WithAdmin transform admin server url
+func (u *URLPath) WithAdmin(req *restful.Request) (isHit bool) {
+	adminRoot := "/migrate/v3"
+	from, to := rootPath, adminRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/admin/"):
+		from, to, isHit = rootPath+"/admin", adminRoot, true
 
 	default:
 		isHit = false

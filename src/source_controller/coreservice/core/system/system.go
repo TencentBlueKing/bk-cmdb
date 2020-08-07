@@ -13,9 +13,12 @@
 package system
 
 import (
+	"encoding/json"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -34,14 +37,36 @@ func New(dbProxy dal.RDB) core.SystemOperation {
 	}
 }
 
-func (sm *systemManager) GetSystemUserConfig(ctx core.ContextParams) (map[string]interface{}, errors.CCErrorCoder) {
+func (sm *systemManager) GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder) {
 	cond := map[string]string{"type": metadata.CCSystemUserConfigSwitch}
 	result := make(map[string]interface{}, 0)
-	err := sm.dbProxy.Table(common.BKTableNameSystem).Find(cond).One(ctx, &result)
+	err := sm.dbProxy.Table(common.BKTableNameSystem).Find(cond).One(kit.Ctx, &result)
 	if err != nil && !sm.dbProxy.IsNotFoundError(err) {
-		blog.ErrorJSON("GetSystemUserConfig find error. cond:%s, err:%s, rid:%s", cond, err.Error(), ctx.ReqID)
-		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("GetSystemUserConfig find error. cond:%s, err:%s, rid:%s", cond, err.Error(), kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
 	return result, nil
+}
+
+func (sm *systemManager) SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin, errors.CCErrorCoder) {
+	cond := map[string]interface{}{
+		"_id": common.ConfigAdminID,
+	}
+
+	ret := struct {
+		Config string `json:"config"`
+	}{}
+	err := sm.dbProxy.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(kit.Ctx, &ret)
+	if err != nil {
+		blog.Errorf("SearchConfigAdmin failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	conf := new(metadata.ConfigAdmin)
+	if err := json.Unmarshal([]byte(ret.Config), conf); err != nil {
+		blog.Errorf("SearchConfigAdmin failed, Unmarshal err: %v, config:%+v,rid:%s", err, ret.Config, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	return conf, nil
 }

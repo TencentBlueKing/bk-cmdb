@@ -211,10 +211,10 @@ const (
 	// one argument: maxValue
 	CCErrExceedMaxOperationRecordsAtOnce = 1199081
 
-	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
-    CCErrCommModifyFieldForbidden                            = 1199083
-    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
-	CCErrCommUnexpectedFieldType   = 1199085
+	CCErrCommListAuthorizedResourceFromIAMFailed             = 1199082
+	CCErrCommModifyFieldForbidden                            = 1199083
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
+	CCErrCommUnexpectedFieldType                             = 1199085
 
 	CCErrCommGetBusinessIDByHostIDFailed = 1199086
 
@@ -222,6 +222,12 @@ const (
 	CCErrCommOPInProgressErr = 1199087
 	// CCErrCommRedisOPErr operate redis error.
 	CCErrCommRedisOPErr = 1199088
+
+	// CCErrArrayLengthWrong the length of the array is wrong
+	CCErrArrayLengthWrong = 1199089
+
+	// too many requests
+	CCErrTooManyRequestErr = 1199997
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -458,6 +464,8 @@ const (
 
 	CCErrorTopoPathParamPaserFailed                = 1101100
 	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
+
+	CCErrorModelNotFound = 1101102
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -530,6 +538,7 @@ const (
 	CCErrCloudCreateSyncTaskFail         = 1106021
 	CCErrCloudConfirmHistoryAddFail      = 1106022
 	CCErrCloudSyncHistorySearchFail      = 1106023
+	CCErrHostGetSnapshotBatch            = 1106024
 
 	// process controller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
@@ -597,7 +606,8 @@ const (
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
-	CCErrAuditTakeSnapshotFailed = 1109001
+	CCErrAuditTakeSnapshotFailed = 1109002
+	CCErrAuditSelectFailed       = 1109003
 
 	// host server
 	CCErrHostGetFail              = 1110001
@@ -630,16 +640,6 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
-
-	CCErrCloudSyncCreateFail        = 1110031
-	CCErrCloudHistoryCreateFail     = 1110032
-	CCErrCloudConfirmCreateFail     = 1110033
-	CCErrCloudGetConfirmFail        = 1110034
-	CCErrCloudAddConfirmHistoryFail = 1110035
-	CCErrCloudGetTaskFail           = 1110036
-	CCErrCloudGetConfirmHistoryFail = 1110037
-	CCErrCloudTaskNameAlreadyExist  = 1110038
-	CCErrCloudSyncStartFail         = 1110039
 
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFailed       = 1110040
@@ -686,6 +686,11 @@ const (
 	CCErrWebGetAddNetPropertyResultFail = 1111010
 	CCErrWebGetNetDeviceFail            = 1111011
 	CCErrWebGetNetPropertyFail          = 1111012
+	CCErrWebNeedFillinUsernamePasswd    = 1111013
+	CCErrWebUsernamePasswdWrong         = 1111014
+	CCErrWebNoUsernamePasswd            = 1111015
+	CCErrWebUserinfoFormatWrong         = 1111016
+	CCErrWebUnknownLoginVersion         = 1111017
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000
@@ -764,10 +769,15 @@ const (
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
 	CCErrCoreServiceModelHasAssociationErr           = 1113031
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
+	// SearchTopoTreeScanTooManyData means hit too many data, we return directly.
+	SearchTopoTreeScanTooManyData = 1113033
+
+	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
+	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
-	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
 
 	// synchronize_server 1114xxx

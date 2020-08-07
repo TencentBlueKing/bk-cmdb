@@ -16,26 +16,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
 	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
 )
 
 // Run main loop function
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
@@ -64,7 +62,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	authConf, err := authcenter.ParseConfigFromKV("auth", apiSvr.Config)
+	authConf, err := engine.WithAuth()
 	if err != nil {
 		return err
 	}
@@ -74,7 +72,23 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	blog.Infof("enable authcenter: %v", authorize.Enabled())
 
-	svc.SetConfig(engine, client, engine.Discovery(), authorize)
+	redisConf, err := engine.WithRedis()
+	if err != nil {
+		return err
+	}
+	cache, err := redis.NewFromConfig(redisConf)
+	if err != nil {
+		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
+	}
+
+	limiter := service.NewLimiter(engine.ServiceManageClient().Client())
+	err = limiter.SyncLimiterRules()
+	if err != nil {
+		blog.Infof("SyncLimiterRules failed, err: %v", err)
+		return err
+	}
+
+	svc.SetConfig(engine, client, engine.Discovery(), authorize, cache, limiter)
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
@@ -117,31 +131,4 @@ func (h *APIServer) CheckForReadiness() error {
 		return nil
 	}
 	return errors.New("wait for api server configuration timeout")
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

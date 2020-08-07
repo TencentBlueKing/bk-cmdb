@@ -10,6 +10,9 @@
 
 .bk-select-dropdown-content {
     white-space: nowrap;
+    .bk-options {
+        @include scrollbar;
+    }
 }
 
 .bk-sideslider {
@@ -67,14 +70,13 @@
         border-bottom: none;
         tr.bk-table-row-last {
             td.is-last {
-                border-bottom: 1px solid #dfe0e5;
+                border-bottom: 1px solid  #dfe0e5;
             }
         }
     }
     .bk-table-body {
         .is-highlight {
             color: #3A84FF;
-            cursor: pointer;
         }
         tr.hover-row>td {
             background-color: #f0f1f5;
@@ -110,6 +112,13 @@
     }
     .bk-big-tree-node.has-link-line.is-leaf {
         padding-left: 12px;
+    }
+    .bk-scroll-home {
+        .bk-min-nav-slide.bk-nav-show {
+            width: 6px;
+            background-color: #dcdee5;
+            border-radius: 3px;
+        }
     }
 }
 
@@ -169,4 +178,12 @@
 
 .bk-dropdown-menu {
     vertical-align: middle;
+}
+
+// 覆盖人员选择器的样式，避免影响magicbox
+.tippy-tooltip {
+    .tippy-arrow {
+        width: unset;
+        height: unset;
+    }
 }
