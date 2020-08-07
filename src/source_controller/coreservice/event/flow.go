@@ -345,6 +345,17 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 		f.key.TailKey(): string(tByte),
 	}
 
+	detail := types.EventDetail{
+		Detail:        types.JsonString(e.DocBytes),
+		UpdatedFields: e.ChangeDesc.UpdatedFields,
+		RemovedFields: e.ChangeDesc.RemovedFields,
+	}
+	detailBytes, err := json.Marshal(detail)
+	if err != nil {
+		blog.Errorf("run flow, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s", name, detail, err, e.Oid)
+		return false, err
+	}
+
 	getLock := f.getLockWithRetry(f.key.LockKey(), e.Oid)
 	if !getLock {
 		blog.Errorf("run flow, set head and tail key, name: %s, op: %s, do not get lock and return, oid: %s", name, e.OperationType, e.Oid)
@@ -360,7 +371,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 	pipe := f.rds.Pipeline()
 	pipe.HMSet(f.key.MainHashKey(), val)
-	pipe.Set(f.key.DetailKey(currentCursor), string(e.DocBytes), 0)
+	pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
 		releaseLock()
 		blog.Errorf("run flow, set head and tail key failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
@@ -495,6 +506,17 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 		f.key.TailKey(): string(tBytes),
 	}
 
+	detail := types.EventDetail{
+		Detail:        types.JsonString(e.DocBytes),
+		UpdatedFields: e.ChangeDesc.UpdatedFields,
+		RemovedFields: e.ChangeDesc.RemovedFields,
+	}
+	detailBytes, err := json.Marshal(detail)
+	if err != nil {
+		blog.Errorf("run flow, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s", name, detail, err, e.Oid)
+		return false, err
+	}
+
 	getLock := f.getLockWithRetry(f.key.LockKey(), e.Oid)
 	if !getLock {
 		blog.Errorf("run flow, insert node, name: %s, op: %s, do not get lock and return, oid: %s", name, e.OperationType, e.Oid)
@@ -510,7 +532,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 
 	pipe := f.rds.Pipeline()
 	pipe.HMSet(f.key.MainHashKey(), values)
-	pipe.Set(f.key.DetailKey(currentCursor), string(e.DocBytes), 0)
+	pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
 		releaseLock()
 		blog.Errorf("run flow, but insert node failed, name: %s, op: %s, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
