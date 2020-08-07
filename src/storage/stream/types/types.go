@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -261,4 +262,37 @@ type UpdateDescription struct {
 	UpdatedFields map[string]interface{} `json:"updatedFields" bson:"updatedFields"`
 	// document's fields which is removed in a change stream
 	RemovedFields []string `json:"removedFields" bson:"removedFields"`
+}
+
+// EventDetail event document detail and changed fields
+type EventDetail struct {
+	Detail        JsonString             `json:"detail"`
+	UpdatedFields map[string]interface{} `json:"update_fields"`
+	RemovedFields []string               `json:"deleted_fields"`
+}
+
+type JsonString string
+
+func (j JsonString) MarshalJSON() ([]byte, error) {
+	if j == "" {
+		j = "{}"
+	}
+	return []byte(j), nil
+}
+
+func (j *JsonString) UnmarshalJSON(b []byte) error {
+	*j = JsonString(b)
+	return nil
+}
+
+// GetEventDetail get event document detail, compatible for string type and EventDetail type
+// if update_fields and deleted_fields and detail all exists, judge it as EventDetail type and return's its detail field
+func GetEventDetail(detailStr string) string {
+	if gjson.Get(detailStr, "update_fields").Exists() && gjson.Get(detailStr, "deleted_fields").Exists() {
+		detailVal := gjson.Get(detailStr, "detail")
+		if detailVal.Exists() {
+			return detailVal.Raw
+		}
+	}
+	return detailStr
 }

@@ -7,6 +7,7 @@ const state = {
         site: {},
         validationRules: {}
     },
+    validatorSetuped: false,
     user: window.User,
     supplier: window.Supplier,
     language: language,
@@ -37,6 +38,7 @@ const state = {
 
 const getters = {
     config: state => state.config,
+    validatorSetuped: state => state.validatorSetuped,
     site: state => {
         // 通过getter和CMDB_CONFIG.site获取的site值确保为页面定义和配置定义的集合
         return { ...window.Site, ...state.config.site }
@@ -139,6 +141,9 @@ const mutations = {
         state.config = { ...config }
         window.CMDB_CONFIG = config
         window.CMDB_CONFIG.site = { ...window.Site, ...config.site }
+    },
+    setValidatorSetuped (state) {
+        state.validatorSetuped = true
     }
 }
 

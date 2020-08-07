@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/watch"
 	ewatcher "configcenter/src/scene_server/event_server/watcher"
 	"configcenter/src/source_controller/coreservice/event"
+	"configcenter/src/storage/stream/types"
 
 	"github.com/emicklei/go-restful"
 )
@@ -97,8 +98,7 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(s.generateResp("", options.Resource, []*watch.WatchEventDetail{events}))
 }
 
-func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.
-	Response {
+func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.Response {
 	result := new(watch.WatchResp)
 	if len(events) == 0 {
 		result.Watched = false
