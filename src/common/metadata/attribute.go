@@ -153,6 +153,9 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validOrganization(ctx, data, key)
 	case "foreignkey", "singleasst", "multiasst":
 		// TODO what validation should do on these types
+	case common.FieldTypeTable:
+		// TODO what validation should do on these types
+		rawError = attribute.validTable(ctx, data, key)
 	default:
 		rawError = errors.RawErrorInfo{
 			ErrCode: common.CCErrCommUnexpectedFieldType,
@@ -710,6 +713,13 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 	return errors.RawErrorInfo{}
 }
 
+// validTable valid object attribute that is bool type
+func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+	// rid := util.ExtractRequestIDFromContext(ctx)
+	// TODO 暂时不需要实现，目前只有进程和进程模板使用
+	return errors.RawErrorInfo{}
+}
+
 // parseFloatOption  parse float data in option
 func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -1058,4 +1068,37 @@ func CheckAllowHostApplyOnField(field string) bool {
 		return allow
 	}
 	return true
+}
+
+// SubAttribute sub attribute metadata definition
+type SubAttribute struct {
+	PropertyID   string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName string      `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name"`
+	Placeholder  string      `field:"placeholder" json:"placeholder" bson:"placeholder"`
+	IsEditable   bool        `field:"editable" json:"editable" bson:"editable"`
+	IsRequired   bool        `field:"isrequired" json:"isrequired" bson:"isrequired"`
+	IsReadOnly   bool        `field:"isreadonly" json:"isreadonly" bson:"isreadonly"`
+	IsSystem     bool        `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem"`
+	IsAPI        bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi"`
+	PropertyType string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
+	Option       interface{} `field:"option" json:"option" bson:"option"`
+	Description  string      `field:"description" json:"description" bson:"description"`
+}
+
+func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key string) (rawError errors.RawErrorInfo) {
+	attr := Attribute{
+		PropertyID:   sa.PropertyID,
+		PropertyName: sa.PropertyName,
+		Placeholder:  sa.Placeholder,
+
+		IsEditable:   sa.IsEditable,
+		IsRequired:   sa.IsRequired,
+		IsReadOnly:   sa.IsReadOnly,
+		IsSystem:     sa.IsSystem,
+		IsAPI:        sa.IsAPI,
+		PropertyType: sa.PropertyType,
+		Option:       sa.Option,
+		Description:  sa.Description,
+	}
+	return attr.Validate(ctx, data, key)
 }

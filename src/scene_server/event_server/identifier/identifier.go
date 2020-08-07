@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -58,6 +59,7 @@ var hostIndentDiffFields = map[string][]string{
 		common.BKProtocol,
 		common.BKPort,
 		common.BKStartParamRegex,
+		common.BKProcBindInfo,
 	},
 	common.BKInnerObjIDHost: {
 		common.BKHostNameField,
@@ -118,7 +120,6 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 			blog.Errorf("identifier: inst == nil, continue, rid:%s", rid)
 			continue
 		}
-
 		if common.BKInnerObjIDHost == event.ObjType {
 			// save previous host identifier data for later usage.
 			preInst := inst.copy()
@@ -140,6 +141,7 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 			ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)
 			blog.InfoJSON("identifier: pushed event inst %s, rid: %s", hostIdentify, rid)
 		} else {
+			fmt.Println(event.ObjType, "handleRelatedInst")
 			if err := ih.handleRelatedInst(hostIdentify, event.ObjType, instID, preData, curData, diffFields); err != nil {
 				blog.Warnf("handleRelatedInst failed objType: %s, inst: %d, error: %v, rid: %s", event.ObjType, instID, err, rid)
 			}
@@ -369,24 +371,17 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				if process.ProcessID != instID {
 					continue
 				}
-				for _, field := range diffFields {
-					switch field {
-					case common.BKProcessNameField:
-						process.ProcessName = getString(curData[field])
-					case common.BKFuncIDField:
-						process.FuncID = getString(curData[field])
-					case common.BKFuncName:
-						process.FuncName = getString(curData[field])
-					case common.BKBindIP:
-						process.BindIP = getString(curData[field])
-					case common.BKProtocol:
-						process.Protocol = getString(curData[field])
-					case common.BKPort:
-						process.Port = getString(curData[field])
-					case common.BKStartParamRegex:
-						process.StartParamRegex = getString(curData[field])
-					}
-				}
+				ip, port, protocol, enable, bindInfoArr := getBindInfo(curData[common.BKProcBindInfo])
+				process.BindIP = ip
+				process.Port = port
+				process.Protocol = protocol
+				process.PortEnable = enable
+				process.ProcessName = getString(curData[common.BKAppName])
+				process.FuncID = getString(curData[common.BKFuncIDField])
+				process.FuncName = getString(curData[common.BKFuncName])
+				process.StartParamRegex = getString(curData[common.BKStartParamRegex])
+				process.BindInfo = bindInfoArr
+
 				inst.ident.Process[index] = process
 			}
 		}
@@ -420,6 +415,7 @@ func (ih *IdentifierHandler) handleHostBatch(hostIdentify metadata.EventInst, ho
 			if nil == inst {
 				continue
 			}
+
 			preIdentifier := inst.copy()
 			err = handler(hostID, inst)
 			if err != nil {
@@ -634,6 +630,7 @@ func getCache(ctx context.Context, cache *redis.Client, clientSet apimachinery.C
 			blog.Errorf("search host with id: %d failed, err: %s", instID, err.Error())
 			return nil, err
 		}
+
 		if len(host) == 0 {
 			return nil, nil
 		}
@@ -864,10 +861,19 @@ func (ih *IdentifierHandler) popEvent() *metadata.EventInstCtx {
 }
 
 func hasChanged(curData, preData map[string]interface{}, fields ...string) (isDifferent bool) {
+
 	for _, field := range fields {
-		if curData[field] != preData[field] {
-			return true
+		switch field {
+		case common.BKProcBindInfo:
+			if !reflect.DeepEqual(curData[field], preData[field]) {
+				return true
+			}
+		default:
+			if curData[field] != preData[field] {
+				return true
+			}
 		}
+
 	}
 	return false
 }
@@ -892,4 +898,38 @@ func getInstCacheKey(objType string, instID int64) string {
 
 func NewIdentifierHandler(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apimachinery.ClientSetInterface) *IdentifierHandler {
 	return &IdentifierHandler{ctx: ctx, cache: cache, db: db, clientSet: clientSet}
+}
+
+func getBindInfo(value interface{}) (ip, port, protocol string, enable bool, bindInfoArr []metadata.ProcBindInfo) {
+	if value == nil {
+		return
+	}
+	bindInfoByteArr, err := json.Marshal(value)
+	if err != nil {
+		blog.Errorf("%v marshal error.", value, err.Error())
+		return
+	}
+	bindInfoArr = make([]metadata.ProcBindInfo, 0)
+	if err := json.Unmarshal(bindInfoByteArr, &bindInfoArr); err != nil {
+		blog.Errorf("%s ummarshal error.", string(bindInfoByteArr), err.Error())
+		return
+	}
+	for _, row := range bindInfoArr {
+		if row.Std == nil {
+			continue
+		}
+		if ip == "" && row.Std.IP != nil {
+			ip = *row.Std.IP
+		}
+		if port == "" && row.Std.Port != nil {
+			port = *row.Std.Port
+		}
+		if protocol == "" && row.Std.Protocol != nil {
+			protocol = *row.Std.Protocol
+		}
+		if row.Std.Enable != nil && *row.Std.Enable == true {
+			enable = true
+		}
+	}
+	return
 }
