@@ -619,7 +619,7 @@ func getCache(ctx context.Context, cache *redis.Client, clientSet apimachinery.C
 	switch objType {
 	case common.BKInnerObjIDHost:
 		ret := cache.Get(getInstCacheKey(objType, instID)).Val()
-		if "" != ret && nilStr != ret {
+		if "" != ret && types.NilStr != ret {
 			err = json.Unmarshal([]byte(ret), inst.ident)
 			if err == nil {
 				return &inst, nil
@@ -841,14 +841,12 @@ func (ih *IdentifierHandler) handleEventLoop() error {
 	}
 }
 
-const nilStr = "nil"
-
 func (ih *IdentifierHandler) popEvent() *metadata.EventInstCtx {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 
 	eventStrs := ih.cache.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
-	if len(eventStrs) == 0 || eventStrs[1] == nilStr || len(eventStrs[1]) == 0 {
+	if len(eventStrs) == 0 || eventStrs[1] == types.NilStr || len(eventStrs[1]) == 0 {
 		return nil
 	}
 

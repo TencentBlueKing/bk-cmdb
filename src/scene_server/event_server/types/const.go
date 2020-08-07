@@ -16,30 +16,24 @@ import (
 	"configcenter/src/common"
 )
 
-// Event Cache Keys
+var (
+	// NilStr is special NIL string.
+	NilStr = "nil"
+)
+
 const (
 
 	// EventCacheEventIDKey the event instance id key in cache
-	EventCacheEventIDKey             = common.BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey          = common.BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventQueueDuplicateKey = common.BKCacheKeyV3Prefix + "event:inst_queue_duplicate"
-	EventCacheEventDoneKey           = common.BKCacheKeyV3Prefix + "event:inst_done"
+	EventCacheEventIDKey = common.BKCacheKeyV3Prefix + "event:inst_id"
 
-	EventCacheDistIDPrefix      = common.BKCacheKeyV3Prefix + "event:dist_id_"
-	EventCacheDistQueuePrefix   = common.BKCacheKeyV3Prefix + "event:dist_queue_"
-	EventCacheDistRunningPrefix = common.BKCacheKeyV3Prefix + "event:dist_running_"
-	EventCacheDistDonePrefix    = common.BKCacheKeyV3Prefix + "event:dist_done_"
+	EventCacheEventQueueKey                 = common.BKCacheKeyV3Prefix + "event:inst_queue"
+	EventCacheEventQueueDuplicateKey        = common.BKCacheKeyV3Prefix + "event:inst_queue_duplicate"
+	EventCacheSubscriberEventQueueKeyPrefix = common.BKCacheKeyV3Prefix + "event:inst_queue_suber_"
+	EventCacheDistCallBackCountPrefix       = common.BKCacheKeyV3Prefix + "event:dist_callback_"
+	EventCacheDistIDPrefix                  = common.BKCacheKeyV3Prefix + "event:dist_id_"
+	EventCacheIdentInstPrefix               = common.BKCacheKeyV3Prefix + "ident:inst_"
 
-	EventCacheDistCallBackCountPrefix = common.BKCacheKeyV3Prefix + "event:dist_callback_"
-
-	// EventCacheSubscribeFormKey the key prefix in cache
-	EventCacheSubscribeFormKey = common.BKCacheKeyV3Prefix + "event:subscribeform:"
-	EventCacheProcessChannel   = common.BKCacheKeyV3Prefix + "event_process_channel"
-
-	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
+	// EventCacheSubscriberCursorPrefixis prefix for subscriber on target resource event type.
+	// e.g: cc:v3:event:type:suberid:cursor_hostcreate:1 -> MarshalChainNodeStr
+	EventCacheSubscriberCursorPrefix = common.BKCacheKeyV3Prefix + "event:type:suberid:cursor_"
 )
-
-// EventSubscriberCacheKey returns EventSubscriberCacheKey
-func EventSubscriberCacheKey(ownerID, eventType string) string {
-	return EventCacheSubscribeFormKey + ownerID + ":" + eventType
-}

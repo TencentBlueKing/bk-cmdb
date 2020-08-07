@@ -108,6 +108,25 @@ var ModuleKey = Key{
 	},
 }
 
+var objectBaseFields = []string{common.BKInstIDField, common.BKInstNameField}
+var ObjectBaseKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDObject,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, objectBaseFields...)
+		for idx := range objectBaseFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", objectBaseFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		fields := gjson.GetManyBytes(doc, objectBaseFields...)
+		return fields[1].String()
+	},
+}
+
 type Key struct {
 	namespace string
 	// the valid event's life time.

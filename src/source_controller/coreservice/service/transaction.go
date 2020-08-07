@@ -14,7 +14,6 @@ package service
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -30,15 +29,19 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 	err := s.db.CommitTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
-		if err := s.AbortEvent(cap.SessionID); err != nil {
-			blog.Errorf("AbortEvent failed, err:%v", err)
-		}
+		/*
+			if err := s.AbortEvent(cap.SessionID); err != nil {
+				blog.Errorf("AbortEvent failed, err:%v", err)
+			}
+		*/
 		return
 	}
 
-	if err := s.CommitEvent(cap.SessionID); err != nil {
-		blog.Errorf("CommitEvent failed, err:%v", err)
-	}
+	/*
+		if err := s.CommitEvent(cap.SessionID); err != nil {
+			blog.Errorf("CommitEvent failed, err:%v", err)
+		}
+	*/
 
 	ctx.RespEntity(nil)
 }
@@ -51,9 +54,11 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.AbortEvent(cap.SessionID); err != nil {
-		blog.Errorf("AbortEvent failed, err:%v", err)
-	}
+	/*
+		if err := s.AbortEvent(cap.SessionID); err != nil {
+			blog.Errorf("AbortEvent failed, err:%v", err)
+		}
+	*/
 
 	err := s.db.AbortTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {

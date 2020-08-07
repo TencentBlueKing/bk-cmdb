@@ -503,6 +503,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameBaseApp:
 	case common.BKTableNameBaseSet:
 	case common.BKTableNameBaseModule:
+	case common.BKTableNameBaseInst:
 	default:
 		// do not archive the delete docs
 		return nil

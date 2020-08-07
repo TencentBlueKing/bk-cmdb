@@ -24,123 +24,266 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/redis"
+	dalredis "configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/reflector"
+
+	"gopkg.in/redis.v5"
 )
 
-func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+const (
+	// defaultInitWaitDuration is default duration for new EventServer init.
+	defaultInitWaitDuration = time.Second
+
+	// defaultDBConnectTimeout is default connect timeout of cc db.
+	defaultDBConnectTimeout = 5 * time.Second
+)
+
+// EventServer is event server.
+type EventServer struct {
+	ctx    context.Context
+	engine *backbone.Engine
+
+	// config for this eventserver app.
+	config *options.Config
+
+	// service main service instance.
+	service *svc.Service
+
+	// make host configs update action safe.
+	hostConfigUpdateMu sync.Mutex
+
+	// db is cc main database.
+	db dal.RDB
+
+	// redisCli is cc redis client.
+	redisCli *redis.Client
+
+	// subWatcher is subscription watcher.
+	subWatcher reflector.Interface
+
+	// distributer handles all events distribution.
+	distributer *distribution.Distributer
+
+	// hash collections hash object, that updates target nodes in dynamic mode,
+	// and calculates node base on hash key of data.
+	hash *distribution.Hash
+}
+
+// NewEventServer creates a new EventServer object.
+func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer, error) {
+	// build server info.
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
-		return fmt.Errorf("wrap server info failed, err: %v", err)
+		return nil, fmt.Errorf("build server info, %+v", err)
 	}
 
-	service := svc.NewService(ctx)
+	// new EventServer instance.
+	newEventServer := &EventServer{ctx: ctx}
 
-	process := new(EventServer)
-	input := &backbone.BackboneParameter{
-		ConfigUpdate: process.onHostConfigUpdate,
+	engine, err := backbone.NewBackbone(ctx, &backbone.BackboneParameter{
+		ConfigUpdate: newEventServer.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
 		SrvInfo:      svrInfo,
-	}
-	engine, err := backbone.NewBackbone(ctx, input)
+	})
 	if err != nil {
-		return fmt.Errorf("new backbone failed, err: %v", err)
+		return nil, fmt.Errorf("build backbone, %+v", err)
 	}
 
-	service.Engine = engine
-	process.Core = engine
-	process.Service = service
-	errCh := make(chan error, 1)
+	// set global cc errors.
+	errors.SetGlobalCCError(engine.CCErr)
+
+	// set hash.
+	newEventServer.hash = distribution.NewHash(svrInfo.RegisterIP, svrInfo.Port, engine.Discovery())
+
+	// set backbone engine.
+	newEventServer.engine = engine
+	newEventServer.service = svc.NewService(ctx, engine)
+
+	return newEventServer, nil
+}
+
+// Engine returns engine of the EventServer instance.
+func (es *EventServer) Engine() *backbone.Engine {
+	return es.engine
+}
+
+// Service returns main service of the EventServer instance.
+func (es *EventServer) Service() *svc.Service {
+	return es.service
+}
+
+// DB returns cc database client of the EventServer instance.
+func (es *EventServer) DB() dal.RDB {
+	return es.db
+}
+
+// RedisCli returns cc redis client of the EventServer instance.
+func (es *EventServer) RedisCli() *redis.Client {
+	return es.redisCli
+}
+
+// OnHostConfigUpdate is callback for updating configs.
+func (es *EventServer) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
+	es.hostConfigUpdateMu.Lock()
+	defer es.hostConfigUpdateMu.Unlock()
+
+	if len(curr.ConfigMap) > 0 {
+		// NOTE: allow to update configs with empty values?
+		// NOTE: what is prev used for? build a compare logic here?
+
+		if es.config == nil {
+			es.config = &options.Config{}
+		}
+
+		if data, err := json.MarshalIndent(curr.ConfigMap, "", "  "); err == nil {
+			blog.Infof("on host config update event: \n%s", data)
+		}
+
+		// TODO: add your configs updates here.
+	}
+}
+
+// initConfigs inits configs for new EventServer server.
+func (es *EventServer) initConfigs() error {
 	for {
-		if process.Config == nil {
-			time.Sleep(time.Second * 2)
-			blog.V(3).Info("config not found, retry 2s later")
+		// wait and parse configs that async updated by backbone engine.
+		es.hostConfigUpdateMu.Lock()
+		if es.config == nil {
+			es.hostConfigUpdateMu.Unlock()
+
+			blog.Info("can't find configs to run the new eventserver, try again later!")
+			time.Sleep(defaultInitWaitDuration)
 			continue
 		}
 
-		process.Config.MongoDB, err = engine.WithMongo()
-		if err != nil {
-			return err
-		}
-		process.Config.Redis, err = engine.WithRedis()
-		if err != nil {
-			return err
-		}
-		process.Config.Auth, err = engine.WithAuth()
-		if err != nil {
-			return err
-		}
-
-		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
-		if err != nil {
-			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
-		}
-		process.Service.SetDB(db)
-
-		cache, err := redis.NewFromConfig(process.Config.Redis)
-		if err != nil {
-			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
-		}
-		process.Service.SetCache(cache)
-
-		subCli, err := redis.NewFromConfig(process.Config.Redis)
-		if err != nil {
-			return fmt.Errorf("connect subcli redis server failed, err: %s", err.Error())
-		}
-
-		authCli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
-		}
-		process.Service.SetAuth(authCli)
-		blog.Infof("enable auth center: %v", auth.IsAuthed())
-
-		go func() {
-			errCh <- distribution.SubscribeChannel(subCli)
-		}()
-
-		go func() {
-			errCh <- distribution.Start(ctx, cache, db, engine.CoreAPI, engine.ServiceManageInterface)
-		}()
-
+		// ready to init new datacollection instance.
+		es.hostConfigUpdateMu.Unlock()
 		break
 	}
-	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+
+	var err error
+	blog.Info("found configs to run the new eventserver now!")
+
+	// mongodb.
+	es.config.MongoDB, err = es.engine.WithMongo()
 	if err != nil {
-		return err
+		return fmt.Errorf("init mongodb configs, %+v", err)
 	}
-	select {
-	case <-ctx.Done():
-	case err = <-errCh:
-		blog.Errorf("distribution routine stopped, err: %v", err)
-		return err
+
+	// cc redis.
+	es.config.Redis, err = es.engine.WithRedis()
+	if err != nil {
+		return fmt.Errorf("init cc redis configs, %+v", err)
+	}
+
+	// cc auth.
+	es.config.Auth, err = es.engine.WithAuth()
+	if err != nil {
+		return fmt.Errorf("init cc auth configs, %+v", err)
 	}
 
 	return nil
 }
 
-type EventServer struct {
-	Core    *backbone.Engine
-	Config  *options.Config
-	Service *svc.Service
+// initModules inits modules for new EventServer.
+func (es *EventServer) initModules() error {
+	// create mongodb client.
+	db, err := local.NewMgo(es.config.MongoDB.GetMongoConf(), defaultDBConnectTimeout)
+	if err != nil {
+		return fmt.Errorf("create new mongodb client, %+v", err)
+	}
+	es.db = db
+	es.service.SetDB(db)
+	blog.Info("init modules, create mongo client success[%+v]", es.config.MongoDB.GetMongoConf())
+
+	// connect to cc redis.
+	redisCli, err := dalredis.NewFromConfig(es.config.Redis)
+	if err != nil {
+		return fmt.Errorf("connect to cc redis, %+v", err)
+	}
+	es.redisCli = redisCli
+	es.service.SetCache(redisCli)
+	blog.Infof("init modules, connected to cc redis, %+v", es.config.Redis)
+
+	authCli, err := authcenter.NewAuthCenter(nil, es.config.Auth, es.engine.Metric().Registry())
+	if err != nil {
+		return fmt.Errorf("new authcenter failed: %v, config: %+v", err, es.config.Auth)
+	}
+	es.service.SetAuth(authCli)
+	blog.Infof("enable auth center: %v", auth.IsAuthed())
+
+	// init subscription stream watcher.
+	subWatcher, err := reflector.NewReflector(es.config.MongoDB.GetMongoConf())
+	if err != nil {
+		return fmt.Errorf("init subscription stream watcher, %+v", err)
+	}
+	es.subWatcher = subWatcher
+	blog.Infof("init modules, init subscription stream watcher success")
+
+	// init event handler.
+	eventHandler := distribution.NewEventHandler(es.ctx, es.redisCli, es.hash)
+	blog.Infof("init modules, create event handler success")
+
+	// init distributer.
+	distributer := distribution.NewDistributer(es.ctx, es.db, es.redisCli, es.subWatcher, eventHandler)
+	es.distributer = distributer
+	es.service.SetDistributer(distributer)
+	blog.Infof("init modules, create event distributer success")
+
+	return nil
 }
 
-var configLock sync.Mutex
-
-func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	configLock.Lock()
-	defer configLock.Unlock()
-	if len(current.ConfigMap) > 0 {
-		if h.Config == nil {
-			h.Config = new(options.Config)
-		}
-		// ignore err, cause ConfigMap is map[string]string
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
-		blog.Infof("config updated: \n%s", out)
+// Run runs a new EventServer.
+func (es *EventServer) Run() error {
+	// init configs.
+	if err := es.initConfigs(); err != nil {
+		return err
 	}
+	blog.Info("init configs success!")
+
+	// ready to setup comms for new server instance now.
+	if err := es.initModules(); err != nil {
+		return err
+	}
+	blog.Info("init modules success!")
+
+	// run main logic comm distributer.
+	if err := es.distributer.Start(); err != nil {
+		return fmt.Errorf("distributer start failed, %+v", err)
+	}
+	blog.Info("distributer starting now!")
+
+	return nil
+}
+
+// Run setups a new EventServer app with a context and options and runs it as server instance.
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+	// create eventserver.
+	eventServer, err := NewEventServer(ctx, op)
+	if err != nil {
+		return fmt.Errorf("create new eventserver, %+v", err)
+	}
+
+	// run new event server.
+	if err := eventServer.Run(); err != nil {
+		return err
+	}
+
+	// all modules is inited success, start the new server now.
+	if err := backbone.StartServer(ctx, cancel, eventServer.Engine(), eventServer.Service().WebService(), true); err != nil {
+		return err
+	}
+	blog.Info("EventServer init and run success!")
+
+	<-ctx.Done()
+	blog.Info("EventServer stopping now!")
+	return nil
 }

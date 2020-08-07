@@ -15,7 +15,6 @@ package host
 import (
 	"gopkg.in/redis.v5"
 
-	"configcenter/src/common/eventclient"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/host/searcher"
 	"configcenter/src/source_controller/coreservice/core/host/transfer"
@@ -27,7 +26,6 @@ var _ core.HostOperation = (*hostManager)(nil)
 type hostManager struct {
 	DbProxy      dal.RDB
 	Cache        *redis.Client
-	EventCli     eventclient.Client
 	hostTransfer *transfer.TransferManager
 	dependent    transfer.OperationDependence
 	hostSearcher searcher.Searcher
@@ -39,10 +37,9 @@ func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDepen
 	coreMgr := &hostManager{
 		DbProxy:   dbProxy,
 		Cache:     cache,
-		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
 		dependent: dependent,
 	}
-	coreMgr.hostTransfer = transfer.New(dbProxy, cache, coreMgr.EventCli, dependent, hostApplyDependence)
+	coreMgr.hostTransfer = transfer.New(dbProxy, cache, dependent, hostApplyDependence)
 	coreMgr.hostSearcher = searcher.New(dbProxy, cache)
 	return coreMgr
 }

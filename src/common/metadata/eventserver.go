@@ -110,6 +110,7 @@ type EventInst struct {
 	OwnerID     string      `json:"bk_supplier_account"`
 	RequestID   string      `json:"request_id"`
 	RequestTime Time        `json:"request_time"`
+	Cursor      string      `json:"cursor"`
 }
 
 func (e *EventInst) MarshalBinary() (data []byte, err error) {

@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -27,7 +26,6 @@ import (
 
 type genericTransfer struct {
 	dbProxy   dal.DB
-	eventCli  eventclient.Client
 	dependent OperationDependence
 
 	// depend parameter
@@ -91,37 +89,26 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostID int64) errors.CCErrorCo
 		return err
 	}
 
-	// hostInfo
-	var hostInfo mapstr.MapStr
-	// transfer  host module config
-	var originDatas, curDatas []mapstr.MapStr
-	// must be slice ptr address, Each assignment will change the address
-	defer t.generateEvent(kit, &originDatas, &curDatas, hostInfo)
-
 	// remove service instance if necessary
 	if err := t.removeHostServiceInstance(kit, hostID); err != nil {
 		return err
 	}
 
-	originDatas, err = t.delHostModuleRelation(kit, hostID)
-	if err != nil {
+	if _, err := t.delHostModuleRelation(kit, hostID); err != nil {
 		// It is not the time to merge and base the time. When it fails,
 		// it is clear that the data before the change is pushed.
-		// t.origindatas = nil
 		return err
 	}
 	// delete host.
 	if t.delHost {
-		hostInfo, err = t.deleteHost(kit, hostID)
-		if err != nil {
+		if _, err := t.deleteHost(kit, hostID); err != nil {
 			return err
 		}
 		return nil
 
 	}
 	// transfer host module config
-	curDatas, err = t.addHostModuleRelation(kit, hostID)
-	if err != nil {
+	if _, err := t.addHostModuleRelation(kit, hostID); err != nil {
 		return err
 	}
 
@@ -165,55 +152,6 @@ func (t *genericTransfer) deleteHost(kit *rest.Kit, hostID int64) (mapstr.MapStr
 	}
 
 	return mapstr.MapStr(hostInfoArr[0]), nil
-}
-
-// generateEvent handle event trigger.
-// Data from before and after changes cannot be merged for historical reasons.
-func (t *genericTransfer) generateEvent(kit *rest.Kit, originDatas, curDatas *[]mapstr.MapStr, hostInfo mapstr.MapStr) errors.CCErrorCoder {
-
-	var eventArr []*metadata.EventInst
-	for _, data := range *originDatas {
-		event := eventclient.NewEventWithHeader(kit.Header)
-		event.EventType = metadata.EventTypeRelation
-		event.ObjType = metadata.EventObjTypeModuleTransfer
-		event.Action = metadata.EventActionDelete
-		event.Data = []metadata.EventData{
-			{PreData: data},
-		}
-		eventArr = append(eventArr, event)
-
-	}
-	for _, data := range *curDatas {
-		event := eventclient.NewEventWithHeader(kit.Header)
-		event.EventType = metadata.EventTypeRelation
-		event.ObjType = metadata.EventObjTypeModuleTransfer
-		event.Action = metadata.EventActionCreate
-		event.Data = []metadata.EventData{
-			{CurData: data},
-		}
-		eventArr = append(eventArr, event)
-	}
-	if len(hostInfo) > 0 {
-		if t.delHost {
-			event := eventclient.NewEventWithHeader(kit.Header)
-			event.EventType = metadata.EventTypeInstData
-			event.ObjType = common.BKInnerObjIDHost
-			event.Action = metadata.EventActionDelete
-			event.Data = []metadata.EventData{
-				{
-					PreData: hostInfo,
-				},
-			}
-		}
-
-	}
-	err := t.eventCli.Push(kit.Ctx, eventArr...)
-	if err != nil {
-		blog.Errorf("host relation event push failed, but create event error:%v, rid: %s", err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
-	}
-
-	return nil
 }
 
 // validParameterInst  validate module, biz, srcBiz must be exist
