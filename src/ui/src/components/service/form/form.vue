@@ -11,7 +11,7 @@
                 :property-groups="propertyGroups"
                 :inst="instance"
                 :show-delete="false"
-                :edit-auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                :edit-auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
                 @on-edit="handleChangeInternalType">
             </cmdb-details>
             <cmdb-form v-else
