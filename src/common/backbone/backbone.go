@@ -26,6 +26,7 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
+	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
@@ -162,9 +163,22 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		OnExtraUpdate:    input.ExtraUpdate,
 		OnLanguageUpdate: engine.onLanguageUpdate,
 		OnErrorUpdate:    engine.onErrorUpdate,
+		OnMongodbUpdate:  engine.onMongodbUpdate,
+		OnRedisUpdate:	  engine.onRedisUpdate,
 	}
 
-	err = cc.NewConfigCenter(ctx, client, input.ConfigPath, handler)
+	// add default configcenter
+	zkdisc := crd.NewZkRegDiscover(client)
+	configCenter := &cc.ConfigCenter{
+		Type:       common.BKDefaultConfigCenter,
+		ConfigCenterDetail:    zkdisc,
+	}
+	cc.AddConfigCenter(configCenter)
+
+	// get the real configuration center.
+	curentConfigCenter := cc.CurrentConfigCenter()
+
+	err = cc.NewConfigCenter(ctx, curentConfigCenter, input.ConfigPath, handler)
 	if err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
@@ -265,6 +279,22 @@ func (e *Engine) onErrorUpdate(previous, current map[string]errors.ErrorCode) {
 	blog.V(3).Infof("load new error config success.")
 }
 
+func (e *Engine) onMongodbUpdate(previous, current cc.ProcessConfig) {
+	e.Lock()
+	defer e.Unlock()
+	if err := cc.SetMongodbFromByte(current.ConfigData); err != nil {
+		blog.Errorf("parse mongo config failed, err: %s, data: %s", err.Error(), string(current.ConfigData))
+	}
+}
+
+func (e *Engine) onRedisUpdate(previous, current cc.ProcessConfig) {
+	e.Lock()
+	defer e.Unlock()
+	if err := cc.SetRedisFromByte(current.ConfigData); err != nil {
+		blog.Errorf("parse redis config failed, err: %s, data: %s", err.Error(), string(current.ConfigData))
+	}
+}
+
 func (e *Engine) Ping() error {
 	return e.SvcDisc.Ping()
 }
@@ -285,17 +315,8 @@ func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	if conf, exist := redisConf[prefix]; exist {
 		return conf, nil
 	}
-	data, err := e.client.Client().Get(fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis))
-	if err != nil {
-		blog.Errorf("get redis config failed, err: %s", err.Error())
-		return redis.Config{}, err
-	}
-	conf, err := cc.ParseConfigWithData([]byte(data))
-	if err != nil {
-		blog.Errorf("parse redis config failed, err: %s, data: %s", err.Error(), data)
-		return redis.Config{}, err
-	}
-	redisConf[prefix] = redis.ParseConfigFromKV(prefix, conf.ConfigMap)
+
+	redisConf[prefix] = cc.Redis(prefix)
 	return redisConf[prefix], nil
 }
 
@@ -313,16 +334,7 @@ func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	if conf, exist := mongoConf[prefix]; exist {
 		return conf, nil
 	}
-	data, err := e.client.Client().Get(fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo))
-	if err != nil {
-		blog.Errorf("get mongo config failed, err: %s", err.Error())
-		return mongo.Config{}, err
-	}
-	conf, err := cc.ParseConfigWithData([]byte(data))
-	if err != nil {
-		blog.Errorf("parse mongo config failed, err: %s, data: %s", err.Error(), data)
-		return mongo.Config{}, err
-	}
-	mongoConf[prefix] = mongo.ParseConfigFromKV(prefix, conf.ConfigMap)
+
+	mongoConf[prefix] = cc.Mongo(prefix)
 	return mongoConf[prefix], nil
 }

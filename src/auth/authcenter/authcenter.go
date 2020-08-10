@@ -27,6 +27,7 @@ import (
 	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/auth"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
@@ -49,11 +50,10 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 		return AuthConfig{}, nil
 	}
 
-	address, exist := configmap[prefix+".address"]
-	if !exist {
+	address, err := cc.String(prefix+".address")
+	if err != nil {
 		return cfg, errors.New(`missing "address" configuration for auth center`)
 	}
-
 	cfg.Address = strings.Split(strings.Replace(address, " ", "", -1), ",")
 	if len(cfg.Address) == 0 {
 		return cfg, errors.New(`invalid "address" configuration for auth center`)
@@ -64,20 +64,20 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 		}
 	}
 
-	cfg.AppSecret, exist = configmap[prefix+".appSecret"]
-	if !exist {
+	appSecret, err := cc.String(prefix + ".appSecret")
+	if err != nil {
 		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
 	}
-
+	cfg.AppSecret = appSecret
 	if len(cfg.AppSecret) == 0 {
 		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
 
-	cfg.AppCode, exist = configmap[prefix+".appCode"]
-	if !exist {
+	addCode, err := cc.String(prefix + ".appCode")
+	if err != nil {
 		return cfg, errors.New(`missing "appCode" configuration for auth center`)
 	}
-
+	cfg.AppCode = addCode
 	if len(cfg.AppCode) == 0 {
 		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}

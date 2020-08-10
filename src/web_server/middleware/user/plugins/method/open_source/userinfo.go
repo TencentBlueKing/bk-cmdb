@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -85,15 +86,14 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 }
 
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
-	var ok bool
 	var siteURL string
-
+	var err error
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
-		siteURL, ok = config["site.https_domain_url"]
+		siteURL, err = cc.String("webServer.site.httpsDomainUrl")
 	} else {
-		siteURL, ok = config["site.domain_url"]
+		siteURL, err = cc.String("webServer.site.domainUrl")
 	}
-	if !ok {
+	if err != nil {
 		siteURL = ""
 	}
 	return fmt.Sprintf("%s/login?c_url=%s%s", siteURL, siteURL, c.Request.URL.String())
@@ -102,13 +102,14 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	users := make([]*metadata.LoginSystemUserInfo, 0)
-	if len(config["session.user_info"]) == 0 {
+	userInfo, err := cc.String("webServer.session.userInfo")
+	if err != nil {
 		blog.Errorf("User name and password can't be found at session.user_info in config file common.conf, rid:%s", rid)
 		return nil, &errors.RawErrorInfo{
 			ErrCode: common.CCErrWebNoUsernamePasswd,
 		}
 	}
-	userInfos := strings.Split(config["session.user_info"], ",")
+	userInfos := strings.Split(userInfo, ",")
 	for _, userInfo := range userInfos {
 		userPasswd := strings.Split(userInfo, ":")
 		if len(userPasswd) != 2 {

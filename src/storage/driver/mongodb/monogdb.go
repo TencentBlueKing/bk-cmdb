@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metric"
@@ -43,7 +44,7 @@ func Client() dal.RDB {
 
 func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
-	config := mongo.ParseConfigFromKV(prefix, configMap)
+	config := cc.Mongo(prefix)
 	if config.Address == "" {
 		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".host] configuration item")
 		return nil, lastConfigErr

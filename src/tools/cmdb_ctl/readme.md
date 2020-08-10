@@ -218,3 +218,17 @@
       ./tool_ctl limiter del --rulenames=test1,test2
       ./tool_ctl limiter ls
     ```
+### 检查yaml格式文件是否正确
+- 使用方式
+    ```
+      ./tool_ctl checkconf [flags]
+    ```
+- 命令行参数
+    ```
+      --path="": the directory to store configuration
+    ```
+- 示例
+    ```
+      ./tool_ctl checkconf
+      ./tool_ctl checkconf --path="/data/cmdb/cmdb_adminserver/configures"
+    ```

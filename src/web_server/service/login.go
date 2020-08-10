@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -30,9 +31,6 @@ import (
 func (s *Service) LogOutUser(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
-	if err := session.Save(); err != nil {
-		blog.Warnf("save session failed, err: %s ", err.Error())
-	}
 	c.Request.URL.Path = ""
 	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
 	loginURL := userManger.GetLoginUrl(c)
@@ -59,14 +57,14 @@ func (s *Service) LoginUser(c *gin.Context) {
 			"error": defErr.CCError(common.CCErrWebNeedFillinUsernamePasswd).Error(),
 		})
 	}
-
-	if len(s.Config.ConfigMap["session.user_info"]) == 0 {
+	userInfo, err := cc.String("webServer.session.userInfo")
+	if err != nil {
 		c.HTML(200, "login.html", gin.H{
 			"error": defErr.CCError(common.CCErrWebNoUsernamePasswd).Error(),
 		})
 		return
 	}
-	userInfos := strings.Split(s.Config.ConfigMap["session.user_info"], ",")
+	userInfos := strings.Split(userInfo, ",")
 	for _, userInfo := range userInfos {
 		userWithPassword := strings.Split(userInfo, ":")
 		if len(userWithPassword) != 2 {

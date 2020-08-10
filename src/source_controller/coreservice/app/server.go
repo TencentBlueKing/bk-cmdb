@@ -38,7 +38,7 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 		t.Config = new(options.Config)
 	}
 
-	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, string(current.ConfigData))
 
 }
 

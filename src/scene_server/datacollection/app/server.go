@@ -14,7 +14,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -191,7 +190,7 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 	c.hostConfigUpdateMu.Lock()
 	defer c.hostConfigUpdateMu.Unlock()
 
-	if len(curr.ConfigMap) > 0 {
+	if len(curr.ConfigData) > 0 {
 		// NOTE: allow to update configs with empty values?
 		// NOTE: what is prev used for? build a compare logic here?
 
@@ -199,14 +198,11 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 			c.config = &DataCollectionConfig{}
 		}
 
-		if data, err := json.MarshalIndent(curr.ConfigMap, "", "  "); err == nil {
-			blog.V(3).Infof("DataCollection| on host config update event: \n%s", data)
-		}
-
+		blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
 		// ESB configs.
-		c.config.Esb.Addrs = curr.ConfigMap["esb.addr"]
-		c.config.Esb.AppCode = curr.ConfigMap["esb.appCode"]
-		c.config.Esb.AppSecret = curr.ConfigMap["esb.appSecret"]
+		c.config.Esb.Addrs, _ = cc.String("datacollection.esb.addr")
+		c.config.Esb.AppCode, _ = cc.String("datacollection.esb.appCode")
+		c.config.Esb.AppSecret, _ = cc.String("datacollection.esb.appSecret")
 	}
 }
 
@@ -249,19 +245,19 @@ func (c *DataCollection) initConfigs() error {
 	}
 
 	// snap redis.
-	c.config.SnapRedis, err = c.engine.WithRedis("snap-redis")
+	c.config.SnapRedis, err = c.engine.WithRedis("redis.snap")
 	if err != nil {
 		return fmt.Errorf("init snap redis configs, %+v", err)
 	}
 
 	// discover redis.
-	c.config.DiscoverRedis, err = c.engine.WithRedis("discover-redis")
+	c.config.DiscoverRedis, err = c.engine.WithRedis("redis.discover")
 	if err != nil {
 		return fmt.Errorf("init discover redis configs, %+v", err)
 	}
 
 	// netcollect redis.
-	c.config.NetCollectRedis, err = c.engine.WithRedis("netcollect-redis")
+	c.config.NetCollectRedis, err = c.engine.WithRedis("redis.netcollect")
 	if err != nil {
 		return fmt.Errorf("init netcollect redis configs, %+v", err)
 	}

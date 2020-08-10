@@ -1215,3 +1215,8 @@ const (
 	BKCloudAreaStatusNormal   = "1"
 	BKCloudAreaStatusAbnormal = "2"
 )
+
+// configcenter
+const (
+	BKDefaultConfigCenter = "zookeeper"
+)
