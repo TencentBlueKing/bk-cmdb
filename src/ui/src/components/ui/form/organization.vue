@@ -1,7 +1,7 @@
 <template>
     <div class="cmdb-organization-select"
         :class="{
-            'is-focus': focus,
+            'is-focus': focused,
             'is-disabled': disabled,
             'is-readonly': readonly,
             'is-unselected': unselected
@@ -36,7 +36,7 @@
                         ext-cls="search-input"
                         right-icon="bk-icon icon-search"
                         clearable
-                        v-model="searchValue"
+                        v-model.trim="searchValue"
                         @input="handleSearch">
                     </bk-input>
                 </div>
@@ -84,7 +84,7 @@
         },
         data () {
             return {
-                focus: false,
+                focused: false,
                 checked: this.value || [],
                 popoverWidth: 0,
                 searchRequestId: Symbol('orgSearch'),
@@ -135,25 +135,31 @@
                         with_ancestors: true
                     })
 
-                    // 已选中节点的树形数据
-                    const chekcedTreeData = this.getTreeSearchData(checkedRes.results || [])
-                    // 已选中节点的完整树形数据（含兄弟节点）
-                    const fullCheckedTreeData = await this.getCheckedFullTreeData(chekcedTreeData)
-                    // 将匹配的树分支替换以合并
-                    fullCheckedTreeData.forEach(checkedNode => {
-                        const matchedIndex = topData.findIndex(top => top.id === checkedNode.id)
-                        if (matchedIndex !== -1) {
-                            topData[matchedIndex] = checkedNode
-                        }
-                    })
+                    // 可能为空，节点数据存在才获取相关联数据
+                    const chcekedData = checkedRes.results || []
+                    if (chcekedData.length) {
+                        // 已选中节点的树形数据
+                        const chekcedTreeData = this.getTreeSearchData(chcekedData)
+                        // 已选中节点的完整树形数据（含兄弟节点）
+                        const fullCheckedTreeData = await this.getCheckedFullTreeData(chekcedTreeData)
+                        // 将匹配的树分支替换以合并
+                        fullCheckedTreeData.forEach(checkedNode => {
+                            const matchedIndex = topData.findIndex(top => top.id === checkedNode.id)
+                            if (matchedIndex !== -1) {
+                                topData[matchedIndex] = checkedNode
+                            }
+                        })
 
-                    // 设置树数据，选中节点数据已被完整包含
-                    tree.setData(topData)
+                        // 设置树数据，选中节点数据已被完整包含
+                        tree.setData(topData)
 
-                    // 将选中节点全部展开
-                    defaultChecked.forEach(id => tree.setExpanded(id))
-                    // 设置为选中状态
-                    tree.setChecked(defaultChecked)
+                        // 将选中节点全部展开
+                        defaultChecked.forEach(id => tree.setExpanded(id))
+                        // 设置为选中状态
+                        tree.setChecked(defaultChecked)
+                    } else {
+                        tree.setData(topData)
+                    }
                 } else {
                     tree.setData(topData)
                 }
@@ -210,7 +216,8 @@
             },
             setDisplayName () {
                 const tree = this.$refs.tree
-                const displayNames = this.checked.map(id => tree.getNodeById(id)).map(node => node.data.full_name)
+                const nodes = this.checked.map(id => tree.getNodeById(id)).filter(node => !!node)
+                const displayNames = nodes.map(node => node.data.full_name)
                 this.displayName = this.formatName(displayNames)
             },
             formatName (names) {
@@ -346,16 +353,17 @@
                 })
             },
             handleSearch: debounce(async function (value) {
+                const keyword = value.trim()
                 try {
-                    if (value.length) {
+                    if (keyword.length) {
                         const res = await this.getSearchData({
                             lookup_field: 'name',
-                            fuzzy_lookups: value,
+                            fuzzy_lookups: keyword,
                             with_ancestors: true
                         })
                         const data = res.results || []
                         this.setTreeSearchData(data)
-                    } else {
+                    } else if (!value.length) {
                         this.loadTree()
                     }
                 } catch (e) {
@@ -378,10 +386,13 @@
             },
             handleDropdownShow () {
                 this.popoverWidth = this.$el.offsetWidth
-                this.focus = true
+                this.focused = true
             },
             handleDropdownHide () {
-                this.focus = false
+                this.focused = false
+            },
+            focus () {
+                this.$refs.selectDropdown.instance.show()
             }
         }
     }
@@ -516,7 +527,7 @@
         }
 
         .org-tree {
-            height: 220px;
+            height: 220px !important;
 
             .tree-node {
                 .node-name {

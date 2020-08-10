@@ -92,7 +92,7 @@
                     this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_DETAILS,
                         params: {
-                            bk_biz_id: biz[0].bk_biz_id,
+                            bizId: biz[0].bk_biz_id,
                             id: host.bk_host_id
                         }
                     })

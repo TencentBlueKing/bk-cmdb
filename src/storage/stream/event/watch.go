@@ -129,6 +129,10 @@ func (e *Event) loopWatch(ctx context.Context,
 					Nano: base.ClusterTime.I,
 				},
 				Token: base.Token,
+				ChangeDesc: &types.ChangeDescription{
+					UpdatedFields: base.UpdateDesc.UpdatedFields,
+					RemovedFields: base.UpdateDesc.RemovedFields,
+				},
 			}
 		}
 

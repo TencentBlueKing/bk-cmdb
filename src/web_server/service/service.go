@@ -13,10 +13,14 @@
 package service
 
 import (
+	"net/http"
+	"net/http/httputil"
 	"os"
+	"runtime"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
@@ -45,10 +49,28 @@ func (s *Service) WebService() *gin.Engine {
 	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
 	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
+	ws.Use(func(c *gin.Context) {
+		defer func() {
+			// suppresses logging of a stack when err is ErrAbortHandler, same as net/http
+			if err := recover(); err != nil {
+				if err != http.ErrAbortHandler {
+					stack := make([]byte, 10000)
+					nbytes := runtime.Stack(stack, false)
+					if nbytes < len(stack) {
+						stack = stack[:nbytes]
+					}
+					request, _ := httputil.DumpRequest(c.Request, false)
+					blog.Errorf("[Recovery] panic recovered:\n%s\n%s\n%s", string(request), err, string(stack))
+				}
+				c.AbortWithStatus(500)
+			}
+		}()
+		c.Next()
+	})
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
-	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html", s.Config.Site.HtmlRoot + "/login.html")
+	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html")
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)
