@@ -57,7 +57,7 @@ const (
 	Biz                CursorType = "biz"
 	Set                CursorType = "set"
 	Module             CursorType = "module"
-	ObjectBase         CursorType = "object"
+	ObjectBase         CursorType = "object_instance"
 )
 
 func (ct CursorType) ToInt() int {
@@ -105,62 +105,6 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase}
-}
-
-// ParseCursorTypeFromEventType returns target cursor type type base on event type.
-func ParseCursorTypeFromEventType(eventType string) CursorType {
-	switch eventType {
-	case "hostcreate":
-		return Host
-
-	case "hostupdate":
-		return Host
-
-	case "hostdelete":
-		return Host
-
-	case "host_relation":
-		return ModuleHostRelation
-
-	case "bizcreate":
-		return Biz
-
-	case "bizupdate":
-		return Biz
-
-	case "bizdelete":
-		return Biz
-
-	case "setcreate":
-		return Set
-
-	case "setupdate":
-		return Set
-
-	case "setdelete":
-		return Set
-
-	case "modulecreate":
-		return Module
-
-	case "moduleupdate":
-		return Module
-
-	case "moduledelete":
-		return Module
-
-	case "objectcreate":
-		return ObjectBase
-
-	case "objectupdate":
-		return ObjectBase
-
-	case "objectdelete":
-		return ObjectBase
-
-	default:
-		return UnknownType
-	}
 }
 
 // Cursor is a self-defined token which is corresponding to the mongodb's resume token.

@@ -200,7 +200,7 @@ func (w *Watcher) GetEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNod
 
 	_, err := pipe.Exec()
 	if err != nil {
-		blog.ErrorJSON("watch with start from: %d, resource: %s, hit events, but get event detail failed, hit nodes: %s, err: %v, rid: %s",
+		blog.ErrorJSON("watch with start from: %s, resource: %s, hit events, but get event detail failed, hit nodes: %s, err: %v, rid: %s",
 			opts.StartFrom, opts.Resource, hitNodes, err, rid)
 		return nil, err
 	}

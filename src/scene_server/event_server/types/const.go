@@ -28,12 +28,23 @@ const (
 	// EventCacheEventIDKey the event instance id key in cache
 	EventCacheEventIDKey = common.BKCacheKeyV3Prefix + "event:inst_id"
 
-	EventCacheEventQueueKey                 = common.BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventQueueDuplicateKey        = common.BKCacheKeyV3Prefix + "event:inst_queue_duplicate"
+	// EventCacheDistIDPrefix is prefix of event dist id key in cache.
+	EventCacheDistIDPrefix = common.BKCacheKeyV3Prefix + "event:dist_id_"
+
+	// EventCacheEventQueueKey is main event queue key in cache.
+	EventCacheEventQueueKey = common.BKCacheKeyV3Prefix + "event:queue"
+
+	// EventCacheEventQueueDuplicateKey is duplicate event queue key in cache.
+	EventCacheEventQueueDuplicateKey = common.BKCacheKeyV3Prefix + "event:queue_duplicate"
+
+	// EventCacheDistCallBackCountPrefix is prefix of event callback stats key in cache.
+	EventCacheDistCallBackCountPrefix = common.BKCacheKeyV3Prefix + "event:dist_callback_"
+
+	// EventCacheIdentInstPrefix is prefix of host identifier instance key in cache.
+	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
+
+	// EventCacheSubscriberEventQueueKeyPrefix is prefix of subscriber event queue key in cache.
 	EventCacheSubscriberEventQueueKeyPrefix = common.BKCacheKeyV3Prefix + "event:inst_queue_suber_"
-	EventCacheDistCallBackCountPrefix       = common.BKCacheKeyV3Prefix + "event:dist_callback_"
-	EventCacheDistIDPrefix                  = common.BKCacheKeyV3Prefix + "event:dist_id_"
-	EventCacheIdentInstPrefix               = common.BKCacheKeyV3Prefix + "ident:inst_"
 
 	// EventCacheSubscriberCursorPrefixis prefix for subscriber on target resource event type.
 	// e.g: cc:v3:event:type:suberid:cursor_hostcreate:1 -> MarshalChainNodeStr

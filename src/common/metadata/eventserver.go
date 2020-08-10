@@ -19,6 +19,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"configcenter/src/common/watch"
 )
 
 type RspSubscriptionCreate struct {
@@ -198,4 +200,51 @@ func (n *ConfirmMode) Scan(value interface{}) error {
 // Value implement sql driver's Value interface
 func (n ConfirmMode) Value() (driver.Value, error) {
 	return string(n), nil
+}
+
+// ParseCursorTypeFromEventType returns target cursor type type base on event type.
+func ParseCursorTypeFromEventType(eventType string) watch.CursorType {
+	switch eventType {
+	case "hostcreate":
+		return watch.Host
+
+	case "hostupdate":
+		return watch.Host
+
+	case "hostdelete":
+		return watch.Host
+
+	case "processmodule":
+		return watch.ModuleHostRelation
+
+	case "bizcreate":
+		return watch.Biz
+
+	case "bizupdate":
+		return watch.Biz
+
+	case "bizdelete":
+		return watch.Biz
+
+	case "setcreate":
+		return watch.Set
+
+	case "setupdate":
+		return watch.Set
+
+	case "setdelete":
+		return watch.Set
+
+	case "modulecreate":
+		return watch.Module
+
+	case "moduleupdate":
+		return watch.Module
+
+	case "moduledelete":
+		return watch.Module
+
+	default:
+		return watch.ObjectBase
+	}
 }

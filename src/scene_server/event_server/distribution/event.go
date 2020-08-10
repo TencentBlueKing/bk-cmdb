@@ -74,9 +74,6 @@ type EventSender struct {
 	// and calculates node base on hash key of data.
 	hash *Hash
 
-	// registry is prometheus registry.
-	registry prometheus.Registerer
-
 	// metrics.
 	// senderHandleTotal is event sender handle total stat.
 	senderHandleTotal *prometheus.CounterVec
@@ -87,36 +84,16 @@ type EventSender struct {
 
 // NewEventSender creates a new EventSender object.
 func NewEventSender(ctx context.Context, subid int64, cache *redis.Client, distributer *Distributer,
-	hash *Hash, registry prometheus.Registerer) *EventSender {
+	hash *Hash, senderHandleTotal *prometheus.CounterVec, senderHandleDuration *prometheus.HistogramVec) *EventSender {
 	return &EventSender{
-		ctx:         ctx,
-		subid:       subid,
-		cache:       cache,
-		distributer: distributer,
-		hash:        hash,
-		registry:    registry,
+		ctx:                  ctx,
+		subid:                subid,
+		cache:                cache,
+		distributer:          distributer,
+		hash:                 hash,
+		senderHandleTotal:    senderHandleTotal,
+		senderHandleDuration: senderHandleDuration,
 	}
-}
-
-// registerMetrics registers prometheus metrics.
-func (s *EventSender) registerMetrics() {
-	s.senderHandleTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: fmt.Sprintf("%s_sender_handle_total", types.MetricsNamespacePrefix),
-			Help: "total number stats of event sender.",
-		},
-		[]string{"status"},
-	)
-	s.registry.MustRegister(s.senderHandleTotal)
-
-	s.senderHandleDuration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: fmt.Sprintf("%s_sender_handle_duration", types.MetricsNamespacePrefix),
-			Help: "sender duration of events.",
-		},
-		[]string{"status"},
-	)
-	s.registry.MustRegister(s.senderHandleDuration)
 }
 
 // Handle add event dist inst to subscriber chan, and sender would send message to
@@ -130,11 +107,9 @@ func (s *EventSender) Handle(dist *metadata.DistInst) error {
 	if err != nil {
 		return err
 	}
-
 	if _, err := s.cache.LPush(types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(dist.SubscriptionID), distData).Result(); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -155,6 +130,7 @@ func (s *EventSender) send(dist *metadata.DistInst) error {
 	if subscription == nil {
 		return fmt.Errorf("subscription not found, %+v", s.subid)
 	}
+	dist.OwnerID = subscription.OwnerID
 	s.increaseTotal(subscription.SubscriptionID)
 
 	var errFinal error
@@ -235,6 +211,7 @@ func (s *EventSender) send(dist *metadata.DistInst) error {
 func (s *EventSender) run() {
 	for {
 		if !s.hash.IsMatch(fmt.Sprint(s.subid)) {
+			blog.Info("subscriber id hash not matched, ignore send action here for subid[%d]", s.subid)
 			s.senderHandleTotal.WithLabelValues("HashNotMatched").Inc()
 			time.Sleep(defaultHandleTimeout)
 			continue
@@ -251,7 +228,6 @@ func (s *EventSender) run() {
 
 		dist := &metadata.DistInst{}
 		if err := json.Unmarshal([]byte(distData), dist); err != nil {
-			s.senderHandleTotal.WithLabelValues("UnmarshalEventFailed").Inc()
 			blog.Errorf("unmarshal dist inst for subscriber failed, %+v", err)
 			continue
 		}
@@ -277,9 +253,6 @@ func (s *EventSender) run() {
 
 // Run setups sender and keep handling event dist.
 func (s *EventSender) Run() {
-	// register metrics.
-	s.registerMetrics()
-
 	// run sender.
 	go s.run()
 }
@@ -315,6 +288,12 @@ type EventHandler struct {
 
 	// eventHandleDuration is event handle cost duration stat.
 	eventHandleDuration *prometheus.HistogramVec
+
+	// senderHandleTotal is event sender handle total stat.
+	senderHandleTotal *prometheus.CounterVec
+
+	// senderHandleDuration is event sender cost duration stat.
+	senderHandleDuration *prometheus.HistogramVec
 }
 
 // NewEventHandler creates new EventHandler object.
@@ -359,6 +338,24 @@ func (h *EventHandler) registerMetrics() {
 		[]string{"status"},
 	)
 	h.registry.MustRegister(h.eventHandleDuration)
+
+	h.senderHandleTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: fmt.Sprintf("%s_sender_handle_total", types.MetricsNamespacePrefix),
+			Help: "total number stats of event sender.",
+		},
+		[]string{"status"},
+	)
+	h.registry.MustRegister(h.senderHandleTotal)
+
+	h.senderHandleDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: fmt.Sprintf("%s_sender_handle_duration", types.MetricsNamespacePrefix),
+			Help: "sender duration of events.",
+		},
+		[]string{"status"},
+	)
+	h.registry.MustRegister(h.senderHandleDuration)
 }
 
 // SetDistributer setups distributer to event handler.
@@ -370,8 +367,11 @@ func (h *EventHandler) SetDistributer(distributer *Distributer) {
 // handle host identifier infos. Handler would find all relate subscribers and send event message
 // to target subscribers by callback.
 func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
+	blog.Info("handle events count[%d]", len(events))
+
 	for _, event := range events {
 		eventInst := &metadata.EventInst{
+			ID:         h.cache.Incr(types.EventCacheEventIDKey).Val(),
 			Cursor:     event.Cursor,
 			ActionTime: metadata.Now(),
 		}
@@ -424,12 +424,12 @@ func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
 			continue
 		}
 
-		eventData, err := json.Marshal(event)
+		eventData, err := json.Marshal(eventInst)
 		if err != nil {
-			h.eventHandleTotal.WithLabelValues("TransEventInstFailed").Inc()
 			blog.Errorf("marshal event data failed, %+v, %+v", event, err)
 			continue
 		}
+		blog.Info("handle event %+v", eventInst)
 
 		// push event data to main event queue.
 		cost := time.Now()
@@ -439,6 +439,7 @@ func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
 			blog.Errorf("push event data to main event queue failed, %+v, %+v", event, err)
 			continue
 		}
+		h.eventHandleDuration.WithLabelValues("PushEventInst").Observe(time.Since(cost).Seconds())
 	}
 
 	return nil
@@ -465,11 +466,11 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 		return nil, nil
 	}
 	eventData := []byte(eventStr)
+	blog.Info("pop new event, %s", eventStr)
 
 	// marshal to EventInst.
 	event := &metadata.EventInst{}
 	if err := json.Unmarshal(eventData, event); err != nil {
-		h.eventHandleTotal.WithLabelValues("UnmarshalEventFailed").Inc()
 		return nil, err
 	}
 	return event, nil
@@ -526,7 +527,9 @@ func (h *EventHandler) pushToSender(subid int64, dist *metadata.DistInst) error 
 	defer h.sendersMu.Unlock()
 
 	if _, isExist := h.senders[subid]; !isExist {
-		newSender := NewEventSender(h.ctx, subid, h.cache, h.distributer, h.hash, h.registry)
+		newSender := NewEventSender(h.ctx, subid, h.cache, h.distributer, h.hash,
+			h.senderHandleTotal, h.senderHandleDuration)
+
 		newSender.Run()
 		h.senders[subid] = newSender
 	}
@@ -551,7 +554,6 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 	// trans event inst to dist inst.
 	dists, err := h.getDistInst(event)
 	if err != nil {
-		h.eventHandleTotal.WithLabelValues("TransDistInstFailed").Inc()
 		return fmt.Errorf("trans event inst to dist inst failed, %+v", err)
 	}
 
@@ -565,6 +567,7 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 		// distribute to subscribers.
 		for _, subscriber := range subscribers {
 			if !h.hash.IsMatch(fmt.Sprint(subscriber)) {
+				blog.Info("subscriber id hash not matched, ignore push to sender action here for subid[%d], %+v", subscriber, dist)
 				h.eventHandleTotal.WithLabelValues("HashNotMatched").Inc()
 				continue
 			}
@@ -577,6 +580,7 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 				h.eventHandleTotal.WithLabelValues("PushEventToSenderFailed").Inc()
 				return err
 			}
+			h.eventHandleDuration.WithLabelValues("PushEventToSender").Observe(time.Since(cost).Seconds())
 			h.eventHandleTotal.WithLabelValues("Success").Inc()
 		}
 	}

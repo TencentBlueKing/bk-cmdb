@@ -148,7 +148,7 @@ func (d *Distributer) registerMetrics() {
 func (d *Distributer) LoadSubscriptions() error {
 	// list and watch subscriptions.
 	opts := types.Options{
-		EventStruct: make(map[string]interface{}),
+		EventStruct: &metadata.Subscription{},
 		Collection:  common.BKTableNameSubscription,
 	}
 
@@ -251,7 +251,7 @@ func (d *Distributer) getResourceCursor(cursorType watch.CursorType) (*watch.Cur
 	defer d.subscribersMu.RUnlock()
 
 	for eventType, subids := range d.subscribers {
-		if watch.ParseCursorTypeFromEventType(eventType) != cursorType {
+		if metadata.ParseCursorTypeFromEventType(eventType) != cursorType {
 			blog.Warnf("parse cursor type from event type[%s], not equal the cursor type[%s], ignore it", eventType, cursorType)
 			continue
 		}
@@ -261,14 +261,14 @@ func (d *Distributer) getResourceCursor(cursorType watch.CursorType) (*watch.Cur
 
 		// range subscribers on target resource event.
 		for _, subid := range subids {
-			cursorKey := fmt.Sprintf("%s:%s", cursorKey, subid)
+			cursorKey := fmt.Sprintf("%s:%d", cursorKey, subid)
 
 			// get target subscriber cursor.
 			var subCursor *watch.Cursor
 
 			val, err := d.cache.Get(cursorKey).Result()
 			if err != nil {
-				return nil, fmt.Errorf("parse resource cursors failed, quert subscriber cursor[%s], %+v", cursorKey, err)
+				return nil, fmt.Errorf("parse resource cursors failed, query subscriber cursor[%s], %+v", cursorKey, err)
 			}
 
 			if len(val) != 0 {
@@ -312,9 +312,9 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 			// try get newest cursor every time.
 			cursor, err := d.getResourceCursor(cursorType)
 			if err != nil {
-				d.watchAndDistributeTotal.WithLabelValues("ResourceCursorFailed").Inc()
+				d.watchAndDistributeTotal.WithLabelValues("GetResourceCursorFailed").Inc()
 				blog.Info("watch and distribute for resource[%+v] failed, can't get subscriber "+
-					"cursor, using head key now, %+v", cursorType, err)
+					"cursor, using tail key now, %+v", cursorType, err)
 			}
 
 			opts := &watch.WatchEventOptions{Resource: cursorType, Cursor: watch.NoEventCursor}
@@ -322,7 +322,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 			if cursor != nil {
 				cursorStr, err := cursor.Encode()
 				if err != nil {
-					d.watchAndDistributeTotal.WithLabelValues("ResourceEncodeCursorFailed").Inc()
+					d.watchAndDistributeTotal.WithLabelValues("ResourceCursorEncodeFailed").Inc()
 					blog.Info("watch and distribute for resource[%+v] failed, can't encode "+
 						"subscriber cursor, %+v", cursorType, err)
 				} else {
@@ -333,7 +333,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 			// watch resource with cursor.
 			if err := d.watchAndDistributeWithCursor(cursorType, resourcekey, opts); err != nil {
 				d.watchAndDistributeTotal.WithLabelValues("ResourceWatchDistributeFailed").Inc()
-				blog.Info("watch and distribute for resource[%+v] failed, retry now, %+v", err)
+				blog.Info("watch and distribute for resource[%+v] failed, retry now, %+v", cursorType, err)
 				time.Sleep(defaultWatchEventLoopInternal)
 			}
 		}
@@ -345,6 +345,9 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 // watchAndDistributeWithCursor watches with oldest cursor(NoEventCursor when find oldest cursor faild or no-exist) and
 // distributes events to event handler which would send event messages to subscribers.
 func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, key event.Key, opts *watch.WatchEventOptions) error {
+	blog.Info("start watching and distribute for resource[%+v]", cursorType)
+	defer blog.Info("stop watching and distribute for resource[%+v]", cursorType)
+
 	// build a resource watcher.
 	watcher := ewatcher.NewWatcher(d.ctx, d.cache)
 
@@ -359,12 +362,16 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		d.watchAndDistributeDuration.WithLabelValues("GetNodesWithCursor").Observe(time.Since(cost).Seconds())
 		if err != nil {
 			if err == ewatcher.HeadNodeNotExistError {
+				blog.Info("watching and distribute for resource[%+v], %+v", cursorType, err)
+
 				// there is no origin events.
 				time.Sleep(defaultWatchEventLoopInternal)
 				continue
 			}
 
 			if err == ewatcher.StartCursorNotExistError {
+				blog.Info("watching and distribute for resource[%+v], %+v", cursorType, err)
+
 				// target cursor not exist, watch from head node.
 				startCursor = key.HeadKey()
 				time.Sleep(defaultWatchEventLoopInternal)
@@ -374,6 +381,8 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		}
 
 		if len(nodes) == 0 {
+			blog.Info("watching and distribute for resource[%+v], empty nodes", cursorType)
+
 			// there is no events from origin.
 			time.Sleep(defaultWatchEventLoopInternal)
 			continue
@@ -383,6 +392,8 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		// hit target event types.
 		hitNodes := watcher.GetHitNodeWithEventType(nodes, opts.EventTypes)
 		if len(hitNodes) == 0 {
+			blog.Info("watching and distribute for resource[%+v], empty hit nodes", cursorType)
+
 			// range some nodes but no any hits, so reset the cursor to current cursor,
 			// and try to get hit nodes in next round.
 			startCursor = lastNode.Cursor
@@ -415,6 +426,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		}
 
 		// distribute success, reset cursor and try to watch next round.
+		blog.Info("watching and distribute for resource[%+v], handled nodes[%d]", cursorType, len(events))
 		startCursor = lastNode.Cursor
 		d.watchAndDistributeDuration.WithLabelValues("HandleEvents").Observe(time.Since(cost).Seconds())
 		d.watchAndDistributeTotal.WithLabelValues("Success").Inc()
