@@ -31,6 +31,7 @@ import (
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/redis.v5"
 )
 
@@ -82,22 +83,65 @@ type Distributer struct {
 
 	// eventHandler is event handler that handles all event senders.
 	eventHandler *EventHandler
+
+	// registry is prometheus registry.
+	registry prometheus.Registerer
+
+	// metrics.
+	// watchAndDistributeTotal is event watch and distribute total stat.
+	watchAndDistributeTotal *prometheus.CounterVec
+
+	// watchAndDistributeDuration is watch and distribute cost duration stat.
+	watchAndDistributeDuration *prometheus.HistogramVec
 }
 
 // NewDistributer creates a new Distributer instance.
 func NewDistributer(ctx context.Context, db dal.RDB, cache *redis.Client,
-	subWatcher reflector.Interface, eventHandler *EventHandler) *Distributer {
+	subWatcher reflector.Interface, registry prometheus.Registerer) *Distributer {
 	return &Distributer{
 		ctx:                          ctx,
 		db:                           db,
 		cache:                        cache,
 		subWatcher:                   subWatcher,
-		eventHandler:                 eventHandler,
+		registry:                     registry,
 		subscriptions:                make(map[int64]*metadata.Subscription),
 		subscribers:                  make(map[string][]int64),
 		resourceCursors:              make(map[watch.CursorType]*watch.Cursor),
 		waitForHandleResourceCursors: make(chan struct{}),
 	}
+}
+
+// registerMetrics registers prometheus metrics.
+func (d *Distributer) registerMetrics() {
+	d.watchAndDistributeTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: fmt.Sprintf("%s_watch_dist_total", etypes.MetricsNamespacePrefix),
+			Help: "total number stats of watched and distributed event.",
+		},
+		[]string{"status"},
+	)
+	d.registry.MustRegister(d.watchAndDistributeTotal)
+
+	d.registry.MustRegister(prometheus.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Name: fmt.Sprintf("%s_subscriptions", etypes.MetricsNamespacePrefix),
+			Help: "current number of subscriptions.",
+		},
+		func() float64 {
+			d.subscriptionsMu.RLock()
+			defer d.subscriptionsMu.RUnlock()
+			return float64(len(d.subscriptions))
+		},
+	))
+
+	d.watchAndDistributeDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: fmt.Sprintf("%s_watch_dist_duration", etypes.MetricsNamespacePrefix),
+			Help: "watch and distribute duration of events.",
+		},
+		[]string{"status"},
+	)
+	d.registry.MustRegister(d.watchAndDistributeDuration)
 }
 
 // LoadSubscriptions loads all subscriptions in cc.
@@ -268,6 +312,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 			// try get newest cursor every time.
 			cursor, err := d.getResourceCursor(cursorType)
 			if err != nil {
+				d.watchAndDistributeTotal.WithLabelValues("ResourceCursorFailed").Inc()
 				blog.Info("watch and distribute for resource[%+v] failed, can't get subscriber "+
 					"cursor, using head key now, %+v", cursorType, err)
 			}
@@ -277,6 +322,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 			if cursor != nil {
 				cursorStr, err := cursor.Encode()
 				if err != nil {
+					d.watchAndDistributeTotal.WithLabelValues("ResourceEncodeCursorFailed").Inc()
 					blog.Info("watch and distribute for resource[%+v] failed, can't encode "+
 						"subscriber cursor, %+v", cursorType, err)
 				} else {
@@ -286,6 +332,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 
 			// watch resource with cursor.
 			if err := d.watchAndDistributeWithCursor(cursorType, resourcekey, opts); err != nil {
+				d.watchAndDistributeTotal.WithLabelValues("ResourceWatchDistributeFailed").Inc()
 				blog.Info("watch and distribute for resource[%+v] failed, retry now, %+v", err)
 				time.Sleep(defaultWatchEventLoopInternal)
 			}
@@ -307,7 +354,9 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 	}
 
 	for {
+		cost := time.Now()
 		nodes, err := watcher.GetNodesFromCursor(defaultWatchEventStepSize, startCursor, key)
+		d.watchAndDistributeDuration.WithLabelValues("GetNodesWithCursor").Observe(time.Since(cost).Seconds())
 		if err != nil {
 			if err == ewatcher.HeadNodeNotExistError {
 				// there is no origin events.
@@ -342,15 +391,21 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		}
 
 		// get hit event datas.
+		cost = time.Now()
 		events, err := watcher.GetEventsWithCursorNodes(opts, hitNodes, key, "INNER-WATCHER")
+		d.watchAndDistributeDuration.WithLabelValues("GetEventsWithCursor").Observe(time.Since(cost).Seconds())
 		if err != nil {
+			d.watchAndDistributeTotal.WithLabelValues("GetEventsWithCursorFailed").Inc()
 			blog.Info("distribute resource[%+v] get events with cursor nodes failed, %+v", cursorType, err)
 			time.Sleep(defaultWatchEventLoopInternal)
 			continue
 		}
 
 		// distribute to subscriber senders.
+		cost = time.Now()
 		if err := d.eventHandler.Handle(events); err != nil {
+			d.watchAndDistributeDuration.WithLabelValues("HandleEvents").Observe(time.Since(cost).Seconds())
+			d.watchAndDistributeTotal.WithLabelValues("HandleEventsFailed").Inc()
 			blog.Info("distribute resource[%+v] events[%d] to event handler failed, %+v", cursorType, len(events), err)
 
 			// get hit nodes success, but can't distribute to event handler, do not reset cursor,
@@ -361,6 +416,8 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 		// distribute success, reset cursor and try to watch next round.
 		startCursor = lastNode.Cursor
+		d.watchAndDistributeDuration.WithLabelValues("HandleEvents").Observe(time.Since(cost).Seconds())
+		d.watchAndDistributeTotal.WithLabelValues("Success").Inc()
 	}
 
 	return nil
@@ -426,7 +483,12 @@ func (d *Distributer) FindSubscription(subid int64) *metadata.Subscription {
 
 // Start starts the Distributer, it would load all subscriptions in listwatch mode, and handle runtime
 // subscription update messages, push event to subscribers when tatget event happend.
-func (d *Distributer) Start() error {
+func (d *Distributer) Start(eventHandler *EventHandler) error {
+	d.eventHandler = eventHandler
+
+	// register metrics.
+	d.registerMetrics()
+
 	// list and keep watching subscriptions.
 	if err := d.LoadSubscriptions(); err != nil {
 		return fmt.Errorf("load subscriptions at first setups failed, %+v", err)
@@ -436,7 +498,6 @@ func (d *Distributer) Start() error {
 	<-d.waitForHandleResourceCursors
 
 	// run event hander.
-	d.eventHandler.SetDistributer(d)
 	if err := d.eventHandler.Start(); err != nil {
 		return fmt.Errorf("start event handler failed, %+v", err)
 	}

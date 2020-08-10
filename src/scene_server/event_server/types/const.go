@@ -22,6 +22,8 @@ var (
 )
 
 const (
+	// MetricsNamespacePrefix is prefix of metrics namespace.
+	MetricsNamespacePrefix = "cmdb_eventserver"
 
 	// EventCacheEventIDKey the event instance id key in cache
 	EventCacheEventIDKey = common.BKCacheKeyV3Prefix + "event:inst_id"

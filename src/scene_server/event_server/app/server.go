@@ -34,6 +34,7 @@ import (
 	dalredis "configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/redis.v5"
 )
 
@@ -68,12 +69,18 @@ type EventServer struct {
 	// subWatcher is subscription watcher.
 	subWatcher reflector.Interface
 
+	// eventHandler is event handler that handles all event senders.
+	eventHandler *distribution.EventHandler
+
 	// distributer handles all events distribution.
 	distributer *distribution.Distributer
 
 	// hash collections hash object, that updates target nodes in dynamic mode,
 	// and calculates node base on hash key of data.
 	hash *distribution.Hash
+
+	// registry is prometheus registry.
+	registry prometheus.Registerer
 }
 
 // NewEventServer creates a new EventServer object.
@@ -106,6 +113,7 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 	// set backbone engine.
 	newEventServer.engine = engine
 	newEventServer.service = svc.NewService(ctx, engine)
+	newEventServer.registry = engine.Metric().Registry()
 
 	return newEventServer, nil
 }
@@ -213,7 +221,7 @@ func (es *EventServer) initModules() error {
 	es.service.SetCache(redisCli)
 	blog.Infof("init modules, connected to cc redis, %+v", es.config.Redis)
 
-	authCli, err := authcenter.NewAuthCenter(nil, es.config.Auth, es.engine.Metric().Registry())
+	authCli, err := authcenter.NewAuthCenter(nil, es.config.Auth, es.registry)
 	if err != nil {
 		return fmt.Errorf("new authcenter failed: %v, config: %+v", err, es.config.Auth)
 	}
@@ -228,15 +236,17 @@ func (es *EventServer) initModules() error {
 	es.subWatcher = subWatcher
 	blog.Infof("init modules, init subscription stream watcher success")
 
-	// init event handler.
-	eventHandler := distribution.NewEventHandler(es.ctx, es.redisCli, es.hash)
-	blog.Infof("init modules, create event handler success")
-
 	// init distributer.
-	distributer := distribution.NewDistributer(es.ctx, es.db, es.redisCli, es.subWatcher, eventHandler)
+	distributer := distribution.NewDistributer(es.ctx, es.db, es.redisCli, es.subWatcher, es.registry)
 	es.distributer = distributer
 	es.service.SetDistributer(distributer)
 	blog.Infof("init modules, create event distributer success")
+
+	// init event handler.
+	eventHandler := distribution.NewEventHandler(es.ctx, es.redisCli, es.hash, es.registry)
+	es.eventHandler = eventHandler
+	es.eventHandler.SetDistributer(distributer)
+	blog.Infof("init modules, create event handler success")
 
 	return nil
 }
@@ -256,7 +266,7 @@ func (es *EventServer) Run() error {
 	blog.Info("init modules success!")
 
 	// run main logic comm distributer.
-	if err := es.distributer.Start(); err != nil {
+	if err := es.distributer.Start(es.eventHandler); err != nil {
 		return fmt.Errorf("distributer start failed, %+v", err)
 	}
 	blog.Info("distributer starting now!")
