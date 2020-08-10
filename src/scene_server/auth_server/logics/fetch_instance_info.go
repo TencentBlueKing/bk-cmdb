@@ -13,7 +13,6 @@
 package logics
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/ac/iam"
@@ -29,25 +28,13 @@ import (
 var resourceParentMap = iam.GetResourceParentMap()
 
 // fetch resource instances' specified attributes info using instance ids
-func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) ([]map[string]interface{}, error) {
-	filter, ok := req.Filter.(types.FetchInstanceInfoFilter)
-	if !ok {
-		blog.ErrorJSON("request filter %s is not the right type for fetch_instance_info method, rid: %s", req.Filter, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
-	}
-	if len(filter.IDs) == 0 {
-		blog.ErrorJSON("request filter %s ids not set for fetch_instance_info method, rid: %s", req.Filter, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "filter.ids")
-	}
-	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
-	}
+func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter,
+	page types.Page, extraCond map[string]interface{}) ([]map[string]interface{}, error) {
 
-	idField := GetResourceIDField(req.Type)
-	nameField := GetResourceNameField(req.Type)
+	idField := GetResourceIDField(resourceType)
+	nameField := GetResourceNameField(resourceType)
 	if idField == "" || nameField == "" {
-		blog.Errorf("request type %s is invalid, rid: %s", req.Type, kit.Rid)
+		blog.Errorf("request type %s is invalid, rid: %s", resourceType, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
 	}
 
@@ -69,15 +56,15 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 				needPath = true
 			}
 		}
-		if needPath && req.Type != iam.Host {
-			for _, parent := range resourceParentMap[req.Type] {
+		if needPath && resourceType != iam.Host {
+			for _, parent := range resourceParentMap[resourceType] {
 				attrs = append(attrs, string(parent))
 			}
 		}
 	}
 
 	cond := make(map[string]interface{})
-	if isResourceIDStringType(req.Type) {
+	if isResourceIDStringType(resourceType) {
 		cond[idField] = map[string]interface{}{
 			common.BKDBIN: filter.IDs,
 		}
@@ -96,13 +83,19 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 		}
 	}
 
+	if len(extraCond) > 0 {
+		cond = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{cond, extraCond},
+		}
+	}
+
 	param := metadata.PullResourceParam{
 		Condition: cond,
 		Fields:    attrs,
-		Limit:     req.Page.Limit,
-		Offset:    req.Page.Offset,
+		Limit:     page.Limit,
+		Offset:    page.Offset,
 	}
-	instances, err := lgc.searchAuthResource(kit, param, req.Type)
+	instances, err := lgc.searchAuthResource(kit, param, resourceType)
 	if err != nil {
 		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
 		return nil, err
@@ -115,7 +108,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 			instance[types.NameField] = util.GetStrByInterface(instance[nameField])
 		}
 		if needPath {
-			instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, req.Type, instance)
+			instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
 			if err != nil {
 				blog.ErrorJSON("getResourceIamPath failed, error: %s, instance: %s, rid: %s", err.Error(), instance, kit.Rid)
 				return nil, err
@@ -123,6 +116,25 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 		}
 	}
 	return instances.Info, nil
+}
+
+func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.FetchInstanceInfoFilter, error) {
+	filter, ok := req.Filter.(types.FetchInstanceInfoFilter)
+	if !ok {
+		blog.ErrorJSON("request filter %s is not the right type for fetch_instance_info method, rid: %s", req.Filter, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
+	}
+
+	if len(filter.IDs) == 0 {
+		blog.ErrorJSON("request filter %s ids not set for fetch_instance_info method, rid: %s", req.Filter, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "filter.ids")
+	}
+
+	if req.Page.IsIllegal() {
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
+	}
+	return &filter, nil
 }
 
 // get resource iam path
@@ -142,26 +154,9 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 		return nil, err
 	}
 
-	// get host iam path, either in resource pool directory or in business TODO support host in business module when topology is supported
-	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
-		Condition: map[string]interface{}{"default": 1},
-	}
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, query)
+	// get host iam path, either in resource pool directory or in business TODO: support host in business module when topology is supported
+	defaultBizID, err := lgc.GetResourcePoolBizID(kit)
 	if err != nil {
-		blog.Errorf("get resource pool id failed, error: %s, rid: %s", err.Error(), kit.Rid)
-		return nil, err
-	}
-	if !result.Result {
-		blog.Errorf("get resource pool id failed, error code: %d, error message: %s, rid: %s", result.Code, result.ErrMsg, kit.Rid)
-		return nil, result.CCError()
-	}
-	if len(result.Data.Info) == 0 {
-		return nil, fmt.Errorf("get resource pool id failed, no default biz found")
-	}
-	defaultBizID, err := result.Data.Info[0].Int64(common.BKAppIDField)
-	if err != nil {
-		blog.Errorf("defaultBizID %v parse int failed, error: %s, rid: %s", result.Data.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
 		return nil, err
 	}
 
