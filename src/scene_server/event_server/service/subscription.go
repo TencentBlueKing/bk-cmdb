@@ -132,6 +132,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 		return
 	}
+	s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
 
 	// register subscription to iam
 	iamResource := meta.ResourceAttribute{
@@ -191,6 +192,9 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 		return
 	}
+	s.cache.Del(types.EventCacheDistIDPrefix+fmt.Sprint(sub.SubscriptionID),
+		types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(sub.SubscriptionID),
+		types.EventCacheDistCallBackCountPrefix+fmt.Sprint(sub.SubscriptionID))
 
 	// deregister subscription from iam
 	iamResource := meta.ResourceAttribute{

@@ -51,7 +51,19 @@ const (
 	defaultSendTimeout = 10 * time.Second
 
 	// defaultFusingEventExpireSec is default expire second num for event.
-	defaultFusingEventExpireSec = 5 * 60
+	defaultFusingEventExpireSec = 3 * 60 * 60
+
+	// defaultCleanCheckInterval is default interval for cleaning check.
+	defaultCleanCheckInterval = time.Minute
+
+	// defaultCleanTrimThreshold is default threshold for cleaning trim.
+	defaultCleanTrimThreshold = 2 * 10000
+
+	// defaultCleanDelThreshold is default threshold for cleaning del.
+	defaultCleanDelThreshold = 5 * 10000
+
+	// defaultCleanUnit is default clean unit count for cleaning.
+	defaultCleanUnit = 10000
 
 	// defaultEventCacheSubscriberCursorExpire is default expire duration for subscriber cursor.
 	defaultEventCacheSubscriberCursorExpire = 6 * time.Hour
@@ -488,14 +500,22 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 		return nil, nil
 	}
 	eventData := []byte(eventStr)
-	blog.Info("pop new event, %s", eventStr)
 
 	// marshal to EventInst.
-	event := &metadata.EventInst{}
-	if err := json.Unmarshal(eventData, event); err != nil {
+	eventInst := &metadata.EventInst{}
+	if err := json.Unmarshal(eventData, eventInst); err != nil {
 		return nil, err
 	}
-	return event, nil
+
+	// check expire event.
+	if time.Now().Unix()-eventInst.ActionTime.Unix() > defaultFusingEventExpireSec {
+		// old event, expire it.
+		h.eventHandleTotal.WithLabelValues("ExpireEventNum").Inc()
+		return nil, nil
+	}
+	blog.Info("pop new event, %s", eventStr)
+
+	return eventInst, nil
 }
 
 // nextDistID returns new event dist id for target subscriber.
@@ -564,6 +584,72 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 	return nil
 }
 
+// clean cleans expire or redundancy events in event cache queue.
+func (h *EventHandler) clean() {
+	ticker := time.NewTicker(defaultCleanCheckInterval)
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C
+		blog.Info("cleaning expire and redundancy events now")
+
+		// clean.
+		eventCount, err := h.cache.LLen(types.EventCacheEventQueueKey).Result()
+		if err != nil {
+			blog.Errorf("fetch expire and redundancy events failed, %+v", err)
+			continue
+		}
+		blog.Info("cleaning events, current events count[%d], trim threshold[%d], delete threshold[%d], clean unit count[%d]",
+			eventCount, defaultCleanTrimThreshold, defaultCleanDelThreshold, defaultCleanUnit)
+
+		if eventCount < defaultCleanTrimThreshold {
+			continue
+		}
+
+		if eventCount < defaultCleanDelThreshold {
+			if _, err := h.cache.LTrim(types.EventCacheEventQueueKey, 0, eventCount-defaultCleanUnit).Result(); err != nil {
+				blog.Errorf("trim expire and redundancy events failed, %+v", err)
+				continue
+			}
+		}
+
+		// too many events.
+		if _, err := h.cache.Del(types.EventCacheEventQueueKey).Result(); err != nil {
+			blog.Errorf("delete expire and redundancy queue failed, %+v", err)
+			continue
+		}
+		blog.Info("cleaning expire and redundancy events done")
+	}
+}
+
+// start starts the poping and handling logic really.
+func (h *EventHandler) start() {
+	// keep cleaning.
+	go h.clean()
+
+	for {
+		// pop.
+		event, err := h.popEvent()
+		if err != nil {
+			blog.Errorf("pop new event failed, %+v", err)
+			time.Sleep(defaultHandleTimeout)
+			continue
+		}
+
+		// ignore empty event.
+		if event == nil {
+			continue
+		}
+
+		// handle.
+		if err := h.handleEvent(event); err != nil {
+			blog.Errorf("handle new event failed, %+v, %+v", event, err)
+			time.Sleep(defaultHandleTimeout)
+			continue
+		}
+	}
+}
+
 // Start starts event handler and keep processing event from distributer.
 func (h *EventHandler) Start() error {
 	if h.distributer == nil {
@@ -574,30 +660,8 @@ func (h *EventHandler) Start() error {
 	// register metrics.
 	h.registerMetrics()
 
-	go func() {
-		// keep poping events and handle distribution.
-		for {
-			// pop.
-			event, err := h.popEvent()
-			if err != nil {
-				blog.Errorf("pop new event failed, %+v", err)
-				time.Sleep(defaultHandleTimeout)
-				continue
-			}
-
-			// ignore empty event.
-			if event == nil {
-				continue
-			}
-
-			// handle.
-			if err := h.handleEvent(event); err != nil {
-				blog.Errorf("handle new event failed, %+v, %+v", event, err)
-				time.Sleep(defaultHandleTimeout)
-				continue
-			}
-		}
-	}()
+	// keep poping events and handle distribution.
+	go h.start()
 
 	return nil
 }

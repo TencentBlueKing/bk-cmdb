@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
+	"configcenter/src/scene_server/event_server/identifier"
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -68,6 +69,9 @@ type EventServer struct {
 
 	// subWatcher is subscription watcher.
 	subWatcher reflector.Interface
+
+	// identifierHandler is identifier handler.
+	identifierHandler *identifier.IdentifierHandler
 
 	// eventHandler is event handler that handles all event senders.
 	eventHandler *distribution.EventHandler
@@ -236,6 +240,10 @@ func (es *EventServer) initModules() error {
 	es.subWatcher = subWatcher
 	blog.Infof("init modules, init subscription stream watcher success")
 
+	// init identifier handler.
+	identifierHandler := identifier.NewIdentifierHandler(es.ctx, es.redisCli, es.db, es.engine.CoreAPI)
+	es.identifierHandler = identifierHandler
+
 	// init distributer.
 	distributer := distribution.NewDistributer(es.ctx, es.db, es.redisCli, es.subWatcher, es.registry)
 	es.distributer = distributer
@@ -264,6 +272,9 @@ func (es *EventServer) Run() error {
 		return err
 	}
 	blog.Info("init modules success!")
+
+	// run identifier handler.
+	go es.identifierHandler.Run()
 
 	// run main logic comm distributer.
 	if err := es.distributer.Start(es.eventHandler); err != nil {
