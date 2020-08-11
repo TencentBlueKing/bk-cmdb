@@ -79,10 +79,6 @@ type EventServer struct {
 	// distributer handles all events distribution.
 	distributer *distribution.Distributer
 
-	// hash collections hash object, that updates target nodes in dynamic mode,
-	// and calculates node base on hash key of data.
-	hash *distribution.Hash
-
 	// registry is prometheus registry.
 	registry prometheus.Registerer
 }
@@ -110,9 +106,6 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 
 	// set global cc errors.
 	errors.SetGlobalCCError(engine.CCErr)
-
-	// set hash.
-	newEventServer.hash = distribution.NewHash(svrInfo.RegisterIP, svrInfo.Port, engine.Discovery())
 
 	// set backbone engine.
 	newEventServer.engine = engine
@@ -245,13 +238,13 @@ func (es *EventServer) initModules() error {
 	es.identifierHandler = identifierHandler
 
 	// init distributer.
-	distributer := distribution.NewDistributer(es.ctx, es.db, es.redisCli, es.subWatcher, es.registry)
+	distributer := distribution.NewDistributer(es.ctx, es.db, es.redisCli, es.subWatcher, es.engine.ServiceManageInterface, es.registry)
 	es.distributer = distributer
 	es.service.SetDistributer(distributer)
 	blog.Infof("init modules, create event distributer success")
 
 	// init event handler.
-	eventHandler := distribution.NewEventHandler(es.ctx, es.redisCli, es.hash, es.registry)
+	eventHandler := distribution.NewEventHandler(es.ctx, es.redisCli, es.registry)
 	es.eventHandler = eventHandler
 	es.eventHandler.SetDistributer(distributer)
 	blog.Infof("init modules, create event handler success")

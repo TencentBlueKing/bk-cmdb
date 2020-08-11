@@ -82,10 +82,6 @@ type EventSender struct {
 	// distributer handles all events distribution.
 	distributer *Distributer
 
-	// hash collections hash object, that updates target nodes in dynamic mode,
-	// and calculates node base on hash key of data.
-	hash *Hash
-
 	// metrics.
 	// senderHandleTotal is event sender handle total stat.
 	senderHandleTotal *prometheus.CounterVec
@@ -96,13 +92,12 @@ type EventSender struct {
 
 // NewEventSender creates a new EventSender object.
 func NewEventSender(ctx context.Context, subid int64, cache *redis.Client, distributer *Distributer,
-	hash *Hash, senderHandleTotal *prometheus.CounterVec, senderHandleDuration *prometheus.HistogramVec) *EventSender {
+	senderHandleTotal *prometheus.CounterVec, senderHandleDuration *prometheus.HistogramVec) *EventSender {
 	return &EventSender{
 		ctx:                  ctx,
 		subid:                subid,
 		cache:                cache,
 		distributer:          distributer,
-		hash:                 hash,
 		senderHandleTotal:    senderHandleTotal,
 		senderHandleDuration: senderHandleDuration,
 	}
@@ -233,13 +228,6 @@ func (s *EventSender) send(dist *metadata.DistInst) error {
 
 func (s *EventSender) run() {
 	for {
-		if !s.hash.IsMatch(fmt.Sprint(s.subid)) {
-			blog.Info("hash not matched, ignore send callback action here for subid[%d]", s.subid)
-			s.senderHandleTotal.WithLabelValues("HashNotMatched").Inc()
-			time.Sleep(defaultHandleTimeout)
-			continue
-		}
-
 		// keep sending.
 		cost := time.Now()
 		distDatas := s.cache.BRPop(defaultTransTimeout, types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(s.subid)).Val()
@@ -285,7 +273,7 @@ func (s *EventSender) Run() {
 }
 
 // EventHandler manages all event senders, and update senders in dynamic mode,
-// when there are events need to be sent, the sender would check hash ring and send
+// when there are events need to be sent, the sender would check master state and send
 // message to subscriber in callback or not.
 type EventHandler struct {
 	ctx context.Context
@@ -301,10 +289,6 @@ type EventHandler struct {
 
 	// distributer handles all events distribution.
 	distributer *Distributer
-
-	// hash collections hash object, that updates target nodes in dynamic mode,
-	// and calculates node base on hash key of data.
-	hash *Hash
 
 	// registry is prometheus registry.
 	registry prometheus.Registerer
@@ -324,11 +308,11 @@ type EventHandler struct {
 }
 
 // NewEventHandler creates new EventHandler object.
-func NewEventHandler(ctx context.Context, cache *redis.Client, hash *Hash, registry prometheus.Registerer) *EventHandler {
+func NewEventHandler(ctx context.Context, cache *redis.Client, registry prometheus.Registerer) *EventHandler {
+
 	return &EventHandler{
 		ctx:      ctx,
 		cache:    cache,
-		hash:     hash,
 		registry: registry,
 		senders:  make(map[int64]*EventSender),
 	}
@@ -530,8 +514,7 @@ func (h *EventHandler) pushToSender(subid int64, dist *metadata.DistInst) error 
 
 	if _, isExist := h.senders[subid]; !isExist {
 		// create new sender for the subscriber.
-		newSender := NewEventSender(h.ctx, subid, h.cache, h.distributer, h.hash,
-			h.senderHandleTotal, h.senderHandleDuration)
+		newSender := NewEventSender(h.ctx, subid, h.cache, h.distributer, h.senderHandleTotal, h.senderHandleDuration)
 
 		// run new sender.
 		newSender.Run()
@@ -562,12 +545,6 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 
 	// distribute to subscribers.
 	for _, subscriber := range subscribers {
-		if !h.hash.IsMatch(fmt.Sprint(subscriber)) {
-			blog.Info("hash not matched, ignore push to sender action here for subid[%d], %+v", subscriber, event)
-			h.eventHandleTotal.WithLabelValues("HashNotMatched").Inc()
-			continue
-		}
-
 		// push to subscriber sender.
 		cost := time.Now()
 		err := h.pushToSender(subscriber, &metadata.DistInst{EventInst: *event})

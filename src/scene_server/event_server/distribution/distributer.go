@@ -14,11 +14,13 @@ package distribution
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -40,10 +42,13 @@ var (
 	defaultListWatchPageSize = 500
 
 	// defaultWatchEventStepSize is default step size of watch event.
-	defaultWatchEventStepSize = 200
+	defaultWatchEventStepSize = 100
 
-	// defaultWatchEventLoopInternal is default watch event loop interval.
-	defaultWatchEventLoopInternal = 500 * time.Millisecond
+	// defaultWatchEventLoopInterval is default watch event loop interval.
+	defaultWatchEventLoopInterval = 500 * time.Millisecond
+
+	// defaultMasterCheckInterval is default master state check interval.
+	defaultMasterCheckInterval = 3 * time.Second
 )
 
 // Distributer is event subscription distributer.
@@ -84,6 +89,9 @@ type Distributer struct {
 	// eventHandler is event handler that handles all event senders.
 	eventHandler *EventHandler
 
+	// disc is service discovery.
+	disc discovery.ServiceManageInterface
+
 	// registry is prometheus registry.
 	registry prometheus.Registerer
 
@@ -96,13 +104,15 @@ type Distributer struct {
 }
 
 // NewDistributer creates a new Distributer instance.
-func NewDistributer(ctx context.Context, db dal.RDB, cache *redis.Client,
-	subWatcher reflector.Interface, registry prometheus.Registerer) *Distributer {
+func NewDistributer(ctx context.Context, db dal.RDB, cache *redis.Client, subWatcher reflector.Interface,
+	disc discovery.ServiceManageInterface, registry prometheus.Registerer) *Distributer {
+
 	return &Distributer{
 		ctx:                          ctx,
 		db:                           db,
 		cache:                        cache,
 		subWatcher:                   subWatcher,
+		disc:                         disc,
 		registry:                     registry,
 		subscriptions:                make(map[int64]*metadata.Subscription),
 		subscribers:                  make(map[string][]int64),
@@ -309,6 +319,12 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 
 	go func() {
 		for {
+			if !d.disc.IsMaster() {
+				blog.Warnf("not master eventserver node, skip watch and distribute!")
+				time.Sleep(defaultMasterCheckInterval)
+				continue
+			}
+
 			opts := &watch.WatchEventOptions{Resource: cursorType, Cursor: watch.NoEventCursor}
 
 			// try get newest watch cursor every time.
@@ -330,7 +346,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 			if err := d.watchAndDistributeWithCursor(cursorType, resourcekey, opts); err != nil {
 				d.watchAndDistributeTotal.WithLabelValues("WatchDistributeFailed").Inc()
 				blog.Errorf("watch and distribute for resource[%+v] failed, retry now, %+v", cursorType, err)
-				time.Sleep(defaultWatchEventLoopInternal)
+				time.Sleep(defaultWatchEventLoopInterval)
 			}
 		}
 	}()
@@ -369,6 +385,12 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 	// keep watching.
 	for {
+		// check master state.
+		if !d.disc.IsMaster() {
+			blog.Warnf("master state changed, stop watching!")
+			return errors.New("master state changed")
+		}
+
 		// new watching round.
 		cost := time.Now()
 		blog.Info("watching for resource[%+v] from cursor[%+v] now!", cursorType, startCursor)
@@ -378,14 +400,14 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		if err != nil {
 			if err == ewatcher.HeadNodeNotExistError {
 				// no origin events.
-				time.Sleep(defaultWatchEventLoopInternal)
+				time.Sleep(defaultWatchEventLoopInterval)
 				continue
 			}
 
 			if err == ewatcher.StartCursorNotExistError {
 				// target cursor not exist, re-watch from head event node.
 				startCursor = key.HeadKey()
-				time.Sleep(defaultWatchEventLoopInternal)
+				time.Sleep(defaultWatchEventLoopInterval)
 				continue
 			}
 			return err
@@ -393,7 +415,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 		if len(targetNodes) == 0 {
 			// no events from origin.
-			time.Sleep(defaultWatchEventLoopInternal)
+			time.Sleep(defaultWatchEventLoopInterval)
 			continue
 		}
 		lastNode := targetNodes[len(targetNodes)-1]
@@ -405,7 +427,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 			// range some nodes but no any hits, so reset the cursor to current cursor,
 			// and try to get hit nodes in next round.
 			startCursor = lastNode.Cursor
-			time.Sleep(defaultWatchEventLoopInternal)
+			time.Sleep(defaultWatchEventLoopInterval)
 			continue
 		}
 		blog.Info("watching for resource[%+v], cursor[%+v], new hit nodes num[%d]", cursorType, startCursor, len(hitNodes))
@@ -419,7 +441,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 			blog.Errorf("watching for resource[%+v], get events with cursor[%+v] failed, %+v", cursorType, startCursor, err)
 
 			// can't get final target event datas, and try again later.
-			time.Sleep(defaultWatchEventLoopInternal)
+			time.Sleep(defaultWatchEventLoopInterval)
 			continue
 		}
 
@@ -434,7 +456,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 			// get hit nodes success, but can't distribute to event handler, do not reset cursor,
 			// try to re-distribute to handler in next round.
-			time.Sleep(defaultWatchEventLoopInternal)
+			time.Sleep(defaultWatchEventLoopInterval)
 			continue
 		}
 		d.watchAndDistributeTotal.WithLabelValues("Success").Inc()
