@@ -20,6 +20,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -296,6 +297,11 @@ func Redis(prefix string) redis.Config {
 	confLock.Lock()
 	defer confLock.Unlock()
 	parser := getRedisParser()
+	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
+	for parser == nil {
+		blog.Warn("the configuration of redis is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
 	return redis.Config{
 		Address:      parser.getString(prefix+".host"),
 		Password:     parser.getString(prefix+".pwd"),
@@ -306,11 +312,16 @@ func Redis(prefix string) redis.Config {
 	}
 }
 
-// Mongo return redis configuration information according to the prefix.
+// Mongo return mongo configuration information according to the prefix.
 func Mongo(prefix string) mongo.Config {
 	confLock.Lock()
 	defer confLock.Unlock()
 	parser := getMongodbParser()
+	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
+	for parser == nil {
+		blog.Warn("the configuration of mongo is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
 	c := mongo.Config{
 		Address:   parser.getString(prefix+".host"),
 		Port:      parser.getString(prefix+".port"),
