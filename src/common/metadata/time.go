@@ -197,3 +197,8 @@ func ParseTime(data interface{}) (time.Time, error) {
 	}
 	return time.Now(), err
 }
+
+// ParseTimeInUnixTS return Time object base on unix timestamp.
+func ParseTimeInUnixTS(sec, nsec int64) Time {
+	return Time{time.Unix(sec, nsec)}
+}

@@ -45,7 +45,7 @@ const (
 	defaultTransTimeout = 60 * time.Second
 
 	// defaultHandleTimeout is default timeout for event handle.
-	defaultHandleTimeout = 2 * time.Second
+	defaultHandleTimeout = time.Second
 
 	// defaultSendTimeout is default timeout for send action.
 	defaultSendTimeout = 10 * time.Second
@@ -107,7 +107,9 @@ func (s *EventSender) Handle(dist *metadata.DistInst) error {
 	if err != nil {
 		return err
 	}
-	if _, err := s.cache.LPush(types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(dist.SubscriptionID), distData).Result(); err != nil {
+
+	subscriberEventQueueKey := types.EventCacheSubscriberEventQueueKeyPrefix + fmt.Sprint(dist.SubscriptionID)
+	if _, err := s.cache.LPush(subscriberEventQueueKey, distData).Result(); err != nil {
 		return err
 	}
 	return nil
@@ -121,20 +123,27 @@ func (s *EventSender) increaseFailure(subid int64) error {
 	return s.statIncrease(subid, "failue")
 }
 
+// statIncrease stats callback details by increase in cache.
 func (s *EventSender) statIncrease(subid int64, key string) error {
-	return s.cache.HIncrBy(types.EventCacheDistCallBackCountPrefix+strconv.FormatInt(subid, 10), key, 1).Err()
+	return s.cache.HIncrBy(types.EventCacheDistCallBackCountPrefix+fmt.Sprint(subid), key, 1).Err()
 }
 
+// send sends new event to target subscriber base on callback url.
 func (s *EventSender) send(dist *metadata.DistInst) error {
+	// try to find new subscription data everytime, and send event
+	// with newest http callback url.
 	subscription := s.distributer.FindSubscription(s.subid)
 	if subscription == nil {
 		return fmt.Errorf("subscription not found, %+v", s.subid)
 	}
+
+	// setups ownerid here.
 	dist.OwnerID = subscription.OwnerID
-	s.increaseTotal(subscription.SubscriptionID)
 
 	var errFinal error
 
+	// stats.
+	s.increaseTotal(subscription.SubscriptionID)
 	defer func() {
 		if errFinal != nil {
 			s.increaseFailure(subscription.SubscriptionID)
@@ -196,11 +205,13 @@ func (s *EventSender) send(dist *metadata.DistInst) error {
 			errFinal = err
 			return fmt.Errorf("not confirm regular pattern, received %s", respData)
 		}
+	} else {
+		// do nothing, just let it go.
 	}
 
 	// mark resource type and action cursor.
 	eventType := dist.EventInst.GetType()
-	suberCursorKey := fmt.Sprintf("%s%s:%d", types.EventCacheSubscriberCursorPrefix, eventType, s.subid)
+	suberCursorKey := types.EventCacheSubscriberCursorKey(eventType, s.subid)
 
 	if _, err := s.cache.Set(suberCursorKey, dist.Cursor, defaultEventCacheSubscriberCursorExpire).Result(); err != nil {
 		blog.Warnf("save subscriber[%d] cursor for action[%s] failed, %+v", s.subid, eventType, err)
@@ -211,7 +222,7 @@ func (s *EventSender) send(dist *metadata.DistInst) error {
 func (s *EventSender) run() {
 	for {
 		if !s.hash.IsMatch(fmt.Sprint(s.subid)) {
-			blog.Info("subscriber id hash not matched, ignore send action here for subid[%d]", s.subid)
+			blog.Info("hash not matched, ignore send callback action here for subid[%d]", s.subid)
 			s.senderHandleTotal.WithLabelValues("HashNotMatched").Inc()
 			time.Sleep(defaultHandleTimeout)
 			continue
@@ -219,8 +230,11 @@ func (s *EventSender) run() {
 
 		// keep sending.
 		cost := time.Now()
-		distDatas := s.cache.BLPop(defaultTransTimeout, types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(s.subid)).Val()
+		distDatas := s.cache.BRPop(defaultTransTimeout, types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(s.subid)).Val()
 		s.senderHandleDuration.WithLabelValues("PopSubscriberEvent").Observe(time.Since(cost).Seconds())
+
+		// distDatas is redis brpop results, and you can parse it base on CMD
+		// formats, https://redis.io/commands/brpop.
 		if len(distDatas) == 0 || distDatas[1] == types.NilStr || len(distDatas[1]) == 0 {
 			continue
 		}
@@ -228,25 +242,26 @@ func (s *EventSender) run() {
 
 		dist := &metadata.DistInst{}
 		if err := json.Unmarshal([]byte(distData), dist); err != nil {
-			blog.Errorf("unmarshal dist inst for subscriber failed, %+v", err)
+			blog.Errorf("unmarshal new event dist inst for subscriber[%d] failed, %+v", s.subid, err)
 			continue
 		}
 
 		if time.Now().Unix()-dist.EventInst.ActionTime.Unix() > defaultFusingEventExpireSec {
-			// too old event, expire it.
+			// old event, expire it.
 			s.senderHandleTotal.WithLabelValues("ExpireEventNum").Inc()
 			continue
 		}
 
 		// send message to subscriber.
 		cost = time.Now()
-		if err := s.send(dist); err != nil {
-			s.senderHandleDuration.WithLabelValues("PopSubscriberEvent").Observe(time.Since(cost).Seconds())
+		err := s.send(dist)
+		s.senderHandleDuration.WithLabelValues("SendSubscriberEvent").Observe(time.Since(cost).Seconds())
+
+		if err != nil {
 			s.senderHandleTotal.WithLabelValues("SendCallbackFailed").Inc()
-			blog.Errorf("send to subscriber failed, err: %+v, data=[%+v]", err, dist)
+			blog.Errorf("send event failed, err: %+v, data=[%+v]", err, dist)
 			continue
 		}
-		s.senderHandleDuration.WithLabelValues("PopSubscriberEvent").Observe(time.Since(cost).Seconds())
 		s.senderHandleTotal.WithLabelValues("Success").Inc()
 	}
 }
@@ -367,13 +382,19 @@ func (h *EventHandler) SetDistributer(distributer *Distributer) {
 // handle host identifier infos. Handler would find all relate subscribers and send event message
 // to target subscribers by callback.
 func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
-	blog.Info("handle events count[%d]", len(events))
+	blog.Info("handle new events now, count[%d]", len(events))
+	defer blog.Info("handle new events done, count[%d]", len(events))
 
 	for _, event := range events {
 		eventInst := &metadata.EventInst{
-			ID:         h.cache.Incr(types.EventCacheEventIDKey).Val(),
-			Cursor:     event.Cursor,
-			ActionTime: metadata.Now(),
+			ID:     h.cache.Incr(types.EventCacheEventIDKey).Val(),
+			Cursor: event.Cursor,
+		}
+
+		cursor := &watch.Cursor{}
+		if err := cursor.Decode(eventInst.Cursor); err == nil {
+			timeNow := metadata.ParseTimeInUnixTS(int64(cursor.ClusterTime.Sec), int64(cursor.ClusterTime.Nano))
+			eventInst.ActionTime = timeNow
 		}
 
 		switch event.Resource {
@@ -426,20 +447,21 @@ func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
 
 		eventData, err := json.Marshal(eventInst)
 		if err != nil {
-			blog.Errorf("marshal event data failed, %+v, %+v", event, err)
+			blog.Errorf("marshal event data failed, %+v, %+v", eventInst, err)
 			continue
 		}
-		blog.Info("handle event %+v", eventInst)
+		blog.Info("handle new event %+v", eventInst)
 
 		// push event data to main event queue.
 		cost := time.Now()
-		if _, err := h.cache.LPush(types.EventCacheEventQueueKey, eventData).Result(); err != nil {
-			h.eventHandleDuration.WithLabelValues("PushEventInst").Observe(time.Since(cost).Seconds())
+		_, err = h.cache.LPush(types.EventCacheEventQueueKey, eventData).Result()
+		h.eventHandleDuration.WithLabelValues("PushEventInst").Observe(time.Since(cost).Seconds())
+
+		if err != nil {
 			h.eventHandleTotal.WithLabelValues("PushEventInstFailed").Inc()
-			blog.Errorf("push event data to main event queue failed, %+v, %+v", event, err)
+			blog.Errorf("push new event data to event queue failed, %+v, %+v", eventInst, err)
 			continue
 		}
-		h.eventHandleDuration.WithLabelValues("PushEventInst").Observe(time.Since(cost).Seconds())
 	}
 
 	return nil
@@ -454,15 +476,15 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 	cost := time.Now()
 	err := h.cache.BRPopLPush(types.EventCacheEventQueueKey,
 		types.EventCacheEventQueueDuplicateKey, defaultTransTimeout).Scan(&eventStr)
+	h.eventHandleDuration.WithLabelValues("PopNewEvent").Observe(time.Since(cost).Seconds())
 
-	h.eventHandleDuration.WithLabelValues("PopEvent").Observe(time.Since(cost).Seconds())
 	if err != nil {
-		h.eventHandleTotal.WithLabelValues("PopEventFailed").Inc()
+		h.eventHandleTotal.WithLabelValues("PopNewEventFailed").Inc()
 		return nil, err
 	}
 
 	// ignore empty event.
-	if eventStr == "" || eventStr == types.NilStr {
+	if len(eventStr) == 0 || eventStr == types.NilStr {
 		return nil, nil
 	}
 	eventData := []byte(eventStr)
@@ -476,63 +498,27 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 	return event, nil
 }
 
-// get event dist inst from event inst.
-func (h *EventHandler) getDistInst(event *metadata.EventInst) ([]*metadata.DistInst, error) {
-	distInst := metadata.DistInst{EventInst: *event}
-
-	dists := []*metadata.DistInst{}
-
-	// handle object event.
-	if event.EventType == metadata.EventTypeInstData && event.ObjType == common.BKInnerObjIDObject {
-		if len(event.Data) <= 0 {
-			// ignore enpty events.
-			return nil, nil
-		}
-
-		var ok bool
-		var m map[string]interface{}
-
-		// handle object data base event type. There is only prev data in delete action.
-		if event.Action == metadata.EventActionDelete {
-			m, ok = event.Data[0].PreData.(map[string]interface{})
-		} else {
-			m, ok = event.Data[0].CurData.(map[string]interface{})
-		}
-
-		if !ok {
-			return nil, fmt.Errorf("can't parse event dist inst from event data, PreData[%+v], CurData[%+v]",
-				event.Data[0].PreData, event.Data[0].CurData)
-		}
-
-		// mark object type in dist inst with bk_obj_id in event inst.
-		if m[common.BKObjIDField] != nil {
-			distInst.ObjType = m[common.BKObjIDField].(string)
-		} else {
-			blog.Warnf("parse event dist inst, missing field bk_obj_id, %+v", m)
-		}
-	}
-
-	// return dist in slice mode.
-	dists = append(dists, &distInst)
-
-	return dists, nil
-}
-
+// nextDistID returns new event dist id for target subscriber.
 func (h *EventHandler) nextDistID(subid int64) (int64, error) {
 	return h.cache.Incr(types.EventCacheDistIDPrefix + fmt.Sprint(subid)).Result()
 }
 
+// pushToSender pushs new event instance to sender of target subscriber.
 func (h *EventHandler) pushToSender(subid int64, dist *metadata.DistInst) error {
 	h.sendersMu.Lock()
 	defer h.sendersMu.Unlock()
 
 	if _, isExist := h.senders[subid]; !isExist {
+		// create new sender for the subscriber.
 		newSender := NewEventSender(h.ctx, subid, h.cache, h.distributer, h.hash,
 			h.senderHandleTotal, h.senderHandleDuration)
 
+		// run new sender.
 		newSender.Run()
 		h.senders[subid] = newSender
 	}
+
+	// sender of subscriber.
 	sender := h.senders[subid]
 
 	dstbID, err := h.nextDistID(subid)
@@ -549,40 +535,30 @@ func (h *EventHandler) pushToSender(subid int64, dist *metadata.DistInst) error 
 // handleEvent handles target event.
 func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 	blog.Infof("handle event inst, %+v", event)
-	defer blog.Infof("handle event inst done, %+v", event.ID)
+	defer blog.Infof("handle event inst done, %+v", event)
 
-	// trans event inst to dist inst.
-	dists, err := h.getDistInst(event)
-	if err != nil {
-		return fmt.Errorf("trans event inst to dist inst failed, %+v", err)
-	}
+	// find all subscribers on this event type.
+	subscribers := h.distributer.FindSubscribers(event.GetType())
 
-	for _, dist := range dists {
-		subscribers := h.distributer.FindSubscribers(dist.GetType())
-		if len(subscribers) <= 0 {
-			blog.Infof("handle event, %v has no subscriber，ignore in this round", dist.GetType())
+	// distribute to subscribers.
+	for _, subscriber := range subscribers {
+		if !h.hash.IsMatch(fmt.Sprint(subscriber)) {
+			blog.Info("hash not matched, ignore push to sender action here for subid[%d], %+v", subscriber, event)
+			h.eventHandleTotal.WithLabelValues("HashNotMatched").Inc()
 			continue
 		}
 
-		// distribute to subscribers.
-		for _, subscriber := range subscribers {
-			if !h.hash.IsMatch(fmt.Sprint(subscriber)) {
-				blog.Info("subscriber id hash not matched, ignore push to sender action here for subid[%d], %+v", subscriber, dist)
-				h.eventHandleTotal.WithLabelValues("HashNotMatched").Inc()
-				continue
-			}
+		// push to subscriber sender.
+		cost := time.Now()
+		err := h.pushToSender(subscriber, &metadata.DistInst{EventInst: *event})
+		h.eventHandleDuration.WithLabelValues("PushEventToSender").Observe(time.Since(cost).Seconds())
 
-			// push to subscriber sender.
-			cost := time.Now()
-			newDist := *dist
-			if err := h.pushToSender(subscriber, &newDist); err != nil {
-				h.eventHandleDuration.WithLabelValues("PushEventToSender").Observe(time.Since(cost).Seconds())
-				h.eventHandleTotal.WithLabelValues("PushEventToSenderFailed").Inc()
-				return err
-			}
-			h.eventHandleDuration.WithLabelValues("PushEventToSender").Observe(time.Since(cost).Seconds())
-			h.eventHandleTotal.WithLabelValues("Success").Inc()
+		if err != nil {
+			blog.Errorf("push to sender for subid[%d] failed, %+v", subscriber, err)
+			h.eventHandleTotal.WithLabelValues("PushEventToSenderFailed").Inc()
+			continue
 		}
+		h.eventHandleTotal.WithLabelValues("Success").Inc()
 	}
 
 	return nil
@@ -590,16 +566,9 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 
 // Start starts event handler and keep processing event from distributer.
 func (h *EventHandler) Start() error {
-	if h.cache == nil {
-		return errors.New("redis cache not inited")
-	}
 	if h.distributer == nil {
 		return errors.New("distributer not inited")
 	}
-	if h.hash == nil {
-		return errors.New("hash not inited")
-	}
-
 	blog.Info("event handler starting now!")
 
 	// register metrics.
@@ -611,20 +580,19 @@ func (h *EventHandler) Start() error {
 			// pop.
 			event, err := h.popEvent()
 			if err != nil {
-				blog.Errorf("pop event failed, %+v", err)
+				blog.Errorf("pop new event failed, %+v", err)
 				time.Sleep(defaultHandleTimeout)
 				continue
 			}
 
 			// ignore empty event.
 			if event == nil {
-				time.Sleep(defaultHandleTimeout)
 				continue
 			}
 
 			// handle.
 			if err := h.handleEvent(event); err != nil {
-				blog.Errorf("handle event failed, %+v, %+v", event, err)
+				blog.Errorf("handle new event failed, %+v, %+v", event, err)
 				time.Sleep(defaultHandleTimeout)
 				continue
 			}

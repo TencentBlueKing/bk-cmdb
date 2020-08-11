@@ -13,6 +13,8 @@
 package types
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 )
 
@@ -31,22 +33,27 @@ const (
 	// EventCacheDistIDPrefix is prefix of event dist id key in cache.
 	EventCacheDistIDPrefix = common.BKCacheKeyV3Prefix + "event:dist_id_"
 
+	// EventCacheIdentInstPrefix is prefix of host identifier instance key in cache.
+	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
+
 	// EventCacheEventQueueKey is main event queue key in cache.
 	EventCacheEventQueueKey = common.BKCacheKeyV3Prefix + "event:queue"
 
 	// EventCacheEventQueueDuplicateKey is duplicate event queue key in cache.
-	EventCacheEventQueueDuplicateKey = common.BKCacheKeyV3Prefix + "event:queue_duplicate"
+	EventCacheEventQueueDuplicateKey = common.BKCacheKeyV3Prefix + "event:duplicate_queue"
+
+	// EventCacheSubscriberEventQueueKeyPrefix is prefix of subscriber event queue key in cache.
+	EventCacheSubscriberEventQueueKeyPrefix = common.BKCacheKeyV3Prefix + "event:subscriber_queue_"
+
+	// EventCacheSubscriberCursorPrefixis prefix for subscriber on target resource event type.
+	// e.g: cc:v3:event:subscriber_cursor_hostcreate:1 -> MarshalChainNodeStr
+	EventCacheSubscriberCursorPrefix = common.BKCacheKeyV3Prefix + "event:subscriber_cursor"
 
 	// EventCacheDistCallBackCountPrefix is prefix of event callback stats key in cache.
 	EventCacheDistCallBackCountPrefix = common.BKCacheKeyV3Prefix + "event:dist_callback_"
-
-	// EventCacheIdentInstPrefix is prefix of host identifier instance key in cache.
-	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
-
-	// EventCacheSubscriberEventQueueKeyPrefix is prefix of subscriber event queue key in cache.
-	EventCacheSubscriberEventQueueKeyPrefix = common.BKCacheKeyV3Prefix + "event:inst_queue_suber_"
-
-	// EventCacheSubscriberCursorPrefixis prefix for subscriber on target resource event type.
-	// e.g: cc:v3:event:type:suberid:cursor_hostcreate:1 -> MarshalChainNodeStr
-	EventCacheSubscriberCursorPrefix = common.BKCacheKeyV3Prefix + "event:type:suberid:cursor_"
 )
+
+// EventCacheSubscriberCursorKey returns redis key for subscriber cursor cache.
+func EventCacheSubscriberCursorKey(eventType string, subid int64) string {
+	return fmt.Sprintf("%s_%s_%d", EventCacheSubscriberCursorPrefix, eventType, subid)
+}
