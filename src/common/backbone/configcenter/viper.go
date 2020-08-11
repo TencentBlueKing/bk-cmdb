@@ -299,6 +299,7 @@ func Redis(prefix string) redis.Config {
 	parser := getRedisParser()
 	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
 	for parser == nil {
+		blog.Warn("the configuration of redis is not ready yet")
 		time.Sleep(time.Duration(1) * time.Second)
 	}
 	return redis.Config{
@@ -318,6 +319,7 @@ func Mongo(prefix string) mongo.Config {
 	parser := getMongodbParser()
 	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
 	for parser == nil {
+		blog.Warn("the configuration of mongo is not ready yet")
 		time.Sleep(time.Duration(1) * time.Second)
 	}
 	c := mongo.Config{
