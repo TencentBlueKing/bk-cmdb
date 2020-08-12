@@ -42,6 +42,7 @@ type Object struct {
 	ObjIcon     string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
 	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	ObjectName  string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	IsHide      bool   `field:"ishide" json:"ishide" bson:"ishide"`
 	IsPre       bool   `field:"ispre" json:"ispre" bson:"ispre"`
 	IsPaused    bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
 	Position    string `field:"position" json:"position" bson:"position"`
