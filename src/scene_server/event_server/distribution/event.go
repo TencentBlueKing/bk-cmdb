@@ -46,6 +46,9 @@ const (
 	// defaultCleanCheckInterval is default interval for cleaning check.
 	defaultCleanCheckInterval = time.Minute
 
+	// defaultPushersCheckInterval is default interval for pushers check.
+	defaultPushersCheckInterval = 5 * time.Second
+
 	// defaultCleanTrimThreshold is default threshold for cleaning trim.
 	defaultCleanTrimThreshold = 2 * 10000
 
@@ -288,10 +291,9 @@ func (h *EventHandler) nextDistID(subid int64) (int64, error) {
 	return h.cache.Incr(types.EventCacheDistIDPrefix + fmt.Sprint(subid)).Result()
 }
 
-// pushToPushers pushs new event instance to pusher of target subscriber.
-func (h *EventHandler) pushToPusher(subid int64, dist *metadata.DistInst) error {
+// sendToPushers sends new event instance to pusher of target subscriber.
+func (h *EventHandler) sendToPusher(subid int64, dist *metadata.DistInst) error {
 	h.pushersMu.Lock()
-	defer h.pushersMu.Unlock()
 
 	if _, isExist := h.pushers[subid]; !isExist {
 		// create new pusher for the subscriber.
@@ -305,6 +307,7 @@ func (h *EventHandler) pushToPusher(subid int64, dist *metadata.DistInst) error 
 
 	// pusher of subscriber.
 	pusher := h.pushers[subid]
+	h.pushersMu.Unlock()
 
 	dstbID, err := h.nextDistID(subid)
 	if err != nil {
@@ -329,7 +332,7 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 	for _, subscriber := range subscribers {
 		// push to subscriber pusher.
 		cost := time.Now()
-		err := h.pushToPusher(subscriber, &metadata.DistInst{EventInst: *event})
+		err := h.sendToPusher(subscriber, &metadata.DistInst{EventInst: *event})
 		h.eventHandleDuration.WithLabelValues("PushEventToPusher").Observe(time.Since(cost).Seconds())
 
 		if err != nil {
@@ -341,6 +344,33 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 	}
 
 	return nil
+}
+
+func (h *EventHandler) handlePushers() {
+	ticker := time.NewTicker(defaultPushersCheckInterval)
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C
+		blog.Info("handle pushers, check base on subscriptions now")
+
+		subids := h.distributer.ListSubscriptionIDs()
+
+		for _, subid := range subids {
+			h.pushersMu.Lock()
+
+			if _, isExist := h.pushers[subid]; !isExist {
+				// create new pusher for the subscriber.
+				newPusher := NewEventPusher(h.ctx, h.engine, subid, h.cache, h.distributer,
+					h.pusherHandleTotal, h.pusherHandleDuration)
+
+				// run new pusher.
+				newPusher.Run()
+				h.pushers[subid] = newPusher
+			}
+			h.pushersMu.Unlock()
+		}
+	}
 }
 
 // cleaning keeps cleaning expire or redundancy events in event cache queue.
@@ -391,6 +421,9 @@ func (h *EventHandler) cleaning() {
 func (h *EventHandler) start() {
 	// keep cleaning.
 	go h.cleaning()
+
+	// keep check and handle pushers.
+	go h.handlePushers()
 
 	for {
 		if !h.engine.ServiceManageInterface.IsMaster() {

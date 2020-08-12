@@ -100,7 +100,6 @@ type Distributer struct {
 
 // NewDistributer creates a new Distributer instance.
 func NewDistributer(ctx context.Context, engine *backbone.Engine, db dal.RDB, cache *redis.Client, subWatcher reflector.Interface) *Distributer {
-
 	return &Distributer{
 		ctx:                          ctx,
 		engine:                       engine,
@@ -184,6 +183,7 @@ func (d *Distributer) onUpsertSubscriptions(e *types.Event) {
 	defer d.subscriptionsMu.Unlock()
 
 	subscription := e.Document.(*metadata.Subscription)
+	blog.Info("on upsert subscription, %+v", subscription)
 
 	oldSubscription, isExist := d.subscriptions[subscription.SubscriptionID]
 	if !isExist {
@@ -225,6 +225,7 @@ func (d *Distributer) onDeleteSubscriptions(e *types.Event) {
 	defer d.subscriptionsMu.Unlock()
 
 	subscription := e.Document.(*metadata.Subscription)
+	blog.Info("on delete subscription, %+v", subscription)
 
 	if _, isExist := d.subscriptions[subscription.SubscriptionID]; isExist {
 		delete(d.subscriptions, subscription.SubscriptionID)
@@ -468,6 +469,8 @@ func (d *Distributer) addSubscriber(eventType string, subid int64) {
 	d.subscribersMu.Lock()
 	defer d.subscribersMu.Unlock()
 
+	blog.Info("add event subscriber, type[%s] subid[%d]", eventType, subid)
+
 	if _, isExist := d.subscribers[eventType]; !isExist {
 		d.subscribers[eventType] = []int64{}
 	}
@@ -486,6 +489,8 @@ func (d *Distributer) addSubscriber(eventType string, subid int64) {
 func (d *Distributer) remSubscriber(eventType string, subid int64) {
 	d.subscribersMu.Lock()
 	defer d.subscribersMu.Unlock()
+
+	blog.Info("remove event subscriber, type[%s] subid[%d]", eventType, subid)
 
 	if _, isExist := d.subscribers[eventType]; !isExist {
 		return
@@ -519,6 +524,18 @@ func (d *Distributer) FindSubscription(subid int64) *metadata.Subscription {
 	defer d.subscriptionsMu.RUnlock()
 
 	return d.subscriptions[subid]
+}
+
+// ListSubscriptionIDs return all subscription ids.
+func (d *Distributer) ListSubscriptionIDs() []int64 {
+	d.subscriptionsMu.RLock()
+	defer d.subscriptionsMu.RUnlock()
+
+	subids := []int64{}
+	for subid := range d.subscriptions {
+		subids = append(subids, subid)
+	}
+	return subids
 }
 
 // Start starts the Distributer, it would load all subscriptions in listwatch mode, and handle runtime

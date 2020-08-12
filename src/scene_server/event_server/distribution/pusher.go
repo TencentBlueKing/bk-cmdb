@@ -119,7 +119,7 @@ func (s *EventPusher) cleaning() {
 
 	for {
 		if !s.engine.ServiceManageInterface.IsMaster() {
-			blog.Warnf("not master eventserver node, skip cleaning subscriber events!")
+			blog.Warnf("not master eventserver node, skip cleaning subscriber[%d] events!", s.subid)
 			time.Sleep(defaultMasterCheckInterval)
 			continue
 		}
