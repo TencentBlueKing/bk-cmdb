@@ -149,14 +149,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		}
 	}
 
-	if util.IsExistSupplierID(params.Header) {
-		supplierID, err := util.GetSupplierID(params.Header)
-		if err != nil {
-			return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKSupplierIDField)
-		}
-		data[common.BKSupplierIDField] = supplierID
-	}
-
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("[operation-biz] failed to create business, error info is %s, rid: %s", err.Error(), params.ReqID)

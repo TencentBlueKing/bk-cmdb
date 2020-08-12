@@ -63,9 +63,6 @@ const (
 	// BKDefaultOwnerID the default owner value
 	BKDefaultOwnerID = "0"
 
-	// BKDefaultSupplierID the default owner id
-	BKDefaultSupplierID = 0
-
 	// BKSuperOwnerID the super owner value
 	BKSuperOwnerID = "superadmin"
 
@@ -221,9 +218,6 @@ const (
 
 	// BKOwnerIDField the owner field
 	BKOwnerIDField = "bk_supplier_account"
-
-	// BKSupplierIDField the supplier id field
-	BKSupplierIDField = "bk_supplier_id"
 
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
@@ -859,7 +853,6 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID     = "bk_supplier_id"
 	BKHTTPRequestAppCode = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
@@ -957,7 +950,6 @@ const (
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
 	//WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"

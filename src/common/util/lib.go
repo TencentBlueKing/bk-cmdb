@@ -115,19 +115,6 @@ func ExtractRequestUserFromContext(ctx context.Context) string {
 	return ""
 }
 
-// GetSupplierID return supplier_id from http header
-func GetSupplierID(header http.Header) (int64, error) {
-	return GetInt64ByInterface(header.Get(common.BKHTTPSupplierID))
-}
-
-// IsExistSupplierID check supplier_id  exist from http header
-func IsExistSupplierID(header http.Header) bool {
-	if "" == header.Get(common.BKHTTPSupplierID) {
-		return false
-	}
-	return true
-}
-
 // GetHTTPCCTransaction return config center request id from http header
 func GetHTTPCCTransaction(header http.Header) string {
 	rid := header.Get(common.BKHTTPCCTransactionID)

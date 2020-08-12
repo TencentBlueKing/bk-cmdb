@@ -43,11 +43,6 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 		}
 		hostIdentModule.BizName = getString(biz.data[common.BKAppNameField])
 		identifier.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
-		identifier.SupplierID, err = getInt(biz.data, common.BKSupplierIDField)
-		if err != nil {
-			blog.Errorf("identifier: convert instID failed the raw is %+v", biz.data[common.BKSupplierIDField])
-			return nil, err
-		}
 
 		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, hostIdentModule.SetID, false)
 		if err != nil {

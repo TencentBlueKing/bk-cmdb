@@ -39,7 +39,6 @@ type ModuleInst struct {
 type BizInst struct {
 	BizID           int64  `bson:"bk_biz_id"`
 	BizName         string `bson:"bk_biz_name"`
-	SupplierID      int64  `bson:"bk_supplier_id"`
 	SupplierAccount string `bson:"bk_supplier_account"`
 }
 
@@ -66,7 +65,6 @@ type ProcessInst struct {
 type HostIdentifier struct {
 	HostID          int64                       `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
 	HostName        string                      `json:"bk_host_name" bson:"bk_host_name"`       // 主机名称
-	SupplierID      int64                       `json:"bk_supplier_id"`                         // 开发商ID（bk_supplier_id）				数字
 	SupplierAccount string                      `json:"bk_supplier_account"`                    // 开发商帐号（bk_supplier_account）	数字
 	CloudID         int64                       `json:"bk_cloud_id" bson:"bk_cloud_id"`         // 所属云区域id(bk_cloud_id)				数字
 	CloudName       string                      `json:"bk_cloud_name" bson:"bk_cloud_name"`     // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）

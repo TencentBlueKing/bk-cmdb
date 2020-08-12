@@ -9,7 +9,8 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x18_10_30_02
+
+package x20_08_11_10
 
 import (
 	"context"
@@ -20,14 +21,14 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x18.10.30.02", upgrade)
+	upgrader.RegistUpgrader("x20_08_11_10", upgrade)
 }
+
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addBizSuupierID(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x18.10.30.02] addBizSuupierID error  %s", err.Error())
+	if err := removeBkSupplierIDField(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version x20_08_11_10 failed, removeBkSupplierIDField failed, err: %+v", err)
 		return err
 	}
 
-	return
+	return nil
 }
