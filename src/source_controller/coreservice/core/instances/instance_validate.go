@@ -27,7 +27,6 @@ var updateIgnoreKeys = []string{
 	common.BKInstParentStr,
 	common.BKAppIDField,
 	common.BKDataStatusField,
-	common.BKSupplierIDField,
 	common.BKInstIDField,
 }
 
@@ -36,7 +35,6 @@ var createIgnoreKeys = []string{
 	common.BKDefaultField,
 	common.BKInstParentStr,
 	common.BKAppIDField,
-	common.BKSupplierIDField,
 	common.BKInstIDField,
 	common.BKDataStatusField,
 	common.CreateTimeField,

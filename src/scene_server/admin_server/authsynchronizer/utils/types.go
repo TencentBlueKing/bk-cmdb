@@ -27,7 +27,6 @@ var (
 // NewListBusinessAPIHeader new a api header for list all business
 func NewListBusinessAPIHeader() *http.Header {
 	header := http.Header{}
-	header.Add(common.BKHTTPSupplierID, fmt.Sprintf("%d", common.BKDefaultSupplierID))
 	header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)
 	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 	header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)
@@ -36,7 +35,6 @@ func NewListBusinessAPIHeader() *http.Header {
 
 func NewAPIHeaderByBusiness(businessSimplify *extensions.BusinessSimplify) *http.Header {
 	header := http.Header{}
-	header.Add(common.BKHTTPSupplierID, fmt.Sprintf("%d", businessSimplify.BKSupplierIDField))
 	header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)
 	header.Add(common.BKHTTPOwnerID, fmt.Sprintf("%s", businessSimplify.BKOwnerIDField))
 	header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)

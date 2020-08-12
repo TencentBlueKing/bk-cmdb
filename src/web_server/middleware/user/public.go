@@ -16,7 +16,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"plugin"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -70,7 +69,6 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		ownerM := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language)
 		ownerM.CacheCli = m.cacheCli
 		ownerM.Engine = m.engine
-		ownerM.SetHttpHeader(common.BKHTTPSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 		// 初始化失败，不影响登录
 		_, err := ownerM.InitOwner()
 		if nil != err {
@@ -93,7 +91,6 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	session.Set(common.WEBSessionOwnerUinKey, userInfo.OnwerUin)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
 	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinList))
-	session.Set(common.WEBSessionSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 	if userInfo.MultiSupplier {
 		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierTrue)
 	} else {

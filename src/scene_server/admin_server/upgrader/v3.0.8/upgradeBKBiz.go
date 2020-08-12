@@ -92,7 +92,6 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	appModelData[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 	appModelData[common.BKOwnerIDField] = conf.OwnerID
 	appModelData[common.BKDefaultField] = 0
-	appModelData[common.BKSupplierIDField] = conf.SupplierID
 	filled := fillEmptyFields(appModelData, AppRow())
 	var preData map[string]interface{}
 	bizID, preData, err := upgrader.Upsert(ctx, db, "cc_ApplicationBase", appModelData, common.BKAppIDField, []string{common.BKAppNameField, common.BKOwnerIDField}, append(filled, common.BKAppIDField))

@@ -21,7 +21,6 @@ import (
 type LoginUserInfoOwnerUinList struct {
 	OwnerID    string `json:"id"`
 	OwnerName  string `json:"name"`
-	SupplierID int64  `json:"supplier_id"`
 	Role       int64  `json:"role"`
 }
 
