@@ -31,7 +31,6 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	ownerID := common.BKDefaultOwnerID
 	updateCfg := &upgrader.Config{
 		OwnerID:      ownerID,
-		SupplierID:   common.BKDefaultSupplierID,
 		User:         common.CCSystemOperatorUserName,
 		CCApiSrvAddr: s.ccApiSrvAddr,
 	}

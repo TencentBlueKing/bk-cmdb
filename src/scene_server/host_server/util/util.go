@@ -48,11 +48,6 @@ func (o *operation) WithAppID(appID int64) *operation {
 	return o
 }
 
-func (o *operation) WithSupplierID(field int64) *operation {
-	o.op[common.BKSupplierIDField] = field
-	return o
-}
-
 func (o *operation) WithOwnerID(ownerID string) *operation {
 	o.op[common.BKOwnerIDField] = ownerID
 	return o
