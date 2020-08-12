@@ -213,7 +213,7 @@ func ParseCursorTypeFromEventType(eventType string) watch.CursorType {
 	case "hostdelete":
 		return watch.Host
 
-	case "processmodule":
+	case "moduletransfer":
 		return watch.ModuleHostRelation
 
 	case "bizcreate":
