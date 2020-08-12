@@ -429,11 +429,12 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 		// get final hit event datas.
 		cost = time.Now()
-		events, err := watcher.GetEventsWithCursorNodes(opts, hitNodes, key, "INNER-WATCHER")
-		d.watchAndDistributeDuration.WithLabelValues("GetEventsWithCursor").Observe(time.Since(cost).Seconds())
+		eventDetailStrs, err := watcher.GetEventDetailsWithCursorNodes(hitNodes, key)
+		d.watchAndDistributeDuration.WithLabelValues("GetEventDetailsWithCursor").Observe(time.Since(cost).Seconds())
+
 		if err != nil {
-			d.watchAndDistributeTotal.WithLabelValues("GetEventsWithCursorFailed").Inc()
-			blog.Errorf("watching for resource[%+v], get events with cursor[%+v] failed, %+v", cursorType, startCursor, err)
+			d.watchAndDistributeTotal.WithLabelValues("GetEventDetailsWithCursorFailed").Inc()
+			blog.Errorf("watching for resource[%+v], get event details with cursor[%+v] failed, %+v", cursorType, startCursor, err)
 
 			// can't get final target event datas, and try again later.
 			time.Sleep(defaultWatchEventLoopInterval)
@@ -442,12 +443,12 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 		// distribute to subscriber senders.
 		cost = time.Now()
-		err = d.eventHandler.Handle(events)
+		err = d.eventHandler.Handle(hitNodes, eventDetailStrs, opts)
 		d.watchAndDistributeDuration.WithLabelValues("HandleEvents").Observe(time.Since(cost).Seconds())
 
 		if err != nil {
 			d.watchAndDistributeTotal.WithLabelValues("HandleEventsFailed").Inc()
-			blog.Errorf("distribute resource[%+v] %d events to handler failed, %+v", cursorType, len(events), err)
+			blog.Errorf("distribute resource[%+v] %d events to handler failed, %+v", cursorType, len(eventDetailStrs), err)
 
 			// get hit nodes success, but can't distribute to event handler, do not reset cursor,
 			// try to re-distribute to handler in next round.
@@ -457,7 +458,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		d.watchAndDistributeTotal.WithLabelValues("Success").Inc()
 
 		// distribute success, reset cursor and watch in next round.
-		blog.Info("watching and distribute for resource[%+v], handled %d nodes successfully", cursorType, len(events))
+		blog.Info("watching and distribute for resource[%+v], handled %d nodes successfully", cursorType, len(eventDetailStrs))
 		startCursor = lastNode.Cursor
 	}
 

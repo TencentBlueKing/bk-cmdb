@@ -102,17 +102,16 @@ func (s Subscription) GetTimeout() time.Duration {
 }
 
 type EventInst struct {
-	ID          int64       `json:"event_id,omitempty"`
-	TxnID       string      `json:"txn_id"`
-	EventType   string      `json:"event_type"`
-	Action      string      `json:"action"`
-	ActionTime  Time        `json:"action_time"`
-	ObjType     string      `json:"obj_type"`
-	Data        []EventData `json:"data"`
-	OwnerID     string      `json:"bk_supplier_account"`
-	RequestID   string      `json:"request_id"`
-	RequestTime Time        `json:"request_time"`
-	Cursor      string      `json:"cursor"`
+	ID            int64       `json:"event_id,omitempty"`
+	EventType     string      `json:"event_type"`
+	Action        string      `json:"action"`
+	ActionTime    Time        `json:"action_time"`
+	ObjType       string      `json:"obj_type"`
+	Data          []EventData `json:"data"`
+	OwnerID       string      `json:"bk_supplier_account"`
+	Cursor        string      `json:"cursor"`
+	UpdateFields  []string    `json:"update_fields"`
+	DeletedFields []string    `json:"deleted_fields"`
 }
 
 func (e *EventInst) MarshalBinary() (data []byte, err error) {

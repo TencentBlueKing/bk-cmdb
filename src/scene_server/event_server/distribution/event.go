@@ -23,9 +23,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	ccjson "configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
-	"configcenter/src/scene_server/event_server/types"
+	etypes "configcenter/src/scene_server/event_server/types"
+	"configcenter/src/storage/stream/types"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
@@ -47,7 +49,7 @@ const (
 	defaultCleanCheckInterval = time.Minute
 
 	// defaultPushersCheckInterval is default interval for pushers check.
-	defaultPushersCheckInterval = 5 * time.Second
+	defaultPushersCheckInterval = 10 * time.Second
 
 	// defaultCleanTrimThreshold is default threshold for cleaning trim.
 	defaultCleanTrimThreshold = 2 * 10000
@@ -106,7 +108,7 @@ func NewEventHandler(ctx context.Context, engine *backbone.Engine, cache *redis.
 func (h *EventHandler) registerMetrics() {
 	h.eventHandleTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: fmt.Sprintf("%s_event_handle_total", types.MetricsNamespacePrefix),
+			Name: fmt.Sprintf("%s_event_handle_total", etypes.MetricsNamespacePrefix),
 			Help: "total number stats of handle event.",
 		},
 		[]string{"status"},
@@ -115,7 +117,7 @@ func (h *EventHandler) registerMetrics() {
 
 	h.engine.Metric().Registry().MustRegister(prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
-			Name: fmt.Sprintf("%s_pushers", types.MetricsNamespacePrefix),
+			Name: fmt.Sprintf("%s_pushers", etypes.MetricsNamespacePrefix),
 			Help: "current number of pushers.",
 		},
 		func() float64 {
@@ -127,7 +129,7 @@ func (h *EventHandler) registerMetrics() {
 
 	h.eventHandleDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: fmt.Sprintf("%s_event_handle_duration", types.MetricsNamespacePrefix),
+			Name: fmt.Sprintf("%s_event_handle_duration", etypes.MetricsNamespacePrefix),
 			Help: "handle duration of events.",
 		},
 		[]string{"status"},
@@ -136,7 +138,7 @@ func (h *EventHandler) registerMetrics() {
 
 	h.pusherHandleTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: fmt.Sprintf("%s_pusher_handle_total", types.MetricsNamespacePrefix),
+			Name: fmt.Sprintf("%s_pusher_handle_total", etypes.MetricsNamespacePrefix),
 			Help: "total number stats of event pusher.",
 		},
 		[]string{"status"},
@@ -145,7 +147,7 @@ func (h *EventHandler) registerMetrics() {
 
 	h.pusherHandleDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: fmt.Sprintf("%s_pusher_handle_duration", types.MetricsNamespacePrefix),
+			Name: fmt.Sprintf("%s_pusher_handle_duration", etypes.MetricsNamespacePrefix),
 			Help: "pusher duration of events.",
 		},
 		[]string{"status"},
@@ -161,14 +163,36 @@ func (h *EventHandler) SetDistributer(distributer *Distributer) {
 // Handle handles events distributed by distributer, add events to real handle queue to
 // handle host identifier infos. Handler would find all relate subscribers and send event message
 // to target subscribers by callback.
-func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
-	blog.Info("handle new events now, count[%d]", len(events))
-	defer blog.Info("handle new events done, count[%d]", len(events))
+func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string, opts *watch.WatchEventOptions) error {
+	blog.Info("handle new events now, count[%d]", len(eventDetailStrs))
+	defer blog.Info("handle new events done, count[%d]", len(eventDetailStrs))
 
-	for _, event := range events {
+	for idx, eventDetailStr := range eventDetailStrs {
+		updateFields := []string{}
+		for updateField, _ := range gjson.Get(eventDetailStr, "update_fields").Map() {
+			updateFields = append(updateFields, updateField)
+		}
+
+		deletedFields := []string{}
+		for _, deletedField := range gjson.Get(eventDetailStr, "deleted_fields").Array() {
+			deletedFields = append(deletedFields, deletedField.String())
+		}
+
+		jsonDetailStr := types.GetEventDetail(eventDetailStr)
+		cut := ccjson.CutJsonDataWithFields(&jsonDetailStr, opts.Fields)
+
+		event := &watch.WatchEventDetail{
+			Cursor:    nodes[idx].Cursor,
+			Resource:  opts.Resource,
+			EventType: nodes[idx].EventType,
+			Detail:    watch.JsonString(*cut),
+		}
+
 		eventInst := &metadata.EventInst{
-			ID:     h.cache.Incr(types.EventCacheEventIDKey).Val(),
-			Cursor: event.Cursor,
+			ID:            h.cache.Incr(etypes.EventCacheEventIDKey).Val(),
+			Cursor:        event.Cursor,
+			UpdateFields:  updateFields,
+			DeletedFields: deletedFields,
 		}
 
 		cursor := &watch.Cursor{}
@@ -234,7 +258,7 @@ func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
 
 		// push event data to main event queue.
 		cost := time.Now()
-		err = h.cache.LPush(types.EventCacheEventQueueKey, eventData).Err()
+		err = h.cache.LPush(etypes.EventCacheEventQueueKey, eventData).Err()
 		h.eventHandleDuration.WithLabelValues("PushEventInst").Observe(time.Since(cost).Seconds())
 
 		if err != nil {
@@ -254,8 +278,8 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 
 	// pop from main event queue and re-add to duplicated queue for identifier.
 	cost := time.Now()
-	err := h.cache.BRPopLPush(types.EventCacheEventQueueKey,
-		types.EventCacheEventQueueDuplicateKey, defaultTransTimeout).Scan(&eventStr)
+	err := h.cache.BRPopLPush(etypes.EventCacheEventQueueKey,
+		etypes.EventCacheEventQueueDuplicateKey, defaultTransTimeout).Scan(&eventStr)
 	h.eventHandleDuration.WithLabelValues("PopNewEvent").Observe(time.Since(cost).Seconds())
 
 	if err != nil {
@@ -264,7 +288,7 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 	}
 
 	// ignore empty event.
-	if len(eventStr) == 0 || eventStr == types.NilStr {
+	if len(eventStr) == 0 || eventStr == etypes.NilStr {
 		return nil, nil
 	}
 	eventData := []byte(eventStr)
@@ -288,7 +312,7 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 
 // nextDistID returns new event dist id for target subscriber.
 func (h *EventHandler) nextDistID(subid int64) (int64, error) {
-	return h.cache.Incr(types.EventCacheDistIDPrefix + fmt.Sprint(subid)).Result()
+	return h.cache.Incr(etypes.EventCacheDistIDPrefix + fmt.Sprint(subid)).Result()
 }
 
 // sendToPushers sends new event instance to pusher of target subscriber.
@@ -356,9 +380,8 @@ func (h *EventHandler) handlePushers() {
 
 		subids := h.distributer.ListSubscriptionIDs()
 
+		h.pushersMu.Lock()
 		for _, subid := range subids {
-			h.pushersMu.Lock()
-
 			if _, isExist := h.pushers[subid]; !isExist {
 				// create new pusher for the subscriber.
 				newPusher := NewEventPusher(h.ctx, h.engine, subid, h.cache, h.distributer,
@@ -368,8 +391,11 @@ func (h *EventHandler) handlePushers() {
 				newPusher.Run()
 				h.pushers[subid] = newPusher
 			}
-			h.pushersMu.Unlock()
 		}
+		pushersCount := len(h.pushers)
+		h.pushersMu.Unlock()
+
+		blog.Info("handle pushers, current subscription count[%d], pusher count[%d]", len(subids), pushersCount)
 	}
 }
 
@@ -389,7 +415,7 @@ func (h *EventHandler) cleaning() {
 		blog.Info("cleaning expire and redundancy events now")
 
 		// clean.
-		eventCount, err := h.cache.LLen(types.EventCacheEventQueueKey).Result()
+		eventCount, err := h.cache.LLen(etypes.EventCacheEventQueueKey).Result()
 		if err != nil {
 			blog.Errorf("fetch expire and redundancy events failed, %+v", err)
 			continue
@@ -402,14 +428,14 @@ func (h *EventHandler) cleaning() {
 		}
 
 		if eventCount < defaultCleanDelThreshold {
-			if err := h.cache.LTrim(types.EventCacheEventQueueKey, 0, eventCount-defaultCleanUnit).Err(); err != nil {
+			if err := h.cache.LTrim(etypes.EventCacheEventQueueKey, 0, eventCount-defaultCleanUnit).Err(); err != nil {
 				blog.Errorf("trim expire and redundancy events failed, %+v", err)
 				continue
 			}
 		}
 
 		// too many events.
-		if err := h.cache.Del(types.EventCacheEventQueueKey).Err(); err != nil {
+		if err := h.cache.Del(etypes.EventCacheEventQueueKey).Err(); err != nil {
 			blog.Errorf("delete expire and redundancy queue failed, %+v", err)
 			continue
 		}

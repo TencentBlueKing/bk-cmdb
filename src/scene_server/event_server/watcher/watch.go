@@ -219,6 +219,35 @@ func (w *Watcher) GetEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNod
 	return resp, nil
 }
 
+// GetEventDetailsWithCursorNodes gets event detail strings base on target hit chain nodes.
+func (w *Watcher) GetEventDetailsWithCursorNodes(hitNodes []*watch.ChainNode, key event.Key) ([]string, error) {
+	results := make([]*redis.StringCmd, 0)
+
+	pipe := w.cache.Pipeline()
+	for _, node := range hitNodes {
+		if node.Cursor == key.TailKey() {
+			continue
+		}
+		results = append(results, pipe.Get(key.DetailKey(node.Cursor)))
+	}
+
+	if len(results) == 0 {
+		return []string{}, nil
+	}
+
+	if _, err := pipe.Exec(); err != nil {
+		blog.ErrorJSON("get event detail strings failed, hit nodes: %s, err: %+v", hitNodes, err)
+		return nil, err
+	}
+
+	resp := []string{}
+	for _, result := range results {
+		resp = append(resp, result.Val())
+	}
+
+	return resp, nil
+}
+
 // WatchFromNow watches target resource events from now.
 func (w *Watcher) WatchFromNow(key event.Key, opts *watch.WatchEventOptions, rid string) (*watch.WatchEventDetail, error) {
 	node, tailTarget, err := w.GetLatestEventDetail(key)
