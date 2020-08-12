@@ -13,21 +13,16 @@
 package distribution
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"regexp"
-	"strconv"
 	"sync"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/event_server/types"
@@ -37,8 +32,6 @@ import (
 	"gopkg.in/redis.v5"
 )
 
-var httpCli = httpclient.NewHttpClient()
-
 const (
 	// defaultTransTimeout is default timeout for trans event data from base queue to identifier
 	// duplicate queue.
@@ -46,9 +39,6 @@ const (
 
 	// defaultHandleTimeout is default timeout for event handle.
 	defaultHandleTimeout = time.Second
-
-	// defaultSendTimeout is default timeout for send action.
-	defaultSendTimeout = 10 * time.Second
 
 	// defaultFusingEventExpireSec is default expire second num for event.
 	defaultFusingEventExpireSec = 3 * 60 * 60
@@ -64,234 +54,26 @@ const (
 
 	// defaultCleanUnit is default clean unit count for cleaning.
 	defaultCleanUnit = 10000
-
-	// defaultEventCacheSubscriberCursorExpire is default expire duration for subscriber cursor.
-	defaultEventCacheSubscriberCursorExpire = 6 * time.Hour
 )
 
-// EventSender sends target events to subscribers in callback mode.
-type EventSender struct {
-	ctx context.Context
-
-	// subid is subscription id.
-	subid int64
-
-	// cache is cc redis client.
-	cache *redis.Client
-
-	// distributer handles all events distribution.
-	distributer *Distributer
-
-	// metrics.
-	// senderHandleTotal is event sender handle total stat.
-	senderHandleTotal *prometheus.CounterVec
-
-	// senderHandleDuration is event sender cost duration stat.
-	senderHandleDuration *prometheus.HistogramVec
-}
-
-// NewEventSender creates a new EventSender object.
-func NewEventSender(ctx context.Context, subid int64, cache *redis.Client, distributer *Distributer,
-	senderHandleTotal *prometheus.CounterVec, senderHandleDuration *prometheus.HistogramVec) *EventSender {
-	return &EventSender{
-		ctx:                  ctx,
-		subid:                subid,
-		cache:                cache,
-		distributer:          distributer,
-		senderHandleTotal:    senderHandleTotal,
-		senderHandleDuration: senderHandleDuration,
-	}
-}
-
-// Handle add event dist inst to subscriber chan, and sender would send message to
-// subscriber base on callback.
-func (s *EventSender) Handle(dist *metadata.DistInst) error {
-	if dist == nil {
-		return errors.New("invalid event dist metadata")
-	}
-
-	distData, err := json.Marshal(dist)
-	if err != nil {
-		return err
-	}
-
-	subscriberEventQueueKey := types.EventCacheSubscriberEventQueueKeyPrefix + fmt.Sprint(dist.SubscriptionID)
-	if _, err := s.cache.LPush(subscriberEventQueueKey, distData).Result(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *EventSender) increaseTotal(subid int64) error {
-	return s.statIncrease(subid, "total")
-}
-
-func (s *EventSender) increaseFailure(subid int64) error {
-	return s.statIncrease(subid, "failue")
-}
-
-// statIncrease stats callback details by increase in cache.
-func (s *EventSender) statIncrease(subid int64, key string) error {
-	return s.cache.HIncrBy(types.EventCacheDistCallBackCountPrefix+fmt.Sprint(subid), key, 1).Err()
-}
-
-// send sends new event to target subscriber base on callback url.
-func (s *EventSender) send(dist *metadata.DistInst) error {
-	// try to find new subscription data everytime, and send event
-	// with newest http callback url.
-	subscription := s.distributer.FindSubscription(s.subid)
-	if subscription == nil {
-		return fmt.Errorf("subscription not found, %+v", s.subid)
-	}
-
-	// setups ownerid here.
-	dist.OwnerID = subscription.OwnerID
-
-	var errFinal error
-
-	// stats.
-	s.increaseTotal(subscription.SubscriptionID)
-	defer func() {
-		if errFinal != nil {
-			s.increaseFailure(subscription.SubscriptionID)
-		}
-	}()
-
-	// marshal message data.
-	distData, err := json.Marshal(dist)
-	if err != nil {
-		errFinal = err
-		return err
-	}
-
-	// build http request.
-	body := bytes.NewBuffer(distData)
-	req, err := http.NewRequest("POST", subscription.CallbackURL, body)
-	if err != nil {
-		errFinal = err
-		return err
-	}
-
-	// callback timeout.
-	var duration time.Duration
-	if subscription.TimeOutSeconds == 0 {
-		duration = defaultSendTimeout
-	} else {
-		duration = subscription.GetTimeout()
-	}
-
-	// send now.
-	resp, err := httpCli.DoWithTimeout(duration, req)
-	if err != nil {
-		errFinal = err
-		return err
-	}
-	defer resp.Body.Close()
-
-	// read response.
-	respData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		errFinal = err
-		return err
-	}
-
-	// confirm mode.
-	if subscription.ConfirmMode == metadata.ConfirmModeHTTPStatus {
-		if strconv.Itoa(resp.StatusCode) != subscription.ConfirmPattern {
-			errFinal = err
-			return fmt.Errorf("not confirm http pattern, received %s", respData)
-		}
-	} else if subscription.ConfirmMode == metadata.ConfirmModeRegular {
-		pattern, err := regexp.Compile(subscription.ConfirmPattern)
-		if err != nil {
-			errFinal = err
-			return fmt.Errorf("build regexp error, %+v", err)
-		}
-
-		if !pattern.Match(respData) {
-			errFinal = err
-			return fmt.Errorf("not confirm regular pattern, received %s", respData)
-		}
-	} else {
-		// do nothing, just let it go.
-	}
-
-	// mark resource type and action cursor.
-	eventType := dist.EventInst.GetType()
-	suberCursorKey := types.EventCacheSubscriberCursorKey(eventType, s.subid)
-
-	if _, err := s.cache.Set(suberCursorKey, dist.Cursor, defaultEventCacheSubscriberCursorExpire).Result(); err != nil {
-		blog.Warnf("save subscriber[%d] cursor for action[%s] failed, %+v", s.subid, eventType, err)
-	}
-	return nil
-}
-
-func (s *EventSender) run() {
-	for {
-		// keep sending.
-		cost := time.Now()
-		distDatas := s.cache.BRPop(defaultTransTimeout, types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(s.subid)).Val()
-		s.senderHandleDuration.WithLabelValues("PopSubscriberEvent").Observe(time.Since(cost).Seconds())
-
-		// distDatas is redis brpop results, and you can parse it base on CMD
-		// formats, https://redis.io/commands/brpop.
-		if len(distDatas) == 0 || distDatas[1] == types.NilStr || len(distDatas[1]) == 0 {
-			continue
-		}
-		distData := distDatas[1]
-
-		dist := &metadata.DistInst{}
-		if err := json.Unmarshal([]byte(distData), dist); err != nil {
-			blog.Errorf("unmarshal new event dist inst for subscriber[%d] failed, %+v", s.subid, err)
-			continue
-		}
-
-		if time.Now().Unix()-dist.EventInst.ActionTime.Unix() > defaultFusingEventExpireSec {
-			// old event, expire it.
-			s.senderHandleTotal.WithLabelValues("ExpireEventNum").Inc()
-			continue
-		}
-
-		// send message to subscriber.
-		cost = time.Now()
-		err := s.send(dist)
-		s.senderHandleDuration.WithLabelValues("SendSubscriberEvent").Observe(time.Since(cost).Seconds())
-
-		if err != nil {
-			s.senderHandleTotal.WithLabelValues("SendCallbackFailed").Inc()
-			blog.Errorf("send event failed, err: %+v, data=[%+v]", err, dist)
-			continue
-		}
-		s.senderHandleTotal.WithLabelValues("Success").Inc()
-	}
-}
-
-// Run setups sender and keep handling event dist.
-func (s *EventSender) Run() {
-	// run sender.
-	go s.run()
-}
-
-// EventHandler manages all event senders, and update senders in dynamic mode,
-// when there are events need to be sent, the sender would check master state and send
+// EventHandler manages all event pushers, and update pushers in dynamic mode,
+// when there are events need to be sent, the pusher would check master state and send
 // message to subscriber in callback or not.
 type EventHandler struct {
-	ctx context.Context
+	ctx    context.Context
+	engine *backbone.Engine
 
 	// cache is cc redis client.
 	cache *redis.Client
 
-	// senders is local event senders, update in dynamic mode, subid -> EventSender.
-	senders map[int64]*EventSender
+	// pushers is local event pushers, update in dynamic mode, subid -> EventPushers.
+	pushers map[int64]*EventPusher
 
-	// sendersMu make senders ops safe.
-	sendersMu sync.RWMutex
+	// pushersMu make pushers ops safe.
+	pushersMu sync.RWMutex
 
 	// distributer handles all events distribution.
 	distributer *Distributer
-
-	// registry is prometheus registry.
-	registry prometheus.Registerer
 
 	// metrics.
 	// eventHandleTotal is event handle total stat.
@@ -300,21 +82,20 @@ type EventHandler struct {
 	// eventHandleDuration is event handle cost duration stat.
 	eventHandleDuration *prometheus.HistogramVec
 
-	// senderHandleTotal is event sender handle total stat.
-	senderHandleTotal *prometheus.CounterVec
+	// pusherHandleTotal is event pusher handle total stat.
+	pusherHandleTotal *prometheus.CounterVec
 
-	// senderHandleDuration is event sender cost duration stat.
-	senderHandleDuration *prometheus.HistogramVec
+	// pusherHandleDuration is event pusher cost duration stat.
+	pusherHandleDuration *prometheus.HistogramVec
 }
 
 // NewEventHandler creates new EventHandler object.
-func NewEventHandler(ctx context.Context, cache *redis.Client, registry prometheus.Registerer) *EventHandler {
-
+func NewEventHandler(ctx context.Context, engine *backbone.Engine, cache *redis.Client) *EventHandler {
 	return &EventHandler{
-		ctx:      ctx,
-		cache:    cache,
-		registry: registry,
-		senders:  make(map[int64]*EventSender),
+		ctx:     ctx,
+		engine:  engine,
+		cache:   cache,
+		pushers: make(map[int64]*EventPusher),
 	}
 }
 
@@ -327,17 +108,17 @@ func (h *EventHandler) registerMetrics() {
 		},
 		[]string{"status"},
 	)
-	h.registry.MustRegister(h.eventHandleTotal)
+	h.engine.Metric().Registry().MustRegister(h.eventHandleTotal)
 
-	h.registry.MustRegister(prometheus.NewGaugeFunc(
+	h.engine.Metric().Registry().MustRegister(prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
-			Name: fmt.Sprintf("%s_senders", types.MetricsNamespacePrefix),
-			Help: "current number of senders.",
+			Name: fmt.Sprintf("%s_pushers", types.MetricsNamespacePrefix),
+			Help: "current number of pushers.",
 		},
 		func() float64 {
-			h.sendersMu.RLock()
-			defer h.sendersMu.RUnlock()
-			return float64(len(h.senders))
+			h.pushersMu.RLock()
+			defer h.pushersMu.RUnlock()
+			return float64(len(h.pushers))
 		},
 	))
 
@@ -348,25 +129,25 @@ func (h *EventHandler) registerMetrics() {
 		},
 		[]string{"status"},
 	)
-	h.registry.MustRegister(h.eventHandleDuration)
+	h.engine.Metric().Registry().MustRegister(h.eventHandleDuration)
 
-	h.senderHandleTotal = prometheus.NewCounterVec(
+	h.pusherHandleTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: fmt.Sprintf("%s_sender_handle_total", types.MetricsNamespacePrefix),
-			Help: "total number stats of event sender.",
+			Name: fmt.Sprintf("%s_pusher_handle_total", types.MetricsNamespacePrefix),
+			Help: "total number stats of event pusher.",
 		},
 		[]string{"status"},
 	)
-	h.registry.MustRegister(h.senderHandleTotal)
+	h.engine.Metric().Registry().MustRegister(h.pusherHandleTotal)
 
-	h.senderHandleDuration = prometheus.NewHistogramVec(
+	h.pusherHandleDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: fmt.Sprintf("%s_sender_handle_duration", types.MetricsNamespacePrefix),
-			Help: "sender duration of events.",
+			Name: fmt.Sprintf("%s_pusher_handle_duration", types.MetricsNamespacePrefix),
+			Help: "pusher duration of events.",
 		},
 		[]string{"status"},
 	)
-	h.registry.MustRegister(h.senderHandleDuration)
+	h.engine.Metric().Registry().MustRegister(h.pusherHandleDuration)
 }
 
 // SetDistributer setups distributer to event handler.
@@ -450,7 +231,7 @@ func (h *EventHandler) Handle(events []*watch.WatchEventDetail) error {
 
 		// push event data to main event queue.
 		cost := time.Now()
-		_, err = h.cache.LPush(types.EventCacheEventQueueKey, eventData).Result()
+		err = h.cache.LPush(types.EventCacheEventQueueKey, eventData).Err()
 		h.eventHandleDuration.WithLabelValues("PushEventInst").Observe(time.Since(cost).Seconds())
 
 		if err != nil {
@@ -507,22 +288,23 @@ func (h *EventHandler) nextDistID(subid int64) (int64, error) {
 	return h.cache.Incr(types.EventCacheDistIDPrefix + fmt.Sprint(subid)).Result()
 }
 
-// pushToSender pushs new event instance to sender of target subscriber.
-func (h *EventHandler) pushToSender(subid int64, dist *metadata.DistInst) error {
-	h.sendersMu.Lock()
-	defer h.sendersMu.Unlock()
+// pushToPushers pushs new event instance to pusher of target subscriber.
+func (h *EventHandler) pushToPusher(subid int64, dist *metadata.DistInst) error {
+	h.pushersMu.Lock()
+	defer h.pushersMu.Unlock()
 
-	if _, isExist := h.senders[subid]; !isExist {
-		// create new sender for the subscriber.
-		newSender := NewEventSender(h.ctx, subid, h.cache, h.distributer, h.senderHandleTotal, h.senderHandleDuration)
+	if _, isExist := h.pushers[subid]; !isExist {
+		// create new pusher for the subscriber.
+		newPusher := NewEventPusher(h.ctx, h.engine, subid, h.cache, h.distributer,
+			h.pusherHandleTotal, h.pusherHandleDuration)
 
-		// run new sender.
-		newSender.Run()
-		h.senders[subid] = newSender
+		// run new pusher.
+		newPusher.Run()
+		h.pushers[subid] = newPusher
 	}
 
-	// sender of subscriber.
-	sender := h.senders[subid]
+	// pusher of subscriber.
+	pusher := h.pushers[subid]
 
 	dstbID, err := h.nextDistID(subid)
 	if err != nil {
@@ -531,8 +313,8 @@ func (h *EventHandler) pushToSender(subid int64, dist *metadata.DistInst) error 
 	dist.DstbID = dstbID
 	dist.SubscriptionID = subid
 
-	// add to subscriber sender.
-	return sender.Handle(dist)
+	// add to subscriber pusher.
+	return pusher.Handle(dist)
 }
 
 // handleEvent handles target event.
@@ -545,14 +327,14 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 
 	// distribute to subscribers.
 	for _, subscriber := range subscribers {
-		// push to subscriber sender.
+		// push to subscriber pusher.
 		cost := time.Now()
-		err := h.pushToSender(subscriber, &metadata.DistInst{EventInst: *event})
-		h.eventHandleDuration.WithLabelValues("PushEventToSender").Observe(time.Since(cost).Seconds())
+		err := h.pushToPusher(subscriber, &metadata.DistInst{EventInst: *event})
+		h.eventHandleDuration.WithLabelValues("PushEventToPusher").Observe(time.Since(cost).Seconds())
 
 		if err != nil {
-			blog.Errorf("push to sender for subid[%d] failed, %+v", subscriber, err)
-			h.eventHandleTotal.WithLabelValues("PushEventToSenderFailed").Inc()
+			blog.Errorf("push to pusher for subid[%d] failed, %+v", subscriber, err)
+			h.eventHandleTotal.WithLabelValues("PushEventToPusherFailed").Inc()
 			continue
 		}
 		h.eventHandleTotal.WithLabelValues("Success").Inc()
@@ -561,12 +343,18 @@ func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
 	return nil
 }
 
-// clean cleans expire or redundancy events in event cache queue.
-func (h *EventHandler) clean() {
+// cleaning keeps cleaning expire or redundancy events in event cache queue.
+func (h *EventHandler) cleaning() {
 	ticker := time.NewTicker(defaultCleanCheckInterval)
 	defer ticker.Stop()
 
 	for {
+		if !h.engine.ServiceManageInterface.IsMaster() {
+			blog.Warnf("not master eventserver node, skip cleaning events!")
+			time.Sleep(defaultMasterCheckInterval)
+			continue
+		}
+
 		<-ticker.C
 		blog.Info("cleaning expire and redundancy events now")
 
@@ -584,14 +372,14 @@ func (h *EventHandler) clean() {
 		}
 
 		if eventCount < defaultCleanDelThreshold {
-			if _, err := h.cache.LTrim(types.EventCacheEventQueueKey, 0, eventCount-defaultCleanUnit).Result(); err != nil {
+			if err := h.cache.LTrim(types.EventCacheEventQueueKey, 0, eventCount-defaultCleanUnit).Err(); err != nil {
 				blog.Errorf("trim expire and redundancy events failed, %+v", err)
 				continue
 			}
 		}
 
 		// too many events.
-		if _, err := h.cache.Del(types.EventCacheEventQueueKey).Result(); err != nil {
+		if err := h.cache.Del(types.EventCacheEventQueueKey).Err(); err != nil {
 			blog.Errorf("delete expire and redundancy queue failed, %+v", err)
 			continue
 		}
@@ -602,9 +390,15 @@ func (h *EventHandler) clean() {
 // start starts the poping and handling logic really.
 func (h *EventHandler) start() {
 	// keep cleaning.
-	go h.clean()
+	go h.cleaning()
 
 	for {
+		if !h.engine.ServiceManageInterface.IsMaster() {
+			blog.Warnf("not master eventserver node, skip distribute events!")
+			time.Sleep(defaultMasterCheckInterval)
+			continue
+		}
+
 		// pop.
 		event, err := h.popEvent()
 		if err != nil {

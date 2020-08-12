@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -53,7 +53,8 @@ var (
 
 // Distributer is event subscription distributer.
 type Distributer struct {
-	ctx context.Context
+	ctx    context.Context
+	engine *backbone.Engine
 
 	// db is cc main database.
 	db dal.RDB
@@ -89,12 +90,6 @@ type Distributer struct {
 	// eventHandler is event handler that handles all event senders.
 	eventHandler *EventHandler
 
-	// disc is service discovery.
-	disc discovery.ServiceManageInterface
-
-	// registry is prometheus registry.
-	registry prometheus.Registerer
-
 	// metrics.
 	// watchAndDistributeTotal is event watch and distribute total stat.
 	watchAndDistributeTotal *prometheus.CounterVec
@@ -104,16 +99,14 @@ type Distributer struct {
 }
 
 // NewDistributer creates a new Distributer instance.
-func NewDistributer(ctx context.Context, db dal.RDB, cache *redis.Client, subWatcher reflector.Interface,
-	disc discovery.ServiceManageInterface, registry prometheus.Registerer) *Distributer {
+func NewDistributer(ctx context.Context, engine *backbone.Engine, db dal.RDB, cache *redis.Client, subWatcher reflector.Interface) *Distributer {
 
 	return &Distributer{
 		ctx:                          ctx,
+		engine:                       engine,
 		db:                           db,
 		cache:                        cache,
 		subWatcher:                   subWatcher,
-		disc:                         disc,
-		registry:                     registry,
 		subscriptions:                make(map[int64]*metadata.Subscription),
 		subscribers:                  make(map[string][]int64),
 		resourceCursors:              make(map[watch.CursorType]*watch.Cursor),
@@ -130,9 +123,10 @@ func (d *Distributer) registerMetrics() {
 		},
 		[]string{"status"},
 	)
-	d.registry.MustRegister(d.watchAndDistributeTotal)
 
-	d.registry.MustRegister(prometheus.NewGaugeFunc(
+	d.engine.Metric().Registry().MustRegister(d.watchAndDistributeTotal)
+
+	d.engine.Metric().Registry().MustRegister(prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
 			Name: fmt.Sprintf("%s_subscriptions", etypes.MetricsNamespacePrefix),
 			Help: "current number of subscriptions.",
@@ -151,7 +145,7 @@ func (d *Distributer) registerMetrics() {
 		},
 		[]string{"status"},
 	)
-	d.registry.MustRegister(d.watchAndDistributeDuration)
+	d.engine.Metric().Registry().MustRegister(d.watchAndDistributeDuration)
 }
 
 // LoadSubscriptions loads all subscriptions in cc.
@@ -319,7 +313,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 
 	go func() {
 		for {
-			if !d.disc.IsMaster() {
+			if !d.engine.ServiceManageInterface.IsMaster() {
 				blog.Warnf("not master eventserver node, skip watch and distribute!")
 				time.Sleep(defaultMasterCheckInterval)
 				continue
@@ -386,7 +380,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 	// keep watching.
 	for {
 		// check master state.
-		if !d.disc.IsMaster() {
+		if !d.engine.ServiceManageInterface.IsMaster() {
 			blog.Warnf("master state changed, stop watching!")
 			return errors.New("master state changed")
 		}

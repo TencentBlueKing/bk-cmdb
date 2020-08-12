@@ -35,7 +35,6 @@ import (
 	dalredis "configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/redis.v5"
 )
 
@@ -78,9 +77,6 @@ type EventServer struct {
 
 	// distributer handles all events distribution.
 	distributer *distribution.Distributer
-
-	// registry is prometheus registry.
-	registry prometheus.Registerer
 }
 
 // NewEventServer creates a new EventServer object.
@@ -110,7 +106,6 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 	// set backbone engine.
 	newEventServer.engine = engine
 	newEventServer.service = svc.NewService(ctx, engine)
-	newEventServer.registry = engine.Metric().Registry()
 
 	return newEventServer, nil
 }
@@ -218,7 +213,7 @@ func (es *EventServer) initModules() error {
 	es.service.SetCache(redisCli)
 	blog.Infof("init modules, connected to cc redis, %+v", es.config.Redis)
 
-	authCli, err := authcenter.NewAuthCenter(nil, es.config.Auth, es.registry)
+	authCli, err := authcenter.NewAuthCenter(nil, es.config.Auth, es.engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("new authcenter failed: %v, config: %+v", err, es.config.Auth)
 	}
@@ -238,13 +233,13 @@ func (es *EventServer) initModules() error {
 	es.identifierHandler = identifierHandler
 
 	// init distributer.
-	distributer := distribution.NewDistributer(es.ctx, es.db, es.redisCli, es.subWatcher, es.engine.ServiceManageInterface, es.registry)
+	distributer := distribution.NewDistributer(es.ctx, es.engine, es.db, es.redisCli, es.subWatcher)
 	es.distributer = distributer
 	es.service.SetDistributer(distributer)
 	blog.Infof("init modules, create event distributer success")
 
 	// init event handler.
-	eventHandler := distribution.NewEventHandler(es.ctx, es.redisCli, es.registry)
+	eventHandler := distribution.NewEventHandler(es.ctx, es.engine, es.redisCli)
 	es.eventHandler = eventHandler
 	es.eventHandler.SetDistributer(distributer)
 	blog.Infof("init modules, create event handler success")
