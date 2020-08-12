@@ -254,7 +254,6 @@ func (h *Host) CreateHostBatch(bizID int64, moduleIDS []int64, data ...types.Map
 	param := types.MapStr{
 		"bk_biz_id":      bizID,
 		"bk_module_id":   moduleIDS,
-		"bk_supplier_id": cccommon.BKDefaultSupplierID,
 		"host_info":      infos,
 	}
 	targetURL := fmt.Sprintf("%s/api/v3/hosts/sync/new/host", h.cli.GetAddress())

@@ -360,7 +360,6 @@ func (i *Identifier) build(kit *rest.Kit) {
 
 			if biz, ok := i.bizs[mod.BizID]; ok {
 				mod.BizName = biz.BizName
-				host.SupplierID = biz.SupplierID
 			}
 
 			var parentID int64
