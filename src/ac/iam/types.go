@@ -51,7 +51,7 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 	if !auth.EnableAuthorize() {
 		return AuthConfig{}, nil
 	}
-	address, err := cc.String(prefix+".address")
+	address, err := cc.String(prefix + ".address")
 	if err != nil {
 		return cfg, errors.New(`missing "address" configuration for auth center`)
 	}
@@ -66,7 +66,7 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 		}
 	}
 
-	appSecret, err := cc.String(prefix+".appSecret")
+	appSecret, err := cc.String(prefix + ".appSecret")
 	if err != nil {
 		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
@@ -75,7 +75,7 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
 
-	appCode, err := cc.String(prefix+".appCode")
+	appCode, err := cc.String(prefix + ".appCode")
 	if err != nil {
 		return cfg, errors.New(`missing "appCode" configuration for auth center`)
 	}
@@ -310,6 +310,7 @@ const (
 	WatchBizEvent          ActionID = "watch_biz_event"
 	WatchSetEvent          ActionID = "watch_set_event"
 	WatchModuleEvent       ActionID = "watch_module_event"
+	WatchSetTemplateEvent  ActionID = "watch_set_template_event"
 	GlobalSettings         ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
