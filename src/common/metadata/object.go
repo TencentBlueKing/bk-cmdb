@@ -23,6 +23,7 @@ const (
 	ModelFieldObjIcon     = "bk_obj_icon"
 	ModelFieldObjectID    = "bk_obj_id"
 	ModelFieldObjectName  = "bk_obj_name"
+	ModelFieldIsHide      = "ishide"
 	ModelFieldIsPre       = "ispre"
 	ModelFieldIsPaused    = "bk_ispaused"
 	ModelFieldPosition    = "position"

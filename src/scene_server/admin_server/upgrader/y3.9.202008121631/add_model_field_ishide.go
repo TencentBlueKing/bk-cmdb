@@ -18,20 +18,22 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
+// addModelFieldIshide add field 'ishide' to the 'cc_ObjDes' table, and model process and plat have 'ishide=true'
 func addModelFieldIshide(ctx context.Context, db dal.RDB, _ *upgrader.Config) (err error) {
 	modelObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 
-	// 在cc_ObjDes表中将指定模型实例增加ishide=true字段
+	// the value of field 'ishide' become true for each model in modelObjIDs
 	for _, objID := range modelObjIDs {
 		cond := mapstr.MapStr{
 			common.BKObjIDField: objID,
 		}
 		doc := mapstr.MapStr{
-			"ishide": true,
+			metadata.ModelFieldIsHide: true,
 		}
 
 		if err := db.Table(common.BKTableNameObjDes).Update(ctx, cond, doc); err != nil {

@@ -26,11 +26,11 @@ func init() {
 	upgrader.RegistUpgrader(currentPackageName, upgrade)
 }
 
-// upgrade  不在前端界面展示指定模型,将其添加ishide=true字段
+// upgrade add field 'ishide' to model, and the value of field 'ishide' of model process and plat is true.
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	blog.Infof("start execute %s", currentPackageName)
 
-	// 在cc_ObjDes表中将process和plat模型实例增加ishide=true字段
+	// add field 'ishide' to the 'cc_ObjDes' table, and model process and plat have 'ishide=true'
 	if err := addModelFieldIshide(ctx, db, conf); err != nil {
 		blog.Errorf("[%s] failed to model add field ishide, error: %s", currentPackageName, err.Error())
 		return err
