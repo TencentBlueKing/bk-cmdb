@@ -57,6 +57,7 @@ const (
 	Biz                CursorType = "biz"
 	Set                CursorType = "set"
 	Module             CursorType = "module"
+	SetTemplate        CursorType = "set_template"
 	ObjectBase         CursorType = "object_instance"
 )
 
@@ -74,8 +75,10 @@ func (ct CursorType) ToInt() int {
 		return 5
 	case Module:
 		return 6
-	case ObjectBase:
+	case SetTemplate:
 		return 7
+	case ObjectBase:
+		return 8
 	default:
 		return -1
 	}
@@ -96,6 +99,8 @@ func (ct *CursorType) ParseInt(typ int) {
 	case 6:
 		*ct = Module
 	case 7:
+		*ct = SetTemplate
+	case 8:
 		*ct = ObjectBase
 	default:
 		*ct = UnknownType
@@ -104,6 +109,11 @@ func (ct *CursorType) ParseInt(typ int) {
 
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
+	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, SetTemplate, ObjectBase}
+}
+
+// ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
+func ListEventCallbackCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase}
 }
 
@@ -238,6 +248,8 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		curType = Set
 	case common.BKTableNameBaseModule:
 		curType = Module
+	case common.BKTableNameSetTemplate:
+		curType = SetTemplate
 	case common.BKTableNameBaseInst:
 		curType = ObjectBase
 	default:

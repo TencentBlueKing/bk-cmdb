@@ -56,6 +56,11 @@ func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster dis
 		return err
 	}
 
+	if err := e.runSetTemplate(context.Background()); err != nil {
+		blog.Errorf("run set_template event flow failed, err: %v", err)
+		return err
+	}
+
 	if err := e.runObjectBase(context.Background()); err != nil {
 		blog.Errorf("run object base event flow failed, err: %v", err)
 		return err
@@ -127,6 +132,19 @@ func (e *Event) runModule(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameBaseModule,
 		key:        ModuleKey,
+		rds:        e.rds,
+		watch:      e.watch,
+		db:         e.db,
+		isMaster:   e.isMaster,
+	}
+
+	return newFlow(ctx, opts)
+}
+
+func (e *Event) runSetTemplate(ctx context.Context) error {
+	opts := FlowOptions{
+		Collection: common.BKTableNameSetTemplate,
+		key:        SetTemplateKey,
 		rds:        e.rds,
 		watch:      e.watch,
 		db:         e.db,
