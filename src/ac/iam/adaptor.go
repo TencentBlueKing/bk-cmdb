@@ -377,6 +377,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchBiz:          WatchBizEvent,
 		meta.WatchSet:          WatchSetEvent,
 		meta.WatchModule:       WatchModuleEvent,
+		meta.WatchSetTemplate:  WatchSetTemplateEvent,
 	},
 	meta.UserCustom: {
 		meta.Find:   Skip,

@@ -1209,6 +1209,16 @@ func genEventWatchActions() []ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   WatchSetTemplateEvent,
+		Name:                 "集群模板数据监听",
+		NameEn:               "Set Template Event Listen",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
 	return actions
 }
 
