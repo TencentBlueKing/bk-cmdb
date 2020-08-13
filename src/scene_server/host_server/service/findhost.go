@@ -115,6 +115,7 @@ func (s *Service) FindModuleHostRelation(req *restful.Request, resp *restful.Res
 				Relation: []meta.ModuleHostRelation{},
 			},
 		})
+		return
 	}
 	hostIDArr := make([]int64, hostLen)
 	for index, host := range hostRes.Data.Info {
