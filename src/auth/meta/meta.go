@@ -53,7 +53,7 @@ type Basic struct {
 
 	// the action that user want to do with this resource.
 	// this field should be empty when it's used in resource handle operation.
-	Action Action `json:"action"'`
+	Action Action `json:"action"`
 
 	// the name of the resource, which could be a bk-route, etc.
 	// this filed is not necessary for all the resources.
@@ -139,6 +139,7 @@ const (
 	WatchBiz          Action = "biz"
 	WatchSet          Action = "set"
 	WatchModule       Action = "module"
+	WatchSetTemplate  Action = "set_template"
 )
 
 type InitConfig struct {

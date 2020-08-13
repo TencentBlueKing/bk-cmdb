@@ -277,6 +277,11 @@ var expectSystemResourceType = []ResourceType{
 				ActionName:        "模块",
 				IsRelatedResource: false,
 			},
+			{
+				ActionID:          WatchSetTemplate,
+				ActionName:        "集群模板",
+				IsRelatedResource: false,
+			},
 		},
 	},
 	{
