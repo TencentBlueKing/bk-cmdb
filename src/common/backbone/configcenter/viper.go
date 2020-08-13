@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -79,10 +80,8 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 
 func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 
-	// if the loaded local file is migrate, skip the loading of other files,load only error and language.
-	split := strings.Split(confPath, "/")
-	fileName := split[len(split)-1]
-	if fileName == types.CC_MODULE_MIGRATE {
+	// if it is admin_server, skip the loading of other files,load only error and language.
+	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
 		errorres, _ := String("errors.res")
 		languageres, _ := String("language.res")
 		return loadErrorAndLanguage(errorres, languageres, handler)
@@ -284,7 +283,10 @@ func SetMigrateFromFile(target string) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
-	migrateParser,err = newViperParserFromFile(target)
+	// /data/migrate.yaml -> /data/migrate
+	split := strings.Split(target, ".")
+	filePath := split[0]
+	migrateParser,err = newViperParserFromFile(filePath)
 	if err != nil {
 		blog.Errorf("fail to read configure from migrate")
 		return err
