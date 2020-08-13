@@ -159,7 +159,6 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	globalBusiness := extensions.BusinessSimplify{
 		BKAppIDField:      0,
 		BKAppNameField:    "",
-		BKSupplierIDField: 0,
 		BKOwnerIDField:    "0",
 		IsDefault:         0,
 	}

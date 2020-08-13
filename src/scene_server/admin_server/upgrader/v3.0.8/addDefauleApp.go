@@ -43,7 +43,6 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultBiz[common.BKLanguageField] = "1" //中文
 	defaultBiz[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 	defaultBiz[common.BKOwnerIDField] = conf.OwnerID
-	defaultBiz[common.BKSupplierIDField] = common.BKDefaultSupplierID
 	defaultBiz[common.BKDefaultField] = common.DefaultAppFlag
 	defaultBiz[common.CreateTimeField] = time.Now()
 	defaultBiz[common.LastTimeField] = time.Now()
