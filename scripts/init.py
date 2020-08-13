@@ -384,7 +384,7 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                 filedata = filedata.replace('cmdb-name-placeholder', d)
                 filedata = filedata.replace('cmdb-port-placeholder', str(server_ports.get(d, 9999)))
                 if d == "cmdb_adminserver":
-                    filedata = filedata.replace('rd_server_placeholder', "configures/migrate")
+                    filedata = filedata.replace('rd_server_placeholder', "configures/migrate.yaml")
                     filedata = filedata.replace('regdiscv', "config")
                 else:
                     filedata = filedata.replace('rd_server_placeholder', rd_server)

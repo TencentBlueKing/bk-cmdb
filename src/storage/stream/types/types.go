@@ -285,14 +285,7 @@ func (j *JsonString) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// GetEventDetail get event document detail, compatible for string type and EventDetail type
-// if update_fields and deleted_fields and detail all exists, judge it as EventDetail type and return's its detail field
+// GetEventDetail get event document detail, returns EventDetail's detail field
 func GetEventDetail(detailStr string) string {
-	if gjson.Get(detailStr, "update_fields").Exists() && gjson.Get(detailStr, "deleted_fields").Exists() {
-		detailVal := gjson.Get(detailStr, "detail")
-		if detailVal.Exists() {
-			return detailVal.Raw
-		}
-	}
-	return detailStr
+	return gjson.Get(detailStr, "detail").Raw
 }

@@ -180,7 +180,6 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	}
 	session.Set(common.WEBSessionOwnerUinKey, supplier.OwnerID)
 	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(supplier.Role, 10))
-	session.Set(common.WEBSessionSupplierID, strconv.FormatInt(supplier.SupplierID, 10))
 	if err := session.Save(); err != nil {
 		blog.Errorf("save session failed, err: %+v, rid: %s", err, rid)
 	}

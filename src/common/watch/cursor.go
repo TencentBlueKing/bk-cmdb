@@ -57,6 +57,7 @@ const (
 	Biz                CursorType = "biz"
 	Set                CursorType = "set"
 	Module             CursorType = "module"
+	SetTemplate        CursorType = "set_template"
 )
 
 func (ct CursorType) ToInt() int {
@@ -73,6 +74,8 @@ func (ct CursorType) ToInt() int {
 		return 5
 	case Module:
 		return 6
+	case SetTemplate:
+		return 7
 	default:
 		return -1
 	}
@@ -92,6 +95,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = Set
 	case 6:
 		*ct = Module
+	case 7:
+		*ct = SetTemplate
 	default:
 		*ct = UnknownType
 	}
@@ -228,6 +233,8 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		curType = Set
 	case common.BKTableNameBaseModule:
 		curType = Module
+	case common.BKTableNameSetTemplate:
+		curType = SetTemplate
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.Oid)
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
