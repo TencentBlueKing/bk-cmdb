@@ -270,6 +270,7 @@ const (
 	WatchBiz          ActionID = "biz"
 	WatchSet          ActionID = "set"
 	WatchModule       ActionID = "module"
+	WatchSetTemplate  ActionID = "set_template"
 )
 
 var ActionIDNameMap = map[ActionID]string{
@@ -285,6 +286,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchBiz:               "业务",
 	WatchSet:               "集群",
 	WatchModule:            "模块",
+	WatchSetTemplate:       "集群模板",
 }
 
 func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
@@ -402,6 +404,8 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		return WatchSet, nil
 	case meta.WatchModule:
 		return WatchModule, nil
+	case meta.WatchSetTemplate:
+		return WatchSetTemplate, nil
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)

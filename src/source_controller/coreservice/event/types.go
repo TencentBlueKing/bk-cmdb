@@ -37,6 +37,8 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = SetKey
 	case watch.Module:
 		key = ModuleKey
+	case watch.SetTemplate:
+		key = SetTemplateKey
 	default:
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}
