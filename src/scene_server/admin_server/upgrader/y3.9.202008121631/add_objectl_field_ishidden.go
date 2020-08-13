@@ -23,23 +23,23 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-// addModelFieldIshide add field 'ishide' to the 'cc_ObjDes' table, and model process and plat have 'ishide=true'
-func addModelFieldIshide(ctx context.Context, db dal.RDB, _ *upgrader.Config) (err error) {
-	modelObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+// addObjectFieldIsHidden add field 'bk_ishidden' to object process and plat, and the value is true
+func addObjectFieldIsHidden(ctx context.Context, db dal.RDB, _ *upgrader.Config) (err error) {
+	objIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 
-	// the value of field 'ishide' become true for each model in modelObjIDs
-	for _, objID := range modelObjIDs {
-		cond := mapstr.MapStr{
-			common.BKObjIDField: objID,
-		}
-		doc := mapstr.MapStr{
-			metadata.ModelFieldIsHide: true,
-		}
+	cond := mapstr.MapStr{
+		common.BKObjIDField: mapstr.MapStr{
+			common.BKDBIN: objIDs,
+		},
+	}
+	doc := mapstr.MapStr{
+		metadata.ModelFieldIsHidden: true,
+	}
 
-		if err := db.Table(common.BKTableNameObjDes).Update(ctx, cond, doc); err != nil {
-			blog.ErrorJSON("failed to model add field, objID: %s, err: %s", err, objID)
-			return err
-		}
+	if err := db.Table(common.BKTableNameObjDes).Update(ctx, cond, doc); err != nil {
+		blog.ErrorJSON("failed to object update value of field %s to true, objIDs: %s, err: %s",
+			metadata.ModelFieldIsHidden, objIDs, err)
+		return err
 	}
 
 	return nil

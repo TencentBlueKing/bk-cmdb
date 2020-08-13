@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -26,13 +27,13 @@ func init() {
 	upgrader.RegistUpgrader(currentPackageName, upgrade)
 }
 
-// upgrade add field 'ishide' to model, and the value of field 'ishide' of model process and plat is true.
+// upgrade add field 'bk_ishidden' to object process and plat, and the value is true
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	blog.Infof("start execute %s", currentPackageName)
 
-	// add field 'ishide' to the 'cc_ObjDes' table, and model process and plat have 'ishide=true'
-	if err := addModelFieldIshide(ctx, db, conf); err != nil {
-		blog.Errorf("[%s] failed to model add field ishide, error: %s", currentPackageName, err.Error())
+	if err := addObjectFieldIsHidden(ctx, db, conf); err != nil {
+		blog.Errorf("[%s] failed to object add field %s, error: %s", currentPackageName,
+			metadata.ModelFieldIsHidden, err.Error())
 		return err
 	}
 
