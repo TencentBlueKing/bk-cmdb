@@ -184,7 +184,6 @@
                     bk_asst_id: '',
                     mapping: ''
                 },
-                specialModel: ['process', 'plat'],
                 originRelationInfo: {}
             }
         },
@@ -231,8 +230,8 @@
                 this.classifications.forEach(classify => {
                     if (classify['bk_objects'].length) {
                         const objects = []
-                        classify['bk_objects'].forEach(({ bk_obj_id: objId, bk_obj_name: objName }) => {
-                            if (!this.specialModel.includes(objId)) {
+                        classify['bk_objects'].forEach(({ bk_obj_id: objId, bk_obj_name: objName, bk_ishidden: isHidden }) => {
+                            if (!isHidden) {
                                 objects.push({
                                     id: objId,
                                     name: objName
