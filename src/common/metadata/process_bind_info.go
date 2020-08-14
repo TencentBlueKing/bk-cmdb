@@ -100,6 +100,9 @@ type propertyBindInfoValueInterface interface {
 	// ExtractInstanceUpdateData extra 主机进程bind_info中某一行的extra
 	ExtractInstanceUpdateData(extra map[string]interface{}) map[string]interface{}
 
+	// SetExtraItem 新加一项数据
+	SetExtraItem(key string, value interface{}) error
+
 	// toMap  获取要保持格式的数据
 	toMap() map[string]interface{}
 }
@@ -510,6 +513,16 @@ func (pbi *ProcPropertyBindInfoValue) Validate() (string, error) {
 
 }
 
+// SetExtraItem 新加一项数据
+func (pbi ProcPropertyBindInfoValue) SetExtraItem(key string, value interface{}) error {
+	if pbi.extra == nil {
+		// 这个是开发错误，并不是业务逻辑错误，所以panic
+		panic("extra unimplement")
+	}
+
+	return pbi.extra.SetExtraItem(key, value)
+}
+
 func (pbi stdProcPropertyBindInfoValue) toKV() map[string]interface{} {
 
 	data := make(map[string]interface{}, 0)
@@ -557,14 +570,40 @@ func (pbi ProcBindInfo) MarshalBSON() ([]byte, error) {
 	return bson.Marshal(stdData)
 }
 
+func (pbi ProcBindInfo) Value() map[string]interface{} {
+	stdData := pbi.toKV()
+	if pbi.extra != nil {
+		stdData = merge(stdData, pbi.extra)
+	}
+	return stdData
+}
+
+// SetExtraItem 设置额外配置项，不可为标准属性赋值
+func (pbi ProcBindInfo) SetExtraItem(key string, value interface{}) error {
+	if pbi.extra == nil {
+		pbi.extra = make(map[string]interface{}, 0)
+	}
+
+	pbi.extra[key] = value
+	return nil
+}
+
 func (pbi ProcBindInfo) toKV() map[string]interface{} {
 	data := make(map[string]interface{}, 0)
+	if pbi.Std == nil {
+		data["template_row_id"] = nil
+		data[common.BKIP] = nil
+		data[common.BKPort] = nil
+		data[common.BKProtocol] = nil
+		data[common.BKEnable] = nil
+	} else {
+		data["template_row_id"] = pbi.Std.TemplateRowID
+		data[common.BKIP] = pbi.Std.IP
+		data[common.BKPort] = pbi.Std.Port
+		data[common.BKProtocol] = pbi.Std.Protocol
+		data[common.BKEnable] = pbi.Std.Enable
+	}
 
-	data["template_row_id"] = pbi.Std.TemplateRowID
-	data[common.BKIP] = pbi.Std.IP
-	data[common.BKPort] = pbi.Std.Port
-	data[common.BKProtocol] = pbi.Std.Protocol
-	data[common.BKEnable] = pbi.Std.Enable
 	return data
 }
 
@@ -645,6 +684,7 @@ func (ov *openVersionPropertyBindInfo) UBSON(data []byte, bindInfo *ProcProperty
 
 	// 公开版没有额外地址，直接解析到标准定义的结构中即可，不要就需要接到自定义结构中
 	bindInfo.Std = &stdProcPropertyBindInfoValue{}
+
 	err := bson.Unmarshal(data, &bindInfo.Std)
 	if err != nil {
 		return err
