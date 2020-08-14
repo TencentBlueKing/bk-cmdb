@@ -227,7 +227,7 @@ func getSubAttr() []SubAttriubte {
 	return []SubAttriubte{
 		SubAttriubte{
 			PropertyID:   "ip",
-			PropertyName: "ip",
+			PropertyName: "IP",
 			Placeholder:  "bind ip",
 			IsEditable:   true,
 			PropertyType: common.FieldTypeSingleChar,
@@ -235,7 +235,7 @@ func getSubAttr() []SubAttriubte {
 		},
 		SubAttriubte{
 			PropertyID:   "port",
-			PropertyName: "port",
+			PropertyName: "Port",
 			Placeholder:  "single port: 8080, </br>multiple consecutive ports: 8080-8089,</br> multiple discontinuous ports: 8080-8089, 8199.",
 			IsEditable:   true,
 			PropertyType: common.FieldTypeSingleChar,
@@ -243,7 +243,7 @@ func getSubAttr() []SubAttriubte {
 		},
 		SubAttriubte{
 			PropertyID:   "protocol",
-			PropertyName: "protocol",
+			PropertyName: "Protocol",
 			Placeholder:  "service use protocol,",
 			IsEditable:   true,
 			PropertyType: common.FieldTypeEnum,
@@ -251,7 +251,7 @@ func getSubAttr() []SubAttriubte {
 		},
 		SubAttriubte{
 			PropertyID:   "enable",
-			PropertyName: "enable",
+			PropertyName: "Enable",
 			Placeholder:  "enable port",
 			IsEditable:   true,
 			PropertyType: common.FieldTypeBool,
