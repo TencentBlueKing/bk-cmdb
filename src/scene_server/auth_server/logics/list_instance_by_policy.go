@@ -94,7 +94,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	}
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
 	header.Add("Content-Type", "application/json")
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
