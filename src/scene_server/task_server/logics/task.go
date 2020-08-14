@@ -228,7 +228,6 @@ func GetDBHTTPHeader(header http.Header) http.Header {
 	newHeader.Add(common.BKHTTPOwnerID, header.Get(common.BKHTTPOwnerID))
 	newHeader.Add(common.BKHTTPRequestAppCode, header.Get(common.BKHTTPRequestAppCode))
 	newHeader.Add(common.BKHTTPRequestRealIP, header.Get(common.BKHTTPRequestRealIP))
-	newHeader.Add(common.BKHTTPSupplierID, header.Get(common.BKHTTPSupplierID))
 
 	return newHeader
 }

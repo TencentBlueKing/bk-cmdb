@@ -110,7 +110,6 @@ func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermis
 	params[common.BKProductPMField] = "admin"
 	params[common.BKTimeZoneField] = "Asia/Shanghai"
 	params[common.BKLanguageField] = "1" // 中文
-	params[common.BKSupplierIDField] = 1
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	result, httpDoErr := m.Engine.CoreAPI.ApiServer().AddDefaultApp(context.Background(), m.header, m.OwnerID, params)

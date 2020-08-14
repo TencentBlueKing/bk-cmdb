@@ -9,25 +9,40 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x18_10_30_02
+
+package y3_8_202008111026
 
 import (
 	"context"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	upgrader.RegistUpgrader("x18.10.30.02", upgrade)
-}
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addBizSuupierID(ctx, db, conf)
+func removeBkSupplierIDField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKPropertyIDField: "bk_supplier_id",
+		common.BKObjIDField:      common.BKInnerObjIDApp,
+	}
+
+	count, err := db.Table(common.BKTableNameObjAttDes).Find(filter).Count(ctx)
 	if err != nil {
-		blog.Errorf("[upgrade x18.10.30.02] addBizSuupierID error  %s", err.Error())
+		blog.Errorf("count bk_supplier_id attribute failed, err: %s", err.Error())
 		return err
 	}
 
-	return
+	if count > 0 {
+		if err := db.Table(common.BKTableNameObjAttDes).Delete(ctx, filter); err != nil {
+			blog.Errorf("delete bk_supplier_id attribute failed, err: %s", err.Error())
+			return err
+		}
+	}
+
+	if err := db.Table(common.BKTableNameBaseApp).DropColumn(ctx, "bk_supplier_id"); err != nil {
+		blog.Errorf("remove biz bk_supplier_id field failed, err: %s", err.Error())
+		return err
+	}
+	return nil
 }

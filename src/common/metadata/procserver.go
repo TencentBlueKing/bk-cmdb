@@ -67,7 +67,6 @@ type GseHost struct {
 	HostID       int64  `json:"bk_host_id,omitempty"`
 	Ip           string `json:"ip,omitempty"`
 	BkCloudId    int64  `json:"bk_cloud_id"`
-	BkSupplierId int64  `json:"bk_supplier_id"`
 }
 
 type GseProcMeta struct {
