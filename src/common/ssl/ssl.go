@@ -22,7 +22,7 @@ import (
 
 func ClientTslConfNoVerity() *tls.Config {
 	return &tls.Config{
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: true,
 	}
 }
 
