@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -31,18 +32,20 @@ import (
  * instance represent common instances here
  */
 
+const syncStep = 1000
+
 func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header http.Header, objectID string) ([]InstanceSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	instances := make([]InstanceSimplify, 0)
 	count := -1
-	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += syncStep {
 		cond := metadata.QueryCondition{
 			Condition: map[string]interface{}{common.BKObjIDField: objectID},
 			Fields:    []string{common.BKInstIDField, common.BKInstNameField, common.BKAppIDField, common.BKObjIDField},
 			Limit: metadata.SearchLimit{
 				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+				Limit:  syncStep,
 			},
 		}
 		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, objectID, &cond)
@@ -59,6 +62,8 @@ func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header htt
 			instances = append(instances, instance)
 		}
 		count = result.Data.Count
+
+		time.Sleep(getRandomDuration())
 	}
 
 	return instances, nil
