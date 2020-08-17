@@ -265,25 +265,17 @@ func (d *Distributer) getResourceCursor(cursorType watch.CursorType) (*watch.Cur
 			// get all cursors of subscribers, and try to find oldest cursor for target resource.
 			cursorKey := etypes.EventCacheSubscriberCursorKey(eventType, subid)
 
-			// target subscriber cursor.
-			var subCursor *watch.Cursor
-
 			// get target subscriber cursor from cache.
-			if val, err := d.cache.Get(cursorKey).Result(); err != nil || len(val) == 0 {
+			val, err := d.cache.Get(cursorKey).Result()
+			if err != nil || len(val) == 0 {
 				blog.Warnf("get resource[%+v] cursor failed, query target subscriber cursor[%s], %+v, %+v", cursorType, cursorKey, val, err)
-			} else {
-				// decode target cursor from cache.
-				cursor := &watch.Cursor{}
-				if err := cursor.Decode(val); err != nil {
-					blog.Warnf("get resource[%+v] cursor failed, invalid cursor[%s], %+v, %+v", cursorType, cursorKey, val, err)
-				} else {
-					// get target cursor success.
-					subCursor = cursor
-				}
+				continue
 			}
 
-			if subCursor == nil {
-				// can't get target cursor from cache, ignore it.
+			// decode target cursor from cache.
+			subCursor := &watch.Cursor{}
+			if err := subCursor.Decode(val); err != nil {
+				blog.Warnf("get resource[%+v] cursor failed, invalid cursor[%s], %+v, %+v", cursorType, cursorKey, val, err)
 				continue
 			}
 
@@ -561,7 +553,7 @@ func (d *Distributer) Start(eventHandler *EventHandler) error {
 	}
 
 	// range all resource cursors and watch to distribute.
-	for _, cursorType := range watch.ListCursorTypes() {
+	for _, cursorType := range watch.ListEventCallbackCursorTypes() {
 		if err := d.watchAndDistribute(cursorType); err != nil {
 			return fmt.Errorf("watch and distribute resource events failed, %+v", err)
 		}

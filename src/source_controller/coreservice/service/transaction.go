@@ -29,19 +29,8 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 	err := s.db.CommitTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
-		/*
-			if err := s.AbortEvent(cap.SessionID); err != nil {
-				blog.Errorf("AbortEvent failed, err:%v", err)
-			}
-		*/
 		return
 	}
-
-	/*
-		if err := s.CommitEvent(cap.SessionID); err != nil {
-			blog.Errorf("CommitEvent failed, err:%v", err)
-		}
-	*/
 
 	ctx.RespEntity(nil)
 }
@@ -54,12 +43,6 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 		return
 	}
 
-	/*
-		if err := s.AbortEvent(cap.SessionID); err != nil {
-			blog.Errorf("AbortEvent failed, err:%v", err)
-		}
-	*/
-
 	err := s.db.AbortTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
@@ -67,14 +50,4 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
-}
-
-// CommitEvent used when a transaction is committed to make all related events valid
-func (s *coreService) CommitEvent(txnID string) error {
-	return s.rds.LPush(common.EventCacheEventTxnCommitQueueKey, txnID).Err()
-}
-
-// AbortEvent used when a transaction is aborted to make all related events invalid
-func (s *coreService) AbortEvent(txnID string) error {
-	return s.rds.LPush(common.EventCacheEventTxnAbortQueueKey, txnID).Err()
 }
