@@ -299,7 +299,7 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 	--listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <cc_url> specified, default:8083
 	--full_text_search   <full_text_search>     full text search function, off or on, default off
 	--es_url             <es_url>               the elasticsearch listen url
-
+ 	--user_info          <user_info>            the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
 ```
 
 **init.py 参数详解：**
@@ -327,6 +327,7 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 |--auth_app_secret    | cmdb项目在蓝鲸权限中心的应用密钥 | auth_enabled 为真时必填 | xxxxxxx |
 |--log_level          | 日志级别0-9, 9日志最详细 | 否 | 3  |
 |--register_ip        | 进程注册到zookeeper上的IP地址，可以是域名 |  否 | 无 |
+|--user_info |登陆 web 页面的账号密码|否|无|
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
@@ -355,7 +356,8 @@ python init.py  \
   --full_text_search   off \
   --es_url             http://127.0.0.1:9200 \
   --log_level          3 \
-  --register_ip         cmdb.domain.com
+  --register_ip         cmdb.domain.com \
+  --user_info admin:admin
 ```
 
 ### 10. init.py 生成的配置如下
