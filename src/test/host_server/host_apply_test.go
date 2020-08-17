@@ -271,6 +271,7 @@ var _ = Describe("host abnormal test", func() {
 				"page": map[string]interface{}{
 					"limit": 10,
 				},
+				"fields": []string{"bk_host_id"},
 			}
 
 			rsp := metadata.Response{}

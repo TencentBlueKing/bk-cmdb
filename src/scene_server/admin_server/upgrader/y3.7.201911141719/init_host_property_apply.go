@@ -40,7 +40,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	// add module attribute field
-	newAttributeID, err := db.NextSequence(ctx, common.BKTableNameObjDes)
+	newAttributeID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 	if err != nil {
 		blog.Errorf("InitHostPropertyApplyDataModel failed, NextSequence failed, err: %s", err.Error())
 		return fmt.Errorf("NextSequence failed, err: %s", err.Error())
