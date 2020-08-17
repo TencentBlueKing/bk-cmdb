@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -91,13 +92,18 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 
 	dbFields = append(dbFields, instIDKey)
 
-	instAsstCond := condition.CreateCondition()
-	instAsstCond.Field(instIDKey).In(instIDArr)
-	instAsstCond.SetFields(dbFields)
+	instAsstCond := mapstr.MapStr{
+		"condition": mapstr.MapStr{
+			instIDKey: mapstr.MapStr{
+				common.BKDBIN: instIDArr,
+			},
+		},
+		"fields": dbFields,
+	}
 
-	instResult, err := lgc.CoreAPI.ApiServer().SearchInsts(ctx, header, objID, instAsstCond)
+	instResult, err := lgc.CoreAPI.ApiServer().GetInstDetail(ctx, header, objID, instAsstCond)
 	if err != nil {
-		blog.ErrorJSON("GetAssocationData fetch %s association instance error:%s, input:%s, rid:%s", objID, err.Error(), instAsstCond.ToMapStr(), rid)
+		blog.ErrorJSON("GetAssocationData fetch %s association instance error:%s, input:%s, rid:%s", objID, err.Error(), instAsstCond, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
