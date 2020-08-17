@@ -16,8 +16,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"sync/atomic"
+	"time"
 
 	"configcenter/src/auth"
 	"configcenter/src/auth/meta"
@@ -143,4 +145,13 @@ func extractBusinessID(m metadata.Label) (int64, error) {
 		return m.Int64(metadata.LabelBusinessID)
 	}
 	return 0, nil
+}
+
+// the random time range is 50ms ~ 250ms
+var ranges = [2]int{50, 250}
+
+func getRandomDuration() time.Duration {
+	rand.Seed(time.Now().UnixNano())
+	milSeconds := rand.Intn(ranges[1]-ranges[0]) + ranges[0]
+	return time.Duration(milSeconds) * time.Millisecond
 }

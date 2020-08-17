@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
@@ -37,13 +38,13 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	moduleArr := make([]ModuleSimplify, 0)
 	count := -1
-	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += syncStep {
 		query := &metadata.QueryCondition{
 			Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKModuleNameField},
 			Condition: cond.ToMapStr(),
 			Limit: metadata.SearchLimit{
 				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+				Limit:  syncStep,
 			},
 		}
 		instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, query)
@@ -63,6 +64,7 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 			moduleArr = append(moduleArr, moduleSimplify)
 		}
 		count = instances.Data.Count
+		time.Sleep(getRandomDuration())
 	}
 
 	blog.V(4).Infof("list modules by business:%d result: %+v, rid: %s", businessID, moduleArr, rid)

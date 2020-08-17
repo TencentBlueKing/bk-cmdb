@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -35,13 +36,13 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 	cond := map[string]interface{}{common.BKAppIDField: businessID}
 	sets := make([]SetSimplify, 0)
 	count := -1
-	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += syncStep {
 		query := &metadata.QueryCondition{
 			Condition: cond,
 			Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKSetNameField},
 			Limit: metadata.SearchLimit{
 				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+				Limit:  syncStep,
 			},
 		}
 		instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
@@ -61,6 +62,7 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 			sets = append(sets, setSimplify)
 		}
 		count = instances.Data.Count
+		time.Sleep(getRandomDuration())
 	}
 
 	blog.V(4).Infof("list sets by business:%d result: %+v, rid: %s", businessID, sets, rid)

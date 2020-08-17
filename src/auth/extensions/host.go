@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // GetHostLayers get resource layers id by hostID(layers is a data structure for call iam)
@@ -190,11 +191,11 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	hostIDs := make([]int64, 0)
 	count := -1
-	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += syncStep {
 		query := &metadata.QueryCondition{
 			Fields:    []string{common.BKHostIDField},
 			Condition: cond.ToMapStr(),
-			Limit:     metadata.SearchLimit{Offset: int64(offset), Limit: common.BKMaxRecordsAtOnce},
+			Limit:     metadata.SearchLimit{Offset: int64(offset), Limit: syncStep},
 		}
 		hosts, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameModuleHostConfig, query)
 		if err != nil {
@@ -219,6 +220,8 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 			hostIDs = append(hostIDs, hostID)
 		}
 		count = hosts.Data.Count
+
+		time.Sleep(getRandomDuration())
 	}
 	if len(hostIDs) == 0 {
 		return make([]HostSimplify, 0), nil
