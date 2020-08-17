@@ -224,7 +224,7 @@
                 demList: [],
                 staList: [],
                 chartType: true,
-                showDia: true,
+                showDia: false,
                 hostFilter: ['host', 'module', 'biz', 'set', 'process', 'plat'],
                 editTitle: '',
                 maxNum: 0
@@ -271,7 +271,7 @@
             if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
         },
         mounted () {
-            this.$refs.dialog.dialogIndex = this.$refs.dialog.getDialogIndex()
+            this.showDia = true
         },
         methods: {
             ...mapActions('operationChart', [
