@@ -57,24 +57,28 @@
                     {{row.bk_status === '1' ? $t('正常') : $t('异常')}}
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor" sortable="custom">
+            <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor" sortable="custom" show-overflow-tooltip>
                 <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
             </bk-table-column>
-            <bk-table-column :label="$t('地域')" prop="bk_region">
+            <bk-table-column :label="$t('地域')" prop="bk_region" show-overflow-tooltip>
                 <template slot-scope="{ row }">
-                    <task-region-selector display="info" :account="row.bk_account_id" :value="row.bk_region"></task-region-selector>
+                    <task-region-selector display="info"
+                        :with-count="false"
+                        :account="row.bk_account_id"
+                        :value="row.bk_region">
+                    </task-region-selector>
                 </template>
             </bk-table-column>
             <bk-table-column label="VPC" prop="bk_vpc_name" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{getVpcInfo(row) | formatter('singlechar')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('主机数量')" prop="host_count">
+            <bk-table-column :label="$t('主机数量')" prop="host_count" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.host_count | formatter('int')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('最近编辑')" prop="last_time" sortable="custom" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
+            <bk-table-column :label="$t('编辑人')" prop="bk_last_editor" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <cmdb-auth
