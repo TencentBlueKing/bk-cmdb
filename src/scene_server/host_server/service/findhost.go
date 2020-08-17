@@ -105,6 +105,7 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 			Count:    hostRes.Data.Count,
 			Relation: []meta.ModuleHostRelation{},
 		})
+		return
 	}
 	hostIDArr := make([]int64, hostLen)
 	for index, host := range hostRes.Data.Info {
