@@ -120,7 +120,7 @@
             <bk-tab-panel name="field" :label="$t('模型字段')">
                 <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
             </bk-tab-panel>
-            <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
+            <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="activeModel">
                 <the-relation v-if="tab.active === 'relation'" :model-id="modelId"></the-relation>
             </bk-tab-panel>
             <bk-tab-panel name="verification" :label="$t('唯一校验')">
@@ -214,7 +214,6 @@
                 },
                 isIconListShow: false,
                 isEditName: false,
-                specialModel: ['process', 'plat'],
                 modelStatisticsSet: {},
                 updateAuth: false,
                 importField: {
@@ -288,7 +287,7 @@
                 return !this.isPublicModel ? { metadata: this.$injectMetadata().metadata } : {}
             },
             canBeImport () {
-                const cantImport = ['host', 'biz', 'process', 'plat']
+                const cantImport = ['host', 'biz']
                 return this.updateAuth
                     && !this.isMainLine
                     && !cantImport.includes(this.$route.params.modelId)

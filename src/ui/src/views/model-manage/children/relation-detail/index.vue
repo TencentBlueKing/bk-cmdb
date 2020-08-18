@@ -202,7 +202,6 @@
                     bk_asst_id: '',
                     mapping: ''
                 },
-                specialModel: ['process', 'plat'],
                 originRelationInfo: {}
             }
         },
@@ -250,7 +249,7 @@
                     if (classify['bk_objects'].length) {
                         const objects = []
                         classify['bk_objects'].forEach(model => {
-                            if (!this.specialModel.includes(model.bk_obj_id)) {
+                            if (!model.bk_ishidden) {
                                 objects.push(model)
                             }
                         })

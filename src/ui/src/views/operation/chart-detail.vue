@@ -225,13 +225,16 @@
                 staList: [],
                 chartType: true,
                 showDia: true,
-                hostFilter: ['host', 'module', 'biz', 'set', 'process', 'plat'],
+                hostFilter: ['host', 'module', 'biz', 'set'],
                 editTitle: '',
                 maxNum: 0
             }
         },
         computed: {
             ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModelClassify', [
+                'getModelById'
+            ]),
             filterList () {
                 return this.demList.filter(item => {
                     if (this.hostType === 'host') {
@@ -242,7 +245,8 @@
             },
             staticFilter () {
                 return this.staList.filter(item => {
-                    return this.hostFilter.indexOf(item.bk_obj_id) === -1
+                    const model = this.getModelById(item.bk_obj_id)
+                    return !model.bk_ishidden || !this.hostFilter.includes(item.bk_obj_id)
                 })
             },
             typeFilter () {
