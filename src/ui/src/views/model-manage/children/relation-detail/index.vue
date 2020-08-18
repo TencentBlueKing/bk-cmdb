@@ -164,16 +164,6 @@
         },
         data () {
             return {
-                mappingList: [{
-                    id: 'n:n',
-                    name: 'N-N'
-                }, {
-                    id: '1:n',
-                    name: '1-N'
-                }, {
-                    id: '1:1',
-                    name: '1-1'
-                }],
                 relationInfo: {
                     ispre: false,
                     id: 0,
@@ -197,6 +187,25 @@
                 'activeModel',
                 'isInjectable'
             ]),
+            isSelfRelation () {
+                return this.relationInfo.bk_obj_id === this.relationInfo.bk_asst_obj_id
+            },
+            mappingList () {
+                const mappingList = [{
+                    id: 'n:n',
+                    name: 'N-N'
+                }, {
+                    id: '1:n',
+                    name: '1-N'
+                }, {
+                    id: '1:1',
+                    name: '1-1'
+                }]
+                if (this.isSelfRelation) {
+                    mappingList.splice(1, 1)
+                }
+                return mappingList
+            },
             usefulRelationList () {
                 return this.relationList.filter(relation => relation.id !== 'bk_mainline')
             },
