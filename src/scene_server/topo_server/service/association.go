@@ -67,15 +67,10 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 
 	// do with transaction
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		if err := s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID, md.Metadata); err != nil {
+		if err := s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID); err != nil {
 			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
 		}
@@ -92,12 +87,7 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 // SearchMainLineObjectTopo search the main line topo
 func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, md.Metadata)
+	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -115,12 +105,7 @@ func (s *Service) SearchMainLineObjectTopo(ctx *rest.Contexts) {
 
 // SearchObjectByClassificationID search the object by classification ID
 func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), md.Metadata)
+	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"))
 	if nil != err {
 		blog.Errorf("[api-asst] failed to find the biz object, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -163,16 +148,11 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts, withStatistics bool) ([
 		return nil, err
 	}
 
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		return nil, err
-	}
-
 	withDefault := false
 	if len(ctx.Request.QueryParameter("with_default")) > 0 {
 		withDefault = true
 	}
-	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, common.BKInnerObjIDApp, id, withStatistics, withDefault, md.Metadata)
+	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, common.BKInnerObjIDApp, id, withStatistics, withDefault)
 	if err != nil {
 		return nil, err
 	}
@@ -222,13 +202,7 @@ func (s *Service) SearchMainLineChildInstTopo(ctx *rest.Contexts) {
 	}
 	_ = bizID
 
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, objID, instID, false, false, md.Metadata)
+	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, objID, instID, false, false)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -436,16 +410,11 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
 		return
 	}
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 
 	var ret *metadata.DeleteAssociationInstResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id, md.Metadata)
+		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
 		if err != nil {
 			return err
 		}

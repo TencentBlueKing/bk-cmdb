@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"strconv"
 
@@ -33,7 +34,7 @@ func (s *Service) CreateObjectAssociation(ctx *rest.Contexts) {
 	var association *metadata.Association
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		association, err = s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc, &assoc.Metadata)
+		association, err = s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc)
 		if nil != err {
 			return err
 		}
@@ -49,12 +50,11 @@ func (s *Service) CreateObjectAssociation(ctx *rest.Contexts) {
 
 // SearchObjectAssociation search  object association by object id
 func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithMetadata.Data
 
 	if data.Exists("condition") {
 		// ATTENTION:
@@ -72,13 +72,6 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		if len(cond) == 0 {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
 			return
-		}
-
-		if nil != dataWithMetadata.Metadata {
-			cond.Merge(metadata.PublicAndBizCondition(*dataWithMetadata.Metadata))
-			cond.Remove(metadata.BKMetadata)
-		} else {
-			cond.Merge(metadata.BizLabelNotExist)
 		}
 
 		resp, err := s.Core.AssociationOperation().SearchObject(ctx.Kit, &metadata.SearchAssociationObjectRequest{Condition: cond})
@@ -110,7 +103,7 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	resp, err := s.Core.AssociationOperation().SearchObjectAssociation(ctx.Kit, objID, dataWithMetadata.Metadata)
+	resp, err := s.Core.AssociationOperation().SearchObjectAssociation(ctx.Kit, objID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -158,14 +151,14 @@ func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := new(mapstr.MapStr)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.AssociationOperation().UpdateAssociation(ctx.Kit, dataWithMetadata.Data, id, dataWithMetadata.Metadata)
+		err = s.Core.AssociationOperation().UpdateAssociation(ctx.Kit, *data, id)
 		if err != nil {
 			return err
 		}

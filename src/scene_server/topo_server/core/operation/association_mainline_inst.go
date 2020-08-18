@@ -211,7 +211,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 }
 
 func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64,
-	withStatistics bool, withDefault bool, metaData *metadata.Metadata) ([]*metadata.TopoInstRst, errors.CCError) {
+	withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError) {
 	// read mainline object association and construct child relation map excluding host
 	mainlineAsstRsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
@@ -240,7 +240,7 @@ func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, objID
 		objectIDs = append(objectIDs, objectID)
 	}
 	objectNameMap := make(map[string]string)
-	objects, err := assoc.obj.FindObject(kit, condition.CreateCondition().Field(common.BKObjIDField).In(objectIDs), metaData)
+	objects, err := assoc.obj.FindObject(kit, condition.CreateCondition().Field(common.BKObjIDField).In(objectIDs))
 	if nil != err {
 		blog.ErrorJSON("search mainline objects(%s) failed, error: %s, rid: %s", objectIDs, err.Error(), kit.Rid)
 		return nil, err
@@ -455,7 +455,7 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 	}
 	moduleRuleCount := make(map[int64]int64)
 	for _, item := range hostApplyRules.Info {
-		moduleRuleCount[item.ModuleID] ++
+		moduleRuleCount[item.ModuleID]++
 	}
 
 	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}

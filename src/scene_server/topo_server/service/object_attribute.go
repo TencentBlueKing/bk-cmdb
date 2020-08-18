@@ -25,15 +25,16 @@ import (
 
 // CreateObjectAttribute create a new object attribute
 func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	dataWithModelBizID := MapStrWithModelBizID{}
+	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithMetadata.Data
-	metaData := dataWithMetadata.Metadata
+	data := dataWithModelBizID.Data
+	modelBizID := dataWithModelBizID.ModelBizID
+
 	isBizCustomField := false
-	// adapt input path param with bk_biz_id. TODO remove metadata
+	// adapt input path param with bk_biz_id
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
 		bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -47,15 +48,15 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 			return
 		}
-		metaData = &metadata.Metadata{Label: metadata.Label{common.BKAppIDField: strconv.FormatInt(bizID, 10)}}
-		data.Set(metadata.BKMetadata, map[string]interface{}{"label": map[string]string{common.BKAppIDField: strconv.FormatInt(bizID, 10)}})
+		modelBizID = bizID
+		data.Set(common.BKAppIDField, modelBizID)
 		isBizCustomField = true
 	}
 
 	var attrInfo []*metadata.ObjAttDes
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, metaData)
+		attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, modelBizID)
 		if nil != err {
 			return err
 		}
@@ -63,7 +64,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		attribute := attr.Attribute()
 		cond := condition.CreateCondition()
 		cond.Field("id").Eq(attribute.ID)
-		attrInfo, err = s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, metaData)
+		attrInfo, err = s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, modelBizID)
 		if err != nil {
 			blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
@@ -73,13 +74,8 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
 		}
 
-		// adapt output metadata and bk_biz_id. TODO remove this
 		if isBizCustomField {
-			attrInfo[0].BizID, err = attrInfo[0].Metadata.ParseBizID()
-			if err != nil {
-				blog.ErrorJSON("parse attribute(%s) business id failed, err: %s", attribute, err.Error())
-				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
-			}
+			attrInfo[0].BizID = modelBizID
 		}
 		return nil
 	})
@@ -94,27 +90,13 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 
 // SearchObjectAttribute search the object attributes
 func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	dataWithModelBizID := MapStrWithModelBizID{}
+	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithMetadata.Data
-
-	metaData := dataWithMetadata.Metadata
-	// adapt input param with bk_biz_id. TODO remove metadata
-	if data.Exists(common.BKAppIDField) {
-		bizID, err := data.Int64(common.BKAppIDField)
-		if err != nil {
-			blog.ErrorJSON("parse business id failed, err: %s, data: %s", err.Error(), data)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
-			return
-		}
-		if bizID != 0 {
-			metaData = &metadata.Metadata{Label: metadata.Label{common.BKAppIDField: strconv.FormatInt(bizID, 10)}}
-		}
-		data.Remove(common.BKAppIDField)
-	}
+	data := dataWithModelBizID.Data
+	modelBizID := dataWithModelBizID.ModelBizID
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
@@ -141,17 +123,12 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
 	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
 
-	resp, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, metaData)
+	resp, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, modelBizID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	for _, attribute := range resp {
-		attribute.BizID, err = attribute.Metadata.ParseBizID()
-		if err != nil {
-			blog.ErrorJSON("parse attribute(%s) business id failed, err: %s", attribute, err.Error())
-		}
-	}
+
 	ctx.RespEntity(resp)
 }
 
@@ -239,12 +216,14 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		ruleIDs = append(ruleIDs, item.ID)
 	}
 
+	modelType := new(ModelType)
+	if err := ctx.DecodeInto(modelType); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		md := new(MetaShell)
-		if err := ctx.DecodeInto(md); err != nil {
-			return err
-		}
-		err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, md.Metadata)
+		err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
 		if err != nil {
 			blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
 			return err
@@ -304,12 +283,12 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 
 // ListHostModelAttribute list host model's attributes
 func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	dataWithModelBizID := MapStrWithModelBizID{}
+	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithMetadata.Data
+	data := dataWithModelBizID.Data
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
 	if err := cond.Parse(data); nil != err {
@@ -321,7 +300,7 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 
-	attributes, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, dataWithMetadata.Metadata)
+	attributes, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, dataWithModelBizID.ModelBizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

@@ -29,21 +29,18 @@ import (
 )
 
 type DeleteCategoryInput struct {
-	Metadata *Metadata `json:"metadata"`
-	ID       int64     `json:"id"`
+	ID int64 `json:"id"`
 }
 
 type CreateProcessTemplateBatchInput struct {
-	Metadata          *Metadata       `json:"metadata"`
 	BizID             int64           `json:"bk_biz_id"`
 	ServiceTemplateID int64           `json:"service_template_id"`
 	Processes         []ProcessDetail `json:"processes"`
 }
 
 type DeleteProcessTemplateBatchInput struct {
-	Metadata         *Metadata `json:"metadata"`
-	BizID            int64     `json:"bk_biz_id"`
-	ProcessTemplates []int64   `json:"process_templates"`
+	BizID            int64   `json:"bk_biz_id"`
+	ProcessTemplates []int64 `json:"process_templates"`
 }
 
 type ProcessDetail struct {
@@ -51,8 +48,7 @@ type ProcessDetail struct {
 }
 
 type ListServiceTemplateInput struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
+	BizID int64 `json:"bk_biz_id"`
 	// this field can be empty, it a optional condition.
 	ServiceCategoryID int64    `json:"service_category_id"`
 	Page              BasePage `json:"page"`
@@ -67,13 +63,11 @@ type ListServiceTemplateWithDetailResult struct {
 }
 
 type DeleteServiceTemplatesInput struct {
-	Metadata          *Metadata `json:"metadata"`
-	BizID             int64     `json:"bk_biz_id"`
-	ServiceTemplateID int64     `json:"service_template_id"`
+	BizID             int64 `json:"bk_biz_id"`
+	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata                   *Metadata                     `json:"metadata"`
 	BizID                      int64                         `json:"bk_biz_id"`
 	Name                       string                        `json:"name"`
 	ModuleID                   int64                         `json:"bk_module_id"`
@@ -82,34 +76,29 @@ type CreateServiceInstanceForServiceTemplateInput struct {
 }
 
 type CreateServiceInstancePreviewInput struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
-	HostIDs  []int64   `json:"bk_host_ids"`
+	BizID    int64   `json:"bk_biz_id"`
+	ModuleID int64   `json:"bk_module_id"`
+	HostIDs  []int64 `json:"bk_host_ids"`
 }
 
 type CreateRawProcessInstanceInput struct {
-	Metadata          *Metadata               `json:"metadata"`
 	BizID             int64                   `json:"bk_biz_id"`
 	ServiceInstanceID int64                   `json:"service_instance_Id"`
 	Processes         []ProcessInstanceDetail `json:"processes"`
 }
 
 type UpdateRawProcessInstanceInput struct {
-	Metadata  *Metadata                `json:"metadata"`
 	BizID     int64                    `json:"bk_biz_id"`
 	Processes []Process                `json:"-"`
 	Raw       []map[string]interface{} `json:"processes"`
 }
 
 type DeleteProcessInstanceInServiceInstanceInput struct {
-	Metadata           *Metadata `json:"metadata"`
-	BizID              int64     `json:"bk_biz_id"`
-	ProcessInstanceIDs []int64   `json:"process_instance_ids"`
+	BizID              int64   `json:"bk_biz_id"`
+	ProcessInstanceIDs []int64 `json:"process_instance_ids"`
 }
 
 type GetServiceInstanceInModuleInput struct {
-	Metadata  *Metadata          `json:"metadata"`
 	BizID     int64              `json:"bk_biz_id"`
 	ModuleID  int64              `json:"bk_module_id"`
 	HostIDs   []int64            `json:"bk_host_ids"`
@@ -119,7 +108,6 @@ type GetServiceInstanceInModuleInput struct {
 }
 
 type ListServiceInstanceDetailRequest struct {
-	Metadata           *Metadata          `json:"metadata"`
 	BizID              int64              `json:"bk_biz_id"`
 	SetID              int64              `json:"bk_set_id"`
 	ModuleID           int64              `json:"bk_module_id"`
@@ -130,21 +118,18 @@ type ListServiceInstanceDetailRequest struct {
 }
 
 type DiffModuleWithTemplateOption struct {
-	Metadata  *Metadata `json:"metadata"`
-	BizID     int64     `json:"bk_biz_id"`
-	ModuleIDs []int64   `json:"bk_module_ids"`
+	BizID     int64   `json:"bk_biz_id"`
+	ModuleIDs []int64 `json:"bk_module_ids"`
 }
 
 type DiffOneModuleWithTemplateOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
 }
 
 type DeleteServiceInstanceOption struct {
-	Metadata           *Metadata `json:"metadata"`
-	BizID              int64     `json:"bk_biz_id"`
-	ServiceInstanceIDs []int64   `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
+	BizID              int64   `json:"bk_biz_id"`
+	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
 type CoreDeleteServiceInstanceOption struct {
@@ -153,10 +138,9 @@ type CoreDeleteServiceInstanceOption struct {
 }
 
 type FindServiceAndProcessInstanceOption struct {
-	Metadata          *Metadata `json:"metadata" field:"metadata" bson:"metadata"`
-	BizID             int64     `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
-	ModuleID          int64     `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
-	ServiceTemplateID int64     `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
+	BizID             int64 `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
+	ServiceTemplateID int64 `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
 }
 
 // to describe the differences between service instance and it's service template's
@@ -250,11 +234,10 @@ type ProcessInstanceDetail struct {
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
-	Metadata            *Metadata `json:"metadata"`
-	BizID               int64     `json:"bk_biz_id"`
-	ProcessTemplatesIDs []int64   `json:"process_template_ids"`
-	ServiceTemplateID   int64     `json:"service_template_id"`
-	Page                BasePage  `json:"page" field:"page" bson:"page"`
+	BizID               int64    `json:"bk_biz_id"`
+	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
+	ServiceTemplateID   int64    `json:"service_template_id"`
+	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
 
 type UpdateProcessByIDsInput struct {
@@ -293,7 +276,7 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 		}
 	}
 
-	if _, ok := o.UpdateData[common.BKProcessIDField]; ok{
+	if _, ok := o.UpdateData[common.BKProcessIDField]; ok {
 		return cErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"update_data.bk_process_id"},
@@ -304,20 +287,17 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 }
 
 type SyncServiceInstanceByTemplateOption struct {
-	Metadata  *Metadata `json:"metadata"`
-	BizID     int64     `json:"bk_biz_id"`
-	ModuleIDs []int64   `json:"bk_module_ids"`
+	BizID     int64   `json:"bk_biz_id"`
+	ModuleIDs []int64 `json:"bk_module_ids"`
 }
 
 // 用于同步单个模块的服务实例
 type SyncModuleServiceInstanceByTemplateOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
 }
 
 type ListServiceInstancesWithHostInput struct {
-	Metadata  *Metadata          `json:"metadata"`
 	BizID     int64              `json:"bk_biz_id"`
 	HostID    int64              `json:"bk_host_id"`
 	SearchKey *string            `json:"search_key"`
@@ -326,9 +306,8 @@ type ListServiceInstancesWithHostInput struct {
 }
 
 type ListProcessInstancesOption struct {
-	Metadata          *Metadata `json:"metadata"`
-	BizID             int64     `json:"bk_biz_id"`
-	ServiceInstanceID int64     `json:"service_instance_id"`
+	BizID             int64 `json:"bk_biz_id"`
+	ServiceInstanceID int64 `json:"service_instance_id"`
 }
 
 type ListProcessInstancesWithHostOption struct {
@@ -403,13 +382,11 @@ func (o *ListProcessInstancesDetailsByIDsOption) Validate() (rawError cErr.RawEr
 }
 
 type RemoveTemplateBindingOnModuleOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
 }
 
 type UpdateProcessTemplateInput struct {
-	Metadata          *Metadata              `json:"metadata"`
 	BizID             int64                  `json:"bk_biz_id"`
 	ProcessTemplateID int64                  `json:"process_template_id"`
 	Property          map[string]interface{} `json:"process_property"`
@@ -1789,7 +1766,6 @@ type Proc2Module struct {
 }
 
 type LabelAggregationOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID *int64    `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
+	BizID    int64  `json:"bk_biz_id"`
+	ModuleID *int64 `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
 }

@@ -36,7 +36,6 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	Metadata    `field:"metadata" json:"metadata" bson:"metadata"`
 	ID          int64  `field:"id" json:"id" bson:"id"`
 	ObjCls      string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
 	ObjIcon     string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`

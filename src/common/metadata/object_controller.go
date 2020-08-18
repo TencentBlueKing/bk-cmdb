@@ -66,8 +66,8 @@ type AttributeWrapper struct {
 
 // UpdateGroupCondition update group condition struct
 type UpdateGroupCondition struct {
-	Metadata  *Metadata `json:"metadata"`
-	Condition struct {
+	ModelBizID int64 `json:"bk_biz_id"`
+	Condition  struct {
 		ID int64 `field:"id" json:"id,omitempty"`
 	} `json:"condition"`
 

@@ -36,12 +36,6 @@ func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 		"scope_id":   selector.ScopeID,
 	}
 	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
-	_, err := selector.Metadata.Label.GetBusinessID()
-	if nil == err {
-		cond.Merge(meta.PublicAndBizCondition(selector.Metadata))
-	} else {
-		cond.Merge(meta.BizLabelNotExist)
-	}
 
 	results := make([]meta.TopoGraphics, 0)
 	if selErr := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx, &results); nil != selErr {

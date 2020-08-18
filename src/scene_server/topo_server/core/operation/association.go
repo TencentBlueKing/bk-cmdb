@@ -34,16 +34,16 @@ import (
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
 	CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error)
-	DeleteMainlineAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) error
+	DeleteMainlineAssociation(kit *rest.Kit, objID string) error
 	SearchMainlineAssociationTopo(kit *rest.Kit, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
-	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64, withStatistics bool, withDefault bool, metaData *metadata.Metadata) ([]*metadata.TopoInstRst, errors.CCError)
+	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, errors.CCError)
 	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
 
-	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association, metaData *metadata.Metadata) (*metadata.Association, error)
+	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error)
 	DeleteAssociationWithPreCheck(kit *rest.Kit, associationID int64) error
-	UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64, metaData *metadata.Metadata) error
-	SearchObjectAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) ([]metadata.Association, error)
-	SearchObjectsAssociation(kit *rest.Kit, objIDs []string, metaData *metadata.Metadata) ([]metadata.Association, error)
+	UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error
+	SearchObjectAssociation(kit *rest.Kit, objID string) ([]metadata.Association, error)
+	SearchObjectsAssociation(kit *rest.Kit, objIDs []string) ([]metadata.Association, error)
 
 	DeleteAssociation(kit *rest.Kit, cond condition.Condition) error
 	SearchInstAssociation(kit *rest.Kit, query *metadata.QueryInput) ([]metadata.InstAsst, error)
@@ -68,7 +68,7 @@ type AssociationOperationInterface interface {
 
 	SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
-	DeleteInst(kit *rest.Kit, assoID int64, metadata *metadata.Metadata) (resp *metadata.DeleteAssociationInstResult, err error)
+	DeleteInst(kit *rest.Kit, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	ImportInstAssociation(ctx context.Context, kit *rest.Kit, objID string, importData map[int]metadata.ExcelAssocation, languageIf language.CCLanguageIf) (resp metadata.ResponeImportAssociationData, err error)
 
@@ -105,20 +105,13 @@ func (assoc *association) SetProxy(cls ClassificationOperationInterface, obj Obj
 	assoc.instFactory = targetInst
 }
 
-func (assoc *association) SearchObjectAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) ([]metadata.Association, error) {
+func (assoc *association) SearchObjectAssociation(kit *rest.Kit, objID string) ([]metadata.Association, error) {
 	cond := condition.CreateCondition()
 	if 0 != len(objID) {
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
 
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
-
 	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
@@ -133,20 +126,13 @@ func (assoc *association) SearchObjectAssociation(kit *rest.Kit, objID string, m
 	return rsp.Data.Info, nil
 }
 
-func (assoc *association) SearchObjectsAssociation(kit *rest.Kit, objIDs []string, metaData *metadata.Metadata) ([]metadata.Association, error) {
+func (assoc *association) SearchObjectsAssociation(kit *rest.Kit, objIDs []string) ([]metadata.Association, error) {
 	cond := condition.CreateCondition()
 	if 0 != len(objIDs) {
 		cond.Field(common.BKObjIDField).In(objIDs)
 	}
 
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
-
 	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
@@ -178,7 +164,7 @@ func (assoc *association) SearchInstAssociation(kit *rest.Kit, query *metadata.Q
 }
 
 // CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
-func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.Association, metaData *metadata.Metadata) (*metadata.Association, error) {
+func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.Association) (*metadata.Association, error) {
 	if data.AsstKindID == common.AssociationKindMainline {
 		return nil, kit.CCError.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
 	}
@@ -218,12 +204,12 @@ func (assoc *association) CreateCommonAssociation(kit *rest.Kit, data *metadata.
 	}
 
 	// check source object exists
-	if err := assoc.obj.IsValidObject(kit, data.ObjectID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, data.ObjectID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, err: %s, rid: %s", data.ObjectID, err.Error(), kit.Rid)
 		return nil, err
 	}
 
-	if err := assoc.obj.IsValidObject(kit, data.AsstObjID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, data.AsstObjID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, err: %s, rid: %s", data.AsstObjID, err.Error(), kit.Rid)
 		return nil, err
 	}
@@ -393,7 +379,7 @@ func (assoc *association) DeleteAssociation(kit *rest.Kit, cond condition.Condit
 	return nil
 }
 
-func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64, metaData *metadata.Metadata) error {
+func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error {
 	asst := &metadata.Association{}
 	err := data.MarshalJSONInto(asst)
 	if err != nil {
@@ -432,12 +418,12 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 	}
 
 	// check object exists
-	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].ObjectID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].ObjectID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, error info is %s, rid: %s", rsp.Data.Info[0].ObjectID, err.Error(), kit.Rid)
 		return err
 	}
 
-	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].AsstObjID, metaData); nil != err {
+	if err := assoc.obj.IsValidObject(kit, rsp.Data.Info[0].AsstObjID); nil != err {
 		blog.Errorf("[operation-asst] the object(%s) is invalid, error info is %s, rid: %s", rsp.Data.Info[0].AsstObjID, err.Error(), kit.Rid)
 		return err
 	}
@@ -864,7 +850,7 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	return resp, err
 }
 
-func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *metadata.Metadata) (resp *metadata.DeleteAssociationInstResult, err error) {
+func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
 	// record audit log
 	searchCondition := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),

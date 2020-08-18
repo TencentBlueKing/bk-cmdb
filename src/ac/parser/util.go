@@ -27,31 +27,9 @@ import (
 
 // objectBase is subset of metadata.Object
 type objectBase struct {
-	metadata.Metadata	`field:"metadata" json:"metadata" bson:"metadata"`
-	ID          		int64  `field:"id" json:"id" bson:"id"`
-	ObjCls      		string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
-	ObjectID    		string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-}
-
-// 注意: 最后返回的模型不一定属于 possibleBizID 对应的业务， 可能是个公有模型, 也可能是私有模型(业务下模型)
-// 背景: possibleBizID 是前端传递过来的请求参数，可能只是用于给公有模型创建一个业务私有字段
-// 取名 possibleBizID 是为了显式告诉调用方获取到的模型不一定是私有模型
-func (ps *parseStream) getPublicOrBizModelByObjectID(possibleBizID int64, objectID string) (objectBase, error) {
-	filter := map[string]interface{}{
-		common.BKObjIDField: objectID,
-	}
-	if possibleBizID == 0 {
-		filter[metadata.MetadataBizField] = mapstr.MapStr{common.BKDBExists: false}
-	} else {
-		filter[common.BKDBOR] = []map[string]interface{}{
-			{
-				metadata.MetadataBizField: mapstr.MapStr{common.BKDBExists: false},
-			}, {
-				metadata.MetadataBizField: possibleBizID,
-			},
-		}
-	}
-	return ps.getOneModel(filter)
+	ID       int64  `field:"id" json:"id" bson:"id"`
+	ObjCls   string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 func (ps *parseStream) getOneModel(cond mapstr.MapStr) (objectBase, error) {
@@ -69,9 +47,8 @@ func (ps *parseStream) getOneModel(cond mapstr.MapStr) (objectBase, error) {
 	}
 
 	model = objectBase{
-		Metadata: models[0].Metadata,
-		ID: models[0].ID,
-		ObjCls: models[0].ObjCls,
+		ID:       models[0].ID,
+		ObjCls:   models[0].ObjCls,
 		ObjectID: models[0].ObjectID,
 	}
 	return model, nil
@@ -401,7 +378,7 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 		Page:   metadata.BasePage{},
 		Condition: mapstr.MapStr{
 			common.BkSupplierAccount: ps.RequestCtx.Header.Get(common.BKHTTPOwnerID),
-			common.BKDefaultField:                common.DefaultResModuleFlag,
+			common.BKDefaultField:    common.DefaultResModuleFlag,
 		},
 	}
 

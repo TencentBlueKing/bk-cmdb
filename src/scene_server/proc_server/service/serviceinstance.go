@@ -57,14 +57,6 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.CreateServiceInstanceForServiceTemplateInput) ([]int64, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			blog.Errorf("createServiceInstances failed, parse bizID failed, metadata: %+v, err: %s, rid: %s", input.Metadata, err.Error(), rid)
-			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
-		}
-	}
 
 	// check hosts in business
 	hostIDs := make([]int64, 0)
@@ -244,14 +236,7 @@ func (ps *ProcServer) CreateServiceInstancesPreview(ctx *rest.Contexts) {
 func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input metadata.CreateServiceInstancePreviewInput) ([]metadata.HostTransferPreview, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			blog.Errorf("createServiceInstances failed, parse bizID failed, metadata: %+v, err: %s, rid: %s", input.Metadata, err.Error(), rid)
-			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
-		}
-	}
+
 	// check hosts in business
 	hostIDs := input.HostIDs
 	if err := ps.CheckHostInBusiness(ctx, bizID, hostIDs); err != nil {
@@ -436,15 +421,6 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service instances in module, but parse biz id failed, err: %v", err)
-			return
-		}
-	}
-
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 		ModuleIDs:  []int64{input.ModuleID},
@@ -515,18 +491,8 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service instances in module, but parse biz id failed, err: %v", err)
-			return
-		}
-	}
-
 	option := &metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
+		BusinessID: input.BizID,
 		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
@@ -549,18 +515,8 @@ func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil || bizID == 0 {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service instances in module, but parse biz id failed, err: %v", err)
-			return
-		}
-	}
-
 	option := &metadata.ListServiceInstanceDetailOption{
-		BusinessID:         bizID,
+		BusinessID:         input.BizID,
 		ModuleID:           input.ModuleID,
 		SetID:              input.SetID,
 		HostID:             input.HostID,
@@ -585,16 +541,6 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service instances, but parse biz id failed, err: %v", err)
-			return
-		}
-	}
-	input.BizID = bizID
-
 	if len(input.ServiceInstanceIDs) == 0 {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "delete service instances, service_instance_ids empty", "service_instance_ids")
 		return
@@ -714,7 +660,6 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	result := make([]*metadata.ModuleDiffWithTemplateDetail, 0)
 	for _, moduleID := range diffOption.ModuleIDs {
 		option := metadata.DiffOneModuleWithTemplateOption{
-			Metadata: diffOption.Metadata,
 			BizID:    diffOption.BizID,
 			ModuleID: moduleID,
 		}
@@ -731,18 +676,6 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 
 func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffOneModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
-
-	// why we need validate metadata here?
-	bizID := diffOption.BizID
-	if bizID == 0 && diffOption.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*diffOption.Metadata)
-		if err != nil {
-			blog.ErrorJSON("diffServiceInstanceWithTemplate failed, parse biz id failed, metadata: %s, err: %v, rid: %s", diffOption.Metadata, err, rid)
-			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
-		}
-	}
-	diffOption.BizID = bizID
 
 	if diffOption.ModuleID == 0 {
 		blog.ErrorJSON("diffServiceInstanceWithTemplate failed, module id empty, option: %s, rid: %s", diffOption, rid)
@@ -1087,16 +1020,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 
 func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOption metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
 	rid := ctx.Kit.Rid
-
 	bizID := syncOption.BizID
-	if bizID == 0 && syncOption.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*syncOption.Metadata)
-		if err != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, parse bizID from metadata failed, metadata: %s, err: %s, rid: %s", syncOption.Metadata, err.Error(), rid)
-			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.MetadataField)
-		}
-	}
 
 	modules, err := ps.getModules(ctx, syncOption.ModuleIDs)
 	if err != nil {
@@ -1367,24 +1291,13 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service instances with host, but parse biz id failed, err: %v", err)
-			return
-		}
-	}
-	input.BizID = bizID
-
 	if input.HostID == 0 {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service instances with host, but got empty host id. input: %+v", input)
 		return
 	}
 
 	option := metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
+		BusinessID: input.BizID,
 		HostIDs:    []int64{input.HostID},
 		SearchKey:  input.SearchKey,
 		Page:       input.Page,
@@ -1392,7 +1305,7 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", bizID, input.HostID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", input.BizID, input.HostID, err)
 		return
 	}
 
@@ -1409,23 +1322,13 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service instances with host, but parse biz id failed, err: %v", err)
-			return
-		}
-	}
-
 	if input.HostID == 0 {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service instances with host, but got empty host id. input: %+v", input)
 		return
 	}
 
 	option := metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
+		BusinessID: input.BizID,
 		HostIDs:    []int64{input.HostID},
 		SearchKey:  input.SearchKey,
 		Page:       input.Page,
@@ -1433,13 +1336,13 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", bizID, input.HostID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", input.BizID, input.HostID, err)
 		return
 	}
 
-	topoRoot, e := ps.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
+	topoRoot, e := ps.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, input.BizID, false)
 	if e != nil {
-		blog.Errorf("ListServiceInstancesWithHostWeb failed, search mainline instance topo failed, bizID: %d, err: %+v, riz: %s", bizID, e, rid)
+		blog.Errorf("ListServiceInstancesWithHostWeb failed, search mainline instance topo failed, bizID: %d, err: %+v, riz: %s", input.BizID, e, rid)
 		err := ctx.Kit.CCError.Errorf(common.CCErrTopoMainlineSelectFailed)
 		ctx.RespAutoError(err)
 		return
@@ -1523,23 +1426,13 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := option.BizID
-	if bizID == 0 {
-		var err error
-		bizID, err = option.Metadata.ParseBizID()
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-	}
-
-	if bizID == 0 {
+	if option.BizID == 0 {
 		ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0", "bk_biz_id")
 		return
 	}
 
 	listOption := &metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
+		BusinessID: option.BizID,
 	}
 	if option.ModuleID != nil {
 		listOption.ModuleIDs = []int64{*option.ModuleID}
@@ -1574,15 +1467,6 @@ func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
 	}
 
 	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service instances, but parse biz id failed, err: %v", err)
-			return
-		}
-	}
-	input.BizID = bizID
 	if len(input.ServiceInstanceIDs) == 0 {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "delete service instances, service_instance_ids empty", "service_instance_ids")
 		return

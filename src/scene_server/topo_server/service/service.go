@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
@@ -61,21 +60,24 @@ func (s *Service) WebService() *restful.Container {
 	return container
 }
 
-type MetaShell struct {
-	Metadata *metadata.Metadata `json:"metadata"`
+// ModelType is model type
+// bk_biz_id == 0 : public model
+// bk_biz_id > 0 : private model
+type ModelType struct {
+	BizID int64 `json:"bk_biz_id"`
 }
 
-type MapStrWithMetadata struct {
-	Metadata *metadata.Metadata
-	Data     mapstr.MapStr
+type MapStrWithModelBizID struct {
+	ModelBizID int64
+	Data       mapstr.MapStr
 }
 
-func (m *MapStrWithMetadata) UnmarshalJSON(data []byte) error {
-	md := new(MetaShell)
-	if err := json.Unmarshal(data, md); err != nil {
+func (m *MapStrWithModelBizID) UnmarshalJSON(data []byte) error {
+	modelType := new(ModelType)
+	if err := json.Unmarshal(data, modelType); err != nil {
 		return err
 	}
-	m.Metadata = md.Metadata
+	m.ModelBizID = modelType.BizID
 	if err := json.Unmarshal(data, &m.Data); err != nil {
 		return err
 	}

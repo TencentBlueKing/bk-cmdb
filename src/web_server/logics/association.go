@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string, instAsstArr []*metadata.InstAsst, meta *metadata.Metadata) (map[string]map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string, instAsstArr []*metadata.InstAsst, modelBizID int64) (map[string]map[int64][]PropertyPrimaryVal, error) {
 
 	// map[objID][]instID
 	asstObjIDIDArr := make(map[string][]int64)
@@ -38,7 +38,7 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	// map[objID]map[inst_id][]Property
 	retAsstObjIDInstInfoMap := make(map[string]map[int64][]PropertyPrimaryVal)
 	for itemObjID, asstInstIDArr := range asstObjIDIDArr {
-		objPrimaryInfo, err := lgc.fetchInstAssocationData(ctx, header, itemObjID, asstInstIDArr, meta)
+		objPrimaryInfo, err := lgc.fetchInstAssocationData(ctx, header, itemObjID, asstInstIDArr, modelBizID)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	return retAsstObjIDInstInfoMap, nil
 }
 
-func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, metadataParams *metadata.Metadata) ([]*metadata.InstAsst, error) {
+func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) ([]*metadata.InstAsst, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -57,8 +57,8 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).In(instIDArr)
 	input.Condition = cond.ToMapStr()
-	if metadataParams != nil {
-		input.Condition.Set(common.MetadataField, metadataParams)
+	if modelBizID > 0 {
+		input.Condition.Set(common.BKAppIDField, modelBizID)
 	}
 
 	result, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
@@ -75,11 +75,11 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	return result.Data, nil
 }
 
-func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, meta *metadata.Metadata) (map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) (map[int64][]PropertyPrimaryVal, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	propertyArr, err := lgc.getObjectPrimaryFieldByObjID(objID, header, meta)
+	propertyArr, err := lgc.getObjectPrimaryFieldByObjID(objID, header, modelBizID)
 	if err != nil {
 		return nil, err
 	}

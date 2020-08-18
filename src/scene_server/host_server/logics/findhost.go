@@ -35,14 +35,7 @@ func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostM
 	bizID := data.AppID
 	var err error
 	if bizID == 0 {
-		// if bk_biz_id and metadata are both not set, then return error
-		if data.Metadata == nil {
-			return retHostInfo, lgc.ccErr.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+", "+common.MetadataField)
-		}
-		bizID, err = data.Metadata.Label.GetBusinessID()
-		if nil != err {
-			return retHostInfo, err
-		}
+		return retHostInfo, lgc.ccErr.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 	}
 	hostSearchParam.AppID = bizID
 

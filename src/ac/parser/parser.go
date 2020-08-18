@@ -13,7 +13,6 @@
 package parser
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -23,10 +22,10 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
+	"github.com/tidwall/gjson"
 )
 
 func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAttribute, error) {
@@ -35,18 +34,7 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 		return nil, err
 	}
 
-	meta := struct {
-		Metadata metadata.Metadata `json:"metadata"`
-	}{}
-
-	// TODO: this condition should be optimized.
-	// one of the api like body is an array is
-	// put: /api/v3/objectatt/group/property
-	if len(body) > 0 && body[0] != '[' {
-		if err := json.Unmarshal(body, &meta); err != nil {
-			return nil, fmt.Errorf("parse attribute, but unmarshal body failed, err: %v", err)
-		}
-	}
+	bizID := gjson.GetBytes(body, common.BKAppIDField).Int()
 
 	elements, err := urlParse(req.Request.URL.Path)
 	if err != nil {
@@ -60,7 +48,7 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 		URI:      req.Request.URL.Path,
 		Elements: elements,
 		Body:     body,
-		Metadata: meta.Metadata,
+		BizID:    bizID,
 	}
 
 	stream, err := newParseStream(requestContext, engine)

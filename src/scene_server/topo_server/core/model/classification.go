@@ -41,7 +41,6 @@ type classification struct {
 	FieldValid
 	cls       metadata.Classification
 	kit       *rest.Kit
-	metadata  *metadata.Metadata
 	clientSet apimachinery.ClientSetInterface
 }
 
@@ -197,9 +196,6 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 }
 
 func (cli *classification) search(cond condition.Condition) ([]metadata.Classification, error) {
-	if nil != cli.metadata {
-		cond.Field(metadata.BKMetadata).Eq(*cli.metadata)
-	}
 	rsp, err := cli.clientSet.CoreService().Model().ReadModelClassification(context.Background(), cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)

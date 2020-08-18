@@ -243,12 +243,8 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
-	businessMetadata := conf.Metadata
-	if businessMetadata.Label == nil {
-		businessMetadata.Label = make(metadata.Label)
-	}
-	businessMetadata.Label.SetBusinessID(conf.ApplicationID)
-	if err := lgc.DeleteHostBusinessAttributes(ctx, conf.HostIDs, &businessMetadata); err != nil {
+
+	if err := lgc.DeleteHostBusinessAttributes(ctx, conf.HostIDs, conf.ApplicationID); err != nil {
 		blog.Errorf("move host to resource pool, delete host bussiness private, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}

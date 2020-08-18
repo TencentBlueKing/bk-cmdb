@@ -38,8 +38,8 @@ func (m *modelAttrUnique) UpdateModelAttrUnique(kit *rest.Kit, objID string, id 
 	return &metadata.UpdatedCount{Count: 1}, nil
 }
 
-func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (*metadata.DeletedCount, error) {
-	err := m.deleteModelAttrUnique(kit, objID, id, meta)
+func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) (*metadata.DeletedCount, error) {
+	err := m.deleteModelAttrUnique(kit, objID, id)
 	if err != nil {
 		return nil, err
 	}

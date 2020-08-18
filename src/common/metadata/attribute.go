@@ -57,7 +57,7 @@ const (
 
 // Attribute attribute metadata definition
 type Attribute struct {
-	Metadata          `field:"metadata" json:"metadata" bson:"metadata"`
+	BizID             int64       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	ID                int64       `field:"id" json:"id" bson:"id"`
 	OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ObjectID          string      `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
@@ -78,11 +78,9 @@ type Attribute struct {
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
-	BizID             int64       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-
-	Creator    string `field:"creator" json:"creator" bson:"creator"`
-	CreateTime *Time  `json:"create_time" bson:"create_time"`
-	LastTime   *Time  `json:"last_time" bson:"last_time"`
+	Creator           string      `field:"creator" json:"creator" bson:"creator"`
+	CreateTime        *Time       `json:"create_time" bson:"create_time"`
+	LastTime          *Time       `json:"last_time" bson:"last_time"`
 }
 
 // AttributeGroup attribute metadata definition

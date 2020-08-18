@@ -52,7 +52,7 @@ func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 	var id *metadata.RspID
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		id, err = s.Core.UniqueOperation().Create(ctx.Kit, objectID, request, &request.Metadata)
+		id, err = s.Core.UniqueOperation().Create(ctx.Kit, objectID, request)
 		if err != nil {
 			blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v, rid: %s", objectID, err, request, ctx.Kit.Rid)
 			return err
@@ -147,12 +147,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 		}
 	}
 
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	uniques, err := s.Core.UniqueOperation().Search(ctx.Kit, objectID, md.Metadata)
+	uniques, err := s.Core.UniqueOperation().Search(ctx.Kit, objectID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -165,7 +160,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.UniqueOperation().Delete(ctx.Kit, objectID, id, md.Metadata)
+		err = s.Core.UniqueOperation().Delete(ctx.Kit, objectID, id)
 		if err != nil {
 			blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v, rid: %s", objectID, id, err, ctx.Kit.Rid)
 			return err
@@ -183,13 +178,8 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 
 // SearchObjectUnique search object uniques
 func (s *Service) SearchObjectUnique(ctx *rest.Contexts) {
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 	objectID := ctx.Request.PathParameter(common.BKObjIDField)
-	uniques, err := s.Core.UniqueOperation().Search(ctx.Kit, objectID, md.Metadata)
+	uniques, err := s.Core.UniqueOperation().Search(ctx.Kit, objectID)
 	if err != nil {
 		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v, rid: %s", objectID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

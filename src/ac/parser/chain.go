@@ -10,7 +10,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 )
 
 type RequestContext struct {
@@ -29,8 +28,8 @@ type RequestContext struct {
 	Elements []string
 	// http request body contents.
 	Body []byte
-
-	Metadata metadata.Metadata
+	// BizID is business ID
+	BizID int64
 }
 
 type parseStream struct {

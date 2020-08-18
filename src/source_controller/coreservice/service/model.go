@@ -523,17 +523,11 @@ func (s *coreService) UpdateModelAttrUnique(ctx *rest.Contexts) {
 }
 
 func (s *coreService) DeleteModelAttrUnique(ctx *rest.Contexts) {
-	inputDatas := metadata.DeleteModelAttrUnique{}
-	if err := ctx.DecodeInto(&inputDatas); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
 	id, err := strconv.ParseUint(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "id"))
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id, metadata.DeleteModelAttrUnique{Metadata: inputDatas.Metadata}))
+	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id))
 }

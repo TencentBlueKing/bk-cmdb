@@ -31,18 +31,15 @@ type associationInstance struct {
 	dependent OperationDependencies
 }
 
-func (m *associationInstance) isExists(kit *rest.Kit, instID, asstInstID int64, objAsstID string, meta metadata.Metadata) (origin *metadata.InstAsst, exists bool, err error) {
+func (m *associationInstance) isExists(kit *rest.Kit, instID, asstInstID int64, objAsstID string, bizID int64) (origin *metadata.InstAsst, exists bool, err error) {
 	cond := mongo.NewCondition()
 	origin = &metadata.InstAsst{}
 	cond.Element(
 		&mongo.Eq{Key: common.BKInstIDField, Val: instID},
 		&mongo.Eq{Key: common.BKAsstInstIDField, Val: asstInstID},
 		&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: objAsstID})
-	isExsit, bizID := meta.Label.Get(common.BKAppIDField)
-	if isExsit {
-		_, metaCond := cond.Embed(metadata.BKMetadata)
-		_, lableCond := metaCond.Embed(metadata.BKLabel)
-		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	if bizID > 0 {
+		cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond.ToMapStr()).One(kit.Ctx, origin)
@@ -86,7 +83,7 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 
 func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 	inputParam.Data.OwnerID = kit.SupplierAccount
-	_, exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID, inputParam.Data.Metadata)
+	_, exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID, inputParam.Data.BizID)
 	if nil != err {
 		blog.Errorf("check instance (%#v)is duplicated error, rid: %s", inputParam.Data, kit.Rid)
 		return nil, err
@@ -136,7 +133,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 	for itemIdx, item := range inputParam.Datas {
 		item.OwnerID = kit.SupplierAccount
 		//check is exist
-		_, exists, err := m.isExists(kit, item.InstID, item.AsstInstID, item.ObjectAsstID, item.Metadata)
+		_, exists, err := m.isExists(kit, item.InstID, item.AsstInstID, item.ObjectAsstID, item.BizID)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),

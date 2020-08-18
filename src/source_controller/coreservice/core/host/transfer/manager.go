@@ -336,12 +336,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attributes []metadata.Attribute, hostIDs ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{}, 0)
 	for _, attribute := range attributes {
-		bizID, err := attribute.Metadata.ParseBizID()
-		if err != nil {
-			blog.Warnf("clearLegacyPrivateField, parse bizID from attribute failed, attribute: %+v, err: %s, rid: %s", attribute, err.Error(), kit.Rid)
-			continue
-		}
-		if bizID == 0 {
+		if attribute.BizID == 0 {
 			continue
 		}
 		doc[attribute.PropertyID] = nil
@@ -368,12 +363,7 @@ func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attribute
 func (manager *TransferManager) setDefaultPrivateField(kit *rest.Kit, attributes []metadata.Attribute, hostID ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{})
 	for _, attribute := range attributes {
-		bizID, err := attribute.Metadata.ParseBizID()
-		if err != nil {
-			blog.Warnf("clearLegacyPrivateField, parse bizID from attribute failed, attribute: %+v, err: %s, rid: %s", attribute, err.Error(), kit.Rid)
-			continue
-		}
-		if bizID == 0 {
+		if attribute.BizID == 0 {
 			continue
 		}
 		doc[attribute.PropertyID] = nil
@@ -528,7 +518,7 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
 	// 根据约束cond,获得去重后的主机id.
-	ret,err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
+	ret, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
 	if err != nil {
 		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -536,7 +526,7 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 
 	// 将ret转化为[]int64
 	var hostIDArr []int64
-	if hostIDArr,err = util.SliceInterfaceToInt64(ret); err != nil{
+	if hostIDArr, err = util.SliceInterfaceToInt64(ret); err != nil {
 		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}

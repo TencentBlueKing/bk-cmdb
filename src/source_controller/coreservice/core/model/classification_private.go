@@ -32,20 +32,11 @@ func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (b
 	return 0 != cnt, err
 }
 
-func (m *modelClassification) isExists(kit *rest.Kit, classificationID string, meta metadata.Metadata) (origin *metadata.Classification, exists bool, err error) {
-
+func (m *modelClassification) isExists(kit *rest.Kit, classificationID string) (origin *metadata.Classification, exists bool, err error) {
 	origin = &metadata.Classification{}
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 
-	// ATTENTION: Currently only business dimension isolation is done,
-	//           and there may be isolation requirements for other dimensions in the future.
-	isExist, bizID := meta.Label.Get(common.BKAppIDField)
-	if isExist {
-		_, metaCond := cond.Embed(metadata.BKMetadata)
-		_, labelCond := metaCond.Embed(metadata.BKLabel)
-		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
-	}
 	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
 	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {

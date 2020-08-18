@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -56,23 +55,11 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 	return objects, nil
 }
 
-func (am *AuthManager) ExtractBusinessIDFromObject(object metadata.Object) (int64, error) {
-	return metadata.BizIDFromMetadata(object.Metadata)
-}
-
 // MakeResourcesByObjects make object resource with businessID and objects
 func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
 	// prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, object := range objects {
-		businessID, err := am.ExtractBusinessIDFromObject(object)
-		if err != nil {
-			blog.V(3).Infof("parse business id from object failed, err: %+v, rid: %s", err, rid)
-			return nil, fmt.Errorf("parse business id from object failed, err: %+v", err)
-		}
-
 		// instance
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
@@ -82,7 +69,7 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 				InstanceID: object.ID,
 			},
 			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      businessID,
+			BusinessID:      0,
 		}
 		resources = append(resources, resource)
 	}
