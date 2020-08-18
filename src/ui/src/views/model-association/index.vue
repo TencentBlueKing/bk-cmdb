@@ -49,7 +49,7 @@
             <bk-table-column prop="src_des" :label="$t('源->目标描述')" sortable="custom" show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="dest_des" :label="$t('目标->源描述')" sortable="custom" show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="count" :label="$t('使用数')"></bk-table-column>
-            <bk-table-column v-if="isAdminView"
+            <bk-table-column
                 fixed="right"
                 prop="operation"
                 :label="$t('操作')">
@@ -110,7 +110,7 @@
 
 <script>
     import theRelation from './_detail'
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapActions } from 'vuex'
     export default {
         components: {
             theRelation
@@ -145,7 +145,6 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
             searchParams () {
                 const params = {
                     page: {

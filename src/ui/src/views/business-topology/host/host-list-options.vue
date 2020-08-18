@@ -384,7 +384,7 @@
                         data.append('export_custom_fields', customFields)
                     }
                     if (this.$route.meta.owner === MENU_BUSINESS) {
-                        data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
+                        data.append('bk_biz_id', this.$route.params.bizId)
                     }
                     await this.$http.download({
                         url: `${window.API_HOST}hosts/export`,

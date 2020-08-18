@@ -276,10 +276,11 @@
                 } else {
                     const action = 'objectModelProperty/searchObjectAttribute'
                     properties = await this.$store.dispatch(action, {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.business,
                             bk_obj_id: modelId,
                             bk_supplier_account: this.$store.getters.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'getModelProperties'
                         }
@@ -300,7 +301,7 @@
                     const action = 'objectModelFieldGroup/searchGroup'
                     groups = await this.$store.dispatch(action, {
                         objId: modelId,
-                        params: this.$injectMetadata(),
+                        params: { bk_biz_id: this.business },
                         config: {
                             requestId: 'getModelPropertyGroups'
                         }
@@ -415,7 +416,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata({}, { injectBizId: true })
+                            params: { bk_biz_id: this.business }
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.$store.commit('businessHost/setCategories', {
@@ -495,7 +496,7 @@
                     module: 'bk_module_name'
                 }
                 try {
-                    await (promiseMap[this.modelId] || this.updateCustomInstance)(this.$injectMetadata(value))
+                    await (promiseMap[this.modelId] || this.updateCustomInstance)({ ...value, bk_biz_id: this.business })
                     this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']
                     this.instance = Object.assign({}, this.instance, value)
                     this.getServiceInfo(this.instance)
@@ -577,7 +578,7 @@
                     setId: this.selectedNode.data.bk_inst_id,
                     config: {
                         requestId: 'deleteNodeInstance',
-                        data: this.$injectMetadata({})
+                        data: { bk_biz_id: this.business }
                     }
                 })
             },
@@ -588,7 +589,7 @@
                     moduleId: this.selectedNode.data.bk_inst_id,
                     config: {
                         requestId: 'deleteNodeInstance',
-                        data: this.$injectMetadata({})
+                        data: { bk_biz_id: this.business }
                     }
                 })
             },
@@ -598,7 +599,7 @@
                     instId: this.selectedNode.data.bk_inst_id,
                     config: {
                         requestId: 'deleteNodeInstance',
-                        data: this.$injectMetadata()
+                        data: { bk_biz_id: this.business }
                     }
                 })
             },
@@ -618,9 +619,10 @@
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
                             config: {
                                 requestId: 'removeServiceTemplate',
-                                data: this.$injectMetadata({
-                                    bk_module_id: this.instance.bk_module_id
-                                }, { injectBizId: true })
+                                data: {
+                                    bk_module_id: this.instance.bk_module_id,
+                                    bk_biz_id: this.business
+                                }
                             }
                         })
                         this.selectedNode.data.service_template_id = 0

@@ -204,7 +204,7 @@
             ]),
             getCategoryList () {
                 this.searchServiceCategory({
-                    params: this.$injectMetadata({}, { injectBizId: true })
+                    params: { bk_biz_id: this.bizId }
                 }).then((data) => {
                     const categoryList = data.info.map(item => {
                         return {
@@ -223,11 +223,12 @@
             },
             createdCategory (name, rootId) {
                 this.createServiceCategory({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_root_id: rootId,
                         bk_parent_id: rootId,
                         name
-                    }, { injectBizId: true })
+                    }
                 }).then(res => {
                     this.$success(this.$t('保存成功'))
                     this.showAddMianCategory = false
@@ -271,10 +272,11 @@
                     this.handleCloseEditMain()
                 } else {
                     this.updateServiceCategory({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             id: data.id,
                             name: type === 'main' ? this.mainCategoryName : this.childCategoryName
-                        }, { injectBizId: true })
+                        }
                     }).then(res => {
                         this.$success(this.$t('保存成功'))
                         this.handleCloseEditChild()
@@ -300,7 +302,7 @@
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
                             params: {
-                                data: this.$injectMetadata({ id }, { injectBizId: true })
+                                data: { id, bk_biz_id: this.bizId }
                             },
                             config: {
                                 requestId: 'delete_proc_services_category'

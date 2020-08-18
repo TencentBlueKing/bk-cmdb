@@ -133,6 +133,7 @@
             ...mapGetters('objectModelClassify', [
                 'getModelById'
             ]),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hostApply', ['configPropertyList']),
             ...mapState('hostApply', ['propertyList']),
             conflictResolveCache () {
@@ -156,7 +157,7 @@
             async getHostPropertyList () {
                 try {
                     const data = await this.$store.dispatch('hostApply/getProperties', {
-                        params: this.$injectMetadata({}),
+                        params: { bk_biz_id: this.bizId },
                         config: {
                             requestId: 'getHostPropertyList'
                         }
@@ -198,13 +199,9 @@
                 )
             },
             getPropertyGroups () {
-                const modelId = 'host'
-                const model = this.getModelById(modelId)
                 return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
-                    objId: modelId,
-                    params: this.$injectMetadata({}, {
-                        inject: !!this.$tools.getMetadataBiz(model)
-                    })
+                    objId: 'host',
+                    params: { bk_biz_id: this.bizId }
                 })
             },
             renderTableHeader (h, data, tips, options = {}) {

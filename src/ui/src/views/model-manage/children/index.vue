@@ -1,21 +1,18 @@
 <template>
     <div class="model-detail-wrapper">
         <div class="model-info" v-bkloading="{ isLoading: $loading('searchObjects') }">
-            <cmdb-auth style="display: none;" :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-                @update-auth="handleReceiveAuth">
-            </cmdb-auth>
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
                     <span class="model-type">{{getModelType()}}</span>
                     <template v-if="isEditable">
-                        <div class="icon-box" v-if="!activeModel['bk_ispaused']" @click="isIconListShow = true">
-                            <i class="icon" :class="[activeModel['bk_obj_icon'] || 'icon-cc-default', { ispre: isPublicModel }]"></i>
-                            <p class="hover-text">{{$t('点击切换')}}</p>
-                        </div>
-                        <div class="icon-box" v-else>
-                            <i class="icon" :class="[activeModel['bk_obj_icon'] || 'icon-cc-default', { ispre: isPublicModel }]"></i>
-                            <p class="hover-text is-paused">{{$t('已停用')}}</p>
-                        </div>
+                        <cmdb-auth tag="div" class="icon-box"
+                            v-if="!activeModel.bk_ispaused"
+                            :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+                            @click="isIconListShow = true">
+                            <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
+                            <p class="hover-text is-paused" v-if="activeModel.bk_ispaused">{{$t('已停用')}}</p>
+                            <p class="hover-text" v-else>{{$t('点击切换')}}</p>
+                        </cmdb-auth>
                         <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
                             <the-choose-icon
                                 v-model="modelInfo.objIcon"
@@ -26,7 +23,7 @@
                     </template>
                     <template v-else>
                         <div class="icon-box" style="cursor: default;">
-                            <i class="icon" :class="[activeModel['bk_obj_icon'] || 'icon-cc-default', { ispre: isPublicModel }]"></i>
+                            <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
                         </div>
                     </template>
                 </div>
@@ -38,10 +35,11 @@
                     <span>{{$t('名称')}}：</span>
                     <template v-if="!isEditName">
                         <span class="text-content" :title="activeModel['bk_obj_name'] || ''">{{activeModel['bk_obj_name'] || ''}}</span>
-                        <i class="icon icon-cc-edit text-primary"
-                            v-if="isEditable && !activeModel.ispre && !activeModel.bk_ispaused"
+                        <cmdb-auth tag="i" class="icon icon-cc-edit text-primary"
+                            v-if="isEditable"
+                            :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
                             @click="editModelName">
-                        </i>
+                        </cmdb-auth>
                     </template>
                     <template v-else>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
@@ -65,7 +63,7 @@
                     </div>
                 </div>
                 <cmdb-auth class="restart-btn"
-                    v-if="!isMainLine && activeModel['bk_ispaused']"
+                    v-if="!isMainLine && activeModel.bk_ispaused"
                     :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
@@ -76,13 +74,14 @@
                 </cmdb-auth>
                 <div class="btn-group">
                     <template v-if="canBeImport">
-                        <label class="label-btn"
+                        <cmdb-auth tag="label" class="label-btn"
                             v-if="tab.active === 'field'"
-                            @click="handleImportField"
-                            :class="{ 'disabled': isReadOnly }">
+                            :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+                            :class="{ 'disabled': isReadOnly }"
+                            @click="handleImportField">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('导入')}}</span>
-                        </label>
+                        </cmdb-auth>
                         <label class="label-btn" @click="exportField">
                             <i class="icon-cc-derivation"></i>
                             <span>{{$t('导出')}}</span>
@@ -141,7 +140,6 @@
                 v-if="importField.show"
                 :template-url="importField.templateUrl"
                 :import-url="importUrl"
-                :import-payload="importPayload"
                 @upload-done="handleUploadDone"
             >
                 <div slot="uploadResult">
@@ -215,7 +213,6 @@
                 isIconListShow: false,
                 isEditName: false,
                 modelStatisticsSet: {},
-                updateAuth: false,
                 importField: {
                     show: false,
                     templateUrl: ''
@@ -230,36 +227,27 @@
         computed: {
             ...mapGetters([
                 'supplierAccount',
-                'userName',
-                'admin',
-                'isAdminView',
-                'isBusinessSelected'
+                'userName'
             ]),
             ...mapGetters('objectModel', [
                 'activeModel',
-                'isPublicModel',
-                'isInjectable',
                 'isMainLine'
             ]),
             ...mapGetters('objectModelClassify', ['models']),
             isShowOperationButton () {
-                return (this.isAdminView || !this.isPublicModel)
-                    && !this.activeModel['ispre']
+                return this.activeModel && !this.activeModel.ispre
             },
             isReadOnly () {
                 if (this.activeModel) {
-                    return this.activeModel['bk_ispaused']
+                    return this.activeModel.bk_ispaused
                 }
                 return false
             },
             isEditable () {
-                if (!this.updateAuth) {
-                    return false
+                if (this.activeModel) {
+                    return !this.activeModel.ispre && !this.activeModel.bk_ispaused
                 }
-                if (this.isAdminView) {
-                    return !this.activeModel.ispre
-                }
-                return !this.isReadOnly && !this.isPublicModel
+                return false
             },
             modelParams () {
                 const {
@@ -283,13 +271,9 @@
             importUrl () {
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/import`
             },
-            importPayload () {
-                return !this.isPublicModel ? { metadata: this.$injectMetadata().metadata } : {}
-            },
             canBeImport () {
                 const cantImport = ['host', 'biz']
-                return this.updateAuth
-                    && !this.isMainLine
+                return !this.isMainLine
                     && !cantImport.includes(this.$route.params.modelId)
             },
             modelId () {
@@ -322,22 +306,15 @@
                 'setActiveModel'
             ]),
             getModelType () {
-                if (this.activeModel.ispre) {
-                    return this.$t('内置')
-                } else {
-                    if (this.$tools.getMetadataBiz(this.activeModel)) {
-                        return this.$t('自定义')
-                    }
-                    return this.$t('公共')
+                if (this.activeModel) {
+                    return this.activeModel.ispre ? this.$t('内置') : this.$t('公共')
                 }
+                return ''
             },
             async handleFile (e) {
                 const files = e.target.files
                 const formData = new FormData()
                 formData.append('file', files[0])
-                if (!this.isPublicModel) {
-                    formData.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
-                }
                 try {
                     const res = await this.importObjectAttribute({
                         params: formData,
@@ -390,7 +367,7 @@
                 }
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: this.$injectMetadata(this.modelParams, { clone: true })
+                    params: this.modelParams
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
@@ -440,7 +417,7 @@
             async exportField () {
                 const res = await this.exportObjectAttribute({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata({}, { inject: !this.isPublicModel }),
+                    params: {},
                     config: {
                         globalError: false,
                         originalResponse: true,
@@ -481,9 +458,9 @@
             async updateModelObject (ispaused) {
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: this.$injectMetadata({
+                    params: {
                         bk_ispaused: ispaused
-                    }),
+                    },
                     config: {
                         requestId: 'updateModel'
                     }
@@ -507,9 +484,6 @@
                     await this.deleteObject({
                         id: this.activeModel['id'],
                         config: {
-                            data: this.$injectMetadata({}, {
-                                inject: this.isInjectable
-                            }),
                             requestId: 'deleteModel'
                         }
                     })
@@ -553,9 +527,6 @@
                     insert_failed: null,
                     update_failed: null
                 }
-            },
-            handleReceiveAuth (auth) {
-                this.updateAuth = auth
             },
             handleImportField () {
                 this.importField.show = true

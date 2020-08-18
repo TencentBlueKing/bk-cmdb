@@ -129,10 +129,8 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
-                'activeModel',
-                'isInjectable'
+                'activeModel'
             ]),
             ...mapGetters('objectModelClassify', ['models']),
             isReadOnly () {
@@ -155,9 +153,6 @@
             isEditable (item) {
                 if (item.ispre || item['bk_asst_id'] === 'bk_mainline' || this.isReadOnly) {
                     return false
-                }
-                if (!this.isAdminView) {
-                    return !!this.$tools.getMetadataBiz(item)
                 }
                 return true
             },
@@ -216,7 +211,6 @@
                         await this.deleteObjectAssociation({
                             id: relation.id,
                             config: {
-                                data: this.$injectMetadata({}, { inject: this.isInjectable }),
                                 requestId: 'deleteObjectAssociation'
                             }
                         }).then(() => {
@@ -232,24 +226,20 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_obj_id': this.activeModel['bk_obj_id']
                         }
-                    }, {
-                        inject: this.isInjectable
-                    })
+                    }
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_asst_obj_id': this.activeModel['bk_obj_id']
                         }
-                    }, {
-                        inject: this.isInjectable
-                    })
+                    }
                 })
             },
             saveRelation () {

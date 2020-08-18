@@ -246,18 +246,6 @@ export function clone (object) {
     return JSON.parse(JSON.stringify(object))
 }
 
-/**
- * 获取对象中的metada.label.bk_biz_id属性
- * @param {Object} object - 需拷贝的对象
- * @return {Object} 拷贝后的对象
- */
-export function getMetadataBiz (object = {}) {
-    const metadata = object.metadata || {}
-    const label = metadata.label || {}
-    const biz = label['bk_biz_id']
-    return biz
-}
-
 export function getValidateRules (property) {
     const rules = {}
     const {
@@ -361,7 +349,6 @@ export default {
     clone,
     getInstFormValues,
     formatValues,
-    getMetadataBiz,
     getValidateRules,
     getSort,
     getValue,

@@ -102,24 +102,24 @@
                     show: false,
                     biz: {},
                     name: ''
-                }
+                },
+                columnsConfigKey: 'biz_custom_table_columns'
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'isAdminView', 'userName']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['bizId']),
             customBusinessColumns () {
-                return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
+                return this.usercustom[this.columnsConfigKey] || []
             }
         },
         async created () {
             try {
                 this.properties = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                    params: {
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: 'post_searchObjectAttribute_biz'
                     }

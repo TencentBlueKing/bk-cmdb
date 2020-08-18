@@ -358,10 +358,11 @@
                 } else {
                     const action = 'objectModelProperty/searchObjectAttribute'
                     const properties = await this.$store.dispatch(action, {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             bk_obj_id: nextModelId,
                             bk_supplier_account: this.$store.getters.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: this.request.property
                         }
@@ -387,11 +388,11 @@
             async handleCreateNode (value) {
                 try {
                     const parentNode = this.createInfo.parentNode
-                    const formData = this.$injectMetadata({
+                    const formData = {
                         ...value,
-                        'bk_biz_id': this.bizId,
-                        'bk_parent_id': parentNode.data.bk_inst_id
-                    })
+                        bk_biz_id: this.bizId,
+                        bk_parent_id: parentNode.data.bk_inst_id
+                    }
                     const nextModelId = this.createInfo.nextModelId
                     const nextModel = this.topologyModels.find(model => model.bk_obj_id === nextModelId)
                     const handlerMap = {
@@ -421,11 +422,11 @@
                     const parentNode = this.createInfo.parentNode
                     const nextModel = this.topologyModels.find(model => model.bk_obj_id === 'set')
                     const formData = (value.sets || []).map(set => {
-                        return this.$injectMetadata({
+                        return {
                             ...set,
-                            'bk_biz_id': this.bizId,
-                            'bk_parent_id': parentNode.data.bk_inst_id
-                        })
+                            bk_biz_id: this.bizId,
+                            bk_parent_id: parentNode.data.bk_inst_id
+                        }
                     })
                     const data = await this.createSet(formData)
                     const insertBasic = parentNode.data.bk_obj_id === 'biz' ? 1 : 0
@@ -461,7 +462,7 @@
                 const modules = await this.$store.dispatch('objectModule/searchModule', {
                     bizId: this.bizId,
                     setId: id,
-                    params: this.$injectMetadata(),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: 'searchModule'
                     }
@@ -501,10 +502,11 @@
                 const data = await this.$store.dispatch('objectModule/createModule', {
                     bizId: this.bizId,
                     setId: this.createInfo.parentNode.data.bk_inst_id,
-                    params: this.$injectMetadata({
+                    params: {
                         ...value,
+                        bk_biz_id: this.bizId,
                         bk_supplier_account: this.supplierAccount
-                    })
+                    }
                 })
                 return {
                     bk_inst_id: data.bk_module_id,

@@ -1,4 +1,3 @@
-import { getMetadataBiz } from '@/utils/tools'
 const state = {
     info: {},
     properties: [],
@@ -16,6 +15,9 @@ const state = {
     expandAll: false
 }
 
+function isBizCustomData (data) {
+    return data.hasOwnProperty('bk_biz_id') && data.bk_biz_id > 0
+}
 const getters = {
     groupedProperties: state => {
         const groupedProperties = []
@@ -30,14 +32,14 @@ const getters = {
             }
         })
         return groupedProperties.sort((prev, next) => {
-            const prevMetadata = !!getMetadataBiz(prev)
-            const nextMetadata = !!getMetadataBiz(next)
+            const bizCustomPrev = isBizCustomData(prev)
+            const bizCustomNext = isBizCustomData(next)
             if (
-                (prevMetadata && nextMetadata)
-                || (!prevMetadata && !nextMetadata)
+                (bizCustomPrev && bizCustomNext)
+                || (!bizCustomPrev && !bizCustomNext)
             ) {
                 return prev.bk_group_index - next.bk_group_index
-            } else if (prevMetadata) {
+            } else if (bizCustomPrev) {
                 return 1
             } else {
                 return -1

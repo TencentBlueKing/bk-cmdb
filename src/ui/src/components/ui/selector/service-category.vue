@@ -89,7 +89,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata({}, { injectBizId: true })
+                            params: { bk_biz_id: this.bizId }
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.firstClassList = categories

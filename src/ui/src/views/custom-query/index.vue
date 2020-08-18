@@ -459,40 +459,43 @@
             async initObjectProperties () {
                 const res = await Promise.all([
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             bk_obj_id: 'host',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_host',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             bk_obj_id: 'set',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_set',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             bk_obj_id: 'module',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_module',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: 'biz',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_biz',
                             fromCache: true

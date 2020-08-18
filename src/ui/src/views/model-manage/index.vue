@@ -263,7 +263,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -340,7 +340,7 @@
                 await Promise.all([
                     this.getModelStatistics(),
                     this.searchClassificationsObjects({
-                        params: this.$injectMetadata(),
+                        params: {},
                         config: {
                             requestId: this.request.searchClassifications
                         }
@@ -423,11 +423,11 @@
                 if (res.includes(false)) {
                     return
                 }
-                const params = this.$injectMetadata({
+                const params = {
                     bk_supplier_account: this.supplierAccount,
                     bk_classification_id: this.groupDialog.data['bk_classification_id'],
                     bk_classification_name: this.groupDialog.data['bk_classification_name']
-                })
+                }
                 if (this.groupDialog.isEdit) {
                     // eslint-disable-next-line
                     const res = await this.updateClassification({
@@ -453,12 +453,7 @@
                     title: this.$t('确认要删除此分组'),
                     confirmFn: async () => {
                         await this.deleteClassification({
-                            id: group.id,
-                            config: {
-                                data: this.$injectMetadata({}, {
-                                    inject: !!this.$tools.getMetadataBiz(group)
-                                })
-                            }
+                            id: group.id
                         })
                         this.$store.commit('objectModelClassify/deleteClassify', group['bk_classification_id'])
                         this.searchModel = ''
@@ -470,21 +465,21 @@
                 this.modelDialog.isShow = true
             },
             async saveModel (data) {
-                const params = this.$injectMetadata({
+                const params = {
                     bk_supplier_account: this.supplierAccount,
                     bk_obj_name: data['bk_obj_name'],
                     bk_obj_icon: data['bk_obj_icon'],
                     bk_classification_id: data['bk_classification_id'],
                     bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
-                })
+                }
                 const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
                 this.curCreateModel = createModel
                 this.sucessDialog.isShow = true
                 this.$http.cancel('post_searchClassificationsObjects')
                 this.getModelStatistics()
                 this.searchClassificationsObjects({
-                    params: this.$injectMetadata()
+                    params: {}
                 })
                 this.modelDialog.isShow = false
                 this.modelDialog.groupId = ''

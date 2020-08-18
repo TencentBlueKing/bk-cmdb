@@ -326,8 +326,9 @@
             async doClone () {
                 try {
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
-                        params: this.$injectMetadata({
+                        params: {
                             name: this.$parent.module.bk_module_name,
+                            bk_biz_id: this.bizId,
                             bk_module_id: this.$route.params.moduleId,
                             instances: [
                                 {
@@ -335,7 +336,7 @@
                                     processes: this.getCloneProcessValues()
                                 }
                             ]
-                        }, { injectBizId: true })
+                        }
                     })
                     this.$success(this.$t('克隆成功'))
                     this.backToModule()
