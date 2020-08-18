@@ -121,15 +121,16 @@ func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	if h.Config == nil {
 		h.Config = &options.Config{}
 	}
-	taskNameArr := strings.Split(current.ConfigMap["task.name"], ",")
+	name, _ := cc.String("taskServer.name")
+	taskNameArr := strings.Split(name, ",")
 
 	for _, name := range taskNameArr {
 		if name == "" {
 			continue
 		}
-		prefix := "task-" + name
+		prefix := "taskServer." + name
 
-		strRetry := current.ConfigMap[prefix+".retry"]
+		strRetry, _ := cc.String(prefix+".retry")
 		var retry int64 = 0
 		var err error
 		if strRetry != "" {
@@ -141,13 +142,15 @@ func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 
 		f := func() ([]string, error) {
-			addrs := strings.Split(current.ConfigMap[prefix+".addrs"], ",")
+			addrArray, _ := cc.String(prefix + ".addrs")
+			addrs := strings.Split(addrArray, ",")
 			return addrs, nil
 		}
+		path, _ := cc.String(prefix + ".path")
 		task := tasksvc.TaskInfo{
 			Name:  name,
 			Addr:  f,
-			Path:  current.ConfigMap[prefix+".path"],
+			Path:  path,
 			Retry: retry,
 		}
 		if h.taskQueue == nil {

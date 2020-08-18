@@ -152,7 +152,6 @@ func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error
 	}
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
 	header.Add("Content-Type", "application/json")
 

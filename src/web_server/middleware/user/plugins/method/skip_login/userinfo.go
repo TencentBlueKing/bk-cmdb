@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
@@ -65,29 +66,30 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 }
 
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
-	var ok bool
 	var loginURL string
 	var siteURL string
-
+	var appCode string
+	var err error
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
-		loginURL, ok = config["site.bk_https_login_url"]
+		loginURL, err = cc.String("webServer.site.bkHttpsLoginUrl")
 	} else {
-		loginURL, ok = config["site.bk_login_url"]
+		loginURL, err = cc.String("webServer.site.bkLoginUrl")
 	}
-	if !ok {
+	if err != nil {
 		loginURL = ""
 	}
+
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
-		siteURL, ok = config["site.https_domain_url"]
+		siteURL,err = cc.String("webServer.site.httpsDomainUrl")
 	} else {
-		siteURL, ok = config["site.domain_url"]
+		siteURL,err = cc.String("webServer.site.domainUrl")
 	}
-	if !ok {
+	if err != nil {
 		siteURL = ""
 	}
 
-	appCode, ok := config["site.app_code"]
-	if !ok {
+	appCode, err = cc.String("webServer.site.appCode")
+	if err != nil {
 		appCode = ""
 	}
 	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteURL, c.Request.URL.String()))

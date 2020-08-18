@@ -25,33 +25,16 @@ import (
 )
 
 // list enumeration attribute options of instance type resource
-func (lgc *Logics) ListAttrValue(kit *rest.Kit, req types.PullResourceReq) (*types.ListAttrValueResult, error) {
-	filter, ok := req.Filter.(types.ListAttrValueFilter)
-	if !ok {
-		blog.ErrorJSON("request filter %s is not the right type for list_attr_value method, rid: %s", req.Filter, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
-	}
-	if filter.Attr == "" {
-		blog.ErrorJSON("request filter %s attr not set for list_attr_value method, rid: %s", req.Filter, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "filter.attr")
-	}
-	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
-	}
+func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListAttrValueFilter,
+	page types.Page) (*types.ListAttrValueResult, error) {
 
 	// get attributes' enumeration options from cache
-	objID := GetInstanceResourceObjID(req.Type)
-	if objID == "" && req.Type != iam.SysInstance {
+	objID := getInstanceResourceObjID(resourceType)
+	if objID == "" && resourceType != iam.SysInstance {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
 	var attrType string
-	var marshaledOptions []byte
-	// TODO use cache
-	//attribute, err := lgc.cache.HGetAll(common.BKCacheKeyV3Prefix + "attribute:object" + objID + "id:" + filter.Attr).Result()
-	//if err != nil {
-	// get attribute from db if get it from cache encounters error
-	//blog.Errorf("get attribute from cache failed, try to get from db, error: %s, object ID: %s, attribute ID: %s", err.Error(), objID, filter.Attr)
+
 	param := metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKPropertyIDField:   filter.Attr,
@@ -62,8 +45,9 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, req types.PullResourceReq) (*typ
 	}
 	var res *metadata.ReadModelAttrResult
 	var err error
+
 	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
-	if req.Type == iam.SysInstance {
+	if resourceType == iam.SysInstance {
 		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &param)
 	} else {
 		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
@@ -79,20 +63,17 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, req types.PullResourceReq) (*typ
 	if len(res.Data.Info) == 0 {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
+
 	attr := res.Data.Info[0]
 	attrType = attr.PropertyType
-	marshaledOptions, err = json.Marshal(attr.Option)
+	if attrType != common.FieldTypeEnum {
+		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
+	}
+
+	marshaledOptions, err := json.Marshal(attr.Option)
 	if err != nil {
 		blog.ErrorJSON("marshal model attribute option failed, error: %s, option: %v, rid: %s", err.Error(), attr.Option, kit.Rid)
 		return nil, err
-	}
-	//} else {
-	//	attrType = attribute[common.BKPropertyTypeField]
-	//	marshaledOptions = []byte(attribute[common.BKOptionField])
-	//}
-
-	if attrType != common.FieldTypeEnum {
-		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
 	options := metadata.AttributesOptions{}
 	err = json.Unmarshal(marshaledOptions, &options)
@@ -103,7 +84,7 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, req types.PullResourceReq) (*typ
 
 	// filter options by keyword and ids and pagination
 	values := make([]types.AttrValueResource, 0)
-	start := req.Page.Offset
+	start := page.Offset
 	if start >= int64(len(options)) {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
@@ -116,7 +97,7 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, req types.PullResourceReq) (*typ
 		}
 	}
 	for _, option := range options[start:] {
-		if count == req.Page.Limit {
+		if count == page.Limit {
 			break
 		}
 		if idMap != nil && !idMap[option.ID] {
@@ -134,4 +115,23 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, req types.PullResourceReq) (*typ
 		count++
 	}
 	return &types.ListAttrValueResult{Count: int64(len(options)), Results: values}, nil
+}
+
+func (lgc *Logics) ValidateListAttrValueRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListAttrValueFilter, error) {
+	filter, ok := req.Filter.(types.ListAttrValueFilter)
+	if !ok {
+		blog.ErrorJSON("request filter %s is not the right type for list_attr_value method, rid: %s", req.Filter, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
+	}
+
+	if filter.Attr == "" {
+		blog.ErrorJSON("request filter %s attr not set for list_attr_value method, rid: %s", req.Filter, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "filter.attr")
+	}
+
+	if req.Page.IsIllegal() {
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
+	}
+	return &filter, nil
 }

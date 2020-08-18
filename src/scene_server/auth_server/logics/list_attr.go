@@ -24,16 +24,11 @@ import (
 // list enumeration attributes of instance type resource
 func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
-	objID := GetInstanceResourceObjID(resourceType)
+	objID := getInstanceResourceObjID(resourceType)
 	if objID == "" && resourceType != iam.SysInstance {
 		return attrs, nil
 	}
 
-	// TODO use cache
-	//attributes, err := cache.GetCacheItemsByKeyRegex(common.BKCacheKeyV3Prefix+"attribute:object"+objID+"*", lgc.cache)
-	//if err != nil {
-	// get attributes from db if get them from cache encounters error
-	// blog.Errorf("get attribute from cache failed, try to get from db, error: %s, object ID: %s", err.Error(), objID)
 	param := metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKPropertyTypeField: common.FieldTypeEnum,
@@ -43,6 +38,7 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 	}
 	var res *metadata.ReadModelAttrResult
 	var err error
+
 	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
 	if resourceType == iam.SysInstance {
 		param.Fields = append(param.Fields, common.BKObjIDField)
@@ -104,15 +100,4 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 		})
 	}
 	return attrs, nil
-	//}
-	// only returns enumeration attributes
-	//for _, attribute := range attributes {
-	//	if attribute[common.BKPropertyTypeField] == common.FieldTypeEnum {
-	//		attrs = append(attrs, types.AttrResource{
-	//			ID:          attribute[common.BKPropertyIDField],
-	//			DisplayName: attribute[common.BKPropertyNameField],
-	//		})
-	//	}
-	//}
-	//return attrs, nil
 }

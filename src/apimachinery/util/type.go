@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
+	cc "configcenter/src/common/backbone/configcenter"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -58,36 +59,32 @@ type TLSClientConfig struct {
 func NewTLSClientConfigFromConfig(prefix string, config map[string]string) (TLSClientConfig, error) {
 	tlsConfig := TLSClientConfig{}
 
-	skipVerifyKey := fmt.Sprintf("%s.insecure_skip_verify", prefix)
-	skipVerifyVal, ok := config[skipVerifyKey]
-	if ok == true {
+	skipVerifyKey := fmt.Sprintf("%s.insecureSkipVerify", prefix)
+	if val, err := cc.String(skipVerifyKey); err == nil {
+		skipVerifyVal := val
 		if skipVerifyVal == "true" {
 			tlsConfig.InsecureSkipVerify = true
 		}
 	}
 
-	certFileKey := fmt.Sprintf("%s.cert_file", prefix)
-	certFileVal, ok := config[certFileKey]
-	if ok == true {
-		tlsConfig.CertFile = certFileVal
+	certFileKey := fmt.Sprintf("%s.certFile", prefix)
+	if val, err := cc.String(certFileKey); err == nil {
+		tlsConfig.CertFile = val
 	}
 
-	keyFileKey := fmt.Sprintf("%s.key_file", prefix)
-	keyFileVal, ok := config[keyFileKey]
-	if ok == true {
-		tlsConfig.KeyFile = keyFileVal
+	keyFileKey := fmt.Sprintf("%s.keyFile", prefix)
+	if val, err := cc.String(keyFileKey); err == nil {
+		tlsConfig.KeyFile = val
 	}
 
-	caFileKey := fmt.Sprintf("%s.ca_file", prefix)
-	caFileVal, ok := config[caFileKey]
-	if ok == true {
-		tlsConfig.CAFile = caFileVal
+	caFileKey := fmt.Sprintf("%s.caFile", prefix)
+	if val, err := cc.String(caFileKey); err == nil {
+		tlsConfig.CAFile = val
 	}
 
 	passwordKey := fmt.Sprintf("%s.password", prefix)
-	passwordVal, ok := config[passwordKey]
-	if ok == true {
-		tlsConfig.Password = passwordVal
+	if val, err := cc.String(passwordKey); err == nil {
+		tlsConfig.Password = val
 	}
 
 	return tlsConfig, nil

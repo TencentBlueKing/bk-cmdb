@@ -5,6 +5,7 @@ import StatusError from './StatusError.js'
 
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
+import { setupValidator } from '@/setup/validate'
 
 import {
     before as businessBeforeInterceptor
@@ -168,6 +169,7 @@ router.beforeEach((to, from, next) => {
                 setLoading(true)
                 setupStatus.preload = false
                 await preload(router.app)
+                setupValidator(router.app)
             }
             await runBeforeHooks()
             const shouldContinue = await businessBeforeInterceptor(router.app, to, from, next)

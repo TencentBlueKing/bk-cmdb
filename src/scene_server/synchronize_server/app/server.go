@@ -18,8 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -30,6 +28,8 @@ import (
 	//"configcenter/src/storage/dal/redis"
 	synchronizeClient "configcenter/src/apimachinery/synchronize"
 	synchronizeUtil "configcenter/src/apimachinery/synchronize/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -92,31 +92,32 @@ type SynchronizeServer struct {
 }
 
 func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc.ProcessConfig) {
+
 	configInfo := &options.Config{}
-	names := current.ConfigMap["synchronize.name"]
+	names, _ := cc.String("synchronizeServer.name")
 	configInfo.Names = SplitFilter(names, ",")
 
-	configInfo.Trigger.TriggerType = current.ConfigMap["trigger.type"]
+	configInfo.Trigger.TriggerType, _ = cc.String("synchronizeServer.trigger.type")
 	// role  unit minute.
 	// type = timing, ervery day  role minute trigger
 	// type = interval, interval role  minute trigger
-	configInfo.Trigger.Role = current.ConfigMap["trigger.role"]
+	configInfo.Trigger.Role, _ = cc.String("synchronizeServer.trigger.role")
 
 	for _, name := range configInfo.Names {
 		if strings.TrimSpace(name) == "" {
 			continue
 		}
 		configItem := &options.ConfigItem{}
-		appNames := current.ConfigMap[name+".AppNames"]
-		syncResource := current.ConfigMap[name+".SynchronizeResource"]
-		targetHost := current.ConfigMap[name+".Host"]
-		fieldSign := current.ConfigMap[name+".FieldSign"]
-		dataSign := current.ConfigMap[name+".Flag"]
-		supplerAccount := current.ConfigMap[name+".SupplerAccount"]
-		whiteList := current.ConfigMap[name+".WhiteList"]
-		objectIDs := current.ConfigMap[name+".ObjectID"]
-		ignoreModelAttr := current.ConfigMap[name+".IgnoreModelAttribute"]
-		strEnableInstFilter := current.ConfigMap[name+".EnableInstFilter"]
+		appNames, _ := cc.String("synchronizeServer."+name+".AppNames")
+		syncResource, _ := cc.String("synchronizeServer."+name+".SynchronizeResource")
+		targetHost, _ := cc.String("synchronizeServer."+name+".Host")
+		fieldSign, _ := cc.String("synchronizeServer."+name+".FieldSign")
+		dataSign, _ := cc.String("synchronizeServer."+name+".Flag")
+		supplerAccount, _ := cc.String("synchronizeServer."+name+".SupplerAccount")
+		whiteList, _ := cc.String("synchronizeServer."+name+".WhiteList")
+		objectIDs, _ := cc.String("synchronizeServer."+name+".ObjectID")
+		ignoreModelAttr, _ := cc.String("synchronizeServer."+name+".IgnoreModelAttribute")
+		strEnableInstFilter, _ := cc.String("synchronizeServer."+name+".EnableInstFilter")
 
 		configItem.AppNames = SplitFilter(appNames, ",")
 		if syncResource == "1" {

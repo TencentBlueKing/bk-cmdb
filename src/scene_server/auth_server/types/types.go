@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 )
 
@@ -145,29 +146,9 @@ type ListInstanceByPolicyFilter struct {
 	Expression *operator.Policy `json:"expression"`
 }
 
-type BaseResp struct {
-	Code    int64  `json:"code"`
-	Message string `json:"message"`
-}
-
-var SuccessBaseResp = BaseResp{
-	Code:    SuccessCode,
-	Message: "success",
-}
-
-type ListAttrResourceResp struct {
-	BaseResp
-	Data []AttrResource `json:"data"`
-}
-
 type AttrResource struct {
 	ID          string `json:"id"`
 	DisplayName string `json:"display_name"`
-}
-
-type ListAttrValueResourceResp struct {
-	BaseResp
-	Data ListAttrValueResult `json:"data"`
 }
 
 type ListAttrValueResult struct {
@@ -179,11 +160,6 @@ type AttrValueResource struct {
 	// id type is string, int or bool
 	ID          interface{} `json:"id"`
 	DisplayName string      `json:"display_name"`
-}
-
-type ListInstanceResourceResp struct {
-	BaseResp
-	Data ListInstanceResult `json:"data"`
 }
 
 type ListInstanceResult struct {
@@ -203,7 +179,18 @@ type InstancePath struct {
 	DisplayName string     `json:"display_name"`
 }
 
-type FetchInstanceInfoResp struct {
-	BaseResp
-	Data []map[string]interface{} `json:"data"`
+// ResourcePullMethod iam resource pull callback methods
+type ResourcePullMethod struct {
+	ListAttr      func(kit *rest.Kit, resourceType iam.TypeID) ([]AttrResource, error)
+	ListAttrValue func(kit *rest.Kit, resourceType iam.TypeID, filter *ListAttrValueFilter, page Page) (
+		*ListAttrValueResult, error)
+
+	ListInstance func(kit *rest.Kit, resourceType iam.TypeID, filter *ListInstanceFilter, page Page) (
+		*ListInstanceResult, error)
+
+	FetchInstanceInfo func(kit *rest.Kit, resourceType iam.TypeID, filter *FetchInstanceInfoFilter, page Page) (
+		[]map[string]interface{}, error)
+
+	ListInstanceByPolicy func(kit *rest.Kit, resourceType iam.TypeID, filter *ListInstanceByPolicyFilter, page Page) (
+		*ListInstanceResult, error)
 }

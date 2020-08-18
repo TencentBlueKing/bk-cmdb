@@ -25,6 +25,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/coreservice/event"
+	"configcenter/src/storage/stream/types"
+
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
 )
@@ -95,8 +97,7 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(s.generateResp("", options.Resource, []*watch.WatchEventDetail{events}))
 }
 
-func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.
-	Response {
+func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.Response {
 	result := new(watch.WatchResp)
 	if len(events) == 0 {
 		result.Watched = false
@@ -272,7 +273,7 @@ func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 				Cursor:    lastNode.Cursor,
 				Resource:  opts.Resource,
 				EventType: lastNode.EventType,
-				Detail:    watch.JsonString(detail),
+				Detail:    watch.JsonString(types.GetEventDetail(detail)),
 			}
 			return []*watch.WatchEventDetail{resp}, nil
 		}
@@ -305,7 +306,7 @@ func (s *Service) getEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNod
 	}
 	resp := make([]*watch.WatchEventDetail, 0)
 	for idx, result := range results {
-		jsonStr := result.Val()
+		jsonStr := types.GetEventDetail(result.Val())
 		cut := json.CutJsonDataWithFields(&jsonStr, opts.Fields)
 		resp = append(resp, &watch.WatchEventDetail{
 			Cursor:    hitNodes[idx].Cursor,
@@ -345,7 +346,9 @@ func (s *Service) watchFromNow(key event.Key, opts *watch.WatchEventOptions, rid
 			Detail:    nil,
 		}, nil
 	}
-	cut := json.CutJsonDataWithFields(&tailTarget, opts.Fields)
+
+	jsonStr := types.GetEventDetail(tailTarget)
+	cut := json.CutJsonDataWithFields(&jsonStr, opts.Fields)
 	// matched the event type.
 	return &watch.WatchEventDetail{
 		Cursor:    node.Cursor,

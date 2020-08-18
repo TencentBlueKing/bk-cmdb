@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"configcenter/src/common/auth"
+	cc "configcenter/src/common/backbone/configcenter"
 )
 
 const (
@@ -47,15 +48,14 @@ type AuthConfig struct {
 
 func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, error) {
 	var cfg AuthConfig
-
 	if !auth.EnableAuthorize() {
 		return AuthConfig{}, nil
 	}
-
-	address, exist := configMap[prefix+".address"]
-	if !exist {
+	address, err := cc.String(prefix + ".address")
+	if err != nil {
 		return cfg, errors.New(`missing "address" configuration for auth center`)
 	}
+
 	cfg.Address = strings.Split(strings.Replace(address, " ", "", -1), ",")
 	if len(cfg.Address) == 0 {
 		return cfg, errors.New(`invalid "address" configuration for auth center`)
@@ -66,18 +66,20 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 		}
 	}
 
-	cfg.AppSecret, exist = configMap[prefix+".appSecret"]
-	if !exist {
-		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
+	appSecret, err := cc.String(prefix + ".appSecret")
+	if err != nil {
+		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
+	cfg.AppSecret = appSecret
 	if len(cfg.AppSecret) == 0 {
 		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
 
-	cfg.AppCode, exist = configMap[prefix+".appCode"]
-	if !exist {
+	appCode, err := cc.String(prefix + ".appCode")
+	if err != nil {
 		return cfg, errors.New(`missing "appCode" configuration for auth center`)
 	}
+	cfg.AppCode = appCode
 	if len(cfg.AppCode) == 0 {
 		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
@@ -308,6 +310,7 @@ const (
 	WatchBizEvent          ActionID = "watch_biz_event"
 	WatchSetEvent          ActionID = "watch_set_event"
 	WatchModuleEvent       ActionID = "watch_module_event"
+	WatchSetTemplateEvent  ActionID = "watch_set_template_event"
 	GlobalSettings         ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized

@@ -294,3 +294,14 @@ func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
 
 	return errors.RawErrorInfo{}
 }
+
+// BkBaseResp base response defined in blueking api protocol
+type BkBaseResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type BKResponse struct {
+	BkBaseResp `json:",inline"`
+	Data       interface{} `json:"data"`
+}

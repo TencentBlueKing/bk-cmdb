@@ -27,6 +27,8 @@ const (
 	dateTimePattern = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[\s]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
 	// timeZonePattern    = `^[a-zA-Z]+/[a-z\-\_+\-A-Z]+$`
 	timeZonePattern = `^[a-zA-Z0-9\-−_\/\+]+$`
+	//userPattern the user names regex expression
+	userPattern = `^(\d|[a-zA-Z])([a-zA-Z0-9\@.,_-])*$`
 )
 
 var (
@@ -37,6 +39,7 @@ var (
 	dateRegexp     = regexp.MustCompile(datePattern)
 	dateTimeRegexp = regexp.MustCompile(dateTimePattern)
 	timeZoneRegexp = regexp.MustCompile(timeZonePattern)
+	userRegexp     = regexp.MustCompile(userPattern)
 )
 
 // 字符串输入长度
@@ -70,6 +73,11 @@ func IsTime(sInput string) bool {
 // 是否时区
 func IsTimeZone(sInput string) bool {
 	return timeZoneRegexp.MatchString(sInput)
+}
+
+// 是否用户
+func IsUser(sInput string) bool {
+	return userRegexp.MatchString(sInput)
 }
 
 // str2time

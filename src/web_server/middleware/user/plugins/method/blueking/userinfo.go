@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpclient"
@@ -68,13 +69,11 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		blog.Infof("LoginUser failed, bk_token empty, rid: %s", rid)
 		return nil, false
 	}
-
-	checkUrl, ok := config["site.check_url"]
-	if !ok {
+	checkUrl, err := cc.String("webServer.site.checkUrl")
+	if err != nil {
 		blog.Errorf("get login url config item not found, rid: %s", rid)
 		return nil, false
 	}
-
 	loginURL := checkUrl + bkToken
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
@@ -120,31 +119,34 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 }
 
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
-	var ok bool
 	var loginURL string
 	var siteURL string
+	var appCode string
+	var err error
 
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
-		loginURL, ok = config["site.bk_https_login_url"]
+		loginURL, err = cc.String("webServer.site.bkHttpsLoginUrl")
 	} else {
-		loginURL, ok = config["site.bk_login_url"]
+		loginURL, err = cc.String("webServer.site.bkLoginUrl")
 	}
-	if !ok {
+	if err != nil {
 		loginURL = ""
 	}
+
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
-		siteURL, ok = config["site.https_domain_url"]
+		siteURL, err = cc.String("webServer.site.httpsDomainUrl")
 	} else {
-		siteURL, ok = config["site.domain_url"]
+		siteURL, err = cc.String("webServer.site.domainUrl")
 	}
-	if !ok {
+	if err != nil {
 		siteURL = ""
 	}
 
-	appCode, ok := config["site.app_code"]
-	if !ok {
+	appCode, err = cc.String("webServer.site.appCode")
+	if err != nil {
 		appCode = ""
 	}
+
 	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteURL, c.Request.URL.String()))
 	return loginURL
 }

@@ -460,7 +460,7 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 		common.BKCloudAccountID:  accountConf.AccountID,
 		common.BKCreator:         common.BKCloudSyncUser,
 		common.BKLastEditor:      common.BKCloudSyncUser,
-		common.BkSupplierAccount: fmt.Sprintf("%d", common.BKDefaultSupplierID),
+		common.BkSupplierAccount: common.BKDefaultOwnerID,
 		common.BKStatus:          "1",
 	}
 

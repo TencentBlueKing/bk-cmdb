@@ -9,6 +9,7 @@ import (
 
 	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
 	"configcenter/src/common/util"
@@ -126,13 +127,18 @@ type EsConfig struct {
 
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configMap map[string]string) (EsConfig, error) {
+	fullTextSearch, _ := cc.String(prefix + ".fullTextSearch")
+	url, _ := cc.String(prefix + ".url")
+	usr, _ := cc.String(prefix + ".usr")
+	pwd, _ := cc.String(prefix + ".pwd")
+
 	conf := EsConfig{
-		FullTextSearch: configMap[prefix+".full_text_search"],
-		EsUrl:          configMap[prefix+".url"],
-		EsUser:         configMap[prefix+".usr"],
-		EsPassword:     configMap[prefix+".pwd"],
+		FullTextSearch: fullTextSearch,
+		EsUrl:          url,
+		EsUser:         usr,
+		EsPassword:     pwd,
 	}
 	var err error
-	conf.TLSClientConfig, err = apiutil.NewTLSClientConfigFromConfig("es", configMap)
+	conf.TLSClientConfig, err = apiutil.NewTLSClientConfigFromConfig(prefix, nil)
 	return conf, err
 }

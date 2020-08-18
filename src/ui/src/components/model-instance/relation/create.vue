@@ -40,14 +40,14 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="authResources">
+                    <cmdb-auth :auth="getInstanceAuth(row)">
                         <template slot-scope="{ disabled }">
                             <bk-link :disabled="disabled" href="javascript:void(0)" class="option-link" theme="primary"
                                 v-if="tempData.includes(row[instanceIdKey])"
                                 @click="updateAssociation(row[instanceIdKey], 'remove')">
                                 {{$t('取消关联')}}
                             </bk-link>
-                            <bk-link :disabled="disabled" href="javascript:void(0)" class="option-link is-associated" theme="primary"
+                            <bk-link href="javascript:void(0)" class="option-link is-associated" theme="primary"
                                 v-else-if="isAssociated(row)">
                                 {{$t('已关联')}}
                             </bk-link>
@@ -117,6 +117,7 @@
                 table: {
                     header: [],
                     list: [],
+                    originalList: [],
                     pagination: {
                         count: 0,
                         current: 1,
@@ -250,6 +251,43 @@
             ...mapActions('objectCommonInst', ['searchInst']),
             ...mapActions('objectBiz', ['searchBusiness']),
             ...mapActions('hostSearch', ['searchHost']),
+            getInstanceAuth (row) {
+                const auth = [this.authResources]
+                switch (this.currentAsstObj) {
+                    case 'biz': {
+                        auth.push({
+                            type: this.$OPERATION.U_BUSINESS,
+                            relation: [row.bk_biz_id]
+                        })
+                        break
+                    }
+                    case 'host': {
+                        const originalData = this.table.originalList.find(data => data.host.bk_host_id === row.bk_host_id)
+                        const [biz] = originalData.biz
+                        if (biz.default === 0) {
+                            auth.push({
+                                type: this.$OPERATION.U_HOST,
+                                relation: [biz.bk_biz_id, row.bk_host_id]
+                            })
+                        } else {
+                            const [module] = originalData.module
+                            auth.push({
+                                type: this.$OPERATION.U_RESOURCE_HOST,
+                                relation: [module.bk_module_id, row.bk_host_id]
+                            })
+                        }
+                        break
+                    }
+                    default: {
+                        const model = this.getModelById(this.currentAsstObj)
+                        auth.push({
+                            type: this.$OPERATION.U_INST,
+                            relation: [model.id, row.bk_inst_id]
+                        })
+                    }
+                }
+                return auth
+            },
             getAsstObjProperties () {
                 return this.searchObjectAttribute({
                     params: {
@@ -482,7 +520,12 @@
                 })
             },
             getHostCondition () {
-                const condition = [{ 'bk_obj_id': 'host', 'condition': [], fields: [] }]
+                const condition = [
+                    { 'bk_obj_id': 'host', 'condition': [], fields: [] },
+                    { 'bk_obj_id': 'biz', 'condition': [], fields: [] },
+                    { 'bk_obj_id': 'module', 'condition': [], fields: [] },
+                    { 'bk_obj_id': 'set', 'condition': [], fields: [] }
+                ]
                 const property = this.getProperty(this.filter.id)
                 if (this.filter.value !== '' && property) {
                     condition[0]['condition'].push({
@@ -536,6 +579,7 @@
             setTableList (data, asstObjId) {
                 // const properties = this.properties
                 this.table.pagination.count = data.count
+                this.table.originalList = Object.freeze(data.info.slice())
                 if (asstObjId === 'host') {
                     data.info = data.info.map(item => item['host'])
                 }

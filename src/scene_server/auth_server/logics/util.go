@@ -74,7 +74,7 @@ func isResourceIDStringType(resourceType iam.TypeID) bool {
 }
 
 // get model instance resource's model id
-func GetInstanceResourceObjID(resourceType iam.TypeID) string {
+func getInstanceResourceObjID(resourceType iam.TypeID) string {
 	switch resourceType {
 	case iam.Host:
 		return common.BKInnerObjIDHost
@@ -91,80 +91,11 @@ func GetInstanceResourceObjID(resourceType iam.TypeID) string {
 	}
 }
 
-var defaultBizID int64
+var resourcePoolBizID int64
 
-// generate condition for resource type that have special constraints
-func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.TypeID, condition map[string]interface{}) (map[string]interface{}, error) {
-	if condition == nil {
-		condition = make(map[string]interface{})
-	}
-
-	// not include default business
-	if resourceType == iam.Business || resourceType == iam.BusinessForHostTrans {
-		condition[common.BKDefaultField] = map[string]interface{}{
-			common.BKDBNE: common.DefaultAppFlag,
-		}
-		return condition, nil
-	}
-
-	// model not include mainline model
-	// process and cloud area are temporarily excluded TODO remove this restriction when they are available for user
-	if resourceType == iam.SysModel || resourceType == iam.SysInstanceModel {
-		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat, common.BKInnerObjIDApp,
-			common.BKInnerObjIDSet, common.BKInnerObjIDModule}
-		// cond := &metadata.QueryCondition{
-		// 	Condition: map[string]interface{}{
-		// 		common.AssociationKindIDField: common.AssociationKindMainline,
-		// 	},
-		// }
-		// asst, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		//
-		// if !asst.Result {
-		// 	return nil, asst.CCError()
-		// }
-		//
-		// for _, mainline := range asst.Data.Info {
-		// 	switch mainline.AsstObjID {
-		// 	// only exclude these in mainline association tree.
-		// 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-		// 		continue
-		// 	default:
-		// 	}
-		// 	excludedObjIDs = append(excludedObjIDs, mainline.AsstObjID)
-		// }
-
-		if resourceType == iam.SysInstanceModel {
-			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost)
-		}
-
-		condition[common.BKObjIDField] = map[string]interface{}{
-			common.BKDBNIN: excludedObjIDs,
-		}
-		return condition, nil
-	}
-
-	if resourceType == iam.SysAssociationType {
-		condition[common.BKIsPre] = map[string]interface{}{
-			common.BKDBNE: true,
-		}
-	}
-
-	if resourceType == iam.SysCloudArea {
-		condition[common.BKCloudIDField] = map[string]interface{}{
-			common.BKDBNE: 0,
-		}
-	}
-
-	if resourceType != iam.SysResourcePoolDirectory && resourceType != iam.SysHostRscPoolDirectory {
-		return condition, nil
-	}
-
-	if defaultBizID != 0 {
-		condition[common.BKAppIDField] = defaultBizID
-		return condition, nil
+func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
+	if resourcePoolBizID != 0 {
+		return resourcePoolBizID, nil
 	}
 
 	input := &metadata.QueryCondition{
@@ -172,24 +103,28 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Type
 		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKAppIDField},
 		Fields:    []string{common.BKAppIDField},
 	}
+
 	bizResp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, input)
 	if err != nil {
 		blog.Errorf("find resource pool biz failed, err: %s, rid: %s", err.Error(), kit.Rid)
-		return nil, err
+		return 0, err
 	}
+
 	if !bizResp.Result {
 		blog.Errorf("find resource pool biz failed, err code: %d, err msg: %s, rid: %s", bizResp.Code, bizResp.ErrMsg, kit.Rid)
-		return nil, bizResp.Error()
+		return 0, bizResp.Error()
 	}
+
 	if len(bizResp.Data.Info) <= 0 {
 		blog.Errorf("find no resource pool biz, rid: %s", kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	defaultBizID, err = util.GetInt64ByInterface(bizResp.Data.Info[0][common.BKAppIDField])
+
+	resourcePoolBizID, err = util.GetInt64ByInterface(bizResp.Data.Info[0][common.BKAppIDField])
 	if nil != err {
 		blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", bizResp.Data.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+		return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 	}
-	condition[common.BKAppIDField] = defaultBizID
-	return condition, nil
+
+	return resourcePoolBizID, nil
 }

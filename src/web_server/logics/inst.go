@@ -74,7 +74,7 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	}
 	searchCond["page"] = nil
 	searchCond[metadata.BKMetadata] = meta
-	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, ownerID, objID, searchCond)
+	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, objID, searchCond)
 	if nil != err {
 		blog.Errorf("get inst data detail error:%v , search condition:%#v, rid: %s", err, searchCond, rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)

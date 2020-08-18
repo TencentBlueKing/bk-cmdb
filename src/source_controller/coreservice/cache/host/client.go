@@ -174,7 +174,7 @@ func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWi
 
 	if len(opt.HostIDs) != 0 {
 		// find with host id directly.
-		total, err := c.countHost(ctx, nil)
+		total, err := c.countHost(ctx, map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: opt.HostIDs}})
 		if err != nil {
 			blog.Errorf("list host with page, but count failed, err: %v, rid: %v", err, rid)
 			return 0, nil, err

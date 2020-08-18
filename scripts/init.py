@@ -58,106 +58,203 @@ def generate_config_file(
     if not os.path.exists(output):
         os.mkdir(output)
 
-    # redis.conf
+
+
+    #redis.yaml
     redis_file_template_str = '''
-[redis]
-host = $redis_host:$redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
-
-[snap-redis]
-host = $redis_host:$redis_port
-pwd = $redis_pass
-database = 0
-
-[discover-redis]
-host = $redis_host:$redis_port
-pwd = $redis_pass
-database = 0
-
-[netcollect-redis]
-host = $redis_host:$redis_port
-pwd = $redis_pass
-database = 0
+#redis:
+#  host: 127.0.0.1:6379
+#  pwd: "123456"
+#  database: "0"
+#  maxOpenConns: 3000
+#  maxIDleConns: 1000
+#  snap:
+#    host: 127.0.0.1:6379
+#    pwd: 123456
+#    database: "0"
+#  discover:
+#    host: 127.0.0.1:6379
+#    pwd: 123456
+#    database: "0"
+#  netcollect:
+#    host: 127.0.0.1:6379
+#    pwd: 123456
+#    database: "0"
+redis:
+  #公共redis配置信息,用于存取缓存，用户信息等数据
+  host: $redis_host:$redis_port
+  pwd: "$redis_pass"
+  database: "0"
+  maxOpenConns: 3000
+  maxIDleConns: 1000
+  #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
+  #接收主机信息数据的redis
+  snap:
+    host: $redis_host:$redis_port
+    pwd: "$redis_pass"
+    database: "0"
+  #接收模型实例数据的redis
+  discover:
+    host: $redis_host:$redis_port
+    pwd: "$redis_pass"
+    database: "0"
+  #接受硬件数据的redis
+  netcollect:
+    host: $redis_host:$redis_port
+    pwd: "$redis_pass"
+    database: "0"
     '''
 
     template = FileTemplate(redis_file_template_str)
     result = template.substitute(**context)
-    with open(output + "redis.conf", 'w') as tmp_file:
+    with open(output + "redis.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # mongodb.conf
+    # mongodb.yaml
     mongodb_file_template_str = '''
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 3000
-maxIdleConns = 100
-mechanism = SCRAM-SHA-1
-rsName = $rs_name
-    '''
+#mongodb:
+#  host: 127.0.0.1
+#  port: 27017
+#  usr: cc
+#  pwd: cc
+#  database: cmdb
+#  maxOpenConns: 3000
+#  maxIdleConns: 100
+#  mechanism: SCRAM-SHA-1
+#  rsName: rs0
 
+# mongodb配置
+mongodb:
+  host: $mongo_host
+  port: $mongo_port
+  usr: $mongo_user
+  pwd: "$mongo_pass"
+  database: $db
+  maxOpenConns: 3000
+  maxIdleConns: 100
+  mechanism: SCRAM-SHA-1
+  rsName: $rs_name
+    '''
     template = FileTemplate(mongodb_file_template_str)
     result = template.substitute(**context)
-    with open(output + "mongodb.conf", 'w') as tmp_file:
+    with open(output + "mongodb.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # common.conf
+    # common.yaml
     common_file_template_str = '''
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
+#topoServer:
+#  es:
+#    fullTextSearch: off
+#    url: http://127.0.0.1:9200
+#    usr: cc
+#    pwd: cc
+#webServer:
+#  api:
+#    version: v3
+#  session:
+#    name: cc3
+#    defaultlanguage: zh-cn
+#    multipleOwner: 0
+#    userInfo: cc:cc
+#  site:
+#    domainUrl: http://127.0.0.1:80/
+#    bkLoginUrl: http://127.0.0.1/login/?app_id=%s&amp;c_url=%s
+#    appCode: cc
+#    checkUrl: http://127.0.0.1/login/accounts/get_user/?bk_token=
+#    bkAccountUrl: http://127.0.0.1/login/accounts/get_all_user/?bk_token=%s
+#    resourcesPath: /tmp/
+#    htmlRoot: /data/cmdb/web
+#    fullTextSearch: off
+#  app:
+#    agentAppUrl: http://127.0.0.1/console/?app=bk_agent_setup
+#    authscheme: internal
+#  login:
+#    version: opensource
+#operationServer:
+#  timer:
+#    spec: 00:30
+#authServer:
+#  address: 127.0.0.1
+#  appCode: bk_cmdb
+#  appSecret: 123456
+#cloudServer:
+#  cryptor:
+#    enableCryptor: false
+#    secretKeyUrl:
+#    secretsAddrs:
+#    secretsToken:
+#    secretsProject:
+#    secretsEnv:
 
-[gse]
-addr = $rd_server
-user = bkzk
-pwd = L%blKas
-
-[timer]
-spec = 00:30  # 00:00 - 23:59
-
-[es]
-full_text_search = $full_text_search
-url=$es_url
-usr = $es_user
-pwd = $es_pass
-
-[api]
-version = v3
-[session]
-name = cc3
-defaultlanguage = zh-cn
-multiple_owner = 0
-user_info=$user_info
-[site]
-domain_url = ${cc_url}
-bk_login_url = ${paas_url}/login/?app_id=%s&c_url=%s
-app_code = cc
-check_url = ${paas_url}/login/accounts/get_user/?bk_token=
-bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
-resources_path = /tmp/
-html_root = $ui_root
-full_text_search = $full_text_search
-[app]
-agent_app_url = ${agent_url}/console/?app=bk_agent_setup
-authscheme = $auth_scheme
-[login]
-version=$loginVersion
-
-[cryptor]
-enable_cryptor = ${enable_cryptor}
-secret_key_url = ${secret_key_url}
-secrets_addrs = ${secrets_addrs}
-secrets_token = ${secrets_token}
-secrets_project = ${secrets_project}
-secrets_env = ${secrets_env}
-
+# topo_server专属配置
+topoServer:
+  #elasticsearch相关
+  es:
+    #全文检索功能开关(取值：off/on)，默认是off，开启是on
+    fullTextSearch: $full_text_search
+    #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
+    url: $es_url
+    #用户
+    usr: $es_user
+    #密码
+    pwd: $es_pass
+# web_server专属配置
+webServer:
+  api:
+    #显示版本，比如v3为3.x
+    version: v3
+  #会话相关
+  session:
+    #会话名
+    name: cc3
+    #语言
+    defaultlanguage: zh-cn
+    #是否支持同时登录同一用户，0为不支持，1为支持
+    multipleOwner: "0"
+    #账号密码，以 : 分割
+    userInfo: $user_info
+  site:
+    #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
+    domainUrl: ${cc_url}
+    #登录地址
+    bkLoginUrl: ${paas_url}/login/?app_id=%s&c_url=%s
+    appCode: cc
+    checkUrl: ${paas_url}/login/accounts/get_user/?bk_token=
+    bkAccountUrl: ${paas_url}/login/accounts/get_all_user/?bk_token=%s
+    resourcesPath: /tmp/
+    #前端基础页面位置
+    htmlRoot: $ui_root
+    #全文检索功能开关(取值：off/on)，默认是off，开启是on
+    fullTextSearch: $full_text_search
+  app:
+    agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
+    #权限模式，web页面使用，可选值: internal, iam
+    authscheme: $auth_scheme
+  login:
+    #登录模式
+    version: $loginVersion
+# operation_server专属配置
+operationServer:
+  timer:
+    #00:00-23:59,operation_server从配置文件读取的时间,默认是为00:30
+    spec: 00:30  # 00:00 - 23:59
+#auth_server专属配置
+authServer:
+  #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
+  address: $auth_address
+  #cmdb项目在蓝鲸权限中心的应用编码
+  appCode: $auth_app_code
+  #cmdb项目在蓝鲸权限中心的应用密钥
+  appSecret: $auth_app_secret
+#cloudServer专属配置
+cloudServer:
+  cryptor:
+    enableCryptor: ${enable_cryptor}
+    secretKeyUrl: ${secret_key_url}
+    secretsAddrs: ${secrets_addrs}
+    secretsToken: ${secrets_token}
+    secretsProject: ${secrets_project}
+    secretsEnv: ${secrets_env}
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -165,58 +262,104 @@ secrets_env = ${secrets_env}
     if auth_enabled == "true":
         loginVersion = 'blueking'
     result = template.substitute(loginVersion=loginVersion, **context)
-    with open(output + "common.conf", 'w') as tmp_file:
+    with open(output + "common.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # extra.conf
+    # extra.yaml
     extra_file_template_str = ''
 
     template = FileTemplate(extra_file_template_str)
     result = template.substitute(**context)
-    with open(output + "extra.conf", 'w') as tmp_file:
+    with open(output + "extra.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # migrate.conf
+    # migrate.yaml
     migrate_file_template_str = '''
-[config-server]
-addrs = $rd_server
-usr =
-pwd =
-[register-server]
-addrs = $rd_server
-usr =
-pwd =
-[mongodb]
-host =$mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 5
-maxIdleConns = 1
-mechanism = SCRAM-SHA-1
-rsName = $rs_name
-[redis]
-host = $redis_host:$redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 5
-maxIDleConns = 1
-[confs]
-dir = $configures_dir
-[errors]
-res = conf/errors
-[language]
-res = conf/language
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
+#configServer:
+#  addrs: 127.0.0.1:2181
+#  usr: cc
+#  pwd: cc
+#registerServer:
+#  addrs: 127.0.0.1:2181
+#  usr: cc
+#  pwd: cc
+#mongodb:
+#  host: 127.0.0.1
+#  port: 27017
+#  usr: cc
+#  pwd: cc
+#  database: cmdb
+#  maxOpenConns: 5
+#  maxIdleConns: 1
+#  mechanism: SCRAM-SHA-1
+#  rsName: rs0
+#redis:
+#  host: 127.0.0.1:6379
+#  pwd: 123456
+#  database: "0"
+#  maxOpenConns: 5
+#  maxIDleConns: 1
+#confs:
+#  dir: /data/cmdb/cmdb_adminserver/configures/
+#errors:
+#  res: /data/cmdb/cmdb_adminserver/conf/errors
+#language:
+#  res: /data/cmdb/cmdb_adminserver/conf/language
+#auth:
+#  address: 127.0.0.1
+#  appCode: bk_cmdb
+#  appSecret: 123456
+
+# 配置中心
+configServer:
+  addrs: $rd_server
+  usr:
+  pwd:
+# 注册中心
+registerServer:
+  addrs: $rd_server
+  usr:
+  pwd:
+# mongodb配置
+mongodb:
+  host: $mongo_host
+  port: $mongo_port
+  usr: $mongo_user
+  pwd: "$mongo_pass"
+  database: $db
+  maxOpenConns: 5
+  maxIdleConns: 1
+  mechanism: SCRAM-SHA-1
+  rsName: $rs_name
+# redis配置
+redis:
+  host: $redis_host:$redis_port
+  pwd: "$redis_pass"
+  database: "0"
+  maxOpenConns: 5
+  maxIDleConns: 1
+# 指定configures的路径，通过这个路径找到其他的配置文件
+confs:
+  dir: $configures_dir
+# 指定errors的路径
+errors:
+  res: conf/errors
+# 指定language的路径
+language:
+  res: conf/language
+# 权限相关配置
+auth:
+  #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
+  address: $auth_address
+  #cmdb项目在蓝鲸权限中心的应用编码
+  appCode: $auth_app_code
+  #cmdb项目在蓝鲸权限中心的应用密钥
+  appSecret: $auth_app_secret
     '''
 
     template = FileTemplate(migrate_file_template_str)
     result = template.substitute(**context)
-    with open(output + "migrate.conf", 'w') as tmp_file:
+    with open(output + "migrate.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
 def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor):
@@ -241,7 +384,7 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                 filedata = filedata.replace('cmdb-name-placeholder', d)
                 filedata = filedata.replace('cmdb-port-placeholder', str(server_ports.get(d, 9999)))
                 if d == "cmdb_adminserver":
-                    filedata = filedata.replace('rd_server_placeholder', "configures/migrate.conf")
+                    filedata = filedata.replace('rd_server_placeholder', "configures/migrate.yaml")
                     filedata = filedata.replace('regdiscv', "config")
                 else:
                     filedata = filedata.replace('rd_server_placeholder', rd_server)

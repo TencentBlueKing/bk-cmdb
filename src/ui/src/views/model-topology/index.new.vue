@@ -175,8 +175,6 @@
         },
         data () {
             return {
-                specialModel: ['process', 'plat'],
-
                 // 关联数据
                 associationList: [],
 
@@ -237,7 +235,7 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.specialModel.includes(model['bk_obj_id']) && !model.bk_ispaused
+                        return !model.bk_ishidden && !model.bk_ispaused
                     })
                     return classify
                 })
@@ -557,7 +555,8 @@
                     node.connectedEdges().addClass('hover')
 
                     // 显示tooltip
-                    if (this.topoEdit.isEdit && !this.specialModel.includes(nodeData.id)) {
+                    const model = this.getModelById(nodeData.id)
+                    if (this.topoEdit.isEdit && !model.bk_ishidden) {
                         // 设置tooltip状态数据
                         this.topoTooltip.hoverNode = nodeData
 

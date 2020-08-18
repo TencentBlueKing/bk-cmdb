@@ -41,27 +41,31 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <a href="javascript:void(0)" class="option-link"
-                        v-if="tempData.includes(row[instanceIdKey])"
-                        @click="updateAssociation(row[instanceIdKey], 'remove')">
-                        {{$t('取消关联')}}
-                    </a>
-                    <a href="javascript:void(0)" class="option-link is-associated"
-                        v-else-if="isAssociated(row)">
-                        {{$t('已关联')}}
-                    </a>
-                    <a href="javascript:void(0)" class="option-link" v-else
-                        v-click-outside="handleCloseConfirm"
-                        @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
-                        {{$t('添加关联')}}
-                    </a>
+                    <cmdb-auth :auth="getInstanceAuth(row)">
+                        <template slot-scope="{ disabled }">
+                            <bk-link href="javascript:void(0)" class="option-link"
+                                v-if="tempData.includes(row[instanceIdKey])"
+                                theme="primary"
+                                :disabled="disabled"
+                                @click="updateAssociation(row[instanceIdKey], 'remove')">
+                                {{$t('取消关联')}}
+                            </bk-link>
+                            <bk-link href="javascript:void(0)" class="option-link is-associated"
+                                theme="primary"
+                                v-else-if="isAssociated(row)">
+                                {{$t('已关联')}}
+                            </bk-link>
+                            <bk-link href="javascript:void(0)" class="option-link" v-else
+                                v-click-outside="handleCloseConfirm"
+                                theme="primary"
+                                :disabled="disabled"
+                                @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
+                                {{$t('添加关联')}}
+                            </bk-link>
+                        </template>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-empty
-                slot="empty"
-                :stuff="table.stuff"
-                :auth="tableDataAuth">
-            </cmdb-table-empty>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
             <p class="tips-content">{{$t('更新确认')}}</p>
@@ -77,11 +81,13 @@
     import cmdbAssociationPropertyFilter from './association-property-filter.vue'
     import bus from '@/utils/bus.js'
     import { mapGetters, mapActions } from 'vuex'
+    import authMixin from '../mixin-auth'
     export default {
         name: 'cmdb-host-association-create',
         components: {
             cmdbAssociationPropertyFilter
         },
+        mixins: [authMixin],
         data () {
             return {
                 properties: [],
@@ -128,7 +134,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
-            ...mapGetters('objectModelClassify', ['models']),
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             objId () {
                 return 'host'
             },
@@ -199,14 +205,6 @@
             },
             isSource () {
                 return this.currentOption['bk_obj_id'] === this.objId
-            },
-            tableDataAuth () {
-                if (this.currentAsstObj === 'biz') {
-                    return {
-                        type: this.$OPERATION.R_BUSINESS
-                    }
-                }
-                return null
             }
         },
         watch: {
@@ -239,6 +237,43 @@
             ...mapActions('objectCommonInst', ['searchInst']),
             ...mapActions('objectBiz', ['searchBusiness']),
             ...mapActions('hostSearch', ['searchHost']),
+            getInstanceAuth (row) {
+                const auth = [this.HOST_AUTH.U_HOST]
+                switch (this.currentAsstObj) {
+                    case 'biz': {
+                        auth.push({
+                            type: this.$OPERATION.U_BUSINESS,
+                            relation: [row.bk_biz_id]
+                        })
+                        break
+                    }
+                    case 'host': {
+                        const originalData = this.table.originalList.find(data => data.host.bk_host_id === row.bk_host_id)
+                        const [biz] = originalData.biz
+                        if (biz.default === 0) {
+                            auth.push({
+                                type: this.$OPERATION.U_HOST,
+                                relation: [biz.bk_biz_id, row.bk_host_id]
+                            })
+                        } else {
+                            const [module] = originalData.module
+                            auth.push({
+                                type: this.$OPERATION.U_RESOURCE_HOST,
+                                relation: [module.bk_module_id, row.bk_host_id]
+                            })
+                        }
+                        break
+                    }
+                    default: {
+                        const model = this.getModelById(this.currentAsstObj)
+                        auth.push({
+                            type: this.$OPERATION.U_INST,
+                            relation: [model.id, row.bk_inst_id]
+                        })
+                    }
+                }
+                return auth
+            },
             getAsstObjProperties () {
                 return this.searchObjectAttribute({
                     params: {

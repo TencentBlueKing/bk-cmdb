@@ -90,10 +90,6 @@ func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		return genModelTopologyViewResource(act, rscType, a)
 	case meta.HostInstance:
 		return genHostInstanceResource(act, rscType, a)
-
-	// case meta.HostFavorite:
-	// 	return genHostFavoriteResource(act, rscType, a)
-
 	case meta.SystemBase:
 		return make([]types.Resource, 0), nil
 	case meta.ProcessServiceCategory:
@@ -116,12 +112,10 @@ func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttri
 		return make([]types.Resource, 0), nil
 	}
 
-	// we have fuzzy authorize for frontend use, so we can not check this.
-	// if attribute.InstanceID <= 0 {
-	// 	return nil, errors.New("business instance id is 0")
-	// }
-
-	r.ID = strconv.FormatInt(attribute.InstanceID, 10)
+	// compatible for authorize any
+	if attribute.InstanceID > 0 {
+		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -145,7 +139,9 @@ func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 	}
 
 	r.Type = types.ResourceType(typ)
-	r.ID = att.InstanceIDEx
+	if len(att.InstanceIDEx) > 0 {
+		r.ID = att.InstanceIDEx
+	}
 
 	// authorize based on business
 	r.Attribute = map[string]interface{}{
@@ -162,13 +158,11 @@ func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceA
 		Attribute: nil,
 	}
 
-	if att.BusinessID <= 0 {
-		return nil, errors.New("biz id can not be 0")
-	}
-
 	// do not related to instance authorize
 	r.Type = types.ResourceType(Business)
-	r.ID = strconv.FormatInt(att.BusinessID, 10)
+	if att.BusinessID > 0 {
+		r.ID = strconv.FormatInt(att.BusinessID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -184,7 +178,9 @@ func genEventSubscribeResource(act ActionID, typ TypeID, att *meta.ResourceAttri
 		return make([]types.Resource, 0), nil
 	}
 
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -211,7 +207,9 @@ func genServiceTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 	}
 
 	r.Type = types.ResourceType(typ)
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -233,7 +231,9 @@ func genSetTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 	}
 
 	r.Type = types.ResourceType(typ)
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -257,7 +257,9 @@ func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Res
 		return make([]types.Resource, 0), nil
 	}
 
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 	return []types.Resource{r}, nil
 
 }
@@ -269,12 +271,10 @@ func genHostApplyResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]
 		Attribute: nil,
 	}
 
-	if att.BusinessID <= 0 {
-		return nil, errors.New("biz id can not be 0")
-	}
-
 	r.Type = types.ResourceType(Business)
-	r.ID = strconv.FormatInt(att.BusinessID, 10)
+	if att.BusinessID > 0 {
+		r.ID = strconv.FormatInt(att.BusinessID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -305,7 +305,9 @@ func genCloudResourceTaskResource(act ActionID, typ TypeID, att *meta.ResourceAt
 		return make([]types.Resource, 0), nil
 	}
 
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 	return []types.Resource{r}, nil
 }
 
@@ -320,7 +322,9 @@ func genResourcePoolDirectoryResource(act ActionID, typ TypeID, att *meta.Resour
 		return make([]types.Resource, 0), nil
 	}
 
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 	return []types.Resource{r}, nil
 }
 
@@ -331,13 +335,11 @@ func genProcessServiceInstanceResource(_ ActionID, typ TypeID, att *meta.Resourc
 		Attribute: nil,
 	}
 
-	if att.BusinessID <= 0 {
-		return nil, errors.New("biz id can not be 0")
-	}
-
 	// do not related to exact service instance authorize
 	r.Type = types.ResourceType(Business)
-	r.ID = strconv.FormatInt(att.BusinessID, 10)
+	if att.BusinessID > 0 {
+		r.ID = strconv.FormatInt(att.BusinessID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -349,13 +351,11 @@ func genBusinessTopologyResource(_ ActionID, typ TypeID, att *meta.ResourceAttri
 		Attribute: nil,
 	}
 
-	if att.BusinessID <= 0 {
-		return nil, errors.New("biz id can not be 0")
-	}
-
 	// do not related to exact instance authorize
 	r.Type = types.ResourceType(Business)
-	r.ID = strconv.FormatInt(att.BusinessID, 10)
+	if att.BusinessID > 0 {
+		r.ID = strconv.FormatInt(att.BusinessID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -378,7 +378,9 @@ func genModelResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]
 		return []types.Resource{r}, nil
 	}
 
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -412,7 +414,9 @@ func genModelClassificationResource(act ActionID, typ TypeID, att *meta.Resource
 		return make([]types.Resource, 0), nil
 	}
 
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -428,7 +432,9 @@ func genAssociationTypeResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 		return make([]types.Resource, 0), nil
 	}
 
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
@@ -621,11 +627,9 @@ func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttrib
 		Attribute: nil,
 	}
 
-	// if len(att.Layers) == 0 {
-	// 	return nil, NotEnoughLayer
-	// }
-
-	r.ID = strconv.FormatInt(att.BusinessID, 10)
+	if att.BusinessID > 0 {
+		r.ID = strconv.FormatInt(att.BusinessID, 10)
+	}
 
 	return []types.Resource{r}, nil
 }
