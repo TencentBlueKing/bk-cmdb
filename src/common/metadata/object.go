@@ -23,6 +23,7 @@ const (
 	ModelFieldObjIcon     = "bk_obj_icon"
 	ModelFieldObjectID    = "bk_obj_id"
 	ModelFieldObjectName  = "bk_obj_name"
+	ModelFieldIsHidden    = "bk_ishidden"
 	ModelFieldIsPre       = "ispre"
 	ModelFieldIsPaused    = "bk_ispaused"
 	ModelFieldPosition    = "position"
@@ -42,6 +43,10 @@ type Object struct {
 	ObjIcon     string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
 	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	ObjectName  string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+
+	// IsHidden front-end don't display the object if IsHidden is true
+	IsHidden    bool   `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden"`
+
 	IsPre       bool   `field:"ispre" json:"ispre" bson:"ispre"`
 	IsPaused    bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
 	Position    string `field:"position" json:"position" bson:"position"`
