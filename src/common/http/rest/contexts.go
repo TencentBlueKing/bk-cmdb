@@ -353,15 +353,36 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 	c.writeAsJson(&body)
 }
 
-func (c *Contexts) RespHTTPBody(data interface{}) {
-	c.resp.Header().Set("Content-Type", "application/json")
+func (c *Contexts) RespBkEntity(data interface{}) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
-	body, err := json.Marshal(data)
-	if err != nil {
-		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
+
+	body := &metadata.BKResponse{
+		BkBaseResp: metadata.BkBaseResp{
+			Code:    common.CCSuccess,
+			Message: common.CCSuccessStr,
+		},
+		Data: data,
+	}
+	if err := c.resp.WriteAsJson(body); err != nil {
+		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
 		return
 	}
-	if _, err := c.resp.Write(body); err != nil {
+}
+
+func (c *Contexts) RespBkError(errCode int, errMsg string) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+
+	body := &metadata.BkBaseResp{
+		Code:    errCode,
+		Message: errMsg,
+	}
+	if err := c.resp.WriteAsJson(body); err != nil {
 		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
 		return
 	}

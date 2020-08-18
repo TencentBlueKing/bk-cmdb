@@ -29,6 +29,7 @@ import iconButton from './button/icon-button.vue'
 import tips from './other/tips.vue'
 import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
+import authOption from './auth/auth-option.vue'
 import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
@@ -71,6 +72,7 @@ const install = (Vue, opts = {}) => {
         cloudSelector,
         serviceCategorySelector,
         auth,
+        authOption,
         tableEmpty,
         list,
         leaveConfirm,
@@ -118,6 +120,7 @@ export default {
     cloudSelector,
     serviceCategorySelector,
     auth,
+    authOption,
     tableEmpty,
     list,
     leaveConfirm,

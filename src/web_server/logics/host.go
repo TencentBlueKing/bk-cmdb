@@ -241,7 +241,6 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	if 0 != len(hosts) {
 		params := map[string]interface{}{
 			"host_info":      hosts,
-			"bk_supplier_id": common.BKDefaultSupplierID,
 			"input_type":     common.InputTypeExcel,
 		}
 		result, resultErr = lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)

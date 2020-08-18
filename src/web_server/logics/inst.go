@@ -53,7 +53,7 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 	}
 }
 
-func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr, modelBizID int64) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	instIDArr := strings.Split(instIDStr, ",")
@@ -73,8 +73,7 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 		common.BKObjIDField: objID,
 	}
 	searchCond["page"] = nil
-	searchCond[common.BKAppIDField] = modelBizID
-	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, ownerID, objID, searchCond)
+	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, objID, searchCond)
 	if nil != err {
 		blog.Errorf("get inst data detail error:%v , search condition:%#v, rid: %s", err, searchCond, rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)

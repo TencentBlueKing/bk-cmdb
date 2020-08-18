@@ -74,7 +74,9 @@
             list () {
                 try {
                     const list = []
-                    this.associationObject.forEach((association, index) => {
+                    const uniqeAssociationId = [...new Set(this.associationObject.map(data => data.id))]
+                    const uniqeAssociationObject = uniqeAssociationId.map(id => this.associationObject.find(object => object.id === id))
+                    uniqeAssociationObject.forEach((association, index) => {
                         const isSource = association['bk_obj_id'] === this.objId
                         const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
                         list.push({

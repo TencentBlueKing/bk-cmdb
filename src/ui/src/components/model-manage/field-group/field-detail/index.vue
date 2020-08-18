@@ -12,7 +12,7 @@
                         v-model.trim="fieldInfo['bk_property_id']"
                         :placeholder="$t('请输入唯一标识')"
                         :disabled="isEditField"
-                        v-validate="'required|fieldId|reservedWord|length:128'">
+                        v-validate="isEditField ? null : 'required|fieldId|reservedWord|length:128'">
                     </bk-input>
                     <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
                 </div>

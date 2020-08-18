@@ -36,6 +36,10 @@
             disabled: Boolean,
             value: {
                 type: [String, Number]
+            },
+            withCount: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -65,13 +69,17 @@
                     const regions = await this.$store.dispatch('cloud/resource/findRegion', {
                         params: {
                             bk_account_id: this.account,
-                            with_host_count: true
+                            with_host_count: this.withCount
                         },
                         config: {
                             requestId: this.request,
-                            fromCache: true
+                            fromCache: true,
+                            globalError: false
                         }
                     })
+                    if (!regions) {
+                        throw new Error('Request account regions failed.')
+                    }
                     this.regions = regions
                     this.selected = regions.length ? regions[0].bk_region : ''
                 } catch (e) {
@@ -81,7 +89,7 @@
             },
             getRegionInfo () {
                 const region = this.regions.find(region => region.bk_region === this.value)
-                return region ? region.bk_region_name : '--'
+                return region ? region.bk_region_name : (this.value || '--')
             }
         }
     }

@@ -118,7 +118,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 
 	kvMap := mapstr.MapStr{}
-	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap, modelBizID)
+	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap)
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
 		fmt.Println("return msg: ", msg)

@@ -354,15 +354,15 @@ func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key s
 		return errors.RawErrorInfo{}
 	}
 
-	var value int64
-	value, err := util.GetInt64ByInterface(val)
-	if nil != err {
+	if !util.IsNumeric(val) {
 		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedInt,
 			Args:    []interface{}{key},
 		}
 	}
+
+	value, _ := util.GetInt64ByInterface(val)
 
 	intObjOption := ParseIntOption(ctx, attribute.Option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
@@ -604,6 +604,7 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 				Args:    []interface{}{key},
 			}
 		}
+
 		if 0 == len(value) {
 			if attribute.IsRequired {
 				blog.Errorf("params can not be empty, rid: %s", rid)
@@ -613,6 +614,16 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 				}
 			}
 			return errors.RawErrorInfo{}
+		}
+
+		// regex check
+		match := util.IsUser(value)
+		if !match {
+			blog.Errorf(`value "%s" not match regexp, rid: %s`, value, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrFieldRegValidFailed,
+				Args:    []interface{}{key},
+			}
 		}
 	default:
 		blog.Errorf("params should be string, rid: %s", rid)

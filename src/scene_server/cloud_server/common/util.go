@@ -44,7 +44,6 @@ func CovertInstState(instState string) string {
 func NewHeader() http.Header {
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, common.BKCloudSyncUser)
 	header.Add(common.BKHTTPLanguage, "cn")
 	header.Add(common.BKHTTPCCRequestID, util.GenerateRID())

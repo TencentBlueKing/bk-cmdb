@@ -453,7 +453,6 @@ func (s *Service) SearchInsts(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 	data := struct {
 		paraparse.SearchParams `json:",inline"`
-		ModelBizID             int64 `json:"bk_biz_id"`
 	}{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -500,7 +499,6 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 	data := struct {
 		paraparse.SearchParams `json:",inline"`
-		ModelBizID             int64 `json:"bk_biz_id"`
 	}{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -546,7 +544,6 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 
 	data := struct {
 		paraparse.SearchParams `json:",inline"`
-		ModelBizID             int64 `json:"bk_biz_id"`
 	}{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -586,7 +583,6 @@ func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 // SearchInstByAssociation search inst by the association inst
 func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 	data := struct {
-		ModelBizID                  int64 `json:"bk_biz_id"`
 		operation.AssociationParams `json:",inline"`
 	}{}
 	if err := ctx.DecodeInto(&data); err != nil {

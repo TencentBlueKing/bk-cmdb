@@ -28,6 +28,47 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	// limiter introduction
+	limiterIntro = `
+********************************************************
+示例:
+以下命令是在配置了ZK_ADDR环境变量的情况下使用，没有配置时也可以通过命令行参数--zk-addr指定
+# 列出所有策略
+./tool_ctl limiter ls
+# 配置策略，对url限制请求次数
+./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"admin","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'
+# 配置策略，将url直接禁掉
+./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"admin","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","denyall":true}'
+# 获取某些策略详情
+./tool_ctl limiter get --rulenames=test1,test2
+# 删除某些策略
+./tool_ctl limiter del --rulenames=test1,test2
+********************************************************
+		`
+	// ruleIntro rule introduction
+	ruleIntro = `
+********************************************************
+- rule策略字段说明
+
+| 字段     | 类型   | 必选 | 描述                                                         |
+|----------|--------|------|--------------------------------------------------------------|
+| rulename | string | 是   | 策略名                                                       |
+| appcode  | string | 否   | 应用ID                                                       |
+| user     | string | 否   | 请求发起的用户名                                             |
+| ip       | string | 否   | api的来源ip                                                  |
+| method   | string | 否   | 请求的类型，配置的情况下只能为POST、GET、PUT、DELETE中的一种 |
+| url      | string | 否   | api的url正则表达式                                           |
+| limit    | int64  | 否   | api请求限制总次数                                            |
+| ttl      | int64  | 否   | 策略存活时间，单位为秒                                       |
+| denyall  | bool   | 否   | 是否直接禁掉请求，默认为false，为true时忽略limit和ttl参数    |
+ 
+appcode、user、ip、method、url需要至少配置一项  
+denyall配置为false的情况下，limit和ttl配置才能生效
+********************************************************
+		`
+)
+
 func init() {
 	rootCmd.AddCommand(NewLimiterCommand())
 }
@@ -49,6 +90,7 @@ func NewLimiterCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "limiter",
 		Short: "api limiter operations",
+		Long:  limiterIntro,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
@@ -57,6 +99,7 @@ func NewLimiterCommand() *cobra.Command {
 	cmd.AddCommand(&cobra.Command{
 		Use:   "set",
 		Short: "set api limiter rule, use with flag --rule",
+		Long:  ruleIntro,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSetRule(conf)
 		},

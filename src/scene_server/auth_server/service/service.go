@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/logics"
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
@@ -57,7 +58,7 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 
 		isAuthorized, err := checkRequestAuthorization(s.iamClient, req.Request)
 		if err != nil {
-			rsp := types.BaseResp{
+			rsp := metadata.BkBaseResp{
 				Code:    types.InternalServerErrorCode,
 				Message: err.Error(),
 			}
@@ -65,7 +66,7 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 			return
 		}
 		if !isAuthorized {
-			rsp := types.BaseResp{
+			rsp := metadata.BkBaseResp{
 				Code:    types.UnauthorizedErrorCode,
 				Message: "request not from iam",
 			}
@@ -153,10 +154,7 @@ func (s *AuthService) initResourcePull(api *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/empty/resource", Handler: s.PullNoRelatedInstanceResource})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instance/resource", Handler: s.PullInstanceResource})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/resource", Handler: s.PullSystemResource})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/business/resource", Handler: s.PullBusinessResource})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/resource", Handler: s.PullResource})
 
 	utility.AddToRestfulWebService(api)
 }

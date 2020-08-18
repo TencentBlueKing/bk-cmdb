@@ -273,7 +273,7 @@
                     enableClassifications.push({
                         ...classification,
                         'bk_objects': classification['bk_objects'].filter(model => {
-                            return !model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                            return !model.bk_ispaused && !model.bk_ishidden
                         })
                     })
                 })
@@ -283,7 +283,7 @@
                 const disabledClassifications = []
                 this.classifications.forEach(classification => {
                     const disabledModels = classification['bk_objects'].filter(model => {
-                        return model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                        return model.bk_ispaused && !model.bk_ishidden
                     })
                     if (disabledModels.length) {
                         disabledClassifications.push({

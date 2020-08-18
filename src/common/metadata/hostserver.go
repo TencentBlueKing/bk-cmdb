@@ -65,7 +65,6 @@ const (
 type HostList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
-	SupplierID    int64                            `json:"bk_supplier_id"`
 	InputType     HostInputType                    `json:"input_type"`
 }
 
@@ -92,7 +91,6 @@ type AddHostFromAgentHostList struct {
 type HostSyncList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
-	SupplierID    int64                            `json:"bk_supplier_id"`
 	ModuleID      []int64                          `json:"bk_module_id"`
 	InputType     HostInputType                    `json:"input_type"`
 }
@@ -367,6 +365,10 @@ func (option ListHosts) Validate() (errKey string, err error) {
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
 			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
+	}
+
+	if len(option.Fields) == 0 {
+		return "fields", errors.New(common.CCErrCommParamsNeedSet, "fields can't be empty")
 	}
 
 	return "", nil

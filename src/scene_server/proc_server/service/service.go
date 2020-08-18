@@ -210,10 +210,10 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
-	esbAddr, addrOk := current.ConfigMap["esb.addr"]
-	esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
-	esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
-	if addrOk && appCodeOk && appSecretOk {
+	esbAddr, addrErr := cfnc.String("procServer.esb.addr")
+	esbAppCode, appCodeErr := cfnc.String("procServer.esb.appCode")
+	esbAppSecret, appSecretErr := cfnc.String("procServer.esb.appSecret")
+	if addrErr == nil && appCodeErr == nil  && appSecretErr == nil {
 		go func() {
 			ps.EsbConfigChn <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
 		}()
@@ -221,25 +221,29 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 
 	ps.Config = &options.Config{}
 
-	hostInstPrefix := "host instance"
+	hostInstPrefix := "procServer.host-instance"
 	procHostInstConfig := &ps.procHostInstConfig
-	if val, ok := current.ConfigMap[hostInstPrefix+".maxEventCount"]; ok {
-		eventCount, err := util.GetIntByInterface(val)
+	maxEventCountVal, err := cfnc.String(hostInstPrefix + ".maxEventCount")
+	if err == nil {
+		eventCount, err := util.GetIntByInterface(maxEventCountVal)
 		if nil == err {
 			procHostInstConfig.MaxEventCount = eventCount
 		}
 	}
-	if val, ok := current.ConfigMap[hostInstPrefix+".maxModuleIDCount"]; ok {
-		midCount, err := util.GetIntByInterface(val)
+
+	maxModuleIDCountVal, err := cfnc.String(hostInstPrefix + ".maxModuleIDCount")
+	if err == nil {
+		midCount, err := util.GetIntByInterface(maxModuleIDCountVal)
 		if nil == err {
 			procHostInstConfig.MaxRefreshModuleCount = midCount
 		}
 	}
-	if val, ok := current.ConfigMap[hostInstPrefix+".getModuleIDInterval"]; ok {
-		getMidInterval, err := util.GetIntByInterface(val)
+
+	getModuleIDInterval, err := cfnc.String(hostInstPrefix + ".getModuleIDInterval")
+	if err == nil {
+		getMidInterval, err := util.GetIntByInterface(getModuleIDInterval)
 		if nil == err {
 			procHostInstConfig.GetModuleIDInterval = time.Duration(getMidInterval) * time.Second
 		}
 	}
-	ps.ConfigMap = current.ConfigMap
 }

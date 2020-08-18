@@ -8,7 +8,7 @@ export const IAM_VIEWS = {
     // 通用模型列表
     INSTANCE_MODEL: 'sys_instance_model',
     // 动态分组列表
-    CUSTOM_QUERY: 'biz_custom_model',
+    CUSTOM_QUERY: 'biz_custom_query',
     // 业务列表
     BIZ: 'biz',
     // 主机列表

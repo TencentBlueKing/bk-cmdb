@@ -124,7 +124,7 @@ func (sto *setTemplateOperation) ModifySetTemplateSyncStatus(kit *rest.Kit, setI
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if cnt <= 0 {
-		blog.Errorf("ModifyStatus failed, not find set template sync info, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
+		blog.Errorf("ModifyStatus failed, not find set template sync info, id: %d, status: %s, rid: %s", setID, sysncStatus, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 

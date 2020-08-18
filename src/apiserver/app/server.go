@@ -105,7 +105,6 @@ type APIServer struct {
 
 func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) {
 	h.configReady = true
-	h.Config = current.ConfigMap
 }
 
 const waitForSeconds = 180

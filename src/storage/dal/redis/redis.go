@@ -30,20 +30,6 @@ type Config struct {
 	MaxOpenConns int
 }
 
-// ParseConfigFromKV returns new config
-func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
-	poolSize, _ := strconv.Atoi(prefix + ".maxOpenConns")
-
-	return Config{
-		Address:      conifgmap[prefix+".host"],
-		Password:     conifgmap[prefix+".pwd"],
-		Database:     conifgmap[prefix+".database"],
-		MasterName:   conifgmap[prefix+".masterName"],
-		Enable:       conifgmap[prefix+".enable"],
-		MaxOpenConns: poolSize,
-	}
-}
-
 // NewFromConfig returns new redis client from config
 func NewFromConfig(cfg Config) (*redis.Client, error) {
 	dbNum, err := strconv.Atoi(cfg.Database)

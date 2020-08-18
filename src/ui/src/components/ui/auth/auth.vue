@@ -20,8 +20,7 @@
         props: {
             ignore: Boolean,
             auth: {
-                type: [Object, Array],
-                required: true
+                type: [Object, Array]
             },
             tag: {
                 type: String,

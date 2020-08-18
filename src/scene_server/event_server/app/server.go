@@ -14,7 +14,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -124,12 +123,11 @@ var configLock sync.Mutex
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	configLock.Lock()
 	defer configLock.Unlock()
-	if len(current.ConfigMap) > 0 {
+	if len(current.ConfigData) > 0 {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
 		// ignore err, cause ConfigMap is map[string]string
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
-		blog.Infof("config updated: \n%s", out)
+		blog.Infof("config updated: \n%s", string(current.ConfigData))
 	}
 }

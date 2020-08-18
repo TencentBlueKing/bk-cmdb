@@ -29,35 +29,45 @@ import (
 )
 
 // list resource instances that user is privileged to access by policy
-func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, req types.PullResourceReq) (*types.ListInstanceResult, error) {
-	filter, ok := req.Filter.(types.ListInstanceByPolicyFilter)
-	if !ok {
-		blog.ErrorJSON("request filter %s is not the right type for list_instance_by_policy method, rid: %s", req.Filter, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
-	}
-	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
-	}
-	collection := getResourceTableName(req.Type)
-	idField := GetResourceIDField(req.Type)
-	nameField := GetResourceNameField(req.Type)
+func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+	page types.Page, extraCond map[string]interface{}) (*types.ListInstanceResult, error) {
+
+	collection := getResourceTableName(resourceType)
+	idField := GetResourceIDField(resourceType)
+	nameField := GetResourceNameField(resourceType)
 	if collection == "" || idField == "" || nameField == "" {
-		blog.Errorf("request type %s is invalid", req.Type)
+		blog.Errorf("request type %s is invalid", resourceType)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
 	}
-	cond, err := lgc.parseFilterToMongo(kit.Ctx, kit.Header, filter.Expression, req.Type)
+
+	cond, err := lgc.parseFilterToMongo(kit.Ctx, kit.Header, filter.Expression, resourceType)
 	if err != nil {
 		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", filter.Expression, err.Error(), kit.Rid)
 		return nil, err
 	}
+
 	if cond == nil {
 		return &types.ListInstanceResult{
 			Count:   0,
 			Results: make([]types.InstanceResource, 0),
 		}, nil
 	}
-	return lgc.ListInstance(kit, cond, req.Type, req.Page)
+
+	return lgc.listInstance(kit, cond, resourceType, page, extraCond)
+}
+
+func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListInstanceByPolicyFilter, error) {
+	filter, ok := req.Filter.(types.ListInstanceByPolicyFilter)
+	if !ok {
+		blog.ErrorJSON("request filter %s is not the right type for list_instance_by_policy method, rid: %s", req.Filter, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
+	}
+
+	if req.Page.IsIllegal() {
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
+	}
+	return &filter, nil
 }
 
 // list resource instances that user is privileged to access by policy
@@ -84,7 +94,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	}
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
 	header.Add("Content-Type", "application/json")
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)

@@ -54,7 +54,9 @@
                 prop="operation"
                 :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_RELATION, relation: [row.id] }">
+                    <cmdb-auth class="mr10"
+                        :auth="{ type: $OPERATION.U_RELATION, relation: [row.id] }"
+                        :ignore="row.ispre">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
@@ -63,7 +65,9 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth :auth="{ type: $OPERATION.D_RELATION, relation: [row.id] }">
+                    <cmdb-auth
+                        :auth="{ type: $OPERATION.D_RELATION, relation: [row.id] }"
+                        :ignore="row.ispre">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
