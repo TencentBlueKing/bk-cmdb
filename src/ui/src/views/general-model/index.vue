@@ -36,15 +36,12 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.D_INST, relation: [model.id] }">
-                    <bk-button slot-scope="{ disabled }"
-                        hover-theme="danger"
-                        class="models-button button-delete"
-                        :disabled="!table.checked.length || disabled"
-                        @click="handleMultipleDelete">
-                        {{$t('删除')}}
-                    </bk-button>
-                </cmdb-auth>
+                <bk-button class="models-button button-delete fl mr10"
+                    hover-theme="danger"
+                    :disabled="!table.checked.length"
+                    @click="handleMultipleDelete">
+                    {{$t('删除')}}
+                </bk-button>
             </div>
             <div class="options-button fr">
                 <icon-button class="ml5"
