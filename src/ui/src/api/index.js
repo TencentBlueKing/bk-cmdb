@@ -275,6 +275,7 @@ async function download (options = {}) {
         return Promise.resolve(response)
     } catch (e) {
         $error('Download failure')
+        console.error(e)
         return Promise.reject(e)
     }
 }

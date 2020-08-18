@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 func (a *apiServer) Client() rest.ClientInterface {
@@ -71,7 +70,7 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params map
 	return
 }
 
-func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
 	subPath := "/find/instance/object/%s"
@@ -237,24 +236,6 @@ func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, re
 		WithContext(ctx).
 		Body(request).
 		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	return
-}
-
-func (a *apiServer) SearchInsts(ctx context.Context, h http.Header, objID string, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
-	resp = new(metadata.ResponseInstData)
-	input := &metadata.SearchAssociationInstRequest{
-		Condition: cond.ToMapStr(),
-	}
-	subPath := "/inst/search/owner/%s/object/%s"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(input).
-		SubResourcef(subPath, util.GetOwnerID(h), objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
