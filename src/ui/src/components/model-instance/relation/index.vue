@@ -170,7 +170,7 @@
             },
             getObjectAssociation (condition, config) {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({ condition }),
+                    params: { condition },
                     config
                 })
             },

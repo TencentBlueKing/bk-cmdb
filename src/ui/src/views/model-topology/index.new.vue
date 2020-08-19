@@ -213,11 +213,12 @@
                 },
                 loading: true,
                 isTopoHover: false,
-                createAuth: false
+                createAuth: false,
+                hideModelConfigKey: 'model_custom_hide_models'
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected', 'supplierAccount', 'userName', 'mainFullScreen']),
+            ...mapGetters(['supplierAccount', 'userName', 'mainFullScreen']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', [
@@ -238,9 +239,6 @@
                     })
                     return classify
                 })
-            },
-            hideModelConfigKey () {
-                return `${this.userName}_model_${this.isAdminView ? 'adminView' : this.bizId}_hide_models`
             },
             hideModels () {
                 return this.usercustom[this.hideModelConfigKey] || {}
@@ -654,7 +652,7 @@
                 const [asstData, mainLineData, nodeData] = await Promise.all([
                     this.getAssociationType(),
                     this.getMainLineModel(),
-                    this.$store.dispatch('globalModels/searchModelAction', this.$injectMetadata())
+                    this.$store.dispatch('globalModels/searchModelAction')
                 ])
 
                 this.associationList = asstData
@@ -1059,7 +1057,7 @@
                 this.slider.isShow = false
             },
             canAddBusinessLevel (model) {
-                return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             isMainNode (model) {
                 const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
@@ -1139,7 +1137,7 @@
             async handleCreateBusinessLevel (data) {
                 try {
                     await this.createMainlineObject({
-                        params: this.$injectMetadata({
+                        params: {
                             'bk_asst_obj_id': this.addBusinessLevel.parent['bk_obj_id'],
                             'bk_classification_id': 'bk_biz_topo',
                             'bk_obj_icon': data['bk_obj_icon'],
@@ -1147,12 +1145,12 @@
                             'bk_obj_name': data['bk_obj_name'],
                             'bk_supplier_account': this.supplierAccount,
                             'creator': this.userName
-                        })
+                        }
                     })
 
                     // 更新分组数据
                     await this.searchClassificationsObjects({
-                        params: this.$injectMetadata({}),
+                        params: {},
                         config: {
                             clearCache: true,
                             requestId: 'post_searchClassificationsObjects'

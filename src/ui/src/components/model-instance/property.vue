@@ -131,10 +131,6 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-            isPublicModel () {
-                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
-                return !this.$tools.getMetadataBiz(model)
-            },
             authData () {
                 if (this.resourceType === 'business') {
                     return this.INST_AUTH.U_BUSINESS
@@ -191,7 +187,7 @@
                         await this.updateInst({
                             objId: this.instState.bk_obj_id,
                             instId: this.instState.bk_inst_id,
-                            params: this.$injectMetadata(values, { inject: !this.isPublicModel })
+                            params: values
                         })
                     }
 

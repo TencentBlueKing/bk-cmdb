@@ -5,7 +5,6 @@ import store from './store'
 import i18n from './i18n'
 import cmdbRequestMixin from './mixins/request'
 import cmdbAuthMixin from './mixins/auth'
-import cmdbInjectMixin from './mixins/inject'
 import cmdbAppMixin from './mixins/app.js'
 import cmdbFormatter from './filters/formatter.js'
 import cmdbUnitFilter from './filters/unit.js'
@@ -26,7 +25,6 @@ Vue.use(cmdbUI)
 Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)
 Vue.mixin(cmdbAuthMixin)
-Vue.mixin(cmdbInjectMixin)
 Vue.mixin(cmdbAppMixin)
 Vue.filter('formatter', cmdbFormatter)
 Vue.filter('unit', cmdbUnitFilter)

@@ -124,6 +124,7 @@
     import theFieldBool from './bool'
     import theConfig from './config'
     import { mapGetters, mapActions } from 'vuex'
+    import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
     export default {
         components: {
             theFieldChar,
@@ -215,12 +216,12 @@
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
-            ...mapGetters('objectModel', [
-                'activeModel',
-                'isPublicModel',
-                'isInjectable'
-            ]),
+            ...mapGetters(['supplierAccount', 'userName']),
+            ...mapGetters('objectModel', ['activeModel']),
+            isGlobalView () {
+                const topRoute = this.$route.matched[0]
+                return topRoute ? topRoute.name !== MENU_BUSINESS : true
+            },
             fieldType () {
                 const {
                     bk_property_type: type
@@ -320,12 +321,13 @@
                 if (this.isEditField) {
                     const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
                     const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
+                    if (!this.isGlobalView) {
+                        params.bk_biz_id = this.bizId
+                    }
                     await this[action]({
                         bizId: this.bizId,
                         id: this.field.id,
-                        params: this.$injectMetadata(params, {
-                            clone: true, inject: this.isInjectable
-                        }),
+                        params: params,
                         config: {
                             requestId: 'updateObjectAttribute'
                         }
@@ -335,7 +337,7 @@
                         this.$http.cancelCache('getHostPropertyList')
                     })
                 } else {
-                    const groupId = (this.isPublicModel && !this.isAdminView) ? 'bizdefault' : 'default'
+                    const groupId = this.isGlobalView ? 'default' : 'bizdefault'
                     const otherParams = {
                         creator: this.userName,
                         bk_property_group: this.group.bk_group_id || groupId,
@@ -343,14 +345,16 @@
                         bk_supplier_account: this.supplierAccount
                     }
                     const action = this.customObjId ? 'createBizObjectAttribute' : 'createObjectAttribute'
+                    const params = {
+                        ...this.fieldInfo,
+                        ...otherParams
+                    }
+                    if (!this.isGlobalView) {
+                        params.bk_biz_id = this.bizId
+                    }
                     await this[action]({
                         bizId: this.bizId,
-                        params: this.$injectMetadata({
-                            ...this.fieldInfo,
-                            ...otherParams
-                        }, {
-                            inject: this.isInjectable
-                        }),
+                        params: params,
                         config: {
                             requestId: 'createObjectAttribute'
                         }

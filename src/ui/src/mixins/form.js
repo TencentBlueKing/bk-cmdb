@@ -30,20 +30,20 @@ export default {
     computed: {
         $sortedGroups () {
             const publicGroups = []
-            const metadataGroups = []
+            const bizCustomGroups = []
             this.propertyGroups.forEach(group => {
-                if (this.$tools.getMetadataBiz(group)) {
-                    metadataGroups.push(group)
+                if (group.hasOwnProperty('bk_biz_id') && group.bk_biz_id > 0) {
+                    bizCustomGroups.push(group)
                 } else {
                     publicGroups.push(group)
                 }
             })
             const sortKey = 'bk_group_index'
             publicGroups.sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey])
-            metadataGroups.sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey])
+            bizCustomGroups.sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey])
             const allGroups = [
                 ...publicGroups,
-                ...metadataGroups
+                ...bizCustomGroups
             ]
             allGroups.forEach((group, index) => {
                 group.bk_group_index = index

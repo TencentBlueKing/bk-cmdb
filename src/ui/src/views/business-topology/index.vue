@@ -126,12 +126,13 @@
             getProperties (models) {
                 return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
                     injectId: 'host',
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_obj_id: {
                             $in: models.map(model => model.bk_obj_id)
                         },
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: this.request.properties
                     }

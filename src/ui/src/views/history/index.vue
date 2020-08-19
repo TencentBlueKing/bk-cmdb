@@ -91,13 +91,13 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             customColumns () {
                 const customKeyMap = {
-                    [this.objId]: `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`,
-                    'host': `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                    [this.objId]: `${this.objId}_custom_table_columns`,
+                    'host': 'host_resource_custom_table_columns'
                 }
                 return this.usercustom[customKeyMap[this.objId]] || []
             },
@@ -171,10 +171,10 @@
             try {
                 this.setBreadcrumbs()
                 this.properties = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                    params: {
                         bk_obj_id: this.objId,
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`
                     }

@@ -1,4 +1,5 @@
 import RouterQuery from '@/router/query'
+import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 export default {
     props: {
         properties: {
@@ -21,6 +22,10 @@ export default {
         }
     },
     computed: {
+        isGlobalView () {
+            const topRoute = this.$route.matched[0]
+            return topRoute ? topRoute.name !== MENU_BUSINESS : true
+        },
         saveAuth () {
             return this.selection.map(({ host, biz, module }) => {
                 const isBizHost = biz[0].default === 0
@@ -102,7 +107,7 @@ export default {
         getPropertyGroups () {
             return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
                 objId: 'host',
-                params: this.$injectMetadata()
+                params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId) }
             })
         }
     }

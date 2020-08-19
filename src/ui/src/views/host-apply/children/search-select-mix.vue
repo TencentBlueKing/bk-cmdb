@@ -22,6 +22,7 @@
 <script>
     import TIMEZONE from '@/components/ui/form/timezone.json'
     import Bus from '@/utils/bus'
+    import { mapGetters } from 'vuex'
     export default {
         components: {},
         data () {
@@ -33,6 +34,9 @@
                 properties: [],
                 currentMenu: null
             }
+        },
+        computed: {
+            ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
             searchValue (searchValue) {
@@ -49,7 +53,7 @@
         methods: {
             async initOptions () {
                 try {
-                    const properties = await this.$store.dispatch('hostApply/getProperties', { params: this.$injectMetadata() })
+                    const properties = await this.$store.dispatch('hostApply/getProperties', { params: { bk_biz_id: this.bizId } })
                     const availableProperties = properties.filter(property => property.host_apply_enabled)
                     this.searchOptions = availableProperties.map(property => {
                         const type = property.bk_property_type

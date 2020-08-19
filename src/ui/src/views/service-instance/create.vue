@@ -222,7 +222,10 @@
                 try {
                     this.$store.commit('setGlobalLoading', this.hasScrollbar)
                     const data = await this.$store.dispatch('serviceInstance/createProcServiceInstancePreview', {
-                        params: this.$injectMetadata(this.confirmParams, { injectBizId: true }),
+                        params: {
+                            ...this.confirmParams,
+                            bk_biz_id: this.bizId
+                        },
                         config: {
                             requestId: this.request.preview,
                             globalPermission: false
@@ -339,7 +342,8 @@
                     const confirmTable = this.$refs.confirmTable
                     const withTemplate = this.withTemplate
                     const params = {
-                        bk_module_id: this.moduleId
+                        bk_module_id: this.moduleId,
+                        bk_biz_id: this.bizId
                     }
                     if (serviceInstanceTables) {
                         params.instances = serviceInstanceTables.map(table => {
@@ -360,7 +364,7 @@
                     }
 
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-                        params: this.$injectMetadata(params, { injectBizId: true })
+                        params: params
                     })
 
                     this.$success(this.$t('添加成功'))

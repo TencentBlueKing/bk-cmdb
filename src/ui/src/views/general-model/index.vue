@@ -200,8 +200,6 @@
             <cmdb-import v-if="importSlider.show" slot="content"
                 :template-url="url.template"
                 :import-url="url.import"
-                :download-payload="url.downloadPayload"
-                :import-payload="url.importPayload"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
@@ -276,7 +274,7 @@
         },
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
@@ -287,7 +285,7 @@
                 return this.getModelById(this.objId) || {}
             },
             customConfigKey () {
-                return `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                return `${this.objId}_custom_table_columns`
             },
             customColumns () {
                 return this.usercustom[this.customConfigKey] || []
@@ -300,14 +298,8 @@
                 return {
                     import: prefix + 'import',
                     export: prefix + 'export',
-                    template: `${window.API_HOST}importtemplate/${this.objId}`,
-                    downloadPayload: this.$injectMetadata({}, { inject: !this.isPublicModel }),
-                    importPayload: this.$injectMetadata({}, { inject: !this.isPublicModel })
+                    template: `${window.API_HOST}importtemplate/${this.objId}`
                 }
-            },
-            isPublicModel () {
-                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
-                return !this.$tools.getMetadataBiz(model)
             },
             parentLayers () {
                 return [{
@@ -387,10 +379,10 @@
                     this.resetData()
                     this.properties = await this.searchObjectAttribute({
                         injectId: this.objId,
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
-                        }, { inject: !this.isPublicModel }),
+                        },
                         config: {
                             requestId: `post_searchObjectAttribute_${this.objId}`,
                             fromCache: false
@@ -441,7 +433,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata({}, { inject: !this.isPublicModel }),
+                    params: {},
                     config: {
                         fromCache: false,
                         requestId: `post_searchGroup_${this.objId}`
@@ -454,9 +446,7 @@
             getObjectUnique () {
                 return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
                     objId: this.objId,
-                    params: this.$injectMetadata({}, {
-                        inject: !this.isPublicModel
-                    })
+                    params: {}
                 }).then(data => {
                     this.objectUnique = data
                     return data
@@ -519,7 +509,7 @@
             getInstList (config = { cancelPrevious: true }) {
                 return this.searchInst({
                     objId: this.objId,
-                    params: this.$injectMetadata(this.getSearchParams(), { inject: !this.isPublicModel }),
+                    params: this.getSearchParams(),
                     config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
@@ -615,10 +605,7 @@
                     confirmFn: () => {
                         this.deleteInst({
                             objId: this.objId,
-                            instId: inst['bk_inst_id'],
-                            config: {
-                                data: this.$injectMetadata({}, { inject: !this.isPublicModel })
-                            }
+                            instId: inst['bk_inst_id']
                         }).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('删除成功'))
@@ -634,7 +621,7 @@
                     this.updateInst({
                         objId: this.objId,
                         instId: originalValues['bk_inst_id'],
-                        params: this.$injectMetadata(values, { inject: !this.isPublicModel })
+                        params: values
                     }).then(() => {
                         this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.handleCancel()
@@ -646,7 +633,7 @@
                 } else {
                     delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
                     this.createInst({
-                        params: this.$injectMetadata(values, { inject: !this.isPublicModel }),
+                        params: values,
                         objId: this.objId
                     }).then(() => {
                         RouterQuery.set({
@@ -671,14 +658,14 @@
             handleMultipleSave (values) {
                 this.batchUpdateInst({
                     objId: this.objId,
-                    params: this.$injectMetadata({
+                    params: {
                         update: this.table.checked.map(instId => {
                             return {
                                 'datas': values,
                                 'inst_id': instId
                             }
                         })
-                    }, { inject: !this.isPublicModel }),
+                    },
                     config: {
                         requestId: `${this.objId}BatchUpdate`
                     }
@@ -706,11 +693,11 @@
                 this.batchDeleteInst({
                     objId: this.objId,
                     config: {
-                        data: this.$injectMetadata({
+                        data: {
                             'delete': {
                                 'inst_ids': this.table.checked
                             }
-                        }, { inject: !this.isPublicModel })
+                        }
                     }
                 }).then(() => {
                     this.$success(this.$t('删除成功'))
@@ -768,9 +755,6 @@
                 const customFields = this.usercustom[this.customConfigKey]
                 if (customFields) {
                     data.append('export_custom_fields', customFields)
-                }
-                if (!this.isPublicModel) {
-                    data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
                 }
                 this.$http.download({
                     url: this.url.export,

@@ -133,7 +133,7 @@
                     operator: '$eq',
                     value: this.id
                 }
-                return this.$injectMetadata({
+                return {
                     bk_biz_id: this.business,
                     condition: ['biz', 'set', 'module', 'host'].map(model => {
                         return {
@@ -143,14 +143,12 @@
                         }
                     }),
                     ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
-                })
+                }
             },
             async getProperties () {
                 try {
                     const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                        params: this.$injectMetadata({
-                            bk_obj_id: 'host'
-                        })
+                        params: this.business > 0 ? { bk_biz_id: this.business } : {}
                     })
                     this.$store.commit('hostDetails/setHostProperties', properties)
                 } catch (e) {
@@ -162,7 +160,7 @@
                 try {
                     const propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
                         objId: 'host',
-                        params: this.$injectMetadata()
+                        params: this.business > 0 ? { bk_biz_id: this.business } : {}
                     })
                     this.$store.commit('hostDetails/setHostPropertyGroups', propertyGroups)
                 } catch (e) {

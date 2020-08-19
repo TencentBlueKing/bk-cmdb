@@ -149,12 +149,6 @@ const checkAvailable = (to, from) => {
     return true
 }
 
-// 因产品形态调整，去掉了管理模式与业务模式，为避免修改过多逻辑，此处做兼容处理
-const setAdminView = to => {
-    const isAdminView = to.matched.length && to.matched[0].name !== MENU_BUSINESS
-    router.app.$store.commit('setAdminView', isAdminView)
-}
-
 const setupStatus = {
     preload: true,
     afterload: true
@@ -182,7 +176,6 @@ router.beforeEach((to, from, next) => {
             if (!shouldContinue) {
                 return false
             }
-            setAdminView(to)
 
             const isAvailable = checkAvailable(to, from)
             if (!isAvailable) {

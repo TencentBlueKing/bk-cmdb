@@ -278,7 +278,7 @@
                     }
                 })
                 return this.$store.dispatch('hostSearch/searchHost', {
-                    params: this.$injectMetadata({
+                    params: {
                         bk_biz_id: -1,
                         condition,
                         id: {
@@ -290,7 +290,7 @@
                             ...this.page,
                             sort: 'bk_host_id'
                         }
-                    }),
+                    },
                     config
                 }).then(data => {
                     return {

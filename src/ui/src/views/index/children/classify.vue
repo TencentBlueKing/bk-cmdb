@@ -14,13 +14,7 @@
                         <div class="model-info"
                             :title="model.bk_obj_name"
                             @click="handleClick(model)">
-                            <i :class="[
-                                'model-icon',
-                                model.bk_obj_icon,
-                                {
-                                    'is-custom': isCustomModel(model)
-                                }
-                            ]">
+                            <i :class="['model-icon', model.bk_obj_icon]">
                             </i>
                             <span class="model-name">{{model.bk_obj_name}}</span>
                             <i
@@ -48,7 +42,6 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
             ...mapGetters('index', ['showClassify']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectModelClassify', [
@@ -69,12 +62,6 @@
             }
         },
         methods: {
-            isCustomModel (model) {
-                if (this.isAdminView) {
-                    return model.ispre
-                }
-                return !!this.$tools.getMetadataBiz(model)
-            },
             isCollected (model) {
                 return this.availableCollectedData.includes(model.id)
             },

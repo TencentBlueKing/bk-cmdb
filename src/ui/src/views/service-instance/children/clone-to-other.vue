@@ -123,8 +123,9 @@
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
-                        params: this.$injectMetadata({
+                        params: {
                             name: this.module.bk_module_name,
+                            bk_biz_id: this.bizId,
                             bk_module_id: this.moduleId,
                             instances: serviceInstanceTables.map(table => {
                                 return {
@@ -136,7 +137,7 @@
                                     })
                                 }
                             })
-                        }, { injectBizId: true })
+                        }
                     })
                     this.$success(this.$t('克隆成功'))
                     this.handleBackToModule()
