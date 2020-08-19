@@ -50,25 +50,15 @@ func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 
 func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
-	meta := &struct {
-		Metadata metadata.Metadata `json:"metadata"`
-		BizID    int64             `json:"bk_biz_id"`
+	biz := &struct {
+		BizID int64 `json:"bk_biz_id"`
 	}{}
-	if err := ctx.DecodeInto(meta); err != nil {
+	if err := ctx.DecodeInto(biz); err != nil {
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-	}
-	bizID := meta.BizID
-	if bizID == 0 {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(meta.Metadata)
-		if err != nil {
-			blog.Errorf("get service category list failed, parse biz id from metadata failed, metadata: %+v, err: %+v, rid: %s", meta.Metadata, err, rid)
-			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
-		}
 	}
 
 	listOption := metadata.ListServiceCategoriesOption{
-		BusinessID:     bizID,
+		BusinessID:     biz.BizID,
 		WithStatistics: withStatistics,
 	}
 	/*
@@ -110,18 +100,8 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service category, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	newCategory := &metadata.ServiceCategory{
-		BizID:    bizID,
+		BizID:    input.BizID,
 		Name:     input.Name,
 		ParentID: input.ParentID,
 	}

@@ -20,7 +20,6 @@ import (
 
 type ChartConfig struct {
 	ConfigID   uint64 `json:"config_id" bson:"config_id"`
-	Metadata   `field:"metadata" json:"metadata" bson:"metadata"`
 	ReportType string `json:"report_type" bson:"report_type"`
 	Name       string `json:"name" bson:"name"`
 	CreateTime Time   `json:"create_time" bson:"create_time"`

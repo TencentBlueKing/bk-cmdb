@@ -89,10 +89,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 					common.BKDBNE: model.ID,
 				},
 			}
-			bizFilter := metadata.PublicAndBizCondition(model.Metadata)
-			for key, value := range bizFilter {
-				modelNameUniqueFilter[key] = value
-			}
+
 			sameNameCount, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 			if err != nil {
 				blog.Errorf("check whether same name model exists failed, name: %s, filter: %+v, err: %s, rid: %s", modelName, modelNameUniqueFilter, err.Error(), kit.Rid)

@@ -17,12 +17,8 @@ import (
 	"regexp"
 
 	"configcenter/src/ac/meta"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/tidwall/gjson"
 )
 
 type InstanceIDGetter func(request *RequestContext, re *regexp.Regexp) ([]int64, error)
@@ -62,7 +58,7 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 		if item.BizIDGetter != nil {
 			bizID, err = item.BizIDGetter(request, item)
 			if err != nil {
-				blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
+				blog.Warnf("get business id failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
 				return nil, err
 			}
 		}
@@ -80,7 +76,7 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 		} else {
 			ids, err := item.InstanceIDGetter(request, item.Regex)
 			if err != nil {
-				blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
+				blog.Warnf("get business id failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
 				return nil, err
 			}
 			for _, id := range ids {
@@ -101,17 +97,7 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 }
 
 func DefaultBizIDGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
-	bizID = gjson.GetBytes(request.Body, common.BKAppIDField).Int()
-	if bizID != 0 {
-		return bizID, nil
-	}
-
-	bizID, err = metadata.BizIDFromMetadata(request.Metadata)
-	if err != nil {
-		blog.Warnf("get business id from metadata failed, name: %s, err: %v, rid: %s", config.Name, err, request.Rid)
-		return 0, err
-	}
-	return bizID, nil
+	return request.BizID, nil
 }
 
 var (

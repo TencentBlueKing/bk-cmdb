@@ -10,33 +10,28 @@
  * limitations under the License.
  */
 
-package local
+package util
 
 import (
-	"testing"
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
+	)
 
-	"configcenter/src/common/metadata"
-
-	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
-)
-
-func TestDecodeSubMap(t *testing.T) {
-
-	ts := metadata.Now()
-	attr := metadata.Attribute{
-		BizID:      111,
-		LastTime:   &ts,
-		CreateTime: &ts,
+// AddModelBizIDConditon add model bizID condition according to bizID value
+func AddModelBizIDConditon(cond mapstr.MapStr, modelBizID int64) {
+	if modelBizID > 0 {
+		// special business model and global shared model
+		cond[common.BKDBOR] = []mapstr.MapStr{
+			{common.BKAppIDField: modelBizID},
+			{common.BKAppIDField: 0},
+			{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
+		}
+	} else {
+		// global shared model
+		cond[common.BKDBOR] = []mapstr.MapStr{
+			{common.BKAppIDField: modelBizID},
+			{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
+		}
 	}
-
-	bsonAttr, err := bson.Marshal(attr)
-	require.NoError(t, err)
-
-	newAttr := &metadata.Attribute{}
-	err = bson.Unmarshal(bsonAttr, newAttr)
-	require.NoError(t, err)
-
-	require.Equal(t, attr.BizID, newAttr.BizID)
-
+	delete(cond, common.BKAppIDField)
 }

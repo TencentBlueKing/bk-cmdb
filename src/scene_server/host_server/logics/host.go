@@ -336,7 +336,7 @@ func (lgc *Logics) GetAllHostIDByCond(ctx context.Context, cond metadata.HostMod
 }
 
 // DeleteHostBusinessAttributes delete host business private property
-func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr []int64, businessMedatadata *metadata.Metadata) error {
+func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr []int64, bizID int64) error {
 
 	return nil
 }

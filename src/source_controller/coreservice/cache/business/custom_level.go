@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	meta "configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
@@ -279,9 +278,6 @@ func (m *customLevel) onMainlineTopologyListDone() {
 // 3. upsert the object instance oid relation for delete it usage.
 func (m *customLevel) onUpsertCustomInstance(e *types.Event) {
 	blog.V(4).Infof("received biz custom level instance upsert event, detail: %s", e.String())
-
-	// just help us to know that we used metadata here.
-	_ = meta.Metadata{}
 
 	fields := gjson.GetManyBytes(e.DocBytes, "bk_obj_id", "bk_inst_id", "bk_inst_name", "metadata.label.bk_biz_id", "bk_parent_id")
 	objID := fields[0].String()

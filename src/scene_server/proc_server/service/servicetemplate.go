@@ -27,18 +27,8 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := option.BizID
-	if bizID == 0 && option.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*option.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	newTemplate := &metadata.ServiceTemplate{
-		BizID:             bizID,
+		BizID:             option.BizID,
 		Name:              option.Name,
 		ServiceCategoryID: option.ServiceCategoryID,
 		SupplierAccount:   ctx.Kit.SupplierAccount,
@@ -103,15 +93,6 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := option.BizID
-	if bizID == 0 && option.Metadata != nil {
-		_, err := metadata.BizIDFromMetadata(*option.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	updateParam := &metadata.ServiceTemplate{
 		ID:                option.ID,
 		Name:              option.Name,
@@ -142,15 +123,6 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
 
 	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
@@ -158,7 +130,7 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	option := metadata.ListServiceTemplateOption{
-		BusinessID:        bizID,
+		BusinessID:        input.BizID,
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 	}
@@ -178,23 +150,13 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
 		return
 	}
 
 	option := metadata.ListServiceTemplateOption{
-		BusinessID:        bizID,
+		BusinessID:        input.BizID,
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 		Search:            input.Search,
@@ -254,16 +216,6 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
-	}
-
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service template, but get business id failed, err: %v", err)
-			return
-		}
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {

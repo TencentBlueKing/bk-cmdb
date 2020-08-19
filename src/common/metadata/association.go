@@ -120,7 +120,6 @@ type SearchAssociationInstResult struct {
 }
 
 type CreateAssociationInstRequest struct {
-	*Metadata    `field:"metadata" json:"metadata" bson:"metadata"`
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
 	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
 	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
@@ -187,8 +186,6 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-	//	define the metadata of association kind
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) {
@@ -249,9 +246,6 @@ type Association struct {
 	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
-
-	//	define the metadata of association
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -323,8 +317,8 @@ type InstAsst struct {
 	// association kind id
 	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
 
-	//	define the metadata of assocication kind
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	// BizID the business ID
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 }
 
 func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {

@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"strconv"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
@@ -92,12 +91,6 @@ func (m *module) validBizSetID(kit *rest.Kit, bizID int64, setID int64) error {
 	cond.Field(common.BKSetIDField).Eq(setID)
 	or := cond.NewOR()
 	or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
-	meta := metadata.Metadata{
-		Label: map[string]string{
-			common.BKAppIDField: strconv.FormatInt(bizID, 10),
-		},
-	}
-	or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
 
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
@@ -416,7 +409,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Objec
 	data.Remove(common.BKModuleIDField)
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.MetadataField)
-	updateErr := m.inst.UpdateInst(kit, data, obj, innerCond, -1, nil)
+	updateErr := m.inst.UpdateInst(kit, data, obj, innerCond, -1)
 	if updateErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
 		if exist == false {

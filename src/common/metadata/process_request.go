@@ -12,25 +12,22 @@
 package metadata
 
 type CreateServiceCategoryOption struct {
-	Metadata *Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-	BizID    int64     `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-	Name     string    `field:"name" json:"name,omitempty" bson:"name"`
-	ParentID int64     `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`
+	BizID    int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	Name     string `field:"name" json:"name,omitempty" bson:"name"`
+	ParentID int64  `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`
 }
 
 type CreateServiceTemplateOption struct {
-	Metadata          *Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-	BizID             int64     `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-	Name              string    `field:"name" json:"name,omitempty" bson:"name"`
-	ServiceCategoryID int64     `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
+	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	Name              string `field:"name" json:"name,omitempty" bson:"name"`
+	ServiceCategoryID int64  `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
 }
 
 type UpdateServiceTemplateOption struct {
-	Metadata          *Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-	BizID             int64     `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-	ID                int64     `field:"id" json:"id,omitempty" bson:"id"`
-	Name              string    `field:"name" json:"name,omitempty" bson:"name"`
-	ServiceCategoryID int64     `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
+	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	ID                int64  `field:"id" json:"id,omitempty" bson:"id"`
+	Name              string `field:"name" json:"name,omitempty" bson:"name"`
+	ServiceCategoryID int64  `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
 }
 
 type RemoveFromModuleHost struct {

@@ -104,15 +104,6 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 
-	// ATTENTION: Currently only business dimension isolation is done,
-	//           and there may be isolation requirements for other dimensions in the future.
-	isExist, bizID := inputParam.Spec.Metadata.Label.Get(common.BKAppIDField)
-	if isExist {
-		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
-		_, labelCond := metaCond.Embed(metadata.BKLabel)
-		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
-	}
-
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err.Error())
@@ -127,10 +118,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	modelNameUniqueFilter := map[string]interface{}{
 		common.BKObjNameField: inputParam.Spec.ObjectName,
 	}
-	bizFilter := metadata.PublicAndBizCondition(inputParam.Spec.Metadata)
-	for key, value := range bizFilter {
-		modelNameUniqueFilter[key] = value
-	}
+
 	sameNameCount, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), kit.Rid)
@@ -155,7 +143,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 			return dataResult, err
 		}
 	}
-	
+
 	dataResult.Created.ID = id
 	return dataResult, nil
 }

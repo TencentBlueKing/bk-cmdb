@@ -31,10 +31,10 @@ import (
 
 // SetOperationInterface set operation methods
 type SetOperationInterface interface {
-	CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapstr.MapStr, metaData *metadata.Metadata) (inst.Inst, error)
-	DeleteSet(kit *rest.Kit, obj model.Object, bizID int64, setIDS []int64, metaData *metadata.Metadata) error
+	CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapstr.MapStr) (inst.Inst, error)
+	DeleteSet(kit *rest.Kit, obj model.Object, bizID int64, setIDS []int64) error
 	FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
-	UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64, metaData *metadata.Metadata) error
+	UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64) error
 
 	SetProxy(obj ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface)
 }
@@ -80,7 +80,7 @@ func (s *set) hasHost(kit *rest.Kit, bizID int64, setIDS []int64) (bool, error) 
 	return 0 != len(rsp.Data.Info), nil
 }
 
-func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapstr.MapStr, metaData *metadata.Metadata) (inst.Inst, error) {
+func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKAppIDField, bizID)
 
@@ -143,7 +143,7 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 		return setInstance, err
 	}
 
-	moduleObj, err := s.obj.FindSingleObject(kit, common.BKInnerObjIDModule, metaData)
+	moduleObj, err := s.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to find module object, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return setInstance, err
@@ -167,7 +167,7 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	return setInstance, nil
 }
 
-func (s *set) DeleteSet(kit *rest.Kit, setModel model.Object, bizID int64, setIDS []int64, metaData *metadata.Metadata) error {
+func (s *set) DeleteSet(kit *rest.Kit, setModel model.Object, bizID int64, setIDS []int64) error {
 
 	setCond := condition.CreateCondition()
 
@@ -190,7 +190,7 @@ func (s *set) DeleteSet(kit *rest.Kit, setModel model.Object, bizID int64, setID
 	}
 
 	// clear the module belong to deleted sets
-	moduleObj, err := s.obj.FindSingleObject(kit, common.BKInnerObjIDModule, metaData)
+	moduleObj, err := s.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to find the object , error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
@@ -215,7 +215,7 @@ func (s *set) FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput
 	return s.inst.FindInst(kit, obj, cond, false)
 }
 
-func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64, metaData *metadata.Metadata) error {
+func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64) error {
 
 	innerCond := condition.CreateCondition()
 
@@ -228,5 +228,5 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 	data.Remove(common.BKSetTemplateIDField)
 	data.Remove(common.BKSetTemplateVersionField)
 
-	return s.inst.UpdateInst(kit, data, obj, innerCond, setID, metaData)
+	return s.inst.UpdateInst(kit, data, obj, innerCond, setID)
 }

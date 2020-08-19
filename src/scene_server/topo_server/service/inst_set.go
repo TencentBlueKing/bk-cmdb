@@ -38,10 +38,8 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 
 	type BatchCreateSetRequest struct {
 		// shared fields
-		Metadata          metadata.Metadata `json:"metadata"`
-		BkSupplierAccount string            `json:"bk_supplier_account"`
-
-		Sets []map[string]interface{} `json:"sets"`
+		BkSupplierAccount string                   `json:"bk_supplier_account"`
+		Sets              []map[string]interface{} `json:"sets"`
 	}
 	batchBody := BatchCreateSetRequest{}
 	if err := ctx.DecodeInto(&batchBody); err != nil {
@@ -49,7 +47,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet, &batchBody.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("batch create set failed, get set model failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -64,9 +62,6 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	batchCreateResult := make([]OneSetCreateResult, 0)
 	var firstErr error
 	for idx, set := range batchBody.Sets {
-		if _, ok := set[common.MetadataField]; ok == false {
-			set[common.MetadataField] = batchBody.Metadata
-		}
 		if _, ok := set[common.BkSupplierAccount]; ok == false {
 			set[common.BkSupplierAccount] = batchBody.BkSupplierAccount
 		}
@@ -77,7 +72,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		ctx.Kit.Header = ctx.Kit.NewHeader()
 		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 			var err error
-			result, err = s.createSet(ctx.Kit, bizID, obj, set, &batchBody.Metadata)
+			result, err = s.createSet(ctx.Kit, bizID, obj, set)
 			if err != nil && firstErr == nil {
 				firstErr = err
 			}
@@ -102,13 +97,13 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 
 // CreateSet create a new set
 func (s *Service) CreateSet(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet, dataWithMetadata.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -125,7 +120,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	var resp interface{}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		resp, err = s.createSet(ctx.Kit, bizID, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		resp, err = s.createSet(ctx.Kit, bizID, obj, data)
 		if err != nil {
 			return err
 		}
@@ -139,8 +134,8 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data mapstr.MapStr, metaData *metadata.Metadata) (interface{}, error) {
-	set, err := s.Core.SetOperation().CreateSet(kit, obj, bizID, data, metaData)
+func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data mapstr.MapStr) (interface{}, error) {
+	set, err := s.Core.SetOperation().CreateSet(kit, obj, bizID, data)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +193,6 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 
 	data := struct {
 		operation.OpCondition `json:",inline"`
-		Metadata              *metadata.Metadata `json:"metadata"`
 	}{}
 	if err = ctx.DecodeInto(&data); nil != err {
 		blog.Errorf("[api-set] failed to parse to the operation condition, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
@@ -206,7 +200,7 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet, data.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), ctx.Kit.Rid)
@@ -222,7 +216,7 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
+		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID)
 		if err != nil {
 			return err
 
@@ -258,12 +252,7 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 		return
 	}
 
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet, md.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 
 	if nil != err {
 		blog.Errorf("delete set failed, failed to search the set, %+v, rid: %s", err, ctx.Kit.Rid)
@@ -278,7 +267,7 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID}, md.Metadata)
+		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID})
 		if err != nil {
 			blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -295,8 +284,8 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 
 // UpdateSet update the set
 func (s *Service) UpdateSet(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -315,7 +304,7 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet, dataWithMetadata.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("update set failed,failed to search the set, %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -323,7 +312,7 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.SetOperation().UpdateSet(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, dataWithMetadata.Metadata)
+		err = s.Core.SetOperation().UpdateSet(ctx.Kit, data, obj, bizID, setID)
 		if err != nil {
 			blog.Errorf("update set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -350,7 +339,7 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 
 	data := struct {
 		parser.SearchParams `json:",inline"`
-		Metadata            *metadata.Metadata `json:"metadata"`
+		ModelBizID          int64 `json:"bk_biz_id"`
 	}{}
 	if err = ctx.DecodeInto(&data); nil != err {
 		blog.Errorf("search set failed, decode parameter condition failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
@@ -362,7 +351,7 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 		paramsCond.Condition = mapstr.New()
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet, data.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("[api-set]failed to search the set, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

@@ -88,8 +88,8 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		}
 
 		attr.OwnerID = kit.SupplierAccount
-		_, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.Metadata)
-		blog.V(5).Infof("CreateModelAttributes isExists info. property id:%s, metadata:%#v, exit:%v, rid:%s", attr.PropertyID, attr.Metadata, exists, kit.Rid)
+		_, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
+		blog.V(5).Infof("CreateModelAttributes isExists info. property id:%s, bizID:%#v, exit:%v, rid:%s", attr.PropertyID, attr.BizID, exists, kit.Rid)
 		if nil != err {
 			blog.Errorf("CreateModelAttributes failed, attribute field propertyID(%s) exists, err: %s, rid: %s", attr.PropertyID, err.Error(), kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
@@ -142,7 +142,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 
 	for attrIdx, attr := range inputParam.Attributes {
 
-		existsAttr, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.Metadata)
+		existsAttr, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
 		if nil != err {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue

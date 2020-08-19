@@ -26,10 +26,10 @@ import (
 
 // UniqueOperationInterface group operation methods
 type UniqueOperationInterface interface {
-	Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest, metaData *metadata.Metadata) (uniqueID *metadata.RspID, err error)
+	Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error)
 	Update(kit *rest.Kit, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error)
-	Delete(kit *rest.Kit, objectID string, id uint64, metaData *metadata.Metadata) (err error)
-	Search(kit *rest.Kit, objectID string, metaData *metadata.Metadata) (objectUniques []metadata.ObjectUnique, err error)
+	Delete(kit *rest.Kit, objectID string, id uint64) (err error)
+	Search(kit *rest.Kit, objectID string) (objectUniques []metadata.ObjectUnique, err error)
 }
 
 // NewUniqueOperation create a new group operation instance
@@ -45,17 +45,13 @@ type unique struct {
 	authManager *extensions.AuthManager
 }
 
-func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest, metaData *metadata.Metadata) (uniqueID *metadata.RspID, err error) {
-
+func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
 	unique := metadata.ObjectUnique{
 		ObjID:     request.ObjID,
 		Keys:      request.Keys,
 		MustCheck: request.MustCheck,
 	}
 
-	if nil != metaData {
-		unique.Metadata = *metaData
-	}
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), kit.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
 	if err != nil {
 		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, kit.Rid)
@@ -84,12 +80,8 @@ func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *meta
 	return nil
 }
 
-func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64, metaData *metadata.Metadata) (err error) {
-	meta := metadata.Metadata{}
-	if metaData != nil {
-		meta = *metaData
-	}
-	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), kit.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
+func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64) (err error) {
+	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), kit.Header, objectID, id)
 	if err != nil {
 		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v, rid: %s", objectID, id, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniqueDeleteFailed)
@@ -100,14 +92,8 @@ func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64, metaData *met
 	return nil
 }
 
-func (a *unique) Search(kit *rest.Kit, objectID string, metaData *metadata.Metadata) (objectUniques []metadata.ObjectUnique, err error) {
+func (a *unique) Search(kit *rest.Kit, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
 	fCond := condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
 
 	cond := metadata.QueryCondition{
 		Condition: fCond,

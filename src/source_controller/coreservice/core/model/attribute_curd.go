@@ -94,7 +94,7 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 	return id, err
 }
 
-func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string, meta metadata.Metadata) error {
+func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string, modelBizID int64) error {
 	cond := map[string]interface{}{
 		common.BKObjIDField: objID,
 	}
@@ -115,10 +115,14 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 		cond[common.BKPropertyNameField] = propertyName
 	}
 
-	isExist, bizID := meta.Label.Get(common.BKAppIDField)
-	if isExist {
+	if modelBizID > 0 {
+		// search special business model and global shared model
 		andCond = append(andCond, map[string]interface{}{
-			common.BKDBOR: []map[string]interface{}{metadata.BizLabelNotExist, {metadata.MetadataBizField: bizID}},
+			common.BKDBOR: []map[string]interface{}{
+				{common.BKAppIDField: modelBizID},
+				{common.BKAppIDField: 0},
+				{common.BKAppIDField: map[string]interface{}{common.BKDBExists: false}},
+			},
 		})
 	}
 
@@ -331,11 +335,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 	// TODO: now, we only support set, module, host model's biz attribute clean operation.
 	for _, attr := range attrs {
 
-		biz, err := metadata.BizIDFromMetadata(attr.Metadata)
-		if err != nil {
-			return err
-		}
-
+		biz := attr.BizID
 		if biz != 0 {
 			if !isBizObject(attr.ObjectID) {
 				return fmt.Errorf("unsupported object %s's clean instance field operation", attr.ObjectID)
@@ -579,7 +579,7 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 	}
 
 	// check name duplicate
-	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName, attribute.Metadata); err != nil {
+	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName, attribute.BizID); err != nil {
 		blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, kit.Rid)
 		return err
 	}
@@ -685,7 +685,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	for _, dbAttribute := range dbAttributeArr {
-		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName, attribute.Metadata)
+		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName, attribute.BizID)
 		if err != nil {
 			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, kit.Rid)
 			return changeRow, err

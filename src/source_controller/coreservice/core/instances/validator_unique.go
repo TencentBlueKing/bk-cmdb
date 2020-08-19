@@ -32,7 +32,7 @@ var hostSpecialFieldMap = map[string]bool{
 }
 
 // validCreateUnique  valid create inst data unique
-func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instanceManager *instanceManager) error {
+func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.MapStr, instanceManager *instanceManager) error {
 	uniqueAttr, err := valid.dependent.SearchUnique(kit, valid.objID)
 	if nil != err {
 		blog.Errorf("[validCreateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, kit.Rid)
@@ -95,13 +95,6 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
 		}
 
-		isExist, bizID := instMedataData.Label.Get(common.BKAppIDField)
-		if isExist {
-			_, metaCond := cond.Embed(metadata.BKMetadata)
-			_, labelCond := metaCond.Embed(metadata.BKLabel)
-			labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
-		}
-
 		result, err := instanceManager.countInstance(kit, valid.objID, cond.ToMapStr())
 		if nil != err {
 			blog.Errorf("[validCreateUnique] count [%s] inst error %v, condition: %#v, rid: %s", valid.objID, err, cond.ToMapStr(), kit.Rid)
@@ -126,7 +119,7 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 }
 
 // validUpdateUnique valid update unique
-func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapStr, instMedataData metadata.Metadata, instID uint64, instanceManager *instanceManager) error {
+func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapStr, instID uint64, instanceManager *instanceManager) error {
 	uniqueAttr, err := valid.dependent.SearchUnique(kit, valid.objID)
 	if nil != err {
 		blog.Errorf("[validUpdateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, kit.Rid)
@@ -188,12 +181,6 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
 		}
 		cond.Element(&mongo.Neq{Key: common.GetInstIDField(valid.objID), Val: instID})
-		isExist, bizID := instMedataData.Label.Get(common.BKAppIDField)
-		if isExist {
-			_, metaCond := cond.Embed(metadata.BKMetadata)
-			_, lableCond := metaCond.Embed(metadata.BKLabel)
-			lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
-		}
 
 		result, err := instanceManager.countInstance(kit, valid.objID, cond.ToMapStr())
 		if nil != err {

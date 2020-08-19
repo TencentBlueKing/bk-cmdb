@@ -60,7 +60,7 @@ type Factory interface {
 	CreateObject(kit *rest.Kit) Object
 	CreateClassification(kit *rest.Kit) Classification
 	CreateAttribute(kit *rest.Kit) AttributeInterface
-	CreateGroup(kit *rest.Kit, metadata *metadata.Metadata) GroupInterface
+	CreateGroup(kit *rest.Kit, bizID int64) GroupInterface
 	CreateCommonAssociation(kit *rest.Kit, obj Object, asstKey string, asstObj Object) Association
 	CreateMainLineAssociation(kit *rest.Kit, obj Object, asstKey string, asstObj Object) Association
 }

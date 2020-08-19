@@ -126,7 +126,7 @@ func (log *ObjectAttrAudit) buildSnapshotForPre() ObjAuditLog {
 	log.bkObjectID = log.preData.ObjectID
 	log.propertyID = log.preData.PropertyID
 	log.propertyName = log.preData.PropertyName
-	log.bizID, _ = log.preData.Metadata.ParseBizID()
+	log.bizID = log.preData.BizID
 	return log
 }
 
@@ -150,7 +150,7 @@ func (log *ObjectAttrAudit) buildSnapshotForCur() ObjAuditLog {
 	log.bkObjectID = log.curData.ObjectID
 	log.propertyID = log.curData.PropertyID
 	log.propertyName = log.curData.PropertyName
-	log.bizID, _ = log.curData.Metadata.ParseBizID()
+	log.bizID = log.curData.BizID
 	return log
 }
 

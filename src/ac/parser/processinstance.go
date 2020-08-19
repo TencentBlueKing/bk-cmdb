@@ -45,7 +45,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Update,
-	},{
+	}, {
 		Name:           "deleteProcessInstance",
 		Description:    "删除进程实例",
 		Pattern:        "/api/v3/delete/proc/process_instance",
@@ -69,7 +69,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
-	},{
+	}, {
 		Name:           "listProcessInstancesNameIDsInModule",
 		Description:    "查询模块下的进程名和对应的进程ID列表",
 		Pattern:        "/api/v3/findmany/proc/process_instance/name_ids",
@@ -77,7 +77,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
-	},{
+	}, {
 		Name:           "listProcessInstancesDetailsByIDs",
 		Description:    "根据进程ID列表批量查询这些进程的详情",
 		Pattern:        "/api/v3/findmany/proc/process_instance/detail/by_ids",

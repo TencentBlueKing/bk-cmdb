@@ -10,33 +10,28 @@
  * limitations under the License.
  */
 
-package local
+package y3_9_202008101530
 
 import (
-	"testing"
+	"context"
 
-	"configcenter/src/common/metadata"
-
-	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func TestDecodeSubMap(t *testing.T) {
+func init() {
+	upgrader.RegistUpgrader("y3.9.202008101530", upgrade)
+}
 
-	ts := metadata.Now()
-	attr := metadata.Attribute{
-		BizID:      111,
-		LastTime:   &ts,
-		CreateTime: &ts,
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.9.202008101530")
+
+	err = changeMetadataToBizID(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202008101530] changeMetadataToBizID failed, error  %s", err.Error())
+		return err
 	}
 
-	bsonAttr, err := bson.Marshal(attr)
-	require.NoError(t, err)
-
-	newAttr := &metadata.Attribute{}
-	err = bson.Unmarshal(bsonAttr, newAttr)
-	require.NoError(t, err)
-
-	require.Equal(t, attr.BizID, newAttr.BizID)
-
+	return nil
 }

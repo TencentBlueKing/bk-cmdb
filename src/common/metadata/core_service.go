@@ -83,7 +83,7 @@ type UpdateModelAttrUnique struct {
 }
 
 type DeleteModelAttrUnique struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 }
 
 type CreateModelInstance struct {

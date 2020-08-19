@@ -57,7 +57,7 @@ type ModelClientInterface interface {
 
 	CreateModelAttrUnique(ctx context.Context, h http.Header, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreatedOneOptionResult, error)
 	UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedOptionResult, error)
-	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.DeleteModelAttrUnique) (*metadata.DeletedOptionResult, error)
+	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedOptionResult, error)
 	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (*metadata.ReadModelUniqueResult, error)
 }
 

@@ -13,7 +13,6 @@
 package mongo_test
 
 import (
-	"strconv"
 	"testing"
 
 	"configcenter/src/common/mapstr"
@@ -157,20 +156,14 @@ func TestNewConditionFromMapStrFromCommonCondition(t *testing.T) {
 	target.Field("int_arr").Eq([]int{1, 2, 4})
 	target.Field("str_arr").Eq([]string{"1", "2", "4"})
 	target.Field("struct").Eq(tmpStruct{A: 1})
-	target.Field("struct_arr").Eq([]tmpStruct{tmpStruct{A: 1}})
+	target.Field("struct_arr").Eq([]tmpStruct{{A: 1}})
 
 	or := target.NewOR()
 	or.Item(mapstr.MapStr{"a": "b", "b": "cc"})
 	or.Item(mapstr.MapStr{"b": "c"})
 	or.Array([]interface{}{mapstr.MapStr{"c": "b"}, mapstr.MapStr{"d": "b"}})
-	or.MapStrArr([]mapstr.MapStr{mapstr.MapStr{"e": "b"}, mapstr.MapStr{"f": "b"}})
+	or.MapStrArr([]mapstr.MapStr{{"e": "b"}, {"f": "b"}})
 	or.Item(mapstr.MapStr{common.BKAppIDField: 1})
-	meta := metadata.Metadata{
-		Label: map[string]string{
-			common.BKAppIDField: strconv.FormatInt(1, 10),
-		},
-	}
-	or.Item(mapstr.MapStr{metadata.BKMetadata: meta.ToMapStr()})
 
 	t.Logf("target: %v", target.ToMapStr())
 	cond, err := mongo.NewConditionFromMapStr(target.ToMapStr())
@@ -212,15 +205,15 @@ func TestNewConditionFromMapStrFromCommonCondition1(t *testing.T) {
 
 	condMap := mapstr.New()
 
-	orMapARr := []mapstr.MapStr{mapstr.MapStr{"aa": 1, "cc": 2}, mapstr.MapStr{"aa": 1, "cc": 3}}
+	orMapARr := []mapstr.MapStr{{"aa": 1, "cc": 2}, {"aa": 1, "cc": 3}}
 	condMap.Set("$or", []mapstr.MapStr{
-		mapstr.MapStr{"a": 1, "b": 1},
-		mapstr.MapStr{"a": 1, "$or": orMapARr},
+		{"a": 1, "b": 1},
+		{"a": 1, "$or": orMapARr},
 	})
 
 	condMap.Set("$and", []mapstr.MapStr{
-		mapstr.MapStr{"a": 1, "b": 1},
-		mapstr.MapStr{"a": 1, "$or": orMapARr},
+		{"a": 1, "b": 1},
+		{"a": 1, "$or": orMapARr},
 	})
 	cond, err := mongo.NewConditionFromMapStr(condMap)
 	require.NoError(t, err)

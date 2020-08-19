@@ -36,14 +36,13 @@ import (
 
 // CreateBusiness create a new business
 func (s *Service) CreateBusiness(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	data := dataWithMetadata.Data
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, dataWithMetadata.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -55,7 +54,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	var business inst.Inst
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data, dataWithMetadata.Metadata)
+		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
 		if err != nil {
 			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -97,12 +96,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 
 // DeleteBusiness delete the business
 func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, md.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -117,7 +111,7 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, obj, bizID, md.Metadata); err != nil {
+		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, obj, bizID); err != nil {
 			return err
 		}
 		return nil
@@ -132,13 +126,13 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 
 // UpdateBusiness update the business
 func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, dataWithMetadata.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -153,7 +147,7 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, dataWithMetadata.Data, obj, bizID, dataWithMetadata.Metadata)
+		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, data, obj, bizID)
 		if err != nil {
 			return err
 		}
@@ -171,14 +165,13 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	data := struct {
 		metadata.UpdateBusinessStatusOption `json:",inline"`
-		Metadata                            *metadata.Metadata `json:"metadata"`
 	}{}
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, data.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -242,7 +235,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj, bizID, data.Metadata)
+		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj, bizID)
 		if err != nil {
 			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -573,24 +566,24 @@ func (s *Service) SearchOwnerResourcePoolBusiness(ctx *rest.Contexts) {
 
 // CreateDefaultBusiness create the default business
 func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, dataWithMetadata.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	dataWithMetadata.Data.Set(common.BKDefaultField, common.DefaultAppFlag)
+	data.Set(common.BKDefaultField, common.DefaultAppFlag)
 
 	var business inst.Inst
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
 		if err != nil {
 			blog.Errorf("create business failed, err: %+v", err)
 			return err
@@ -606,12 +599,7 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 }
 
 func (s *Service) GetInternalModule(ctx *rest.Contexts) {
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, md.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -623,7 +611,7 @@ func (s *Service) GetInternalModule(ctx *rest.Contexts) {
 		return
 	}
 
-	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, obj, bizID, md.Metadata)
+	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, obj, bizID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -639,18 +627,13 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 		return
 	}
 
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, md.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	_, innerAppTopo, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, obj, bizID, md.Metadata)
+	_, innerAppTopo, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, obj, bizID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
