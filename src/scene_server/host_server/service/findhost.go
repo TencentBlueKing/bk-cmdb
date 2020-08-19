@@ -649,7 +649,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	option := &meta.ListHosts{
 		BizID:              bizID,
 		HostPropertyFilter: parameter.HostPropertyFilter,
-		Fields:             parameter.Fields,
+		Fields:             append(parameter.Fields, common.BKHostIDField),
 		Page:               parameter.Page,
 	}
 	hosts, err := s.CoreAPI.CoreService().Host().ListHosts(ctx.Kit.Ctx, header, option)
