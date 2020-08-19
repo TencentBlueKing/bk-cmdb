@@ -988,6 +988,35 @@ var _ = Describe("object test", func() {
 				attrId1 = strconv.FormatInt(data.ID, 10)
 			})
 
+			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_biz' and bk_property_name='test_biz' and invalid PropertyGroup with bizID", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "test_biz",
+						PropertyName:  "test_biz",
+						PropertyGroup: "abcdefg",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+						BizID:         bizIdInt,
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				util.RegisterResponse(rsp)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				j, err := json.Marshal(rsp.Data)
+				data := metadata.Attribute{}
+				json.Unmarshal(j, &data)
+				Expect(data.ObjectID).To(Equal(input.ObjectID))
+				Expect(data.PropertyID).To(Equal(input.PropertyID))
+				Expect(data.PropertyName).To(Equal(input.PropertyName))
+				Expect(data.PropertyGroup).To(Equal("bizdefault"))
+				Expect(data.IsEditable).To(Equal(input.IsEditable))
+				Expect(data.PropertyType).To(Equal(input.PropertyType))
+				Expect(data.OwnerID).To(Equal(input.OwnerID))
+			})
+
 			It("update object attribute id="+attrId1, func() {
 				input := map[string]interface{}{
 					"bk_property_name": "ayayyaya",
@@ -1232,9 +1261,7 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		// 对于自定义层级实例，在cc_ObjectBase表里可能不存在bk_biz_id字段，代码里没有进行校验，暂时停用该用例
-		// 如需启用该用例，自定义层级实例是否属于该业务下的校验逻辑需调整，考虑使用主线实例拓扑树来校验
-		PIt("create set unmatch bk_biz_id and bk_parent_id", func() {
+		It("create set unmatch bk_biz_id and bk_parent_id", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":         "test4",
 				"bk_parent_id":        childInstIdInt,

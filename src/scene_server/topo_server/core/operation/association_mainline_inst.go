@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -167,10 +166,11 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 		currentInst.SetValue(common.BKInstParentStr, id)
 		object := parent.GetObject()
 		if object.GetObjectID() == common.BKInnerObjIDApp {
-			metaInfo := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(id, 10))
-			currentInst.SetValue(metadata.BKMetadata, metaInfo)
+			currentInst.SetValue(common.BKAppIDField, id)
 		} else {
-			currentInst.SetValue(metadata.BKMetadata, parent.GetValues()[metadata.BKMetadata])
+			if bizID, ok := parent.GetValues().Get(common.BKAppIDField); ok {
+				currentInst.SetValue(common.BKAppIDField, bizID)
+			}
 		}
 
 		// create the instance now.

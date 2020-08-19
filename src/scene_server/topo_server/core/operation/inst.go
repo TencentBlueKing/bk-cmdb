@@ -231,14 +231,12 @@ func (c *commonInst) isValidBizInstID(kit *rest.Kit, obj metadata.Object, instID
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 
+	if bizID != 0 {
+		cond.Field(common.BKAppIDField).Eq(bizID)
+	}
+
 	if obj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(obj.ObjectID)
-	} else {
-		// 暂时只针对非自定义层级的模型实例增加业务ID的条件，对于自定义层级实例，在cc_ObjectBase表里可能不存在bk_biz_id字段，故不能校验通过
-		// 如需校验，需要使用主线拓扑实例树
-		if bizID != 0 {
-			cond.Field(common.BKAppIDField).Eq(bizID)
-		}
 	}
 
 	query := &metadata.QueryInput{}
