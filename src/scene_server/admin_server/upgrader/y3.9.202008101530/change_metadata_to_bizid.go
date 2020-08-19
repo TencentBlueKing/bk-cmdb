@@ -32,14 +32,20 @@ func changeMetadataToBizID(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		return fmt.Errorf("db is not *local.Mongo type")
 	}
 	dbc := mongo.GetDBClient()
+
 	type ret struct {
 		ID       interface{}   `bson:"_id" json:"_id"`
 		Metadata mapstr.MapStr `bson:"metadata" json:"metadata"`
 	}
 	fields := []string{"_id", "metadata"}
+	existsMetadataFilter := map[string]interface{}{
+		"metadata": map[string]interface{}{
+			common.BKDBExists: true,
+		},
+	}
 
 	for _, tableName := range common.AllTables {
-		count, err := db.Table(tableName).Find(nil).Count(ctx)
+		count, err := db.Table(tableName).Find(existsMetadataFilter).Count(ctx)
 		if err != nil {
 			blog.Errorf("count table %s failed, err: %s", tableName, err.Error())
 			return err
@@ -47,7 +53,7 @@ func changeMetadataToBizID(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 		for i := uint64(0); i < count; i += common.BKMaxPageSize {
 			result := make([]ret, 0)
-			err = db.Table(tableName).Find(mapstr.MapStr{}).Fields(fields...).Start(uint64(i)).Limit(uint64(common.BKMaxPageSize)).All(ctx, &result)
+			err = db.Table(tableName).Find(existsMetadataFilter).Sort("_id").Fields(fields...).Start(uint64(i)).Limit(uint64(common.BKMaxPageSize)).All(ctx, &result)
 			if err != nil {
 				blog.Errorf("changeMetadataToBizID starting from %d failed, err: %s", i, err)
 				return err
