@@ -605,21 +605,34 @@ var _ = Describe("inst test", func() {
 })
 
 var _ = Describe("audit test", func() {
-	It("get audit log", func() {
-		input := &metadata.QueryInput{
-			Condition: map[string]interface{}{
-				"op_time": []string{
+	It("search audit dict", func() {
+		rsp, err := instClient.SearchAuditDict(context.Background(), header)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("search audit list", func() {
+		input := &metadata.AuditQueryInput{
+			Condition: metadata.AuditQueryCondition{
+				OperationTime: []string{
 					"2018-07-20 00:00:00",
 					"2018-07-21 23:59:59",
 				},
 			},
-			Start: 0,
-			Limit: 10,
-			Sort:  "-op_time",
+			Page: metadata.BasePage{
+				Sort:  "-op_time",
+				Limit: 0,
+				Start: 10,
+			},
 		}
-		rsp, err := instClient.QueryAuditLog(context.Background(), header, input)
+		rsp, err := instClient.SearchAuditList(context.Background(), header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("search audit detail", func() {
+		rsp, err := instClient.SearchAuditDetail(context.Background(), header, 1)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
 	})
 })
