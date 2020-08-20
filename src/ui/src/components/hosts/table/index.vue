@@ -46,15 +46,19 @@
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
-                :min-width="column.id === 'bk_host_id' ? 80 : 120"
+                :min-width="column.minWidth"
                 :key="column.id"
                 :label="column.name"
                 :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
-                show-overflow-tooltip
+                :show-overflow-tooltip="column.type !== 'topology'"
                 :fixed="column.id === 'bk_host_id'">
                 <template slot-scope="{ row }">
-                    <cmdb-property-value
+                    <cmdb-host-topo-path
+                        v-if="column.type === 'topology'"
+                        :host="row">
+                    </cmdb-host-topo-path>
+                    <cmdb-property-value v-else
                         :theme="column.id === 'bk_host_id' ? 'primary' : 'default'"
                         :value="row | hostValueFilter(column.objId, column.id, column)"
                         :show-unit="false"
@@ -117,10 +121,12 @@
     } from '@/dictionary/menu-symbol'
     import RouterQuery from '@/router/query'
     import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
+    import CmdbHostTopoPath from '@/components/host-topo-path/host-topo-path.vue'
     export default {
         components: {
             cmdbColumnsConfig,
-            cmdbHostFilter
+            cmdbHostFilter,
+            CmdbHostTopoPath
         },
         filters: {
             hostValueFilter
@@ -201,7 +207,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
                 },
                 scope: RouterQuery.get('scope', '1')
             }
@@ -351,7 +357,12 @@
                         name: this.$tools.getHeaderPropertyName(property),
                         type: property.bk_property_type,
                         objId: property.bk_obj_id,
-                        sortable: property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
+                        sortable: property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type),
+                        minWidth: property.bk_property_id === 'bk_host_id'
+                            ? 120
+                            : property.bk_property_type === 'topology'
+                                ? 200
+                                : 80
                     }
                 })
                 this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
