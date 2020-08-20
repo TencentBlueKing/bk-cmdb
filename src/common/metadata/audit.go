@@ -48,6 +48,7 @@ type AuditQueryCondition struct {
 }
 
 type AuditLog struct {
+	ID int64 `json:"id" bson:"id"`
 	// AuditType is a high level abstract of the resource managed by this cmdb.
 	// Each kind of concept, resource must belongs to one of the resource type.
 	AuditType AuditType `json:"audit_type" bson:"audit_type"`
@@ -67,20 +68,18 @@ type AuditLog struct {
 	OperationDetail DetailFactory `json:"operation_detail" bson:"operation_detail"`
 	// OperationTime is the time that user do the operation.
 	OperationTime Time `json:"operation_time" bson:"operation_time"`
-	// for special scene like categorize if the resource belongs to biz topo or service instance
-	Label map[string]string `json:"label" bson:"label"`
 }
 
 type bsonAuditLog struct {
-	AuditType       AuditType         `json:"audit_type" bson:"audit_type"`
-	SupplierAccount string            `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	User            string            `json:"user" bson:"user"`
-	ResourceType    ResourceType      `json:"resource_type" bson:"resource_type"`
-	Action          ActionType        `json:"action" bson:"action"`
-	OperateFrom     OperateFromType   `json:"operate_from" bson:"operate_from"`
-	OperationTime   Time              `json:"operation_time" bson:"operation_time"`
-	Label           map[string]string `json:"label" bson:"label"`
-	OperationDetail bson.Raw          `json:"operation_detail" bson:"operation_detail"`
+	ID              int64           `json:"id" bson:"id"`
+	AuditType       AuditType       `json:"audit_type" bson:"audit_type"`
+	SupplierAccount string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	User            string          `json:"user" bson:"user"`
+	ResourceType    ResourceType    `json:"resource_type" bson:"resource_type"`
+	Action          ActionType      `json:"action" bson:"action"`
+	OperateFrom     OperateFromType `json:"operate_from" bson:"operate_from"`
+	OperationTime   Time            `json:"operation_time" bson:"operation_time"`
+	OperationDetail bson.Raw        `json:"operation_detail" bson:"operation_detail"`
 }
 
 type DetailFactory interface {
@@ -89,20 +88,21 @@ type DetailFactory interface {
 
 func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	type jsonAuditLog struct {
-		AuditType       AuditType         `json:"audit_type" bson:"audit_type"`
-		SupplierAccount string            `json:"bk_supplier_account" bson:"bk_supplier_account"`
-		User            string            `json:"user" bson:"user"`
-		ResourceType    ResourceType      `json:"resource_type" bson:"resource_type"`
-		Action          ActionType        `json:"action" bson:"action"`
-		OperateFrom     OperateFromType   `json:"operate_from" bson:"operate_from"`
-		OperationTime   Time              `json:"operation_time" bson:"operation_time"`
-		Label           map[string]string `json:"label" bson:"label"`
-		OperationDetail json.RawMessage   `json:"operation_detail" bson:"operation_detail"`
+		ID              int64           `json:"id" bson:"id"`
+		AuditType       AuditType       `json:"audit_type" bson:"audit_type"`
+		SupplierAccount string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+		User            string          `json:"user" bson:"user"`
+		ResourceType    ResourceType    `json:"resource_type" bson:"resource_type"`
+		Action          ActionType      `json:"action" bson:"action"`
+		OperateFrom     OperateFromType `json:"operate_from" bson:"operate_from"`
+		OperationTime   Time            `json:"operation_time" bson:"operation_time"`
+		OperationDetail json.RawMessage `json:"operation_detail" bson:"operation_detail"`
 	}
 	audit := jsonAuditLog{}
 	if err := json.Unmarshal(data, &audit); err != nil {
 		return err
 	}
+	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
 	auditLog.SupplierAccount = audit.SupplierAccount
 	auditLog.User = audit.User
@@ -110,7 +110,6 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	auditLog.Action = audit.Action
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
-	auditLog.Label = audit.Label
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -159,6 +158,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	if err := bson.Unmarshal(data, &audit); err != nil {
 		return err
 	}
+	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
 	auditLog.SupplierAccount = audit.SupplierAccount
 	auditLog.User = audit.User
@@ -166,7 +166,6 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	auditLog.Action = audit.Action
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
-	auditLog.Label = audit.Label
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -212,6 +211,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 
 func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit := bsonAuditLog{}
+	audit.ID = auditLog.ID
 	audit.AuditType = auditLog.AuditType
 	audit.SupplierAccount = auditLog.SupplierAccount
 	audit.User = auditLog.User
@@ -219,7 +219,6 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit.Action = auditLog.Action
 	audit.OperateFrom = auditLog.OperateFrom
 	audit.OperationTime = auditLog.OperationTime
-	audit.Label = auditLog.Label
 	var err error
 	switch val := auditLog.OperationDetail.(type) {
 	default:
@@ -234,10 +233,8 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 type BasicOpDetail struct {
 	// the business id of the resource if it belongs to a business.
 	BusinessID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
-	// the business name of the resource if it belongs to a business.
-	BusinessName string `json:"bk_biz_name" bson:"bk_biz_name"`
-	// ResourceID is the id of the resource instance. which is a unique id.
-	ResourceID int64 `json:"resource_id" bson:"resource_id"`
+	// ResourceID is the id of the resource instance. which is a unique id, dynamic grouping id is string type.
+	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
 	// ResourceName is the name of the resource, such as a switch model has a name "switch"
 	ResourceName string `json:"resource_name" bson:"resource_name"`
 	// Details contains all the details information about a user's operation
@@ -269,12 +266,11 @@ func (op *InstanceOpDetail) WithName() string {
 
 type HostTransferOpDetail struct {
 	// the business id of the previous biz if the host transfers to the resource pool, otherwise is the current biz
-	BusinessID   int64       `json:"bk_biz_id" bson:"bk_biz_id"`
-	BusinessName string      `json:"bk_biz_name" bson:"bk_biz_name"`
-	HostID       int64       `json:"bk_host_id" bson:"bk_host_id"`
-	HostInnerIP  string      `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	PreData      HostBizTopo `json:"pre_data" bson:"pre_data"`
-	CurData      HostBizTopo `json:"cur_data" bson:"cur_data"`
+	BusinessID  int64       `json:"bk_biz_id" bson:"bk_biz_id"`
+	HostID      int64       `json:"resource_id" bson:"resource_id"`
+	HostInnerIP string      `json:"resource_name" bson:"resource_name"`
+	PreData     HostBizTopo `json:"pre_data" bson:"pre_data"`
+	CurData     HostBizTopo `json:"cur_data" bson:"cur_data"`
 }
 
 type HostBizTopo struct {
@@ -295,11 +291,11 @@ type AssociationOpDetail struct {
 }
 
 type InstanceAssociationOpDetail struct {
-	AssociationOpDetail AssociationOpDetail `json:"basic_asst_detail" bson:"basic_asst_detail"`
-	SourceInstanceID    int64               `json:"src_instance_id" bson:"src_instance_id"`
-	SourceInstanceName  string              `json:"src_instance_name" bson:"src_instance_name"`
-	TargetInstanceID    int64               `json:"target_instance_id" bson:"target_instance_id"`
-	TargetInstanceName  string              `json:"target_instance_name" bson:"target_instance_name"`
+	AssociationOpDetail `bson:",inline"`
+	SourceInstanceID    int64  `json:"src_instance_id" bson:"src_instance_id"`
+	SourceInstanceName  string `json:"src_instance_name" bson:"src_instance_name"`
+	TargetInstanceID    int64  `json:"target_instance_id" bson:"target_instance_id"`
+	TargetInstanceName  string `json:"target_instance_name" bson:"target_instance_name"`
 }
 
 func (ao *InstanceAssociationOpDetail) WithName() string {
@@ -307,7 +303,7 @@ func (ao *InstanceAssociationOpDetail) WithName() string {
 }
 
 type ModelAssociationOpDetail struct {
-	AssociationOpDetail AssociationOpDetail       `json:"basic_asst_detail" bson:"basic_asst_detail"`
+	AssociationOpDetail `bson:",inline"`
 	AssociationName     string                    `json:"asst_name" bson:"asst_name"`
 	Mapping             AssociationMapping        `json:"mapping" bson:"mapping"`
 	OnDelete            AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`
@@ -323,17 +319,12 @@ func (ao *ModelAssociationOpDetail) WithName() string {
 // Content contains the details information with in a user's operation.
 // Generally, works for business, model, model instance etc.
 type BasicContent struct {
-	// the previous data before the operation
+	// PreData the previous data before the deletion or updating operation
 	PreData map[string]interface{} `json:"pre_data" bson:"pre_data"`
-	// the current date being operated
+	// CurData the current date after the creation operation
 	CurData map[string]interface{} `json:"cur_data" bson:"cur_data"`
-	// data properties being operated, normally is a model's attributes.
-	Properties []Property `json:"properties" bson:"properties"`
-}
-
-type Property struct {
-	PropertyID   string `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName string `json:"bk_property_name" bson:"bk_property_name"`
+	// UpdateFields the data that user uses to update the pre data, might not be the actual changed data
+	UpdateFields map[string]interface{} `json:"update_fields" bson:"update_fields"`
 }
 
 type AuditType string
@@ -383,15 +374,18 @@ type ResourceType string
 
 const (
 	// business related operation type
-	BusinessRes        ResourceType = "business"
-	ServiceTemplateRes ResourceType = "service_template"
-	SetTemplateRes     ResourceType = "set_template"
-	ServiceCategoryRes ResourceType = "service_category"
-	DynamicGroupRes    ResourceType = "dynamic_group"
-	ServiceInstanceRes ResourceType = "service_instance"
-	SetRes             ResourceType = "set"
-	ModuleRes          ResourceType = "module"
-	ProcessRes         ResourceType = "process"
+	BusinessRes             ResourceType = "business"
+	ServiceTemplateRes      ResourceType = "service_template"
+	SetTemplateRes          ResourceType = "set_template"
+	ServiceCategoryRes      ResourceType = "service_category"
+	DynamicGroupRes         ResourceType = "dynamic_group"
+	ServiceInstanceRes      ResourceType = "service_instance"
+	ServiceInstanceLabelRes ResourceType = "service_instance_label"
+	SetRes                  ResourceType = "set"
+	ModuleRes               ResourceType = "module"
+	ProcessRes              ResourceType = "process"
+	HostApplyRes            ResourceType = "host_apply"
+	CustomFieldRes          ResourceType = "custom_field"
 
 	// model related operation type
 	ModelRes               ResourceType = "model"
@@ -399,10 +393,12 @@ const (
 	MainlineInstanceRes    ResourceType = "mainline_instance"
 	ModelAssociationRes    ResourceType = "model_association"
 	ModelAttributeRes      ResourceType = "model_attribute"
+	ModelAttributeGroupRes ResourceType = "model_attribute_group"
 	ModelClassificationRes ResourceType = "model_classification"
 	InstanceAssociationRes ResourceType = "instance_association"
 	ModelGroupRes          ResourceType = "model_group"
 	ModelUniqueRes         ResourceType = "model_unique"
+	ResourceDirectoryRes   ResourceType = "resource_directory"
 
 	AssociationKindRes ResourceType = "association_kind"
 	EventPushRes       ResourceType = "event"
@@ -447,13 +443,10 @@ const (
 	AuditArchive ActionType = "archive"
 	// recover a resource
 	AuditRecover ActionType = "recover"
-)
-
-const (
-	// resource with this label belongs to biz topology, like set, module, layer ...
-	LabelBizTopology = "biz_topology"
-	// resource with this label is related to service instance, like service instance, service instance label, process ...
-	LabelServiceInstance = "service_instance"
+	// pause an object
+	AuditPause ActionType = "stop"
+	// resume using an object
+	AuditResume ActionType = "resume"
 )
 
 func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
