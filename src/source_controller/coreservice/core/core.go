@@ -170,7 +170,7 @@ type AssociationOperation interface {
 
 type AuditOperation interface {
 	CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error
-	SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.AuditLog, uint64, error)
+	SearchAuditLog(kit *rest.Kit, param metadata.QueryCondition) ([]metadata.AuditLog, uint64, error)
 }
 
 type StatisticOperation interface {

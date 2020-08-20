@@ -2467,6 +2467,7 @@ func (ps *parseStream) objectSet() *parseStream {
 
 var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
+	searchAuditList   = `/api/v3/findmany/audit_list`
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -2480,6 +2481,18 @@ func (ps *parseStream) audit() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.AuditLog,
 					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(searchAuditList, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.AuditLog,
+					Action: meta.FindMany,
 				},
 			},
 		}

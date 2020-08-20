@@ -13,7 +13,6 @@
 package auditlog
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -65,74 +64,6 @@ func TestCmpData(t *testing.T) {
 
 		option := cmpopts.IgnoreMapEntries(ignorePath(item.ignoreKey))
 		bl := cmp.Equal(item.src, item.dst, option)
-		require.Equal(t, item.result, bl)
-
-	}
-
-}
-
-func TestInstNotChange(t *testing.T) {
-	type testData struct {
-		content map[string]interface{}
-		result  bool
-		desc    string
-	}
-
-	testDataArr := []testData{
-		testData{
-			content: map[string]interface{}{
-				"pre_data": map[string]interface{}{"_id": 1, "id": 2},
-				"cur_data": map[string]interface{}{"id": 2},
-			},
-			result: true,
-			desc:   "测试忽略字段在目标值中不存在",
-		},
-		testData{
-			content: map[string]interface{}{
-				"pre_data": map[string]interface{}{"last_time": "2", "_id": 1, "id": 2},
-				"cur_data": map[string]interface{}{"id": 2},
-			},
-			result: true,
-			desc:   "测试多个忽略字段在目标值中不存在",
-		},
-		testData{
-			content: map[string]interface{}{
-				"pre_data": map[string]interface{}{"_id": 1, "id": 2},
-				"cur_data": map[string]interface{}{"_id": 2, "id": 2},
-			},
-			result: true,
-			desc:   "测试忽略字段在目标值中不同",
-		},
-		testData{
-			content: map[string]interface{}{
-				"pre_data": map[string]interface{}{"id": 2},
-				"cur_data": map[string]interface{}{"_id": 2, "id": 2},
-			},
-			result: true,
-			desc:   "测试忽略字段在源数据不存在",
-		},
-
-		testData{
-			content: map[string]interface{}{
-				"pre_data": map[string]interface{}{"id": 3},
-				"cur_data": map[string]interface{}{"_id": 2, "id": 2},
-			},
-			result: false,
-			desc:   "值不同比较",
-		},
-		testData{
-			content: map[string]interface{}{
-				"pre_data": map[string]interface{}{"id——bak": 3},
-				"cur_data": map[string]interface{}{"id": 2},
-			},
-			result: false,
-			desc:   "字段不同比较",
-		},
-	}
-
-	for _, item := range testDataArr {
-
-		bl := instNotChange(context.Background(), item.content, "")
 		require.Equal(t, item.result, bl)
 
 	}

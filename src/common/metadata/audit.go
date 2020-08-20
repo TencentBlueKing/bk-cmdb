@@ -16,35 +16,71 @@ import (
 	"encoding/json"
 
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// AuditQueryResult add single host log param
 type AuditQueryResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
-		Count int        `json:"count"`
+		Count int64      `json:"count"`
 		Info  []AuditLog `json:"info"`
 	} `json:"data"`
+}
+
+type CreateAuditLogParam struct {
+	Data []AuditLog `json:"data"`
+}
+
+type AuditQueryInput struct {
+	Condition AuditQueryCondition `json:"condition"`
+	Page      BasePage            `json:"page,omitempty"`
+}
+
+// Validate validates the input param
+func (input *AuditQueryInput) Validate() errors.RawErrorInfo {
+	if input.Page.Limit <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"limit"},
+		}
+	}
+
+	if input.Page.Limit > common.BKAuditLogPageLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 type AuditQueryCondition struct {
 	AuditType    AuditType       `json:"audit_type"`
 	User         string          `json:"user"`
-	ResourceType []ResourceType  `json:"resource_type" `
+	ResourceType ResourceType    `json:"resource_type" `
 	Action       []ActionType    `json:"action"`
 	OperateFrom  OperateFromType `json:"operate_from"`
 	BizID        int64           `json:"bk_biz_id"`
-	ResourceID   int64           `json:"resource_id"`
+	ResourceID   interface{}     `json:"resource_id"`
 	// ResourceName filters audit logs by resource name, such as instance name, host ip etc., support fuzzy query
 	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
 	OperationTime []string `json:"operation_time"`
-	// Label filters audit logs with these labels
-	Label []string `json:"label"`
 	// Category is used by front end, filters audit logs as business(business resource and host operation related to business), resource(instance resource not related to business) or other category
 	Category string `json:"category"`
+}
+
+type AuditLogBasicInfo struct {
+	ID            int64        `json:"id"`
+	User          string       `json:"user"`
+	ResourceType  ResourceType `json:"resource_type"`
+	Action        ActionType   `json:"action" bson:"action"`
+	OperationTime Time         `json:"operation_time"`
+	ResourceID    interface{}  `json:"resource_id"`
+	ResourceName  string       `json:"resource_name"`
+	BusinessID    int64        `json:"bk_biz_id"`
 }
 
 type AuditLog struct {
@@ -500,7 +536,7 @@ func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 func GetAuditTypesByCategory(category string) []AuditType {
 	switch category {
 	case "business":
-		return []AuditType{BusinessResourceType}
+		return []AuditType{BusinessResourceType, HostType}
 	case "resource":
 		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
 	case "other":

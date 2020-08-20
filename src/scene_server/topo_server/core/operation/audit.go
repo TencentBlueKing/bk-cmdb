@@ -13,17 +13,14 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
 
 type AuditOperationInterface interface {
-	Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error)
+	SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLogBasicInfo, error)
 }
 
 // NewAuditOperation create a new inst operation instance
@@ -37,17 +34,60 @@ type audit struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *audit) Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error) {
-	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), kit.Header, query)
+func (a *audit) SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLogBasicInfo, error) {
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(kit.Ctx, kit.Header, query)
 	if nil != err {
-		blog.Errorf("[audit] failed to request core service, error info is %s, rid: %s", err.Error(), kit.Rid)
-		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		blog.ErrorJSON("search audit log list failed, error: %s, query: %s, rid: %s", err.Error(), query, kit.Rid)
+		return 0, nil, err
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[audit] search audit log failed, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrAuditSelectFailed)
+	auditList := make([]metadata.AuditLogBasicInfo, len(rsp.Data.Info))
+	for index, auditLog := range rsp.Data.Info {
+		auditInfo := metadata.AuditLogBasicInfo{
+			ID:            auditLog.ID,
+			User:          auditLog.User,
+			ResourceType:  auditLog.ResourceType,
+			Action:        auditLog.Action,
+			OperationTime: auditLog.OperationTime,
+		}
+
+		switch auditLog.OperationDetail.WithName() {
+		case "BasicDetail":
+			operationDetail := auditLog.OperationDetail.(*metadata.BasicOpDetail)
+			auditInfo.ResourceID = operationDetail.ResourceID
+			auditInfo.ResourceName = operationDetail.ResourceName
+			auditInfo.BusinessID = operationDetail.BusinessID
+
+		case "InstanceOpDetail":
+			operationDetail := auditLog.OperationDetail.(*metadata.InstanceOpDetail)
+			auditInfo.ResourceID = operationDetail.ResourceID
+			auditInfo.ResourceName = operationDetail.ResourceName
+			auditInfo.BusinessID = operationDetail.BusinessID
+
+		case "InstanceAssociationOpDetail":
+			operationDetail := auditLog.OperationDetail.(*metadata.InstanceAssociationOpDetail)
+			auditInfo.ResourceID = operationDetail.SourceInstanceID
+			auditInfo.ResourceName = operationDetail.SourceInstanceName
+
+		case "ModelAssociationOpDetail":
+			operationDetail := auditLog.OperationDetail.(*metadata.ModelAssociationOpDetail)
+			auditInfo.ResourceID = operationDetail.AssociationOpDetail.SourceModelID
+			auditInfo.ResourceName = operationDetail.SourceModelName
+
+		case "HostTransferOpDetail":
+			operationDetail := auditLog.OperationDetail.(*metadata.HostTransferOpDetail)
+			auditInfo.ResourceID = operationDetail.HostID
+			auditInfo.ResourceName = operationDetail.HostInnerIP
+			auditInfo.BusinessID = operationDetail.BusinessID
+
+		case "ModelAttrDetail":
+			operationDetail := auditLog.OperationDetail.(*metadata.ModelAttrOpDetail)
+			auditInfo.ResourceID = operationDetail.ResourceID
+			auditInfo.ResourceName = operationDetail.ResourceName
+			auditInfo.BusinessID = operationDetail.BusinessID
+		}
+		auditList[index] = auditInfo
 	}
 
-	return rsp.Data, nil
+	return rsp.Data.Count, auditList, nil
 }
