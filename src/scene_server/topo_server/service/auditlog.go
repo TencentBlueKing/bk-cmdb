@@ -13,6 +13,7 @@
 package service
 
 import (
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -267,6 +268,22 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithCount(count, list)
+}
+
+// SearchAuditDetail search audit log detail by id
+func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
+	id, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKFieldID), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
+		return
+	}
+
+	resp, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, id)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 var defaultBizID int64

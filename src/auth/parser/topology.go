@@ -2468,6 +2468,7 @@ func (ps *parseStream) objectSet() *parseStream {
 var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
 	searchAuditList   = `/api/v3/findmany/audit_list`
+	searchAuditDetail = regexp.MustCompile(`^/api/v3/find/audit/[0-9]+/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -2493,6 +2494,18 @@ func (ps *parseStream) audit() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.AuditLog,
 					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(searchAuditDetail, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.AuditLog,
+					Action: meta.Find,
 				},
 			},
 		}
