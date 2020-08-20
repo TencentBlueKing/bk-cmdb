@@ -508,3 +508,289 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	}
 	return []AuditType{}
 }
+
+func GetAuditDict() []resourceTypeInfo {
+	return auditDict
+}
+
+var auditDict = []resourceTypeInfo{
+	{
+		ID:   DynamicGroupRes,
+		Name: "动态分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   SetTemplateRes,
+		Name: "集群模板",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceTemplateRes,
+		Name: "服务模板",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceCategoryRes,
+		Name: "服务分类",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModuleRes,
+		Name: "模块",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   SetRes,
+		Name: "集群",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   MainlineInstanceRes,
+		Name: "节点",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceInstanceRes,
+		Name: "服务实例",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ProcessRes,
+		Name: "进程",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceInstanceLabelRes,
+		Name: "服务实例标签",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditUpdate],
+		},
+	},
+	{
+		ID:   HostRes,
+		Name: "主机",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+			actionInfoMap[AuditAssignHost],
+			actionInfoMap[AuditUnassignHost],
+			actionInfoMap[AuditTransferHostModule],
+		},
+	},
+	{
+		ID:   HostApplyRes,
+		Name: "主机自动应用",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CustomFieldRes,
+		Name: "自定义字段",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   BusinessRes,
+		Name: "业务",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditArchive],
+			actionInfoMap[AuditRecover],
+		},
+	},
+	{
+		ID:   CloudAreaRes,
+		Name: "云区域",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelInstanceRes,
+		Name: "模型实例",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   InstanceAssociationRes,
+		Name: "实例关联",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ResourceDirectoryRes,
+		Name: "资源池目录",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelGroupRes,
+		Name: "模型分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+			actionInfoMap[AuditPause],
+			actionInfoMap[AuditResume],
+		},
+	},
+	{
+		ID:   ModelRes,
+		Name: "模型",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAttributeRes,
+		Name: "模型字段",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelUniqueRes,
+		Name: "模型唯一校验",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAssociationRes,
+		Name: "模型关联",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAttributeGroupRes,
+		Name: "模型字段分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   EventPushRes,
+		Name: "事件订阅",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   AssociationKindRes,
+		Name: "关联类型",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CloudAccountRes,
+		Name: "云账户",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CloudSyncTaskRes,
+		Name: "云资源同步任务",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+}
+
+var actionInfoMap = map[ActionType]actionTypeInfo{
+	AuditCreate:             {ID: AuditCreate, Name: "新增"},
+	AuditUpdate:             {ID: AuditUpdate, Name: "修改"},
+	AuditDelete:             {ID: AuditDelete, Name: "删除"},
+	AuditAssignHost:         {ID: AuditAssignHost, Name: "分配到业务"},
+	AuditUnassignHost:       {ID: AuditUnassignHost, Name: "归还到资源池"},
+	AuditTransferHostModule: {ID: AuditTransferHostModule, Name: "转移模块"},
+	AuditArchive:            {ID: AuditArchive, Name: "归档"},
+	AuditRecover:            {ID: AuditRecover, Name: "恢复"},
+	AuditPause:              {ID: AuditPause, Name: "停用"},
+	AuditResume:             {ID: AuditResume, Name: "启用"},
+}
+
+type resourceTypeInfo struct {
+	ID         ResourceType     `json:"id"`
+	Name       string           `json:"name"`
+	Operations []actionTypeInfo `json:"operations"`
+}
+
+type actionTypeInfo struct {
+	ID   ActionType `json:"id"`
+	Name string     `json:"name"`
+}

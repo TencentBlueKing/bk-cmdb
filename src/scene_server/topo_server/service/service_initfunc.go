@@ -71,8 +71,7 @@ func (s *Service) initAuditLog(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/audit/search", Handler: s.AuditQuery})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/object/{bk_obj_id}/audit/search", Handler: s.InstanceAuditQuery})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/audit_dict", Handler: s.SearchAuditDict})
 
 	utility.AddToRestfulWebService(web)
 }

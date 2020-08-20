@@ -65,9 +65,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/audit/"):
-		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.HasPrefix(string(*u), rootPath+"/biz/"):
 		from, to, isHit = rootPath+"/biz", topoRoot+"/app", true
 
@@ -168,6 +165,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/find/full_text"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/find/audit_dict"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):
