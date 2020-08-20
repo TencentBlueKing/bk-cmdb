@@ -420,6 +420,7 @@ func NewHostIdentifier(m map[string]interface{}) (*metadata.HostIdentifier, erro
 		}
 	}
 	ident.HostIdentModule = map[string]*metadata.HostIdentModule{}
+	ident.SupplierID = 0
 	return &ident, nil
 }
 

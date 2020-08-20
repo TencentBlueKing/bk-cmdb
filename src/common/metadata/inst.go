@@ -77,6 +77,7 @@ type HostIdentifier struct {
 	Disk            int64                       `json:"bk_disk" bson:"bk_disk"`                 // 磁盘容量
 	HostIdentModule map[string]*HostIdentModule `json:"associations" bson:"associations"`
 	Process         []HostIdentProcess          `json:"process" bson:"process"`
+	SupplierID      int64                       `json:"bk_supplier_id"`
 }
 
 func (identifier *HostIdentifier) MarshalBinary() (data []byte, err error) {
