@@ -3,7 +3,7 @@
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
-            :columns-config-disabled-columns="['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
+            :columns-config-disabled-columns="['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']"
             :edit-auth="$OPERATION.U_RESOURCE_HOST"
             :delete-auth="$OPERATION.D_RESOURCE_HOST"
             :save-auth="$OPERATION.U_RESOURCE_HOST"
@@ -126,6 +126,7 @@
                     set: [],
                     module: []
                 },
+                topologyProperty: Object.freeze(this.$tools.createTopologyProperty()),
                 table: {
                     checked: [],
                     header: [],
@@ -183,14 +184,14 @@
                 return this.usercustom[this.columnsConfigKey]
             },
             clipboardList () {
-                return this.table.header.filter(header => header.type !== 'checkbox')
+                return this.table.header.filter(header => !['topology'].includes(header.type))
             },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
                 const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
-                const hostProperties = this.properties.host
-                return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
+                const hostProperties = this.properties.host.concat([this.topologyProperty])
+                return [...hostProperties, ...businessProperties, ...moduleProperties, ...setProperties]
             }
         },
         watch: {

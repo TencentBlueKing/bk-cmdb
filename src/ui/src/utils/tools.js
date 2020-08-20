@@ -1,5 +1,6 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
+import i18n from '@/i18n'
 
 /**
  * 拍平列表
@@ -351,6 +352,27 @@ export function localSort (data, compareKey) {
     })
 }
 
+export function createTopologyProperty () {
+    return {
+        bk_biz_id: 0,
+        bk_isapi: true,
+        bk_issystem: false,
+        bk_obj_id: 'host',
+        bk_property_group: undefined,
+        bk_property_group_name: undefined,
+        bk_property_id: '__bk_host_topology__',
+        bk_property_index: Infinity,
+        bk_property_name: i18n.t('业务拓扑'),
+        bk_property_type: 'topology',
+        editable: false,
+        id: Date.now(),
+        ispre: true,
+        isonly: true,
+        isreadonly: true,
+        isrequired: true
+    }
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -371,5 +393,6 @@ export default {
     transformHostSearchParams,
     getDefaultPaginationConfig,
     getPageParams,
-    localSort
+    localSort,
+    createTopologyProperty
 }
