@@ -6,7 +6,8 @@
         :clearable="allowClear"
         :disabled="disabled"
         :loading="loading"
-        :font-size="fontSize">
+        :font-size="fontSize"
+        :popover-options="popoverOptions">
         <bk-option-group v-for="(group, index) in list"
             :key="index"
             :name="group[displayKey]">
@@ -24,7 +25,8 @@
         :clearable="allowClear"
         :disabled="disabled"
         :loading="loading"
-        :font-size="fontSize">
+        :font-size="fontSize"
+        :popover-options="popoverOptions">
         <bk-option
             v-for="option in list"
             :key="option[settingKey]"
@@ -88,7 +90,11 @@
                 type: Boolean,
                 default: false
             },
-            loading: Boolean
+            loading: Boolean,
+            popoverOptions: {
+                type: Object,
+                default: () => ({})
+            }
         },
         data () {
             return {
