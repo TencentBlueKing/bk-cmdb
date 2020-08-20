@@ -260,6 +260,12 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 				},
 			},
 		},
+		Fields: []string{
+			common.BKHostIDField,
+			common.BKHostNameField,
+			common.BKHostInnerIPField,
+			common.BKHostOuterIPField,
+		},
 		Page: metadata.BasePage{
 			Start: 0,
 			Limit: 1,
