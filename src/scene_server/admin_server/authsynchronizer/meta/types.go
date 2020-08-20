@@ -59,7 +59,6 @@ type SyncHandler interface {
 	HandleModuleSync(task *WorkRequest) error
 	HandleModelSync(task *WorkRequest) error
 	HandleInstanceSync(task *WorkRequest) error
-	HandleAuditSync(task *WorkRequest) error
 	HandleProcessSync(task *WorkRequest) error
 	HandleDynamicGroupSync(task *WorkRequest) error
 	HandleClassificationSync(task *WorkRequest) error
