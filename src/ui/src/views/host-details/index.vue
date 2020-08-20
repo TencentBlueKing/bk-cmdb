@@ -60,6 +60,7 @@
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             ...mapState('hostDetails', ['info', 'isBusinessHost']),
             ...mapGetters('hostDetails', ['isBusinessHost']),
             id () {
@@ -147,8 +148,15 @@
             },
             async getProperties () {
                 try {
+                    const params = {
+                        bk_supplier_account: this.supplierAccount,
+                        bk_obj_id: 'host'
+                    }
+                    if (this.business > 0) {
+                        params.bk_biz_id = this.business
+                    }
                     const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                        params: this.business > 0 ? { bk_biz_id: this.business } : {}
+                        params: params
                     })
                     this.$store.commit('hostDetails/setHostProperties', properties)
                 } catch (e) {
