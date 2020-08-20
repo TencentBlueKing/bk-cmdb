@@ -190,17 +190,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 			return srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 		}
 
-		hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
-		if err != nil {
-			blog.Errorf("delete host batch failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
-			return err
-		}
-
 		logContentMap := make(map[int64]meta.AuditLog, 0)
 		hosts := make([]extensions.HostSimplify, 0)
 		for _, hostID := range iHostIDArr {
 			logger := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-			if err := logger.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
+			if err := logger.WithPrevious(srvData.ctx, hostID); err != nil {
 				blog.Errorf("delete host batch, but get pre host data failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
 				return err
 			}
@@ -746,12 +740,6 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKHostIDField)
 	data.Remove(common.BKCloudIDField)
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
-	if err != nil {
-		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
-		return
-	}
 
 	// check authorization
 	hostIDArr := make([]int64, 0)
@@ -785,7 +773,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	logPreContents := make(map[int64]*logics.HostLog, 0)
 	for _, hostID := range hostIDArr {
 		audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-		if err := audit.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
+		if err := audit.WithPrevious(srvData.ctx, hostID); err != nil {
 			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v, rid: %s", id, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
@@ -865,7 +853,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			if !ok {
 				audit = srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
 			}
-			if err := audit.WithCurrent(srvData.ctx, hostID, hostFields); err != nil {
+			if err := audit.WithCurrent(srvData.ctx, hostID); err != nil {
 				blog.Errorf("update host batch, but get host[%v] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
 				return srvData.ccErr.Error(common.CCErrHostDetailFail)
 			}
@@ -911,13 +899,6 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
-	if err != nil {
-		blog.Errorf("update host property batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
-		return
-	}
-
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, update := range parameter.Update {
@@ -959,7 +940,7 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 				Data:      data,
 			}
 			hostLog := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-			if err := hostLog.WithPrevious(srvData.ctx, update.HostID, hostFields); err != nil {
+			if err := hostLog.WithPrevious(srvData.ctx, update.HostID); err != nil {
 				blog.Errorf("update host property batch, but get host[%d] pre data for audit failed, err: %v, rid: %s", update.HostID, err, srvData.rid)
 				return err
 			}
@@ -973,7 +954,7 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 				return srvData.ccErr.New(result.Code, result.ErrMsg)
 			}
 
-			if err := hostLog.WithCurrent(srvData.ctx, update.HostID, nil); err != nil {
+			if err := hostLog.WithCurrent(srvData.ctx, update.HostID); err != nil {
 				blog.Errorf("update host property batch, but get host[%d] pre data for audit failed, err: %v, rid: %s", update.HostID, err, srvData.rid)
 				return err
 			}
@@ -1450,13 +1431,6 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
-	if err != nil {
-		blog.Errorf("UpdateImportHosts, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
-		return
-	}
-
 	hostIDArr := make([]int64, 0)
 	hosts := make(map[int64]map[string]interface{}, 0)
 	indexHostIDMap := make(map[int64]int64, 0)
@@ -1472,7 +1446,7 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 			errMsg = append(errMsg, srvData.ccLang.Languagef("import_update_host_miss_hostID", index))
 			continue
 		}
-		intHostID, err = util.GetInt64ByInterface(hostID)
+		intHostID, err := util.GetInt64ByInterface(hostID)
 		if err != nil {
 			errMsg = append(errMsg, srvData.ccLang.Languagef("import_update_host_hostID_not_int", index))
 			continue
@@ -1576,7 +1550,7 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		logLastContents := make([]meta.AuditLog, 0)
 		for _, hostID := range hostIDArr {
 			audit := logPreContents[hostID]
-			if err := audit.WithCurrent(srvData.ctx, hostID, hostFields); err != nil {
+			if err := audit.WithCurrent(srvData.ctx, hostID); err != nil {
 				blog.Errorf("UpdateImportHosts, but get host[%d] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
 				return srvData.ccErr.Error(common.CCErrHostDetailFail)
 			}

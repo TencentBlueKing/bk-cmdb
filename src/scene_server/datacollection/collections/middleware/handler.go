@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -219,11 +218,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	blog.Infof("get inst result: %v", inst)
 
 	instIDField := common.GetInstIDField(objID)
-	audit := auditlog.NewAudit(d.CoreAPI, d.httpHeader)
-	properties, err := audit.GetAuditLogProperty(d.ctx, objID)
-	if err != nil {
-		return err
-	}
 
 	asst, err := d.CoreAPI.CoreService().Association().ReadModelAssociation(d.ctx, d.httpHeader, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
 	if err != nil || !asst.Result {
@@ -259,13 +253,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				}
 				return err
 			}
-			bizName := ""
-			if bizID > 0 {
-				bizName, err = audit.GetInstNameByID(d.ctx, common.BKInnerObjIDApp, bizID)
-				if err != nil {
-					return err
-				}
-			}
+
 			bodyData[instIDField] = instID
 			instName, ok := bodyData[common.GetInstNameField(objID)].(string)
 			if !ok {
@@ -279,22 +267,15 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				OperationDetail: &metadata.InstanceOpDetail{
 					BasicOpDetail: metadata.BasicOpDetail{
 						BusinessID:   bizID,
-						BusinessName: bizName,
 						ResourceID:   instID,
 						ResourceName: instName,
 						Details: &metadata.BasicContent{
-							PreData:    nil,
-							CurData:    bodyData,
-							Properties: properties,
+							PreData: nil,
+							CurData: bodyData,
 						},
 					},
 					ModelID: objID,
 				},
-			}
-			if isMainline && objID != common.BKInnerObjIDApp {
-				auditLog.Label = map[string]string{
-					metadata.LabelBizTopology: "",
-				}
 			}
 
 			result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
@@ -399,13 +380,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			}
 			return err
 		}
-		bizName := ""
-		if bizID > 0 {
-			bizName, err = audit.GetInstNameByID(d.ctx, common.BKInnerObjIDApp, bizID)
-			if err != nil {
-				return err
-			}
-		}
+
 		qc := metadata.QueryCondition{
 			Condition: map[string]interface{}{
 				common.BKInstIDField: instID,
@@ -433,22 +408,15 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   bizID,
-					BusinessName: bizName,
 					ResourceID:   instID,
 					ResourceName: instName,
 					Details: &metadata.BasicContent{
-						PreData:    preUpdatedData,
-						CurData:    updatedInst,
-						Properties: properties,
+						PreData: preUpdatedData,
+						CurData: updatedInst,
 					},
 				},
 				ModelID: objID,
 			},
-		}
-		if isMainline && objID != common.BKInnerObjIDApp {
-			auditLog.Label = map[string]string{
-				metadata.LabelBizTopology: "",
-			}
 		}
 		result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
 		if err != nil {

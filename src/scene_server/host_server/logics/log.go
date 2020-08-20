@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -43,18 +42,8 @@ func (lgc *Logics) NewHostLog(ctx context.Context, ownerID string) *HostLog {
 	}
 }
 
-func (h *HostLog) WithPrevious(ctx context.Context, hostID int64, properties []metadata.Property) errors.CCError {
+func (h *HostLog) WithPrevious(ctx context.Context, hostID int64) errors.CCError {
 	var err error
-	if len(h.Content.Properties) == 0 {
-		if properties != nil && len(properties) != 0 {
-			h.Content.Properties = properties
-		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, metadata.BizLabelNotExist)
-			if err != nil {
-				return err
-			}
-		}
-	}
 
 	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
 	if err != nil {
@@ -64,18 +53,8 @@ func (h *HostLog) WithPrevious(ctx context.Context, hostID int64, properties []m
 	return nil
 }
 
-func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []metadata.Property) errors.CCError {
+func (h *HostLog) WithCurrent(ctx context.Context, hostID int64) errors.CCError {
 	var err error
-	if len(h.Content.Properties) == 0 {
-		if properties != nil && len(properties) != 0 {
-			h.Content.Properties = properties
-		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, metadata.BizLabelNotExist)
-			if err != nil {
-				return err
-			}
-		}
-	}
 
 	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
 	if err != nil {
@@ -86,14 +65,6 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []me
 }
 
 func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, action metadata.ActionType) (metadata.AuditLog, error) {
-	bizName := ""
-	var err error
-	if bizID > 0 {
-		bizName, err = auditlog.NewAudit(h.logic.CoreAPI, h.header).GetInstNameByID(ctx, common.BKInnerObjIDApp, bizID)
-		if err != nil {
-			return metadata.AuditLog{}, err
-		}
-	}
 	return metadata.AuditLog{
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
@@ -101,7 +72,6 @@ func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, actio
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   bizID,
-				BusinessName: bizName,
 				ResourceID:   hostID,
 				ResourceName: h.ip,
 				Details:      h.Content,
@@ -313,7 +283,6 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 			Action:       action,
 			OperationDetail: &metadata.HostTransferOpDetail{
 				BusinessID:   bizID,
-				BusinessName: appIDNameMap[bizID],
 				HostID:       hostID,
 				HostInnerIP:  hostIP,
 				PreData:      preData,

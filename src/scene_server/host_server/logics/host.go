@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, bizMetaOpt mapstr.MapStr) ([]metadata.Property, error) {
+func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, bizMetaOpt mapstr.MapStr) ([]metadata.Attribute, error) {
 	searchOp := mapstr.MapStr{
 		common.BKObjIDField: common.BKInnerObjIDHost,
 	}
@@ -45,18 +45,7 @@ func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, bizMet
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	headers := make([]metadata.Property, 0)
-	for _, p := range result.Data.Info {
-		if p.PropertyID == common.BKChildStr {
-			continue
-		}
-		headers = append(headers, metadata.Property{
-			PropertyID:   p.PropertyID,
-			PropertyName: p.PropertyName,
-		})
-	}
-
-	return headers, nil
+	return result.Data.Info, nil
 }
 
 func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, hostID int64) (map[string]interface{}, string, errors.CCError) {
@@ -156,7 +145,7 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		}
 		// add create host log
 		audit := lgc.NewHostLog(ctx, ownerID)
-		if err := audit.WithCurrent(ctx, hostID, nil); err != nil {
+		if err := audit.WithCurrent(ctx, hostID); err != nil {
 			return err
 		}
 		auditLog, err := audit.AuditLog(ctx, hostID, appID, metadata.AuditCreate)
@@ -440,16 +429,11 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		return nil, lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
-	hostFields, err := lgc.GetHostAttributes(ctx, lgc.ownerID, metadata.BizLabelNotExist)
-	if err != nil {
-		blog.ErrorJSON("DeleteHostFromBusiness get host attribute failed, err: %s, rid:%s", err, lgc.rid)
-		return nil, err
-	}
-
 	logContentMap := make(map[int64]metadata.AuditLog, 0)
 	for _, hostID := range hostIDArr {
 		logger := lgc.NewHostLog(ctx, lgc.ownerID)
-		if err := logger.WithPrevious(ctx, hostID, hostFields); err != nil {
+		err := logger.WithPrevious(ctx, hostID)
+		if err != nil {
 			blog.ErrorJSON("DeleteHostFromBusiness get pre host data failed, err: %s, host id: %s, rid: %s", err, hostID, lgc.rid)
 			return nil, err
 		}

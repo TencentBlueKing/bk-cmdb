@@ -24,7 +24,6 @@ import (
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -192,22 +191,11 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
 	}
 
-	audit := auditlog.NewAudit(h.CoreAPI, header)
-	properties, err := audit.GetAuditLogProperty(h.ctx, common.BKInnerObjIDHost)
-	if err != nil {
-		return err
-	}
 	var bizID int64
 	if len(moduleHost.Data.Info) > 0 {
 		bizID = moduleHost.Data.Info[0].AppID
 	}
-	bizName := ""
-	if bizID > 0 {
-		bizName, err = audit.GetInstNameByID(h.ctx, common.BKInnerObjIDApp, bizID)
-		if err != nil {
-			return err
-		}
-	}
+
 	auditLog := metadata.AuditLog{
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
@@ -216,13 +204,11 @@ func (h *HostSnap) Analyze(msg *string) error {
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   bizID,
-				BusinessName: bizName,
 				ResourceID:   hostID,
 				ResourceName: innerIP,
 				Details: &metadata.BasicContent{
 					PreData:    preData.Data,
 					CurData:    curData,
-					Properties: properties,
 				},
 			},
 			ModelID: common.BKInnerObjIDHost,
