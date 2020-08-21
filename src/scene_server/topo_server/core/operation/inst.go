@@ -146,7 +146,7 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 		return nil, err
 	}
 
-	audit := auditlog.NewInstanceAudit(c.clientSet)
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	updateAuditLogs := make([]metadata.AuditLog, 0)
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
@@ -376,7 +376,7 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 	}
 
 	for _, inst := range insts {
-		audit := auditlog.NewInstanceAudit(c.clientSet)
+		audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, obj.GetObjectID(), []mapstr.MapStr{inst.GetValues()}, nil, nil)
 		if err != nil {
 			blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
@@ -488,7 +488,7 @@ func (c *commonInst) DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID 
 		deleteIDS = append(deleteIDS, ids...)
 	}
 
-	audit := auditlog.NewInstanceAudit(c.clientSet)
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	auditLogs := make([]metadata.AuditLog, 0)
 
 	for _, delInst := range deleteIDS {
@@ -569,7 +569,7 @@ func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, i
 		delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
 	}
 
-	audit := auditlog.NewInstanceAudit(c.clientSet)
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, obj.GetObjectID(), nil, delCond.ToMapStr(), nil)
 	if err != nil {
 		blog.Errorf(" delete inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
@@ -1128,7 +1128,7 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Obj
 		Condition: fCond,
 	}
 
-	audit := auditlog.NewInstanceAudit(c.clientSet)
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	auditLog, ccErr := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.GetObjectID(), nil, fCond, data)
 	if ccErr != nil {
 		blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", ccErr, kit.Rid)

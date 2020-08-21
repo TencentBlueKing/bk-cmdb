@@ -15,7 +15,7 @@ package auditlog
 import (
 	"strings"
 
-	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -26,16 +26,16 @@ import (
 
 // audit provides common methods for all audit log utilities
 type audit struct {
-	clientSet apimachinery.ClientSetInterface
+	clientSet coreservice.CoreServiceClientInterface
 }
 
-func (a *audit) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) errors.CCErrorCoder {
-	_, err := a.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, logs...)
+func (a *audit) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
+	_, err := a.clientSet.Audit().SaveAuditLog(kit.Ctx, kit.Header, logs...)
 	return err
 }
 
 func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]interface{}, fields []string) (
-	[]mapstr.MapStr, errors.CCErrorCoder) {
+	[]mapstr.MapStr, error) {
 
 	switch objID {
 	case common.BKInnerObjIDHost:
@@ -44,7 +44,7 @@ func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]
 			input.Fields = strings.Join(fields, ",")
 		}
 
-		rsp, err := a.clientSet.CoreService().Host().GetHosts(kit.Ctx, kit.Header, input)
+		rsp, err := a.clientSet.Host().GetHosts(kit.Ctx, kit.Header, input)
 		if err != nil {
 			blog.ErrorfDepthf(1, "get host by cond %+v failed, err: %v, rid: %s", condition, err, kit.Rid)
 			return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -62,7 +62,7 @@ func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]
 			input.Fields = fields
 		}
 
-		rsp, err := a.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, input)
+		rsp, err := a.clientSet.Instance().ReadInstance(kit.Ctx, kit.Header, objID, input)
 		if err != nil {
 			blog.ErrorfDepthf(1, "get host by cond %+v failed, err: %v, rid: %s", condition, err, kit.Rid)
 			return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -77,8 +77,7 @@ func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]
 	}
 }
 
-func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (string, errors.CCErrorCoder) {
-
+func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (string, error) {
 	instIDField := common.GetInstIDField(objID)
 	instNameField := common.GetInstNameField(objID)
 

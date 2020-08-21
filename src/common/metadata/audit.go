@@ -68,19 +68,8 @@ type AuditQueryCondition struct {
 	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
 	OperationTime []string `json:"operation_time"`
-	// Category is used by front end, filters audit logs as business(business resource and host operation related to business), resource(instance resource not related to business) or other category
+	// Category is used by front end, filters audit logs as business(business resource related to business), resource(instance resource not related to business), host or other category
 	Category string `json:"category"`
-}
-
-type AuditLogBasicInfo struct {
-	ID            int64        `json:"id"`
-	User          string       `json:"user"`
-	ResourceType  ResourceType `json:"resource_type"`
-	Action        ActionType   `json:"action" bson:"action"`
-	OperationTime Time         `json:"operation_time"`
-	ResourceID    interface{}  `json:"resource_id"`
-	ResourceName  string       `json:"resource_name"`
-	BusinessID    int64        `json:"bk_biz_id"`
 }
 
 type AuditLog struct {
@@ -104,6 +93,12 @@ type AuditLog struct {
 	OperationDetail DetailFactory `json:"operation_detail" bson:"operation_detail"`
 	// OperationTime is the time that user do the operation.
 	OperationTime Time `json:"operation_time" bson:"operation_time"`
+	// the business id of the resource if it belongs to a business.
+	BusinessID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	// ResourceID is the id of the resource instance. which is a unique id, dynamic grouping id is string type.
+	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
+	// ResourceName is the name of the resource, such as a switch model has a name "switch"
+	ResourceName string `json:"resource_name" bson:"resource_name"`
 }
 
 type bsonAuditLog struct {
@@ -116,6 +111,24 @@ type bsonAuditLog struct {
 	OperateFrom     OperateFromType `json:"operate_from" bson:"operate_from"`
 	OperationTime   Time            `json:"operation_time" bson:"operation_time"`
 	OperationDetail bson.Raw        `json:"operation_detail" bson:"operation_detail"`
+	BusinessID      int64           `json:"bk_biz_id" bson:"bk_biz_id"`
+	ResourceID      interface{}     `json:"resource_id" bson:"resource_id"`
+	ResourceName    string          `json:"resource_name" bson:"resource_name"`
+}
+
+type jsonAuditLog struct {
+	ID              int64           `json:"id" bson:"id"`
+	AuditType       AuditType       `json:"audit_type" bson:"audit_type"`
+	SupplierAccount string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	User            string          `json:"user" bson:"user"`
+	ResourceType    ResourceType    `json:"resource_type" bson:"resource_type"`
+	Action          ActionType      `json:"action" bson:"action"`
+	OperateFrom     OperateFromType `json:"operate_from" bson:"operate_from"`
+	OperationTime   Time            `json:"operation_time" bson:"operation_time"`
+	OperationDetail json.RawMessage `json:"operation_detail" bson:"operation_detail"`
+	BusinessID      int64           `json:"bk_biz_id" bson:"bk_biz_id"`
+	ResourceID      interface{}     `json:"resource_id" bson:"resource_id"`
+	ResourceName    string          `json:"resource_name" bson:"resource_name"`
 }
 
 type DetailFactory interface {
@@ -123,17 +136,6 @@ type DetailFactory interface {
 }
 
 func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
-	type jsonAuditLog struct {
-		ID              int64           `json:"id" bson:"id"`
-		AuditType       AuditType       `json:"audit_type" bson:"audit_type"`
-		SupplierAccount string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
-		User            string          `json:"user" bson:"user"`
-		ResourceType    ResourceType    `json:"resource_type" bson:"resource_type"`
-		Action          ActionType      `json:"action" bson:"action"`
-		OperateFrom     OperateFromType `json:"operate_from" bson:"operate_from"`
-		OperationTime   Time            `json:"operation_time" bson:"operation_time"`
-		OperationDetail json.RawMessage `json:"operation_detail" bson:"operation_detail"`
-	}
 	audit := jsonAuditLog{}
 	if err := json.Unmarshal(data, &audit); err != nil {
 		return err
@@ -146,6 +148,9 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	auditLog.Action = audit.Action
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
+	auditLog.BusinessID = audit.BusinessID
+	auditLog.ResourceID = audit.ResourceID
+	auditLog.ResourceName = audit.ResourceName
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -202,6 +207,9 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	auditLog.Action = audit.Action
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
+	auditLog.BusinessID = audit.BusinessID
+	auditLog.ResourceID = audit.ResourceID
+	auditLog.ResourceName = audit.ResourceName
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -255,6 +263,9 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit.Action = auditLog.Action
 	audit.OperateFrom = auditLog.OperateFrom
 	audit.OperationTime = auditLog.OperationTime
+	audit.BusinessID = auditLog.BusinessID
+	audit.ResourceID = auditLog.ResourceID
+	audit.ResourceName = auditLog.ResourceName
 	var err error
 	switch val := auditLog.OperationDetail.(type) {
 	default:
@@ -267,12 +278,6 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 }
 
 type BasicOpDetail struct {
-	// the business id of the resource if it belongs to a business.
-	BusinessID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
-	// ResourceID is the id of the resource instance. which is a unique id, dynamic grouping id is string type.
-	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
-	// ResourceName is the name of the resource, such as a switch model has a name "switch"
-	ResourceName string `json:"resource_name" bson:"resource_name"`
 	// Details contains all the details information about a user's operation
 	Details *BasicContent `json:"details" bson:"details"`
 }
@@ -283,8 +288,10 @@ func (op *BasicOpDetail) WithName() string {
 
 type ModelAttrOpDetail struct {
 	BasicOpDetail `bson:",inline"`
-	BkObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
-	BkObjName     string `json:"bk_obj_name" bson:"bk_obj_name"`
+	// BkObjID the attribute object ID
+	BkObjID string `json:"bk_obj_id" bson:"bk_obj_id"`
+	// BkObjName the attribute object name
+	BkObjName string `json:"bk_obj_name" bson:"bk_obj_name"`
 }
 
 func (op *ModelAttrOpDetail) WithName() string {
@@ -293,7 +300,8 @@ func (op *ModelAttrOpDetail) WithName() string {
 
 type InstanceOpDetail struct {
 	BasicOpDetail `bson:",inline"`
-	ModelID       string `json:"bk_obj_id" bson:"bk_obj_id"`
+	// BkObjID the object ID of the instance's model
+	ModelID string `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 func (op *InstanceOpDetail) WithName() string {
@@ -301,12 +309,10 @@ func (op *InstanceOpDetail) WithName() string {
 }
 
 type HostTransferOpDetail struct {
-	// the business id of the previous biz if the host transfers to the resource pool, otherwise is the current biz
-	BusinessID  int64       `json:"bk_biz_id" bson:"bk_biz_id"`
-	HostID      int64       `json:"resource_id" bson:"resource_id"`
-	HostInnerIP string      `json:"resource_name" bson:"resource_name"`
-	PreData     HostBizTopo `json:"pre_data" bson:"pre_data"`
-	CurData     HostBizTopo `json:"cur_data" bson:"cur_data"`
+	// PreData the previous biz topology of the host before transfer
+	PreData HostBizTopo `json:"pre_data" bson:"pre_data"`
+	// CurData the current biz topology of the host before transfer
+	CurData HostBizTopo `json:"cur_data" bson:"cur_data"`
 }
 
 type HostBizTopo struct {
@@ -320,18 +326,22 @@ func (op *HostTransferOpDetail) WithName() string {
 }
 
 type AssociationOpDetail struct {
-	AssociationID   string `json:"asst_id" bson:"asst_id"`
+	// AssociationID association id between two object
+	AssociationID string `json:"asst_id" bson:"asst_id"`
+	// AssociationKind association kind id
 	AssociationKind string `json:"asst_kind" bson:"asst_kind"`
-	SourceModelID   string `json:"src_model_id" bson:"src_model_id"`
-	TargetModelID   string `json:"target_model_id" bson:"target_model_id"`
 }
 
 type InstanceAssociationOpDetail struct {
 	AssociationOpDetail `bson:",inline"`
-	SourceInstanceID    int64  `json:"src_instance_id" bson:"src_instance_id"`
-	SourceInstanceName  string `json:"src_instance_name" bson:"src_instance_name"`
-	TargetInstanceID    int64  `json:"target_instance_id" bson:"target_instance_id"`
-	TargetInstanceName  string `json:"target_instance_name" bson:"target_instance_name"`
+	// SourceModelID the source instance's object ID
+	SourceModelID string `json:"src_obj_id" bson:"src_obj_id"`
+	// TargetModelID the target instance's object ID
+	TargetModelID string `json:"dest_obj_id" bson:"dest_obj_id"`
+	// TargetInstanceID the target instance ID
+	TargetInstanceID int64 `json:"dest_inst_id" bson:"dest_inst_id"`
+	// TargetInstanceID the target instance name
+	TargetInstanceName string `json:"dest_inst_name" bson:"dest_inst_name"`
 }
 
 func (ao *InstanceAssociationOpDetail) WithName() string {
@@ -340,12 +350,18 @@ func (ao *InstanceAssociationOpDetail) WithName() string {
 
 type ModelAssociationOpDetail struct {
 	AssociationOpDetail `bson:",inline"`
-	AssociationName     string                    `json:"asst_name" bson:"asst_name"`
-	Mapping             AssociationMapping        `json:"mapping" bson:"mapping"`
-	OnDelete            AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`
-	IsPre               *bool                     `json:"is_pre" bson:"is_pre"`
-	SourceModelName     string                    `json:"src_model_name" bson:"src_model_name"`
-	TargetModelName     int64                     `json:"target_model_name" bson:"target_model_name"`
+	// AssociationName the alias name of the association
+	AssociationName string `json:"asst_name" bson:"asst_name"`
+	// Mapping the association mapping, defines which kind of association can be used
+	Mapping AssociationMapping `json:"mapping" bson:"mapping"`
+	// OnDelete the association on delete action
+	OnDelete AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`
+	// IsPre describe whether this association is a pre-defined association or not
+	IsPre *bool `json:"is_pre" bson:"is_pre"`
+	// TargetModelID the target object ID
+	TargetModelID string `json:"dest_obj_id" bson:"dest_obj_id"`
+	// TargetModelID the target object name
+	TargetModelName int64 `json:"dest_obj_name" bson:"dest_obj_name"`
 }
 
 func (ao *ModelAssociationOpDetail) WithName() string {
@@ -536,9 +552,11 @@ func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 func GetAuditTypesByCategory(category string) []AuditType {
 	switch category {
 	case "business":
-		return []AuditType{BusinessResourceType, HostType}
+		return []AuditType{BusinessResourceType}
 	case "resource":
 		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
+	case "host":
+		return []AuditType{HostType}
 	case "other":
 		return []AuditType{ModelType, AssociationKindType, EventPushType}
 	}

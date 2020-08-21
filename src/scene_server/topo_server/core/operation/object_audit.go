@@ -65,9 +65,9 @@ func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCE
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
 		Action:       auditAction,
+		ResourceID:   log.id,
+		ResourceName: log.bkObjName,
 		OperationDetail: &metadata.BasicOpDetail{
-			ResourceID:   log.id,
-			ResourceName: log.bkObjName,
 			Details: &metadata.BasicContent{
 				PreData: preData,
 				CurData: curData,

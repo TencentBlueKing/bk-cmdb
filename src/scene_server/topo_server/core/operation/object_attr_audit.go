@@ -72,13 +72,13 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
 		Action:       auditAction,
+		BusinessID:   log.bizID,
+		ResourceID:   log.id,
+		ResourceName: log.propertyName,
 		OperationDetail: &metadata.ModelAttrOpDetail{
 			BkObjID:   log.bkObjectID,
 			BkObjName: log.bkObjectName,
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   log.bizID,
-				ResourceID:   log.id,
-				ResourceName: log.propertyName,
 				Details: &metadata.BasicContent{
 					PreData: preData,
 					CurData: curData,

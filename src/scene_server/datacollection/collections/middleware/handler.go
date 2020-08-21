@@ -264,11 +264,11 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
 				Action:       metadata.AuditCreate,
 				OperateFrom:  metadata.FromDataCollection,
+				BusinessID:   bizID,
+				ResourceID:   instID,
+				ResourceName: instName,
 				OperationDetail: &metadata.InstanceOpDetail{
 					BasicOpDetail: metadata.BasicOpDetail{
-						BusinessID:   bizID,
-						ResourceID:   instID,
-						ResourceName: instName,
 						Details: &metadata.BasicContent{
 							PreData: nil,
 							CurData: bodyData,
@@ -405,11 +405,11 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
 			Action:       metadata.AuditUpdate,
 			OperateFrom:  metadata.FromDataCollection,
+			BusinessID:   bizID,
+			ResourceID:   instID,
+			ResourceName: instName,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					BusinessID:   bizID,
-					ResourceID:   instID,
-					ResourceName: instName,
 					Details: &metadata.BasicContent{
 						PreData: preUpdatedData,
 						CurData: updatedInst,

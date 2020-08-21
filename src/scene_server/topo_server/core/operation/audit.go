@@ -21,7 +21,7 @@ import (
 )
 
 type AuditOperationInterface interface {
-	SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLogBasicInfo, error)
+	SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLog, error)
 	SearchAuditDetail(kit *rest.Kit, id int64) (*metadata.AuditLog, error)
 }
 
@@ -36,62 +36,14 @@ type audit struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *audit) SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLogBasicInfo, error) {
+func (a *audit) SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLog, error) {
 	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(kit.Ctx, kit.Header, query)
 	if nil != err {
 		blog.ErrorJSON("search audit log list failed, error: %s, query: %s, rid: %s", err.Error(), query, kit.Rid)
 		return 0, nil, err
 	}
 
-	auditList := make([]metadata.AuditLogBasicInfo, len(rsp.Data.Info))
-	for index, auditLog := range rsp.Data.Info {
-		auditInfo := metadata.AuditLogBasicInfo{
-			ID:            auditLog.ID,
-			User:          auditLog.User,
-			ResourceType:  auditLog.ResourceType,
-			Action:        auditLog.Action,
-			OperationTime: auditLog.OperationTime,
-		}
-
-		switch auditLog.OperationDetail.WithName() {
-		case "BasicDetail":
-			operationDetail := auditLog.OperationDetail.(*metadata.BasicOpDetail)
-			auditInfo.ResourceID = operationDetail.ResourceID
-			auditInfo.ResourceName = operationDetail.ResourceName
-			auditInfo.BusinessID = operationDetail.BusinessID
-
-		case "InstanceOpDetail":
-			operationDetail := auditLog.OperationDetail.(*metadata.InstanceOpDetail)
-			auditInfo.ResourceID = operationDetail.ResourceID
-			auditInfo.ResourceName = operationDetail.ResourceName
-			auditInfo.BusinessID = operationDetail.BusinessID
-
-		case "InstanceAssociationOpDetail":
-			operationDetail := auditLog.OperationDetail.(*metadata.InstanceAssociationOpDetail)
-			auditInfo.ResourceID = operationDetail.SourceInstanceID
-			auditInfo.ResourceName = operationDetail.SourceInstanceName
-
-		case "ModelAssociationOpDetail":
-			operationDetail := auditLog.OperationDetail.(*metadata.ModelAssociationOpDetail)
-			auditInfo.ResourceID = operationDetail.AssociationOpDetail.SourceModelID
-			auditInfo.ResourceName = operationDetail.SourceModelName
-
-		case "HostTransferOpDetail":
-			operationDetail := auditLog.OperationDetail.(*metadata.HostTransferOpDetail)
-			auditInfo.ResourceID = operationDetail.HostID
-			auditInfo.ResourceName = operationDetail.HostInnerIP
-			auditInfo.BusinessID = operationDetail.BusinessID
-
-		case "ModelAttrDetail":
-			operationDetail := auditLog.OperationDetail.(*metadata.ModelAttrOpDetail)
-			auditInfo.ResourceID = operationDetail.ResourceID
-			auditInfo.ResourceName = operationDetail.ResourceName
-			auditInfo.BusinessID = operationDetail.BusinessID
-		}
-		auditList[index] = auditInfo
-	}
-
-	return rsp.Data.Count, auditList, nil
+	return rsp.Data.Count, rsp.Data.Info, nil
 }
 
 func (a *audit) SearchAuditDetail(kit *rest.Kit, id int64) (*metadata.AuditLog, error) {

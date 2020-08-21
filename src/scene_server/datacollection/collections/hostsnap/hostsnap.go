@@ -201,14 +201,14 @@ func (h *HostSnap) Analyze(msg *string) error {
 		ResourceType: metadata.HostRes,
 		Action:       metadata.AuditUpdate,
 		OperateFrom:  metadata.FromDataCollection,
+		BusinessID:   bizID,
+		ResourceID:   hostID,
+		ResourceName: innerIP,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				ResourceID:   hostID,
-				ResourceName: innerIP,
 				Details: &metadata.BasicContent{
-					PreData:    preData.Data,
-					CurData:    curData,
+					PreData: preData.Data,
+					CurData: curData,
 				},
 			},
 			ModelID: common.BKInnerObjIDHost,

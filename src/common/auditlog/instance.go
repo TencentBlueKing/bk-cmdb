@@ -13,7 +13,7 @@
 package auditlog
 
 import (
-	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -29,10 +29,10 @@ type instanceAuditLog struct {
 }
 
 func (i *instanceAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, objID string, data []mapstr.MapStr,
-	condition map[string]interface{}, updateFields map[string]interface{}) ([]metadata.AuditLog, errors.CCErrorCoder) {
+	condition map[string]interface{}, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
 
 	if len(data) == 0 {
-		var err errors.CCErrorCoder
+		var err error
 		data, err = i.getInstByCond(kit, objID, condition, nil)
 		if err != nil {
 			blog.ErrorJSON("get instances failed, err: %s, condition: %s, rid: %s", err, condition, kit.Rid)
@@ -96,12 +96,12 @@ func (i *instanceAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Actio
 			AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
 			ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
 			Action:       action,
+			BusinessID:   bizID,
+			ResourceID:   id,
+			ResourceName: util.GetStrByInterface(inst[metadata.GetInstNameFieldName(objID)]),
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					BusinessID:   bizID,
-					ResourceID:   id,
-					ResourceName: util.GetStrByInterface(inst[metadata.GetInstNameFieldName(objID)]),
-					Details:      details,
+					Details: details,
 				},
 				ModelID: objID,
 			},
@@ -112,12 +112,12 @@ func (i *instanceAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Actio
 	return auditLogs, nil
 }
 
-func (i *instanceAuditLog) isMainline(kit *rest.Kit, objID string) (bool, errors.CCErrorCoder) {
+func (i *instanceAuditLog) isMainline(kit *rest.Kit, objID string) (bool, error) {
 	cond := &metadata.QueryCondition{Condition:
 	map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
 	}
 
-	asst, err := i.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
+	asst, err := i.clientSet.Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("[audit] failed to find mainline association, err: %v, rid: %s", err, kit.Rid)
 		return false, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -137,7 +137,7 @@ func (i *instanceAuditLog) isMainline(kit *rest.Kit, objID string) (bool, errors
 	return false, nil
 }
 
-func NewInstanceAudit(clientSet apimachinery.ClientSetInterface) *instanceAuditLog {
+func NewInstanceAudit(clientSet coreservice.CoreServiceClientInterface) *instanceAuditLog {
 	return &instanceAuditLog{
 		audit: audit{
 			clientSet: clientSet,

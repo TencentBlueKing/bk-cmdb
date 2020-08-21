@@ -69,13 +69,12 @@ func (log *ObjectAttrGroupAudit) SaveAuditLog(auditAction metadata.ActionType) e
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
 		Action:       auditAction,
+		BusinessID:   log.bizID,
+		ResourceID:   log.id,
+		ResourceName: log.bkGroupName,
 		OperationDetail: &metadata.ModelAttrOpDetail{
-			BkObjID:   log.bkObjectID,
-			BkObjName: log.bkObjectName,
+			BkObjID: log.bkObjectID,
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   log.bizID,
-				ResourceID:   log.id,
-				ResourceName: log.bkGroupName,
 				Details: &metadata.BasicContent{
 					PreData: preData,
 					CurData: curData,

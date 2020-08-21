@@ -69,12 +69,12 @@ func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, actio
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
 		Action:       action,
+		BusinessID:   bizID,
+		ResourceID:   hostID,
+		ResourceName: h.ip,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				ResourceID:   hostID,
-				ResourceName: h.ip,
-				Details:      h.Content,
+				Details: h.Content,
 			},
 			ModelID: common.BKInnerObjIDHost,
 		},
@@ -281,12 +281,12 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 			AuditType:    metadata.HostType,
 			ResourceType: metadata.HostRes,
 			Action:       action,
+			BusinessID:   bizID,
+			ResourceID:   hostID,
+			ResourceName: hostIP,
 			OperationDetail: &metadata.HostTransferOpDetail{
-				BusinessID:   bizID,
-				HostID:       hostID,
-				HostInnerIP:  hostIP,
-				PreData:      preData,
-				CurData:      curData,
+				PreData: preData,
+				CurData: curData,
 			},
 		})
 	}

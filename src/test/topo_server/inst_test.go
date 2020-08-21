@@ -621,8 +621,8 @@ var _ = Describe("audit test", func() {
 			},
 			Page: metadata.BasePage{
 				Sort:  "-op_time",
-				Limit: 0,
-				Start: 10,
+				Limit: 10,
+				Start: 0,
 			},
 		}
 		rsp, err := instClient.SearchAuditList(context.Background(), header, input)

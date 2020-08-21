@@ -22,14 +22,19 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
-// addAuditTableIndexes add indexes for common audit log query params
-func addAuditTableIndexes(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+// reconcileAuditTableIndexes update indexes for common audit log query params
+func reconcileAuditTableIndexes(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	indexes := []types.Index{
 		{Name: "index_id", Keys: map[string]int32{common.BKFieldID: 1}, Background: true},
-		{Name: "index_operation_time", Keys: map[string]int32{common.BKOperationTimeField: 1}, Background: true},
-		{Name: "index_bk_supplier_account", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
-		{Name: "index_audit_type", Keys: map[string]int32{common.BKAuditTypeField: 1}, Background: true},
-		{Name: "index_action", Keys: map[string]int32{common.BKActionField: 1}, Background: true},
+		{Name: "index_operationTime", Keys: map[string]int32{common.BKOperationTimeField: 1}, Background: true},
+		{Name: "index_user", Keys: map[string]int32{common.BKUser: 1}, Background: true},
+		{Name: "index_resourceName", Keys: map[string]int32{common.BKResourceNameField: 1}, Background: true},
+		{Name: "index_operationTime_auditType_resourceType_action", Keys: map[string]int32{
+			common.BKOperationTimeField: 1,
+			common.BKAuditTypeField:     1,
+			common.BKResourceTypeField:  1,
+			common.BKActionField:        1,
+		}, Background: true},
 	}
 
 	existIndexArr, err := db.Table(common.BKTableNameAuditLog).Indexes(ctx)
@@ -52,6 +57,18 @@ func addAuditTableIndexes(ctx context.Context, db dal.RDB, conf *upgrader.Config
 			blog.Errorf("create index for audit table failed, err: %s, index: %+v", err.Error(), index)
 			return err
 		}
+	}
+
+	removeIndexes := []string{"index_bk_supplier_account", "index_audit_type", "index_action"}
+	for _, removeIndex := range removeIndexes {
+		if _, exist := existIdxMap[removeIndex]; !exist {
+			continue
+		}
+		if err = db.Table(common.BKTableNameAuditLog).DropIndex(ctx, removeIndex); err != nil {
+			blog.Errorf("remove index for audit table failed, err: %s, index: %s", err.Error(), removeIndex)
+			return err
+		}
+
 	}
 	return nil
 }

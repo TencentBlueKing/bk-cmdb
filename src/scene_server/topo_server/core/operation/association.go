@@ -855,7 +855,7 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	curData := mapstr.NewFromStruct(input.Data, "json")
 	curData.Set("name", objectAsst.AssociationAliasName)
 
-	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet)
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
 	auditLog, err := audit.GenerateAuditLog(kit, nil, instanceAssociationID, metadata.AuditCreate)
 	if err != nil {
 		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
@@ -916,7 +916,7 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *meta
 		BaseResp: rsp.BaseResp,
 	}
 
-	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet)
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
 	auditLog, err := audit.GenerateAuditLog(kit, &instanceAssociation, assoID, metadata.AuditDelete)
 	if err != nil {
 		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)

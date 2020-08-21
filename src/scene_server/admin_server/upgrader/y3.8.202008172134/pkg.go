@@ -25,8 +25,8 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	if err := addAuditTableIndexes(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade to version y3.8.202008172134 failed, addAuditTableIndexes failed, err: %+v", err)
+	if err := reconcileAuditTableIndexes(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version y3.8.202008172134 failed, reconcileAuditTableIndexes failed, err: %+v", err)
 		return err
 	}
 

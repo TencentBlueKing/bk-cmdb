@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (*metadata.Response, errors.CCErrorCoder) {
+func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (*metadata.Response, error) {
 	resp := new(metadata.Response)
 	subPath := "/create/auditlog"
 
@@ -44,7 +44,7 @@ func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...m
 	return resp, nil
 }
 
-func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (*metadata.AuditQueryResult, errors.CCErrorCoder) {
+func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (*metadata.AuditQueryResult, error) {
 	resp := new(metadata.AuditQueryResult)
 	subPath := "/read/auditlog"
 

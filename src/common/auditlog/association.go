@@ -13,10 +13,9 @@
 package auditlog
 
 import (
-	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -27,11 +26,11 @@ type instanceAssociationAuditLog struct {
 }
 
 func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *metadata.InstAsst, id int64, action metadata.ActionType) (
-	metadata.AuditLog, errors.CCErrorCoder) {
+	metadata.AuditLog, error) {
 
 	if data == nil {
 		cond := metadata.QueryCondition{Condition: map[string]interface{}{common.BKFieldID: id}}
-		result, err := a.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, &cond)
+		result, err := a.clientSet.Association().ReadInstAssociation(kit.Ctx, kit.Header, &cond)
 		if err != nil {
 			blog.Errorf("generate inst asst audit log failed, get instance association failed, err: %v, rid: %s", err, kit.Rid)
 			return metadata.AuditLog{}, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
@@ -59,22 +58,22 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *meta
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.InstanceAssociationRes,
 		Action:       action,
+		ResourceID:   data.InstID,
+		ResourceName: srcInstName,
 		OperationDetail: &metadata.InstanceAssociationOpDetail{
 			AssociationOpDetail: metadata.AssociationOpDetail{
 				AssociationID:   data.ObjectAsstID,
 				AssociationKind: data.AssociationKindID,
-				SourceModelID:   data.ObjectID,
-				TargetModelID:   data.AsstObjectID,
 			},
-			SourceInstanceID:   data.InstID,
-			SourceInstanceName: srcInstName,
+			SourceModelID:      data.ObjectID,
+			TargetModelID:      data.AsstObjectID,
 			TargetInstanceID:   data.AsstInstID,
 			TargetInstanceName: targetInstName,
 		},
 	}, nil
 }
 
-func NewInstanceAssociationAudit(clientSet apimachinery.ClientSetInterface) *instanceAssociationAuditLog {
+func NewInstanceAssociationAudit(clientSet coreservice.CoreServiceClientInterface) *instanceAssociationAuditLog {
 	return &instanceAssociationAuditLog{
 		audit: audit{
 			clientSet: clientSet,

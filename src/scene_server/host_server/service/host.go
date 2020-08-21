@@ -205,16 +205,10 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 				return err
 			}
 
-			detail, ok := logContentMap[hostID].OperationDetail.(*meta.InstanceOpDetail)
-			if !ok {
-				blog.Errorf("delete host batch, but got invalid operation detail, rid:%s", srvData.rid)
-				return errors.New(common.CCErrCommParamsValueInvalidError, "")
-			}
-
 			hosts = append(hosts, extensions.HostSimplify{
 				BKAppIDField:       0,
 				BKHostIDField:      hostID,
-				BKHostInnerIPField: detail.ResourceName,
+				BKHostInnerIPField: logContentMap[hostID].ResourceName,
 			})
 		}
 

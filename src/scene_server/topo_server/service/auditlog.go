@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 
 	"github.com/coccyx/timeparser"
 )
@@ -44,9 +43,8 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	// the front-end table display fields
-	opDetailPrefix := common.BKOperationDetailField + "."
 	fields := []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
-		common.BKOperationTimeField, opDetailPrefix + common.BKAppIDField}
+		common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
 
 	cond := make(map[string]interface{})
 	condition := query.Condition
@@ -71,188 +69,38 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	if condition.BizID != 0 {
-		cond[opDetailPrefix+common.BKAppIDField] = condition.BizID
+		cond[common.BKAppIDField] = condition.BizID
+	}
+
+	if condition.ResourceID != 0 {
+		cond[common.BKResourceIDField] = condition.ResourceID
+	}
+
+	if condition.ResourceName != "" {
+		cond[common.BKResourceNameField] = map[string]interface{}{
+			common.BKDBLIKE: condition.ResourceName,
+		}
 	}
 
 	// parse operation time from string array to start time and end time
 	if condition.OperationTime != nil && len(condition.OperationTime) > 0 {
-		times := condition.OperationTime
-		if 2 != len(times) {
-			blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField))
-			return
-		}
-
-		startTime, err := timeparser.TimeParserInLocation(times[0], time.Local)
-		if nil != err {
-			blog.Errorf("parse start time failed, error: %s, time: %s, rid: %s", err, times[0], ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField))
-			return
-		}
-
-		endTime, err := timeparser.TimeParserInLocation(times[1], time.Local)
-		if nil != err {
-			blog.Errorf("parse end time failed, error: %s, time: %s, rid: %s", err, times[1], ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField))
-			return
-		}
-
-		cond[common.BKOperationTimeField] = map[string]interface{}{
-			common.BKDBGTE: startTime.Local(),
-			common.BKDBLTE: endTime.Local(),
-		}
-	}
-
-	andCond := make([]map[string]interface{}, 0)
-
-	// parse resource id and name condition by resource type, use different fields for different resource type
-	resourceID := condition.ResourceID
-	resourceNameCond := map[string]interface{}{
-		common.BKDBLIKE: condition.ResourceName,
-	}
-
-	resourceIDField := opDetailPrefix + common.BKResourceIDField
-	srcInstIDField := opDetailPrefix + "src_instance_id"
-	srcModelIDField := opDetailPrefix + "src_model_id"
-	targetInstIDField := opDetailPrefix + "target_instance_id"
-	targetModelIDField := opDetailPrefix + "target_model_id"
-
-	resourceNameField := opDetailPrefix + common.BKResourceNameField
-	srcInstNameField := opDetailPrefix + "src_instance_name"
-	srcModelNameField := opDetailPrefix + "src_model_name"
-	targetInstNameField := opDetailPrefix + "target_instance_name"
-	targetModelNameField := opDetailPrefix + "target_model_name"
-
-	switch condition.ResourceType {
-	case "":
-		fields = append(fields, resourceIDField, srcInstIDField, srcModelIDField, resourceNameField, srcInstNameField, srcModelNameField)
-
-		if condition.ResourceID != 0 {
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{resourceIDField: resourceID},
-				{srcInstIDField: resourceID},
-				{targetInstIDField: resourceID},
-				{srcModelIDField: resourceID},
-				{targetModelIDField: resourceID},
-			}})
-		}
-
-		if condition.ResourceName != "" {
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{resourceNameField: resourceNameCond},
-				{srcInstNameField: resourceNameCond},
-				{targetInstNameField: resourceNameCond},
-				{srcModelNameField: resourceNameCond},
-				{targetModelNameField: resourceNameCond},
-			}})
-		}
-
-	case metadata.InstanceAssociationRes:
-		fields = append(fields, srcInstIDField, srcInstNameField)
-
-		if condition.ResourceID != 0 {
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{srcInstIDField: resourceID},
-				{targetInstIDField: resourceID},
-			}})
-		}
-
-		if condition.ResourceName != "" {
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{srcInstNameField: resourceNameCond},
-				{targetInstNameField: resourceNameCond},
-			}})
-		}
-
-	case metadata.ModelAssociationRes:
-		fields = append(fields, srcModelIDField, srcModelNameField)
-
-		if condition.ResourceID != 0 {
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{srcModelIDField: resourceID},
-				{targetModelIDField: resourceID},
-			}})
-		}
-
-		if condition.ResourceName != "" {
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{srcModelNameField: resourceNameCond},
-				{targetModelNameField: resourceNameCond},
-			}})
-		}
-
-	default:
-		fields = append(fields, resourceIDField, resourceNameField)
-		if condition.ResourceID != 0 {
-			cond[resourceIDField] = resourceID
-		}
-		if condition.ResourceName != "" {
-			cond[resourceNameField] = resourceNameCond
-		}
-	}
-
-	// parse audit type condition by category and audit type condition
-	auditTypeCond := make(map[string]interface{})
-	if condition.AuditType != "" {
-		auditTypeCond[common.BKAuditTypeField] = condition.AuditType
-	}
-	if condition.Category != "" {
-		auditTypes := metadata.GetAuditTypesByCategory(condition.Category)
-		if condition.AuditType != "" {
-			flag := false
-			if condition.AuditType != metadata.HostType || condition.Category != "resource" {
-				for _, audit := range auditTypes {
-					if condition.AuditType == audit {
-						flag = true
-						break
-					}
-				}
-
-				// audit type and category not match
-				if !flag {
-					ctx.RespEntity(map[string]interface{}{"count": 0, "info": []interface{}{}})
-					return
-				}
-			}
-		} else {
-			auditTypeCond[common.BKAuditTypeField] = map[string]interface{}{
-				common.BKDBIN: auditTypes,
-			}
-		}
-
-		bizID, err := s.getDefaultBizID(ctx.Kit)
+		timeCond, err := parseOperationTimeCondition(ctx.Kit, condition.OperationTime)
 		if err != nil {
-			blog.Errorf("get default biz id failed, err: %s", err.Error())
 			ctx.RespAutoError(err)
 			return
 		}
-		switch condition.Category {
-		case "business":
-			cond[common.BKAuditTypeField] = auditTypeCond[common.BKAuditTypeField]
-			andCond = append(andCond, map[string]interface{}{
-				common.BKActionField:                 map[string]interface{}{common.BKDBNE: metadata.AuditAssignHost},
-				opDetailPrefix + common.BKAppIDField: map[string]interface{}{common.BKDBNIN: []int64{0, bizID}},
-			})
-
-		case "resource":
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				auditTypeCond,
-				{
-					common.BKAuditTypeField: metadata.HostType,
-					common.BKActionField:    map[string]interface{}{common.BKDBEQ: metadata.AuditAssignHost},
-				},
-				{
-					common.BKAuditTypeField:              metadata.HostType,
-					opDetailPrefix + common.BKAppIDField: map[string]interface{}{common.BKDBIN: []int64{0, bizID}},
-				},
-			}})
-		default:
-			cond[common.BKAuditTypeField] = auditTypeCond[common.BKAuditTypeField]
-		}
+		cond[common.BKOperationTimeField] = timeCond
 	}
 
-	if len(andCond) > 0 {
-		cond[common.BKDBAND] = andCond
+	// parse audit type condition by category and audit type condition
+	auditTypeCond, notMatch := parseAuditTypeCondition(ctx.Kit, condition)
+	if notMatch {
+		ctx.RespEntity(map[string]interface{}{"count": 0, "info": []interface{}{}})
+		return
+	}
+
+	if auditTypeCond != nil {
+		cond[common.BKAuditTypeField] = auditTypeCond
 	}
 
 	auditQuery := metadata.QueryCondition{
@@ -286,33 +134,58 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-var defaultBizID int64
-
-func (s *Service) getDefaultBizID(kit *rest.Kit) (int64, error) {
-	if defaultBizID != 0 {
-		return defaultBizID, nil
+func parseOperationTimeCondition(kit *rest.Kit, times []string) (map[string]interface{}, error) {
+	if 2 != len(times) {
+		blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
 	}
 
-	biz, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, &metadata.QueryCondition{
-		Fields: []string{common.BKAppIDField},
-		Page:   metadata.BasePage{Limit: 1},
-		Condition: map[string]interface{}{
-			common.BKDefaultField: common.DefaultAppFlag,
-		},
-	})
-
-	if err != nil {
-		return 0, err
+	startTime, err := timeparser.TimeParserInLocation(times[0], time.Local)
+	if nil != err {
+		blog.Errorf("parse start time failed, error: %s, time: %s, rid: %s", err, times[0], kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
 	}
 
-	if len(biz.Data.Info) == 0 {
-		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	endTime, err := timeparser.TimeParserInLocation(times[1], time.Local)
+	if nil != err {
+		blog.Errorf("parse end time failed, error: %s, time: %s, rid: %s", err, times[1], kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
 	}
 
-	defaultBizID, err = util.GetInt64ByInterface(biz.Data.Info[0][common.BKAppIDField])
-	if err != nil {
-		return 0, err
+	return map[string]interface{}{
+		common.BKDBGTE: startTime.Local(),
+		common.BKDBLTE: endTime.Local(),
+	}, nil
+}
+
+func parseAuditTypeCondition(kit *rest.Kit, condition metadata.AuditQueryCondition) (interface{}, bool) {
+	if condition.Category != "" {
+		auditTypes := metadata.GetAuditTypesByCategory(condition.Category)
+		if condition.AuditType != "" {
+			flag := false
+			if condition.AuditType != metadata.HostType || condition.Category != "resource" {
+				for _, audit := range auditTypes {
+					if condition.AuditType == audit {
+						flag = true
+						break
+					}
+				}
+
+				// audit type and category not match, result is empty
+				if !flag {
+					return nil, true
+				}
+			}
+		} else {
+			return map[string]interface{}{
+				common.BKDBIN: auditTypes,
+			}, false
+		}
 	}
 
-	return defaultBizID, nil
+	if condition.AuditType != "" {
+		return condition.AuditType, false
+	}
+
+	return nil, false
 }

@@ -17,13 +17,12 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
 type AuditClientInterface interface {
-	SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (*metadata.Response, errors.CCErrorCoder)
-	SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (*metadata.AuditQueryResult, errors.CCErrorCoder)
+	SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (*metadata.Response, error)
+	SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (*metadata.AuditQueryResult, error)
 }
 
 func NewAuditClientInterface(client rest.ClientInterface) AuditClientInterface {
