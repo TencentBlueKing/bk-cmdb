@@ -146,6 +146,44 @@ var ObjectBaseKey = Key{
 	},
 }
 
+var processFields = []string{common.BKProcessIDField, common.BKProcessNameField}
+var ProcessKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDProc,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, processFields...)
+		for idx := range processFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", processFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		fields := gjson.GetManyBytes(doc, processFields...)
+		return fields[1].String()
+	},
+}
+
+var processInstanceRelationFields = []string{common.BKProcessIDField, common.BKServiceInstanceIDField, common.BKHostIDField}
+var ProcessInstanceRelationKey = Key{
+	namespace:  watchCacheNamespace + "process_instance_relation",
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, processInstanceRelationFields...)
+		for idx := range processInstanceRelationFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", processInstanceRelationFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		fields := gjson.GetManyBytes(doc, processInstanceRelationFields...)
+		return fields[0].String()
+	},
+}
+
 type Key struct {
 	namespace string
 	// the valid event's life time.

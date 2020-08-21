@@ -505,6 +505,8 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameBaseModule:
 	case common.BKTableNameSetTemplate:
 	case common.BKTableNameBaseInst:
+	case common.BKTableNameBaseProcess:
+	case common.BKTableNameProcessInstanceRelation:
 	default:
 		// do not archive the delete docs
 		return nil

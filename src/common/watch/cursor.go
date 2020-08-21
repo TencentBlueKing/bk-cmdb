@@ -50,15 +50,17 @@ func init() {
 type CursorType string
 
 const (
-	NoEvent            CursorType = "no_event"
-	UnknownType        CursorType = "unknown"
-	Host               CursorType = "host"
-	ModuleHostRelation CursorType = "host_relation"
-	Biz                CursorType = "biz"
-	Set                CursorType = "set"
-	Module             CursorType = "module"
-	SetTemplate        CursorType = "set_template"
-	ObjectBase         CursorType = "object_instance"
+	NoEvent                 CursorType = "no_event"
+	UnknownType             CursorType = "unknown"
+	Host                    CursorType = "host"
+	ModuleHostRelation      CursorType = "host_relation"
+	Biz                     CursorType = "biz"
+	Set                     CursorType = "set"
+	Module                  CursorType = "module"
+	SetTemplate             CursorType = "set_template"
+	ObjectBase              CursorType = "object_instance"
+	Process                 CursorType = "process"
+	ProcessInstanceRelation CursorType = "process_instance_relation"
 )
 
 func (ct CursorType) ToInt() int {
@@ -79,6 +81,10 @@ func (ct CursorType) ToInt() int {
 		return 7
 	case ObjectBase:
 		return 8
+	case Process:
+		return 9
+	case ProcessInstanceRelation:
+		return 10
 	default:
 		return -1
 	}
@@ -102,6 +108,10 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = SetTemplate
 	case 8:
 		*ct = ObjectBase
+	case 9:
+		*ct = Process
+	case 10:
+		*ct = ProcessInstanceRelation
 	default:
 		*ct = UnknownType
 	}
@@ -109,12 +119,12 @@ func (ct *CursorType) ParseInt(typ int) {
 
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
-	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, SetTemplate, ObjectBase}
+	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, SetTemplate, ObjectBase, Process, ProcessInstanceRelation}
 }
 
 // ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
 func ListEventCallbackCursorTypes() []CursorType {
-	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase}
+	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation}
 }
 
 // Cursor is a self-defined token which is corresponding to the mongodb's resume token.
@@ -252,6 +262,10 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		curType = SetTemplate
 	case common.BKTableNameBaseInst:
 		curType = ObjectBase
+	case common.BKTableNameBaseProcess:
+		curType = Process
+	case common.BKTableNameProcessInstanceRelation:
+		curType = ProcessInstanceRelation
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.Oid)
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)

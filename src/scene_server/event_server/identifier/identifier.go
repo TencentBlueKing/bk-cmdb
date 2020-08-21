@@ -74,14 +74,33 @@ var hostIndentDiffFields = map[string][]string{
 }
 
 func (ih *IdentifierHandler) handleEvent(event *metadata.EventInstCtx) {
-	if diffFields, ok := hostIndentDiffFields[event.ObjType]; ok &&
-		event.Action == metadata.EventActionUpdate &&
-		event.EventType == metadata.EventTypeInstData {
-		ih.handleInstFieldChange(event, diffFields)
-	} else if event.EventType == metadata.EventTypeRelation &&
-		(event.ObjType == metadata.EventObjTypeModuleTransfer ||
-			event.ObjType == metadata.EventObjTypeProcModule) {
-		ih.handleHostRelationChange(event)
+	/*
+			NOTE: Identifier event handle rules here,
+		    	For EventTypeInstData:
+		   			only handle events App: update, Set: update, Module: update, Process: update, Host: create
+
+		   		For EventTypeRelation:
+		   			only handle events ModuleHostRelation: create/update/delete ProcessInstanceRelation: create/update/delete
+	*/
+
+	if event.EventType == metadata.EventTypeInstData {
+		diffFields, ok := hostIndentDiffFields[event.ObjType]
+		if !ok {
+			return
+		}
+
+		if event.Action == metadata.EventActionUpdate /* all object type update event would be handled */ ||
+			(event.ObjType == common.BKInnerObjIDHost && event.Action == metadata.EventActionCreate) {
+			ih.handleInstFieldChange(event, diffFields)
+		}
+
+	} else if event.EventType == metadata.EventTypeRelation {
+		// handle module and process relation events.
+		if event.ObjType == metadata.EventObjTypeModuleTransfer ||
+			event.ObjType == metadata.EventObjTypeProcModule /* process instance relation delete event */ {
+
+			ih.handleHostRelationChange(event)
+		}
 	}
 }
 
@@ -172,6 +191,7 @@ func (ih *IdentifierHandler) handleHostRelationChange(e *metadata.EventInstCtx) 
 	hostIdentify.Action = metadata.EventActionUpdate
 
 	go func() {
+		// NOTE: why 30 seconds?
 		time.Sleep(delayTime)
 
 		hostIDs := make([]int64, 0)
@@ -889,6 +909,7 @@ func (ih *IdentifierHandler) popEvent() *metadata.EventInstCtx {
 		blog.Errorf("identifier: event distribute fail, unmarshal error: %+v, data=[%s], rid: %s", err, eventStr, rid)
 		return nil
 	}
+	blog.V(3).Infof("pop new event for identifier, %+v", event)
 
 	return &metadata.EventInstCtx{EventInst: event, Raw: eventStr}
 }

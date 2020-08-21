@@ -41,6 +41,10 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = SetTemplateKey
 	case watch.ObjectBase:
 		key = ObjectBaseKey
+	case watch.Process:
+		key = ProcessKey
+	case watch.ProcessInstanceRelation:
+		key = ProcessInstanceRelationKey
 	default:
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}

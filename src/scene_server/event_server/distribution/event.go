@@ -222,6 +222,14 @@ func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string
 			eventInst.EventType = metadata.EventTypeInstData
 			eventInst.ObjType = common.BKInnerObjIDModule
 
+		case watch.Process:
+			eventInst.EventType = metadata.EventTypeInstData
+			eventInst.ObjType = common.BKInnerObjIDProc
+
+		case watch.ProcessInstanceRelation:
+			eventInst.EventType = metadata.EventTypeRelation
+			eventInst.ObjType = metadata.EventObjTypeProcModule
+
 		case watch.ObjectBase:
 			eventInst.EventType = metadata.EventTypeInstData
 			jsonStr := event.Detail.(watch.JsonString)
