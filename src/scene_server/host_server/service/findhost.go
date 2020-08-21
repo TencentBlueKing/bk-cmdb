@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/mapstruct"
 	meta "configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
@@ -465,9 +464,9 @@ func (s *Service) ListResourcePoolHosts(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	// parse biz data
-	biz := meta.BizBasicInfo{}
-	if err := mapstruct.Decode2Struct(bizData, &biz); err != nil {
+	// get biz ID
+	bizID, err := util.GetInt64ByInterface(bizData[common.BKAppIDField])
+	if err != nil {
 		blog.ErrorJSON("ListResourcePoolHosts failed, parse app data failed, bizData: %s, err: %s, rid: %s", bizData, err.Error(), rid)
 		ccErr := defErr.Error(common.CCErrCommParseDataFailed)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
@@ -475,7 +474,6 @@ func (s *Service) ListResourcePoolHosts(req *restful.Request, resp *restful.Resp
 	}
 
 	// do host search
-	bizID := biz.BizID
 	hostResult, ccErr := s.listBizHosts(req.Request.Header, bizID, parameter)
 	if ccErr != nil {
 		blog.ErrorJSON("ListResourcePoolHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID, parameter, ccErr.Error(), rid)

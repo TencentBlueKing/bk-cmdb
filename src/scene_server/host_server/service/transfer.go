@@ -601,6 +601,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, withHostA
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField},
 		Condition: map[string]interface{}{
 			common.BKModuleIDField: map[string]interface{}{
 				common.BKDBIN: moduleIDs,
@@ -615,12 +616,12 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, withHostA
 	}
 	enableModuleMap := make(map[int64]bool)
 	for _, item := range enabledModules.Data.Info {
-		module := metadata.ModuleInst{}
-		if err := mapstruct.Decode2Struct(item, &module); err != nil {
+		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
+		if err != nil {
 			blog.ErrorJSON("RunHostApplyOnHosts failed, parse module from db failed, module: %s, err: %s, rid: %s", item, err.Error(), rid)
 			return transferPlans, srvData.ccErr.CCError(common.CCErrCommParseDBFailed)
 		}
-		enableModuleMap[module.ModuleID] = true
+		enableModuleMap[moduleID] = true
 	}
 	for _, item := range transferPlans {
 		host2Module := metadata.Host2Modules{
