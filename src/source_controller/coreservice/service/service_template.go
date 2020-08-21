@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -130,14 +129,8 @@ func (s *coreService) ListServiceTemplateDetail(ctx *rest.Contexts) {
 	input := struct {
 		ServiceTemplateIDs []int64 `json:"service_template_ids" mapstructure:"service_template_ids"`
 	}{}
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
+	if err := ctx.DecodeInto(&input); nil != err {
 		ctx.RespAutoError(err)
-		return
-	}
-	if err := mapstruct.Decode2Struct(data, &input); err != nil {
-		blog.ErrorJSON("ListServiceTemplateDetail failed, unmarshal request body failed, value: %s, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 

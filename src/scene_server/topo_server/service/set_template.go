@@ -102,6 +102,7 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 			},
+			Fields: []string{common.BKSetIDField},
 			Condition: mapstr.MapStr(map[string]interface{}{
 				common.BKAppIDField:         bizID,
 				common.BKSetTemplateIDField: setTemplateID,
@@ -113,13 +114,13 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 			return err
 		}
 		for _, item := range setInstanceResult.Data.Info {
-			set := metadata.SetInst{}
-			if err := mapstruct.Decode2Struct(item, &set); err != nil {
+			setID, err := util.GetInt64ByInterface(item[common.BKSetIDField])
+			if err != nil {
 				blog.ErrorJSON("UpdateSetTemplate failed, ListSetTplRelatedSets failed, set: %s, err: %s, rid: %s", item, err, ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 			}
-			if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, set.SetID); err != nil {
-				blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", set.SetID, err, ctx.Kit.Rid)
+			if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, setID); err != nil {
+				blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", setID, err, ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 			}
 		}
@@ -809,15 +810,9 @@ func (s *Service) ListSetTemplateSyncHistory(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.ListSetTemplateSyncStatusOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("ListSetTemplateSyncHistory failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -839,15 +834,9 @@ func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.ListSetTemplateSyncStatusOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("ListSetTemplateSyncStatus failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
 		return
 	}
 

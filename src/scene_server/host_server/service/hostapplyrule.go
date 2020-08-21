@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -659,6 +658,7 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField},
 		Condition: map[string]interface{}{
 			common.BKModuleIDField: map[string]interface{}{
 				common.BKDBIN: moduleIDs,
@@ -677,14 +677,12 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 	}
 	validModuleIDs := make([]int64, 0)
 	for _, item := range moduleResult.Data.Info {
-		module := struct {
-			ModuleID int64 `mapstructure:"bk_module_id" json:"bk_module_id"`
-		}{}
-		if err := mapstruct.Decode2Struct(item, &module); err != nil {
+		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
+		if err != nil {
 			blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, parse module data failed, filter: %s, item: %s, rid: %s", moduleFilter, item, rid)
 			return nil, srvData.ccErr.CCError(common.CCErrCommParseDBFailed)
 		}
-		validModuleIDs = append(validModuleIDs, module.ModuleID)
+		validModuleIDs = append(validModuleIDs, moduleID)
 	}
 
 	ruleOption := metadata.ListHostApplyRuleOption{
