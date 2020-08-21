@@ -75,12 +75,11 @@ var hostIndentDiffFields = map[string][]string{
 
 func (ih *IdentifierHandler) handleEvent(event *metadata.EventInstCtx) {
 	/*
-			NOTE: Identifier event handle rules here,
-		    	For EventTypeInstData:
-		   			only handle events App: update, Set: update, Module: update, Process: update, Host: create
-
-		   		For EventTypeRelation:
-		   			only handle events ModuleHostRelation: create/update/delete ProcessInstanceRelation: create/update/delete
+	   NOTE: Identifier event handle rules here,
+	       For EventTypeInstData:
+	           only handle events App: update, Set: update, Module: update, Process: update, Host: create
+	       For EventTypeRelation:
+	           only handle events ModuleHostRelation: create/update/delete ProcessInstanceRelation: create/update/delete
 	*/
 
 	if event.EventType == metadata.EventTypeInstData {
@@ -89,7 +88,8 @@ func (ih *IdentifierHandler) handleEvent(event *metadata.EventInstCtx) {
 			return
 		}
 
-		if event.Action == metadata.EventActionUpdate /* all object type update event would be handled */ ||
+		// host create and all object type update event would be handled.
+		if event.Action == metadata.EventActionUpdate ||
 			(event.ObjType == common.BKInnerObjIDHost && event.Action == metadata.EventActionCreate) {
 			ih.handleInstFieldChange(event, diffFields)
 		}
@@ -97,8 +97,7 @@ func (ih *IdentifierHandler) handleEvent(event *metadata.EventInstCtx) {
 	} else if event.EventType == metadata.EventTypeRelation {
 		// handle module and process relation events.
 		if event.ObjType == metadata.EventObjTypeModuleTransfer ||
-			event.ObjType == metadata.EventObjTypeProcModule /* process instance relation delete event */ {
-
+			event.ObjType == metadata.EventObjTypeProcModule {
 			ih.handleHostRelationChange(event)
 		}
 	}
