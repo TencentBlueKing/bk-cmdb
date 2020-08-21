@@ -115,6 +115,7 @@ func (s *Service) FindModuleHostRelation(req *restful.Request, resp *restful.Res
 				Relation: []meta.ModuleHostRelation{},
 			},
 		})
+		return
 	}
 	hostIDArr := make([]int64, hostLen)
 	for index, host := range hostRes.Data.Info {
@@ -681,7 +682,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	option := &meta.ListHosts{
 		BizID:              bizID,
 		HostPropertyFilter: parameter.HostPropertyFilter,
-		Fields:             parameter.Fields,
+		Fields:             append(parameter.Fields, common.BKHostIDField),
 		Page:               parameter.Page,
 	}
 	hosts, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)

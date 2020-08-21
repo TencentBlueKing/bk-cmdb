@@ -1272,7 +1272,7 @@ var _ = Describe("list_hosts_topo test", func() {
 		Expect(transferRsp.Result).To(Equal(true))
 
 		By("list hosts topo")
-		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId, &metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10}})
+		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId, &metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10}, Fields: []string{"bk_host_id"}})
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -1400,7 +1400,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		input := &metadata.CreateModelInstance{
 			Data: map[string]interface{}{
 				"bk_host_innerip": "1.0.0.1,1.0.0.2",
-				"bk_cloud_id" : 0,
+				"bk_cloud_id":     0,
 			},
 		}
 		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
