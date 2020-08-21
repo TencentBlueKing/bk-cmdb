@@ -77,7 +77,7 @@ func (ih *IdentifierHandler) handleEvent(event *metadata.EventInstCtx) {
 	/*
 	   NOTE: Identifier event handle rules here,
 	       For EventTypeInstData:
-	           only handle events App: update, Set: update, Module: update, Process: update, Host: create
+	           only handle events App: update, Set: update, Module: update, Process: update, Host: create, update
 	       For EventTypeRelation:
 	           only handle events ModuleHostRelation: create/update/delete ProcessInstanceRelation: create/update/delete
 	*/
