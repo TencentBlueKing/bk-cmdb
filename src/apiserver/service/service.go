@@ -61,6 +61,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws := &restful.WebService{}
 	ws.Path(rootPath)
 	ws.Filter(s.engine.Metric().RestfulMiddleWare)
+	ws.Filter(rdapi.RequestTimeoutFilter())
 	ws.Filter(rdapi.AllGlobalFilter(getErrFun))
 	ws.Filter(rdapi.RequestLogFilter())
 	ws.Filter(s.LimiterFilter())

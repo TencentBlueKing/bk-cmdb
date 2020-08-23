@@ -187,7 +187,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			}
 		}
 
-		auditResp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.kit.Header, auditLog)
+		auditResp, err := a.client.CoreService().Audit().SaveAuditLog(a.kit.Ctx, a.kit.Header, auditLog)
 		if err != nil {
 			blog.ErrorJSON("[audit] failed to save audit log(%s), err: %s, rid: %s", auditLog, err.Error(), a.kit.Rid)
 			return

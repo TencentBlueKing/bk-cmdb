@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -68,7 +66,7 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		Fields:    []string{common.BKHostIDField},
 		Page:      param.Page,
 	}
-	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, common.BKInnerObjIDHost, hostQuery)
+	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, hostQuery)
 	if nil != err {
 		blog.ErrorJSON("[identifier] ReadInstance query host  http do error. error:%s, input:%s,  rid:%s", err.Error(), kit, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
@@ -91,7 +89,7 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		hostIDs = append(hostIDs, hostID)
 	}
 	queryHostIdentifier := &metadata.SearchHostIdentifierParam{HostIDs: hostIDs}
-	rsp, err := g.clientSet.CoreService().Host().FindIdentifier(context.Background(), kit.Header, queryHostIdentifier)
+	rsp, err := g.clientSet.CoreService().Host().FindIdentifier(kit.Ctx, kit.Header, queryHostIdentifier)
 	if nil != err {
 		blog.ErrorJSON("[identifier]  SearchIdentifier http do error. error:%s, input:%s,  rid:%s", err.Error(), kit, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)

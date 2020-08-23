@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -66,7 +64,7 @@ func (s *set) hasHost(kit *rest.Kit, bizID int64, setIDS []int64) (bool, error) 
 		ApplicationID: bizID,
 		SetIDArr:      setIDS,
 	}
-	rsp, err := s.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
+	rsp, err := s.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

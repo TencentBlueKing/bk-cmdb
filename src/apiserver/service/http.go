@@ -66,6 +66,8 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
+	proxyReq = proxyReq.WithContext(req.Request.Context())
+
 	response, err := s.client.Do(proxyReq)
 	if err != nil {
 		blog.Errorf("*failed do request[%s url: %s] , err: %v, rid: %s", req.Request.Method, url, err, rid)

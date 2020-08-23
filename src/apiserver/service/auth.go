@@ -67,7 +67,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
-	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	ctx := context.WithValue(req.Request.Context(), common.ContextRequestIDField, rid)
 	verifyResults, err := s.authorizer.AuthorizeBatch(ctx, user, attrs...)
 	if err != nil {
 		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)

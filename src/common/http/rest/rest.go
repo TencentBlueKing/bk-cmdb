@@ -16,11 +16,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -103,6 +106,10 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		user := util.GetUser(header)
 		owner := util.GetOwnerID(header)
 		ctx := req.Request.Context()
+		if deadline := header.Get(common.BKHTTPRequestDeadline); len(deadline) > 0 {
+			deadlineStamp, _ := strconv.ParseInt(deadline, 10, 64)
+			ctx, _ = context.WithDeadline(ctx, time.Unix(deadlineStamp, 0))
+		}
 		ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 		ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 		ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)

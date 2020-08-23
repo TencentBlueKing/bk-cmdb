@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -38,7 +36,7 @@ type audit struct {
 }
 
 func (a *audit) Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error) {
-	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), kit.Header, query)
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(kit.Ctx, kit.Header, query)
 	if nil != err {
 		blog.Errorf("[audit] failed to request core service, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())

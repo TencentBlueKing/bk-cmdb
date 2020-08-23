@@ -123,6 +123,9 @@ pwd = $es_pass
 
 [api]
 version = v3
+# api请求默认超时时间,单位为秒，取值范围为10～120
+requestDefaultTimeoutSecond = 30
+
 [session]
 name = cc3
 defaultlanguage = zh-cn

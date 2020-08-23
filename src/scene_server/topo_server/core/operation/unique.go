@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
@@ -56,7 +54,7 @@ func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.Create
 	if nil != metaData {
 		unique.Metadata = *metaData
 	}
-	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), kit.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
+	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
 	if err != nil {
 		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueCreateFailed)
@@ -72,7 +70,7 @@ func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *meta
 	update := metadata.UpdateModelAttrUnique{
 		Data: *request,
 	}
-	resp, err := a.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), kit.Header, objectID, id, update)
+	resp, err := a.clientSet.CoreService().Model().UpdateModelAttrUnique(kit.Ctx, kit.Header, objectID, id, update)
 	if err != nil {
 		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v, rid: %s", objectID, id, request, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniqueUpdateFailed)
@@ -94,7 +92,7 @@ func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64, metaData *met
 	if metaData != nil {
 		meta = *metaData
 	}
-	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), kit.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
+	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(kit.Ctx, kit.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
 	if err != nil {
 		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v, rid: %s", objectID, id, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniqueDeleteFailed)
@@ -122,7 +120,7 @@ func (a *unique) Search(kit *rest.Kit, objectID string, metaData *metadata.Metad
 	cond := metadata.QueryCondition{
 		Condition: fCond,
 	}
-	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), kit.Header, cond)
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("[UniqueOperation] search for %s, failed %v, rid: %s", objectID, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed)

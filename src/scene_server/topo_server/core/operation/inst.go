@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"strconv"
@@ -258,7 +257,7 @@ func (c *commonInst) isValidBizInstID(kit *rest.Kit, obj metadata.Object, instID
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, obj.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -367,7 +366,7 @@ func (c *commonInst) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error
 		Fields:      []string{common.BKHostIDField},
 		Page:        metadata.BasePage{Limit: 1},
 	}
-	rsp, err := c.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
+	rsp, err := c.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -599,7 +598,7 @@ func (c *commonInst) convertInstIDIntoStruct(kit *rest.Kit, asstObj metadata.Ass
 
 	query := &metadata.QueryCondition{}
 	query.Condition = cond.ToMapStr()
-	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, obj.GetObjectID(), query)
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj.GetObjectID(), query)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)

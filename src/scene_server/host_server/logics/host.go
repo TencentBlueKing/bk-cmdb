@@ -163,7 +163,7 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		if err != nil {
 			return err
 		}
-		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, auditLog)
+		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(ctx, lgc.header, auditLog)
 		if err != nil {
 			blog.Errorf("EnterIP AddHostLog http do error, err:%s, rid:%s", err.Error(), lgc.rid)
 			return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

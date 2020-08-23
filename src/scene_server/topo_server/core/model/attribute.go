@@ -13,7 +13,6 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
@@ -65,7 +64,7 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	input := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := a.clientSet.CoreService().Model().ReadModel(context.Background(), a.kit.Header, &input)
+	rsp, err := a.clientSet.CoreService().Model().ReadModel(a.kit.Ctx, a.kit.Header, &input)
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, a.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -230,7 +229,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(a.attr.ID).ToMapStr(),
 		Data:      data,
 	}
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.kit.Header, a.attr.ObjectID, &input)
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return err
@@ -244,7 +243,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.kit.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request to object controller, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, err
@@ -321,7 +320,7 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)
 	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
 
-	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), a.kit.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request the coreservice, err: %s, rid: %s", err.Error(), a.kit.Rid)
 		return nil, a.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -333,7 +332,7 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 	}
 
 	if 0 == len(rsp.Data.Info) {
-		return CreateGroup(a.kit, a.clientSet, []metadata.Group{metadata.Group{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
+		return CreateGroup(a.kit, a.clientSet, []metadata.Group{{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
 	}
 
 	return CreateGroup(a.kit, a.clientSet, rsp.Data.Info)[0], nil // should be one group

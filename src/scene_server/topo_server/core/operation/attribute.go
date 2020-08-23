@@ -191,7 +191,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 		objAudit := NewObjectAttrAudit(kit, a.clientSet, attrItem.Attribute().ID).buildSnapshotForPre()
 
 		// delete the attribute
-		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(context.Background(), kit.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v, rid: %s", err, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -290,7 +290,7 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 		Page:      metadata.BasePage{Limit: int(limits), Start: int(start), Sort: sort},
 	}
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), kit.Header, opt)
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, opt)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -321,7 +321,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	//get PreData
 	objAudit := NewObjectAttrAudit(kit, a.clientSet, attID).buildSnapshotForPre()
 
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(context.Background(), kit.Header, &input)
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -373,7 +373,7 @@ func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data
 		Data:      data,
 	}
 
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(context.Background(), kit.Header, objID, &input)
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(kit.Ctx, kit.Header, objID, &input)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

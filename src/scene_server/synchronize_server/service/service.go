@@ -15,6 +15,8 @@ package service
 import (
 	"context"
 	"net/http"
+	"strconv"
+	"time"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/synchronize"
@@ -59,6 +61,10 @@ func (s *Service) SetSynchronizeServer(synchronizeSrv synchronize.SynchronizeCli
 func (s *Service) newSrvComm(header http.Header) *srvComm {
 	lang := util.GetLanguage(header)
 	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	if deadline := header.Get(common.BKHTTPRequestDeadline); len(deadline) > 0 {
+		deadlineStamp, _ := strconv.ParseInt(deadline, 10, 64)
+		ctx, _ = context.WithDeadline(ctx, time.Unix(deadlineStamp, 0))
+	}
 	return &srvComm{
 		header:        header,
 		rid:           util.GetHTTPCCRequestID(header),

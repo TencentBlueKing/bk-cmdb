@@ -81,6 +81,12 @@ const (
 
 	// BKTopoBusinessLevelDefault the mainline topo level default level
 	BKTopoBusinessLevelDefault = 7
+
+	// BKMinRequestTimeout is the min timeout for a request, unit is second
+	BKMinRequestTimeout = 10
+
+	// BKMaxRequestTimeout is the max timeout for a request, unit is second
+	BKMaxRequestTimeout = 120
 )
 
 const (
@@ -931,6 +937,8 @@ const (
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
 	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
+
+	BKHTTPRequestDeadline = "HTTP_Request_Deadline"
 )
 
 // transaction related

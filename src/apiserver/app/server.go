@@ -16,15 +16,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
 	"configcenter/src/auth"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 
@@ -61,6 +64,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err := apiSvr.CheckForReadiness(); err != nil {
 		return err
 	}
+
+	apiSvr.setRequestDefaultTimeout()
 
 	authConf, err := engine.WithAuth()
 	if err != nil {
@@ -131,4 +136,24 @@ func (h *APIServer) CheckForReadiness() error {
 		return nil
 	}
 	return errors.New("wait for api server configuration timeout")
+}
+
+func (h *APIServer) setRequestDefaultTimeout() {
+	timeout := h.Config["api.requestDefaultTimeoutSecond"]
+	if timeout != "" {
+		tm, err := strconv.ParseInt(timeout, 10, 64)
+		if err != nil {
+			blog.Errorf(" parse api.requestDefaultTimeoutSecond %s to int error, don't change it, err:%s", timeout, err.Error())
+			return
+		}
+		if tm < common.BKMinRequestTimeout {
+			blog.Errorf("api.requestDefaultTimeoutSecond %d < %d, don't change it", tm, common.BKMinRequestTimeout)
+			return
+		}
+		if tm > common.BKMaxRequestTimeout {
+			blog.Errorf("api.requestDefaultTimeoutSecond %d > %d, don't change it", tm, common.BKMaxRequestTimeout)
+			return
+		}
+		rdapi.RequestDefaultTimeout = tm
+	}
 }

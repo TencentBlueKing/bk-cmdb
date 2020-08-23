@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
@@ -147,7 +145,7 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	//get PreData
 	objAudit := NewObjectClsAudit(kit, c.clientSet, id).buildSnapshotForPre()
 
-	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(kit.Ctx, kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
@@ -177,7 +175,7 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
@@ -194,7 +192,7 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 	}
 	clsIDs = util.StrArrayUnique(clsIDs)
 	queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).In(clsIDs)
-	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), kit.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
+	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
@@ -234,7 +232,7 @@ func (c *classification) FindClassification(kit *rest.Kit, cond condition.Condit
 		// fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err

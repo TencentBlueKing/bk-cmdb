@@ -186,7 +186,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	}
 
 	if len(logContents) > 0 {
-		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, logContents...)
+		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(ctx, lgc.header, logContents...)
 		if err != nil {
 			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}

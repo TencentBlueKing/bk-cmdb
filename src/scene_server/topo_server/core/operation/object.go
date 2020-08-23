@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"context"
 	"fmt"
 
 	"configcenter/src/apimachinery"
@@ -735,7 +734,7 @@ func (o *object) FindObject(kit *rest.Kit, cond condition.Condition, metaData *m
 		// search global shared model
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
-	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

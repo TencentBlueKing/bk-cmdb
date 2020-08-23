@@ -60,26 +60,6 @@ type ProcServer struct {
 	EnableTxn          bool
 }
 
-func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
-	rid := util.GetHTTPCCRequestID(header)
-	lang := util.GetLanguage(header)
-	ctx, cancel := ps.Engine.CCCtx.WithCancel()
-	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
-
-	errors.SetGlobalCCError(ps.CCErr)
-	return &srvComm{
-		header:        header,
-		rid:           util.GetHTTPCCRequestID(header),
-		ccErr:         ps.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:        ps.Language.CreateDefaultCCLanguageIf(lang),
-		ctx:           ctx,
-		ctxCancelFunc: cancel,
-		user:          util.GetUser(header),
-		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(ps.Engine, header, ps.EsbSrv, &ps.procHostInstConfig),
-	}
-}
-
 func (ps *ProcServer) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return ps.Engine.CCErr

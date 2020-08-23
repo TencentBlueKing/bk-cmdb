@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"context"
 	"strconv"
 
 	"configcenter/src/apimachinery"
@@ -58,7 +57,7 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	if nil != metaData {
 		graphCondition.SetMetaData(*metaData)
 	}
-	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(context.Background(), kit.Header, graphCondition)
+	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(kit.Ctx, kit.Header, graphCondition)
 	if nil != err {
 		return nil, err
 	}
@@ -165,7 +164,7 @@ func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		}
 	}
 
-	rsp, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(context.Background(), kit.Header, datas)
+	rsp, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(kit.Ctx, kit.Header, datas)
 	if err != nil {
 		blog.Errorf("UpdateGraphics failed %v, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrTopoGraphicsUpdateFailed, err.Error())

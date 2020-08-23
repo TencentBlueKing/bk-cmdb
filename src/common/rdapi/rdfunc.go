@@ -13,12 +13,15 @@
 package rdapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"strings"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,6 +30,11 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
+)
+
+var (
+	// RequestDefaultTimeout is the default timeout for a request, unit is second
+	RequestDefaultTimeout int64 = 30
 )
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
@@ -75,6 +83,32 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 			io.WriteString(resp, rsp)
 			return
 		}
+
+		fchain.ProcessFilter(req, resp)
+		return
+	}
+}
+
+// RequestTimeoutFilter add timeout for request
+func RequestTimeoutFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+
+		defaultTimeout := time.Duration(RequestDefaultTimeout) * time.Second
+		deadlineStamp := time.Now().Add(defaultTimeout).Unix()
+
+		header := req.Request.Header
+		deadline := header.Get(common.BKHTTPRequestDeadline)
+		if len(deadline) > 0 {
+			timestamp, _ := strconv.ParseInt(deadline, 10, 64)
+			dlTime := time.Unix(timestamp, 0)
+			if dlTime.Sub(time.Now()) >= common.BKMinRequestTimeout*time.Second && dlTime.Sub(time.Now()) <= common.BKMaxRequestTimeout*time.Second {
+				deadlineStamp = timestamp
+			}
+		}
+
+		req.Request.Header.Set(common.BKHTTPRequestDeadline, strconv.FormatInt(deadlineStamp, 10))
+		ctx, _ := context.WithDeadline(req.Request.Context(), time.Unix(deadlineStamp, 0))
+		req.Request = req.Request.WithContext(ctx)
 
 		fchain.ProcessFilter(req, resp)
 		return

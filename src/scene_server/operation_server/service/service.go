@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
@@ -35,6 +36,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -61,6 +63,10 @@ func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
 	rid := util.GetHTTPCCRequestID(header)
 	lang := util.GetLanguage(header)
 	ctx, cancel := o.Engine.CCCtx.WithCancel()
+	if deadline := header.Get(common.BKHTTPRequestDeadline); len(deadline) > 0 {
+		deadlineStamp, _ := strconv.ParseInt(deadline, 10, 64)
+		ctx, _ = context.WithDeadline(ctx, time.Unix(deadlineStamp, 0))
+	}
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 
 	return &srvComm{
