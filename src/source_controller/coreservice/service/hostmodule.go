@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/http/rest"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) GetHostModulesIDs(ctx *rest.Contexts) {
@@ -42,7 +43,7 @@ func (s *coreService) getModuleIDsByHostID(kit *rest.Kit, moduleCond interface{}
 	result := make([]meta.ModuleHost, 0)
 	var ret []int64
 
-	err := s.db.Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(kit.Ctx, &result)
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(kit.Ctx, &result)
 	if nil != err {
 		blog.Errorf("get module id by host id failed, error: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)

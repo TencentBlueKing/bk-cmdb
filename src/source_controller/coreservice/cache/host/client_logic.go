@@ -22,6 +22,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
+
 	"gopkg.in/redis.v5"
 )
 
@@ -161,7 +163,7 @@ func (c *Client) refreshHostIDListCache(ctx context.Context) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 
 	// get all host id list at first
-	total, err := c.db.Table(common.BKTableNameBaseHost).Find(nil).Count(ctx)
+	total, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(nil).Count(ctx)
 	if err != nil {
 		blog.Errorf("refresh host id list, but count failed, err: %v, rid: %v", err, rid)
 		return err
@@ -170,7 +172,7 @@ func (c *Client) refreshHostIDListCache(ctx context.Context) error {
 	allID := make([]hostID, 0)
 	for start := 0; start < int(total); start += listStep {
 		stepID := make([]hostID, 0)
-		if err := c.db.Table(common.BKTableNameBaseHost).Find(nil).Start(uint64(start)).
+		if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(nil).Start(uint64(start)).
 			Limit(uint64(listStep)).All(ctx, &stepID); err != nil {
 			blog.Errorf("refresh host id list, but get host id list failed, err: %v, rid: %v", err, rid)
 			return err
@@ -235,7 +237,7 @@ func (c *Client) getHostsWithPage(ctx context.Context, opt *metadata.ListHostWit
 	}
 
 	list := make([]metadata.HostMapStr, 0)
-	if err := c.db.Table(common.BKTableNameBaseHost).Find(nil).Start(uint64(opt.Page.Start)).
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(nil).Start(uint64(opt.Page.Start)).
 		Limit(uint64(opt.Page.Limit)).Sort(common.BKHostIDField).Fields(opt.Fields...).All(ctx, &list); err != nil {
 
 		blog.Errorf("get host id list with page failed, err: %v, rid: %v", err, rid)
@@ -253,5 +255,5 @@ func (c *Client) getHostsWithPage(ctx context.Context, opt *metadata.ListHostWit
 }
 
 func (c *Client) countHost(ctx context.Context, filter map[string]interface{}) (uint64, error) {
-	return c.db.Table(common.BKTableNameBaseHost).Find(filter).Count(ctx)
+	return mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(ctx)
 }

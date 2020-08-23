@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) CreateServiceTemplate(ctx *rest.Contexts) {
@@ -87,7 +88,7 @@ func (s *coreService) GetServiceTemplateWithStatistics(ctx *rest.Contexts) {
 	serviceInstanceFilter := map[string]interface{}{
 		common.BKServiceTemplateIDField: template.ID,
 	}
-	serviceInstanceCount, err := s.db.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Kit.Ctx)
+	serviceInstanceCount, err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetServiceCategory failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -98,7 +99,7 @@ func (s *coreService) GetServiceTemplateWithStatistics(ctx *rest.Contexts) {
 	processRelationFilter := map[string]interface{}{
 		common.BKServiceTemplateIDField: template.ID,
 	}
-	processRelationCount, err := s.db.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Count(ctx.Kit.Ctx)
+	processRelationCount, err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetServiceCategory failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))

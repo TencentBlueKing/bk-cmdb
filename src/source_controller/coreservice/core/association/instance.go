@@ -21,11 +21,10 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type associationInstance struct {
-	dbProxy dal.RDB
 	*associationKind
 	*associationModel
 	dependent OperationDependencies
@@ -45,34 +44,34 @@ func (m *associationInstance) isExists(kit *rest.Kit, instID, asstInstID int64, 
 		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond.ToMapStr()).One(kit.Ctx, origin)
-	if m.dbProxy.IsNotFoundError(err) {
-		return origin, !m.dbProxy.IsNotFoundError(err), nil
+	err = mongodb.Client().Table(common.BKTableNameInstAsst).Find(cond.ToMapStr()).One(kit.Ctx, origin)
+	if mongodb.Client().IsNotFoundError(err) {
+		return origin, !mongodb.Client().IsNotFoundError(err), nil
 	}
-	return origin, !m.dbProxy.IsNotFoundError(err), err
+	return origin, !mongodb.Client().IsNotFoundError(err), err
 }
 
 func (m *associationInstance) instCount(kit *rest.Kit, cond mapstr.MapStr) (cnt uint64, err error) {
-	innerCnt, err := m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond).Count(kit.Ctx)
+	innerCnt, err := mongodb.Client().Table(common.BKTableNameInstAsst).Find(cond).Count(kit.Ctx)
 	return innerCnt, err
 }
 
 func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.InstAsst, err error) {
 	results = []metadata.InstAsst{}
-	instHandler := m.dbProxy.Table(common.BKTableNameInstAsst).Find(inputParam.Condition).Fields(inputParam.Fields...)
+	instHandler := mongodb.Client().Table(common.BKTableNameInstAsst).Find(inputParam.Condition).Fields(inputParam.Fields...)
 	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 	return results, err
 }
 
 func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, cond mapstr.MapStr) (count uint64, err error) {
-	count, err = m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond).Count(kit.Ctx)
+	count, err = mongodb.Client().Table(common.BKTableNameInstAsst).Find(cond).Count(kit.Ctx)
 
 	return count, err
 }
 
 func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (id uint64, err error) {
 
-	id, err = m.dbProxy.NextSequence(kit.Ctx, common.BKTableNameInstAsst)
+	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameInstAsst)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
@@ -80,7 +79,7 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 	asstInst.ID = int64(id)
 	asstInst.OwnerID = kit.SupplierAccount
 
-	err = m.dbProxy.Table(common.BKTableNameInstAsst).Insert(kit.Ctx, asstInst)
+	err = mongodb.Client().Table(common.BKTableNameInstAsst).Insert(kit.Ctx, asstInst)
 	return id, err
 }
 
@@ -265,7 +264,7 @@ func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, inputPara
 		return &metadata.DeletedCount{}, err
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameInstAsst).Delete(kit.Ctx, inputParam.Condition)
+	err = mongodb.Client().Table(common.BKTableNameInstAsst).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete inst association [%#v] err [%#v], rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.DeletedCount{}, err

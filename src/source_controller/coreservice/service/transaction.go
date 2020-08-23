@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // CommitTransaction to commit transaction
@@ -26,7 +27,7 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.db.CommitTransaction(ctx.Kit.Ctx, cap)
+	err := mongodb.Client().CommitTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		return
@@ -43,7 +44,7 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.db.AbortTransaction(ctx.Kit.Ctx, cap)
+	err := mongodb.Client().AbortTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		return

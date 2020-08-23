@@ -21,27 +21,24 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var _ core.SystemOperation = (*systemManager)(nil)
 
 type systemManager struct {
-	dbProxy dal.RDB
 }
 
 // New create a new instance manager instance
-func New(dbProxy dal.RDB) core.SystemOperation {
-	return &systemManager{
-		dbProxy: dbProxy,
-	}
+func New() core.SystemOperation {
+	return &systemManager{}
 }
 
 func (sm *systemManager) GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder) {
 	cond := map[string]string{"type": metadata.CCSystemUserConfigSwitch}
 	result := make(map[string]interface{}, 0)
-	err := sm.dbProxy.Table(common.BKTableNameSystem).Find(cond).One(kit.Ctx, &result)
-	if err != nil && !sm.dbProxy.IsNotFoundError(err) {
+	err := mongodb.Client().Table(common.BKTableNameSystem).Find(cond).One(kit.Ctx, &result)
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.ErrorJSON("GetSystemUserConfig find error. cond:%s, err:%s, rid:%s", cond, err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -57,7 +54,7 @@ func (sm *systemManager) SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin
 	ret := struct {
 		Config string `json:"config"`
 	}{}
-	err := sm.dbProxy.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(kit.Ctx, &ret)
+	err := mongodb.Client().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(kit.Ctx, &ret)
 	if err != nil {
 		blog.Errorf("SearchConfigAdmin failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)

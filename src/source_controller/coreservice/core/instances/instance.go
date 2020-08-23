@@ -22,24 +22,19 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
-
-	redis "gopkg.in/redis.v5"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var _ core.InstanceOperation = (*instanceManager)(nil)
 
 type instanceManager struct {
-	dbProxy   dal.RDB
 	dependent OperationDependences
 	language  language.CCLanguageIf
-	Cache     *redis.Client
 }
 
 // New create a new instance manager instance
-func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client, language language.CCLanguageIf) core.InstanceOperation {
+func New(dependent OperationDependences, language language.CCLanguageIf) core.InstanceOperation {
 	return &instanceManager{
-		dbProxy:   dbProxy,
 		dependent: dependent,
 		language:  language,
 	}
@@ -47,7 +42,7 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client, l
 
 func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
 	tableName := common.GetInstTableName(objID)
-	cnt, err = m.dbProxy.Table(tableName).Find(cond).Count(kit.Ctx)
+	cnt, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
 }
@@ -169,7 +164,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	instItems := make([]mapstr.MapStr, 0)
-	query := m.dbProxy.Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
+	query := mongodb.Client().Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
 		Limit(uint64(inputParam.Page.Limit)).
 		Sort(inputParam.Page.Sort).
 		Fields(inputParam.Fields...)
@@ -188,7 +183,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 		return nil, instErr
 	}
 
-	count, countErr := m.dbProxy.Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
+	count, countErr := mongodb.Client().Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
 	if countErr != nil {
 		blog.Errorf("count instance error [%v], rid: %s", countErr, kit.Rid)
 		return nil, countErr
@@ -227,7 +222,7 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		}
 	}
 
-	err = m.dbProxy.Table(tableName).Delete(kit.Ctx, inputParam.Condition)
+	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID, err.Error(), inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, err
@@ -257,7 +252,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 		}
 	}
 	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
-	err = m.dbProxy.Table(tableName).Delete(kit.Ctx, inputParam.Condition)
+	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}

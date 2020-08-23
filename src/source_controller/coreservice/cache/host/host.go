@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
@@ -39,7 +39,6 @@ type hostCache struct {
 	key   hostKeyGenerator
 	rds   *redis.Client
 	event reflector.Interface
-	db    dal.DB
 }
 
 func (h *hostCache) Run() error {
@@ -99,7 +98,7 @@ func (h *hostCache) onUpsert(e *types.Event) {
 	}
 
 	// get host details from db again to avoid dirty data.
-	ips, cloudID, detail, err := getHostDetailsFromMongoWithHostID(h.db, hostID)
+	ips, cloudID, detail, err := getHostDetailsFromMongoWithHostID(hostID)
 	if err != nil {
 		blog.Errorf("received host %d upsert event, but get detail from mongodb failed, err: %v", hostID, err)
 		return
@@ -114,7 +113,7 @@ func (h *hostCache) onDelete(e *types.Event) {
 		"oid": e.Oid,
 	}
 	doc := bsonx.Doc{}
-	err := h.db.Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
+	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
 	if err != nil {
 		blog.Errorf("received delete host event, but get archive deleted doc from mongodb failed, oid: %s, err: %v", e.Oid, err)
 		return
@@ -206,12 +205,12 @@ func refreshHostDetailCache(rds *redis.Client, hostID int64, ips string, cloudID
 	blog.V(4).Infof("refresh host cache success, host id: %d, ips: %s, ttl: %ds", hostID, ips, ttl/time.Second)
 }
 
-func getHostDetailsFromMongoWithHostID(db dal.DB, hostID int64) (ips string, cloudID int64, detail []byte, err error) {
+func getHostDetailsFromMongoWithHostID(hostID int64) (ips string, cloudID int64, detail []byte, err error) {
 	filter := mapstr.MapStr{
 		common.BKHostIDField: hostID,
 	}
 	host := make(metadata.HostMapStr)
-	err = db.Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
+	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb for cache failed, err: %v", err)
 		return "", 0, nil, err
@@ -241,14 +240,14 @@ type hostBase struct {
 	detail  string
 }
 
-func listHostDetailsFromMongoWithHostID(db dal.DB, hostID []int64) (list []*hostBase, err error) {
+func listHostDetailsFromMongoWithHostID(hostID []int64) (list []*hostBase, err error) {
 	filter := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{
 			common.BKDBIN: hostID,
 		},
 	}
 	host := make([]metadata.HostMapStr, 0)
-	err = db.Table(common.BKTableNameBaseHost).Find(filter).Sort(common.BKHostIDField).All(context.Background(), &host)
+	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Sort(common.BKHostIDField).All(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb for cache failed, err: %v", err)
 		return nil, err
@@ -288,7 +287,7 @@ func listHostDetailsFromMongoWithHostID(db dal.DB, hostID []int64) (list []*host
 	return list, nil
 }
 
-func getHostDetailsFromMongoWithIP(db dal.DB, innerIP string, cloudID int64) (hostID int64, detail []byte, err error) {
+func getHostDetailsFromMongoWithIP(innerIP string, cloudID int64) (hostID int64, detail []byte, err error) {
 	innerIPArr := strings.Split(innerIP, ",")
 	filter := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
@@ -298,7 +297,7 @@ func getHostDetailsFromMongoWithIP(db dal.DB, innerIP string, cloudID int64) (ho
 		common.BKCloudIDField: cloudID,
 	}
 	host := make(metadata.HostMapStr)
-	err = db.Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
+	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb with ip: %s, cloud: %d for cache failed, err: %v", innerIP, cloudID, err)
 		return 0, nil, err
