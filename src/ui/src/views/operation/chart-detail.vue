@@ -246,7 +246,7 @@
             staticFilter () {
                 return this.staList.filter(item => {
                     const model = this.getModelById(item.bk_obj_id)
-                    return !model.bk_ishidden || !this.hostFilter.includes(item.bk_obj_id)
+                    return !model.bk_ishidden && !this.hostFilter.includes(item.bk_obj_id)
                 })
             },
             typeFilter () {
