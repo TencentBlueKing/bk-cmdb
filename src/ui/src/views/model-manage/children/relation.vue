@@ -54,11 +54,13 @@
                 <template slot-scope="{ row }">
                     <button class="text-primary mr10 operation-btn"
                         :disabled="!isEditable(row)"
+                        @keydown.enter.prevent
                         @click.stop="editRelation(row)">
                         {{$t('编辑')}}
                     </button>
                     <button class="text-primary operation-btn"
                         :disabled="!isEditable(row)"
+                        @keydown.enter.prevent
                         @click.stop="deleteRelation(row)">
                         {{$t('删除')}}
                     </button>
