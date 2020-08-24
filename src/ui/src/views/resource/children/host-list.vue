@@ -5,23 +5,30 @@
             v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="table.list"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 230"
             @selection-change="handleSelectionChange"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="property in table.header"
+                show-overflow-tooltip
+                :min-width="property.bk_property_id === 'bk_host_id' ? 80 : 120"
                 :key="property.bk_property_id"
                 :label="$tools.getHeaderPropertyName(property)"
                 :sortable="isPropertySortable(property) ? 'custom' : false"
                 :prop="property.bk_property_id"
-                :fixed="property.bk_property_id === 'bk_host_innerip'"
-                :class-name="property.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
+                :fixed="['bk_host_id'].includes(property.bk_property_id)"
+                :class-name="['bk_host_id'].includes(property.bk_property_id) ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(property.bk_obj_id, property.bk_property_id) | formatter(property)}}
+                    <cmdb-property-value
+                        :theme="['bk_host_id'].includes(property.bk_property_id) ? 'primary' : 'default'"
+                        :value="row | hostValueFilter(property.bk_obj_id, property.bk_property_id)"
+                        :show-unit="false"
+                        :show-title="false"
+                        :property="property"
+                        @click.native.stop="handleValueClick(row, property)">
+                    </cmdb-property-value>
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
@@ -79,7 +86,7 @@
                 columnsConfig: {
                     selected: []
                 },
-                columnsConfigDisabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name'],
+                columnsConfigDisabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name'],
                 request: {
                     property: Symbol('property'),
                     propertyGroup: Symbol('propertyGroup'),
@@ -146,6 +153,7 @@
             async getProperties () {
                 try {
                     const propertyMap = await this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
+                        injectId: 'host',
                         params: {
                             bk_obj_id: { '$in': Object.keys(this.properties) },
                             bk_supplier_account: this.supplierAccount
@@ -267,7 +275,10 @@
                 this.table.selection = selection
                 this.table.checked = selection.map(item => item.host.bk_host_id)
             },
-            handleRowClick (item) {
+            handleValueClick (item, property) {
+                if (property.bk_obj_id !== 'host' || property.bk_property_id !== 'bk_host_id') {
+                    return
+                }
                 const business = item.biz[0]
                 if (business.default) {
                     this.$routerActions.redirect({
