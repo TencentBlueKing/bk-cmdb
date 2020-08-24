@@ -85,7 +85,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.HostInstance:
 		iamResourceType = Host
 	case meta.HostFavorite:
-		iamResourceType = Host
+		iamResourceType = SkipType
 	case meta.Process:
 		iamResourceType = BizProcessServiceInstance
 	case meta.EventPushing:
@@ -413,9 +413,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 	meta.HostFavorite: {
 		meta.Find:   Skip,
-		meta.Update: EditBusinessHost,
-		meta.Delete: DeleteResourcePoolHost,
-		meta.Create: CreateResourcePoolHost,
+		meta.Update: Skip,
+		meta.Delete: Skip,
+		meta.Create: Skip,
 	},
 
 	meta.ProcessTemplate: {
