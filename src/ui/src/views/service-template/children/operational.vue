@@ -70,7 +70,6 @@
                                     :auto-select="true"
                                     :searchable="true"
                                     :list="secondaryList"
-                                    :empty-text="emptyText"
                                     v-validate="'required'"
                                     name="secondaryClassificationId"
                                     v-model="formData['secondaryClassification']">
@@ -221,7 +220,6 @@
                 processList: [],
                 originTemplateValues: {},
                 hasUsed: false,
-                emptyText: this.$t('请选择一级分类'),
                 attribute: {
                     type: null,
                     dataIndex: null,
@@ -451,7 +449,6 @@
             },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
-                this.emptyText = this.$t('没有二级分类')
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
                 }
@@ -713,6 +710,10 @@
             },
             async handleSaveCategory () {
                 try {
+                    const isValid = await this.$validator.validateAll()
+                    if (!isValid) {
+                        return false
+                    }
                     this.isEditCategoryLoading = true
                     await this.updateServiceTemplate({
                         params: {
