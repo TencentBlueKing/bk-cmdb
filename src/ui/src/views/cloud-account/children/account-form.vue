@@ -106,6 +106,7 @@
     import CmdbVendor from '@/components/ui/other/vendor'
     import { mapGetters } from 'vuex'
     import { CLOUD_AREA_PROPERTIES } from '@/dictionary/request-symbol'
+    import RouterQuery from '@/router/query'
     const DEFAULT_FORM = {
         bk_account_name: '',
         bk_cloud_vendor: '',
@@ -322,7 +323,11 @@
                         }
                     })
                     this.$success('新建成功')
-                    this.handleHide('request-refresh')
+                    this.container.hide()
+                    RouterQuery.set({
+                        _t: Date.now(),
+                        page: RouterQuery.get('page', 1)
+                    })
                 } catch (e) {
                     console.error(e)
                 }
@@ -341,12 +346,16 @@
                         }
                     })
                     this.$success('修改成功')
-                    this.handleCancel('request-refresh')
+                    this.handleCancel()
+                    RouterQuery.set({
+                        _t: Date.now(),
+                        page: RouterQuery.get('page', 1)
+                    })
                 } catch (e) {
                     console.error(e)
                 }
             },
-            handleCancel (eventType) {
+            handleCancel () {
                 if (!this.isCreateMode) {
                     this.container.show({
                         type: 'details',
@@ -356,11 +365,8 @@
                         }
                     })
                 } else {
-                    this.handleHide(eventType)
+                    this.container.hide()
                 }
-            },
-            handleHide (eventType) {
-                this.container.hide(eventType)
             },
             handleLinkToFAQ () {
                 const FAQLink = {

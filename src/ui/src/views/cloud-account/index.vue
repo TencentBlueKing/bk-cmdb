@@ -108,10 +108,16 @@
             }
         },
         created () {
-            this.getData()
-            this.unwatch = RouterQuery.watch('_t', () => {
-                this.handlePageChange(1)
-            })
+            this.unwatch = RouterQuery.watch('*', ({
+                page,
+                limit,
+                sort
+            }) => {
+                this.pagination.current = parseInt(page || this.pagination.current, 10)
+                this.pagination.limit = parseInt(limit || this.pagination.limit, 10)
+                this.sort = sort || this.sort
+                this.getData()
+            }, { immediate: true })
         },
         beforeDestroy () {
             this.unwatch && this.unwatch()
@@ -127,17 +133,23 @@
                 })
             },
             handleSortChange (sort) {
-                this.sort = this.$tools.getSort(sort, { prop: 'bk_account_id' })
-                this.getData()
+                RouterQuery.set({
+                    _t: Date.now(),
+                    sort: this.$tools.getSort(sort, { prop: 'bk_account_id' })
+                })
             },
             handlePageChange (page) {
-                this.pagination.current = page
-                this.getData()
+                RouterQuery.set({
+                    _t: Date.now(),
+                    page: page
+                })
             },
             handleLimitChange (limit) {
-                this.pagination.limit = limit
-                this.pagination.current = 1
-                this.getData()
+                RouterQuery.set({
+                    _t: Date.now(),
+                    page: 1,
+                    limit: limit
+                })
             },
             handleCellClick (row, column) {
                 if (column.property === 'bk_account_name') {

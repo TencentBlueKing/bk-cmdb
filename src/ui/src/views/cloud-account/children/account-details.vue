@@ -130,7 +130,8 @@
                                 this.$success('删除成功')
                                 this.container.hide()
                                 RouterQuery.set({
-                                    _t: Date.now()
+                                    _t: Date.now(),
+                                    page: RouterQuery.get('page', 1)
                                 })
                             } catch (error) {
                                 console.error(error)
