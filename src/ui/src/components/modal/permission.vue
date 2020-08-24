@@ -16,7 +16,8 @@
             </div>
             <bk-table ref="table"
                 :data="list"
-                :max-height="193">
+                :max-height="193"
+                class="permission-table">
                 <bk-table-column prop="name" :label="$t('需要申请的权限')"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
@@ -148,6 +149,15 @@
                 color: #63656e;
                 font-size: 24px;
                 font-weight: normal;
+            }
+        }
+    }
+    .permission-table {
+        /deep/ {
+            .bk-table-row {
+                td.is-first {
+                    vertical-align: top;
+                }
             }
         }
     }
