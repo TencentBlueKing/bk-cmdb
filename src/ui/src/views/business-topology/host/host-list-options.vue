@@ -467,6 +467,7 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.$route.meta.customInstanceColumn]: []
                 })
+                this.sideslider.show = false
             },
             handleSetColumn () {
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()

@@ -106,7 +106,7 @@
             ]),
             ...mapGetters('hosts', ['condition']),
             customColumns () {
-                return this.usercustom['business_topology_table_column_config'] || []
+                return this.usercustom[this.$route.meta.customInstanceColumn] || []
             },
             globalCustomColumns () {
                 return this.globalUsercustom['host_global_custom_table_columns'] || []
