@@ -186,6 +186,52 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				},
 				SubResourceTypes: nil,
 			},
+			{
+				ResourceID: BizProcessServiceTemplate,
+				Actions: []CreatorRelatedAction{
+					{
+						ID:         EditBusinessServiceTemplate,
+						IsRequired: false,
+					},
+					{
+						ID:         DeleteBusinessServiceTemplate,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
+			{
+				ResourceID: BizSetTemplate,
+				Actions: []CreatorRelatedAction{
+					{
+						ID:         EditBusinessSetTemplate,
+						IsRequired: false,
+					},
+					{
+						ID:         DeleteBusinessSetTemplate,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
+			{
+				ResourceID: BizCustomQuery,
+				Actions: []CreatorRelatedAction{
+					{
+						ID:         EditBusinessCustomQuery,
+						IsRequired: false,
+					},
+					{
+						ID:         DeleteBusinessCustomQuery,
+						IsRequired: false,
+					},
+					{
+						ID:         FindBusinessCustomQuery,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
 		},
 	}
 }

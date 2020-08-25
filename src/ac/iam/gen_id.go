@@ -132,7 +132,7 @@ func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 	}
 
 	// do not related to instance authorize
-	if act == CreateBusinessCustomQuery || act == FindBusinessCustomQuery {
+	if act == CreateBusinessCustomQuery {
 		r.Type = types.ResourceType(Business)
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
 		return []types.Resource{r}, nil

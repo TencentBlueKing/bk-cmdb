@@ -15,7 +15,9 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -52,6 +54,22 @@ func (s *Service) CreateSetTemplate(ctx *rest.Contexts) {
 			blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			return err
 		}
+
+		// register set template resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.BizSetTemplate),
+				ID:      strconv.FormatInt(setTemplate.ID, 10),
+				Name:    setTemplate.Name,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created set template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
 		return nil
 	})
 
