@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -256,15 +255,9 @@ func (s *coreService) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.ListSetTemplateSyncStatusOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("ListSetTemplateSyncStatus failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 	option.BizID = bizID
@@ -286,15 +279,9 @@ func (s *coreService) ListSetTemplateSyncHistory(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.ListSetTemplateSyncStatusOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("ListSetTemplateSyncHistory failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 	option.BizID = bizID
@@ -316,15 +303,9 @@ func (s *coreService) DeleteSetTemplateSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
 	option := metadata.DeleteSetTemplateSyncStatusOption{}
-	if err := mapstruct.Decode2Struct(data, &option); err != nil {
-		blog.Errorf("DeleteSetTemplateSyncStatus failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&option); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 	option.BizID = bizID

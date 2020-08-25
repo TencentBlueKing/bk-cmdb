@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/common/querybuilder"
@@ -31,7 +30,7 @@ import (
 
 func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, errors.CCErrorCoder) {
 	qc := &metadata.QueryCondition{
-		Fields: []string{common.BKSetTemplateIDField, common.BKSetIDField},
+		Fields: []string{common.BKSetTemplateIDField},
 		Condition: map[string]interface{}{
 			common.BKSetIDField: setID,
 		},
@@ -53,12 +52,12 @@ func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 		return false, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
 	setData := result.Data.Info[0]
-	set := metadata.SetInst{}
-	if err := mapstruct.Decode2Struct(setData, &set); err != nil {
+	setTemplateID, err := util.GetInt64ByInterface(setData[common.BKSetTemplateIDField])
+	if err != nil {
 		blog.ErrorJSON("IsSetInitializedByTemplate failed, decode set failed, data: %s, err: %s, rid: %s", setData)
 		return false, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
-	return set.SetTemplateID > 0, nil
+	return setTemplateID > 0, nil
 }
 
 // CreateModule create a new module
@@ -477,15 +476,9 @@ func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 		return
 	}
 
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 	requestBody := metadata.SearchRuleRelatedModulesOption{}
-	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
-		blog.Errorf("SearchRuleRelatedModules failed, parse request body failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+	if err := ctx.DecodeInto(&requestBody); err != nil {
+		ctx.RespAutoError(err)
 		return
 	}
 	if requestBody.QueryFilter == nil {
