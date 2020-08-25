@@ -1059,7 +1059,21 @@ func (ps *parseStream) hostTransfer() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ProcessServiceInstance,
+					Action: meta.Create,
+				},
+			},
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
 					Action: meta.Update,
+				},
+			},
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Delete,
 				},
 			},
 		}
