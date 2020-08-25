@@ -61,8 +61,8 @@ a:focus {
 
 input::-webkit-input-placeholder,
 textarea::-webkit-input-placeholder {
-    color: #c3cdd7;
-    font-size: 14px;
+    color: #c3cdd7 !important;
+    font-size: 12px;
 }
 
 [class^="icon-cc"], [class*=" icon-cc"] {
