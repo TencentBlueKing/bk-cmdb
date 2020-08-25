@@ -709,6 +709,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 
 	switch val.(type) {
 	case []interface{}:
+	case bson.A:
 	default:
 		blog.Errorf("params should be type organization,but its type is %T, rid: %s", val, rid)
 		return errors.RawErrorInfo{
