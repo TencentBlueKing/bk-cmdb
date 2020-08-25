@@ -46,13 +46,11 @@
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
-                :min-width="column.minWidth"
                 :key="column.id"
                 :label="column.name"
-                :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
                 :show-overflow-tooltip="column.type !== 'topology'"
-                :fixed="column.id === 'bk_host_id'">
+                v-bind="column.columnProps">
                 <template slot-scope="{ row }">
                     <cmdb-host-topo-path
                         v-if="column.type === 'topology'"
@@ -357,12 +355,18 @@
                         name: this.$tools.getHeaderPropertyName(property),
                         type: property.bk_property_type,
                         objId: property.bk_obj_id,
-                        sortable: property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type),
-                        minWidth: property.bk_property_id === 'bk_host_id'
-                            ? 120
-                            : property.bk_property_type === 'topology'
-                                ? 200
-                                : 80
+                        columnProps: {
+                            fixed: property.bk_obj_id === 'host',
+                            sortable: (property.bk_obj_id === 'host'
+                                && !['foreignkey', 'topology'].includes(property.bk_property_type))
+                                ? 'custom' : false,
+                            width: property.bk_property_id === 'bk_host_id' ? '120' : undefined,
+                            minWidth: property.bk_property_id === 'bk_host_id'
+                                ? 120
+                                : property.bk_property_type === 'topology'
+                                    ? 200
+                                    : 80
+                        }
                     }
                 })
                 this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
