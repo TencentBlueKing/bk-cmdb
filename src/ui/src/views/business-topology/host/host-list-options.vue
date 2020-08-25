@@ -29,7 +29,15 @@
                         @click="handleTransfer($event, 'idle', false)">
                         {{$t('空闲模块')}}
                     </li>
-                    <li class="bk-dropdown-item" @click="handleTransfer($event, 'business', false)">{{$t('业务模块')}}</li>
+                    <cmdb-auth tag="li" class="bk-dropdown-item"
+                        :auth="[
+                            { type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] },
+                            { type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] },
+                            { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
+                        ]"
+                        @click="handleTransfer($event, 'business', false)">
+                        {{$t('业务模块')}}
+                    </cmdb-auth>
                     <!-- 暂忽略鉴权，交互待调整，需要选择目录 -->
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
                         ignore

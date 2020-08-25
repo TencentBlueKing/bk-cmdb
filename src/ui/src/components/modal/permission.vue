@@ -22,7 +22,9 @@
                 <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
                         <template v-if="row.relations.length">
-                            <div v-for="(relation, index) in row.relations" :key="index">
+                            <div class="permission-resource"
+                                v-for="(relation, index) in row.relations"
+                                :key="index">
                                 {{relation}}
                             </div>
                         </template>
@@ -153,10 +155,14 @@
         }
     }
     .permission-table {
+        .permission-resource {
+            line-height: 24px;
+        }
         /deep/ {
             .bk-table-row {
                 td.is-first {
                     vertical-align: top;
+                    line-height: 42px;
                 }
             }
         }
