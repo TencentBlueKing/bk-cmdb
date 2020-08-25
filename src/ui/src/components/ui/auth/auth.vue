@@ -18,21 +18,32 @@
         props: {
             auth: {
                 type: Object,
-                required: true
+                default: () => ({})
             },
             tag: {
                 type: String,
                 default: 'span'
+            },
+            trigger: {
+                type: String,
+                default: 'initial',
+                validator (trigger) {
+                    return ['initial', 'click'].includes(trigger)
+                }
             }
         },
         data () {
             return {
+                pending: false,
                 isAuthorized: true,
                 disabled: true,
                 turnOnVerify: window.CMDB_CONFIG.site.authscheme === 'iam'
             }
         },
         computed: {
+            useIAM () {
+                return this.turnOnVerify && Object.keys(this.auth).length
+            },
             resources () {
                 if (!this.auth.type) return []
                 const types = Array.isArray(this.auth.type) ? this.auth.type : [this.auth.type]
@@ -49,28 +60,48 @@
                 immediate: true,
                 deep: true,
                 handler (value, oldValue) {
-                    if (!this.turnOnVerify || !Object.keys(this.auth).length) {
+                    if (!this.useIAM) {
                         this.disabled = false
                         this.$emit('update-auth', true)
-                    } else if (!deepEqual(value, oldValue)) {
-                        resourceOperation.pushQueue({
-                            component: this,
-                            data: this.auth
-                        })
+                    } else if (this.trigger === 'initial' && !deepEqual(value, oldValue)) {
+                        this.setup()
                     }
                 }
             }
         },
         methods: {
+            setup () {
+                this.pending = true
+                resourceOperation.pushQueue({
+                    component: this,
+                    data: this.auth
+                })
+            },
             updateAuth (auths) {
                 const isPass = auths.every(auth => auth.is_pass)
                 this.isAuthorized = isPass
                 this.disabled = !isPass
+                this.pending = false
                 this.$emit('update-auth', isPass)
             },
-            handleClick () {
+            async handleClick () {
                 if (this.disabled) {
                     return
+                }
+                if (this.useIAM && this.trigger === 'click') {
+                    const dynamicResult = await new Promise(resolve => {
+                        this.setup()
+                        const unwatch = this.$watch(this.pending, () => {
+                            if (!this.isAuthorized) {
+                                this.$el.__cursor__.globalCallback({ auth: this.auth })
+                            }
+                            unwatch()
+                            resolve(this.isAuthorized)
+                        })
+                    })
+                    if (!dynamicResult) {
+                        return
+                    }
                 }
                 this.$emit('click')
             }

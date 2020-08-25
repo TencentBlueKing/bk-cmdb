@@ -170,6 +170,7 @@
                 },
                 propertyGroups: [],
                 table: {
+                    selection: [],
                     checked: [],
                     header: Array(8).fill({}),
                     list: [],
@@ -239,7 +240,7 @@
         },
         watch: {
             'table.checked' (checked) {
-                this.$emit('on-checked', checked)
+                this.$emit('on-checked', checked, this.table.selection)
             },
             'table.header' (header) {
                 this.$emit('on-set-header', header)
@@ -482,6 +483,7 @@
             },
             handleSelectionChange (selection) {
                 this.table.checked = selection.map(item => item.host.bk_host_id)
+                this.table.selection = selection
             },
             handleValueClick (item, column) {
                 if (column.objId !== 'host' || column.id !== 'bk_host_id') {

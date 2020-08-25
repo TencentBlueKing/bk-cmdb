@@ -58,7 +58,7 @@
     .clipboard-list{
         width: 100%;
         font-size: 14px;
-        line-height: 40px;
+        line-height: 32px;
         max-height: 160px;
         @include scrollbar-y;
         &::-webkit-scrollbar{

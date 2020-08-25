@@ -22,7 +22,7 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_RESOURCE_HOST })">
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_RESOURCE_HOST })" v-show="scope === '1'">
                     <bk-select class="options-business-selector" slot-scope="{ disabled }"
                         v-if="isAdminView"
                         font-size="medium"
@@ -41,6 +41,9 @@
                         </bk-option>
                     </bk-select>
                 </cmdb-auth>
+                <cmdb-transfer-menu class="mr10"
+                    v-show="scope === '0'">
+                </cmdb-transfer-menu>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
@@ -112,11 +115,14 @@
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
     import RouterQuery from '@/router/query'
+    import HostStore from './transfer/host-store'
+    import cmdbTransferMenu from './transfer/transfer-menu'
     export default {
         components: {
             cmdbHostsTable,
             cmdbImport,
-            cmdbButtonGroup
+            cmdbButtonGroup,
+            cmdbTransferMenu
         },
         data () {
             return {
@@ -192,6 +198,9 @@
                 const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
                 const hostProperties = this.properties.host.concat([this.topologyProperty])
                 return [...hostProperties, ...businessProperties, ...moduleProperties, ...setProperties]
+            },
+            scope () {
+                return (this.$route.query.scope || 1).toString()
             }
         },
         watch: {
@@ -301,8 +310,9 @@
                     ip: ''
                 })
             },
-            handleChecked (checked) {
+            handleChecked (checked, selection) {
                 this.table.checked = checked
+                HostStore.setSelected(selection)
             },
             handleSetHeader (header) {
                 this.table.header = header
