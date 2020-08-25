@@ -1070,14 +1070,8 @@ func (ps *parseStream) objectInstance() *parseStream {
 	//}
 
 	if ps.hitPattern(findObjectBatchRegexp, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil && err != metadata.LabelKeyNotExistError {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.FindMany,

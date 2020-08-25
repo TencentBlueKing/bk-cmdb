@@ -12,7 +12,6 @@
 package service
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -22,7 +21,6 @@ import (
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
@@ -36,18 +34,6 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-type srvComm struct {
-	header        http.Header
-	rid           string
-	ccErr         errors.DefaultCCErrorIf
-	ccLang        language.DefaultCCLanguageIf
-	ctx           context.Context
-	ctxCancelFunc context.CancelFunc
-	user          string
-	ownerID       string
-	lgc           *logics.Logics
-}
-
 type ProcServer struct {
 	*backbone.Engine
 	EsbConfigChn       chan esbutil.EsbConfig
@@ -58,26 +44,6 @@ type ProcServer struct {
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
 	EnableTxn          bool
-}
-
-func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
-	rid := util.GetHTTPCCRequestID(header)
-	lang := util.GetLanguage(header)
-	ctx, cancel := ps.Engine.CCCtx.WithCancel()
-	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
-
-	errors.SetGlobalCCError(ps.CCErr)
-	return &srvComm{
-		header:        header,
-		rid:           util.GetHTTPCCRequestID(header),
-		ccErr:         ps.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:        ps.Language.CreateDefaultCCLanguageIf(lang),
-		ctx:           ctx,
-		ctxCancelFunc: cancel,
-		user:          util.GetUser(header),
-		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(ps.Engine, header, ps.EsbSrv, &ps.procHostInstConfig),
-	}
 }
 
 func (ps *ProcServer) WebService() *restful.Container {

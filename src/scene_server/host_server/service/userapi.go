@@ -15,9 +15,13 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
+	"configcenter/src/ac/iam"
+	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	meta "configcenter/src/common/metadata"
@@ -73,6 +77,31 @@ func (s *Service) AddUserCustomQuery(ctx *rest.Contexts) {
 			blog.Errorf("GetUserCustom http response error, err code:%d,err msg:%s, input:%+v,rid:%s", result.Code, result.ErrMsg, ucq, ctx.Kit.Rid)
 			return result.CCError()
 		}
+
+		// register custom query resource creator action to iam
+		if auth.EnableAuthorize() {
+			res, err := s.CoreAPI.CoreService().Host().GetUserConfigDetail(ctx.Kit.Ctx, strconv.FormatInt(ucq.AppID, 10), result.Data.ID, ctx.Kit.Header)
+			if err != nil {
+				blog.Errorf("get created custom query failed, err: %s, biz: %d, ID: %s, rid: %s", err.Error(), ucq.AppID, result.Data.ID, ctx.Kit.Rid)
+				return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+			}
+			if !res.Result {
+				blog.Errorf("get created custom query failed, err: %s, biz: %d, ID: %s, rid: %s", res.ErrMsg, ucq.AppID, result.Data.ID, ctx.Kit.Rid)
+				return res.CCError()
+			}
+
+			iamInstance := meta.IamInstanceWithCreator{
+				Type:    string(iam.BizCustomQuery),
+				ID:      res.Data.ID,
+				Name:    res.Data.Name,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created custom query to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+		}
 		return nil
 	})
 
@@ -120,7 +149,7 @@ func (s *Service) UpdateUserCustomQuery(ctx *rest.Contexts) {
 			blog.Errorf("UpdateUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,input:%+v,rid:%s", result.Code, result.ErrMsg, bizID, params, ctx.Kit.Rid)
 			return result.CCError()
 		}
-		
+
 		return nil
 	})
 
@@ -133,7 +162,7 @@ func (s *Service) UpdateUserCustomQuery(ctx *rest.Contexts) {
 }
 
 func (s *Service) DeleteUserCustomQuery(ctx *rest.Contexts) {
-	
+
 	req := ctx.Request
 	dynamicID := req.PathParameter("id")
 	appID := req.PathParameter("bk_biz_id")
@@ -173,7 +202,7 @@ func (s *Service) DeleteUserCustomQuery(ctx *rest.Contexts) {
 }
 
 func (s *Service) GetUserCustomQuery(ctx *rest.Contexts) {
-	
+
 	req := ctx.Request
 	input := &meta.QueryInput{}
 	if err := json.NewDecoder(req.Request.Body).Decode(input); nil != err {
@@ -201,6 +230,24 @@ func (s *Service) GetUserCustomQuery(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
+
+	if auth.EnableAuthorize() {
+		authInput := authmeta.ListAuthorizedResourcesParam{
+			UserName:     ctx.Kit.User,
+			ResourceType: authmeta.DynamicGrouping,
+			Action:       authmeta.FindMany,
+		}
+
+		resourceIDs, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+		if err != nil {
+			blog.Errorf("list authorized dynamic grouping failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		condition[common.BKFieldID] = map[string]interface{}{common.BKDBIN: resourceIDs}
+	}
+
 	input.Condition = condition
 
 	result, err := s.CoreAPI.CoreService().Host().GetUserConfig(ctx.Kit.Ctx, ctx.Kit.Header, input)
@@ -219,7 +266,7 @@ func (s *Service) GetUserCustomQuery(ctx *rest.Contexts) {
 }
 
 func (s *Service) GetUserCustomQueryDetail(ctx *rest.Contexts) {
-	
+
 	req := ctx.Request
 	appID := req.PathParameter("bk_biz_id")
 	ID := req.PathParameter("id")
@@ -240,7 +287,7 @@ func (s *Service) GetUserCustomQueryDetail(ctx *rest.Contexts) {
 }
 
 func (s *Service) GetUserCustomQueryResult(ctx *rest.Contexts) {
-	
+
 	req := ctx.Request
 	appID := req.PathParameter("bk_biz_id")
 	ID := req.PathParameter("id")

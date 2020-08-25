@@ -13,7 +13,11 @@
 package service
 
 import (
+	"strconv"
+
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -41,6 +45,21 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("create service template failed, err: %v", err)
 			return err
+		}
+
+		// register service template resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.BizProcessServiceTemplate),
+				ID:      strconv.FormatInt(tpl.ID, 10),
+				Name:    tpl.Name,
+				Creator: ctx.Kit.User,
+			}
+			_, err = ps.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created service template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 
 		return nil

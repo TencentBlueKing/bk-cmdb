@@ -135,17 +135,11 @@ func (ps *parseStream) userAPI() *parseStream {
 			return ps
 		}
 
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host user custom query failed, err: %v", err)
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -168,9 +162,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Find,
-					// InstanceIDEx: ps.RequestCtx.Elements[5],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Find,
+					InstanceIDEx: ps.RequestCtx.Elements[5],
 				},
 			},
 		}
@@ -196,7 +190,7 @@ func (ps *parseStream) userAPI() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Execute,
-					// Name:   ps.RequestCtx.Elements[5],
+					Name:   ps.RequestCtx.Elements[5],
 				},
 			},
 		}
@@ -1065,7 +1059,21 @@ func (ps *parseStream) hostTransfer() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ProcessServiceInstance,
+					Action: meta.Create,
+				},
+			},
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
 					Action: meta.Update,
+				},
+			},
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Delete,
 				},
 			},
 		}

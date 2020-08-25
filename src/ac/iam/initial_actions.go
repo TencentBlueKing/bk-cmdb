@@ -192,7 +192,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		Name:                 "动态分组查询",
 		NameEn:               "View Dynamic Grouping",
 		Type:                 View,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
+		RelatedResourceTypes: relatedResource,
 		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
@@ -225,7 +225,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		NameEn:               "Create Service Category",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessServiceCategory, DeleteBusinessServiceCategory},
 		Version:              1,
 	})
 
@@ -261,7 +261,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		NameEn:               "Create Service Instance",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessServiceInstance, DeleteBusinessServiceInstance},
 		Version:              1,
 	})
 
@@ -401,7 +401,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		NameEn:               "Create Business Topo",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessTopology, DeleteBusinessTopology},
 		Version:              1,
 	})
 
