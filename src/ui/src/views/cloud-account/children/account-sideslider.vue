@@ -39,9 +39,8 @@
                 this.title = options.title
                 this.isShow = true
             },
-            hide (eventType) {
+            hide () {
                 this.isShow = false
-                eventType && this.$emit(eventType)
             },
             handleHidden () {
                 this.component = null

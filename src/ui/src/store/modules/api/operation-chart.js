@@ -64,7 +64,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getStaticObj ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`objects`, params, config)
+        return $http.post('find/object', params, config)
     },
 
     /**

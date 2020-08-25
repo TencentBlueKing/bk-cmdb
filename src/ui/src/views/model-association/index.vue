@@ -56,7 +56,11 @@
                 <template slot-scope="{ row }">
                     <cmdb-auth class="mr10"
                         :auth="{ type: $OPERATION.U_RELATION, relation: [row.id] }"
-                        :ignore="row.ispre">
+                        :ignore="row.ispre"
+                        v-bk-tooltips="{
+                            content: $t('禁止操作内置关联类型'),
+                            disabled: !row.ispre
+                        }">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
@@ -67,7 +71,11 @@
                     </cmdb-auth>
                     <cmdb-auth
                         :auth="{ type: $OPERATION.D_RELATION, relation: [row.id] }"
-                        :ignore="row.ispre">
+                        :ignore="row.ispre"
+                        v-bk-tooltips="{
+                            content: $t('禁止操作内置关联类型'),
+                            disabled: !row.ispre
+                        }">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"

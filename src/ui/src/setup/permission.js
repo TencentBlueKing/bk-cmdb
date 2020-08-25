@@ -31,49 +31,79 @@ function convertRelation (relation = [], type) {
         console.error('auth relation:', relation)
     }
 }
-export const translateAuth = auth => {
-    const authList = Array.isArray(auth) ? auth : [auth]
+
+// 将相同动作下的相同视图的实例合并到一起
+function mergeSameActions (actions) {
+    const actionMap = new Map()
+    actions.forEach(action => {
+        const viewMap = actionMap.get(action.id) || new Map()
+        action.related_resource_types.forEach(({ type, instances }) => {
+            const viewInstances = viewMap.get(type) || []
+            viewInstances.push(...instances)
+            viewMap.set(type, viewInstances)
+        })
+        actionMap.set(action.id, viewMap)
+    })
     const permission = {
         system_id: SYSTEM_ID,
-        actions: authList.map(({ type, relation = [] }) => {
-            relation = convertRelation(relation, type)
-            const definition = IAM_ACTIONS[type]
-            const action = {
-                id: definition.id,
-                related_resource_types: []
-            }
-            if (!definition.relation) {
-                return action
-            }
-            definition.relation.forEach(viewDefinition => {
-                const { view, instances } = viewDefinition
-                const relatedResource = {
-                    system_id: SYSTEM_ID,
-                    type: view,
-                    instances: []
-                }
-                if (relation.length) {
-                    relation.forEach(levelOneData => { // convert后的第一层数据[[1, 2], [3, 4]]
-                        levelOneData.forEach(levelTwoData => { // convert后的第二层数据[1, 2]
-                            const childInstances = []
-                            levelTwoData.forEach((levelThreeData, levelThreeIndex) => { // convert后的第三层数据 1
-                                childInstances.push({
-                                    type: instances[levelThreeIndex],
-                                    id: String(levelThreeData)
-                                })
-                            })
-                            relatedResource.instances.push(childInstances)
-                        })
-                        action.related_resource_types.push(relatedResource)
-                    })
-                } else {
-                    action.related_resource_types.push(relatedResource)
-                }
-            })
-            return action
-        })
+        actions: []
     }
+    actionMap.forEach((viewMap, actionId) => {
+        const relatedResourceTypes = []
+        viewMap.forEach((viewInstances, viewType) => {
+            relatedResourceTypes.push({
+                type: viewType,
+                system_id: SYSTEM_ID,
+                instances: viewInstances
+            })
+        })
+        permission.actions.push({
+            id: actionId,
+            related_resource_types: relatedResourceTypes
+        })
+    })
     return permission
+}
+
+export const translateAuth = auth => {
+    const authList = Array.isArray(auth) ? auth : [auth]
+    const actions = authList.map(({ type, relation = [] }) => {
+        relation = convertRelation(relation, type)
+        const definition = IAM_ACTIONS[type]
+        const action = {
+            id: definition.id,
+            related_resource_types: []
+        }
+        if (!definition.relation) {
+            return action
+        }
+        definition.relation.forEach(viewDefinition => {
+            const { view, instances } = viewDefinition
+            const relatedResource = {
+                type: view,
+                instances: []
+            }
+            if (relation.length) {
+                relation.forEach(levelOneData => { // convert后的第一层数据[[1, 2], [3, 4]]
+                    levelOneData.forEach(levelTwoData => { // convert后的第二层数据[1, 2]
+                        const childInstances = []
+                        levelTwoData.forEach((levelThreeData, levelThreeIndex) => { // convert后的第三层数据 1
+                            childInstances.push({
+                                type: instances[levelThreeIndex],
+                                id: String(levelThreeData)
+                            })
+                        })
+                        relatedResource.instances.push(childInstances)
+                    })
+                    action.related_resource_types.push(relatedResource)
+                })
+            } else {
+                action.related_resource_types.push(relatedResource)
+            }
+        })
+        return action
+    })
+    return mergeSameActions(actions)
 }
 
 cursor.setOptions({

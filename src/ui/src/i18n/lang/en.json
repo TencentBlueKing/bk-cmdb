@@ -1330,5 +1330,6 @@
     "分配到业务空闲机": "Assign to business idle",
     "取消置顶": "Cancel topping",
     "重命名": "Rename",
-    "目录名": "Directory"
+    "目录名": "Directory",
+    "禁止操作内置关联类型": "Built-in association"
 }

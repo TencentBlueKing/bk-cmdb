@@ -216,7 +216,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 assign: {
                     show: false,

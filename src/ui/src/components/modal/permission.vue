@@ -16,12 +16,15 @@
             </div>
             <bk-table ref="table"
                 :data="list"
-                :max-height="193">
+                :max-height="193"
+                class="permission-table">
                 <bk-table-column prop="name" :label="$t('需要申请的权限')"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
                         <template v-if="row.relations.length">
-                            <div v-for="(relation, index) in row.relations" :key="index">
+                            <div class="permission-resource"
+                                v-for="(relation, index) in row.relations"
+                                :key="index">
                                 {{relation}}
                             </div>
                         </template>
@@ -148,6 +151,19 @@
                 color: #63656e;
                 font-size: 24px;
                 font-weight: normal;
+            }
+        }
+    }
+    .permission-table {
+        .permission-resource {
+            line-height: 24px;
+        }
+        /deep/ {
+            .bk-table-row {
+                td.is-first {
+                    vertical-align: top;
+                    line-height: 42px;
+                }
             }
         }
     }

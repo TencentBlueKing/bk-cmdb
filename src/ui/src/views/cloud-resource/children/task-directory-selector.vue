@@ -189,6 +189,7 @@
                     })
                     this.selected = data.created.id
                     this.toggleCreate(false)
+                    this.injectAuth(this.directories)
                 } catch (e) {
                     console.error(e)
                 }

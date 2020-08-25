@@ -482,6 +482,7 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.columnsConfigKey]: []
                 })
+                this.columnsConfig.show = false
             },
             routeToHistory () {
                 this.$routerActions.redirect({

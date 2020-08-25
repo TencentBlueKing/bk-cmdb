@@ -1,17 +1,15 @@
 export default {
     methods: {
-        async handleApplyPermission () {
-            try {
-                const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
-                    params: this.permission,
-                    config: {
-                        requestId: 'getSkipUrl'
-                    }
-                })
-                window.open(skipUrl)
-            } catch (e) {
-                console.error(e)
-            }
+        handleApplyPermission () {
+            return this.$store.dispatch('auth/getSkipUrl', {
+                params: this.permission,
+                config: {
+                    requestId: 'getSkipUrl'
+                }
+            }).then(url => {
+                window.open(url)
+                return url
+            })
         }
     }
 }
