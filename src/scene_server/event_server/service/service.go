@@ -23,48 +23,65 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/event_server/distribution"
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
 )
 
+// Service impls main logics as service for datacolection app.
 type Service struct {
-	*backbone.Engine
-	db    dal.RDB
+	ctx    context.Context
+	engine *backbone.Engine
+	auth   auth.Authorize
+
+	// db is cc main database.
+	db dal.RDB
+
+	// cache is cc redis client.
 	cache *redis.Client
-	auth  auth.Authorize
-	ctx   context.Context
+
+	// distributer is event subscription distributer.
+	distributer *distribution.Distributer
 }
 
-func NewService(ctx context.Context) *Service {
-	return &Service{
-		ctx: ctx,
-	}
+// NewService creates a new Service object.
+func NewService(ctx context.Context, engine *backbone.Engine) *Service {
+	return &Service{ctx: ctx, engine: engine}
 }
 
+// SetDB setups database.
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
+// SetCache setups cc main redis.
 func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
+// SetAuth setups authorize.
 func (s *Service) SetAuth(auth auth.Authorize) {
 	s.auth = auth
 }
 
-func (s *Service) WebService() *restful.Container {
+// SetDistributer setups event subscription distributer.
+func (s *Service) SetDistributer(distributer *distribution.Distributer) {
+	s.distributer = distributer
+}
 
+// WebService setups a new restful web service.
+func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
-		return s.CCErr
+		return s.engine.CCErr
 	}
+
 	api.Path("/event/v3")
-	api.Filter(s.Engine.Metric().RestfulMiddleWare)
+	api.Filter(s.engine.Metric().RestfulMiddleWare)
 	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
 	api.Produces(restful.MIME_JSON)
 
@@ -86,24 +103,27 @@ func (s *Service) WebService() *restful.Container {
 	return container
 }
 
+// Healthz is a HTTP restful interface for health check.
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	// metadata.
 	meta := metric.HealthMeta{IsHealthy: true}
 
-	// zk health status
-	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
+	// zookeeper health status info.
+	zkItem := metric.HealthItem{
+		IsHealthy: true,
+		Name:      types.CCFunctionalityServicediscover,
+	}
+	if err := s.engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
 
-	// mongodb
-	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
-	meta.Items = append(meta.Items, healthItem)
+	// mongodb health status info.
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
-	// redis
-	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
-	meta.Items = append(meta.Items, redisItem)
+	// cc main redis health status info.
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
@@ -126,6 +146,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
 }

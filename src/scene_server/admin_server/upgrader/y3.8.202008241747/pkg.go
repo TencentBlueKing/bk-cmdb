@@ -10,42 +10,25 @@
  * limitations under the License.
  */
 
-package main
+package y3_8_202008241747
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"runtime"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/event_server/app"
-	"configcenter/src/scene_server/event_server/app/options"
-
-	"github.com/spf13/pflag"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_EVENTSERVER)
+func init() {
+	upgrader.RegistUpgrader("y3.8.202008241747", upgrade)
+}
 
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	if err := app.Run(ctx, cancel, op); err != nil {
-		fmt.Fprintf(os.Stderr, "run app failed, %v\n", err)
-		blog.Errorf("process stopped by %v", err)
-		blog.CloseLogs()
-		os.Exit(1)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err := addCpuMemDiskUnit(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version y3.8.202008241747 failed, addCpuMemDiskUnit failed, err: %+v", err)
+		return err
 	}
+
+	return nil
 }
