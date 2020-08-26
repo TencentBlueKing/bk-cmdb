@@ -19,6 +19,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"configcenter/src/common/watch"
 )
 
 type RspSubscriptionCreate struct {
@@ -100,16 +102,16 @@ func (s Subscription) GetTimeout() time.Duration {
 }
 
 type EventInst struct {
-	ID          int64       `json:"event_id,omitempty"`
-	TxnID       string      `json:"txn_id"`
-	EventType   string      `json:"event_type"`
-	Action      string      `json:"action"`
-	ActionTime  Time        `json:"action_time"`
-	ObjType     string      `json:"obj_type"`
-	Data        []EventData `json:"data"`
-	OwnerID     string      `json:"bk_supplier_account"`
-	RequestID   string      `json:"request_id"`
-	RequestTime Time        `json:"request_time"`
+	ID            int64       `json:"event_id,omitempty"`
+	EventType     string      `json:"event_type"`
+	Action        string      `json:"action"`
+	ActionTime    Time        `json:"action_time"`
+	ObjType       string      `json:"obj_type"`
+	Data          []EventData `json:"data"`
+	OwnerID       string      `json:"bk_supplier_account"`
+	Cursor        string      `json:"cursor"`
+	UpdateFields  []string    `json:"update_fields"`
+	DeletedFields []string    `json:"deleted_fields"`
 }
 
 func (e *EventInst) MarshalBinary() (data []byte, err error) {
@@ -197,4 +199,51 @@ func (n *ConfirmMode) Scan(value interface{}) error {
 // Value implement sql driver's Value interface
 func (n ConfirmMode) Value() (driver.Value, error) {
 	return string(n), nil
+}
+
+// ParseCursorTypeFromEventType returns target cursor type type base on event type.
+func ParseCursorTypeFromEventType(eventType string) watch.CursorType {
+	switch eventType {
+	case "hostcreate":
+		return watch.Host
+
+	case "hostupdate":
+		return watch.Host
+
+	case "hostdelete":
+		return watch.Host
+
+	case "moduletransfer":
+		return watch.ModuleHostRelation
+
+	case "bizcreate":
+		return watch.Biz
+
+	case "bizupdate":
+		return watch.Biz
+
+	case "bizdelete":
+		return watch.Biz
+
+	case "setcreate":
+		return watch.Set
+
+	case "setupdate":
+		return watch.Set
+
+	case "setdelete":
+		return watch.Set
+
+	case "modulecreate":
+		return watch.Module
+
+	case "moduleupdate":
+		return watch.Module
+
+	case "moduledelete":
+		return watch.Module
+
+	default:
+		return watch.ObjectBase
+	}
 }

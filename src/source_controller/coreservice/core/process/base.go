@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -28,7 +27,6 @@ import (
 type processOperation struct {
 	dbProxy    dal.RDB
 	dependence OperationDependence
-	eventCli   eventclient.Client
 }
 
 // OperationDependence methods definition
@@ -42,7 +40,6 @@ func New(dbProxy dal.RDB, dependence OperationDependence, cache *redis.Client) c
 	processOps := &processOperation{
 		dbProxy:    dbProxy,
 		dependence: dependence,
-		eventCli:   eventclient.NewClientViaRedis(cache, dbProxy),
 	}
 	return processOps
 }

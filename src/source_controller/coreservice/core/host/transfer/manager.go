@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -29,7 +28,6 @@ import (
 
 type TransferManager struct {
 	dbProxy             dal.RDB
-	eventCli            eventclient.Client
 	cache               *redis.Client
 	dependence          OperationDependence
 	hostApplyDependence HostApplyRuleDependence
@@ -45,11 +43,10 @@ type HostApplyRuleDependence interface {
 	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
-func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
+func New(db dal.RDB, cache *redis.Client, dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
 	return &TransferManager{
 		dbProxy:             db,
 		cache:               cache,
-		eventCli:            ec,
 		dependence:          dependence,
 		hostApplyDependence: hostApplyDependence,
 	}
@@ -59,7 +56,6 @@ func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence Oper
 func (manager *TransferManager) NewHostModuleTransfer(kit *rest.Kit, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
 	return &genericTransfer{
 		dbProxy:     manager.dbProxy,
-		eventCli:    manager.eventCli,
 		dependent:   manager.dependence,
 		moduleIDArr: moduleIDArr,
 		bizID:       bizID,
@@ -528,7 +524,7 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
 	// 根据约束cond,获得去重后的主机id.
-	ret,err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
+	ret, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
 	if err != nil {
 		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -536,7 +532,7 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 
 	// 将ret转化为[]int64
 	var hostIDArr []int64
-	if hostIDArr,err = util.SliceInterfaceToInt64(ret); err != nil{
+	if hostIDArr, err = util.SliceInterfaceToInt64(ret); err != nil {
 		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}

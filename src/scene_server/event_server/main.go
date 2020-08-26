@@ -14,7 +14,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"runtime"
 
@@ -29,21 +28,26 @@ import (
 )
 
 func main() {
-	common.SetIdentification(types.CC_MODULE_EVENTSERVER)
-
+	// setup system runtimes.
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	// set module datacollection id.
+	common.SetIdentification(types.CC_MODULE_EVENTSERVER)
+
+	// init logger.
 	blog.InitLogs()
 	defer blog.CloseLogs()
 
+	// parse flags.
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
-
 	util.InitFlags()
 
+	// main context for app.
 	ctx, cancel := context.WithCancel(context.Background())
+
+	// run the app now.
 	if err := app.Run(ctx, cancel, op); err != nil {
-		fmt.Fprintf(os.Stderr, "run app failed, %v\n", err)
 		blog.Errorf("process stopped by %v", err)
 		blog.CloseLogs()
 		os.Exit(1)
