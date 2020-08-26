@@ -1437,8 +1437,36 @@ func (ti *PropertyPort) Validate() error {
 		if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
 			return fmt.Errorf("port format invalid")
 		}
+		var tmpPortArr []propertyPortItem
+		strPortItemArr := strings.Split(*ti.Value, ",")
+		for _, strPortItem := range strPortItemArr {
+			portArr := strings.Split(strPortItem, "-")
+			var start, end int64
+			start, _ = util.GetInt64ByInterface(portArr[0])
+			if len(portArr) > 1 {
+				end, _ = util.GetInt64ByInterface(portArr[1])
+			} else {
+				end = start
+			}
+			if start > end {
+				return fmt.Errorf("port format invalid, start > end")
+			}
+			for _, tmpItem := range tmpPortArr {
+				if !(end < tmpItem.start || start > tmpItem.end) {
+					return fmt.Errorf("port format invalid,  port duplicate:" + strPortItem)
+				}
+			}
+			tmpPortArr = append(tmpPortArr, propertyPortItem{start: start, end: end})
+		}
+
 	}
 	return nil
+}
+
+// propertyPortItem 记录进程端口起始范围
+type propertyPortItem struct {
+	start int64
+	end   int64
 }
 
 type PropertyBindIP struct {
