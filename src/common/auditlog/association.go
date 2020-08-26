@@ -26,19 +26,19 @@ type instanceAssociationAuditLog struct {
 }
 
 func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *metadata.InstAsst, id int64, action metadata.ActionType) (
-	metadata.AuditLog, error) {
+	*metadata.AuditLog, error) {
 
 	if data == nil {
 		cond := metadata.QueryCondition{Condition: map[string]interface{}{common.BKFieldID: id}}
 		result, err := a.clientSet.Association().ReadInstAssociation(kit.Ctx, kit.Header, &cond)
 		if err != nil {
 			blog.Errorf("generate inst asst audit log failed, get instance association failed, err: %v, rid: %s", err, kit.Rid)
-			return metadata.AuditLog{}, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+			return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 
 		if len(result.Data.Info) == 0 || len(result.Data.Info) > 1 {
 			blog.Errorf("generate inst asst audit log failed, get instance association by id(%d) get none or multiple result, rid: %s", id, kit.Rid)
-			return metadata.AuditLog{}, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+			return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
 
 		data = &result.Data.Info[0]
@@ -46,15 +46,15 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *meta
 
 	srcInstName, err := a.getInstNameByID(kit, data.ObjectID, data.InstID)
 	if err != nil {
-		return metadata.AuditLog{}, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
 
 	targetInstName, err := a.getInstNameByID(kit, data.AsstObjectID, data.AsstInstID)
 	if err != nil {
-		return metadata.AuditLog{}, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
 
-	return metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.InstanceAssociationRes,
 		Action:       action,

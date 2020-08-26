@@ -862,7 +862,7 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		return nil, err
 	}
 
-	err = audit.SaveAuditLog(kit, auditLog)
+	err = audit.SaveAuditLog(kit, *auditLog)
 	if err != nil {
 		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
@@ -923,7 +923,7 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *meta
 		return nil, err
 	}
 
-	err = audit.SaveAuditLog(kit, auditLog)
+	err = audit.SaveAuditLog(kit, *auditLog)
 	if err != nil {
 		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
