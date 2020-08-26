@@ -58,4 +58,6 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
+
+	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
