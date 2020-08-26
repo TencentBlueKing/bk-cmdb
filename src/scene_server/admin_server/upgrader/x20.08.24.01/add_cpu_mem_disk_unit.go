@@ -14,12 +14,12 @@ package x20_08_24_01
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	"fmt"
 )
 
 //add unit to bk_property_name.
