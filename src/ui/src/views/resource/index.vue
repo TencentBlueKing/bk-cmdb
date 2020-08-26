@@ -237,6 +237,8 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
+                } finally {
+                    HostStore.setBusinessList(this.businessList)
                 }
             },
             getProperties () {
@@ -321,10 +323,10 @@
                 this.$refs.resourceTable.handleCopy(target)
             },
             handleMultipleEdit () {
-                if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('请勿选择已分配主机'))
-                    return false
-                }
+                // if (this.hasSelectAssignedHost()) {
+                //     this.$error(this.$t('请勿选择已分配主机'))
+                //     return false
+                // }
                 this.$refs.resourceTable.handleMultipleEdit()
             },
             handleMultipleDelete () {
