@@ -15,6 +15,7 @@ package y3_8_202007211455
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -98,21 +99,34 @@ func migrateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 			if proc.ProcessID > maxProcID {
 				maxProcID = proc.ProcessID
 			}
-
-			updateFilter := map[string]interface{}{
-				common.BKProcIDField:  proc.ProcessID,
-				common.BKProcBindInfo: map[string]interface{}{common.BKDBExists: false},
-			}
-			doc := map[string]interface{}{
-				common.BKProcBindInfo: []interface{}{
-					map[string]interface{}{
-						"template_row_id": 1,
+			bindInfoArr := make([]map[string]interface{}, 0)
+			if proc.Port != nil {
+				portArr := strings.Split(*proc.Port, ",")
+				for idx, port := range portArr {
+					bindInfoArr = append(bindInfoArr, map[string]interface{}{
+						"template_row_id": idx + 1,
 						"ip":              proc.BindIP,
-						"port":            proc.Port,
+						"port":            port,
 						"protocol":        proc.Protocol,
 						"enable":          proc.PortEnable,
-					},
-				},
+					})
+				}
+			} else {
+				bindInfoArr = append(bindInfoArr, map[string]interface{}{
+					"template_row_id": 1,
+					"ip":              proc.BindIP,
+					"port":            "",
+					"protocol":        proc.Protocol,
+					"enable":          proc.PortEnable,
+				})
+			}
+
+			updateFilter := map[string]interface{}{
+				common.BKProcIDField: proc.ProcessID,
+				//common.BKProcBindInfo: map[string]interface{}{common.BKDBExists: false},
+			}
+			doc := map[string]interface{}{
+				common.BKProcBindInfo: bindInfoArr,
 			}
 			if err := db.Table(common.BKTableNameBaseProcess).Update(ctx, updateFilter, doc); err != nil {
 				return err
@@ -122,7 +136,6 @@ func migrateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		if len(procs) == 0 {
 			break
 		}
-
 	}
 
 	return nil
@@ -151,18 +164,36 @@ func migrateProcTempBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Con
 			// 保证数据库的数据不是null
 			bindInfoValue := make([]map[string]interface{}, 0)
 			if procTemp.Property != nil {
-				bindInfoValue = append(bindInfoValue, map[string]interface{}{
-					// 老版本只能有一行数据
-					"row_id":   1,
-					"ip":       procTemp.Property["bind_ip"],
-					"port":     procTemp.Property[common.BKPort],
-					"protocol": procTemp.Property[common.BKProtocol],
-					"enable":   procTemp.Property[common.BKProcPortEnable],
-				})
+				if procTemp.Property.Port != nil && procTemp.Property.Port.Value != nil {
+					portArr := strings.Split(*procTemp.Property.Port.Value, ",")
+					for idx := range portArr {
+						bindInfoValue = append(bindInfoValue, map[string]interface{}{
+							// 老版本只能有一行数据
+							"row_id": idx + 1,
+							"ip":     procTemp.Property.BindIP,
+							"port": PropertyString{
+								AsDefaultValue: procTemp.Property.Port.AsDefaultValue,
+								Value:          &portArr[idx],
+							},
+							"protocol": procTemp.Property.Protocol,
+							"enable":   procTemp.Property.Enable,
+						})
+					}
+
+				} else {
+					bindInfoValue = append(bindInfoValue, map[string]interface{}{
+						// 老版本只能有一行数据
+						"row_id":   1,
+						"ip":       procTemp.Property.BindIP,
+						"port":     procTemp.Property.Port,
+						"protocol": procTemp.Property.Protocol,
+						"enable":   procTemp.Property.Enable,
+					})
+				}
+
 			}
 			updateFilter := map[string]interface{}{
-				common.BKFieldID:      procTemp.ID,
-				common.BKProcBindInfo: map[string]interface{}{common.BKDBExists: false},
+				common.BKFieldID: procTemp.ID,
 			}
 			doc := map[string]interface{}{
 				"property." + common.BKProcBindInfo: map[string]interface{}{
@@ -236,10 +267,10 @@ func getSubAttr() []SubAttriubte {
 		SubAttriubte{
 			PropertyID:   "port",
 			PropertyName: "Port",
-			Placeholder:  "single port: 8080, </br>multiple consecutive ports: 8080-8089,</br> multiple discontinuous ports: 8080-8089, 8199.",
+			Placeholder:  "single port: 8080, </br>multiple consecutive ports: 8080-8089</br> multiple discontinuous ports: 8080-8089.",
 			IsEditable:   true,
 			PropertyType: common.FieldTypeSingleChar,
-			Option:       "^(((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))-(([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))|((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))))(,(((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))|((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))-(([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))))*$",
+			Option:       "^(((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))-(([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))|((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))))$",
 		},
 		SubAttriubte{
 			PropertyID:   "protocol",
@@ -309,11 +340,28 @@ type dbProcessTemplate struct {
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Property map[string]interface{} `field:"property" json:"property" bson:"property"`
+	Property *dbProcessTemplateProperty `field:"property" json:"property" bson:"property"`
 
 	Creator         string    `field:"creator" json:"creator" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
 	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+type dbProcessTemplateProperty struct {
+	BindIP   *PropertyString `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
+	Port     *PropertyString `field:"port" json:"port" bson:"port"`
+	Protocol *PropertyString `field:"protocol" json:"protocol" bson:"protocol"`
+	Enable   *PropertyBool   `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+}
+
+type PropertyString struct {
+	Value          *string `field:"value" json:"value" bson:"value"`
+	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
+}
+
+type PropertyBool struct {
+	Value          *bool `field:"value" json:"value" bson:"value"`
+	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
