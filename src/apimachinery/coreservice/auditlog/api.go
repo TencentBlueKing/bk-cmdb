@@ -16,36 +16,53 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
-func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-
+func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (*metadata.Response, error) {
+	resp := new(metadata.Response)
 	subPath := "/create/auditlog"
 
-	err = inst.client.Post().
+	err := inst.client.Post().
 		WithContext(ctx).
-		Body(struct {
-			Data []metadata.AuditLog `json:"data"`
-		}{Data: logs}).
+		Body(metadata.CreateAuditLogParam{Data: logs}).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return nil, resp.CCError()
+	}
+
+	return resp, nil
 }
 
-func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryInput) (resp *metadata.AuditQueryResult, err error) {
-	resp = new(metadata.AuditQueryResult)
+func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (*metadata.AuditQueryResult, error) {
+	resp := new(metadata.AuditQueryResult)
 	subPath := "/read/auditlog"
 
-	err = inst.client.Post().
+	err := inst.client.Post().
 		WithContext(ctx).
 		Body(param).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return nil, resp.CCError()
+	}
+
+	return resp, nil
 }

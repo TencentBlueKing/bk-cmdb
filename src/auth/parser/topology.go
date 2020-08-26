@@ -50,7 +50,6 @@ func (ps *parseStream) topology() *parseStream {
 		objectSet().
 		//objectUnique().
 		audit().
-		instanceAudit().
 		fullTextSearch().
 		cloudArea()
 
@@ -2467,8 +2466,9 @@ func (ps *parseStream) objectSet() *parseStream {
 //}
 
 var (
-	searchAuditLog               = `/api/v3/audit/search`
-	searchInstanceAuditLogRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/audit/search/?$`)
+	searchAuditDict   = `/api/v3/find/audit_dict`
+	searchAuditList   = `/api/v3/findmany/audit_list`
+	searchAuditDetail = regexp.MustCompile(`^/api/v3/find/audit/[0-9]+/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -2476,35 +2476,36 @@ func (ps *parseStream) audit() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(searchAuditLog, http.MethodPost) {
+	if ps.hitPattern(searchAuditDict, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type: meta.AuditLog,
-					// audit authorization in topo scene layer
-					Action: meta.SkipAction,
+					Type:   meta.AuditLog,
+					Action: meta.Find,
 				},
 			},
 		}
 		return ps
 	}
 
-	return ps
-}
-
-func (ps *parseStream) instanceAudit() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	// add object unique operation.
-	if ps.hitRegexp(searchInstanceAuditLogRegexp, http.MethodPost) {
+	if ps.hitPattern(searchAuditList, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type: meta.AuditLog,
-					// instance audit authorization by instance
-					Action: meta.SkipAction,
+					Type:   meta.AuditLog,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(searchAuditDetail, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.AuditLog,
+					Action: meta.Find,
 				},
 			},
 		}

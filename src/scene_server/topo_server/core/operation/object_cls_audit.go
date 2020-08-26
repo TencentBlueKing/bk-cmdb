@@ -59,9 +59,9 @@ func (log *ObjectClsAudit) SaveAuditLog(auditAction metadata.ActionType) errors.
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
 		Action:       auditAction,
+		ResourceID:   log.id,
+		ResourceName: log.objClsName,
 		OperationDetail: &metadata.BasicOpDetail{
-			ResourceID:   log.id,
-			ResourceName: log.objClsName,
 			Details: &metadata.BasicContent{
 				PreData: preData,
 				CurData: curData,

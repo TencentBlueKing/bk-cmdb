@@ -15,7 +15,6 @@ package operation
 import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -65,28 +64,21 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
 	}
 	//如果目标为自定义层级下的自定义字段，则auditType需要由"model"更改为"BusinessResourceType"
-	var bizName string
 	if log.bizID != 0 {
 		log.auditType = metadata.BusinessResourceType
-		bizName, err = auditlog.NewAudit(log.clientSet, log.kit.Header).GetInstNameByID(log.kit.Ctx, common.BKInnerObjIDApp, log.bizID)
-		if err != nil {
-			blog.Errorf("[audit] failed to get biz name by id: %d,err: %s", log.bizID, err)
-			return err
-		}
 	}
 	//make auditLog
 	auditLog := metadata.AuditLog{
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
 		Action:       auditAction,
+		BusinessID:   log.bizID,
+		ResourceID:   log.id,
+		ResourceName: log.propertyName,
 		OperationDetail: &metadata.ModelAttrOpDetail{
 			BkObjID:   log.bkObjectID,
 			BkObjName: log.bkObjectName,
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   log.bizID,
-				BusinessName: bizName,
-				ResourceID:   log.id,
-				ResourceName: log.propertyName,
 				Details: &metadata.BasicContent{
 					PreData: preData,
 					CurData: curData,

@@ -10,25 +10,25 @@
  * limitations under the License.
  */
 
-package auditlog
+package y3_8_202008172134
 
 import (
 	"context"
-	"net/http"
 
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-type AuditClientInterface interface {
-	SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.AuditLog) (*metadata.Response, error)
-	SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryCondition) (*metadata.AuditQueryResult, error)
+func init() {
+	upgrader.RegistUpgrader("y3.8.202008172134", upgrade)
 }
 
-func NewAuditClientInterface(client rest.ClientInterface) AuditClientInterface {
-	return &auditlog{client: client}
-}
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err := reconcileAuditTableIndexes(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version y3.8.202008172134 failed, reconcileAuditTableIndexes failed, err: %+v", err)
+		return err
+	}
 
-type auditlog struct {
-	client rest.ClientInterface
+	return nil
 }

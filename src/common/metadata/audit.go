@@ -16,38 +16,64 @@ import (
 	"encoding/json"
 
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// AuditQueryResult add single host log param
 type AuditQueryResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
-		Count int        `json:"count"`
+		Count int64      `json:"count"`
 		Info  []AuditLog `json:"info"`
 	} `json:"data"`
+}
+
+type CreateAuditLogParam struct {
+	Data []AuditLog `json:"data"`
+}
+
+type AuditQueryInput struct {
+	Condition AuditQueryCondition `json:"condition"`
+	Page      BasePage            `json:"page,omitempty"`
+}
+
+// Validate validates the input param
+func (input *AuditQueryInput) Validate() errors.RawErrorInfo {
+	if input.Page.Limit <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"limit"},
+		}
+	}
+
+	if input.Page.Limit > common.BKAuditLogPageLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 type AuditQueryCondition struct {
 	AuditType    AuditType       `json:"audit_type"`
 	User         string          `json:"user"`
-	ResourceType []ResourceType  `json:"resource_type" `
+	ResourceType ResourceType    `json:"resource_type" `
 	Action       []ActionType    `json:"action"`
 	OperateFrom  OperateFromType `json:"operate_from"`
 	BizID        int64           `json:"bk_biz_id"`
-	ResourceID   int64           `json:"resource_id"`
+	ResourceID   interface{}     `json:"resource_id"`
 	// ResourceName filters audit logs by resource name, such as instance name, host ip etc., support fuzzy query
 	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
 	OperationTime []string `json:"operation_time"`
-	// Label filters audit logs with these labels
-	Label []string `json:"label"`
-	// Category is used by front end, filters audit logs as business(business resource and host operation related to business), resource(instance resource not related to business) or other category
+	// Category is used by front end, filters audit logs as business(business resource related to business), resource(instance resource not related to business), host or other category
 	Category string `json:"category"`
 }
 
 type AuditLog struct {
+	ID int64 `json:"id" bson:"id"`
 	// AuditType is a high level abstract of the resource managed by this cmdb.
 	// Each kind of concept, resource must belongs to one of the resource type.
 	AuditType AuditType `json:"audit_type" bson:"audit_type"`
@@ -67,20 +93,42 @@ type AuditLog struct {
 	OperationDetail DetailFactory `json:"operation_detail" bson:"operation_detail"`
 	// OperationTime is the time that user do the operation.
 	OperationTime Time `json:"operation_time" bson:"operation_time"`
-	// for special scene like categorize if the resource belongs to biz topo or service instance
-	Label map[string]string `json:"label" bson:"label"`
+	// the business id of the resource if it belongs to a business.
+	BusinessID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	// ResourceID is the id of the resource instance. which is a unique id, dynamic grouping id is string type.
+	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
+	// ResourceName is the name of the resource, such as a switch model has a name "switch"
+	ResourceName string `json:"resource_name" bson:"resource_name"`
 }
 
 type bsonAuditLog struct {
-	AuditType       AuditType         `json:"audit_type" bson:"audit_type"`
-	SupplierAccount string            `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	User            string            `json:"user" bson:"user"`
-	ResourceType    ResourceType      `json:"resource_type" bson:"resource_type"`
-	Action          ActionType        `json:"action" bson:"action"`
-	OperateFrom     OperateFromType   `json:"operate_from" bson:"operate_from"`
-	OperationTime   Time              `json:"operation_time" bson:"operation_time"`
-	Label           map[string]string `json:"label" bson:"label"`
-	OperationDetail bson.Raw          `json:"operation_detail" bson:"operation_detail"`
+	ID              int64           `json:"id" bson:"id"`
+	AuditType       AuditType       `json:"audit_type" bson:"audit_type"`
+	SupplierAccount string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	User            string          `json:"user" bson:"user"`
+	ResourceType    ResourceType    `json:"resource_type" bson:"resource_type"`
+	Action          ActionType      `json:"action" bson:"action"`
+	OperateFrom     OperateFromType `json:"operate_from" bson:"operate_from"`
+	OperationTime   Time            `json:"operation_time" bson:"operation_time"`
+	OperationDetail bson.Raw        `json:"operation_detail" bson:"operation_detail"`
+	BusinessID      int64           `json:"bk_biz_id" bson:"bk_biz_id"`
+	ResourceID      interface{}     `json:"resource_id" bson:"resource_id"`
+	ResourceName    string          `json:"resource_name" bson:"resource_name"`
+}
+
+type jsonAuditLog struct {
+	ID              int64           `json:"id" bson:"id"`
+	AuditType       AuditType       `json:"audit_type" bson:"audit_type"`
+	SupplierAccount string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	User            string          `json:"user" bson:"user"`
+	ResourceType    ResourceType    `json:"resource_type" bson:"resource_type"`
+	Action          ActionType      `json:"action" bson:"action"`
+	OperateFrom     OperateFromType `json:"operate_from" bson:"operate_from"`
+	OperationTime   Time            `json:"operation_time" bson:"operation_time"`
+	OperationDetail json.RawMessage `json:"operation_detail" bson:"operation_detail"`
+	BusinessID      int64           `json:"bk_biz_id" bson:"bk_biz_id"`
+	ResourceID      interface{}     `json:"resource_id" bson:"resource_id"`
+	ResourceName    string          `json:"resource_name" bson:"resource_name"`
 }
 
 type DetailFactory interface {
@@ -88,21 +136,11 @@ type DetailFactory interface {
 }
 
 func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
-	type jsonAuditLog struct {
-		AuditType       AuditType         `json:"audit_type" bson:"audit_type"`
-		SupplierAccount string            `json:"bk_supplier_account" bson:"bk_supplier_account"`
-		User            string            `json:"user" bson:"user"`
-		ResourceType    ResourceType      `json:"resource_type" bson:"resource_type"`
-		Action          ActionType        `json:"action" bson:"action"`
-		OperateFrom     OperateFromType   `json:"operate_from" bson:"operate_from"`
-		OperationTime   Time              `json:"operation_time" bson:"operation_time"`
-		Label           map[string]string `json:"label" bson:"label"`
-		OperationDetail json.RawMessage   `json:"operation_detail" bson:"operation_detail"`
-	}
 	audit := jsonAuditLog{}
 	if err := json.Unmarshal(data, &audit); err != nil {
 		return err
 	}
+	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
 	auditLog.SupplierAccount = audit.SupplierAccount
 	auditLog.User = audit.User
@@ -110,7 +148,9 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	auditLog.Action = audit.Action
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
-	auditLog.Label = audit.Label
+	auditLog.BusinessID = audit.BusinessID
+	auditLog.ResourceID = audit.ResourceID
+	auditLog.ResourceName = audit.ResourceName
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -159,6 +199,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	if err := bson.Unmarshal(data, &audit); err != nil {
 		return err
 	}
+	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
 	auditLog.SupplierAccount = audit.SupplierAccount
 	auditLog.User = audit.User
@@ -166,7 +207,9 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	auditLog.Action = audit.Action
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
-	auditLog.Label = audit.Label
+	auditLog.BusinessID = audit.BusinessID
+	auditLog.ResourceID = audit.ResourceID
+	auditLog.ResourceName = audit.ResourceName
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -212,6 +255,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 
 func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit := bsonAuditLog{}
+	audit.ID = auditLog.ID
 	audit.AuditType = auditLog.AuditType
 	audit.SupplierAccount = auditLog.SupplierAccount
 	audit.User = auditLog.User
@@ -219,7 +263,9 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit.Action = auditLog.Action
 	audit.OperateFrom = auditLog.OperateFrom
 	audit.OperationTime = auditLog.OperationTime
-	audit.Label = auditLog.Label
+	audit.BusinessID = auditLog.BusinessID
+	audit.ResourceID = auditLog.ResourceID
+	audit.ResourceName = auditLog.ResourceName
 	var err error
 	switch val := auditLog.OperationDetail.(type) {
 	default:
@@ -232,14 +278,6 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 }
 
 type BasicOpDetail struct {
-	// the business id of the resource if it belongs to a business.
-	BusinessID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
-	// the business name of the resource if it belongs to a business.
-	BusinessName string `json:"bk_biz_name" bson:"bk_biz_name"`
-	// ResourceID is the id of the resource instance. which is a unique id.
-	ResourceID int64 `json:"resource_id" bson:"resource_id"`
-	// ResourceName is the name of the resource, such as a switch model has a name "switch"
-	ResourceName string `json:"resource_name" bson:"resource_name"`
 	// Details contains all the details information about a user's operation
 	Details *BasicContent `json:"details" bson:"details"`
 }
@@ -250,8 +288,10 @@ func (op *BasicOpDetail) WithName() string {
 
 type ModelAttrOpDetail struct {
 	BasicOpDetail `bson:",inline"`
-	BkObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
-	BkObjName     string `json:"bk_obj_name" bson:"bk_obj_name"`
+	// BkObjID the attribute object ID
+	BkObjID string `json:"bk_obj_id" bson:"bk_obj_id"`
+	// BkObjName the attribute object name
+	BkObjName string `json:"bk_obj_name" bson:"bk_obj_name"`
 }
 
 func (op *ModelAttrOpDetail) WithName() string {
@@ -260,7 +300,8 @@ func (op *ModelAttrOpDetail) WithName() string {
 
 type InstanceOpDetail struct {
 	BasicOpDetail `bson:",inline"`
-	ModelID       string `json:"bk_obj_id" bson:"bk_obj_id"`
+	// BkObjID the object ID of the instance's model
+	ModelID string `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 func (op *InstanceOpDetail) WithName() string {
@@ -268,13 +309,10 @@ func (op *InstanceOpDetail) WithName() string {
 }
 
 type HostTransferOpDetail struct {
-	// the business id of the previous biz if the host transfers to the resource pool, otherwise is the current biz
-	BusinessID   int64       `json:"bk_biz_id" bson:"bk_biz_id"`
-	BusinessName string      `json:"bk_biz_name" bson:"bk_biz_name"`
-	HostID       int64       `json:"bk_host_id" bson:"bk_host_id"`
-	HostInnerIP  string      `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	PreData      HostBizTopo `json:"pre_data" bson:"pre_data"`
-	CurData      HostBizTopo `json:"cur_data" bson:"cur_data"`
+	// PreData the previous biz topology of the host before transfer
+	PreData HostBizTopo `json:"pre_data" bson:"pre_data"`
+	// CurData the current biz topology of the host before transfer
+	CurData HostBizTopo `json:"cur_data" bson:"cur_data"`
 }
 
 type HostBizTopo struct {
@@ -288,18 +326,22 @@ func (op *HostTransferOpDetail) WithName() string {
 }
 
 type AssociationOpDetail struct {
-	AssociationID   string `json:"asst_id" bson:"asst_id"`
+	// AssociationID association id between two object
+	AssociationID string `json:"asst_id" bson:"asst_id"`
+	// AssociationKind association kind id
 	AssociationKind string `json:"asst_kind" bson:"asst_kind"`
-	SourceModelID   string `json:"src_model_id" bson:"src_model_id"`
-	TargetModelID   string `json:"target_model_id" bson:"target_model_id"`
 }
 
 type InstanceAssociationOpDetail struct {
-	AssociationOpDetail AssociationOpDetail `json:"basic_asst_detail" bson:"basic_asst_detail"`
-	SourceInstanceID    int64               `json:"src_instance_id" bson:"src_instance_id"`
-	SourceInstanceName  string              `json:"src_instance_name" bson:"src_instance_name"`
-	TargetInstanceID    int64               `json:"target_instance_id" bson:"target_instance_id"`
-	TargetInstanceName  string              `json:"target_instance_name" bson:"target_instance_name"`
+	AssociationOpDetail `bson:",inline"`
+	// SourceModelID the source instance's object ID
+	SourceModelID string `json:"src_obj_id" bson:"src_obj_id"`
+	// TargetModelID the target instance's object ID
+	TargetModelID string `json:"dest_obj_id" bson:"dest_obj_id"`
+	// TargetInstanceID the target instance ID
+	TargetInstanceID int64 `json:"dest_inst_id" bson:"dest_inst_id"`
+	// TargetInstanceID the target instance name
+	TargetInstanceName string `json:"dest_inst_name" bson:"dest_inst_name"`
 }
 
 func (ao *InstanceAssociationOpDetail) WithName() string {
@@ -307,13 +349,19 @@ func (ao *InstanceAssociationOpDetail) WithName() string {
 }
 
 type ModelAssociationOpDetail struct {
-	AssociationOpDetail AssociationOpDetail       `json:"basic_asst_detail" bson:"basic_asst_detail"`
-	AssociationName     string                    `json:"asst_name" bson:"asst_name"`
-	Mapping             AssociationMapping        `json:"mapping" bson:"mapping"`
-	OnDelete            AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`
-	IsPre               *bool                     `json:"is_pre" bson:"is_pre"`
-	SourceModelName     string                    `json:"src_model_name" bson:"src_model_name"`
-	TargetModelName     int64                     `json:"target_model_name" bson:"target_model_name"`
+	AssociationOpDetail `bson:",inline"`
+	// AssociationName the alias name of the association
+	AssociationName string `json:"asst_name" bson:"asst_name"`
+	// Mapping the association mapping, defines which kind of association can be used
+	Mapping AssociationMapping `json:"mapping" bson:"mapping"`
+	// OnDelete the association on delete action
+	OnDelete AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`
+	// IsPre describe whether this association is a pre-defined association or not
+	IsPre *bool `json:"is_pre" bson:"is_pre"`
+	// TargetModelID the target object ID
+	TargetModelID string `json:"dest_obj_id" bson:"dest_obj_id"`
+	// TargetModelID the target object name
+	TargetModelName int64 `json:"dest_obj_name" bson:"dest_obj_name"`
 }
 
 func (ao *ModelAssociationOpDetail) WithName() string {
@@ -323,17 +371,12 @@ func (ao *ModelAssociationOpDetail) WithName() string {
 // Content contains the details information with in a user's operation.
 // Generally, works for business, model, model instance etc.
 type BasicContent struct {
-	// the previous data before the operation
+	// PreData the previous data before the deletion or updating operation
 	PreData map[string]interface{} `json:"pre_data" bson:"pre_data"`
-	// the current date being operated
+	// CurData the current date after the creation operation
 	CurData map[string]interface{} `json:"cur_data" bson:"cur_data"`
-	// data properties being operated, normally is a model's attributes.
-	Properties []Property `json:"properties" bson:"properties"`
-}
-
-type Property struct {
-	PropertyID   string `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName string `json:"bk_property_name" bson:"bk_property_name"`
+	// UpdateFields the data that user uses to update the pre data, might not be the actual changed data
+	UpdateFields map[string]interface{} `json:"update_fields" bson:"update_fields"`
 }
 
 type AuditType string
@@ -383,15 +426,18 @@ type ResourceType string
 
 const (
 	// business related operation type
-	BusinessRes        ResourceType = "business"
-	ServiceTemplateRes ResourceType = "service_template"
-	SetTemplateRes     ResourceType = "set_template"
-	ServiceCategoryRes ResourceType = "service_category"
-	DynamicGroupRes    ResourceType = "dynamic_group"
-	ServiceInstanceRes ResourceType = "service_instance"
-	SetRes             ResourceType = "set"
-	ModuleRes          ResourceType = "module"
-	ProcessRes         ResourceType = "process"
+	BusinessRes             ResourceType = "business"
+	ServiceTemplateRes      ResourceType = "service_template"
+	SetTemplateRes          ResourceType = "set_template"
+	ServiceCategoryRes      ResourceType = "service_category"
+	DynamicGroupRes         ResourceType = "dynamic_group"
+	ServiceInstanceRes      ResourceType = "service_instance"
+	ServiceInstanceLabelRes ResourceType = "service_instance_label"
+	SetRes                  ResourceType = "set"
+	ModuleRes               ResourceType = "module"
+	ProcessRes              ResourceType = "process"
+	HostApplyRes            ResourceType = "host_apply"
+	CustomFieldRes          ResourceType = "custom_field"
 
 	// model related operation type
 	ModelRes               ResourceType = "model"
@@ -399,10 +445,12 @@ const (
 	MainlineInstanceRes    ResourceType = "mainline_instance"
 	ModelAssociationRes    ResourceType = "model_association"
 	ModelAttributeRes      ResourceType = "model_attribute"
+	ModelAttributeGroupRes ResourceType = "model_attribute_group"
 	ModelClassificationRes ResourceType = "model_classification"
 	InstanceAssociationRes ResourceType = "instance_association"
 	ModelGroupRes          ResourceType = "model_group"
 	ModelUniqueRes         ResourceType = "model_unique"
+	ResourceDirectoryRes   ResourceType = "resource_directory"
 
 	AssociationKindRes ResourceType = "association_kind"
 	EventPushRes       ResourceType = "event"
@@ -447,13 +495,10 @@ const (
 	AuditArchive ActionType = "archive"
 	// recover a resource
 	AuditRecover ActionType = "recover"
-)
-
-const (
-	// resource with this label belongs to biz topology, like set, module, layer ...
-	LabelBizTopology = "biz_topology"
-	// resource with this label is related to service instance, like service instance, service instance label, process ...
-	LabelServiceInstance = "service_instance"
+	// pause an object
+	AuditPause ActionType = "stop"
+	// resume using an object
+	AuditResume ActionType = "resume"
 )
 
 func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
@@ -510,8 +555,296 @@ func GetAuditTypesByCategory(category string) []AuditType {
 		return []AuditType{BusinessResourceType}
 	case "resource":
 		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
+	case "host":
+		return []AuditType{HostType}
 	case "other":
 		return []AuditType{ModelType, AssociationKindType, EventPushType}
 	}
 	return []AuditType{}
+}
+
+func GetAuditDict() []resourceTypeInfo {
+	return auditDict
+}
+
+var auditDict = []resourceTypeInfo{
+	{
+		ID:   DynamicGroupRes,
+		Name: "动态分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   SetTemplateRes,
+		Name: "集群模板",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceTemplateRes,
+		Name: "服务模板",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceCategoryRes,
+		Name: "服务分类",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModuleRes,
+		Name: "模块",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   SetRes,
+		Name: "集群",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   MainlineInstanceRes,
+		Name: "节点",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceInstanceRes,
+		Name: "服务实例",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ProcessRes,
+		Name: "进程",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceInstanceLabelRes,
+		Name: "服务实例标签",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditUpdate],
+		},
+	},
+	{
+		ID:   HostRes,
+		Name: "主机",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+			actionInfoMap[AuditAssignHost],
+			actionInfoMap[AuditUnassignHost],
+			actionInfoMap[AuditTransferHostModule],
+		},
+	},
+	{
+		ID:   HostApplyRes,
+		Name: "主机自动应用",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CustomFieldRes,
+		Name: "自定义字段",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   BusinessRes,
+		Name: "业务",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditArchive],
+			actionInfoMap[AuditRecover],
+		},
+	},
+	{
+		ID:   CloudAreaRes,
+		Name: "云区域",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelInstanceRes,
+		Name: "模型实例",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   InstanceAssociationRes,
+		Name: "实例关联",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ResourceDirectoryRes,
+		Name: "资源池目录",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelGroupRes,
+		Name: "模型分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+			actionInfoMap[AuditPause],
+			actionInfoMap[AuditResume],
+		},
+	},
+	{
+		ID:   ModelRes,
+		Name: "模型",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAttributeRes,
+		Name: "模型字段",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelUniqueRes,
+		Name: "模型唯一校验",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAssociationRes,
+		Name: "模型关联",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAttributeGroupRes,
+		Name: "模型字段分组",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   EventPushRes,
+		Name: "事件订阅",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   AssociationKindRes,
+		Name: "关联类型",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CloudAccountRes,
+		Name: "云账户",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CloudSyncTaskRes,
+		Name: "云资源同步任务",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+}
+
+var actionInfoMap = map[ActionType]actionTypeInfo{
+	AuditCreate:             {ID: AuditCreate, Name: "新增"},
+	AuditUpdate:             {ID: AuditUpdate, Name: "修改"},
+	AuditDelete:             {ID: AuditDelete, Name: "删除"},
+	AuditAssignHost:         {ID: AuditAssignHost, Name: "分配到业务"},
+	AuditUnassignHost:       {ID: AuditUnassignHost, Name: "归还到资源池"},
+	AuditTransferHostModule: {ID: AuditTransferHostModule, Name: "转移模块"},
+	AuditArchive:            {ID: AuditArchive, Name: "归档"},
+	AuditRecover:            {ID: AuditRecover, Name: "恢复"},
+	AuditPause:              {ID: AuditPause, Name: "停用"},
+	AuditResume:             {ID: AuditResume, Name: "启用"},
+}
+
+type resourceTypeInfo struct {
+	ID         ResourceType     `json:"id"`
+	Name       string           `json:"name"`
+	Operations []actionTypeInfo `json:"operations"`
+}
+
+type actionTypeInfo struct {
+	ID   ActionType `json:"id"`
+	Name string     `json:"name"`
 }

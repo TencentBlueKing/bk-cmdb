@@ -19,36 +19,33 @@ import (
 )
 
 func (s *coreService) CreateAuditLog(ctx *rest.Contexts) {
-	inputData := struct {
-		Data []metadata.AuditLog `json:"data"`
-	}{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	inputData := new(metadata.CreateAuditLogParam)
+
+	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	if err := s.core.AuditOperation().CreateAuditLog(ctx.Kit, inputData.Data...); nil != err {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSaveLogFailed))
 		return
 	}
+
 	ctx.RespEntity(nil)
 }
 
 func (s *coreService) SearchAuditLog(ctx *rest.Contexts) {
-	inputData := metadata.QueryInput{}
+	inputData := metadata.QueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	auditLogs, count, err := s.core.AuditOperation().SearchAuditLog(ctx.Kit, inputData)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSelectFailed))
 		return
 	}
-	ctx.RespEntity(struct {
-		Count uint64              `json:"count"`
-		Info  []metadata.AuditLog `json:"info"`
-	}{
-		Count: count,
-		Info:  auditLogs,
-	})
+
+	ctx.RespEntityWithCount(int64(count), auditLogs)
 }

@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -145,6 +146,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 		return nil, err
 	}
 
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	updateAuditLogs := make([]metadata.AuditLog, 0)
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
 	idFieldname := metadata.GetInstIDFieldByObjID(obj.GetObjectID())
@@ -174,7 +177,13 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			filter := condition.CreateCondition()
 			filter = filter.Field(idFieldname).Eq(instID)
 
-			preAuditLog := NewSupplementary().Audit(kit, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
+			auditLog, ccErr := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.GetObjectID(), nil, filter.ToMapStr(), colInput)
+			if ccErr != nil {
+				blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+				return nil, ccErr
+			}
+			updateAuditLogs = append(updateAuditLogs, auditLog...)
+
 			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
@@ -193,8 +202,6 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, instID)
 			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-			currAuditLog := NewSupplementary().Audit(kit, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
-			NewSupplementary().Audit(kit, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 			continue
 		}
 
@@ -213,7 +220,6 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			continue
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-		NewSupplementary().Audit(kit, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nonInnerAttributes)
 
 		instanceID, err := item.GetInstID()
 		if err != nil {
@@ -221,6 +227,23 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			continue
 		}
 		createdInstanceIDs = append(createdInstanceIDs, instanceID)
+	}
+
+	cond := map[string]interface{}{
+		obj.GetInstIDFieldName(): map[string]interface{}{
+			common.BKDBIN: createdInstanceIDs,
+		},
+	}
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, obj.GetObjectID(), nil, cond, nil)
+	if err != nil {
+		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	err = audit.SaveAuditLog(kit, append(updateAuditLogs, auditLog...)...)
+	if err != nil {
+		blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
 	results.SuccessCreated = createdInstanceIDs
@@ -341,8 +364,6 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 		return nil, err
 	}
 
-	NewSupplementary().Audit(kit, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item, nil)
-
 	instID, err := item.GetInstID()
 	if err != nil {
 		return nil, kit.CCError.Error(common.CCErrTopoInstCreateFailed)
@@ -355,6 +376,18 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 	}
 
 	for _, inst := range insts {
+		audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, obj.GetObjectID(), []mapstr.MapStr{inst.GetValues()}, nil, nil)
+		if err != nil {
+			blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		err = audit.SaveAuditLog(kit, auditLog...)
+		if err != nil {
+			blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+		}
 		return inst, nil
 	}
 
@@ -455,9 +488,10 @@ func (c *commonInst) DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID 
 		deleteIDS = append(deleteIDS, ids...)
 	}
 
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	auditLogs := make([]metadata.AuditLog, 0)
+
 	for _, delInst := range deleteIDS {
-		auditFilter := condition.CreateCondition().ToMapStr()
-		preAudit := NewSupplementary().Audit(kit, c.clientSet, delInst.obj, c).CreateSnapshot(delInst.instID, auditFilter)
 
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 		err := c.asst.CheckAssociation(kit, obj, objectID, delInst.instID)
@@ -471,6 +505,14 @@ func (c *commonInst) DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID 
 		if delInst.obj.IsCommon() {
 			delCond.Field(common.BKObjIDField).Eq(objectID)
 		}
+
+		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, obj.GetObjectID(), nil, delCond.ToMapStr(), nil)
+		if err != nil {
+			blog.Errorf(" delete inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+		auditLogs = append(auditLogs, auditLog...)
+
 		// clear association
 		dc := &metadata.DeleteOption{Condition: delCond.ToMapStr()}
 		instObjID := delInst.obj.GetObjectID()
@@ -485,7 +527,6 @@ func (c *commonInst) DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID 
 			return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 
-		NewSupplementary().Audit(kit, c.clientSet, delInst.obj, c).CommitDeleteLog(preAudit, nil, nil)
 	}
 
 	// clear set template sync status for set instances
@@ -504,12 +545,17 @@ func (c *commonInst) DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID 
 		}
 	}
 
+	err = audit.SaveAuditLog(kit, auditLogs...)
+	if err != nil {
+		blog.Errorf("delete inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
 	return nil
 }
 
 func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, instID int64) error {
 	object := obj.Object()
-	preAudit := NewSupplementary().Audit(kit, c.clientSet, obj, c).CreateSnapshot(instID, condition.CreateCondition().ToMapStr())
 	// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 	err := c.asst.CheckAssociation(kit, obj, object.ObjectID, instID)
 	if nil != err {
@@ -521,6 +567,13 @@ func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, i
 	delCond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	if obj.IsCommon() {
 		delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
+	}
+
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, obj.GetObjectID(), nil, delCond.ToMapStr(), nil)
+	if err != nil {
+		blog.Errorf(" delete inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	ops := metadata.DeleteOption{
@@ -537,7 +590,11 @@ func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, i
 		return kit.CCError.Error(rsp.Code)
 	}
 
-	NewSupplementary().Audit(kit, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("delete inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
 
 	return nil
 }
@@ -1071,7 +1128,13 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Obj
 		Condition: fCond,
 	}
 
-	preAuditLog := NewSupplementary().Audit(kit, c.clientSet, obj, c).CreateSnapshot(-1, fCond)
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	auditLog, ccErr := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.GetObjectID(), nil, fCond, data)
+	if ccErr != nil {
+		blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", ccErr, kit.Rid)
+		return ccErr
+	}
+
 	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(), &inputParams)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
@@ -1082,7 +1145,11 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Obj
 		blog.Errorf("[operation-inst] failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
-	currAuditLog := NewSupplementary().Audit(kit, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-	NewSupplementary().Audit(kit, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nil)
+
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
 	return nil
 }
