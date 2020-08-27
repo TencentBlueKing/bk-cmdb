@@ -107,10 +107,11 @@ func (s *coreService) DeleteHostFromSystem(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().DeleteFromSystem(ctx.Kit, inputData)
+
+	err := s.core.HostOperation().DeleteFromSystem(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("DeleteHost  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("delete host error. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)

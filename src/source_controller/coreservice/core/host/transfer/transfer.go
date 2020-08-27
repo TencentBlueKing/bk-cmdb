@@ -40,9 +40,6 @@ type genericTransfer struct {
 	// cross-business transfer module, source business id
 	srcBizID int64
 
-	// delHost delete host model
-	delHost bool
-
 	// ***** cache ********
 	// inner module id array
 	innerModuleID []int64
@@ -78,35 +75,23 @@ func (t *genericTransfer) SetCrossBusiness(kit *rest.Kit, bizID int64) {
 	t.srcBizID = bizID
 }
 
-// SetCrossBusiness Set host cross-service transfer parameters
-func (t *genericTransfer) SetDeleteHost(kit *rest.Kit) {
-	t.delHost = true
-}
-
 func (t *genericTransfer) Transfer(kit *rest.Kit, hostID int64) errors.CCErrorCoder {
-	err := t.validHost(kit, hostID)
+	err := t.validHosts(kit, []int64{hostID})
 	if err != nil {
 		return err
 	}
 
 	// remove service instance if necessary
-	if err := t.removeHostServiceInstance(kit, hostID); err != nil {
+	if err := t.removeHostServiceInstance(kit, []int64{hostID}); err != nil {
 		return err
 	}
 
-	if _, err := t.delHostModuleRelation(kit, hostID); err != nil {
+	if err := t.delHostModuleRelation(kit, []int64{hostID}); err != nil {
 		// It is not the time to merge and base the time. When it fails,
 		// it is clear that the data before the change is pushed.
 		return err
 	}
-	// delete host.
-	if t.delHost {
-		if _, err := t.deleteHost(kit, hostID); err != nil {
-			return err
-		}
-		return nil
 
-	}
 	// transfer host module config
 	if _, err := t.addHostModuleRelation(kit, hostID); err != nil {
 		return err
@@ -120,52 +105,53 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostID int64) errors.CCErrorCo
 	return nil
 }
 
-func (t *genericTransfer) deleteHost(kit *rest.Kit, hostID int64) (mapstr.MapStr, errors.CCErrorCoder) {
-	hostCond := condition.CreateCondition()
-	hostCond.Field(common.BKHostIDField).Eq(hostID)
-	hostCondMap := util.SetQueryOwner(hostCond.ToMapStr(), kit.SupplierAccount)
-	hostInfoArr := make([]metadata.HostMapStr, 0)
-	err := t.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCondMap).All(kit.Ctx, &hostInfoArr)
-	if err != nil {
-		blog.ErrorJSON("deleteHost find data error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+func (t *genericTransfer) DeleteHosts(kit *rest.Kit, hostIDs []int64) error {
+	if len(hostIDs) == 0 {
+		return nil
 	}
 
-	if len(hostInfoArr) == 0 {
-		blog.ErrorJSON("deleteHost not found host error. cond:%s, rid:%s", hostCond.ToMapStr(), kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotExist, hostID)
-	}
-	delMoudleHost := condition.CreateCondition()
-	delMoudleHost.Field(common.BKHostIDField).Eq(hostID)
-	delMoudleHost.Field(common.BKAppIDField).Eq(t.bizID)
-	delMoudleHostMap := util.SetQueryOwner(delMoudleHost.ToMapStr(), kit.SupplierAccount)
-	err = t.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, delMoudleHostMap)
-	if err != nil {
-		blog.ErrorJSON("deleteHost delete module hsot realtion error. err:%s, cond:%s, rid:%s", err.Error(), delMoudleHostMap, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+	// check if biz exist
+	if err := t.validParameterInst(kit); err != nil {
+		return err
 	}
 
-	err = t.dbProxy.Table(common.BKTableNameBaseHost).Delete(kit.Ctx, hostCondMap)
-	if err != nil {
-		blog.ErrorJSON("deleteHost delete host error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+	// check if hosts belong to biz
+	if err := t.validHostsBelongBiz(kit, hostIDs); err != nil {
+		return err
 	}
 
-	return mapstr.MapStr(hostInfoArr[0]), nil
+	// remove service instances
+	if err := t.removeHostServiceInstance(kit, hostIDs); err != nil {
+		return err
+	}
+
+	// remove host module relations
+	if err := t.delHostModuleRelation(kit, hostIDs); err != nil {
+		return err
+	}
+
+	// remove hosts
+	hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+	if err := t.dbProxy.Table(common.BKTableNameBaseHost).Delete(kit.Ctx, hostCond); err != nil {
+		blog.Errorf("delete host failed, err: %s, host ID: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+
+	return nil
 }
 
 // validParameterInst  validate module, biz, srcBiz must be exist
 func (t *genericTransfer) validParameterInst(kit *rest.Kit) errors.CCErrorCoder {
 
-	appCond := condition.CreateCondition()
-	appCond.Field(common.BKAppIDField).Eq(t.bizID)
+	appCond := map[string]interface{}{common.BKAppIDField: t.bizID}
+	appCond = util.SetQueryOwner(appCond, kit.SupplierAccount)
 
-	cnt, err := t.countByCond(kit, appCond.ToMapStr(), common.BKTableNameBaseApp)
+	cnt, err := t.countByCond(kit, appCond, common.BKTableNameBaseApp)
 	if err != nil {
 		return err
 	}
 	if cnt == 0 {
-		blog.ErrorJSON("validParameter not business host error. cond:%s, rid:%s", appCond.ToMapStr(), kit.Rid)
+		blog.ErrorJSON("validParameter not business host error. cond:%s, rid:%s", appCond, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCoreServiceBusinessNotExist, t.bizID)
 	}
 	// cross-business validation source business
@@ -189,10 +175,6 @@ func (t *genericTransfer) validParameterInst(kit *rest.Kit) errors.CCErrorCoder 
 // module must be exist in business
 // multiple modules not default module, transfer default must be one module
 func (t *genericTransfer) validParameterModule(kit *rest.Kit) errors.CCErrorCoder {
-	// delete host not validation destination module
-	if t.delHost {
-		return nil
-	}
 	if len(t.moduleIDArr) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)
 	}
@@ -247,17 +229,33 @@ func (t *genericTransfer) validParameterModule(kit *rest.Kit) errors.CCErrorCode
 // validParameterHostBelongbiz  legal
 // check if the host belongs to the transfer business.
 // check host exist
-func (t *genericTransfer) validHost(kit *rest.Kit, hostID int64) errors.CCErrorCoder {
-	hostCond := condition.CreateCondition()
-	hostCond.Field(common.BKHostIDField).Eq(hostID)
-
-	cnt, err := t.countByCond(kit, hostCond.ToMapStr(), common.BKTableNameBaseHost)
-	if err != nil {
-		return err
+func (t *genericTransfer) validHosts(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+	if len(hostIDs) == 0 {
+		return nil
 	}
-	if cnt == 0 {
-		blog.ErrorJSON("validParameter not found host error. cond:%s, rid:%s", hostCond.ToMapStr(), kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotExist, hostID)
+
+	// check if hosts exist
+	hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+	hostCond = util.SetQueryOwner(hostCond, kit.SupplierAccount)
+
+	cnt, err := t.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("valid hosts, but count host failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	if int(cnt) < len(hostIDs) {
+		blog.Errorf("valid hosts, but some hosts not exist, hostIDs: %+v, rid: %s", hostIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotExist, hostIDs)
+	}
+
+	return t.validHostsBelongBiz(kit, hostIDs)
+}
+
+// validHostsBelongBiz check if hosts not belongs to other biz
+func (t *genericTransfer) validHostsBelongBiz(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+	if len(hostIDs) == 0 {
+		return nil
 	}
 
 	bizID := t.bizID
@@ -266,26 +264,31 @@ func (t *genericTransfer) validHost(kit *rest.Kit, hostID int64) errors.CCErrorC
 	if t.crossBizTransfer {
 		bizID = t.srcBizID
 	}
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).NotEq(bizID)
-	cond.Field(common.BKHostIDField).Eq(hostID)
-	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
 
-	cnt, dbErr := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).Count(kit.Ctx)
-	if dbErr != nil {
-		blog.ErrorJSON("validParameterHostBelongbiz find data error. err:%s,cond:%s, rid:%s", dbErr.Error(), condMap, kit.Rid)
+	relationCond := map[string]interface{}{common.BKAppIDField: map[string]interface{}{common.BKDBNE: bizID},
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+	relationCond = util.SetQueryOwner(relationCond, kit.SupplierAccount)
+
+	cnt, err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(relationCond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("valid host, but get host relation failed, err: %s, biz ID: %d, host ID: %+v, rid: %s", err.Error(), bizID, hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	if cnt > 0 {
-		blog.ErrorJSON("validParameterHostBelongbiz has belong to other business.cond:%s, rid:%s", condMap, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostID, bizID)
+		blog.Errorf("delete host, but some hosts belongs to other biz, biz ID: %d, host ID: %+v, rid: %s", bizID, hostIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostIDs, bizID)
 	}
+
 	return nil
 }
 
 // delHostModuleRelation delete single host module relation
-func (t *genericTransfer) delHostModuleRelation(kit *rest.Kit, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) delHostModuleRelation(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
 	bizID := t.bizID
 	// transfer the host across business,
 	// check host belongs to the original business ID
@@ -295,42 +298,29 @@ func (t *genericTransfer) delHostModuleRelation(kit *rest.Kit, hostID int64) ([]
 
 	if t.isIncrement {
 		// delete default module
-		return t.delHostModuleRelationItem(kit, bizID, hostID, true)
+		return t.delHostModuleRelationItem(kit, bizID, hostIDs, true)
 
 	} else {
 		// delete all module
-		return t.delHostModuleRelationItem(kit, bizID, hostID, false)
+		return t.delHostModuleRelationItem(kit, bizID, hostIDs, false)
 	}
 }
 
 // delHostModuleRelationItem delete single host module relation
-func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizID, hostID int64, isDefault bool) ([]mapstr.MapStr, errors.CCErrorCoder) {
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
+func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizID int64, hostIDs []int64, isDefault bool) errors.CCErrorCoder {
+	relationCond := map[string]interface{}{common.BKAppIDField: bizID,
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
 	if isDefault {
-		cond.Field(common.BKModuleIDField).In(t.innerModuleID)
-	}
-	cond.Field(common.BKHostIDField).Eq(hostID)
-
-	delCondition := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
-
-	// retrieve original data
-	originDatas := make([]mapstr.MapStr, 0)
-	getErr := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).All(kit.Ctx, &originDatas)
-	if getErr != nil {
-		blog.ErrorJSON("delete host relation, retrieve original data error. err:%v, cond:%s, rid:%s", getErr, delCondition, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		relationCond[common.BKModuleIDField] = map[string]interface{}{common.BKDBIN: t.innerModuleID}
 	}
 
-	delCondition = util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
-	delErr := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, delCondition) //.DelByCondition(ModuleHostCollection, delCondition)
-	if delErr != nil {
-		blog.ErrorJSON("delete host relation, but del module host relation failed. err:%v, cond:%s, rid:%s", delErr, delCondition, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+	err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, relationCond)
+	if err != nil {
+		blog.Errorf("delete host, but remove host relations failed, biz ID: %d, host ID: %+v, rid: %s", bizID, hostIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
-	return originDatas, nil
+	return nil
 }
 
 // AddSingleHostModuleRelation add single host module relation
@@ -398,14 +388,19 @@ func (t *genericTransfer) autoCreateServiceInstance(kit *rest.Kit, hostID int64)
 }
 
 // remove service instances bound to hosts with process instances in certain modules
-func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostID int64) errors.CCErrorCoder {
+func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
 	// increment transfer don't need to remove service instance
 	if t.isIncrement {
 		return nil
 	}
+
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
 	// get all service instance IDs that need to be removed
 	serviceInstanceFilter := map[string]interface{}{
-		common.BKHostIDField: hostID,
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
 	}
 	if len(t.moduleIDArr) > 0 {
 		serviceInstanceFilter[common.BKModuleIDField] = map[string]interface{}{
