@@ -406,6 +406,182 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 	return nil
 }
 
+// TransferHostAcrossBusinessPreview transfer host across business, service instance, host apply preview
+func (lgc *Logics) TransferHostAcrossBusinessPreview(kit *rest.Kit, srcBizID, dstBizID int64, hostIDs []int64,
+	moduleIDs []int64) ([]metadata.HostTransferPreview, errors.CCError) {
+
+	// get src biz idle module
+	srcModuleCond := map[string]interface{}{
+		common.BKAppIDField:   srcBizID,
+		common.BKDefaultField: common.DefaultResModuleFlag,
+	}
+
+	srcModuleID, err := lgc.GetResourcePoolModuleID(kit, srcModuleCond)
+	if err != nil {
+		blog.Errorf("transfer host across biz preview, get src biz(%d) idle module id failed, err: %v, rid: %s", srcBizID, err, kit.Rid)
+		return nil, err
+	}
+
+	// check if hosts are in the src biz idle module
+	errHostID, err := lgc.notExistAppModuleHost(kit, srcBizID, []int64{srcModuleID}, hostIDs)
+	if err != nil {
+		blog.Errorf("transfer host across biz preview, check hosts in src biz idle module failed, err: %v, bizID: %d, hostIDs: %+v, rid: %s", err, srcBizID, hostIDs, kit.Rid)
+		return nil, err
+	}
+
+	if len(errHostID) > 0 {
+		errHostIP := lgc.convertHostIDToHostIP(kit, errHostID)
+		blog.Errorf("transfer host across biz preview, has host not belong to idle module, bizID: %d, err host inner ip:%#v, rid:%s", srcBizID, errHostIP, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrNotBelongToIdleModule, util.PrettyIPStr(errHostIP))
+	}
+
+	// check if dest modules are in dest biz and do not contain both inner and outer modules
+	moduleIDs = util.IntArrayUnique(moduleIDs)
+	query := &metadata.QueryCondition{
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Fields: []string{common.BKModuleIDField, common.BKDefaultField, common.BKServiceTemplateIDField, common.HostApplyEnabledField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField: dstBizID,
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+		},
+	}
+
+	destModuleRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query)
+	if err != nil {
+		blog.Errorf("transfer host across biz preview, valid dest modules failed, err: %v, bizID: %d, moduleIDs: %+v, rid: %s", err, dstBizID, moduleIDs, kit.Rid)
+		return nil, err
+	}
+	if !destModuleRes.Result {
+		blog.Errorf("transfer host across biz preview, valid dest modules failed, err: %s, bizID: %d, moduleIDs: %+v, rid: %s", destModuleRes.ErrMsg, dstBizID, moduleIDs, kit.Rid)
+		return nil, destModuleRes.CCError()
+	}
+
+	if len(destModuleRes.Data.Info) != len(moduleIDs) {
+		blog.Errorf("transfer host across biz preview, not all modules are in the dest biz, moduleIDs: %+v, rid: %s", moduleIDs, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+	}
+
+	hasInnerModule := false
+	serviceTemplateIDs := make([]int64, 0)
+	hostApplyModuleIDs := make([]int64, 0)
+	moduleServiceTemplateMap := make(map[int64]int64)
+	for _, module := range destModuleRes.Data.Info {
+		def, err := util.GetIntByInterface(module[common.BKDefaultField])
+		if err != nil {
+			blog.ErrorJSON("transfer host across biz preview, module(%s) has invalid default field, rid: %s", module, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+		}
+
+		if def == common.DefaultResModuleFlag || def == common.DefaultFaultModuleFlag || def == common.DefaultRecycleModuleFlag {
+			hasInnerModule = true
+		} else if hasInnerModule {
+			blog.ErrorJSON("transfer host across biz preview, transfer to both inner and outer modules, rid: %s", kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+		}
+
+		moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
+		if err != nil {
+			blog.ErrorJSON("transfer host across biz preview, module(%s) has invalid module id field, rid: %s", module, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+		}
+
+		serviceTemplateID, err := util.GetInt64ByInterface(module[common.BKServiceTemplateIDField])
+		if err != nil {
+			blog.ErrorJSON("transfer host across biz preview, module(%s) has invalid service template id field, rid: %s", module, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+		}
+
+		if serviceTemplateID != common.ServiceTemplateIDNotSet {
+			serviceTemplateIDs = append(serviceTemplateIDs, serviceTemplateID)
+			moduleServiceTemplateMap[moduleID] = serviceTemplateID
+		}
+
+		enabled, ok := module[common.HostApplyEnabledField].(bool)
+		if !ok {
+			blog.ErrorJSON("transfer host across biz preview, module(%s) has invalid host_apply_enabled field, rid: %s", module, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+		}
+
+		if enabled {
+			hostApplyModuleIDs = append(hostApplyModuleIDs, moduleID)
+		}
+	}
+
+	// get service template related to modules
+	serviceTemplateDetails, err := lgc.CoreAPI.CoreService().Process().ListServiceTemplateDetail(kit.Ctx, kit.Header, dstBizID, serviceTemplateIDs...)
+	if err != nil {
+		blog.Errorf("transfer host across biz preview, get service template failed, err: %s, ids: %+v, rid: %s", dstBizID, err.Error(), serviceTemplateIDs, kit.Rid)
+		return nil, err
+	}
+
+	serviceTemplateMap := make(map[int64]*metadata.ServiceTemplateDetail)
+	for _, templateDetail := range serviceTemplateDetails.Info {
+		serviceTemplateMap[templateDetail.ServiceTemplate.ID] = &templateDetail
+	}
+
+	toAddToModules := make([]metadata.AddToModuleInfo, len(moduleIDs))
+	for index, moduleID := range moduleIDs {
+		toAddToModules[index] = metadata.AddToModuleInfo{
+			ModuleID:        moduleID,
+			ServiceTemplate: serviceTemplateMap[moduleServiceTemplateMap[moduleID]],
+		}
+	}
+
+	// generate host apply plans
+	ruleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: hostApplyModuleIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	rules, err := lgc.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(kit.Ctx, kit.Header, dstBizID, ruleOption)
+	if err != nil {
+		blog.Errorf("transfer host across biz preview, get host apply rules failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	hostModules := make([]metadata.Host2Modules, len(hostIDs))
+	for index, hostID := range hostIDs {
+		hostModules[index] = metadata.Host2Modules{
+			HostID:    hostID,
+			ModuleIDs: hostApplyModuleIDs,
+		}
+	}
+
+	planOption := metadata.HostApplyPlanOption{
+		Rules:       rules.Info,
+		HostModules: hostModules,
+	}
+
+	hostApplyPlanResult, err := lgc.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(kit.Ctx, kit.Header, dstBizID, planOption)
+	if err != nil {
+		blog.ErrorJSON("transfer host across biz preview, generate host apply rules failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return nil, err
+	}
+	hostApplyPlanMap := make(map[int64]metadata.OneHostApplyPlan)
+	for _, item := range hostApplyPlanResult.Plans {
+		hostApplyPlanMap[item.HostID] = item
+	}
+
+	previews := make([]metadata.HostTransferPreview, 0)
+	for _, hostID := range hostIDs {
+		preview := metadata.HostTransferPreview{
+			HostID:       hostID,
+			FinalModules: moduleIDs,
+			ToRemoveFromModules: []metadata.RemoveFromModuleInfo{{
+				ModuleID:         srcModuleID,
+				ServiceInstances: make([]metadata.ServiceInstance, 0),
+			}},
+			ToAddToModules: toAddToModules,
+			HostApplyPlan:  hostApplyPlanMap[hostID],
+		}
+		previews = append(previews, preview)
+	}
+	return previews, nil
+}
+
 // DeleteHostFromBusiness  delete host from business,
 func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult, errors.CCError) {
 	// ready audit log of delete host.

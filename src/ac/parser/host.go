@@ -307,6 +307,7 @@ const (
 	moveHostsToBizIdleModulePattern       = "/api/v3/hosts/modules/idle"
 	moveHostsToBizRecycleModulePattern    = "/api/v3/hosts/modules/recycle"
 	moveHostAcrossBizPattern              = "/api/v3/hosts/modules/across/biz"
+	moveHostAcrossBizPreviewPattern       = "/api/v3/hosts/modules/across/biz/preview"
 	moveRscPoolHostToRscPoolDir           = "/api/v3/host/transfer/resource/directory"
 	cleanHostInSetOrModulePattern         = "/api/v3/hosts/modules/idle/set"
 	findHostTopoRelationPattern           = "/api/v3/host/topo/relation/read"
@@ -1017,7 +1018,8 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	}
 
 	// transfer host to another business
-	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
+	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) ||
+		ps.hitPattern(moveHostAcrossBizPreviewPattern, http.MethodPost) {
 		srcBizID := gjson.GetBytes(ps.RequestCtx.Body, "src_bk_biz_id").Int()
 		if srcBizID == 0 {
 			ps.err = errors.New("src_bk_biz_id invalid")

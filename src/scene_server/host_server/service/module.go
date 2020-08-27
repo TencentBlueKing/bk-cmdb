@@ -184,6 +184,44 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 	return
 }
 
+// TransferHostWithAutoClearServiceInstancePreview generate a preview of changes for TransferHostAcrossBusiness operation
+func (s *Service) TransferHostAcrossBusinessPreview(ctx *rest.Contexts) {
+	data := new(metadata.TransferHostAcrossBusinessParameter)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if data.SrcAppID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "src_bk_biz_id"))
+		return
+	}
+
+	if data.DstAppID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "dst_bk_biz_id"))
+		return
+	}
+
+	if len(data.HostID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKHostIDField))
+		return
+	}
+
+	if len(data.DstModuleIDArr) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_module_ids"))
+		return
+	}
+
+	preview, err := s.Logic.TransferHostAcrossBusinessPreview(ctx.Kit, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleIDArr)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(preview)
+	return
+}
+
 // TransferHostAcrossBusiness  Transfer host across business,
 // delete old business  host and module relation
 func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
