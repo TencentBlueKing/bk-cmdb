@@ -159,19 +159,10 @@ func (w *Watcher) WatchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 		// check if nodes has already scan to the end
 		lastNode := nodes[len(nodes)-1]
 		if lastNode.NextCursor == key.TailKey() {
-			// has already scan to the end, no need to scan anymore
-			// get event detail.
-			detail, err := w.cache.Get(key.DetailKey(lastNode.Cursor)).Result()
-			if err != nil {
-				blog.Errorf("get cursor: %s detail failed, err: %v, rid: %s", lastNode.Cursor, err, rid)
-				return nil, err
-			}
-
 			resp := &watch.WatchEventDetail{
-				Cursor:    lastNode.Cursor,
-				Resource:  opts.Resource,
-				EventType: lastNode.EventType,
-				Detail:    watch.JsonString(types.GetEventDetail(detail)),
+				Cursor:   lastNode.Cursor,
+				Resource: opts.Resource,
+				Detail:   nil,
 			}
 			return []*watch.WatchEventDetail{resp}, nil
 		}
@@ -374,10 +365,9 @@ func (w *Watcher) WatchWithCursor(key event.Key, opts *watch.WatchEventOptions, 
 			// watch from here later for next watch round.
 			lastNode := nodes[len(nodes)-1]
 			resp := &watch.WatchEventDetail{
-				Cursor:    lastNode.Cursor,
-				Resource:  opts.Resource,
-				EventType: lastNode.EventType,
-				Detail:    nil,
+				Cursor:   lastNode.Cursor,
+				Resource: opts.Resource,
+				Detail:   nil,
 			}
 
 			// at least the tail node should can be scan, so something goes wrong.
