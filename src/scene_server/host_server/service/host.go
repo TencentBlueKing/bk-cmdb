@@ -114,14 +114,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		if rsp.Data.Count <= 0 {
 			continue
 		}
-		objIDs := make([]string, 0)
 		asstInstMap := make(map[string][]int64, 0)
 		for _, asst := range rsp.Data.Info {
 			if asst.ObjectID == common.BKInnerObjIDHost && iHostID == asst.InstID {
-				objIDs = append(objIDs, asst.AsstObjectID)
 				asstInstMap[asst.AsstObjectID] = append(asstInstMap[asst.AsstObjectID], asst.AsstInstID)
 			} else if asst.AsstObjectID == common.BKInnerObjIDHost && iHostID == asst.AsstInstID {
-				objIDs = append(objIDs, asst.ObjectID)
 				asstInstMap[asst.ObjectID] = append(asstInstMap[asst.ObjectID], asst.InstID)
 			} else {
 				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(common.CCErrCommDBSelectFailed, "host is not associated in selected association")})
@@ -244,10 +241,6 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 			return srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 
-		// ensure delete host add log
-		for _, ex := range delResult.Data {
-			delete(logContentMap, ex.OriginIndex)
-		}
 		var logContents []meta.AuditLog
 		for _, item := range logContentMap {
 			logContents = append(logContents, item)

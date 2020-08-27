@@ -449,34 +449,9 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 }
 
 // DeleteHost delete host module relation and host info
-func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
-
+func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false)
-	transfer.SetDeleteHost(kit)
-
-	err := transfer.ValidParameter(kit)
-	if err != nil {
-		blog.ErrorJSON("DeleteFromSystem failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
-		return nil, err
-	}
-
-	var exceptionArr []metadata.ExceptionResult
-	for _, hostID := range input.HostIDArr {
-		err := transfer.Transfer(kit, hostID)
-		if err != nil {
-			blog.ErrorJSON("DeleteFromSystem failed, Transfer module host relation failed. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, kit.Rid)
-			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.GetCode()),
-				OriginIndex: hostID,
-			})
-		}
-	}
-	if len(exceptionArr) > 0 {
-		return exceptionArr, kit.CCError.CCError(common.CCErrCoreServiceTransferHostModuleErr)
-	}
-
-	return nil, nil
+	return transfer.DeleteHosts(kit, input.HostIDArr)
 }
 
 func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID int64, hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {

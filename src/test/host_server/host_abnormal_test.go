@@ -1958,7 +1958,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp1.Result).To(Equal(true))
 		})
 
-		// the noexist host noExistID cause the result to be false, no host will be deleted for using transaction
+		// delete host batch does not judge if host exists since it has no side effect
 		It("delete host one nonexist bk_host_id", func() {
 			input := map[string]interface{}{
 				"bk_host_id": fmt.Sprintf("%v,%v", hostId4, noExistID),
@@ -1966,12 +1966,12 @@ var _ = Describe("host abnormal test", func() {
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(true))
 
 			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId4, 10), header)
 			util.RegisterResponse(rsp1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp1.Result).To(Equal(true))
+			Expect(rsp1.Result).To(Equal(false))
 		})
 	})
 })
