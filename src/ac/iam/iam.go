@@ -234,11 +234,11 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 			blog.ErrorJSON("register action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
 			return err
 		}
-		return nil
-	}
-	if err = i.client.UpdateActionGroups(ctx, actionGroups); err != nil {
-		blog.ErrorJSON("update action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
-		return err
+	} else {
+		if err = i.client.UpdateActionGroups(ctx, actionGroups); err != nil {
+			blog.ErrorJSON("update action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
+			return err
+		}
 	}
 
 	// register or update resource creator actions
@@ -248,11 +248,11 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 			blog.ErrorJSON("register resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
 			return err
 		}
-		return nil
-	}
-	if err = i.client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
-		blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
-		return err
+	} else {
+		if err = i.client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
+			blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s", err.Error(), resourceCreatorActions)
+			return err
+		}
 	}
 
 	return nil
