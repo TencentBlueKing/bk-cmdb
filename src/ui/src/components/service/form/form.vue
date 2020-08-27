@@ -12,6 +12,8 @@
                 :inst="instance"
                 :show-delete="false"
                 :edit-auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                :invisible-name-properties="invisibleNameProperties"
+                :flex-properties="flexProperties"
                 @on-edit="handleChangeInternalType">
             </cmdb-details>
             <cmdb-form v-else
@@ -22,18 +24,13 @@
                 :properties="properties"
                 :property-groups="propertyGroups"
                 :disabled-properties="bindedProperties"
+                :invisible-name-properties="invisibleNameProperties"
+                :flex-properties="flexProperties"
                 :render-tips="renderTips"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleCancel">
-                <template slot="bind_ip">
-                    <cmdb-input-select
-                        name="bindIP"
-                        :disabled="isBindIPDisabled"
-                        :placeholder="$t('请选择或输入IP')"
-                        :options="bindIPList"
-                        :validate="bindIPRules"
-                        v-model="bindIP">
-                    </cmdb-input-select>
+                <template slot="bind_info">
+                    <process-bind-table v-bind="processTableProps" @change="handleProcessTableChange"></process-bind-table>
                 </template>
             </cmdb-form>
         </template>
@@ -47,7 +44,11 @@
         processPropertyGroupsRequestId
     } from './symbol'
     import RenderTips from './process-form-tips-render'
+    import ProcessBindTable from './process-bind-table'
     export default {
+        components: {
+            ProcessBindTable
+        },
         props: {
             type: String,
             serviceTemplateId: Number,
@@ -65,36 +66,27 @@
                 properties: [],
                 propertyGroups: [],
                 bindedProperties: [],
-                bindIP: this.instance ? this.instance.bind_ip : '',
-                bindIPList: [],
-                pending: true
+                processTemplate: {},
+                pending: true,
+                invisibleNameProperties: ['bind_info'],
+                flexProperties: ['bind_info']
             }
         },
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('objectBiz', ['bizId']),
-            bindIPProperty () {
-                return this.properties.find(property => property.bk_property_id === 'bind_ip')
-            },
-            isBindIPDisabled () {
-                return this.bindedProperties.includes('bind_ip')
-            },
-            bindIPRules () {
-                if (!this.bindIPProperty) {
-                    return {}
+            processTableProps () {
+                return {
+                    processTemplate: this.processTemplate,
+                    serviceTemplateId: this.serviceTemplateId,
+                    processTemplateId: this.processTemplateId,
+                    hostId: this.hostId,
+                    properties: this.properties,
+                    list: this.instance ? this.instance['bind_info'] : []
                 }
-                const rules = {}
-                if (this.bindIPProperty.isrequired) {
-                    rules.required = true
-                }
-                rules.regex = this.bindIPProperty.option
-                return rules
             }
         },
         watch: {
-            bindIP (ip) {
-                this.$refs.form.values.bind_ip = ip
-            },
             internalType (type) {
                 this.updateFormWatcher()
             }
@@ -105,9 +97,6 @@
                     this.getProperties(),
                     this.getPropertyGroups()
                 ]
-                if (this.hostId) {
-                    request.push(this.getBindIPList())
-                }
                 if (this.processTemplateId) {
                     request.push(this.getProcessTemplate())
                 }
@@ -131,6 +120,9 @@
                 } else {
                     this.$nextTick(() => {
                         const form = this.$refs.form
+                        if (!form) {
+                            return
+                        }
                         this.unwatchForm = this.$watch(() => {
                             return form.values.bk_func_name
                         }, (newVal, oldValue) => {
@@ -173,23 +165,9 @@
                     this.propertyGroups = []
                 }
             },
-            async getBindIPList () {
-                try {
-                    const { options } = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
-                        hostId: this.hostId,
-                        config: {
-                            requestId: 'getInstanceIpByHost'
-                        }
-                    })
-                    this.bindIPList = options.map(ip => ({ id: ip, name: ip }))
-                } catch (error) {
-                    this.bindIPList = []
-                    console.error(error)
-                }
-            },
             async getProcessTemplate () {
                 try {
-                    const { property } = await this.$store.dispatch('processTemplate/getProcessTemplate', {
+                    this.processTemplate = await this.$store.dispatch('processTemplate/getProcessTemplate', {
                         params: {
                             processTemplateId: this.processTemplateId
                         },
@@ -197,6 +175,7 @@
                             cancelPrevious: true
                         }
                     })
+                    const { property } = this.processTemplate
                     const bindedProperties = []
                     Object.keys(property).forEach(key => {
                         if (property[key].as_default_value) {
@@ -214,7 +193,9 @@
             async handleSaveProcess (values, changedValues, instance) {
                 try {
                     this.pending = true
-                    await this.submitHandler(values, changedValues, instance)
+                    const newValues = this.formatValues(values)
+                    const newChangedValues = this.formatValues(changedValues)
+                    await this.submitHandler(newValues, newChangedValues, instance)
                     this.isShow = false
                 } catch (error) {
                     console.error(error)
@@ -233,6 +214,21 @@
                 } else {
                     this.isShow = false
                 }
+            },
+            formatValues (values) {
+                const newValues = { ...values }
+                const bindInfoList = newValues['bind_info'] || []
+                const bindInfo = bindInfoList.filter(row => {
+                    const values = Object.keys(row).map(key => row[key]).filter(value => {
+                        if (typeof value !== 'boolean') {
+                            return !!value
+                        }
+                        return true
+                    })
+                    return values.length > 0
+                })
+                newValues['bind_info'] = bindInfo
+                return newValues
             },
             beforeClose () {
                 if (this.internalType === 'view') return Promise.resolve(true)
@@ -261,6 +257,15 @@
             handleChangeInternalType () {
                 this.internalType = 'update'
                 this.internalTitle = this.$t('编辑进程')
+            },
+            handleProcessTableChange (list) {
+                this.$refs.form.values.bind_info = list.map(item => {
+                    const row = {}
+                    Object.keys(item).forEach(key => {
+                        row[key] = item[key].value
+                    })
+                    return row
+                })
             }
         }
     }

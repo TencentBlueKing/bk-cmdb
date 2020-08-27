@@ -462,6 +462,32 @@
                         data[key].value = null
                     } else if (property && property.bk_property_type === 'bool' && !data[key].as_default_value) {
                         data[key].value = null
+                    } else if (property && property.bk_property_type === 'table') {
+                        // 过滤掉无效数据行
+                        if (Array.isArray(data[key].value)) {
+                            const list = data[key].value.filter(row => {
+                                const values = Object.keys(row).map(key => row[key].value).filter(value => {
+                                    if (typeof value !== 'boolean') {
+                                        return !!value
+                                    }
+                                    return true
+                                })
+                                return values.length > 0
+                            })
+                            list.forEach(row => {
+                                Object.keys(row).forEach(key => {
+                                    // 未勾选未填写需设置值为null
+                                    if (row[key] !== null
+                                        && typeof row[key] === 'object'
+                                        && !row[key].as_default_value
+                                        && typeof row[key].value !== 'boolean'
+                                        && !row[key].value) {
+                                        row[key].value = null
+                                    }
+                                })
+                            })
+                            data[key].value = list
+                        }
                     } else if (!data[key].as_default_value) {
                         data[key].value = ''
                     }
