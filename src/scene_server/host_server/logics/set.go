@@ -86,3 +86,78 @@ func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond ma
 	}
 	return setMap, nil
 }
+
+// GetSetIDsByTopo get set IDs by custom layer node
+func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int64) ([]int64, error) {
+	if objID == common.BKInnerObjIDApp || objID == common.BKInnerObjIDSet || objID == common.BKInnerObjIDModule {
+		blog.Errorf("get set IDs by topo failed, obj(%s) is a inner object, rid: %s", objID, lgc.rid)
+		return nil, lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+	}
+
+	// get mainline association, generate map of object and its child
+	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, lgc.header, &metadata.QueryCondition{
+		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
+	if err != nil {
+		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", err.Error(), lgc.rid)
+		return nil, err
+	}
+
+	if !asstRes.Result {
+		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", asstRes.ErrMsg, lgc.rid)
+		return nil, asstRes.CCError()
+	}
+
+	childObjMap := make(map[string]string)
+	for _, asst := range asstRes.Data.Info {
+		childObjMap[asst.AsstObjID] = asst.ObjectID
+	}
+
+	childObj := childObjMap[objID]
+	if childObj == "" {
+		blog.Errorf("get set IDs by topo failed, obj(%s) is not a mainline object, rid: %s", objID, lgc.rid)
+		return nil, lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+	}
+
+	// traverse down topo till set, get set ids
+	instIDs := []int64{instID}
+	for {
+		idField := common.GetInstIDField(childObj)
+		query := &metadata.QueryCondition{
+			Condition: map[string]interface{}{common.BKParentIDField: map[string]interface{}{common.BKDBIN: instIDs}},
+			Fields:    []string{idField},
+			Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		}
+
+		instRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, childObj, query)
+		if err != nil {
+			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), childObj, instIDs, lgc.rid)
+			return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !instRes.Result {
+			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", instRes.ErrMsg, childObj, instIDs, lgc.rid)
+			return nil, lgc.ccErr.New(instRes.Code, instRes.ErrMsg)
+		}
+
+		if len(instRes.Data.Info) == 0 {
+			return []int64{}, nil
+		}
+
+		instIDs = make([]int64, len(instRes.Data.Info))
+		for index, inst := range instRes.Data.Info {
+			id, err := inst.Int64(idField)
+			if err != nil {
+				blog.Errorf("get set IDs by topo failed, parse inst id err: %s, inst: %#v, rid: %s", err.Error(), inst, lgc.rid)
+				return nil, err
+			}
+			instIDs[index] = id
+		}
+
+		if childObj == common.BKInnerObjIDSet {
+			break
+		}
+		childObj = childObjMap[childObj]
+	}
+
+	return instIDs, nil
+}

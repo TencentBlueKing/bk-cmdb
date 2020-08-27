@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -398,6 +399,69 @@ func (s *Service) FindHostsBySetTemplates(req *restful.Request, resp *restful.Re
 	result, err := s.findDistinctHostInfo(req.Request.Header, distinctHostCond, searchHostCond)
 	if err != nil {
 		blog.Errorf("FindHostsBySetTemplates failed, findDistinctHostInfo err: %s, distinctHostCond:%#v, searchHostCond:%#v, rid:%s", err.Error(), *distinctHostCond, *searchHostCond, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+		return
+	}
+	_ = resp.WriteEntity(result)
+}
+
+// FindHostsByTopo find hosts by topo node except for biz
+func (s *Service) FindHostsByTopo(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+
+	option := new(meta.FindHostsByTopoOpt)
+	if err := json.NewDecoder(req.Request.Body).Decode(option); err != nil {
+		blog.Errorf("find hosts by topo failed, decode body err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
+		blog.Errorf("find hosts by topo failed, validate err: %v, option: %#v, rid: %s", rawErr.ToCCError(defErr).Error(), *option, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: rawErr.ToCCError(defErr)})
+		return
+	}
+
+	bizID, err := strconv.ParseInt(req.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil || bizID <= 0 {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
+		return
+	}
+
+	// generate search condition, if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
+	distinctHostCond := &meta.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizID},
+	}
+
+	if option.ObjID == common.BKInnerObjIDSet {
+		distinctHostCond.SetIDArr = []int64{option.InstID}
+	} else if option.ObjID == common.BKInnerObjIDModule {
+		distinctHostCond.ModuleIDArr = []int64{option.InstID}
+	} else {
+		setIDArr, err := srvData.lgc.GetSetIDsByTopo(srvData.ctx, option.ObjID, option.InstID)
+		if err != nil {
+			blog.Errorf("find hosts by topo failed, get set ID by topo err: %s, objID: %s, instID: %d, rid: %s", err.Error(), option.ObjID, option.InstID, srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+			return
+		}
+
+		if len(setIDArr) == 0 {
+			_ = resp.WriteEntity(&meta.SearchHostResult{BaseResp: meta.SuccessBaseResp, Data: meta.SearchHost{}})
+			return
+		}
+
+		distinctHostCond.SetIDArr = setIDArr
+	}
+
+	searchHostCond := &meta.QueryCondition{
+		Fields: option.Fields,
+		Page:   option.Page,
+	}
+
+	result, err := s.findDistinctHostInfo(req.Request.Header, distinctHostCond, searchHostCond)
+	if err != nil {
+		blog.Errorf("find hosts by topo failed, find host err: %s, distinctHostCond: %#v, searchHostCond: %#v, rid: %s", err.Error(), *distinctHostCond, *searchHostCond, srvData.rid)
 		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
 		return
 	}
