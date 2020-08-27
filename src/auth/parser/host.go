@@ -352,6 +352,7 @@ var (
 	findHostsByServiceTemplatesRegex = regexp.MustCompile(`^/api/v3/findmany/hosts/by_service_templates/biz/\d+$`)
 	findHostsBySetTemplatesRegex     = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
 	findHostModuleRelationsRegex     = regexp.MustCompile(`^/api/v3/findmany/module_relation/bk_biz_id/[0-9]+/?$`)
+	findHostsByTopoRegex             = regexp.MustCompile(`^/api/v3/findmany/hosts/by_topo/biz/\d+$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -434,6 +435,25 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitRegexp(findHostsBySetTemplatesRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findHostsByTopoRegex, http.MethodPost) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])

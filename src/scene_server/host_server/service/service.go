@@ -156,6 +156,7 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/findmany/hosts/by_service_templates/biz/{bk_biz_id}").To(s.FindHostsByServiceTemplates))
 	api.Route(api.POST("/findmany/hosts/by_set_templates/biz/{bk_biz_id}").To(s.FindHostsBySetTemplates))
+	api.Route(api.POST("/findmany/hosts/by_topo/biz/{bk_biz_id}").To(s.FindHostsByTopo))
 
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))

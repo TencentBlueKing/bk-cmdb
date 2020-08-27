@@ -204,6 +204,52 @@ func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
 	return errors.RawErrorInfo{}
 }
 
+type FindHostsByTopoOpt struct {
+	ObjID  string   `json:"bk_obj_id"`
+	InstID int64    `json:"bk_inst_id"`
+	Fields []string `json:"fields"`
+	Page   BasePage `json:"page"`
+}
+
+func (o *FindHostsByTopoOpt) Validate() (rawError errors.RawErrorInfo) {
+	if o.ObjID == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if o.ObjID == common.BKInnerObjIDApp {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if o.InstID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKInstIDField},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 type FindModuleHostRelationParameter struct {
 	ModuleIDS    []int64  `json:"bk_module_ids"`
 	ModuleFields []string `json:"module_fields"`
@@ -472,9 +518,8 @@ type TransferHostAcrossBusinessParameter struct {
 
 // HostModuleRelationParameter get host and module  relation parameter
 type HostModuleRelationParameter struct {
-	AppID  int64    `json:"bk_biz_id"`
-	HostID []int64  `json:"bk_host_id"`
-	Page   BasePage `json:"page"`
+	AppID  int64   `json:"bk_biz_id"`
+	HostID []int64 `json:"bk_host_id"`
 }
 
 // DeleteHostFromBizParameter delete host from business

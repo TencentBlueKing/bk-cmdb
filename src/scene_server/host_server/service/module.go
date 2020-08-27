@@ -398,16 +398,11 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 		if len(data.HostID) > pageSize {
 			blog.Errorf("GetHostModuleRelation host id length %d exceeds 500, rid: %s", len(data.HostID), srvData.rid)
 			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommXXExceedLimit, common.BKHostIDField, pageSize)})
+			return
 		}
 		cond.HostIDArr = data.HostID
 	}
-	if data.Page.Limit == 0 {
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "page.limit")})
-	}
-	if data.Page.Limit > pageSize {
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommPageLimitIsExceeded)})
-	}
-	cond.Page = data.Page
+	cond.Page = metadata.BasePage{Limit: common.BKNoLimit}
 
 	moduleHostConfig, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
 	if err != nil {
