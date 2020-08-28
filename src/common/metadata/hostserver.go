@@ -398,10 +398,6 @@ func (option ListHosts) Validate() (errKey string, err error) {
 		}
 	}
 
-	if len(option.Fields) == 0 {
-		return "fields", errors.New(common.CCErrCommParamsNeedSet, "fields can't be empty")
-	}
-
 	return "", nil
 }
 
