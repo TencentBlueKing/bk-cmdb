@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -11,6 +12,22 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"github.com/olivere/elastic/v7"
+)
+
+const (
+	ESIndexPrefix = "cmdb"
+
+	TypeHost        = "host"
+	TypeObject      = "object"
+	TypeApplication = "biz"
+
+	BkBizMetaKey = "metadata.label.bk_biz_id"
+)
+
+var (
+	SpecialChar = []string{"`", "~", "!", "@", "#", "$", "%", "^", "&", "*",
+		"(", ")", "-", "_", "=", "+", "[", "{", "]", "}",
+		"\\", "|", ";", ":", "'", "\"", ",", "<", ".", ">", "/", "?"}
 )
 
 type SearchResult struct {
@@ -107,8 +124,8 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 	if found == true && indexArggr != nil {
 		for _, bucket := range indexArggr.Buckets {
 			// only cc_HostBase, cc_ApplicationBase currently
-			if bucket.Key == common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseHost) ||
-				bucket.Key == common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseApp) {
+			if bucket.Key == getESIndexByCollection(common.BKTableNameBaseHost) ||
+				bucket.Key == getESIndexByCollection(common.BKTableNameBaseApp) {
 				agg := Aggregation{}
 				agg.setAgg(bucket)
 				searchResults.Aggregations = append(searchResults.Aggregations, agg)
@@ -141,8 +158,8 @@ func (s *Service) FullTextFind(ctx *rest.Contexts) {
 
 func (query Query) checkQueryString() (string, bool) {
 	// if query string is single string in SpecialChar, make it to null string
-	for i := range common.SpecialChar {
-		if query.QueryString == common.SpecialChar[i] {
+	for i := range SpecialChar {
+		if query.QueryString == SpecialChar[i] {
 			query.QueryString = ""
 			return "", true
 		}
@@ -161,12 +178,12 @@ func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 
 	// if set bk_biz_id
 	qBool.MinimumNumberShouldMatch(1)
-	qBizRegex := elastic.NewRegexpQuery(common.BkBizMetaKey, "[0-9]*")
+	qBizRegex := elastic.NewRegexpQuery(BkBizMetaKey, "[0-9]*")
 	qBizBool := elastic.NewBoolQuery()
 	qBizBool.MustNot(qBizRegex)
 	qBool.Should(qBizBool)
 	if query.BkBizId != "" {
-		qBizTerm := elastic.NewTermQuery(common.BkBizMetaKey, query.BkBizId)
+		qBizTerm := elastic.NewTermQuery(BkBizMetaKey, query.BkBizId)
 		qBool.Should(qBizTerm)
 	}
 
@@ -184,32 +201,32 @@ func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 	if query.BkObjId == "" {
 		// if bk_obj_id is "", we search all indexs
 		indexs := make([]string, 0)
-		indexs = append(indexs, common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseApp))
-		indexs = append(indexs, common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseHost))
-		indexs = append(indexs, common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseInst))
+		indexs = append(indexs, getESIndexByCollection(common.BKTableNameBaseApp))
+		indexs = append(indexs, getESIndexByCollection(common.BKTableNameBaseHost))
+		indexs = append(indexs, getESIndexByCollection(common.BKTableNameBaseInst))
 		return qBool, indexs
-	} else if query.BkObjId == common.TypeHost {
+	} else if query.BkObjId == TypeHost {
 		// if bk_obj_id is host, we search only from type cc_HostBase
-		indexs := []string{common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseHost)}
+		indexs := []string{getESIndexByCollection(common.BKTableNameBaseHost)}
 		return qBool.Must(qString), indexs
-	} else if query.BkObjId == common.TypeApplication {
+	} else if query.BkObjId == TypeApplication {
 		// if bk_obj_id is biz, we search only from type cc_ApplicationBase
-		indexs := []string{common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseApp)}
+		indexs := []string{getESIndexByCollection(common.BKTableNameBaseApp)}
 		return qBool.Must(qString), indexs
 	} else {
 		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
 		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
 		qBool.Must(qString)
-		indexs := []string{common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseInst)}
+		indexs := []string{getESIndexByCollection(common.BKTableNameBaseInst)}
 		return qBool, indexs
 	}
 }
 
 func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
-	if bucket.Key == common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseHost) {
-		agg.Key = common.TypeHost
-	} else if bucket.Key == common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseApp) {
-		agg.Key = common.TypeApplication
+	if bucket.Key == getESIndexByCollection(common.BKTableNameBaseHost) {
+		agg.Key = TypeHost
+	} else if bucket.Key == getESIndexByCollection(common.BKTableNameBaseApp) {
+		agg.Key = TypeApplication
 	} else {
 		agg.Key = bucket.Key
 	}
@@ -229,12 +246,12 @@ func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit
 	}
 
 	switch searchHit.Index {
-	case common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseApp):
-		sr.Type = common.TypeApplication
-	case common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseHost):
-		sr.Type = common.TypeHost
-	case common.GetIndexName(common.CMDBINDEX, common.BKTableNameBaseInst):
-		sr.Type = common.TypeObject
+	case getESIndexByCollection(common.BKTableNameBaseApp):
+		sr.Type = TypeApplication
+	case getESIndexByCollection(common.BKTableNameBaseHost):
+		sr.Type = TypeHost
+	case getESIndexByCollection(common.BKTableNameBaseInst):
+		sr.Type = TypeObject
 	}
 
 	sr.dealHighlight(sr.Source, searchHit.Highlight, bkBizId, rawString)
@@ -284,4 +301,10 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 	}
 
 	sr.Highlight = highlight
+}
+
+// getESIndexByCollection get the index of es through ESIndexPrefix and collection's name
+func getESIndexByCollection(collectionName string) string {
+	collectionName = strings.ToLower(collectionName)
+	return fmt.Sprintf("%s.%s", strings.ToLower(ESIndexPrefix), collectionName)
 }
