@@ -274,7 +274,7 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 		return
 	}
 	query := &metadata.QueryBusinessRequest{
-		Fields: []string{common.BKAppIDField, common.BKAppNameField, "business_dept_id", "business_dept_name"},
+		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page:   page,
 		Condition: mapstr.MapStr{
 			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
@@ -310,19 +310,6 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 		inst := mapstr.New()
 		inst[common.BKAppIDField] = item[common.BKAppIDField]
 		inst[common.BKAppNameField] = item[common.BKAppNameField]
-		inst["business_dept_id"] = item["business_dept_id"]
-		inst["business_dept_name"] = item["business_dept_name"]
-
-		if val, exist := item["business_dept_id"]; exist {
-			inst["business_dept_id"] = val
-		} else {
-			inst["business_dept_id"] = ""
-		}
-		if val, exist := item["business_dept_name"]; exist {
-			inst["business_dept_name"] = val
-		} else {
-			inst["business_dept_name"] = ""
-		}
 		datas = append(datas, inst)
 	}
 
