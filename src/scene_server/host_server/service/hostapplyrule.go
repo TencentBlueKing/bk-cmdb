@@ -448,7 +448,7 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 	}
 
 	planResult, ccErr = s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(srvData.ctx, srvData.header, bizID, planOption)
-	if err != nil {
+	if ccErr != nil {
 		blog.ErrorJSON("generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
 		return planResult, ccErr
 	}
@@ -484,7 +484,6 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	hostApplyResults := make([]metadata.HostApplyResult, 0)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
 		// enable host apply on module
 		moduleUpdateOption := &metadata.UpdateOption{
@@ -535,58 +534,70 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 			}
 		}
 
-		for _, plan := range planResult.Plans {
-			hostApplyResult := metadata.HostApplyResult{
-				HostID: plan.HostID,
-			}
-			if len(plan.UpdateFields) == 0 {
-				continue
-			}
-			updateOption := &metadata.UpdateOption{
-				Data: plan.GetUpdateData(),
-				Condition: map[string]interface{}{
-					common.BKHostIDField: plan.HostID,
-				},
-			}
-			updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
-			if err != nil {
-				blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
-				ccErr := srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-				hostApplyResult.SetError(ccErr)
-				hostApplyResults = append(hostApplyResults, hostApplyResult)
-				continue
-			}
-			if ccErr := updateResult.CCError(); ccErr != nil {
-				blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-				hostApplyResult.SetError(ccErr)
-				hostApplyResults = append(hostApplyResults, hostApplyResult)
-				continue
-			}
-			hostApplyResults = append(hostApplyResults, hostApplyResult)
-		}
-
-		var ccErr errors.CCErrorCoder
-		for _, item := range hostApplyResults {
-			if err := item.GetError(); err != nil {
-				ccErr = err
-				break
-			}
-		}
-		if ccErr != nil {
-			return ccErr
-		}
 		return nil
 	})
 
 	if txnErr != nil {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr, Data: hostApplyResults})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
-	result := metadata.Response{
-		BaseResp: metadata.SuccessBaseResp,
-		Data:     hostApplyResults,
+
+	// update host instances, allow partial success
+	updateMap := make(map[string][]int64, 0)
+	for _, plan := range planResult.Plans {
+		if len(plan.UpdateFields) == 0 {
+			continue
+		}
+		dataStr := plan.GetUpdateDataStr()
+		updateMap[dataStr] = append(updateMap[dataStr], plan.HostID)
 	}
-	_ = resp.WriteEntity(result)
+
+	// update host operation is not done in a transaction, since the successfully updated hosts need not roll back
+	srvData.header.Del(common.TransactionIdHeader)
+
+	hostApplyResults := make([]metadata.HostApplyResult, 0)
+	for dataStr, hostIDs := range updateMap {
+		data := make(map[string]interface{})
+		_ = json.Unmarshal([]byte(dataStr), &data)
+
+		updateOption := &metadata.UpdateOption{
+			Data: data,
+			Condition: map[string]interface{}{
+				common.BKHostIDField: map[string]interface{}{
+					common.BKDBIN: hostIDs,
+				},
+			},
+		}
+
+		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
+		if err != nil {
+			blog.ErrorJSON("run host apply rule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
+			for _, hostID := range hostIDs {
+				hostApplyResult := metadata.HostApplyResult{HostID: hostID}
+				hostApplyResult.SetError(srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed))
+				hostApplyResults = append(hostApplyResults, hostApplyResult)
+			}
+			continue
+		}
+
+		if ccErr := updateResult.CCError(); ccErr != nil {
+			blog.ErrorJSON("run host apply rule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
+
+			for _, hostID := range hostIDs {
+				hostApplyResult := metadata.HostApplyResult{HostID: hostID}
+				hostApplyResult.SetError(ccErr)
+				hostApplyResults = append(hostApplyResults, hostApplyResult)
+			}
+			continue
+		}
+
+		for _, hostID := range hostIDs {
+			hostApplyResult := metadata.HostApplyResult{HostID: hostID}
+			hostApplyResults = append(hostApplyResults, hostApplyResult)
+		}
+	}
+
+	_ = resp.WriteEntity(metadata.NewSuccessResp(hostApplyResults))
 }
 
 // ListHostRelatedApplyRule 返回主机关联的规则信息（仅返回启用模块的规则）
