@@ -483,14 +483,14 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 			return nil, err
 		}
 
-		var relationReq *metadata.HostModuleRelationRequest
+		var relationReq *metadata.DistinctHostIDByTopoRelationRequest
 		if filter.Parent.Type == iam.Business {
-			relationReq = &metadata.HostModuleRelationRequest{ApplicationID: parentID, Fields: []string{common.BKHostIDField}}
+			relationReq = &metadata.DistinctHostIDByTopoRelationRequest{ApplicationIDArr: []int64{parentID}}
 		} else {
-			relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}, Fields: []string{common.BKHostIDField}}
+			relationReq = &metadata.DistinctHostIDByTopoRelationRequest{ModuleIDArr: []int64{parentID}}
 		}
 
-		hostRsp, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
+		hostRsp, err := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relationReq)
 		if err != nil {
 			blog.Errorf("get host ids by parent failed, err: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, err
@@ -500,16 +500,11 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 			return nil, hostRsp.Error()
 		}
 
-		if len(hostRsp.Data.Info) == 0 {
+		if len(hostRsp.Data.IDArr) == 0 || int64(len(hostRsp.Data.IDArr)) <= page.Offset {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 
-		hostIDs := make([]int64, 0)
-		for _, relation := range hostRsp.Data.Info {
-			hostIDs = append(hostIDs, relation.HostID)
-		}
-
-		return lgc.listHostInstanceFromCache(kit, hostIDs, page)
+		return lgc.listHostInstanceFromCache(kit, hostRsp.Data.IDArr, page)
 	}
 	return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 
@@ -523,13 +518,24 @@ type hostInstance struct {
 
 func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page) (*types.ListInstanceResult, error) {
 	listHostParam := &metadata.ListHostWithPage{
-		HostIDs: hostIDs,
-		Fields:  []string{common.BKHostIDField, common.BKHostInnerIPField},
-		Page: metadata.BasePage{
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+	}
+
+	// if hostIDs are set, get hosts from cache returns hosts using ids directly without paging, we need to do it here
+	hostLen := int64(len(hostIDs))
+	if hostLen > 0 {
+		limit := page.Offset + page.Limit
+		if limit > hostLen {
+			limit = hostLen
+		}
+		listHostParam.HostIDs = hostIDs[page.Offset:limit]
+	} else {
+		listHostParam.Page = metadata.BasePage{
 			Start: int(page.Offset),
 			Limit: int(page.Limit),
-		},
+		}
 	}
+
 	count, hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithPage(kit.Ctx, kit.Header, listHostParam)
 	if err != nil {
 		blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
@@ -553,6 +559,10 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 			ID:          strconv.FormatInt(host.ID, 10),
 			DisplayName: host.InnerIP,
 		})
+	}
+
+	if hostLen > 0 {
+		return &types.ListInstanceResult{Count: hostLen, Results: instances}, nil
 	}
 
 	return &types.ListInstanceResult{
