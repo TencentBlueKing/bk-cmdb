@@ -25,7 +25,7 @@ const getters = {
 
 const actions = {
     getAuthorizedBusiness ({ commit, state }, config = {}) {
-        return $http.get('biz/with_reduced?sort=bk_biz_name', config)
+        return $http.get('biz/with_reduced?sort=bk_biz_id', config)
     },
     /**
      * 添加业务

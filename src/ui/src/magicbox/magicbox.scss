@@ -5,6 +5,9 @@
     &.is-disabled {
         background-color: #fafbfd !important;
         border-color: #dcdee5 !important;
+        .bk-select-name {
+            color: $textDisabledColor;
+        }
     }
 }
 
@@ -119,6 +122,13 @@
             background-color: #dcdee5;
             border-radius: 3px;
         }
+    }
+    .bk-big-tree-empty {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
     }
 }
 

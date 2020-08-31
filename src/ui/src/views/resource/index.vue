@@ -3,7 +3,7 @@
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
-            :columns-config-disabled-columns="['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
+            :columns-config-disabled-columns="['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']"
             :edit-auth="$OPERATION.U_RESOURCE_HOST"
             :delete-auth="$OPERATION.D_RESOURCE_HOST"
             :save-auth="$OPERATION.U_RESOURCE_HOST"
@@ -22,7 +22,7 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_RESOURCE_HOST })">
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_RESOURCE_HOST })" v-show="scope === '1'">
                     <bk-select class="options-business-selector" slot-scope="{ disabled }"
                         v-if="isAdminView"
                         font-size="medium"
@@ -41,6 +41,9 @@
                         </bk-option>
                     </bk-select>
                 </cmdb-auth>
+                <cmdb-transfer-menu class="mr10"
+                    v-show="scope === '0'">
+                </cmdb-transfer-menu>
                 <cmdb-clipboard-selector class="options-clipboard"
                     :list="clipboardList"
                     :disabled="!table.checked.length"
@@ -112,11 +115,14 @@
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
     import RouterQuery from '@/router/query'
+    import HostStore from './transfer/host-store'
+    import cmdbTransferMenu from './transfer/transfer-menu'
     export default {
         components: {
             cmdbHostsTable,
             cmdbImport,
-            cmdbButtonGroup
+            cmdbButtonGroup,
+            cmdbTransferMenu
         },
         data () {
             return {
@@ -126,6 +132,7 @@
                     set: [],
                     module: []
                 },
+                topologyProperty: Object.freeze(this.$tools.createTopologyProperty()),
                 table: {
                     checked: [],
                     header: [],
@@ -183,14 +190,17 @@
                 return this.usercustom[this.columnsConfigKey]
             },
             clipboardList () {
-                return this.table.header.filter(header => header.type !== 'checkbox')
+                return this.table.header.filter(header => !['topology'].includes(header.type))
             },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
                 const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
-                const hostProperties = this.properties.host
-                return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
+                const hostProperties = this.properties.host.concat([this.topologyProperty])
+                return [...hostProperties, ...businessProperties, ...moduleProperties, ...setProperties]
+            },
+            scope () {
+                return (this.$route.query.scope || 1).toString()
             }
         },
         watch: {
@@ -227,6 +237,8 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
+                } finally {
+                    HostStore.setBusinessList(this.businessList)
                 }
             },
             getProperties () {
@@ -300,8 +312,9 @@
                     ip: ''
                 })
             },
-            handleChecked (checked) {
+            handleChecked (checked, selection) {
                 this.table.checked = checked
+                HostStore.setSelected(selection)
             },
             handleSetHeader (header) {
                 this.table.header = header
@@ -310,10 +323,10 @@
                 this.$refs.resourceTable.handleCopy(target)
             },
             handleMultipleEdit () {
-                if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('请勿选择已分配主机'))
-                    return false
-                }
+                // if (this.hasSelectAssignedHost()) {
+                //     this.$error(this.$t('请勿选择已分配主机'))
+                //     return false
+                // }
                 this.$refs.resourceTable.handleMultipleEdit()
             },
             handleMultipleDelete () {

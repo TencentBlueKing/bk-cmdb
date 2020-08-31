@@ -1275,5 +1275,8 @@
     "实例操作": "Instance Operation",
     "所属实例": "Instance",
     "确定删除N个进程": "Confirm to delete {count} selected process?",
-    "确定删除该进程": "Confirm to delete this process?"
+    "确定删除该进程": "Confirm to delete this process?",
+    "跳转业务拓扑": "Link to business topology",
+    "该功能仅支持对相同业务下的主机进行操作": "Only support operate hosts under same business",
+    "改功能仅支持对空闲机模块下的主机进行操作": "Only support operate hosts under idle module"
 }

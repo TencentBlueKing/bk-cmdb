@@ -356,9 +356,10 @@
             this.unwatch = RouterQuery.watch('*', ({
                 page = 1,
                 limit = this.table.pagination.limit,
-                filter = ''
+                filter = '',
+                field = 'bk_inst_name'
             }) => {
-                this.filter.id = 'bk_inst_name'
+                this.filter.id = field
                 this.filter.value = filter
                 this.table.pagination.current = parseInt(page)
                 this.table.pagination.limit = parseInt(limit)
@@ -417,14 +418,12 @@
                 }
             },
             handleFilterValueChange () {
-                const query = {
+                RouterQuery.set({
                     _t: Date.now(),
-                    page: 1
-                }
-                if (this.filter.id === 'bk_inst_name') {
-                    query.filter = this.filter.value
-                }
-                RouterQuery.set(query)
+                    page: 1,
+                    field: this.filter.id,
+                    filter: this.filter.value
+                })
             },
             resetData () {
                 this.table = {
