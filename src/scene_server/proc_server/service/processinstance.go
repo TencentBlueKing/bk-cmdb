@@ -467,7 +467,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	rid := ctx.Kit.Rid
 
 	processInfo := metadata.Process{}
-	if err := mapstruct.Decode2Struct(processData, &processInfo); err != nil {
+	if err := mapstruct.Decode2StructWithHook(processData, &processInfo); err != nil {
 		blog.ErrorJSON("validateRawInstanceUnique failed, Decode2Struct failed, process: %s, err: %s, rid: %s", processData, err.Error(), rid)
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
