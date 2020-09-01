@@ -13,6 +13,8 @@
 package hostsnap
 
 import (
+	"configcenter/src/common/auditlog"
+	"configcenter/src/common/http/rest"
 	"context"
 	"errors"
 	"fmt"
@@ -170,58 +172,29 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
 	}
 
-	curData := make(map[string]interface{}, 0)
-	for k, v := range preData.Data {
-		if value, exist := setter[k]; exist {
-			// set with the new value
-			curData[k] = value
-			continue
-		}
-		curData[k] = v
+	// get audit interface of host snap.
+	audit := auditlog.NewHostSnapAudit(h.CoreAPI.CoreService())
+
+	// generate audit log
+	kit := &rest.Kit{
+		Rid:             rid,
+		Header:          header,
+		Ctx:             h.ctx,
+		CCError:         h.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+		User:            common.CCSystemCollectorUserName,
+		SupplierAccount: common.BKDefaultOwnerID,
 	}
 
-	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
-	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, header, input)
+	auditLog, err := audit.GenerateAuditLog(kit, hostID, innerIP, preData.Data, setter)
 	if err != nil {
-		blog.Errorf("snapshot get host: %d/%s module relation failed, err:%v, rid: %s", hostID, innerIP, err, rid)
+		blog.Errorf("generate host snap audit log failed, err: %v, rid: %s", err, rid)
 		return err
 	}
-	if !moduleHost.Result {
-		blog.Errorf("snapshot get host: %d%s module relation failed, err: %v, rid: %s", hostID, innerIP, moduleHost.ErrMsg, rid)
-		return fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
-	}
 
-	var bizID int64
-	if len(moduleHost.Data.Info) > 0 {
-		bizID = moduleHost.Data.Info[0].AppID
-	}
-
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.HostType,
-		ResourceType: metadata.HostRes,
-		Action:       metadata.AuditUpdate,
-		OperateFrom:  metadata.FromDataCollection,
-		BusinessID:   bizID,
-		ResourceID:   hostID,
-		ResourceName: innerIP,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: &metadata.BasicContent{
-					PreData: preData.Data,
-					CurData: curData,
-				},
-			},
-			ModelID: common.BKInnerObjIDHost,
-		},
-	}
-	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, header, auditLog)
-	if err != nil {
-		blog.Errorf("snapshot create host %d/%s audit log failed, err: %v, rid: %s", hostID, innerIP, err.Error())
+	// save audit log
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save host snap audit log failed, err: %v, rid: %s", err, rid)
 		return err
-	}
-	if !result.Result {
-		blog.Errorf("snapshot create host %d/%s audit log failed, err: %s, rid: %s", hostID, innerIP, result.ErrMsg, rid)
-		return fmt.Errorf("create host audit log failed, err: %s", result.ErrMsg)
 	}
 
 	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %d, rid: %s",

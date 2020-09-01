@@ -13,12 +13,14 @@
 package middleware
 
 import (
+	"configcenter/src/common/auditlog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -224,13 +226,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		blog.Errorf("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, rid)
 		return err
 	}
-	isMainline := false
-	for _, mainline := range asst.Data.Info {
-		if mainline.ObjectID == objID || mainline.AsstObjID == objID {
-			isMainline = true
-			break
-		}
-	}
 
 	if len(inst) <= 0 {
 		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.httpHeader, objID, &metadata.CreateModelInstance{Data: bodyData})
@@ -246,47 +241,27 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		instID := int64(resp.Data.Created.ID)
 
 		if err := func() error {
-			bizID, err := extensions.ParseBizID(bodyData)
+			// create and save the audit log
+			audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
+
+			kit := &rest.Kit{
+				Rid:             rid,
+				Header:          d.httpHeader,
+				Ctx:             d.ctx,
+				CCError:         d.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+				User:            common.CCSystemCollectorUserName,
+				SupplierAccount: common.BKDefaultOwnerID,
+			}
+			data := []mapstr.MapStr{mapstr.NewFromMap(bodyData)}
+			auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, objID, metadata.FromDataCollection, data, nil)
 			if err != nil {
-				if blog.V(5) {
-					blog.InfoJSON("ParseBizID from input data: %+v failed, err: %+v", bodyData)
-				}
 				return err
 			}
 
-			bodyData[instIDField] = instID
-			instName, ok := bodyData[common.GetInstNameField(objID)].(string)
-			if !ok {
-				instName = ""
-			}
-			auditLog := metadata.AuditLog{
-				AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
-				ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
-				Action:       metadata.AuditCreate,
-				OperateFrom:  metadata.FromDataCollection,
-				BusinessID:   bizID,
-				ResourceID:   instID,
-				ResourceName: instName,
-				OperationDetail: &metadata.InstanceOpDetail{
-					BasicOpDetail: metadata.BasicOpDetail{
-						Details: &metadata.BasicContent{
-							PreData: nil,
-							CurData: bodyData,
-						},
-					},
-					ModelID: objID,
-				},
+			if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+				return err
 			}
 
-			result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
-			if err != nil {
-				blog.Errorf("create inst audit log failed, http failed, err:%s, rid:%s", err.Error(), rid)
-				return err
-			}
-			if !result.Result {
-				blog.Errorf("create inst audit log failed, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, rid)
-				return err
-			}
 			return nil
 		}(); err != nil && blog.V(3) {
 			blog.Errorf("save inst create audit log failed, err: %+v, rid: %s", err.Error(), rid)
@@ -373,60 +348,27 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	d.TryUnsetRedis(instKeyStr)
 
 	if err := func() error {
-		bizID, err := extensions.ParseBizID(inst)
+		// create and save the audit log
+		audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
+
+		kit := &rest.Kit{
+			Rid:             rid,
+			Header:          d.httpHeader,
+			Ctx:             d.ctx,
+			CCError:         d.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+			User:            common.CCSystemCollectorUserName,
+			SupplierAccount: common.BKDefaultOwnerID,
+		}
+		cond := map[string]interface{}{instIDField: instID}
+		auditLog, err := audit.GenerateAuditLogByCond(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, cond, inst)
 		if err != nil {
-			if blog.V(5) {
-				blog.InfoJSON("ParseBizID from input data: %+v failed, err: %+v", inst)
-			}
 			return err
 		}
 
-		qc := metadata.QueryCondition{
-			Condition: map[string]interface{}{
-				common.BKInstIDField: instID,
-			},
-		}
-		readResult, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.httpHeader, objID, &qc)
-		if err != nil {
-			blog.Errorf("read updated inst failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err.Error(), rid)
+		if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 			return err
 		}
-		if len(readResult.Data.Info) == 0 {
-			blog.Errorf("read updated inst failed, not found, objID: %s, instID: %d, rid: %s", objID, instID, rid)
-			return fmt.Errorf("get updated instance failed, not found, objID: %s, instID: %d", objID, instID)
-		}
-		updatedInst := readResult.Data.Info[0]
-		instName, ok := updatedInst[common.GetInstNameField(objID)].(string)
-		if !ok {
-			instName = ""
-		}
-		auditLog := metadata.AuditLog{
-			AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
-			ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
-			Action:       metadata.AuditUpdate,
-			OperateFrom:  metadata.FromDataCollection,
-			BusinessID:   bizID,
-			ResourceID:   instID,
-			ResourceName: instName,
-			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: metadata.BasicOpDetail{
-					Details: &metadata.BasicContent{
-						PreData: preUpdatedData,
-						CurData: updatedInst,
-					},
-				},
-				ModelID: objID,
-			},
-		}
-		result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
-		if err != nil {
-			blog.Errorf("save inst update audit log failed, http failed, err:%s, rid:%s", err.Error(), rid)
-			return err
-		}
-		if !result.Result {
-			blog.Errorf("save inst update audit log failed, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, rid)
-			return fmt.Errorf("coreservice save audit log result faield, result: %+v", result)
-		}
+
 		return nil
 	}(); err != nil && blog.V(3) {
 		blog.Errorf("save inst update audit log failed, err: %s, rid: %s", err.Error(), rid)
