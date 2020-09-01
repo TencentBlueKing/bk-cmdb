@@ -135,11 +135,18 @@ func (ps *parseStream) userAPI() *parseStream {
 			return ps
 		}
 
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find host user custom query failed, err: %v", err)
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
-					Action: meta.SkipAction,
+					Action: meta.FindMany,
 				},
 			},
 		}

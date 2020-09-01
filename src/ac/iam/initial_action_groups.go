@@ -148,9 +148,6 @@ func genBusinessManageActionGroups() []ActionGroup {
 						{
 							ID: DeleteBusinessCustomQuery,
 						},
-						{
-							ID: FindBusinessCustomQuery,
-						},
 					},
 				},
 				{
