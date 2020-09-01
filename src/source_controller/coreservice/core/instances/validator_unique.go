@@ -126,7 +126,7 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 }
 
 // validUpdateUnique valid update unique
-func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapStr, instMedataData metadata.Metadata, instID uint64, instanceManager *instanceManager) error {
+func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapStr, instMedataData metadata.Metadata, instID int64, instanceManager *instanceManager) error {
 	uniqueAttr, err := valid.dependent.SearchUnique(kit, valid.objID)
 	if nil != err {
 		blog.Errorf("[validUpdateUnique] search [%s] unique error %v, rid: %s", valid.objID, err, kit.Rid)

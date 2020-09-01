@@ -237,21 +237,21 @@ func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int
 }
 
 func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
-	instMetaData metadata.Metadata, instID uint64, canEditAll bool) error {
-	updateData, err := m.getInstDataByID(kit, objID, instID, m)
-	if err != nil {
-		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, kit.Rid)
-		return err
-	}
+	instMetaData metadata.Metadata, originData mapstr.MapStr, canEditAll bool) error {
+
+	instIDI := originData[common.GetInstIDField(objID)]
+	instID, _ := util.GetInt64ByInterface(instIDI)
+
 	var bizID int64
+	var err error
 	if objID != common.BKInnerObjIDHost {
-		bizID, err = FetchBizIDFromInstance(objID, updateData)
+		bizID, err = FetchBizIDFromInstance(objID, originData)
 		if err != nil {
-			blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, kit.Rid)
+			blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, originData, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 		}
 	} else {
-		bizID, err = getHostRelatedBizID(kit, m.dbProxy, int64(instID))
+		bizID, err = getHostRelatedBizID(kit, m.dbProxy, instID)
 		if err != nil {
 			blog.ErrorJSON("validUpdateInstanceData failed, getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
@@ -287,14 +287,13 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		if rawErr.ErrCode != 0 {
 			return rawErr.ToCCError(kit.CCError)
 		}
+
+		originData[key] = val
 	}
 
-	for key, val := range instanceData {
-		updateData[key] = val
-	}
-	bizID, err = FetchBizIDFromInstance(objID, updateData)
+	bizID, err = FetchBizIDFromInstance(objID, originData)
 	if err != nil {
-		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, kit.Rid)
+		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, originData, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 	if bizID != 0 {
@@ -305,7 +304,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
-	return valid.validUpdateUnique(kit, updateData, instMetaData, instID, m)
+	return valid.validUpdateUnique(kit, originData, instMetaData, instID, m)
 }
 
 func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {

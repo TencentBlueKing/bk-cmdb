@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 )
 
@@ -76,26 +75,6 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 		err = m.dbProxy.Table(tableName).Find(cond).All(kit.Ctx, &origins)
 	}
 	return origins, !m.dbProxy.IsNotFoundError(err), err
-}
-
-func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID uint64, instanceManager *instanceManager) (origin mapstr.MapStr, err error) {
-	tableName := common.GetInstTableName(objID)
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.GetInstIDField(objID), Val: instID})
-	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
-		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
-	}
-	if objID == common.BKInnerObjIDHost {
-		host := make(metadata.HostMapStr)
-		err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &host)
-		origin = mapstr.MapStr(host)
-	} else {
-		err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
-	}
-	if nil != err {
-		return nil, err
-	}
-	return origin, nil
 }
 
 func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {

@@ -107,7 +107,6 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 }
 
 func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
-	instIDFieldName := common.GetInstIDField(objID)
 	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
 	if nil != err {
@@ -128,7 +127,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 			if "" != bizID {
 				instMedataData.Label.Set(metadata.LabelBusinessID, bizID)
 			}
-			continue
+			break
 		}
 	}
 	if inputParam.Condition.Exists(metadata.BKMetadata) {
@@ -136,9 +135,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 	}
 
 	for _, origin := range origins {
-		instIDI := origin[instIDFieldName]
-		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID), inputParam.CanEditAll)
+		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, origin, inputParam.CanEditAll)
 		if nil != err {
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
