@@ -225,10 +225,6 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 						ID:         DeleteBusinessCustomQuery,
 						IsRequired: false,
 					},
-					{
-						ID:         FindBusinessCustomQuery,
-						IsRequired: false,
-					},
 				},
 				SubResourceTypes: nil,
 			},

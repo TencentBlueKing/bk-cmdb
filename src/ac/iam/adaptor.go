@@ -208,9 +208,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   DeleteBusinessCustomQuery,
 		meta.Update:   EditBusinessCustomQuery,
 		meta.Create:   CreateBusinessCustomQuery,
-		meta.Find:     FindBusinessCustomQuery,
-		meta.FindMany: FindBusinessCustomQuery,
-		meta.Execute:  FindBusinessCustomQuery,
+		meta.Find:     ViewBusinessResource,
+		meta.FindMany: ViewBusinessResource,
+		meta.Execute:  ViewBusinessResource,
 	},
 	meta.MainlineModel: {
 		meta.Find:   Skip,

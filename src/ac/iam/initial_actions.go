@@ -173,7 +173,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		NameEn:               "Edit Dynamic Grouping",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource, FindBusinessCustomQuery},
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -182,16 +182,6 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		Name:                 "动态分组删除",
 		NameEn:               "Delete Dynamic Grouping",
 		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource, FindBusinessCustomQuery},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   FindBusinessCustomQuery,
-		Name:                 "动态分组查询",
-		NameEn:               "View Dynamic Grouping",
-		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,

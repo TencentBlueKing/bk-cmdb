@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/ac/iam"
-	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -229,23 +228,6 @@ func (s *Service) GetUserCustomQuery(ctx *rest.Contexts) {
 		blog.Error("GetUserCustomQuery query user custom query parameter ApplicationID not integer in url,bizID:%s,rid:%s", req.PathParameter("bk_biz_id"), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
-	}
-
-	if auth.EnableAuthorize() {
-		authInput := authmeta.ListAuthorizedResourcesParam{
-			UserName:     ctx.Kit.User,
-			ResourceType: authmeta.DynamicGrouping,
-			Action:       authmeta.FindMany,
-		}
-
-		resourceIDs, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
-		if err != nil {
-			blog.Errorf("list authorized dynamic grouping failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-
-		condition[common.BKFieldID] = map[string]interface{}{common.BKDBIN: resourceIDs}
 	}
 
 	input.Condition = condition

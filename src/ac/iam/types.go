@@ -219,7 +219,6 @@ const (
 	CreateBusinessCustomQuery ActionID = "create_biz_dynamic_query"
 	EditBusinessCustomQuery   ActionID = "edit_biz_dynamic_query"
 	DeleteBusinessCustomQuery ActionID = "delete_biz_dynamic_query"
-	FindBusinessCustomQuery   ActionID = "find_biz_dynamic_query"
 
 	EditBusinessCustomField ActionID = "edit_biz_custom_field"
 
