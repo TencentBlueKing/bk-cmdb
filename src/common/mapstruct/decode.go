@@ -21,7 +21,9 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func Decode2Struct(m map[string]interface{}, st interface{}) error {
+// Decode2StructWithHook conv map to struct with hook func that can conv time and queryFilter
+// 适用场景：用于查询操作，转 查询条件map to struct(重点：转 string to timeDuration 和 map to queryFilter)
+func Decode2StructWithHook(m map[string]interface{}, st interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			metadata.StringToTimeDurationHookFunc(),
@@ -35,6 +37,15 @@ func Decode2Struct(m map[string]interface{}, st interface{}) error {
 		return err
 	}
 	if err := dec.Decode(m); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Decode2Struct conv map to struct
+// 适用场景：仅支持原生转 map to struct
+func Decode2Struct(m map[string]interface{}, st interface{}) error {
+	if err := mapstructure.Decode(m, &st); err != nil {
 		return err
 	}
 	return nil

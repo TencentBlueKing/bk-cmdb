@@ -55,7 +55,7 @@ func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, 
 		blog.ErrorJSON("GetOneSet failed, got multiple, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
 	}
-	if err := mapstruct.Decode2Struct(instResult.Data.Info[0], &set); err != nil {
+	if err := mapstruct.Decode2StructWithHook(instResult.Data.Info[0], &set); err != nil {
 		blog.ErrorJSON("GetOneSet failed, unmarshal set failed, instResult: %s, err: %s, rid: %s", instResult, err.Error(), kit.Rid)
 		return set, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
