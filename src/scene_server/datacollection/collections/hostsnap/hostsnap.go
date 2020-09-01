@@ -127,10 +127,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 	innerIP := elements[1].String()
 	outerIP := elements[2].String()
 
-	key := common.RedisSnapKeyPrefix + strconv.FormatInt(hostID, 10)
-	if err := h.redisCli.Set(key, data, time.Minute*10).Err(); err != nil {
-		blog.Errorf("save snapshot key: %s to redis failed: %v, rid: %s", key, err, rid)
-	}
+	// save host snapshot in redis
+	h.saveHostsnap(header, &val, hostID)
 
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
@@ -495,6 +493,25 @@ func getIPS(val *gjson.Result) []string {
 		}
 	}
 	return append(ipv4, ipv6...)
+}
+
+// saveHostsnap save host snapshot in redis
+func (h *HostSnap) saveHostsnap(header http.Header, hostData *gjson.Result, hostID int64) error {
+	rid := util.GetHTTPCCRequestID(header)
+
+	snapshot, err := ParseHostSnap(hostData)
+	if err != nil {
+		blog.Errorf("saveHostsnap failed, ParseHostSnap err: %v, hostID:%v, rid:%s", err, hostID, rid)
+		return err
+	}
+
+	key := common.RedisSnapKeyPrefix + strconv.FormatInt(hostID, 10)
+	if err := h.redisCli.Set(key, *snapshot, time.Minute*10).Err(); err != nil {
+		blog.Errorf("saveHostsnap failed, set key: %s to redis err: %v, rid: %s", key, err, rid)
+		return err
+	}
+
+	return nil
 }
 
 func newHeaderWithRid() (http.Header, string) {
