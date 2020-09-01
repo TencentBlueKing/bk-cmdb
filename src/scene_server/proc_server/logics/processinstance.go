@@ -171,7 +171,9 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]in
 
 // it works to find the different attribute value between the process instance and it's bounded process template.
 // return with the changed attribute's details.
-func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, host map[string]interface{},
+	attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+
 	changes := make([]metadata.ProcessChangedAttribute, 0)
 	if t == nil || i == nil {
 		return changes
@@ -260,15 +262,15 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	}
 
 	if metadata.IsAsDefaultValue(t.BindIP.AsDefaultValue) {
-		if (t.BindIP.Value == nil && i.BindIP != nil) ||
+		if tmplBindIP := t.BindIP.Value.IP(host); (t.BindIP.Value == nil && i.BindIP != nil) ||
 			(t.BindIP.Value != nil && i.BindIP == nil) ||
-			(t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP) {
+			(t.BindIP.Value != nil && i.BindIP != nil && tmplBindIP != *i.BindIP) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bind_ip"].ID,
 				PropertyID:            "bind_ip",
 				PropertyName:          attrMap["bind_ip"].PropertyName,
 				PropertyValue:         i.BindIP,
-				TemplatePropertyValue: t.BindIP.Value.IP(),
+				TemplatePropertyValue: tmplBindIP,
 			})
 		}
 	}
@@ -541,3 +543,4 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 
 	return changes
 }
+

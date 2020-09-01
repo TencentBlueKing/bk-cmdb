@@ -293,7 +293,7 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 		}
 	}
 
-	if _, ok := o.UpdateData[common.BKProcessIDField]; ok{
+	if _, ok := o.UpdateData[common.BKProcessIDField]; ok {
 		return cErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"update_data.bk_process_id"},
@@ -424,19 +424,50 @@ const (
 	BindOtterIP   SocketBindType = "4"
 )
 
-func (p *SocketBindType) IP() string {
-	// TODO: support BindInnerIP and BindOtterIP
+func (p *SocketBindType) NeedIPFromHost() bool {
+	if p == nil {
+		return false
+	}
+
+	switch *p {
+	case BindInnerIP, BindOtterIP:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *SocketBindType) IP(host map[string]interface{}) string {
 	if p == nil {
 		return ""
 	}
+
+	var ip string
+
 	switch *p {
 	case BindLocalHost:
 		return "127.0.0.1"
 	case BindAll:
 		return "0.0.0.0"
+	case BindInnerIP:
+		if host == nil {
+			return ""
+		}
+		ip = util.GetStrByInterface(host[common.BKHostInnerIPField])
+	case BindOtterIP:
+		if host == nil {
+			return ""
+		}
+		ip = util.GetStrByInterface(host[common.BKHostOuterIPField])
 	default:
 		return ""
 	}
+
+	index := strings.Index(ip, ",")
+	if index == -1 {
+		return ip
+	}
+	return ip[:index]
 }
 
 func (p *SocketBindType) String() string {
@@ -459,8 +490,7 @@ func (p *SocketBindType) String() string {
 }
 
 func (p SocketBindType) Validate() error {
-	// validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOtterIP}
-	validValues := []SocketBindType{BindLocalHost, BindAll}
+	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOtterIP}
 	if util.InArray(p, validValues) == false {
 		return fmt.Errorf("invalid socket bind type, value: %s, available values: %+v", p, validValues)
 	}
@@ -640,7 +670,7 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 	return false
 }
 
-func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Process {
+func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host map[string]interface{}) *Process {
 	now := time.Now()
 	processInstance := &Process{
 		LastTime:        now,
@@ -689,7 +719,7 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 
 	processInstance.BindIP = nil
 	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
-		bindIP := property.BindIP.Value.IP()
+		bindIP := property.BindIP.Value.IP(host)
 		if len(bindIP) > 0 {
 			processInstance.BindIP = new(string)
 			*processInstance.BindIP = bindIP
@@ -834,7 +864,7 @@ func GetAllProcessPropertyFields() []string {
 }
 
 // ExtractChangeInfo get changes that will be applied to process instance
-func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, bool) {
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interface{}) (mapstr.MapStr, bool, bool) {
 	t := pt.Property
 	var changed, isNamePortChanged bool
 	if t == nil || i == nil {
@@ -925,11 +955,13 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 			process["bind_ip"] = nil
 			changed = true
 		} else if t.BindIP.Value != nil && i.BindIP == nil {
-			process["bind_ip"] = t.BindIP.Value.IP()
+			process["bind_ip"] = t.BindIP.Value.IP(host)
 			changed = true
-		} else if t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP {
-			process["bind_ip"] = t.BindIP.Value.IP()
-			changed = true
+		} else if t.BindIP.Value != nil && i.BindIP != nil {
+			if bindIP := t.BindIP.Value.IP(host); bindIP != *i.BindIP {
+				process["bind_ip"] = bindIP
+				changed = true
+			}
 		}
 	}
 

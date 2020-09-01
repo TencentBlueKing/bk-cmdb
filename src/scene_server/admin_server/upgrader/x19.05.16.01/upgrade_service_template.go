@@ -88,8 +88,8 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
-	HostID            int64  `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
+	HostID            int64 `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id"`
@@ -156,6 +156,8 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		}
 		biz2Module[module.BizID][module.ModuleName] = append(biz2Module[module.BizID][module.ModuleName], module)
 	}
+
+	hostMap := make(map[int64]map[string]interface{}, 0)
 
 	for bizID, bizModules := range biz2Module {
 		ownerID := common.BKDefaultOwnerID
@@ -306,7 +308,22 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						inst.LastTime = time.Now()
 						if inst.BindIP != nil {
 							tplBindIP := metadata.SocketBindType(*inst.BindIP)
-							*inst.BindIP = tplBindIP.IP()
+
+							if tplBindIP == metadata.BindInnerIP || tplBindIP == metadata.BindOtterIP {
+								if hostMap[moduleHost.HostID] == nil {
+									host := metadata.HostMapStr{}
+									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}
+									if err = db.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
+										common.BKHostOuterIPField).One(ctx, &host); err != nil {
+										return err
+									}
+									hostMap[moduleHost.HostID] = host
+								}
+							}
+
+							bindIP := tplBindIP.IP(hostMap[moduleHost.HostID])
+
+							*inst.BindIP = bindIP
 						} else {
 							inst.BindIP = new(string)
 						}
