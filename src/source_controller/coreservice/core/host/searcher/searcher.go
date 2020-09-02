@@ -103,6 +103,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	if len(filters) == 0 {
 
 		// return info use cache
+		// fix: has question when multi-supplier
 		sort := strings.TrimLeft(option.Page.Sort, "+-")
 		if len(option.Page.Sort) == 0 || sort == common.BKHostIDField || strings.Contains(sort, ",") == false && strings.HasPrefix(sort, common.BKHostIDField+":") {
 			opt := &metadata.ListHostWithPage{
