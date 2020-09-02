@@ -29,7 +29,7 @@ var resourceParentMap = iam.GetResourceParentMap()
 
 // fetch resource instances' specified attributes info using instance ids
 func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter,
-	page types.Page, extraCond map[string]interface{}) ([]map[string]interface{}, error) {
+	extraCond map[string]interface{}) ([]map[string]interface{}, error) {
 
 	idField := GetResourceIDField(resourceType)
 	nameField := GetResourceNameField(resourceType)
@@ -92,8 +92,8 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 	param := metadata.PullResourceParam{
 		Condition: cond,
 		Fields:    attrs,
-		Limit:     page.Limit,
-		Offset:    page.Offset,
+		Limit:     common.BKNoLimit,
+		Offset:    0,
 	}
 	instances, err := lgc.searchAuthResource(kit, param, resourceType)
 	if err != nil {
@@ -128,11 +128,6 @@ func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.Pu
 	if len(filter.IDs) == 0 {
 		blog.ErrorJSON("request filter %s ids not set for fetch_instance_info method, rid: %s", req.Filter, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "filter.ids")
-	}
-
-	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
 	}
 	return &filter, nil
 }
@@ -186,7 +181,7 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 		if relation.AppID == defaultBizID {
 			path = "/" + string(iam.SysResourcePoolDirectory) + "," + strconv.FormatInt(relation.ModuleID, 10) + "/"
 		} else {
-			iamPath = append(iamPath, "/"+string(iam.Business)+","+strconv.FormatInt(relation.AppID, 10)+"/")
+			path = "/" + string(iam.Business) + "," + strconv.FormatInt(relation.AppID, 10) + "/"
 		}
 		if !relationDistinctMap[path] {
 			relationDistinctMap[path] = true

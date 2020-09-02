@@ -101,7 +101,12 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 			return
 		}
 
-		res, err := method.FetchInstanceInfo(ctx.Kit, query.Type, filter, query.Page)
+		if len(filter.IDs) > 2000 {
+			ctx.RespBkError(types.UnprocessableEntityErrorCode, "filter.ids length exceeds maximum limit 2000")
+			return
+		}
+
+		res, err := method.FetchInstanceInfo(ctx.Kit, query.Type, filter)
 		if err != nil {
 			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
 			return

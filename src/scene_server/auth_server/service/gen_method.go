@@ -29,8 +29,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListAttr:      s.lgc.ListAttr,
 			ListAttrValue: s.lgc.ListAttrValue,
 			ListInstance:  s.lgc.ListHostInstance,
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, nil)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
@@ -52,8 +52,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, extraCond)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
@@ -75,8 +75,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, extraCond)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
@@ -90,8 +90,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, nil)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, nil)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
@@ -101,8 +101,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizSetTemplate:
 		return types.ResourcePullMethod{
 			ListInstance: s.lgc.ListBusinessInstance,
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, nil)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
@@ -114,8 +114,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, nil)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, nil)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
@@ -143,8 +143,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, extraCond)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
@@ -164,8 +164,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, extraCond)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
@@ -187,15 +187,15 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
 				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
 			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter, page types.Page) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, page, extraCond)
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 			},
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
 			},
 		}, nil
 
-	case iam.SysSystemBase, iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply,
+	case iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply,
 		iam.BizTopology, iam.SysEventWatch, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance:
 		return types.ResourcePullMethod{}, nil
 
