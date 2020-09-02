@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
@@ -50,15 +51,15 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 		for index, attr := range attrs {
 			if attr == types.NameField {
 				attrs[index] = nameField
-				break
+				continue
 			}
 			if attr == sdktypes.IamPathKey {
 				needPath = true
 			}
 		}
-		if needPath && resourceType != iam.Host {
+		if needPath {
 			for _, parent := range resourceParentMap[resourceType] {
-				attrs = append(attrs, string(parent))
+				attrs = append(attrs, GetResourceIDField(parent))
 			}
 		}
 	}
@@ -118,6 +119,103 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 	return instances.Info, nil
 }
 
+// fetch hosts' specified attributes info using host ids
+func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+	if resourceType != iam.Host {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	}
+
+	if len(filter.Attrs) == 0 {
+		return make([]map[string]interface{}, 0), nil
+	}
+
+	// if attribute filter is set, add id attribute and convert display_name to the real name field
+	var attrs []string
+	needPath := false
+	hasName := false
+	if len(filter.Attrs) > 0 {
+		attrs = append(filter.Attrs, common.BKHostIDField)
+		for index, attr := range attrs {
+			if attr == types.NameField {
+				attrs[index] = common.BKHostInnerIPField
+				hasName = true
+				continue
+			}
+			if attr == sdktypes.IamPathKey {
+				needPath = true
+			}
+		}
+		if hasName {
+			attrs = append(attrs, common.BKCloudIDField)
+		}
+	}
+
+	hostIDs := make([]int64, len(filter.IDs))
+	for idx, idStr := range filter.IDs {
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			blog.Errorf("id %s parse int failed, error: %s, rid: %s, skip it", idStr, err.Error(), kit.Rid)
+			continue
+		}
+		hostIDs[idx] = id
+	}
+
+	hostParam := &metadata.ListWithIDOption{
+		IDs:    hostIDs,
+		Fields: attrs,
+	}
+	hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithHostID(kit.Ctx, kit.Header, hostParam)
+	if err != nil {
+		blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
+		return nil, err
+	}
+
+	hosts := make([]map[string]interface{}, 0)
+	err = json.Unmarshal([]byte(hostArrStr), &hosts)
+	if err != nil {
+		blog.Errorf("unmarshal hosts %s failed, err: %v", hostArrStr, err)
+		return nil, err
+	}
+
+	cloudIDs := make([]int64, len(hosts))
+	for index, host := range hosts {
+		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+		if err != nil {
+			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+
+		cloudIDs[index] = cloudID
+	}
+
+	cloudMap, err := lgc.getCloudNameMapByIDs(kit, cloudIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// covert id and display_name field
+	for _, host := range hosts {
+		host[types.IDField] = util.GetStrByInterface(host[common.BKHostIDField])
+
+		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+		if err != nil {
+			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+
+		host[types.NameField] = util.GetStrByInterface(host[common.BKHostInnerIPField]) + "(" + cloudMap[cloudID] + ")"
+
+		if needPath {
+			host[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, host)
+			if err != nil {
+				blog.ErrorJSON("getResourceIamPath failed, error: %s, instance: %s, rid: %s", err.Error(), host, kit.Rid)
+				return nil, err
+			}
+		}
+	}
+	return hosts, nil
+}
+
 func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.FetchInstanceInfoFilter, error) {
 	filter, ok := req.Filter.(types.FetchInstanceInfoFilter)
 	if !ok {
@@ -134,18 +232,26 @@ func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.Pu
 
 // get resource iam path
 func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, instance map[string]interface{}) ([]string, error) {
-	iamPath := make([]string, 0)
-	if resourceType != iam.Host {
-		// currently all resources only have one layer TODO support multiple layers if needed
-		for _, parent := range resourceParentMap[resourceType] {
-			iamPath = append(iamPath, "/"+string(parent)+","+util.GetStrByInterface(instance[GetResourceIDField(parent)])+"/")
-		}
-		return iamPath, nil
+	if resourceType == iam.Host {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	hostID, err := util.GetInt64ByInterface(instance[common.BKHostIDField])
+	iamPath := make([]string, 0)
+	// currently all resources only have one layer TODO support multiple layers if needed
+	for _, parent := range resourceParentMap[resourceType] {
+		iamPath = append(iamPath, "/"+string(parent)+","+util.GetStrByInterface(instance[GetResourceIDField(parent)])+"/")
+	}
+	return iamPath, nil
+}
+
+func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, host map[string]interface{}) ([]string, error) {
+	if resourceType != iam.Host {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	}
+
+	hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 	if err != nil {
-		blog.Errorf("hostID %v parse int failed, error: %s, rid: %s", instance[common.BKHostIDField], err.Error(), kit.Rid)
+		blog.Errorf("hostID %v parse int failed, error: %s, rid: %s", host[common.BKHostIDField], err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -176,6 +282,7 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 	}
 
 	relationDistinctMap := make(map[string]bool)
+	iamPath := make([]string, 0)
 	for _, relation := range res.Data.Info {
 		var path string
 		if relation.AppID == defaultBizID {

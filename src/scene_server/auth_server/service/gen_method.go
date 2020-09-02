@@ -26,15 +26,11 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 	switch resourceType {
 	case iam.Host:
 		return types.ResourcePullMethod{
-			ListAttr:      s.lgc.ListAttr,
-			ListAttrValue: s.lgc.ListAttrValue,
-			ListInstance:  s.lgc.ListHostInstance,
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
-			},
+			ListAttr:             s.lgc.ListAttr,
+			ListAttrValue:        s.lgc.ListAttrValue,
+			ListInstance:         s.lgc.ListHostInstance,
+			FetchInstanceInfo:    s.lgc.FetchHostInfo,
+			ListInstanceByPolicy: s.lgc.ListHostByPolicy,
 		}, nil
 
 	case iam.Business, iam.BusinessForHostTrans:

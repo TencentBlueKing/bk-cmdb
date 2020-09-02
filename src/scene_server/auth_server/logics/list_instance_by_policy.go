@@ -32,6 +32,10 @@ import (
 func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
 	page types.Page, extraCond map[string]interface{}) (*types.ListInstanceResult, error) {
 
+	if resourceType == iam.Host {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	}
+
 	collection := getResourceTableName(resourceType)
 	idField := GetResourceIDField(resourceType)
 	nameField := GetResourceNameField(resourceType)
@@ -54,6 +58,74 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, 
 	}
 
 	return lgc.listInstance(kit, cond, resourceType, page, extraCond)
+}
+
+// list host instances that user is privileged to access by policy
+func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+	page types.Page) (*types.ListInstanceResult, error) {
+
+	if resourceType != iam.Host {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	}
+
+	cond, err := lgc.parseFilterToMongo(kit.Ctx, kit.Header, filter.Expression, resourceType)
+	if err != nil {
+		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", filter.Expression, err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	if cond == nil {
+		return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+	}
+
+	param := metadata.PullResourceParam{
+		Condition: cond,
+		Fields:    []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField},
+		Limit:     page.Limit,
+		Offset:    page.Offset,
+	}
+
+	hostRes, err := lgc.searchAuthResource(kit, param, resourceType)
+	if err != nil {
+		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
+		return nil, err
+	}
+	hosts := hostRes.Info
+
+	cloudIDs := make([]int64, len(hosts))
+	for index, host := range hosts {
+		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+		if err != nil {
+			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+
+		cloudIDs[index] = cloudID
+	}
+
+	cloudMap, err := lgc.getCloudNameMapByIDs(kit, cloudIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// covert id and display_name field
+	instances := make([]types.InstanceResource, 0)
+	for _, host := range hosts {
+		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+		if err != nil {
+			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+
+		instances = append(instances, types.InstanceResource{
+			ID:          util.GetStrByInterface(host[common.BKHostIDField]),
+			DisplayName: util.GetStrByInterface(host[common.BKHostInnerIPField]) + "(" + cloudMap[cloudID] + ")",
+		})
+	}
+	return &types.ListInstanceResult{
+		Count:   hostRes.Count,
+		Results: instances,
+	}, nil
 }
 
 func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListInstanceByPolicyFilter, error) {

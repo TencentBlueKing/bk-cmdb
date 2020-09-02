@@ -514,6 +514,7 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 type hostInstance struct {
 	ID      int64  `json:"bk_host_id"`
 	InnerIP string `json:"bk_host_innerip"`
+	CloudID int64  `json:"bk_cloud_id"`
 }
 
 func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page) (*types.ListInstanceResult, error) {
@@ -553,12 +554,23 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 		return nil, err
 	}
 
-	instances := make([]types.InstanceResource, 0)
-	for _, host := range hosts {
-		instances = append(instances, types.InstanceResource{
+	// get cloud area to generate host display name
+	cloudIDs := make([]int64, len(hosts))
+	for index, host := range hosts {
+		cloudIDs[index] = host.CloudID
+	}
+
+	cloudMap, err := lgc.getCloudNameMapByIDs(kit, cloudIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	instances := make([]types.InstanceResource, len(hosts))
+	for index, host := range hosts {
+		instances[index] = types.InstanceResource{
 			ID:          strconv.FormatInt(host.ID, 10),
-			DisplayName: host.InnerIP,
-		})
+			DisplayName: host.InnerIP + "(" + cloudMap[host.CloudID] + ")",
+		}
 	}
 
 	if hostLen > 0 {
