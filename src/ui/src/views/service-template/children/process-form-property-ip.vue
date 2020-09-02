@@ -1,7 +1,8 @@
 <template>
     <bk-select style="width: 100%"
         v-model="localValue"
-        v-bind="$attrs">
+        v-bind="$attrs"
+        :clearable="false">
         <bk-option id="1" name="127.0.0.1"></bk-option>
         <bk-option id="2" name="0.0.0.0"></bk-option>
     </bk-select>

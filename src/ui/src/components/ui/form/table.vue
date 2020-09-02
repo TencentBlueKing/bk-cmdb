@@ -6,13 +6,14 @@
                 :prop="property.bk_property_id"
                 :label="property.bk_property_name"
                 :key="property.bk_property_id"
-                :min-width="property.bk_property_type === 'bool' ? 80 : 150">
+                :min-width="property.bk_property_type === 'bool' ? 80 : 150"
+                :render-header="(h, data) => renderHeader(h, data, property)">
                 <template slot-scope="rowProps">
-                    <custom-render
+                    <custom-content-render
                         v-if="$scopedSlots[property.bk_property_id]"
                         v-bind="rowProps"
                         :render="$scopedSlots[property.bk_property_id]">
-                    </custom-render>
+                    </custom-content-render>
                     <component class="form-component"
                         v-else
                         v-validate="$tools.getValidateRules(property)"
@@ -59,11 +60,11 @@
 </template>
 
 <script>
-    import CustomRender from './table-custom-render'
+    import CustomContentRender from './table-custom-content-render'
     export default {
         name: 'cmdb-form-table',
         components: {
-            CustomRender
+            CustomContentRender
         },
         props: {
             value: {
@@ -107,6 +108,21 @@
             }
         },
         methods: {
+            renderHeader (h, { column, $index }, property) {
+                if (!property.placeholder) {
+                    return property.bk_property_name
+                }
+                const directive = {
+                    name: 'bkTooltips',
+                    content: property.placeholder,
+                    placement: 'top'
+                }
+                const style = {
+                    'text-decoration': 'underline',
+                    'text-decoration-style': 'dashed'
+                }
+                return (<span v-bk-tooltips={ directive } style={ style }>{ property.bk_property_name }</span>)
+            },
             handleColumnValueChange ({ row, column, $index }, value) {
                 const newRowValue = { ...row }
                 newRowValue[column.property] = value

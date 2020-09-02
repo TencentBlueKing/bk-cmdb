@@ -30,7 +30,10 @@
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleCancel">
                 <template slot="bind_info">
-                    <process-bind-table v-bind="processTableProps" @change="handleProcessTableChange"></process-bind-table>
+                    <process-form-property-table
+                        v-model="instance.bind_info"
+                        :options="bindInfoProperty.option || []">
+                    </process-form-property-table>
                 </template>
             </cmdb-form>
         </template>
@@ -44,10 +47,10 @@
         processPropertyGroupsRequestId
     } from './symbol'
     import RenderTips from './process-form-tips-render'
-    import ProcessBindTable from './process-bind-table'
+    import ProcessFormPropertyTable from './process-form-property-table'
     export default {
         components: {
-            ProcessBindTable
+            ProcessFormPropertyTable
         },
         props: {
             type: String,
@@ -57,6 +60,11 @@
             title: String,
             hostId: Number,
             submitHandler: Function
+        },
+        provide () {
+            return {
+                form: this
+            }
         },
         data () {
             return {
@@ -75,15 +83,8 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('objectBiz', ['bizId']),
-            processTableProps () {
-                return {
-                    processTemplate: this.processTemplate,
-                    serviceTemplateId: this.serviceTemplateId,
-                    processTemplateId: this.processTemplateId,
-                    hostId: this.hostId,
-                    properties: this.properties,
-                    list: this.instance ? this.instance['bind_info'] : []
-                }
+            bindInfoProperty () {
+                return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
             }
         },
         watch: {
@@ -193,9 +194,7 @@
             async handleSaveProcess (values, changedValues, instance) {
                 try {
                     this.pending = true
-                    const newValues = this.formatValues(values)
-                    const newChangedValues = this.formatValues(changedValues)
-                    await this.submitHandler(newValues, newChangedValues, instance)
+                    await this.submitHandler(values, changedValues, instance)
                     this.isShow = false
                 } catch (error) {
                     console.error(error)
@@ -214,21 +213,6 @@
                 } else {
                     this.isShow = false
                 }
-            },
-            formatValues (values) {
-                const newValues = { ...values }
-                const bindInfoList = newValues['bind_info'] || []
-                const bindInfo = bindInfoList.filter(row => {
-                    const values = Object.keys(row).map(key => row[key]).filter(value => {
-                        if (typeof value !== 'boolean') {
-                            return !!value
-                        }
-                        return true
-                    })
-                    return values.length > 0
-                })
-                newValues['bind_info'] = bindInfo
-                return newValues
             },
             beforeClose () {
                 if (this.internalType === 'view') return Promise.resolve(true)
@@ -257,15 +241,6 @@
             handleChangeInternalType () {
                 this.internalType = 'update'
                 this.internalTitle = this.$t('编辑进程')
-            },
-            handleProcessTableChange (list) {
-                this.$refs.form.values.bind_info = list.map(item => {
-                    const row = {}
-                    Object.keys(item).forEach(key => {
-                        row[key] = item[key].value
-                    })
-                    return row
-                })
             }
         }
     }
