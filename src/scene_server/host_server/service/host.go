@@ -110,14 +110,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		if rsp.Data.Count <= 0 {
 			continue
 		}
-		objIDs := make([]string, 0)
 		asstInstMap := make(map[string][]int64, 0)
 		for _, asst := range rsp.Data.Info {
 			if asst.ObjectID == common.BKInnerObjIDHost && iHostID == asst.InstID {
-				objIDs = append(objIDs, asst.AsstObjectID)
 				asstInstMap[asst.AsstObjectID] = append(asstInstMap[asst.AsstObjectID], asst.AsstInstID)
 			} else if asst.AsstObjectID == common.BKInnerObjIDHost && iHostID == asst.AsstInstID {
-				objIDs = append(objIDs, asst.ObjectID)
 				asstInstMap[asst.ObjectID] = append(asstInstMap[asst.ObjectID], asst.InstID)
 			} else {
 				ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommDBSelectFailed, "host is not associated in selected association"))
@@ -235,10 +232,6 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
 		}
 
-		// ensure delete host add log
-		for _, ex := range delResult.Data {
-			delete(logContentMap, ex.OriginIndex)
-		}
 		var logContents []meta.AuditLog
 		for _, item := range logContentMap {
 			logContents = append(logContents, item)

@@ -88,8 +88,8 @@ func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header
 }
 
 // DeleteHost delete host
-func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
+func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/delete/host"
 
 	err = h.client.Delete().

@@ -164,21 +164,17 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 	if data.AppID != 0 {
 		cond.ApplicationID = data.AppID
 	}
-	pageSize := 500
+	
 	if len(data.HostID) > 0 {
-		if len(data.HostID) > pageSize {
+		if len(data.HostID) > 500 {
 			blog.Errorf("GetHostModuleRelation host id length %d exceeds 500, rid: %s", len(data.HostID), ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommXXExceedLimit, common.BKHostIDField, pageSize))
+			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommXXExceedLimit, common.BKHostIDField, 500))
+			return
 		}
 		cond.HostIDArr = data.HostID
 	}
-	if data.Page.Limit == 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "page.limit"))
-	}
-	if data.Page.Limit > pageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommPageLimitIsExceeded))
-	}
-	cond.Page = data.Page
+	
+	cond.Page = metadata.BasePage{Limit: common.BKNoLimit}
 	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	moduleHostConfig, err := lgc.GetHostModuleRelation(ctx.Kit.Ctx, cond)
 	if err != nil {
@@ -213,6 +209,7 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
+	
 	ctx.RespEntity(nil)
 	return
 }
@@ -243,6 +240,7 @@ func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(exceptionArr, txnErr)
 		return
 	}
+	
 	ctx.RespEntity(nil)
 	return
 }

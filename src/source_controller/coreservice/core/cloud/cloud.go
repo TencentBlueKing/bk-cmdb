@@ -13,23 +13,18 @@
 package cloud
 
 import (
-	"configcenter/src/common/eventclient"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
 )
 
 type cloudOperation struct {
 	dbProxy  dal.RDB
-	eventCli eventclient.Client
 }
 
 // New create a new cloud manager instance
-func New(dbProxy dal.RDB, cache *redis.Client) core.CloudOperation {
+func New(dbProxy dal.RDB) core.CloudOperation {
 	cloudOps := &cloudOperation{
 		dbProxy:  dbProxy,
-		eventCli: eventclient.NewClientViaRedis(cache, dbProxy),
 	}
 	return cloudOps
 }

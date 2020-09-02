@@ -14,6 +14,7 @@ package service
 
 import (
 	"sort"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -267,7 +268,7 @@ func (s *Service) findDistinctHostInfo(ctx *rest.Contexts, distinctHostCond *met
 	if startIndex >= hostCnt {
 		return &meta.SearchHostResult{
 			BaseResp: meta.SuccessBaseResp,
-			Data: meta.SearchHost{
+			Data: &meta.SearchHost{
 				Count: hostCnt,
 			},
 		}, nil
@@ -298,7 +299,7 @@ func (s *Service) findDistinctHostInfo(ctx *rest.Contexts, distinctHostCond *met
 
 	return &meta.SearchHostResult{
 		BaseResp: meta.SuccessBaseResp,
-		Data: meta.SearchHost{
+		Data: &meta.SearchHost{
 			Count: hostCnt,
 			Info:  hostInfo,
 		},
@@ -382,6 +383,70 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	ctx.RespEntity(result.Data)
+}
+
+// FindHostsByTopo find hosts by topo node except for biz
+func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
+
+	option := new(meta.FindHostsByTopoOpt)
+	if err := ctx.DecodeInto(option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	
+	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
+		blog.Errorf("find hosts by topo failed, validate err: %v, option: %#v, rid: %s", rawErr, *option, ctx.Kit.Rid)
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil || bizID <= 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	// generate search condition, if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
+	distinctHostCond := &meta.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizID},
+	}
+
+	if option.ObjID == common.BKInnerObjIDSet {
+		distinctHostCond.SetIDArr = []int64{option.InstID}
+	} else if option.ObjID == common.BKInnerObjIDModule {
+		distinctHostCond.ModuleIDArr = []int64{option.InstID}
+	} else {
+		lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
+		setIDArr, err := lgc.GetSetIDsByTopo(ctx.Kit.Ctx, option.ObjID, option.InstID)
+		if err != nil {
+			blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, rid: %s", 
+				err, option.ObjID, option.InstID, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if len(setIDArr) == 0 {
+			ctx.RespEntity(meta.SearchHost{})
+			return
+		}
+
+		distinctHostCond.SetIDArr = setIDArr
+	}
+
+	searchHostCond := &meta.QueryCondition{
+		Fields: option.Fields,
+		Page:   option.Page,
+	}
+
+	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
+	if err != nil {
+		blog.Errorf("find hosts by topo failed, cond: %#v, search cond: %#v, er: %v, rid: %s", err, *distinctHostCond, 
+			*searchHostCond, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	
 	ctx.RespEntity(result.Data)
 }
 

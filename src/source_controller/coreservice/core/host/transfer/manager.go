@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -29,7 +28,6 @@ import (
 
 type TransferManager struct {
 	dbProxy             dal.RDB
-	eventCli            eventclient.Client
 	cache               *redis.Client
 	dependence          OperationDependence
 	hostApplyDependence HostApplyRuleDependence
@@ -45,11 +43,10 @@ type HostApplyRuleDependence interface {
 	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
-func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
+func New(db dal.RDB, cache *redis.Client, dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
 	return &TransferManager{
 		dbProxy:             db,
 		cache:               cache,
-		eventCli:            ec,
 		dependence:          dependence,
 		hostApplyDependence: hostApplyDependence,
 	}
@@ -59,7 +56,6 @@ func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence Oper
 func (manager *TransferManager) NewHostModuleTransfer(kit *rest.Kit, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
 	return &genericTransfer{
 		dbProxy:     manager.dbProxy,
-		eventCli:    manager.eventCli,
 		dependent:   manager.dependence,
 		moduleIDArr: moduleIDArr,
 		bizID:       bizID,
@@ -443,34 +439,9 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 }
 
 // DeleteHost delete host module relation and host info
-func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
-
+func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false)
-	transfer.SetDeleteHost(kit)
-
-	err := transfer.ValidParameter(kit)
-	if err != nil {
-		blog.ErrorJSON("DeleteFromSystem failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
-		return nil, err
-	}
-
-	var exceptionArr []metadata.ExceptionResult
-	for _, hostID := range input.HostIDArr {
-		err := transfer.Transfer(kit, hostID)
-		if err != nil {
-			blog.ErrorJSON("DeleteFromSystem failed, Transfer module host relation failed. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, kit.Rid)
-			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.GetCode()),
-				OriginIndex: hostID,
-			})
-		}
-	}
-	if len(exceptionArr) > 0 {
-		return exceptionArr, kit.CCError.CCError(common.CCErrCoreServiceTransferHostModuleErr)
-	}
-
-	return nil, nil
+	return transfer.DeleteHosts(kit, input.HostIDArr)
 }
 
 func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID int64, hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {

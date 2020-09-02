@@ -145,7 +145,7 @@ type HostOperation interface {
 	TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
 	TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
 	RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
-	DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
+	DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error
 	GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 	UpdateHostCloudAreaField(kit *rest.Kit, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder

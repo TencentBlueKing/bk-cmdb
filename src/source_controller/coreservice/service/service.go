@@ -129,7 +129,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		operation.New(db),
 		hostApplyRuleCore,
 		dbSystem.New(db),
-		cloud.New(db, cache),
+		cloud.New(db),
 		auth.New(db),
 	)
 
