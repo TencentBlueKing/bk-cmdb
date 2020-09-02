@@ -343,7 +343,13 @@ func (s *Service) HostSnapInfo(ctx *rest.Contexts) {
 		return
 	}
 
-	snap, err := logics.ParseHostSnap(result.Data.Data)
+	if result.Data.Data == "" {
+		ctx.RespEntity(map[string]interface{}{})
+		return
+	}
+
+	var snap map[string]interface{}
+	err = json.Unmarshal([]byte(result.Data.Data), &snap)
 	if err != nil {
 		blog.Errorf("get host snap info, but parse snap info failed, err: %v, hostID:%v,rid:%s", err, hostID, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -401,7 +407,8 @@ func (s *Service) HostSnapInfoBatch(ctx *rest.Contexts) {
 			ret = append(ret, map[string]interface{}{"bk_host_id": hostID})
 			continue
 		}
-		snap, err := logics.ParseHostSnap(snapData)
+		var snap map[string]interface{}
+		err := json.Unmarshal([]byte(snapData), &snap)
 		if err != nil {
 			blog.Errorf("HostSnapInfoBatch failed, ParseHostSnap err: %v, hostID:%v, rid:%s", err, hostID, ctx.Kit.Rid)
 			ctx.RespAutoError(err)

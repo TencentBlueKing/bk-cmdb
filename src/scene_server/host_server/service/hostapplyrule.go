@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -429,8 +430,7 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	hostApplyResults := make([]metadata.HostApplyResult, 0)
+	
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		// enable host apply on module
 		moduleUpdateOption := &metadata.UpdateOption{
@@ -481,53 +481,70 @@ func (s *Service) RunHostApplyRule(ctx *rest.Contexts) {
 			}
 		}
 
-		for _, plan := range planResult.Plans {
-			hostApplyResult := metadata.HostApplyResult{
-				HostID: plan.HostID,
-			}
-			if len(plan.UpdateFields) == 0 {
-				continue
-			}
-			updateOption := &metadata.UpdateOption{
-				Data: plan.GetUpdateData(),
-				Condition: map[string]interface{}{
-					common.BKHostIDField: plan.HostID,
-				},
-			}
-			updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, updateOption)
-			if err != nil {
-				blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
-				ccErr := ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-				hostApplyResult.SetError(ccErr)
-				hostApplyResults = append(hostApplyResults, hostApplyResult)
-				continue
-			}
-			if ccErr := updateResult.CCError(); ccErr != nil {
-				blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-				hostApplyResult.SetError(ccErr)
-				hostApplyResults = append(hostApplyResults, hostApplyResult)
-				continue
-			}
-			hostApplyResults = append(hostApplyResults, hostApplyResult)
-		}
-
-		var ccErr errors.CCErrorCoder
-		for _, item := range hostApplyResults {
-			if err := item.GetError(); err != nil {
-				ccErr = err
-				break
-			}
-		}
-		if ccErr != nil {
-			return ccErr
-		}
 		return nil
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(hostApplyResults,txnErr)
+		ctx.RespAutoError(&metadata.RespError{Msg: txnErr})
 		return
 	}
+
+	// update host instances, allow partial success
+	updateMap := make(map[string][]int64, 0)
+	for _, plan := range planResult.Plans {
+		if len(plan.UpdateFields) == 0 {
+			continue
+		}
+		dataStr := plan.GetUpdateDataStr()
+		updateMap[dataStr] = append(updateMap[dataStr], plan.HostID)
+	}
+
+	// update host operation is not done in a transaction, since the successfully updated hosts need not roll back
+	ctx.Kit.Header.Del(common.TransactionIdHeader)
+
+	hostApplyResults := make([]metadata.HostApplyResult, 0)
+	for dataStr, hostIDs := range updateMap {
+		data := make(map[string]interface{})
+		_ = json.Unmarshal([]byte(dataStr), &data)
+
+		updateOption := &metadata.UpdateOption{
+			Data: data,
+			Condition: map[string]interface{}{
+				common.BKHostIDField: map[string]interface{}{
+					common.BKDBIN: hostIDs,
+				},
+			},
+		}
+
+		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, 
+			common.BKInnerObjIDHost, updateOption)
+		if err != nil {
+			blog.ErrorJSON("run host apply rule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
+			for _, hostID := range hostIDs {
+				hostApplyResult := metadata.HostApplyResult{HostID: hostID}
+				hostApplyResult.SetError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
+				hostApplyResults = append(hostApplyResults, hostApplyResult)
+			}
+			continue
+		}
+
+		if ccErr := updateResult.CCError(); ccErr != nil {
+			blog.ErrorJSON("run host apply rule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
+
+			for _, hostID := range hostIDs {
+				hostApplyResult := metadata.HostApplyResult{HostID: hostID}
+				hostApplyResult.SetError(ccErr)
+				hostApplyResults = append(hostApplyResults, hostApplyResult)
+			}
+			continue
+		}
+
+		for _, hostID := range hostIDs {
+			hostApplyResult := metadata.HostApplyResult{HostID: hostID}
+			hostApplyResults = append(hostApplyResults, hostApplyResult)
+		}
+	}
+
 	ctx.RespEntity(hostApplyResults)
 }
 
