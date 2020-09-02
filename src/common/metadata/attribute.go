@@ -1072,17 +1072,18 @@ func CheckAllowHostApplyOnField(field string) bool {
 
 // SubAttribute sub attribute metadata definition
 type SubAttribute struct {
-	PropertyID   string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName string      `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name"`
-	Placeholder  string      `field:"placeholder" json:"placeholder" bson:"placeholder"`
-	IsEditable   bool        `field:"editable" json:"editable" bson:"editable"`
-	IsRequired   bool        `field:"isrequired" json:"isrequired" bson:"isrequired"`
-	IsReadOnly   bool        `field:"isreadonly" json:"isreadonly" bson:"isreadonly"`
-	IsSystem     bool        `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem"`
-	IsAPI        bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi"`
-	PropertyType string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
-	Option       interface{} `field:"option" json:"option" bson:"option"`
-	Description  string      `field:"description" json:"description" bson:"description"`
+	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName  string      `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name"`
+	Placeholder   string      `field:"placeholder" json:"placeholder" bson:"placeholder"`
+	IsEditable    bool        `field:"editable" json:"editable" bson:"editable"`
+	IsRequired    bool        `field:"isrequired" json:"isrequired" bson:"isrequired"`
+	IsReadOnly    bool        `field:"isreadonly" json:"isreadonly" bson:"isreadonly"`
+	IsSystem      bool        `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem"`
+	IsAPI         bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi"`
+	PropertyType  string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
+	Option        interface{} `field:"option" json:"option" bson:"option"`
+	Description   string      `field:"description" json:"description" bson:"description"`
+	PropertyGroup string      `field:"bk_property_group" json:"bk_property_group" bson:"bk_property_group"`
 }
 
 func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key string) (rawError errors.RawErrorInfo) {
@@ -1099,6 +1100,8 @@ func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key stri
 		PropertyType: sa.PropertyType,
 		Option:       sa.Option,
 		Description:  sa.Description,
+
+		PropertyGroup: sa.PropertyGroup,
 	}
 	return attr.Validate(ctx, data, key)
 }
