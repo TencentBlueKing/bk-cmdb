@@ -309,7 +309,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						if inst.BindIP != nil {
 							tplBindIP := metadata.SocketBindType(*inst.BindIP)
 
-							if tplBindIP == metadata.BindInnerIP || tplBindIP == metadata.BindOtterIP {
+							if tplBindIP == metadata.BindInnerIP || tplBindIP == metadata.BindOuterIP {
 								if hostMap[moduleHost.HostID] == nil {
 									host := metadata.HostMapStr{}
 									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}

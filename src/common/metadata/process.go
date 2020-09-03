@@ -421,7 +421,7 @@ const (
 	BindLocalHost SocketBindType = "1"
 	BindAll       SocketBindType = "2"
 	BindInnerIP   SocketBindType = "3"
-	BindOtterIP   SocketBindType = "4"
+	BindOuterIP   SocketBindType = "4"
 )
 
 func (p *SocketBindType) NeedIPFromHost() bool {
@@ -430,7 +430,7 @@ func (p *SocketBindType) NeedIPFromHost() bool {
 	}
 
 	switch *p {
-	case BindInnerIP, BindOtterIP:
+	case BindInnerIP, BindOuterIP:
 		return true
 	default:
 		return false
@@ -454,7 +454,7 @@ func (p *SocketBindType) IP(host map[string]interface{}) string {
 			return ""
 		}
 		ip = util.GetStrByInterface(host[common.BKHostInnerIPField])
-	case BindOtterIP:
+	case BindOuterIP:
 		if host == nil {
 			return ""
 		}
@@ -463,7 +463,7 @@ func (p *SocketBindType) IP(host map[string]interface{}) string {
 		return ""
 	}
 
-	index := strings.Index(ip, ",")
+	index := strings.Index(strings.Trim(ip, ","), ",")
 	if index == -1 {
 		return ip
 	}
@@ -482,7 +482,7 @@ func (p *SocketBindType) String() string {
 		return "0.0.0.0"
 	case BindInnerIP:
 		return "第一内网IP"
-	case BindOtterIP:
+	case BindOuterIP:
 		return "第一外网IP"
 	default:
 		return ""
@@ -490,7 +490,7 @@ func (p *SocketBindType) String() string {
 }
 
 func (p SocketBindType) Validate() error {
-	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOtterIP}
+	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP}
 	if util.InArray(p, validValues) == false {
 		return fmt.Errorf("invalid socket bind type, value: %s, available values: %+v", p, validValues)
 	}

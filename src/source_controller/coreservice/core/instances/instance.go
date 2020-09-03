@@ -13,6 +13,8 @@
 package instances
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -23,7 +25,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
-	"strings"
 
 	redis "gopkg.in/redis.v5"
 )
@@ -163,46 +164,110 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData mapstr.MapStr, origins []mapstr.MapStr) error {
 	innerIP, innerIPExist := updateData[common.BKHostInnerIPField]
 	outerIP, outerIPExist := updateData[common.BKHostOuterIPField]
-	innerIPUpdated, outerIPUpdated := false, false
 
 	firstInnerIP := getFirstIP(innerIP)
 	firstOuterIP := getFirstIP(outerIP)
 
 	// get all hosts whose first ip changes
-	innerIPUpdatedHostIDs := make([]int64, 0)
-	outerIPUpdatedHostIDs := make([]int64, 0)
+	innerIPUpdatedHostMap := make(map[int64]bool)
+	outerIPUpdatedHostMap := make(map[int64]bool)
+	hostIDs := make([]int64, 0)
+	var err error
+
 	for _, origin := range origins {
+		var hostID int64
+
 		if innerIPExist && getFirstIP(origin[common.BKHostInnerIPField]) != firstInnerIP {
-			innerIPUpdated = true
-			hostID, err := util.GetInt64ByInterface(origin[common.BKHostIDField])
+			hostID, err = util.GetInt64ByInterface(origin[common.BKHostIDField])
 			if err != nil {
 				blog.Errorf("host ID invalid, err: %v, host: %+v, rid: %s", err, origin, kit.Rid)
 				return err
 			}
-			innerIPUpdatedHostIDs = append(innerIPUpdatedHostIDs, hostID)
+			innerIPUpdatedHostMap[hostID] = true
 		}
 
 		if outerIPExist && getFirstIP(origin[common.BKHostOuterIPField]) != firstOuterIP {
-			outerIPUpdated = true
-			hostID, err := util.GetInt64ByInterface(origin[common.BKHostIDField])
-			if err != nil {
-				blog.Errorf("host ID invalid, err: %v, host: %+v, rid: %s", err, origin, kit.Rid)
-				return err
+			if hostID == 0 {
+				hostID, err = util.GetInt64ByInterface(origin[common.BKHostIDField])
+				if err != nil {
+					blog.Errorf("host ID invalid, err: %v, host: %+v, rid: %s", err, origin, kit.Rid)
+					return err
+				}
 			}
-			outerIPUpdatedHostIDs = append(outerIPUpdatedHostIDs, hostID)
+			outerIPUpdatedHostMap[hostID] = true
+		}
+
+		if hostID != 0 {
+			hostIDs = append(hostIDs, hostID)
 		}
 	}
 
-	if innerIPUpdated {
-		if err := m.updateProcessBindIP(kit, firstInnerIP, true, innerIPUpdatedHostIDs); err != nil {
-			blog.Errorf("update process bind inner ip failed, err: %v, inner ip: %s, hosts: %+v, rid: %s", err, innerIP, innerIPUpdatedHostIDs, kit.Rid)
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
+	// get hosts related process and template relations
+	processRelations := make([]metadata.ProcessInstanceRelation, 0)
+	processRelationFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+
+	err = m.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Fields(
+		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &processRelations)
+	if err != nil {
+		blog.Errorf("get process relation failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDs, kit.Rid)
+		return err
+	}
+
+	if len(processRelations) == 0 {
+		return nil
+	}
+
+	processTemplateIDs := make([]int64, len(processRelations))
+	processTemplateMap := make(map[int64][]int64)
+	for index, relation := range processRelations {
+		processTemplateIDs[index] = relation.ProcessTemplateID
+		processTemplateMap[relation.ProcessTemplateID] = append(processTemplateMap[relation.ProcessTemplateID], relation.ProcessID)
+	}
+
+	// get all processes whose templates has corresponding bind ip
+	processTemplates := make([]metadata.ProcessTemplate, 0)
+	processTemplateFilter := map[string]interface{}{
+		common.BKFieldID:                    map[string]interface{}{common.BKDBIN: processTemplateIDs},
+		"property.bind_ip.as_default_value": true,
+		"property.bind_ip.value": map[string]interface{}{common.BKDBIN: []string{
+			string(metadata.BindInnerIP), string(metadata.BindOuterIP)}},
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
+		common.BKFieldID, "property.bind_ip.value").All(kit.Ctx, &processTemplates)
+	if err != nil {
+		blog.Errorf("get process template failed, err: %v, processTemplateIDs: %+v, rid: %s", err, processTemplateIDs, kit.Rid)
+		return err
+	}
+
+	bindInnerProcessIDs := make([]int64, 0)
+	bindOuterProcessIDs := make([]int64, 0)
+	for _, processTemplate := range processTemplates {
+		bindIP := processTemplate.Property.BindIP.Value
+		if bindIP != nil {
+			if *bindIP == metadata.BindInnerIP {
+				bindInnerProcessIDs = append(bindInnerProcessIDs, processTemplateMap[processTemplate.ID]...)
+			}
+			if *bindIP == metadata.BindOuterIP {
+				bindOuterProcessIDs = append(bindOuterProcessIDs, processTemplateMap[processTemplate.ID]...)
+			}
+		}
+	}
+
+	if len(bindInnerProcessIDs) != 0 {
+		if err := m.updateProcessBindIP(kit, firstInnerIP, bindInnerProcessIDs); err != nil {
+			blog.Errorf("update process bind inner ip failed, err: %v, inner ip: %s, processIDs: %+v, rid: %s", err, innerIP, bindInnerProcessIDs, kit.Rid)
 			return err
 		}
 	}
 
-	if outerIPUpdated {
-		if err := m.updateProcessBindIP(kit, firstOuterIP, false, outerIPUpdatedHostIDs); err != nil {
-			blog.Errorf("update process bind outer ip failed, err: %v, outer ip: %s, hosts: %+v, rid: %s", err, innerIP, outerIPUpdatedHostIDs, kit.Rid)
+	if len(bindOuterProcessIDs) != 0 {
+		if err := m.updateProcessBindIP(kit, firstOuterIP, bindOuterProcessIDs); err != nil {
+			blog.Errorf("update process bind outer ip failed, err: %v, inner ip: %s, processIDs: %+v, rid: %s", err, innerIP, bindOuterProcessIDs, kit.Rid)
 			return err
 		}
 	}
@@ -236,63 +301,11 @@ func getFirstIP(ip interface{}) string {
 }
 
 // updateHostProcessBindIP update processes using changed ip
-func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, ip string, isInner bool, hostIDs []int64) error {
-	// get hosts related process and template relations
-	processRelations := make([]metadata.ProcessInstanceRelation, 0)
-	processRelationFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-
-	err := m.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Fields(
-		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &processRelations)
-	if err != nil {
-		blog.Errorf("get process relation failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDs, kit.Rid)
-		return err
-	}
-
-	if len(processRelations) == 0 {
-		return nil
-	}
-
-	processTemplateIDs := make([]int64, len(processRelations))
-	processTemplateMap := make(map[int64][]int64)
-	for index, relation := range processRelations {
-		processTemplateIDs[index] = relation.ProcessTemplateID
-		processTemplateMap[relation.ProcessTemplateID] = append(processTemplateMap[relation.ProcessTemplateID], relation.ProcessID)
-	}
-
-	// get all processes whose templates has corresponding bind ip
-	processTemplates := make([]metadata.ProcessTemplate, 0)
-	processTemplateFilter := map[string]interface{}{
-		common.BKFieldID:                    map[string]interface{}{common.BKDBIN: processTemplateIDs},
-		"property.bind_ip.as_default_value": true,
-	}
-
-	if isInner {
-		processTemplateFilter["property.bind_ip.value"] = metadata.BindInnerIP
-	} else {
-		processTemplateFilter["property.bind_ip.value"] = metadata.BindOtterIP
-	}
-
-	err = m.dbProxy.Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
-		common.BKFieldID).All(kit.Ctx, &processTemplates)
-	if err != nil {
-		blog.Errorf("get process template failed, err: %v, processTemplateIDs: %+v, rid: %s", err, processTemplateIDs, kit.Rid)
-		return err
-	}
-
-	processIDs := make([]int64, 0)
-	for _, processTemplate := range processTemplates {
-		processIDs = append(processIDs, processTemplateMap[processTemplate.ID]...)
-	}
-
-	if len(processIDs) == 0 {
-		return nil
-	}
-
-	// update all processes bind ip
+func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, ip string, processIDs []int64) error {
 	processFilter := map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: processIDs}}
 	bindIPData := map[string]interface{}{common.BKBindIP: ip}
 
-	if err = m.dbProxy.Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, bindIPData); err != nil {
+	if err := m.dbProxy.Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, bindIPData); err != nil {
 		blog.Errorf("update process failed, err: %v, processIDs: %+v, ip: %s, rid: %s", err, processIDs, ip, kit.Rid)
 		return err
 	}
