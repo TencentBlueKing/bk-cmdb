@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 // HostModuleRelation transfer host to module specify by bk_module_id (in the same business)
@@ -29,9 +28,8 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 		return
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	for _, moduleID := range config.ModuleID {
-		module, err := lgc.GetNormalModuleByModuleID(ctx.Kit.Ctx, config.ApplicationID, moduleID)
+		module, err := s.Logic.GetNormalModuleByModuleID(ctx.Kit, config.ApplicationID, moduleID)
 		if err != nil {
 			blog.Errorf("add host and module relation, but get module with id[%d] failed, err: %v,param:%+v,rid:%s", moduleID, err, config, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
@@ -45,7 +43,7 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 		}
 	}
 
-	audit := lgc.NewHostModuleLog(config.HostID)
+	audit := s.Logic.NewHostModuleLog(ctx.Kit, config.HostID)
 	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 		blog.Errorf("host module relation, get prev module host config failed, err: %v,param:%+v,rid:%s", err, config, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
@@ -105,10 +103,9 @@ func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 	}
 
 	var exceptionArr []metadata.ExceptionResult
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		exceptionArr, err = lgc.MoveHostToResourcePool(ctx.Kit.Ctx, conf)
+		exceptionArr, err = s.Logic.MoveHostToResourcePool(ctx.Kit, conf)
 		if err != nil {
 			blog.Errorf("move host to resource pool failed, err:%s, input:%#v, rid:%s", err.Error(), conf, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -133,10 +130,9 @@ func (s *Service) AssignHostToApp(ctx *rest.Contexts) {
 	}
 
 	var exceptionArr []metadata.ExceptionResult
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		exceptionArr, err = lgc.AssignHostToApp(ctx.Kit.Ctx, conf)
+		exceptionArr, err = s.Logic.AssignHostToApp(ctx.Kit, conf)
 		if err != nil {
 			blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,rid:%s", err, conf, ctx.Kit.Rid)
 			return err
@@ -175,8 +171,8 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 	}
 	
 	cond.Page = metadata.BasePage{Limit: common.BKNoLimit}
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	moduleHostConfig, err := lgc.GetHostModuleRelation(ctx.Kit.Ctx, cond)
+	moduleHostConfig, err := s.Logic.GetHostModuleRelation(ctx.Kit, cond)
+
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), cond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -195,9 +191,8 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := lgc.TransferHostAcrossBusiness(ctx.Kit.Ctx, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleIDArr)
+		err := s.Logic.TransferHostAcrossBusiness(ctx.Kit, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleIDArr)
 		if err != nil {
 			blog.Errorf("TransferHostAcrossBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, ctx.Kit.Rid)
 			return err
@@ -225,10 +220,9 @@ func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
 	}
 
 	var exceptionArr []metadata.ExceptionResult
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		exceptionArr, err = lgc.DeleteHostFromBusiness(ctx.Kit.Ctx, data.AppID, data.HostIDArr)
+		exceptionArr, err = s.Logic.DeleteHostFromBusiness(ctx.Kit, data.AppID, data.HostIDArr)
 		if err != nil {
 			blog.Errorf("DeleteHostFromBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, ctx.Kit.Rid)
 			return err
@@ -278,15 +272,14 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 	}
 
 	moduleFilter[common.BKAppIDField] = bizID
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	moduleID, err := lgc.GetResourcePoolModuleID(ctx.Kit.Ctx, moduleFilter)
+	moduleID, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, moduleFilter)
 	if err != nil {
 		blog.ErrorJSON("move host to default module failed, get default module id failed, filter: %s, err: %s, rid: %s", moduleFilter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrAddHostToModuleFailStr, moduleFilter[common.BKModuleNameField].(string)+" not foud "))
 		return
 	}
 
-	audit := lgc.NewHostModuleLog(conf.HostIDs)
+	audit := s.Logic.NewHostModuleLog(ctx.Kit, conf.HostIDs)
 	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 		blog.Errorf("move host to default module s failed, get prev module host config failed, hostIDs: %v, err: %s, rid: %s", conf.HostIDs, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
@@ -335,8 +328,7 @@ func (s *Service) GetAppHostTopoRelation(ctx *rest.Contexts) {
 		return
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	result, err := lgc.GetHostModuleRelation(ctx.Kit.Ctx, *data)
+	result, err := s.Logic.GetHostModuleRelation(ctx.Kit, *data)
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation logic failed, cond:%#v, err:%s, rid:%s", data, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -353,8 +345,7 @@ func (s *Service) TransferHostResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	audit := lgc.NewHostModuleLog(input.HostID)
+	audit := s.Logic.NewHostModuleLog(ctx.Kit, input.HostID)
 	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 		blog.Errorf("TransferHostResourceDirectory, but get prev module host config failed, err: %v, hostIDs:%#v,rid:%s", err, input.HostID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server"))

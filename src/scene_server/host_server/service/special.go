@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 /*
@@ -51,9 +50,8 @@ func (s *Service) BKSystemInstall(ctx *rest.Contexts) {
 		return
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := lgc.NewSpecial().BkSystemInstall(ctx.Kit.Ctx, common.BKAppName, input)
+		err := s.Logic.NewSpecial(ctx.Kit).BkSystemInstall(ctx.Kit.Ctx, common.BKAppName, input)
 		if err != nil {
 			blog.Errorf("BkSystemInstall handle err: %v, rid:%s", err, ctx.Kit.Rid)
 			return err
@@ -71,8 +69,7 @@ func (s *Service) BKSystemInstall(ctx *rest.Contexts) {
 func (s *Service) FindSystemUserConfigBKSwitch(ctx *rest.Contexts) {
 
 	// 没有权限校验
-	lgc:=logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	data, err := lgc.CoreAPI.CoreService().System().GetUserConfig(ctx.Kit.Ctx, ctx.Kit.Header)
+	data, err := s.Logic.CoreAPI.CoreService().System().GetUserConfig(ctx.Kit.Ctx, ctx.Kit.Header)
 	if err != nil {
 		blog.Errorf("FindSystemUserConfig handle err: %v, rid:%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
