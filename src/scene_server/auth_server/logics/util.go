@@ -128,3 +128,39 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 
 	return resourcePoolBizID, nil
 }
+
+// GetCloudMapByIDs get cloud area ID to name map by ID to generate host display name
+func (lgc *Logics) getCloudNameMapByIDs(kit *rest.Kit, cloudIDs []int64) (map[int64]string, error) {
+	cloudParam := metadata.QueryCondition{
+		Fields:    []string{common.BKCloudIDField, common.BKCloudNameField},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{common.BKCloudIDField: map[string]interface{}{common.BKDBIN: cloudIDs}},
+	}
+	cloudRsp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat, &cloudParam)
+	if err != nil {
+		blog.Errorf("get cloud areas failed, err: %v,cloudIDs: %+v", err, cloudIDs)
+		return nil, err
+	}
+
+	if !cloudRsp.Result {
+		blog.Errorf("get cloud areas failed, err: %v,cloudIDs: %+v", cloudRsp.ErrMsg, cloudIDs)
+		return nil, cloudRsp.CCError()
+	}
+
+	cloudMap := make(map[int64]string)
+	for _, cloud := range cloudRsp.Data.Info {
+		cloudID, err := util.GetInt64ByInterface(cloud[common.BKCloudIDField])
+		if err != nil {
+			blog.Errorf("parse cloud area id failed, err: %v,cloud: %+v", err, cloud)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+
+		cloudMap[cloudID] = util.GetStrByInterface(cloud[common.BKCloudNameField])
+	}
+
+	return cloudMap, nil
+}
+
+func getHostDisplayName(innerIP string, cloudName string) string {
+	return innerIP + "(" + cloudName + ")"
+}

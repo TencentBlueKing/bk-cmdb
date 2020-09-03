@@ -59,12 +59,12 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 		return nil, err
 	}
 
-	instances := make([]types.InstanceResource, 0)
-	for _, instance := range data.Info {
-		instances = append(instances, types.InstanceResource{
+	instances := make([]types.InstanceResource, len(data.Info))
+	for index, instance := range data.Info {
+		instances[index] = types.InstanceResource{
 			ID:          util.GetStrByInterface(instance[idField]),
 			DisplayName: util.GetStrByInterface(instance[nameField]),
-		})
+		}
 	}
 	return &types.ListInstanceResult{
 		Count:   data.Count,
@@ -278,8 +278,8 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 		}
 	}
 
-	instances := make([]types.InstanceResource, 0)
-	for _, inst := range data.Info {
+	instances := make([]types.InstanceResource, len(data.Info))
+	for index, inst := range data.Info {
 		instance := types.InstanceResource{
 			ID:          util.GetStrByInterface(inst[idField]),
 			DisplayName: util.GetStrByInterface(inst[nameField]),
@@ -290,7 +290,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 			ID:          ancestorID,
 			DisplayName: ancestorMap[ancestorID],
 		})
-		instances = append(instances, instance)
+		instances[index] = instance
 	}
 
 	return &types.ListInstanceResult{
@@ -418,8 +418,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 		}
 	}
 
-	instances := make([]types.InstanceResource, 0)
-	for _, inst := range data.Info {
+	instances := make([]types.InstanceResource, len(data.Info))
+	for index, inst := range data.Info {
 		instance := types.InstanceResource{
 			ID:          util.GetStrByInterface(inst[idField]),
 			DisplayName: util.GetStrByInterface(inst[nameField]),
@@ -430,8 +430,9 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 			ID:          ancestorID,
 			DisplayName: modelMap[ancestorID],
 		})
-		instances = append(instances, instance)
+		instances[index] = instance
 	}
+
 	return &types.ListInstanceResult{
 		Count:   data.Count,
 		Results: instances,
@@ -514,55 +515,94 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 type hostInstance struct {
 	ID      int64  `json:"bk_host_id"`
 	InnerIP string `json:"bk_host_innerip"`
+	CloudID int64  `json:"bk_cloud_id"`
 }
 
 func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page) (*types.ListInstanceResult, error) {
-	listHostParam := &metadata.ListHostWithPage{
-		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
-	}
 
 	// if hostIDs are set, get hosts from cache returns hosts using ids directly without paging, we need to do it here
+	hosts := make([]hostInstance, 0)
+	var count int64
+
 	hostLen := int64(len(hostIDs))
 	if hostLen > 0 {
-		limit := page.Offset + page.Limit
-		if limit > hostLen {
-			limit = hostLen
+		count = hostLen
+
+		hostIDLen := page.Offset + page.Limit
+		if hostIDLen > hostLen {
+			hostIDLen = hostLen
 		}
-		listHostParam.HostIDs = hostIDs[page.Offset:limit]
+		hostIDs = hostIDs[page.Offset:hostIDLen]
+
+		for offset := int64(0); offset < hostIDLen; offset += 500 {
+			limit := offset + 500
+			if limit > hostIDLen {
+				limit = hostIDLen
+			}
+			listHostParam := &metadata.ListWithIDOption{
+				IDs:    hostIDs[offset:limit],
+				Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+			}
+			hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithHostID(kit.Ctx, kit.Header, listHostParam)
+			if err != nil {
+				blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
+				return nil, err
+			}
+
+			hostArr := make([]hostInstance, 0)
+			err = json.Unmarshal([]byte(hostArrStr), &hostArr)
+			if err != nil {
+				blog.Errorf("unmarshal hosts %s failed, err: %v", hostArrStr, err)
+				return nil, err
+			}
+
+			hosts = append(hosts, hostArr...)
+		}
 	} else {
-		listHostParam.Page = metadata.BasePage{
-			Start: int(page.Offset),
-			Limit: int(page.Limit),
+		listHostParam := &metadata.ListHostWithPage{
+			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+			Page: metadata.BasePage{
+				Start: int(page.Offset),
+				Limit: int(page.Limit),
+			},
 		}
+
+		cnt, hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithPage(kit.Ctx, kit.Header, listHostParam)
+		if err != nil {
+			blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
+			return nil, err
+		}
+
+		if len(hostArrStr) == 0 {
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+		}
+
+		err = json.Unmarshal([]byte(hostArrStr), &hosts)
+		if err != nil {
+			blog.Errorf("unmarshal hosts %s failed, err: %v", hostArrStr, err)
+			return nil, err
+		}
+
+		count = cnt
 	}
 
-	count, hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithPage(kit.Ctx, kit.Header, listHostParam)
+	// get cloud area to generate host display name
+	cloudIDs := make([]int64, len(hosts))
+	for index, host := range hosts {
+		cloudIDs[index] = host.CloudID
+	}
+
+	cloudMap, err := lgc.getCloudNameMapByIDs(kit, cloudIDs)
 	if err != nil {
-		blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
 		return nil, err
 	}
 
-	if len(hostArrStr) == 0 {
-		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
-	}
-
-	hosts := make([]hostInstance, 0)
-	err = json.Unmarshal([]byte(hostArrStr), &hosts)
-	if err != nil {
-		blog.Errorf("unmarshal hosts %s failed, err: %v", hostArrStr, err)
-		return nil, err
-	}
-
-	instances := make([]types.InstanceResource, 0)
-	for _, host := range hosts {
-		instances = append(instances, types.InstanceResource{
+	instances := make([]types.InstanceResource, len(hosts))
+	for index, host := range hosts {
+		instances[index] = types.InstanceResource{
 			ID:          strconv.FormatInt(host.ID, 10),
-			DisplayName: host.InnerIP,
-		})
-	}
-
-	if hostLen > 0 {
-		return &types.ListInstanceResult{Count: hostLen, Results: instances}, nil
+			DisplayName: getHostDisplayName(host.InnerIP, cloudMap[host.CloudID]),
+		}
 	}
 
 	return &types.ListInstanceResult{

@@ -31,7 +31,6 @@ var ResourceTypeIDMap = map[TypeID]string{
 	SysInstance:               "实例",
 	SysAssociationType:        "关联类型",
 	SysEventPushing:           "事件订阅",
-	SysSystemBase:             "系统基础",
 	SysOperationStatistic:     "运营统计",
 	SysAuditLog:               "操作审计",
 	SysCloudAccount:           "云账户",
@@ -351,18 +350,6 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Event Subscription",
 			Description:   "当配置发生变化时推送事件",
 			DescriptionEn: "push event when configuration changes",
-			Parents:       nil,
-			ProviderConfig: ResourceConfig{
-				Path: "/auth/v3/find/resource",
-			},
-			Version: 1,
-		},
-		{
-			ID:            SysSystemBase,
-			Name:          ResourceTypeIDMap[SysSystemBase],
-			NameEn:        "System",
-			Description:   "基础系统资源",
-			DescriptionEn: "basic system resource",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",

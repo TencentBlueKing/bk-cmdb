@@ -46,7 +46,7 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		return 0, nil, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 	if limit == 0 {
-		limit = common.BKDefaultLimit
+		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "page.limit")
 	}
 	f := a.dbProxy.Table(param.Collection).Find(param.Condition)
 	count, err := f.Count(kit.Ctx)
