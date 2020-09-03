@@ -145,6 +145,7 @@
                     this.defaultIndex = 0
                     this.enumList[0]['is_default'] = true
                 }
+                this.handleInput()
             },
             validate () {
                 return this.$validator.validateAll()
