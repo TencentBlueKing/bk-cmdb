@@ -87,22 +87,22 @@ func (lgc *Logics) GetSetMapByCond(kit *rest.Kit, fields []string, cond mapstr.M
 }
 
 // GetSetIDsByTopo get set IDs by custom layer node
-func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int64) ([]int64, error) {
+func (lgc *Logics) GetSetIDsByTopo(kit *rest.Kit, objID string, instID int64) ([]int64, error) {
 	if objID == common.BKInnerObjIDApp || objID == common.BKInnerObjIDSet || objID == common.BKInnerObjIDModule {
-		blog.Errorf("get set IDs by topo failed, obj(%s) is a inner object, rid: %s", objID, lgc.rid)
-		return nil, lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+		blog.Errorf("get set IDs by topo failed, obj(%s) is a inner object, rid: %s", objID, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
 	}
 
 	// get mainline association, generate map of object and its child
-	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, lgc.header, &metadata.QueryCondition{
+	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx,kit.Header, &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
 	if err != nil {
-		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", err.Error(), lgc.rid)
+		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	if !asstRes.Result {
-		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", asstRes.ErrMsg, lgc.rid)
+		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", asstRes.ErrMsg, kit.Rid)
 		return nil, asstRes.CCError()
 	}
 
@@ -113,8 +113,8 @@ func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int
 
 	childObj := childObjMap[objID]
 	if childObj == "" {
-		blog.Errorf("get set IDs by topo failed, obj(%s) is not a mainline object, rid: %s", objID, lgc.rid)
-		return nil, lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+		blog.Errorf("get set IDs by topo failed, obj(%s) is not a mainline object, rid: %s", objID, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
 	}
 
 	// traverse down topo till set, get set ids
@@ -127,15 +127,15 @@ func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int
 			Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		}
 
-		instRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, childObj, query)
+		instRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, childObj, query)
 		if err != nil {
-			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), childObj, instIDs, lgc.rid)
-			return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), childObj, instIDs, kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !instRes.Result {
-			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", instRes.ErrMsg, childObj, instIDs, lgc.rid)
-			return nil, lgc.ccErr.New(instRes.Code, instRes.ErrMsg)
+			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", instRes.ErrMsg, childObj, instIDs, kit.Rid)
+			return nil, kit.CCError.New(instRes.Code, instRes.ErrMsg)
 		}
 
 		if len(instRes.Data.Info) == 0 {
@@ -146,7 +146,7 @@ func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int
 		for index, inst := range instRes.Data.Info {
 			id, err := inst.Int64(idField)
 			if err != nil {
-				blog.Errorf("get set IDs by topo failed, parse inst id err: %s, inst: %#v, rid: %s", err.Error(), inst, lgc.rid)
+				blog.Errorf("get set IDs by topo failed, parse inst id err: %s, inst: %#v, rid: %s", err.Error(), inst, kit.Rid)
 				return nil, err
 			}
 			instIDs[index] = id

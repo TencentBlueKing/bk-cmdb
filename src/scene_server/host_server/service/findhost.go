@@ -411,8 +411,7 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 	} else if option.ObjID == common.BKInnerObjIDModule {
 		distinctHostCond.ModuleIDArr = []int64{option.InstID}
 	} else {
-		lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-		setIDArr, err := lgc.GetSetIDsByTopo(ctx.Kit.Ctx, option.ObjID, option.InstID)
+		setIDArr, err := s.Logic.GetSetIDsByTopo(ctx.Kit, option.ObjID, option.InstID)
 		if err != nil {
 			blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, rid: %s", 
 				err, option.ObjID, option.InstID, ctx.Kit.Rid)
