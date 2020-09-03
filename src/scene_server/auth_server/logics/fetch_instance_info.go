@@ -177,36 +177,42 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 		return nil, err
 	}
 
-	cloudIDs := make([]int64, len(hosts))
-	for index, host := range hosts {
-		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
-		if err != nil {
-			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+	// get cloud area for display name use
+	var cloudMap map[int64]string
+	if hasName {
+		cloudIDs := make([]int64, len(hosts))
+		for index, host := range hosts {
+			cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+			if err != nil {
+				blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+			}
+
+			cloudIDs[index] = cloudID
 		}
 
-		cloudIDs[index] = cloudID
-	}
-
-	cloudMap, err := lgc.getCloudNameMapByIDs(kit, cloudIDs)
-	if err != nil {
-		return nil, err
+		cloudMap, err = lgc.getCloudNameMapByIDs(kit, cloudIDs)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// covert id and display_name field
 	for _, host := range hosts {
 		host[types.IDField] = util.GetStrByInterface(host[common.BKHostIDField])
 
-		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
-		if err != nil {
-			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		if hasName {
+			cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+			if err != nil {
+				blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+			}
+
+			host[types.NameField] = util.GetStrByInterface(host[common.BKHostInnerIPField]) + "(" + cloudMap[cloudID] + ")"
 		}
 
-		host[types.NameField] = util.GetStrByInterface(host[common.BKHostInnerIPField]) + "(" + cloudMap[cloudID] + ")"
-
 		if needPath {
-			host[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, host)
+			host[sdktypes.IamPathKey], err = lgc.getHostIamPath(kit, resourceType, host)
 			if err != nil {
 				blog.ErrorJSON("getResourceIamPath failed, error: %s, instance: %s, rid: %s", err.Error(), host, kit.Rid)
 				return nil, err
