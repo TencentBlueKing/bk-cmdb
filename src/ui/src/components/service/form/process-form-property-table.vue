@@ -1,36 +1,39 @@
 <template>
-    <cmdb-form-table class="cmdb-form-process-table"
-        v-bind="$attrs"
-        v-model="localValue"
-        :options="options"
-        :mode="mode">
-        <div class="process-table-content"
-            v-for="column in options"
-            slot-scope="rowProps"
-            :slot="column.bk_property_id"
-            :key="`row-${rowProps.index}-${column.bk_property_id}`">
-            <bk-popover class="content-value" :disabled="!isLocked(rowProps)">
-                <component
-                    size="small"
-                    font-size="small"
-                    v-validate="$tools.getValidateRules(column)"
-                    :disabled="isLocked(rowProps)"
-                    :data-vv-name="column.bk_property_id"
-                    :data-vv-as="column.bk_property_name"
-                    :data-vv-scope="column.bk_property_group || 'bind_info'"
-                    :is="getComponentType(column)"
-                    :options="column.option || []"
-                    :placeholder="getPlaceholder(column)"
-                    :value="localValue[rowProps.index][column.bk_property_id]"
-                    :auto-select="false"
-                    @input="handleColumnValueChange(rowProps, ...arguments)">
-                </component>
-                <i18n path="进程表单锁定提示" slot="content">
-                    <bk-link theme="primary" @click="handleRedirect" place="link">{{$t('跳转服务模板')}}</bk-link>
-                </i18n>
-            </bk-popover>
-        </div>
-    </cmdb-form-table>
+    <div class="cmdb-form-process-table">
+        <cmdb-form-table
+            v-bind="$attrs"
+            v-model="localValue"
+            :options="options"
+            :mode="mode">
+            <div class="process-table-content"
+                v-for="column in options"
+                slot-scope="rowProps"
+                :slot="column.bk_property_id"
+                :key="`row-${rowProps.index}-${column.bk_property_id}`">
+                <bk-popover class="content-value" :disabled="!isLocked(rowProps)">
+                    <component
+                        size="small"
+                        font-size="small"
+                        v-validate="$tools.getValidateRules(column)"
+                        :disabled="isLocked(rowProps)"
+                        :data-vv-name="column.bk_property_id"
+                        :data-vv-as="column.bk_property_name"
+                        :data-vv-scope="column.bk_property_group || 'bind_info'"
+                        :is="getComponentType(column)"
+                        :options="column.option || []"
+                        :placeholder="getPlaceholder(column)"
+                        :value="localValue[rowProps.index][column.bk_property_id]"
+                        :auto-select="false"
+                        @input="handleColumnValueChange(rowProps, ...arguments)">
+                    </component>
+                    <i18n path="进程表单锁定提示" slot="content">
+                        <bk-link theme="primary" @click="handleRedirect" place="link">{{$t('跳转服务模板')}}</bk-link>
+                    </i18n>
+                </bk-popover>
+            </div>
+        </cmdb-form-table>
+        <span class="form-error" v-if="validateMsg">{{validateMsg}}</span>
+    </div>
 </template>
 
 <script>
@@ -74,6 +77,10 @@
             },
             mode () {
                 return this.form.serviceTemplateId ? 'info' : 'update'
+            },
+            validateMsg () {
+                const item = this.errors.items.find(item => item.scope === 'bind_info')
+                return item ? item.msg : null
             }
         },
         methods: {
@@ -114,6 +121,7 @@
 
 <style lang="scss" scoped>
     .cmdb-form-process-table {
+        position: relative;
         .process-table-content {
             display: flex;
             align-items: center;
@@ -126,6 +134,16 @@
                     }
                 }
             }
+        }
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            line-height: 14px;
+            font-size: 12px;
+            color: $dangerColor;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
 </style>

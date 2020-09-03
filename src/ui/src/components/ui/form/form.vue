@@ -116,7 +116,8 @@
             invisibleNameProperties: {
                 type: Array,
                 default: () => []
-            }
+            },
+            customValidator: Function
         },
         data () {
             return {
@@ -227,24 +228,29 @@
 
                 return rules
             },
-            handleSave () {
-                this.$validator.validateAll().then(result => {
-                    if (result) {
-                        this.$emit(
-                            'on-submit',
-                            this.$tools.formatValues(this.values, this.properties),
-                            this.$tools.formatValues(this.changedValues, this.properties),
-                            this.inst,
-                            this.type
-                        )
-                    } else {
-                        this.uncollapseGroup()
-                    }
-                })
+            async handleSave () {
+                const validatePromise = [this.$validator.validateAll()]
+                if (typeof this.customValidator === 'function') {
+                    validatePromise.push(this.customValidator())
+                }
+                const results = await Promise.all(validatePromise)
+                const isValid = results.every(result => result)
+                if (isValid) {
+                    this.$emit(
+                        'on-submit',
+                        this.$tools.formatValues(this.values, this.properties),
+                        this.$tools.formatValues(this.changedValues, this.properties),
+                        this.inst,
+                        this.type
+                    )
+                } else {
+                    this.uncollapseGroup()
+                }
             },
             uncollapseGroup () {
                 this.errors.items.forEach(item => {
-                    const property = this.properties.find(property => property['bk_property_id'] === item.field)
+                    const compareKey = item.scope || item.field
+                    const property = this.properties.find(property => property['bk_property_id'] === compareKey)
                     const group = property['bk_property_group']
                     this.groupState[group] = false
                 })

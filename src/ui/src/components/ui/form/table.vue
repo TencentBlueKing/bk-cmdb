@@ -47,7 +47,9 @@
                 </template>
             </bk-table-column>
             <div slot="empty">
+                <span v-if="mode === 'info'">{{$t('暂无数据')}}</span>
                 <bk-button class="empty-button"
+                    v-else
                     theme="primary"
                     text
                     icon="icon-plus"

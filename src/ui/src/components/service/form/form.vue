@@ -27,11 +27,13 @@
                 :invisible-name-properties="invisibleNameProperties"
                 :flex-properties="flexProperties"
                 :render-tips="renderTips"
+                :custom-validator="validateCustomComponent"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleCancel">
                 <template slot="bind_info">
                     <process-form-property-table
-                        v-model="instance.bind_info"
+                        ref="bindInfo"
+                        v-model="bindInfo"
                         :options="bindInfoProperty.option || []">
                     </process-form-property-table>
                 </template>
@@ -56,7 +58,10 @@
             type: String,
             serviceTemplateId: Number,
             processTemplateId: Number,
-            instance: Object,
+            instance: {
+                type: Object,
+                default: () => ({})
+            },
             title: String,
             hostId: Number,
             submitHandler: Function
@@ -77,7 +82,8 @@
                 processTemplate: {},
                 pending: true,
                 invisibleNameProperties: ['bind_info'],
-                flexProperties: ['bind_info']
+                flexProperties: ['bind_info'],
+                formValuesReflect: {}
             }
         },
         computed: {
@@ -85,6 +91,14 @@
             ...mapGetters('objectBiz', ['bizId']),
             bindInfoProperty () {
                 return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
+            },
+            bindInfo: {
+                get () {
+                    return this.formValuesReflect.bind_info || []
+                },
+                set (values) {
+                    this.formValuesReflect.bind_info = values
+                }
             }
         },
         watch: {
@@ -111,20 +125,34 @@
         mounted () {
             this.updateFormWatcher()
         },
+        beforeDestroy () {
+            this.teardownWatcher()
+        },
         methods: {
             show () {
                 this.isShow = true
             },
+            teardownWatcher () {
+                this.unwatchName && this.unwatchName()
+                this.unwatchFormValues && this.unwatchFormValues()
+            },
             updateFormWatcher () {
                 if (this.internalType === 'view') {
-                    this.unwatchForm && this.unwatchForm()
+                    this.teardownWatcher()
                 } else {
                     this.$nextTick(() => {
                         const form = this.$refs.form
                         if (!form) {
-                            return
+                            return this.updateFormWatcher() // 递归nextTick等待form创建完成
                         }
-                        this.unwatchForm = this.$watch(() => {
+                        // watch form组件表单值，用于获取bind_info字段给进程表格字段组件使用
+                        this.unwatchFormValues = this.$watch(() => {
+                            return form.values
+                        }, values => {
+                            this.formValuesReflect = values
+                        }, { immediate: true })
+                        // watch 名称，在用户未修改进程别名时，自动同步进程名称到进程别名
+                        this.unwatchName = this.$watch(() => {
                             return form.values.bk_func_name
                         }, (newVal, oldValue) => {
                             if (form.values.bk_process_name === oldValue) {
@@ -190,6 +218,17 @@
             },
             handleHidden () {
                 this.$emit('close')
+            },
+            async validateCustomComponent () {
+                const { bindInfo } = this.$refs
+                const customComponents = [bindInfo]
+                const validatePromise = []
+                customComponents.forEach(component => {
+                    validatePromise.push(component.$validator.validateAll())
+                    validatePromise.push(component.$validator.validateScopes())
+                })
+                const results = await Promise.all(validatePromise)
+                return results.every(result => result)
             },
             async handleSaveProcess (values, changedValues, instance) {
                 try {

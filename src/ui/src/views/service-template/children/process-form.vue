@@ -280,6 +280,15 @@
                 }
                 return this.errors.first(property.bk_property_id)
             },
+            callComponentValidator () {
+                const componentValidator = []
+                const { formComponent = [] } = this.$refs
+                formComponent.forEach(component => {
+                    componentValidator.push(component.$validator.validateAll())
+                    componentValidator.push(component.$validator.validateScopes())
+                })
+                return componentValidator
+            },
             async handleSave () {
                 try {
                     const results = await Promise.all([

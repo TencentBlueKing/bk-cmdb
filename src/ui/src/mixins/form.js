@@ -78,16 +78,5 @@ export default {
         return {
             groupState: {}
         }
-    },
-    methods: {
-        callComponentValidator () {
-            const componentValidator = []
-            const { formComponent = [] } = this.$refs
-            formComponent.forEach(component => {
-                componentValidator.push(component.$validator.validateAll())
-                componentValidator.push(component.$validator.validateScopes())
-            })
-            return componentValidator
-        }
     }
 }
