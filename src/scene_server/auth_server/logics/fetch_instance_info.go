@@ -160,25 +160,36 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 		hostIDs[idx] = id
 	}
 
-	hostParam := &metadata.ListWithIDOption{
-		IDs:    hostIDs,
-		Fields: attrs,
-	}
-	hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithHostID(kit.Ctx, kit.Header, hostParam)
-	if err != nil {
-		blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
-		return nil, err
-	}
-
+	hostIDLen := len(hostIDs)
 	hosts := make([]map[string]interface{}, 0)
-	err = json.Unmarshal([]byte(hostArrStr), &hosts)
-	if err != nil {
-		blog.Errorf("unmarshal hosts %s failed, err: %v", hostArrStr, err)
-		return nil, err
+	for offset := 0; offset < hostIDLen; offset += 500 {
+		limit := offset + 500
+		if limit > hostIDLen {
+			limit = hostIDLen
+		}
+		hostParam := &metadata.ListWithIDOption{
+			IDs:    hostIDs[offset:limit],
+			Fields: attrs,
+		}
+		hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithHostID(kit.Ctx, kit.Header, hostParam)
+		if err != nil {
+			blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
+			return nil, err
+		}
+
+		hostArr := make([]map[string]interface{}, 0)
+		err = json.Unmarshal([]byte(hostArrStr), &hostArr)
+		if err != nil {
+			blog.Errorf("unmarshal hosts %s failed, err: %v", hostArrStr, err)
+			return nil, err
+		}
+
+		hosts = append(hosts, hostArr...)
 	}
 
 	// get cloud area for display name use
 	var cloudMap map[int64]string
+	var err error
 	if hasName {
 		cloudIDs := make([]int64, len(hosts))
 		for index, host := range hosts {

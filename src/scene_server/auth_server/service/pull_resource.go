@@ -15,6 +15,7 @@ package service
 import (
 	"fmt"
 
+	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/auth_server/types"
 )
@@ -101,8 +102,8 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 			return
 		}
 
-		if len(filter.IDs) > 2000 {
-			ctx.RespBkError(types.UnprocessableEntityErrorCode, "filter.ids length exceeds maximum limit 2000")
+		if len(filter.IDs) > common.BKMaxPageSize {
+			ctx.RespBkError(types.UnprocessableEntityErrorCode, fmt.Sprintf("filter.ids length exceeds maximum limit %d", common.BKMaxPageSize))
 			return
 		}
 
