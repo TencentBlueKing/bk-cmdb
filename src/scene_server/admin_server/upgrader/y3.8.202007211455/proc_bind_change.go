@@ -264,6 +264,7 @@ func getSubAttr() []SubAttriubte {
 			PropertyType:  common.FieldTypeSingleChar,
 			Option:        "^([0-9]{1,3}\\.){3}[0-9]{1,3}$",
 			PropertyGroup: common.BKProcBindInfo,
+			IsRequired:    true,
 		},
 		SubAttriubte{
 			PropertyID:    "port",
@@ -273,6 +274,7 @@ func getSubAttr() []SubAttriubte {
 			PropertyType:  common.FieldTypeSingleChar,
 			Option:        "^(((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))-(([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))|((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))))$",
 			PropertyGroup: common.BKProcBindInfo,
+			IsRequired:    true,
 		},
 		SubAttriubte{
 			PropertyID:    "protocol",
@@ -282,6 +284,7 @@ func getSubAttr() []SubAttriubte {
 			PropertyType:  common.FieldTypeEnum,
 			Option:        []metadata.EnumVal{{ID: "1", Name: "TCP", Type: "text", IsDefault: true}, {ID: "2", Name: "UDP", Type: "text"}},
 			PropertyGroup: common.BKProcBindInfo,
+			IsRequired:    true,
 		},
 		SubAttriubte{
 			PropertyID:    "enable",
@@ -290,6 +293,7 @@ func getSubAttr() []SubAttriubte {
 			IsEditable:    true,
 			PropertyType:  common.FieldTypeBool,
 			PropertyGroup: common.BKProcBindInfo,
+			IsRequired:    true,
 		},
 	}
 }
