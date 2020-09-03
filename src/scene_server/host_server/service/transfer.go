@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 /*
@@ -99,7 +98,6 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		Message string `json:"message"`
 	}
 	transferResult := make([]HostTransferResult, 0)
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.removeServiceInstanceRelatedResource(ctx, transferPlans, bizID)
 		if err != nil {
@@ -122,7 +120,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 			moduleMap[mod.ModuleID] = mod.ServiceTemplateID
 		}
 
-		audit := lgc.NewHostModuleLog(option.HostIDs)
+		audit := s.Logic.NewHostModuleLog(ctx.Kit, option.HostIDs)
 		if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, get prev module host config for audit failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
 			return err

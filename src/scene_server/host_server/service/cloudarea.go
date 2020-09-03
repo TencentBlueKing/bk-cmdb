@@ -28,7 +28,6 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 // FindManyCloudArea  find cloud area list
@@ -173,8 +172,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 		}
 
 		// add auditLog
-		lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-		auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
+		auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
 		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platIDs...); err != nil {
 			blog.ErrorJSON("CreatePlatBatch failed,  WithCurrent err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -260,8 +258,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		platID := int64(res.Data.Created.ID)
 
 		// add auditLog
-		lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-		auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
+		auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
 		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platID); err != nil {
 			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -349,8 +346,7 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 	}
 
 	// add auditLog preData
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
+	auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
 	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
 		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -418,8 +414,7 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 	}
 
 	// auditLog preData
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
+	auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
 	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
 		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
