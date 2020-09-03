@@ -21,7 +21,7 @@
                 v-bkloading="{ isLoading: pending }"
                 :type="internalType"
                 :inst="instance"
-                :properties="properties"
+                :properties="visibleProperties"
                 :property-groups="propertyGroups"
                 :disabled-properties="bindedProperties"
                 :invisible-name-properties="invisibleNameProperties"
@@ -64,7 +64,11 @@
             },
             title: String,
             hostId: Number,
-            submitHandler: Function
+            submitHandler: Function,
+            invisibleProperties: {
+                type: Array,
+                default: () => ([])
+            }
         },
         provide () {
             return {
@@ -99,6 +103,9 @@
                 set (values) {
                     this.formValuesReflect.bind_info = values
                 }
+            },
+            visibleProperties () {
+                return this.properties.filter(property => !this.invisibleProperties.includes(property.bk_property_id))
             }
         },
         watch: {
@@ -220,8 +227,11 @@
                 this.$emit('close')
             },
             async validateCustomComponent () {
+                const customComponents = []
                 const { bindInfo } = this.$refs
-                const customComponents = [bindInfo]
+                if (bindInfo) {
+                    customComponents.push(bindInfo)
+                }
                 const validatePromise = []
                 customComponents.forEach(component => {
                     validatePromise.push(component.$validator.validateAll())

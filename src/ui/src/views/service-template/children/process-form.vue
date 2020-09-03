@@ -275,8 +275,8 @@
             },
             getFormError (property) {
                 if (property.bk_property_type === 'table') {
-                    const errorItem = this.errors.items.find(item => item.scope === property.bk_property_id)
-                    return errorItem ? errorItem.msg : ''
+                    const hasError = this.errors.items.some(item => item.scope === property.bk_property_id)
+                    return hasError ? this.$t('有未正确定义的监听信息') : ''
                 }
                 return this.errors.first(property.bk_property_id)
             },

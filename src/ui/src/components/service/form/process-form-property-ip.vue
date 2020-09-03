@@ -1,14 +1,12 @@
 <template>
-    <bk-select style="width: 100%"
-        v-model="localValue"
+    <cmdb-input-select
+        name="ip"
+        style="width: 100%"
+        :placeholder="$t('请选择或输入IP')"
+        :options="IPList"
         v-bind="$attrs"
-        :clearable="false">
-        <bk-option
-            v-for="ip in IPList"
-            v-bind="ip"
-            :key="ip.id">
-        </bk-option>
-    </bk-select>
+        v-model="localValue">
+    </cmdb-input-select>
 </template>
 
 <script>
