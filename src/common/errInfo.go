@@ -210,9 +210,12 @@ const (
 	CCErrCommBizNotFoundError = 1199079
 
 	// CCErrCommRedisOPErr operate redis error.
-	CCErrCommRedisOPErr = 1199076
+	CCErrCommRedisOPErr = 1199080
 	// CCErrCommOPInProgressErr have the same task[%s] in progress
-	CCErrCommOPInProgressErr = 1199077
+	CCErrCommOPInProgressErr = 1199081
+
+	// CCErrObjectDBOpErrno failed to operation database
+	CCErrObjectDBOpErrno = 1199082
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -456,9 +459,6 @@ const (
 	CCErrObjectDeleteInstFailed       = 1102006
 	CCErrObjectSelectInstFailed       = 1102007
 	CCErrObjectSelectIdentifierFailed = 1102008
-
-	// CCErrObjectDBOpErrno failed to operation database
-	CCErrObjectDBOpErrno = 1102004
 
 	// event_server 1103XXX
 	// CCErrEventSubscribeInsertFailed failed to save the Subscribe
