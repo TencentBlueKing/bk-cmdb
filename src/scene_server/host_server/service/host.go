@@ -361,7 +361,7 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	if result.Data.Data == "" {
 		_ = resp.WriteEntity(meta.HostSnapResult{
 			BaseResp: meta.SuccessBaseResp,
-			Data:     map[string]interface{}{},
+			Data:     nil,
 		})
 		return
 	}
