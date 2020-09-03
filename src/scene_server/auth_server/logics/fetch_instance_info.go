@@ -75,7 +75,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 			id, err := strconv.ParseInt(idStr, 10, 64)
 			if err != nil {
 				blog.Errorf("id %s parse int failed, error: %s, rid: %s, skip it", idStr, err.Error(), kit.Rid)
-				continue
+				return nil, err
 			}
 			ids[idx] = id
 		}
@@ -155,7 +155,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
 			blog.Errorf("id %s parse int failed, error: %s, rid: %s, skip it", idStr, err.Error(), kit.Rid)
-			continue
+			return nil, err
 		}
 		hostIDs[idx] = id
 	}
@@ -219,7 +219,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 			}
 
-			host[types.NameField] = util.GetStrByInterface(host[common.BKHostInnerIPField]) + "(" + cloudMap[cloudID] + ")"
+			host[types.NameField] = getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]), cloudMap[cloudID])
 		}
 
 		if needPath {

@@ -92,15 +92,18 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filt
 	}
 	hosts := hostRes.Info
 
-	cloudIDs := make([]int64, len(hosts))
-	for index, host := range hosts {
+	cloudIDs := make([]int64, 0)
+	cloudExistMap := make(map[int64]bool)
+	for _, host := range hosts {
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if err != nil {
 			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 		}
 
-		cloudIDs[index] = cloudID
+		if !cloudExistMap[cloudID] {
+			cloudIDs = append(cloudIDs, cloudID)
+		}
 	}
 
 	cloudMap, err := lgc.getCloudNameMapByIDs(kit, cloudIDs)
@@ -109,18 +112,18 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filt
 	}
 
 	// covert id and display_name field
-	instances := make([]types.InstanceResource, 0)
-	for _, host := range hosts {
+	instances := make([]types.InstanceResource, len(hosts))
+	for index, host := range hosts {
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if err != nil {
 			blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 		}
 
-		instances = append(instances, types.InstanceResource{
+		instances[index] = types.InstanceResource{
 			ID:          util.GetStrByInterface(host[common.BKHostIDField]),
-			DisplayName: util.GetStrByInterface(host[common.BKHostInnerIPField]) + "(" + cloudMap[cloudID] + ")",
-		})
+			DisplayName: getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]), cloudMap[cloudID]),
+		}
 	}
 	return &types.ListInstanceResult{
 		Count:   hostRes.Count,

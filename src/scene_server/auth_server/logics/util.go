@@ -160,3 +160,7 @@ func (lgc *Logics) getCloudNameMapByIDs(kit *rest.Kit, cloudIDs []int64) (map[in
 
 	return cloudMap, nil
 }
+
+func getHostDisplayName(innerIP string, cloudName string) string {
+	return innerIP + "(" + cloudName + ")"
+}

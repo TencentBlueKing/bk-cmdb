@@ -59,12 +59,12 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 		return nil, err
 	}
 
-	instances := make([]types.InstanceResource, 0)
-	for _, instance := range data.Info {
-		instances = append(instances, types.InstanceResource{
+	instances := make([]types.InstanceResource, len(data.Info))
+	for index, instance := range data.Info {
+		instances[index] = types.InstanceResource{
 			ID:          util.GetStrByInterface(instance[idField]),
 			DisplayName: util.GetStrByInterface(instance[nameField]),
-		})
+		}
 	}
 	return &types.ListInstanceResult{
 		Count:   data.Count,
@@ -278,8 +278,8 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 		}
 	}
 
-	instances := make([]types.InstanceResource, 0)
-	for _, inst := range data.Info {
+	instances := make([]types.InstanceResource, len(data.Info))
+	for index, inst := range data.Info {
 		instance := types.InstanceResource{
 			ID:          util.GetStrByInterface(inst[idField]),
 			DisplayName: util.GetStrByInterface(inst[nameField]),
@@ -290,7 +290,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 			ID:          ancestorID,
 			DisplayName: ancestorMap[ancestorID],
 		})
-		instances = append(instances, instance)
+		instances[index] = instance
 	}
 
 	return &types.ListInstanceResult{
@@ -418,8 +418,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 		}
 	}
 
-	instances := make([]types.InstanceResource, 0)
-	for _, inst := range data.Info {
+	instances := make([]types.InstanceResource, len(data.Info))
+	for index, inst := range data.Info {
 		instance := types.InstanceResource{
 			ID:          util.GetStrByInterface(inst[idField]),
 			DisplayName: util.GetStrByInterface(inst[nameField]),
@@ -430,8 +430,9 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 			ID:          ancestorID,
 			DisplayName: modelMap[ancestorID],
 		})
-		instances = append(instances, instance)
+		instances[index] = instance
 	}
+
 	return &types.ListInstanceResult{
 		Count:   data.Count,
 		Results: instances,
@@ -600,7 +601,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 	for index, host := range hosts {
 		instances[index] = types.InstanceResource{
 			ID:          strconv.FormatInt(host.ID, 10),
-			DisplayName: host.InnerIP + "(" + cloudMap[host.CloudID] + ")",
+			DisplayName: getHostDisplayName(host.InnerIP, cloudMap[host.CloudID]),
 		}
 	}
 
