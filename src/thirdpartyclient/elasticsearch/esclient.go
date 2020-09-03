@@ -14,7 +14,7 @@ import (
 	"configcenter/src/common/ssl"
 	"configcenter/src/common/util"
 
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 )
 
 type EsSrv struct {
@@ -71,17 +71,14 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 	return client, nil
 }
 
-func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string, from, size int) (*elastic.SearchResult, error) {
-	// Starting with elastic.v5, you must pass a context to execute each service
+func (es *EsSrv) Search(ctx context.Context, query elastic.Query, indexs []string, from, size int) (*elastic.SearchResult, error) {
+	// Starting with elastic.v7, you must pass a context to execute each service
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// search highlight
 	highlight := elastic.NewHighlight()
 	highlight.Field("*")
 	highlight.RequireFieldMatch(false)
-	highlight.Field(common.BKInstIDField)
-	highlight.Field(common.BKHostIDField)
-	highlight.Field(common.BKAppIDField)
 
 	// search for paging
 	searchSource := elastic.NewSearchSource()
@@ -89,19 +86,16 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string
 	searchSource.Size(size)
 
 	// search for aggregations value count
-	bkObjIdAgg := elastic.NewTermsAggregation().Field(common.BkObjIdAggField)
-	typeAgg := elastic.NewTermsAggregation().Field(common.TypeAggField)
+	typeAgg := elastic.NewTermsAggregation().Field(common.IndexAggField)
 
 	searchResult, err := es.Client.Search().
 		// search from es indexes
-		Index(common.CMDBINDEX).
-		// search from es types of index
-		Type(types...).
-		SearchSource(searchSource). // search in index like "cmdb" and paging
+		Index(indexs...).
+		SearchSource(searchSource).        // search in index like "cmdb" and paging
 		Query(query).Highlight(highlight). // specify the query and highlight
-		Pretty(true). // pretty print request and response JSON
+		Pretty(true).                      // pretty print request and response JSON
 		// search result with aggregations
-		Aggregation(common.BkObjIdAggName, bkObjIdAgg).Aggregation(common.TypeAggName, typeAgg).
+		Aggregation(common.IndexAggName, typeAgg).
 		Do(ctx) // execute
 
 	if err != nil {

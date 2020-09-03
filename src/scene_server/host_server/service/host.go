@@ -110,14 +110,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		if rsp.Data.Count <= 0 {
 			continue
 		}
-		objIDs := make([]string, 0)
 		asstInstMap := make(map[string][]int64, 0)
 		for _, asst := range rsp.Data.Info {
 			if asst.ObjectID == common.BKInnerObjIDHost && iHostID == asst.InstID {
-				objIDs = append(objIDs, asst.AsstObjectID)
 				asstInstMap[asst.AsstObjectID] = append(asstInstMap[asst.AsstObjectID], asst.AsstInstID)
 			} else if asst.AsstObjectID == common.BKInnerObjIDHost && iHostID == asst.AsstInstID {
-				objIDs = append(objIDs, asst.ObjectID)
 				asstInstMap[asst.ObjectID] = append(asstInstMap[asst.ObjectID], asst.InstID)
 			} else {
 				ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommDBSelectFailed, "host is not associated in selected association"))
@@ -234,10 +231,6 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
 		}
 
-		// ensure delete host add log
-		for _, ex := range delResult.Data {
-			delete(logContentMap, ex.OriginIndex)
-		}
 		var logContents []meta.AuditLog
 		for _, item := range logContentMap {
 			logContents = append(logContents, item)
@@ -348,7 +341,13 @@ func (s *Service) HostSnapInfo(ctx *rest.Contexts) {
 		return
 	}
 
-	snap, err := logics.ParseHostSnap(result.Data.Data)
+	if result.Data.Data == "" {
+		ctx.RespEntity(map[string]interface{}{})
+		return
+	}
+
+	var snap map[string]interface{}
+	err = json.Unmarshal([]byte(result.Data.Data), &snap)
 	if err != nil {
 		blog.Errorf("get host snap info, but parse snap info failed, err: %v, hostID:%v,rid:%s", err, hostID, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -406,7 +405,8 @@ func (s *Service) HostSnapInfoBatch(ctx *rest.Contexts) {
 			ret = append(ret, map[string]interface{}{"bk_host_id": hostID})
 			continue
 		}
-		snap, err := logics.ParseHostSnap(snapData)
+		var snap map[string]interface{}
+		err := json.Unmarshal([]byte(snapData), &snap)
 		if err != nil {
 			blog.Errorf("HostSnapInfoBatch failed, ParseHostSnap err: %v, hostID:%v, rid:%s", err, hostID, ctx.Kit.Rid)
 			ctx.RespAutoError(err)

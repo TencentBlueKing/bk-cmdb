@@ -98,7 +98,7 @@
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
             ...mapGetters('businessHost', [
                 'columnsConfigProperties',
                 'selectedNode',
@@ -236,7 +236,8 @@
             handleTransfer (type) {
                 if (['idle', 'business'].includes(type)) {
                     const props = {
-                        moduleType: type
+                        moduleType: type,
+                        business: this.currentBusiness
                     }
                     if (type === 'idle') {
                         props.title = this.$t('转移主机到空闲模块')

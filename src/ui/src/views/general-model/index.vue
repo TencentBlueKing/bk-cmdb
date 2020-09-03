@@ -405,8 +405,8 @@
                 RouterQuery.set({
                     _t: Date.now(),
                     page: 1,
-                    filter: this.filter.value,
-                    field: this.filter.id
+                    field: this.filter.id,
+                    filter: this.filter.value
                 })
             },
             resetData () {

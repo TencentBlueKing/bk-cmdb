@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventoperator"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -216,14 +215,6 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 		},
 	}
 
-	// used to handle event
-	eo := eventoperator.NewEventOperator(c.eventCli, c.dbProxy)
-	err := eo.SetPreDataByCond(kit, common.BKInnerObjIDHost, updateHostCond)
-	if err != nil {
-		blog.ErrorJSON("DeleteDestroyedHostRelated failed, SetPreDataByCond err:%s, cond: %#v, rid: %s", err, updateHostCond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrDeleteDestroyedHostRelatedFailed)
-	}
-
 	updateHostData := mapstr.MapStr{
 		common.BKHostInnerIPField:     []string{},
 		common.BKHostOuterIPField:     []string{},
@@ -231,13 +222,7 @@ func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metad
 		common.LastTimeField:          time.Now(),
 		common.BKLastEditor:           kit.User,
 	}
-	err = c.dbProxy.Table(common.BKTableNameBaseHost).Update(kit.Ctx, updateHostCond, updateHostData)
-
-	err = eo.SetCurDataAndPush(kit, common.BKInnerObjIDHost, metadata.EventActionUpdate, updateHostCond)
-	if err != nil {
-		blog.ErrorJSON("DeleteDestroyedHostRelated failed, SetCurDataAndPush err:%s, cond: %#v, rid: %s", err, updateHostCond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrDeleteDestroyedHostRelatedFailed)
-	}
+	err := c.dbProxy.Table(common.BKTableNameBaseHost).Update(kit.Ctx, updateHostCond, updateHostData)
 
 	// get all service instance IDs that need to be removed
 	serviceInstanceFilter := map[string]interface{}{

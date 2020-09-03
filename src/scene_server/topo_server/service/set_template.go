@@ -361,7 +361,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 	moduleIDs := make([]int64, 0)
 	svcTpl2Modules := make(map[int64][]metadata.ModuleInst)
 	for _, item := range moduleResult.Data.Info {
-		if err := mapstruct.Decode2Struct(item, &module); err != nil {
+		if err := mapstruct.Decode2StructWithHook(item, &module); err != nil {
 			blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, parse module failed, module: %+v, err: %+v, rid: %s", item, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed))
 			return

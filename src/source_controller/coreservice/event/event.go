@@ -61,6 +61,21 @@ func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster dis
 		return err
 	}
 
+	if err := e.runObjectBase(context.Background()); err != nil {
+		blog.Errorf("run object base event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runProcess(context.Background()); err != nil {
+		blog.Errorf("run process event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runProcessInstanceRelation(context.Background()); err != nil {
+		blog.Errorf("run process instance relation event flow failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -140,6 +155,45 @@ func (e *Event) runSetTemplate(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameSetTemplate,
 		key:        SetTemplateKey,
+		rds:        e.rds,
+		watch:      e.watch,
+		db:         e.db,
+		isMaster:   e.isMaster,
+	}
+
+	return newFlow(ctx, opts)
+}
+
+func (e *Event) runObjectBase(ctx context.Context) error {
+	opts := FlowOptions{
+		Collection: common.BKTableNameBaseInst,
+		key:        ObjectBaseKey,
+		rds:        e.rds,
+		watch:      e.watch,
+		db:         e.db,
+		isMaster:   e.isMaster,
+	}
+
+	return newFlow(ctx, opts)
+}
+
+func (e *Event) runProcess(ctx context.Context) error {
+	opts := FlowOptions{
+		Collection: common.BKTableNameBaseProcess,
+		key:        ProcessKey,
+		rds:        e.rds,
+		watch:      e.watch,
+		db:         e.db,
+		isMaster:   e.isMaster,
+	}
+
+	return newFlow(ctx, opts)
+}
+
+func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
+	opts := FlowOptions{
+		Collection: common.BKTableNameProcessInstanceRelation,
+		key:        ProcessInstanceRelationKey,
 		rds:        e.rds,
 		watch:      e.watch,
 		db:         e.db,

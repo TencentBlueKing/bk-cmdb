@@ -15,9 +15,7 @@ package instances
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -36,7 +34,6 @@ type instanceManager struct {
 	dependent OperationDependences
 	language  language.CCLanguageIf
 	Cache     *redis.Client
-	EventCli  eventclient.Client
 }
 
 // New create a new instance manager instance
@@ -44,7 +41,6 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client, l
 	return &instanceManager{
 		dbProxy:   dbProxy,
 		dependent: dependent,
-		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
 		language:  language,
 	}
 }
@@ -71,14 +67,6 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 		return nil, err
 	}
 
-	instIDFieldName := common.GetInstIDField(objID)
-	// 处理事件数据的
-	eh := m.NewEventClient(objID)
-	err = eh.SetCurDataAndPush(kit, objID, metadata.EventActionCreate, mapstr.MapStr{instIDFieldName: id})
-	if err != nil {
-		blog.ErrorJSON("CreateModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, id, kit.Rid)
-		return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
-	}
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 }
 
@@ -115,14 +103,7 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 		newIDs = append(newIDs, id)
 
 	}
-	instIDFieldName := common.GetInstIDField(objID)
-	// 处理事件数据的
-	eh := m.NewEventClient(objID)
-	err := eh.SetCurDataAndPush(kit, objID, metadata.EventActionCreate, condition.CreateCondition().Field(instIDFieldName).In(newIDs).ToMapStr())
-	if err != nil {
-		blog.ErrorJSON("CreateManyModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, newIDs, kit.Rid)
-		return dataResult, err
-	}
+
 	return dataResult, nil
 }
 
@@ -140,9 +121,6 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 		return nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
-	// 处理事件数据的
-	eh := m.NewEventClient(objID)
-
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
@@ -151,18 +129,11 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
 		}
-		// 设置实例变更前数据
-		eh.SetPreData(instID, origin)
 	}
 
 	err = m.update(kit, objID, inputParam.Data, inputParam.Condition)
 	if err != nil {
 		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, inputParam.Condition, kit.Rid)
-		return nil, err
-	}
-	err = eh.SetCurDataAndPush(kit, objID, metadata.EventActionUpdate, inputParam.Condition)
-	if err != nil {
-		blog.ErrorJSON("UpdateModelInstance  event push instance current data error. err:%s, condition:%s, rid:%s", err, inputParam.Condition, kit.Rid)
 		return nil, err
 	}
 
@@ -231,9 +202,6 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		return &metadata.DeletedCount{}, err
 	}
 
-	// 处理事件数据的
-	eh := m.NewEventClient(objID)
-
 	for _, origin := range origins {
 		instID, err := util.GetInt64ByInterface(origin[instIDFieldName])
 		if nil != err {
@@ -246,19 +214,14 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		if exists {
 			return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrorInstHasAsst)
 		}
-		eh.SetPreData(instID, origin)
 	}
+
 	err = m.dbProxy.Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID, err.Error(), inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
-	err = eh.Push(kit, objID, metadata.EventActionDelete)
-	if err != nil {
-		blog.ErrorJSON("DeleteModelInstance push delete objType(%s) instance to event server error. data:%s, rid:%s", objID, origins, kit.Rid)
-		return &metadata.DeletedCount{Count: uint64(len(origins))}, kit.CCError.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
 
-	}
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 

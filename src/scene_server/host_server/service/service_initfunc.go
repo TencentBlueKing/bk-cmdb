@@ -75,6 +75,8 @@ func (s *Service) initFindhost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/list_hosts_without_app", Handler: s.ListHostsWithNoBiz})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/app/{bk_biz_id}/list_hosts_topo", Handler: s.ListBizHostsTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/count_by_topo_node/bk_biz_id/{bk_biz_id}", Handler: s.CountTopoNodeHosts})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_topo/biz/{bk_biz_id}", Handler: s.FindHostsByTopo})
+	
 
 	utility.AddToRestfulWebService(web)
 

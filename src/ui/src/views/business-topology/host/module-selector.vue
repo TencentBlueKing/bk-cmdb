@@ -104,6 +104,10 @@
             previousModules: {
                 type: Array,
                 default: () => ([])
+            },
+            business: {
+                type: Object,
+                required: true
             }
         },
         data () {
@@ -123,14 +127,12 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
-            ...mapGetters('businessHost', ['topologyModels']),
-            internalModelMap () {
-                const map = {}
-                this.topologyModels.forEach(model => {
-                    map[model.bk_obj_id] = model
-                })
-                return map
+            ...mapGetters('objectModelClassify', ['getModelById']),
+            bizId () {
+                return this.business.bk_biz_id
+            },
+            bizName () {
+                return this.business.bk_biz_name
             },
             hasDifference () {
                 const checkedModules = this.checked.map(node => node.data.bk_inst_id).sort()
@@ -187,22 +189,22 @@
                     }
                 }).then(data => {
                     return [{
-                        bk_inst_id: this.currentBusiness.bk_biz_id,
-                        bk_inst_name: this.currentBusiness.bk_biz_name,
+                        bk_inst_id: this.bizId,
+                        bk_inst_name: this.bizName,
                         bk_obj_id: 'biz',
-                        bk_obj_name: this.internalModelMap.biz.bk_obj_name,
+                        bk_obj_name: this.getModelById('biz').bk_obj_name,
                         default: 0,
                         child: [{
                             bk_inst_id: data.bk_set_id,
                             bk_inst_name: data.bk_set_name,
                             bk_obj_id: 'set',
-                            bk_obj_name: this.internalModelMap.set.bk_obj_name,
+                            bk_obj_name: this.getModelById('set').bk_obj_name,
                             default: 0,
                             child: (data.module || []).map(module => ({
                                 bk_inst_id: module.bk_module_id,
                                 bk_inst_name: module.bk_module_name,
                                 bk_obj_id: 'module',
-                                bk_obj_name: this.internalModelMap.module.bk_obj_name,
+                                bk_obj_name: this.getModelById('module').bk_obj_name,
                                 default: module.default
                             }))
                         }]

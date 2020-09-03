@@ -450,13 +450,9 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 	}
 	if !result.Result {
 		blog.Errorf("TransferHostAcrossBusiness DeleteHost failed, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, kit.Rid)
-		return result.Data, kit.CCError.New(result.Code, result.ErrMsg)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
-	// ensure delete host add log
-	for _, ex := range result.Data {
-		delete(logContentMap, ex.OriginIndex)
-	}
 	var logContents []metadata.AuditLog
 	for _, item := range logContentMap {
 		logContents = append(logContents, item)

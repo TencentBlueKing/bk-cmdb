@@ -56,6 +56,9 @@
                                     :placeholder="$t('请选择一级分类')"
                                     :searchable="true"
                                     :list="mainList"
+                                    :popover-options="{
+                                        boundary: 'window'
+                                    }"
                                     v-validate="'required'"
                                     name="mainClassificationId"
                                     v-model="formData['mainClassification']"

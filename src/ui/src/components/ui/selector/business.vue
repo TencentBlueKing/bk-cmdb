@@ -11,7 +11,7 @@
             v-for="(option, index) in authorizedBusiness"
             :key="index"
             :id="option.bk_biz_id"
-            :name="option.bk_biz_name">
+            :name="`[${option.bk_biz_id}] ${option.bk_biz_name}`">
         </bk-option>
         <div class="business-extension" slot="extension" v-if="showApplyPermission || showApplyCreate">
             <a href="javascript:void(0)" class="extension-link"

@@ -38,7 +38,7 @@ func (hm *hostManager) TransferToAnotherBusiness(kit *rest.Kit, input *metadata.
 }
 
 // DeleteHost delete host from cmdb
-func (hm *hostManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
+func (hm *hostManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
 	return hm.hostTransfer.DeleteFromSystem(kit, input)
 }
 

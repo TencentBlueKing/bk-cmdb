@@ -93,6 +93,9 @@
                     </template>
                 </cmdb-auth>
             </template>
+            <div :slot="nodeNamePropertyId" v-bk-overflow-tips>
+                {{`[${instance[nodePrimaryPropertyId] || '--'}] ${instance[nodeNamePropertyId] || '--'}`}}
+            </div>
         </cmdb-details>
         <template v-else-if="type === 'update'">
             <cmdb-form class="topology-form"
@@ -192,6 +195,28 @@
             modelId () {
                 if (this.selectedNode) {
                     return this.selectedNode.data.bk_obj_id
+                }
+                return null
+            },
+            nodeNamePropertyId () {
+                if (this.modelId) {
+                    const map = {
+                        biz: 'bk_biz_name',
+                        set: 'bk_set_name',
+                        module: 'bk_module_name'
+                    }
+                    return map[this.modelId] || 'bk_inst_name'
+                }
+                return null
+            },
+            nodePrimaryPropertyId () {
+                if (this.modelId) {
+                    const map = {
+                        biz: 'bk_biz_id',
+                        set: 'bk_set_id',
+                        module: 'bk_module_id'
+                    }
+                    return map[this.modelId] || 'bk_inst_id'
                 }
                 return null
             },
