@@ -73,9 +73,8 @@ func (lgc *Logics) GetAppDetails(kit *rest.Kit, fields string, condition map[str
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
-	supplier := kit.SupplierAccount
 	for idx, biz := range result.Data.Info {
-		if supplier == biz[common.BkSupplierAccount].(string) {
+		if kit.SupplierAccount == biz[common.BkSupplierAccount].(string) {
 			return result.Data.Info[idx], nil
 		}
 	}
@@ -169,6 +168,8 @@ func (lgc *Logics) GetAppIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) 
 	condc := make(map[string]interface{})
 	if err := params.ParseCommonParams(cond, condc); err != nil {
 		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, err
+
 	}
 	condMap := mapstr.NewFromMap(condc)
 	condMap.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})

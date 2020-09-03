@@ -25,7 +25,8 @@ import (
 func (lgc *Logics) GetSetIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	if err := parse.ParseCommonParams(cond, condc); err != nil {
-		blog.Warnf("ParseCommonParams failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
 	query := &metadata.QueryCondition{
