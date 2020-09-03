@@ -15,6 +15,7 @@ package association
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -60,11 +61,11 @@ func (m *associationInstance) searchInstanceAssociation(ctx core.ContextParams, 
 	results = []metadata.InstAsst{}
 	instHandler := m.dbProxy.Table(common.BKTableNameInstAsst).Find(inputParam.Condition).Fields(inputParam.Fields...)
 	for _, sort := range inputParam.SortArr {
-		fileld := sort.Field
+		field := sort.Field
 		if sort.IsDsc {
-			fileld = "-" + fileld
+			field = "-" + field
 		}
-		instHandler = instHandler.Sort(fileld)
+		instHandler = instHandler.Sort(field)
 	}
 	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
 	return results, err
@@ -268,6 +269,54 @@ func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, 
 	}
 
 	return dataResult, nil
+}
+
+//Query all associations of certain model instance,by regarding the instance as both Association source and Association target.
+func (m *associationInstance) SearchInstanceAssociationRelated(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+	//create condition
+	condMapStr := mapstr.MapStr{
+		condition.BKDBOR: []mapstr.MapStr{
+			{
+				common.BKObjIDField:  inputParam.Condition[common.BKObjIDField],
+				common.BKInstIDField: inputParam.Condition[common.BKInstIDField],
+			},
+			{
+				common.BKAsstObjIDField:  inputParam.Condition[common.BKObjIDField],
+				common.BKAsstInstIDField: inputParam.Condition[common.BKInstIDField],
+			},
+		},
+	}
+
+	queryCond := metadata.QueryCondition{
+		Fields:    inputParam.Fields,
+		Limit:     inputParam.Limit,
+		SortArr:   inputParam.SortArr,
+		Condition: condMapStr,
+	}
+
+	//count
+	count, err := m.countInstanceAssociation(ctx, queryCond.Condition)
+	if nil != err {
+		blog.Errorf("search inst association count err [%#v], rid: %s", err, ctx.ReqID)
+		return nil, err
+	}
+
+	//search bkObjIDInstAsst
+	Items, err := m.searchInstanceAssociation(ctx, queryCond)
+	if nil != err {
+		blog.Errorf("search inst association array err [%#v], rid: %s", err, ctx.ReqID)
+		return nil, err
+	}
+
+	//result
+	queryResult := &metadata.QueryResult{}
+	queryResult.Info = make([]mapstr.MapStr, 0)
+	for _, item := range Items {
+		queryResult.Info = append(queryResult.Info, mapstr.NewFromStruct(item, "field"))
+	}
+	queryResult.Count = count - uint64(inputParam.Limit.Offset)
+
+	return queryResult, nil
 }
 
 func (m *associationInstance) DeleteInstanceAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {

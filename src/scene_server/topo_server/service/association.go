@@ -325,6 +325,36 @@ func (s *Service) SearchAssociationInst(params types.ContextParams, pathParams, 
 	return ret.Data, nil
 }
 
+//Search all associations of certain model instance,by regarding the instance as both Association source and Association target.
+func (s *Service) SearchAssociationRelatedInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	request := &metadata.SearchAssociationInstRequest{}
+	if err := data.MarshalJSONInto(request); err != nil {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	}
+	//Use fixed sort parameters
+	request.SortArr = []metadata.SearchSort{
+		{
+			IsDsc: true,
+			Field: common.BKFieldID,
+		},
+	}
+	//check Maximum limit
+	if request.Limit.Limit > 500 {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, "The maximum limit should be less than 500")
+	}
+
+	ret, err := s.Core.AssociationOperation().SearchInstAssociationRelated(params, request)
+	if err != nil {
+		return nil, err
+	}
+
+	if ret.Code != 0 {
+		return nil, params.Err.New(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}
+
 func (s *Service) CreateAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.CreateAssociationInstRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
@@ -357,4 +387,18 @@ func (s *Service) DeleteAssociationInst(params types.ContextParams, pathParams, 
 		return ret.Data, nil
 
 	}
+}
+
+//Delete all associations of certain model instance,by regarding the instance as both Association source and Association target.
+func (s *Service) DeleteAssociationRelatedInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	request := &metadata.DeleteAssociationInstRequest{}
+	if err := data.MarshalJSONInto(request); err != nil {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	}
+
+	resp, err := s.Core.AssociationOperation().DeleteInstAssociationRelated(params, &metadata.DeleteAssociationInstRequest{Condition: request.Condition})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }

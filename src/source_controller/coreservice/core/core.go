@@ -117,6 +117,7 @@ type InstanceAssociation interface {
 	CreateOneInstanceAssociation(ctx ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
 	CreateManyInstanceAssociation(ctx ContextParams, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
 	SearchInstanceAssociation(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchInstanceAssociationRelated(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
