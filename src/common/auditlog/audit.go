@@ -13,6 +13,7 @@
 package auditlog
 
 import (
+	"fmt"
 	"strings"
 
 	"configcenter/src/apimachinery/coreservice"
@@ -99,4 +100,49 @@ func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (stri
 	}
 
 	return instName, nil
+}
+
+func (a *audit) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, error) {
+	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
+	moduleHost, err := a.clientSet.Host().GetHostModuleRelation(kit.Ctx, kit.Header, input)
+	if err != nil {
+		blog.Errorf("", hostID, err, kit.Rid)
+		return 0, err
+	}
+	if !moduleHost.Result {
+		blog.Errorf("", hostID, moduleHost.ErrMsg, kit.Rid)
+		return 0, fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
+	}
+	var bizID int64
+	if len(moduleHost.Data.Info) > 0 {
+		bizID = moduleHost.Data.Info[0].AppID
+	}
+	return bizID, nil
+}
+
+func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string, error) {
+	// get host details, pre data
+	result, err := a.clientSet.Host().GetHostByID(kit.Ctx, kit.Header, hostID)
+	if err != nil {
+		blog.Errorf("getHostInstanceDetailByHostID http do error, err: %s, input: %+v, rid: %s", err.Error(), hostID, kit.Rid)
+		return nil, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getHostInstanceDetailByHostID http response error, err code: %d, err msg: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, hostID, kit.Rid)
+		return nil, "", kit.CCError.New(result.Code, result.ErrMsg)
+	}
+
+	hostInfo := result.Data
+	if len(hostInfo) == 0 {
+		return nil, "", nil
+	}
+	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
+	if !ok {
+		blog.Errorf("GetHostInstanceDetails http response format error, convert bk_biz_id to int error, inst: %#v  input:% #v, rid: %s",
+			hostInfo, hostID, kit.Rid)
+		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
+
+	}
+	return hostInfo, ip, nil
 }

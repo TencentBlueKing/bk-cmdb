@@ -233,7 +233,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 			common.BKDBIN: createdInstIDs,
 		},
 	}
-	auditLog, err := audit.GenerateAuditLogByCond(kit, metadata.AuditCreate, currentObj.GetObjectID(), metadata.FromCCSystem,
+	auditLog, err := audit.GenerateAuditLogByCondGetData(kit, metadata.AuditCreate, currentObj.GetObjectID(), metadata.FromUser,
 		cond, nil)
 	if err != nil {
 		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)

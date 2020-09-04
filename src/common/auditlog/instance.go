@@ -28,31 +28,25 @@ type instanceAuditLog struct {
 	audit
 }
 
-/*
- pre，cur，update
-1. data 是符合condition现在的数据, 如果传入，则可以省略获取数据的这一步
-	-. 创建动作, 记录data
-	-. 删除动作, 记录data
-	-. 更新动作, 记录data,且参数必须传入updateFields
-*/
-
+// GenerateAuditLog generate audit log of instance.
 func (i *instanceAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, objID string, operateFrom metadata.OperateFromType,
 	data []mapstr.MapStr, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
-	return i.generateAuditLog(kit, action, objID, data, updateFields)
+	return i.generateAuditLog(kit, action, objID, operateFrom, data, updateFields)
 }
 
-func (i *instanceAuditLog) GenerateAuditLogByCond(kit *rest.Kit, action metadata.ActionType, objID string, operateFrom metadata.OperateFromType,
+// GenerateAuditLogByCondGetData generate audit log of instance, auto get current instance by objID and condition.
+func (i *instanceAuditLog) GenerateAuditLogByCondGetData(kit *rest.Kit, action metadata.ActionType, objID string, operateFrom metadata.OperateFromType,
 	condition, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
 	data, err := i.getInstByCond(kit, objID, condition, nil)
 	if err != nil {
 		blog.ErrorJSON("get instances failed, err: %s, condition: %s, rid: %s", err, condition, kit.Rid)
 		return nil, err
 	}
-	return i.generateAuditLog(kit, action, objID, data, updateFields)
+	return i.generateAuditLog(kit, action, objID, operateFrom, data, updateFields)
 }
 
-func (i *instanceAuditLog) generateAuditLog(kit *rest.Kit, action metadata.ActionType, objID string, data []mapstr.MapStr,
-	updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
+func (i *instanceAuditLog) generateAuditLog(kit *rest.Kit, action metadata.ActionType, objID string, operateFrom metadata.OperateFromType,
+	data []mapstr.MapStr, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	isMainline, err := i.isMainline(kit, objID)
@@ -111,6 +105,7 @@ func (i *instanceAuditLog) generateAuditLog(kit *rest.Kit, action metadata.Actio
 			Action:       action,
 			BusinessID:   bizID,
 			ResourceID:   id,
+			OperateFrom:  operateFrom,
 			ResourceName: util.GetStrByInterface(inst[metadata.GetInstNameFieldName(objID)]),
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{

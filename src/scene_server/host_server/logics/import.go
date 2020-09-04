@@ -13,6 +13,8 @@
 package logics
 
 import (
+	"configcenter/src/common/auditlog"
+	"configcenter/src/common/http/rest"
 	"context"
 	"fmt"
 	"net/http"
@@ -67,7 +69,18 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	}
 
 	var errMsg, updateErrMsg, successMsg []string
+
+	// ready interface and kit for audit log
 	logContents := make([]metadata.AuditLog, 0)
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	kit := &rest.Kit{
+		Rid:             lgc.rid,
+		Header:          lgc.header,
+		Ctx:             ctx,
+		CCError:         lgc.ccErr,
+		User:            lgc.user,
+		SupplierAccount: lgc.ownerID,
+	}
 
 	for index, host := range hostInfos {
 		if nil == host {
@@ -112,24 +125,33 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			key := generateHostCloudKey(innerIP, iSubAreaVal)
 			intHostID, existInDB = hostIDMap[key]
 		}
-		var preData mapstr.MapStr
-		var action metadata.ActionType
+
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
+
+		var auditLog *metadata.AuditLog
 		if existInDB {
+			var err error
+
 			// remove unchangeable fields
 			delete(host, common.BKHostInnerIPField)
 			delete(host, common.BKCloudIDField)
 
-			// get host info before really change it
-			preData, _, _ = lgc.GetHostInstanceDetails(ctx, intHostID)
+			// get audit log before really change it.
+			auditLog, err = audit.GenerateAuditLog(kit, metadata.AuditUpdate, intHostID, appID, innerIP, metadata.FromUser, nil, host)
+			if err != nil {
+				blog.Errorf("generate host audit log failed before update host, hostID: %d, bizID: %d, err: %v, rid: %s",
+					intHostID, innerIP, err, lgc.rid)
+				errMsg = append(errMsg, err.Error())
+				continue
+			}
 
 			// update host instance.
 			if err := instance.updateHostInstance(index, host, intHostID); err != nil {
 				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
-			action = metadata.AuditUpdate
+
 		} else {
 			intHostID, err = instance.addHostInstance(iSubAreaVal, index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
@@ -138,41 +160,28 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			}
 			host[common.BKHostIDField] = intHostID
 			hostIDMap[generateHostCloudKey(innerIP, iSubAreaVal)] = intHostID
-			action = metadata.AuditCreate
+
+			// to generate audit log.
+			auditLog, err = audit.GenerateAuditLog(kit, metadata.AuditCreate, intHostID, appID, innerIP, metadata.FromUser, nil, nil)
+			if err != nil {
+				blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
+					intHostID, appID, err, lgc.rid)
+				errMsg = append(errMsg, err.Error())
+				continue
+			}
 		}
-		// add current host operate result to  batch add result
+
+		// add current host operate result to batch add result
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
-		// host info after it changed
-		curData, _, err := lgc.GetHostInstanceDetails(ctx, intHostID)
-		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
-		}
-
 		// add audit log
-		logContents = append(logContents, metadata.AuditLog{
-			AuditType:    metadata.HostType,
-			ResourceType: metadata.HostRes,
-			Action:       action,
-			BusinessID:   appID,
-			ResourceID:   intHostID,
-			ResourceName: innerIP,
-			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: metadata.BasicOpDetail{
-					Details: &metadata.BasicContent{
-						PreData: preData,
-						CurData: curData,
-					},
-				},
-				ModelID: common.BKInnerObjIDHost,
-			},
-		})
+		logContents = append(logContents, *auditLog)
 		hostIDs = append(hostIDs, intHostID)
 	}
 
+	// to save audit log
 	if len(logContents) > 0 {
-		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, logContents...)
-		if err != nil {
+		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
 			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 	}

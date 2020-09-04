@@ -56,6 +56,7 @@ func (h *hostSnapAuditLog) GenerateAuditLog(kit *rest.Kit, hostID int64, innerIP
 	return &auditLog, nil
 }
 
+// 提供一个接口，通过hostID获得 HostInstanceDetailsByHostID
 func NewHostSnapAudit(clientSet coreservice.CoreServiceClientInterface) *hostSnapAuditLog {
 	return &hostSnapAuditLog{
 		audit: audit{

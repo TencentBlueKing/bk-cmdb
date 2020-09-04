@@ -142,15 +142,21 @@ func (h *HostSnap) Analyze(msg *string) error {
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
 
-	// add auditLog
-	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, header, hostID)
-	if err != nil {
-		blog.Errorf("snapshot get host previous data failed, err: %s, hostID: %d, rid: %s", err, hostID, rid)
-		return err
+	// get audit interface of host snap.
+	audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
+	kit := &rest.Kit{
+		Rid:             rid,
+		Header:          header,
+		Ctx:             h.ctx,
+		CCError:         h.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+		User:            common.CCSystemCollectorUserName,
+		SupplierAccount: common.BKDefaultOwnerID,
 	}
-	if !preData.Result {
-		blog.Errorf("snapshot get host previous data failed, code: %d, err: %s, hostID: %d, rid: %s",
-			preData.Code, preData.ErrMsg, hostID, rid)
+	// generate audit log.
+	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(kit, metadata.AuditUpdate, hostID, innerIP, metadata.FromDataCollection,
+		nil, setter)
+	if err != nil {
+		blog.Errorf("generate host snap audit log failed before update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
 
@@ -172,28 +178,9 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
 	}
 
-	// get audit interface of host snap.
-	audit := auditlog.NewHostSnapAudit(h.CoreAPI.CoreService())
-
-	// generate audit log
-	kit := &rest.Kit{
-		Rid:             rid,
-		Header:          header,
-		Ctx:             h.ctx,
-		CCError:         h.CCErr.CreateDefaultCCErrorIf(string(common.English)),
-		User:            common.CCSystemCollectorUserName,
-		SupplierAccount: common.BKDefaultOwnerID,
-	}
-
-	auditLog, err := audit.GenerateAuditLog(kit, hostID, innerIP, preData.Data, setter)
-	if err != nil {
-		blog.Errorf("generate host snap audit log failed, err: %v, rid: %s", err, rid)
-		return err
-	}
-
-	// save audit log
+	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("save host snap audit log failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
 

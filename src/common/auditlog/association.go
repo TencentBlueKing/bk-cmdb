@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// instanceAuditLog provides methods to generate and save instance association audit log
+// instanceAssociationAuditLog provides methods to generate and save instance association audit log
 type instanceAssociationAuditLog struct {
 	audit
 }

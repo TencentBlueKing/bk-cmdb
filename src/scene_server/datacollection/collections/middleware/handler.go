@@ -360,7 +360,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			SupplierAccount: common.BKDefaultOwnerID,
 		}
 		cond := map[string]interface{}{instIDField: instID}
-		auditLog, err := audit.GenerateAuditLogByCond(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, cond, inst)
+		auditLog, err := audit.GenerateAuditLogByCondGetData(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, cond, inst)
 		if err != nil {
 			return err
 		}

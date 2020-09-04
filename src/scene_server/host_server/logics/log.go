@@ -18,68 +18,14 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
-
-type HostLog struct {
-	logic   *Logics
-	header  http.Header
-	ownerID string
-	ip      string
-	Content *metadata.BasicContent
-}
-
-func (lgc *Logics) NewHostLog(ctx context.Context, ownerID string) *HostLog {
-	return &HostLog{
-		logic:   lgc,
-		header:  lgc.header,
-		ownerID: ownerID,
-		Content: new(metadata.BasicContent),
-	}
-}
-
-func (h *HostLog) WithPrevious(ctx context.Context, hostID int64) errors.CCError {
-	var err error
-
-	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h *HostLog) WithCurrent(ctx context.Context, hostID int64) errors.CCError {
-	var err error
-
-	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, action metadata.ActionType) (metadata.AuditLog, error) {
-	return metadata.AuditLog{
-		AuditType:    metadata.HostType,
-		ResourceType: metadata.HostRes,
-		Action:       action,
-		BusinessID:   bizID,
-		ResourceID:   hostID,
-		ResourceName: h.ip,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: h.Content,
-			},
-			ModelID: common.BKInnerObjIDHost,
-		},
-	}, nil
-}
 
 type HostModuleLog struct {
 	logic     *Logics
@@ -153,6 +99,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 	if err != nil {
 		return err
 	}
+
 	moduleNameMap := make(map[int64]string)
 	for _, module := range modules {
 		moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
@@ -192,6 +139,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		preHostAppMap[val.HostID] = val.AppID
 		preHostRelationMap[val.HostID][val.SetID] = append(preHostRelationMap[val.HostID][val.SetID], metadata.Module{ModuleID: val.ModuleID, ModuleName: moduleNameMap[val.ModuleID]})
 	}
+
 	curHostRelationMap := make(map[int64]map[int64][]metadata.Module)
 	curHostAppMap := make(map[int64]int64)
 	for _, val := range h.cur {
@@ -206,6 +154,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 	if err != nil {
 		return err
 	}
+
 	appIDNameMap := make(map[int64]string, 0)
 	for _, appInfo := range appInfoArr {
 		bizID, err := appInfo.Int64(common.BKAppIDField)
@@ -222,7 +171,18 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		appIDNameMap[bizID] = name
 	}
 
+	// audit interface for generate and save audit log
+	var audit = auditlog.NewHostModuleAudit(h.logic.CoreAPI.CoreService())
+	var kit = &rest.Kit{
+		Rid:             h.logic.rid,
+		Header:          h.logic.header,
+		Ctx:             ctx,
+		CCError:         h.logic.ccErr,
+		User:            h.logic.user,
+		SupplierAccount: h.logic.ownerID,
+	}
 	logs := make([]metadata.AuditLog, 0)
+
 	for _, host := range hostInfos {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
@@ -242,6 +202,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 				Module:  modules,
 			})
 		}
+
 		preBizID := preHostAppMap[hostID]
 		preData := metadata.HostBizTopo{
 			BizID:   preBizID,
@@ -277,28 +238,14 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 			bizID = curBizID
 		}
 
-		logs = append(logs, metadata.AuditLog{
-			AuditType:    metadata.HostType,
-			ResourceType: metadata.HostRes,
-			Action:       action,
-			BusinessID:   bizID,
-			ResourceID:   hostID,
-			ResourceName: hostIP,
-			OperationDetail: &metadata.HostTransferOpDetail{
-				PreData: preData,
-				CurData: curData,
-			},
-		})
+		// generate audit log.
+		logs = append(logs, *audit.GenerateAuditLog(action, hostID, bizID, hostIP, preData, curData))
 	}
 
-	result, err := h.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), h.header, logs...)
-	if err != nil {
-		blog.Errorf("AddHostLogs http do error, err:%s,input:%+v,rid:%s", err.Error(), logs, h.logic.rid)
-		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFailed)
-	}
-	if !result.Result {
-		blog.Errorf("AddHostLogs  http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, logs, h.logic.rid)
-		return h.logic.ccErr.New(result.Code, result.ErrMsg)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, logs...); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	return nil
