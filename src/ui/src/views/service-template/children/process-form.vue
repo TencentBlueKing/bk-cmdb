@@ -11,7 +11,7 @@
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
                             <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                                <li :class="['property-item', { flex: flexProperties.includes(property['bk_property_id']) }]"
+                                <li :class="['property-item', { flex: property.bk_property_type === 'table' }]"
                                     v-if="checkEditable(property)"
                                     :key="propertyIndex">
                                     <div class="property-name clearfix" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
@@ -28,8 +28,8 @@
                                         </i>
                                     </div>
                                     <div class="property-value">
-                                        <component class="form-component" v-if="property['bk_property_type'] !== 'table'"
-                                            :is="`cmdb-form-${property['bk_property_type']}`"
+                                        <component class="form-component" ref="formComponent"
+                                            :is="getComponentType(property)"
                                             :disabled="getPropertyEditStatus(property)"
                                             :class="{ error: errors.has(property['bk_property_id']) }"
                                             :unit="property.unit"
@@ -42,33 +42,7 @@
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]['value']">
                                         </component>
-                                        <cmdb-form-table
-                                            v-else
-                                            :options="property.option || []"
-                                            :disabled-check="getDisabled"
-                                            :new-row-value="getNewRowValue"
-                                            v-model.trim="values[property['bk_property_id']]['value']">
-                                            <template slot="switch" slot-scope="{ row, col }">
-                                                <bk-checkbox
-                                                    class="form-checkbox"
-                                                    v-model="row[col['bk_property_id']]['as_default_value']"
-                                                    @change="handleSwitchChange(row[col['bk_property_id']], col)">
-                                                </bk-checkbox>
-                                            </template>
-                                            <template slot="col-ip" slot-scope="{ row, sizes }">
-                                                <cmdb-form-enum
-                                                    size="small"
-                                                    font-size="normal"
-                                                    :disabled="!row['ip']['as_default_value']"
-                                                    :placeholder="$t('请选择或输入IP')"
-                                                    :options="ipOption"
-                                                    :auto-select="true"
-                                                    v-bind="sizes"
-                                                    v-model="row['ip'].value">
-                                                </cmdb-form-enum>
-                                            </template>
-                                        </cmdb-form-table>
-                                        <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                        <span class="form-error">{{getFormError(property)}}</span>
                                     </div>
                                 </li>
                             </template>
@@ -101,7 +75,11 @@
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import { mapMutations } from 'vuex'
+    import ProcessFormPropertyTable from './process-form-property-table'
     export default {
+        components: {
+            ProcessFormPropertyTable
+        },
         mixins: [formMixins],
         props: {
             inst: {
@@ -145,27 +123,12 @@
         },
         data () {
             return {
-                ipOption: [
-                    {
-                        'name': '127.0.0.1',
-                        'type': 'text',
-                        'is_default': true,
-                        'id': '1'
-                    },
-                    {
-                        'id': '2',
-                        'name': '0.0.0.0',
-                        'type': 'text',
-                        'is_default': false
-                    }
-                ],
                 values: {
                     bk_func_name: ''
                 },
                 refrenceValues: {},
                 scrollbar: false,
-                invisibleNameProperties: ['bind_info'],
-                flexProperties: ['bind_info']
+                invisibleNameProperties: ['bind_info']
             }
         },
         computed: {
@@ -209,6 +172,13 @@
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
+            getComponentType (property) {
+                const type = property.bk_property_type
+                if (type === 'table') {
+                    return 'process-form-property-table'
+                }
+                return `cmdb-form-${type}`
+            },
             getPropertyEditStatus (property) {
                 const uneditable = ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']) && !this.isCreatedService
                 return (this.type === 'update' && uneditable)
@@ -303,8 +273,29 @@
             getValidateRules (property) {
                 return this.$tools.getValidateRules(property)
             },
-            handleSave () {
-                this.$validator.validateAll().then(result => {
+            getFormError (property) {
+                if (property.bk_property_type === 'table') {
+                    const hasError = this.errors.items.some(item => item.scope === property.bk_property_id)
+                    return hasError ? this.$t('有未正确定义的监听信息') : ''
+                }
+                return this.errors.first(property.bk_property_id)
+            },
+            callComponentValidator () {
+                const componentValidator = []
+                const { formComponent = [] } = this.$refs
+                formComponent.forEach(component => {
+                    componentValidator.push(component.$validator.validateAll())
+                    componentValidator.push(component.$validator.validateScopes())
+                })
+                return componentValidator
+            },
+            async handleSave () {
+                try {
+                    const results = await Promise.all([
+                        this.$validator.validateAll(),
+                        ...this.callComponentValidator()
+                    ])
+                    const result = results.every(result => result)
                     if (result && !this.hasChange()) {
                         this.$emit('on-cancel')
                     } else if (result && this.isCreatedService) {
@@ -322,11 +313,14 @@
                     } else {
                         this.uncollapseGroup()
                     }
-                })
+                } catch (error) {
+                    console.error(error)
+                }
             },
             uncollapseGroup () {
                 this.errors.items.forEach(item => {
-                    const property = this.properties.find(property => property['bk_property_id'] === item.field)
+                    const compareKey = item.scope || item.field
+                    const property = this.properties.find(property => property['bk_property_id'] === compareKey)
                     const group = property['bk_property_group']
                     this.groupState[group] = false
                 })
@@ -360,28 +354,6 @@
                     } else {
                         this.values[property['bk_property_id']]['value'] = ''
                     }
-                }
-            },
-            handleSwitchChange (field, property) {
-                if (!field.as_default_value) {
-                    const type = property['bk_property_type']
-                    if (['bool'].includes(type)) {
-                        field.value = false
-                    } else if (['int'].includes(type)) {
-                        field.value = null
-                    } else {
-                        field.value = ''
-                    }
-                }
-            },
-            getDisabled (field, property) {
-                return !field.as_default_value
-            },
-            getNewRowValue (property) {
-                const formValues = this.$tools.getInstFormValues([property])
-                return {
-                    value: formValues[property.bk_property_id],
-                    as_default_value: false
                 }
             }
         }

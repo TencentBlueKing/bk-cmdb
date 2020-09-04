@@ -58,42 +58,17 @@
             </cmdb-auth>
             <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
-        <bk-sideslider
-            v-transfer-dom
-            :is-show.sync="processForm.show"
-            :title="processForm.title"
-            :width="800"
-            :before-close="handleBeforeClose">
-            <cmdb-form slot="content"
-                ref="processForm"
-                type="update"
-                v-if="processForm.show"
-                :properties="properties"
-                :property-groups="propertyGroups"
-                :object-unique="processForm.type === 'single' ? [] : propertyUnique"
-                :inst="processForm.instance"
-                :invisible-name-properties="invisibleNameProperties"
-                :flex-properties="flexProperties"
-                :uneditable-properties="uneditableProperties"
-                @on-submit="handleSubmit"
-                @on-cancel="handleBeforeClose">
-                <template slot="bind_info">
-                    <process-bind-table v-bind="processTableProps" @change="handleProcessTableChange"></process-bind-table>
-                </template>
-            </cmdb-form>
-        </bk-sideslider>
     </div>
 </template>
 
 <script>
     import { processTableHeader } from '@/dictionary/table-header'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
-    import ProcessBindTable from '@/components/service/form/process-bind-table'
     import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
+    import ProcessForm from '@/components/service/form/form.js'
     export default {
         name: 'clone-to-source',
         components: {
-            ProcessBindTable,
             ProcessBindInfoValue
         },
         props: {
@@ -109,18 +84,10 @@
                 checked: [],
                 cloneProcesses: this.$tools.clone(this.sourceProcesses),
                 properties: [],
-                propertyGroups: [],
                 propertyUnique: [],
-                processForm: {
-                    show: false,
-                    type: 'single',
-                    title: '',
-                    instance: {}
-                },
                 hasScrollbar: false,
-                invisibleNameProperties: ['bind_info'],
-                flexProperties: ['bind_info'],
-                uneditableProperties: []
+                formValuesReflect: {},
+                processFormType: 'single'
             }
         },
         computed: {
@@ -152,11 +119,15 @@
             hostId () {
                 return parseInt(this.$route.params.hostId)
             },
-            processTableProps () {
-                return {
-                    hostId: this.hostId,
-                    properties: this.properties,
-                    list: this.processForm.instance ? this.processForm.instance['bind_info'] : []
+            bindInfoProperty () {
+                return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
+            },
+            bindInfo: {
+                get () {
+                    return this.formValuesReflect.bind_info || []
+                },
+                set (values) {
+                    this.formValuesReflect.bind_info = values
                 }
             }
         },
@@ -173,13 +144,11 @@
         },
         async created () {
             try {
-                const [properties, propertyGroups, propertyUnique] = await Promise.all([
+                const [properties, propertyUnique] = await Promise.all([
                     this.getProcessProperties(),
-                    this.getProcessPropertyGroups(),
                     this.getProcessPropertyUnique()
                 ])
                 this.properties = properties
-                this.propertyGroups = propertyGroups
                 this.propertyUnique = propertyUnique
             } catch (e) {
                 console.error(e)
@@ -195,17 +164,6 @@
                     },
                     config: {
                         requestId: 'get_service_process_properties',
-                        fromCache: true
-                    }
-                })
-            },
-            getProcessPropertyGroups () {
-                const action = 'objectModelFieldGroup/searchGroup'
-                return this.$store.dispatch(action, {
-                    objId: 'process',
-                    params: {},
-                    config: {
-                        requestId: 'get_service_process_property_groups',
                         fromCache: true
                     }
                 })
@@ -228,75 +186,45 @@
                 this.checked = selection.map(row => row.bk_process_id)
             },
             handleBatchEdit () {
-                this.processForm.type = 'batch'
-                this.processForm.title = this.$t('批量编辑')
-                this.processForm.instance = {}
-                this.processForm.show = true
-                // 绑定信息暂不支持批量编辑
-                this.uneditableProperties.push('bind_info')
-                this.$nextTick(() => {
-                    const { processForm } = this.$refs
-                    this.processForm.unwatch = processForm.$watch(() => {
-                        return processForm.values.bk_func_name
-                    }, (newVal, oldValue) => {
-                        if (processForm.values.bk_process_name === oldValue) {
-                            processForm.values.bk_process_name = newVal
-                        }
-                    })
+                this.processFormType = 'batch'
+                ProcessForm.show({
+                    type: 'update',
+                    title: this.$t('批量编辑'),
+                    instance: {},
+                    hostId: this.hostId,
+                    submitHandler: this.handleSubmit,
+                    invisibleProperties: ['bind_info']
                 })
             },
             handleEditProcess (item) {
-                this.processForm.type = 'single'
-                this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
-                this.processForm.instance = item
-                this.processForm.show = true
-                const index = this.uneditableProperties.findIndex(property => 'bind_info')
-                if (index !== -1) {
-                    this.uneditableProperties.splice(index, 1)
-                }
-                this.$nextTick(() => {
-                    const { processForm } = this.$refs
-                    this.processForm.unwatch = processForm.$watch(() => {
-                        return processForm.values.bk_func_name
-                    }, (newVal, oldValue) => {
-                        if (processForm.values.bk_process_name === oldValue) {
-                            processForm.values.bk_process_name = newVal
-                        }
-                    })
+                this.processFormType = 'single'
+                ProcessForm.show({
+                    type: 'update',
+                    title: `${this.$t('编辑进程')}${item.bk_process_name}`,
+                    instance: item,
+                    hostId: this.hostId,
+                    submitHandler: this.handleSubmit
                 })
             },
-            handleSubmit (values, changedValues) {
-                if (this.processForm.type === 'single') {
-                    Object.assign(this.processForm.instance, changedValues)
+            async validateCustomComponent () {
+                const { bindInfo } = this.$refs
+                const customComponents = [bindInfo]
+                const validatePromise = []
+                customComponents.forEach(component => {
+                    validatePromise.push(component.$validator.validateAll())
+                    validatePromise.push(component.$validator.validateScopes())
+                })
+                const results = await Promise.all(validatePromise)
+                return results.every(result => result)
+            },
+            handleSubmit (values, changedValues, instance) {
+                if (this.processFormType === 'single') {
+                    Object.assign(instance, changedValues)
                 } else {
                     this.cloneProcesses.forEach(instance => {
                         Object.assign(instance, changedValues)
                     })
                 }
-                this.processForm.show = false
-            },
-            handleCloseProcessForm () {
-                this.processForm.show = false
-                this.processForm.instance = {}
-            },
-            handleBeforeClose () {
-                const changedValues = this.$refs.processForm.changedValues
-                if (Object.keys(changedValues).length) {
-                    return new Promise((resolve, reject) => {
-                        this.$bkInfo({
-                            title: this.$t('确认退出'),
-                            subTitle: this.$t('退出会导致未保存信息丢失'),
-                            extCls: 'bk-dialog-sub-header-center',
-                            confirmFn: () => {
-                                this.handleCloseProcessForm()
-                            },
-                            cancelFn: () => {
-                                resolve(false)
-                            }
-                        })
-                    })
-                }
-                this.handleCloseProcessForm()
             },
             async doClone () {
                 try {
@@ -306,7 +234,7 @@
                             bk_module_id: this.$route.params.moduleId,
                             instances: [
                                 {
-                                    bk_host_id: this.$route.params.hostId,
+                                    bk_host_id: this.hostId,
                                     processes: this.getCloneProcessValues()
                                 }
                             ]
@@ -336,15 +264,6 @@
                 this.$nextTick(() => {
                     const scroller = this.$el.parentElement
                     this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
-                })
-            },
-            handleProcessTableChange (list) {
-                this.$refs.processForm.values.bind_info = list.map(item => {
-                    const row = {}
-                    Object.keys(item).forEach(key => {
-                        row[key] = item[key].value
-                    })
-                    return row
                 })
             }
         }

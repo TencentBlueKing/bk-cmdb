@@ -69,13 +69,16 @@
                 return `${row.protocol} ${ip}:${row.port}`
             },
             formatCellValue (list) {
+                if (!list.length) {
+                    return '--'
+                }
                 const newList = list.map(this.getRowValue)
                 const total = list.length
                 const showCount = total > 1
                 return (
                     <div class={`bind-info-value${showCount ? ' show-count' : ''}`}>
                         <span>{newList.join(', ')}</span>
-                        {showCount ? <span class="count">+{total}</span> : ''}
+                        {showCount ? <span class="count">{total}</span> : ''}
                     </div>
                 )
             }
