@@ -295,11 +295,7 @@ func (m *associationInstance) SearchInstanceAssociationRelated(ctx core.ContextP
 	}
 
 	//count
-	count, err := m.countInstanceAssociation(ctx, queryCond.Condition)
-	if nil != err {
-		blog.Errorf("search inst association count err [%#v], rid: %s", err, ctx.ReqID)
-		return nil, err
-	}
+	var count uint64
 
 	//search bkObjIDInstAsst
 	Items, err := m.searchInstanceAssociation(ctx, queryCond)
@@ -312,9 +308,10 @@ func (m *associationInstance) SearchInstanceAssociationRelated(ctx core.ContextP
 	queryResult := &metadata.QueryResult{}
 	queryResult.Info = make([]mapstr.MapStr, 0)
 	for _, item := range Items {
+		count = count + 1
 		queryResult.Info = append(queryResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
-	queryResult.Count = count - uint64(inputParam.Limit.Offset)
+	queryResult.Count = count
 
 	return queryResult, nil
 }
