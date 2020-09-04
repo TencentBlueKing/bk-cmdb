@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
@@ -206,20 +205,6 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 		return hostIDs, successMsg, updateErrMsg, errMsg, errors.New(ccLang.Language("host_import_err"))
 	}
 
-	// register host resource creator action to iam
-	if auth.EnableAuthorize() && len(iamInstances) > 0 {
-		iamInstance := metadata.IamInstancesWithCreator{
-			Type:      string(iam.Host),
-			Instances: iamInstances,
-			Creator:   kit.User,
-		}
-		_, err = lgc.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstance)
-		if err != nil {
-			blog.Errorf("register created hosts to iam failed, err: %s, rid: %s", err, kit.Rid)
-			return hostIDs, successMsg, updateErrMsg, errMsg, err
-		}
-	}
-
 	return hostIDs, successMsg, updateErrMsg, errMsg, nil
 }
 
@@ -350,20 +335,6 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 		return hostIDs, res, kit.CCError.CCErrorf(common.CCErrHostCreateFail)
 	}
 
-	// register host resource creator action to iam
-	if auth.EnableAuthorize() && len(iamInstances) > 0 {
-		iamInstance := metadata.IamInstancesWithCreator{
-			Type:      string(iam.Host),
-			Instances: iamInstances,
-			Creator:   kit.User,
-		}
-		_, err = lgc.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstance)
-		if err != nil {
-			blog.ErrorJSON("register created hosts to iam failed, err: %s, rid: %s", err, kit.Rid)
-			return hostIDs, res, err
-		}
-	}
-
 	return hostIDs, res, nil
 }
 
@@ -418,7 +389,7 @@ type importInstance struct {
 	kit           *rest.Kit
 }
 
-func NewImportInstance(kit *rest.Kit, ownerID string,lgc *Logics) *importInstance {
+func NewImportInstance(kit *rest.Kit, ownerID string, lgc *Logics) *importInstance {
 	lang := util.GetLanguage(kit.Header)
 	return &importInstance{
 		pheader: kit.Header,
