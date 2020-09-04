@@ -391,7 +391,6 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 			blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 		}
-
 		return inst, nil
 	}
 

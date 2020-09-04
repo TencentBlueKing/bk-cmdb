@@ -151,7 +151,6 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
-
 		} else {
 			intHostID, err = instance.addHostInstance(iSubAreaVal, index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
@@ -171,15 +170,15 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			}
 		}
 
-		// add current host operate result to batch add result
+		// add current host operate result to batch add result.
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
-		// add audit log
+		// add audit log.
 		logContents = append(logContents, *auditLog)
 		hostIDs = append(hostIDs, intHostID)
 	}
 
-	// to save audit log
+	// to save audit log.
 	if len(logContents) > 0 {
 		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
 			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)

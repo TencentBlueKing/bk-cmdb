@@ -18,6 +18,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -72,22 +73,6 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, err
 	}
 
-	// auth: check authorization
-	// class := cls.Classify()
-	// var businessID int64
-	// if _, exist := class.Metadata.Label[metadata.LabelBusinessID]; exist {
-	// 	var err error
-	// 	businessID, err = class.Metadata.Label.Int64(metadata.LabelBusinessID)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-	//
-	// if err := c.authManager.AuthorizeResourceCreate(kit.Ctx, kit.Header, businessID, metaData.ModelClassification); err != nil {
-	// 	blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v, rid: %s", class, err, kit.Rid)
-	// 	return nil, err
-	// }
-
 	err = cls.Create()
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
@@ -100,12 +85,22 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
-	//package audit response
-	err = NewObjectClsAudit(kit, c.clientSet, class.ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
+	// generate audit log of object classification.
+	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, class.ID, metadata.FromUser, nil, nil)
 	if err != nil {
-		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
+		blog.Errorf("create object classification %s success, but generate audit log failed, err: %v, rid: %s",
+			class.ClassificationName, err, kit.Rid)
 		return nil, err
 	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("create object classification %s success, but save audit log failed, err: %v, rid: %s",
+			class.ClassificationName, err, kit.Rid)
+		return nil, err
+	}
+
 	return cls, nil
 }
 
@@ -144,24 +139,30 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 
 	}
 
-	//get PreData
-	objAudit := NewObjectClsAudit(kit, c.clientSet, id).buildSnapshotForPre()
+	// generate audit log of object classification.
+	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, id, metadata.FromUser, nil, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before delete object classification, objClsID: %d, err: %v, rid: %s",
+			id, err, kit.Rid)
+		return err
+	}
 
+	// to delete.
 	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
-
 	if !rsp.Result {
 		blog.Errorf("failed to delete the classification, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	//saveAuditLog
-	err = objAudit.SaveAuditLog(metadata.AuditDelete)
-	if err != nil {
-		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("delete object classification success, but save audit log failed, objClsID: %d, err: %v, rid: %s",
+			id, err, kit.Rid)
 		return err
 	}
 
@@ -260,17 +261,17 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	class := cls.Classify()
 	class.ID = id
 
-	// auth: check authorization
-	// if err := c.authManager.AuthorizeByClassification(kit.Ctx, kit.Header, metaData.Update, class); err != nil {
-	// 	blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v, rid: %s", class, err, kit.Rid)
-	// 	return err
-	// }
+	// generate audit log of object classification.
+	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, class.ID, metadata.FromUser, nil, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update object classification, objClsID: %d, err: %v, rid: %s",
+			id, err, kit.Rid)
+		return err
+	}
 
-	//get PreData
-	objAudit := NewObjectClsAudit(kit, c.clientSet, id).buildSnapshotForPre()
-
-	err := cls.Update(data)
-	if nil != err {
+	// to update.
+	if err := cls.Update(data); nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
 		return err
 	}
@@ -288,11 +289,12 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 		}
 	}
 
-	//get CurData and saveAuditLog
-	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
-	if err != nil {
-		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", id, err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("update object classification success, but save audit log failed, objClsID: %d, err: %v, rid: %s",
+			id, err, kit.Rid)
 		return err
 	}
+
 	return nil
 }

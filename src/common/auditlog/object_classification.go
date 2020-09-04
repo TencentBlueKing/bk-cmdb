@@ -21,37 +21,37 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type modelAuditLog struct {
+type objectClsAuditLog struct {
 	audit
 }
 
-// GenerateAuditLog generate audit of model, if data is nil, will auto get current model data by id.
-func (h *modelAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
-	data *metadata.Object, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+// GenerateAuditLog generate audit of model classification, if data is nil, will auto get current model classification data by id.
+func (h *objectClsAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
+	data *metadata.Classification, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	if data == nil {
-		// get current model data by id.
+		// get current model classification data by id.
 		query := mapstr.MapStr{"id": id}
-		rsp, err := h.clientSet.Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+		rsp, err := h.clientSet.Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 		if err != nil {
-			blog.Errorf("generate audit log of model failed, failed to read model, err: %v, rid: %s",
+			blog.Errorf("generate audit log of model classification failed, failed to read model classification, err: %v, rid: %s",
 				err.Error(), kit.Rid)
 			return nil, err
 		}
 		if rsp.Result != true {
-			blog.Errorf("generate audit log of model failed, failed to read model, rsp code is %v, err: %s, rid: %s",
+			blog.Errorf("generate audit log of model classification failed, failed to read model classification, rsp code is %v, err: %s, rid: %s",
 				rsp.Code, rsp.ErrMsg, kit.Rid)
 			return nil, err
 		}
 		if len(rsp.Data.Info) <= 0 {
-			blog.Errorf("generate audit log of model failed, failed to read model, err: %s, rid: %s",
+			blog.Errorf("generate audit log of model classification failed, failed to read model classification, err: %s, rid: %s",
 				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
 			return nil, err
 		}
 
-		data = &rsp.Data.Info[0].Spec
+		data = &rsp.Data.Info[0]
 	}
-
-	objName := data.ObjectName
+	
+	objClsName := data.ClassificationName
 
 	var basicDetail *metadata.BasicContent
 	switch action {
@@ -72,10 +72,10 @@ func (h *modelAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionTy
 
 	var auditLog = &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
-		ResourceType: metadata.ModelRes,
+		ResourceType: metadata.ModelClassificationRes,
 		Action:       action,
 		ResourceID:   id,
-		ResourceName: objName,
+		ResourceName: objClsName,
 		OperateFrom:  OperateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
 			Details: basicDetail,
@@ -85,8 +85,8 @@ func (h *modelAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionTy
 	return auditLog, nil
 }
 
-func NewModelAuditLog(clientSet coreservice.CoreServiceClientInterface) *modelAuditLog {
-	return &modelAuditLog{
+func NewObjectClsAuditLog(clientSet coreservice.CoreServiceClientInterface) *objectClsAuditLog {
+	return &objectClsAuditLog{
 		audit: audit{
 			clientSet: clientSet,
 		},

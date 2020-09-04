@@ -225,7 +225,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, err
 	}
 
-	// create audit log for the created instances
+	// create audit log for the created instances.
 	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
 
 	cond := map[string]interface{}{

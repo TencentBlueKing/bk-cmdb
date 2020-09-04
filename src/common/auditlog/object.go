@@ -21,44 +21,37 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type modelAttributeAuditLog struct {
+type objectAuditLog struct {
 	audit
 }
 
-// GenerateAuditLog generate audit of model attribute, if data is nil, will auto get current model attribute data by id.
-func (h *modelAttributeAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
-	data *metadata.Attribute, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+// GenerateAuditLog generate audit of model, if data is nil, will auto get current model data by id.
+func (h *objectAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
+	data *metadata.Object, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	if data == nil {
-		// get current model attribute data by id.
+		// get current model data by id.
 		query := mapstr.MapStr{"id": id}
-		rsp, err := h.clientSet.Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+		rsp, err := h.clientSet.Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 		if err != nil {
-			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, err: %v, rid: %s",
+			blog.Errorf("generate audit log of model failed, failed to read model, err: %v, rid: %s",
 				err.Error(), kit.Rid)
 			return nil, err
 		}
 		if rsp.Result != true {
-			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, rsp code is %v, err: %s, rid: %s",
+			blog.Errorf("generate audit log of model failed, failed to read model, rsp code is %v, err: %s, rid: %s",
 				rsp.Code, rsp.ErrMsg, kit.Rid)
 			return nil, err
 		}
 		if len(rsp.Data.Info) <= 0 {
-			blog.Errorf("generate audit log of model attribute failed, failed to read model attribute, err: %s, rid: %s",
+			blog.Errorf("generate audit log of model failed, failed to read model, err: %s, rid: %s",
 				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
 			return nil, err
 		}
 
-		data = &rsp.Data.Info[0]
+		data = &rsp.Data.Info[0].Spec
 	}
 
-	bizID, _ := data.Metadata.ParseBizID()
-	// propertyID := data.PropertyID    // why ResourceID not is propertyID
-	propertyName := data.PropertyName
-	objID := data.ObjectID
-	objName, err := h.getObjNameByObjID(kit, objID)
-	if err != nil {
-		return nil, err
-	}
+	objName := data.ObjectName
 
 	var basicDetail *metadata.BasicContent
 	switch action {
@@ -79,26 +72,21 @@ func (h *modelAttributeAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata
 
 	var auditLog = &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
-		ResourceType: metadata.ModelAttributeRes,
+		ResourceType: metadata.ModelRes,
 		Action:       action,
-		BusinessID:   bizID,
-		ResourceID:   id, // TODO: issue, why not is propertyID.
-		ResourceName: propertyName,
+		ResourceID:   id,
+		ResourceName: objName,
 		OperateFrom:  OperateFrom,
-		OperationDetail: &metadata.ModelAttrOpDetail{
-			BkObjID:   objID,
-			BkObjName: objName,
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: basicDetail,
-			},
+		OperationDetail: &metadata.BasicOpDetail{
+			Details: basicDetail,
 		},
 	}
 
 	return auditLog, nil
 }
 
-func NewModelAttributeAuditLog(clientSet coreservice.CoreServiceClientInterface) *modelAttributeAuditLog {
-	return &modelAttributeAuditLog{
+func NewObjectAuditLog(clientSet coreservice.CoreServiceClientInterface) *objectAuditLog {
+	return &objectAuditLog{
 		audit: audit{
 			clientSet: clientSet,
 		},

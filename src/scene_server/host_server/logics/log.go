@@ -171,7 +171,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		appIDNameMap[bizID] = name
 	}
 
-	// audit interface for generate and save audit log
+	// audit interface for generate and save audit log.
 	var audit = auditlog.NewHostModuleAudit(h.logic.CoreAPI.CoreService())
 	var kit = &rest.Kit{
 		Rid:             h.logic.rid,

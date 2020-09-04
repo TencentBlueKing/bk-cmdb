@@ -153,7 +153,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 	}
 
 	// generate audit log of model attribute.
-	audit := auditlog.NewModelAttributeAuditLog(a.clientSet.CoreService())
+	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, att.Attribute().ID, metadata.FromUser, nil, nil)
 	if err != nil {
 		blog.Errorf("create object attribute %s success, but generate audit log failed, err: %v, rid: %s",
@@ -194,7 +194,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 	for _, attrItem := range attrItems {
 
 		// generate audit log of model attribute.
-		audit := auditlog.NewModelAttributeAuditLog(a.clientSet.CoreService())
+		audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, attrItem.Attribute().ID, metadata.FromUser, attrItem.Attribute(), nil)
 		if err != nil {
 			blog.Errorf("generate audit log failed before delete model attribute %s, err: %v, rid: %s",
@@ -326,7 +326,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	// generate audit log of model attribute.
-	audit := auditlog.NewModelAttributeAuditLog(a.clientSet.CoreService())
+	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, attID, metadata.FromUser, nil, data)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update model attribute, attID: %d, err: %v, rid: %s",
