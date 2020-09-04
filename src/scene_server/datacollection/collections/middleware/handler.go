@@ -236,6 +236,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 
 		// add audit log.
 		if err := func() error {
+			// ready audit interface of instance.
 			audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
 			kit := &rest.Kit{
 				Rid:             rid,
@@ -246,7 +247,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				SupplierAccount: common.BKDefaultOwnerID,
 			}
 
-			// generate audit log.
+			// generate audit log for create instance.
 			data := []mapstr.MapStr{mapstr.NewFromMap(bodyData)}
 			auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, objID, metadata.FromDataCollection, data, nil)
 			if err != nil {
@@ -348,7 +349,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	d.TryUnsetRedis(instKeyStr)
 
 	if err := func() error {
-		// create and save the audit log
+		// create and save the audit log.
 		audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
 
 		kit := &rest.Kit{

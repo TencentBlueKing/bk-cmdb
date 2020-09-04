@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-// instanceAuditLog provides methods to generate and save instance audit log
+// instanceAuditLog provides methods to generate and save instance audit log.
 type instanceAuditLog struct {
 	audit
 }

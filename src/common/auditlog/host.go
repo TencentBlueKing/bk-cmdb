@@ -24,8 +24,8 @@ type hostAuditLog struct {
 	audit
 }
 
-// GenerateAuditLog generate audit log of host, if data is nil,
-// then auto get host current data by hostID, meanwhile update hostIP if hostIP is "".
+// GenerateAuditLog generate audit log of host, if data is nil, will auto get host current data by hostID,
+// meanwhile update hostIP if hostIP is "".
 func (h *hostAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, hostID, bizID int64, innerIP string,
 	OperateFrom metadata.OperateFromType, data, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	return h.generateAuditLog(kit, action, hostID, bizID, innerIP, OperateFrom, data, updateFields)
@@ -60,7 +60,6 @@ func (h *hostAuditLog) generateAuditLog(kit *rest.Kit, action metadata.ActionTyp
 			return nil, err
 		}
 
-		// innerIP is nil, update hostIP to innerIP.
 		if innerIP != "" {
 			hostIP = innerIP
 		}

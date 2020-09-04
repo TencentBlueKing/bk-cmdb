@@ -142,7 +142,7 @@ func (h *HostSnap) Analyze(msg *string) error {
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
 
-	// get audit interface of host snap.
+	// get audit interface of host.
 	audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
 	kit := &rest.Kit{
 		Rid:             rid,
@@ -152,11 +152,12 @@ func (h *HostSnap) Analyze(msg *string) error {
 		User:            common.CCSystemCollectorUserName,
 		SupplierAccount: common.BKDefaultOwnerID,
 	}
-	// generate audit log.
+
+	// generate audit log for update host.
 	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(kit, metadata.AuditUpdate, hostID, innerIP, metadata.FromDataCollection,
 		nil, setter)
 	if err != nil {
-		blog.Errorf("generate host snap audit log failed before update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
+		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
 

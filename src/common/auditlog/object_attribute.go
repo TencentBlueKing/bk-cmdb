@@ -52,7 +52,6 @@ func (h *objectAttributeAuditLog) GenerateAuditLog(kit *rest.Kit, action metadat
 	}
 
 	bizID, _ := data.Metadata.ParseBizID()
-	// propertyID := data.PropertyID    // why ResourceID not is propertyID
 	propertyName := data.PropertyName
 	objID := data.ObjectID
 	objName, err := h.getObjNameByObjID(kit, objID)
@@ -82,7 +81,7 @@ func (h *objectAttributeAuditLog) GenerateAuditLog(kit *rest.Kit, action metadat
 		ResourceType: metadata.ModelAttributeRes,
 		Action:       action,
 		BusinessID:   bizID,
-		ResourceID:   id, // TODO: issue, why not is propertyID.
+		ResourceID:   id,
 		ResourceName: propertyName,
 		OperateFrom:  OperateFrom,
 		OperationDetail: &metadata.ModelAttrOpDetail{

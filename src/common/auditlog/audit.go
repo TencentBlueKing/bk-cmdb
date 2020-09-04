@@ -102,6 +102,7 @@ func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (stri
 	return instName, nil
 }
 
+// getBizIDByHostID get the bizID for host belong business.
 func (a *audit) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, error) {
 	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
 	moduleHost, err := a.clientSet.Host().GetHostModuleRelation(kit.Ctx, kit.Header, input)
@@ -113,15 +114,18 @@ func (a *audit) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, error) {
 		blog.Errorf("", hostID, moduleHost.ErrMsg, kit.Rid)
 		return 0, fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
 	}
+
 	var bizID int64
 	if len(moduleHost.Data.Info) > 0 {
 		bizID = moduleHost.Data.Info[0].AppID
 	}
+
 	return bizID, nil
 }
 
+// getHostInstanceDetailByHostID get host data and hostIP by hostID.
 func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string, error) {
-	// get host details, pre data
+	// get host details.
 	result, err := a.clientSet.Host().GetHostByID(kit.Ctx, kit.Header, hostID)
 	if err != nil {
 		blog.Errorf("getHostInstanceDetailByHostID http do error, err: %s, input: %+v, rid: %s", err.Error(), hostID, kit.Rid)
@@ -144,9 +148,11 @@ func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[
 		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
 
 	}
+
 	return hostInfo, ip, nil
 }
 
+// getObjNameByObjID get the object name corresponding to object id.
 func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 	query := mapstr.MapStr{"bk_obj_id": objID}
 

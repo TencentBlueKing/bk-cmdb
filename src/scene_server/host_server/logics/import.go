@@ -70,7 +70,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 
 	var errMsg, updateErrMsg, successMsg []string
 
-	// ready interface and kit for audit log
+	// ready interface and kit for audit log.
 	logContents := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	kit := &rest.Kit{
@@ -137,7 +137,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			delete(host, common.BKHostInnerIPField)
 			delete(host, common.BKCloudIDField)
 
-			// get audit log before really change it.
+			// generate audit log before really change it.
 			auditLog, err = audit.GenerateAuditLog(kit, metadata.AuditUpdate, intHostID, appID, innerIP, metadata.FromUser, nil, host)
 			if err != nil {
 				blog.Errorf("generate host audit log failed before update host, hostID: %d, bizID: %d, err: %v, rid: %s",
