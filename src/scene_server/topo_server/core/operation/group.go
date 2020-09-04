@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -80,10 +81,19 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, metaData *m
 		return nil, kit.CCError.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 	}
 
-	//package audit response
-	err = NewObjectAttrGroupAudit(kit, g.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
+	// generate audit log of object attribute group.
+	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, grp.Group().ID, metadata.FromUser, nil, nil)
 	if err != nil {
-		blog.Errorf("create object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", grp.Group().GroupName, err, kit.Rid)
+		blog.Errorf("create object attribute group %s success, but generate audit log failed, err: %v, rid: %s",
+			grp.Group().GroupName, err, kit.Rid)
+		return nil, err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("create object attribute group %s success, but save audit log failed, err: %v, rid: %s",
+			grp.Group().GroupName, err, kit.Rid)
 		return nil, err
 	}
 
@@ -91,26 +101,29 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, metaData *m
 }
 
 func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
+	// generate audit log of object attribute group.
+	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, groupID, metadata.FromUser, nil, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before delete attribute group, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// to delete.
 	cond := condition.CreateCondition().Field(common.BKFieldID).Eq(groupID)
-
-	//get PreData
-	objAudit := NewObjectAttrGroupAudit(kit, g.clientSet, groupID).buildSnapshotForPre()
-
 	rsp, err := g.clientSet.CoreService().Model().DeleteAttributeGroupByCondition(context.Background(), kit.Header, metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-grp]failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
-
 	if !rsp.Result {
 		blog.Errorf("[operation-grp]failed to delete the group(%d), err: %s, rid: %s", groupID, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 
-	//saveAuditLog
-	err = objAudit.SaveAuditLog(metadata.AuditDelete)
-	if err != nil {
-		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("delete object attribute group success, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 	return nil
@@ -226,7 +239,6 @@ func (g *group) DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, gro
 }
 
 func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondition) error {
-
 	if cond.Data.Index == nil && cond.Data.Name == nil {
 		return nil
 	}
@@ -235,26 +247,31 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 		Data:      mapstr.NewFromStruct(cond.Data, "json"),
 	}
 
-	//get PreData
-	objAudit := NewObjectAttrGroupAudit(kit, g.clientSet, cond.Condition.ID).buildSnapshotForPre()
+	// generate audit log of object attribute group.
+	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, cond.Condition.ID, metadata.FromUser, nil, input.Data)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update attribute group, groupName: %s, err: %v, rid: %s",
+			cond.Data.Name, err, kit.Rid)
+		return err
+	}
 
+	// to update.
 	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(context.Background(), kit.Header, input)
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-
 	if !rsp.Result {
 		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s , rid: %s", cond.Data, cond.Condition, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	//get CurData and saveAuditLog
-	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
-	if err != nil {
-		blog.Errorf("update object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", cond.Data.Name, err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("update object attribute group %s success, but save audit log failed, err: %v, rid: %s",
+			cond.Data.Name, err, kit.Rid)
 		return err
 	}
-
 	return nil
 }

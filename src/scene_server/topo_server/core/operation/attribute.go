@@ -131,18 +131,12 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 					OwnerID:    att.Attribute().OwnerID,
 				}
 				group.Metadata = *metaData
+
 				data := mapstr.NewFromStruct(group, "field")
-				grp, err := a.grp.CreateObjectGroup(kit, data, metaData)
+				_, err := a.grp.CreateObjectGroup(kit, data, metaData)
 				if nil != err {
 					blog.Errorf("[operation-obj] failed to create the default group, err: %s, rid: %s", err.Error(), kit.Rid)
 					return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
-				}
-
-				//audit the CreateObjectGroup action
-				err = NewObjectAttrGroupAudit(kit, a.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
-				if err != nil {
-					blog.Errorf("create object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", grp.Group().GroupName, err, kit.Rid)
-					return nil, err
 				}
 			}
 			att.Attribute().PropertyGroup = common.BKBizDefault
