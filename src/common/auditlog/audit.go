@@ -146,3 +146,21 @@ func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[
 	}
 	return hostInfo, ip, nil
 }
+
+func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
+	query := mapstr.MapStr{"bk_obj_id": objID}
+
+	// get objectName.
+	resp, err := a.clientSet.Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+	if err != nil {
+		return "", err
+	}
+	if resp.Result != true {
+		return "", kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+	if len(resp.Data.Info) <= 0 {
+		return "", kit.CCError.CCError(common.CCErrorModelNotFound)
+	}
+
+	return resp.Data.Info[0].Spec.ObjectName, nil
+}

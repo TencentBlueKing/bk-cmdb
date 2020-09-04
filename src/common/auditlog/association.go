@@ -24,7 +24,8 @@ import (
 type instanceAssociationAuditLog struct {
 	audit
 }
-
+// GenerateAuditLog generate audit log of instance association, if data is nil,
+// then auto get data by id and instance association.
 func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *metadata.InstAsst, id int64, action metadata.ActionType) (
 	*metadata.AuditLog, error) {
 

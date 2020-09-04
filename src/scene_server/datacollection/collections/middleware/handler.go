@@ -221,12 +221,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 
 	instIDField := common.GetInstIDField(objID)
 
-	asst, err := d.CoreAPI.CoreService().Association().ReadModelAssociation(d.ctx, d.httpHeader, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
-	if err != nil || !asst.Result {
-		blog.Errorf("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, rid)
-		return err
-	}
-
 	if len(inst) <= 0 {
 		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.httpHeader, objID, &metadata.CreateModelInstance{Data: bodyData})
 		if err != nil {
@@ -240,10 +234,9 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		blog.Infof("create inst result: %v", resp)
 		instID := int64(resp.Data.Created.ID)
 
+		// add audit log.
 		if err := func() error {
-			// create and save the audit log
 			audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
-
 			kit := &rest.Kit{
 				Rid:             rid,
 				Header:          d.httpHeader,
@@ -252,13 +245,20 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				User:            common.CCSystemCollectorUserName,
 				SupplierAccount: common.BKDefaultOwnerID,
 			}
+
+			// generate audit log.
 			data := []mapstr.MapStr{mapstr.NewFromMap(bodyData)}
 			auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, objID, metadata.FromDataCollection, data, nil)
 			if err != nil {
+				blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+					objID, err, rid)
 				return err
 			}
 
+			// save audit log.
 			if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+				blog.Errorf("save instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+					objID, err, rid)
 				return err
 			}
 
@@ -362,10 +362,14 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		cond := map[string]interface{}{instIDField: instID}
 		auditLog, err := audit.GenerateAuditLogByCondGetData(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, cond, inst)
 		if err != nil {
+			blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+				objID, err, rid)
 			return err
 		}
 
 		if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+			blog.Errorf("save instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+				objID, err, rid)
 			return err
 		}
 

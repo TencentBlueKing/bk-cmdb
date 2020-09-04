@@ -20,6 +20,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -136,6 +137,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 					blog.Errorf("[operation-obj] failed to create the default group, err: %s, rid: %s", err.Error(), kit.Rid)
 					return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
 				}
+
 				//audit the CreateObjectGroup action
 				err = NewObjectAttrGroupAudit(kit, a.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
 				if err != nil {
@@ -156,10 +158,19 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 		return nil, err
 	}
 
-	//package audit response
-	err = NewObjectAttrAudit(kit, a.clientSet, att.Attribute().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
+	// generate audit log of model attribute.
+	audit := auditlog.NewModelAttributeAuditLog(a.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, att.Attribute().ID, metadata.FromUser, nil, nil)
 	if err != nil {
-		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", att.Attribute().PropertyName, err, kit.Rid)
+		blog.Errorf("create object attribute %s success, but generate audit log failed, err: %v, rid: %s",
+			att.Attribute().PropertyName, err, kit.Rid)
+		return nil, err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("create object attribute %s success, but save audit log failed, err: %v, rid: %s",
+			att.Attribute().PropertyName, err, kit.Rid)
 		return nil, err
 	}
 
@@ -187,24 +198,31 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 	// }
 
 	for _, attrItem := range attrItems {
-		//get PreData
-		objAudit := NewObjectAttrAudit(kit, a.clientSet, attrItem.Attribute().ID).buildSnapshotForPre()
 
-		// delete the attribute
+		// generate audit log of model attribute.
+		audit := auditlog.NewModelAttributeAuditLog(a.clientSet.CoreService())
+		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, attrItem.Attribute().ID, metadata.FromUser, attrItem.Attribute(), nil)
+		if err != nil {
+			blog.Errorf("generate audit log failed before delete model attribute %s, err: %v, rid: %s",
+				attrItem.Attribute().PropertyName, err, kit.Rid)
+			return err
+		}
+
+		// delete the attribute.
 		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(context.Background(), kit.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v, rid: %s", err, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-
 		if !rsp.Result {
 			blog.Errorf("[operation-attr] failed to delete the attribute by condition(%v), err: %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, kit.Rid)
 			return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
-		//saveAuditLog
-		err = objAudit.SaveAuditLog(metadata.AuditDelete)
-		if err != nil {
-			blog.Errorf("Delete object attribute success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
+
+		// save audit log.
+		if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+			blog.Errorf("delete object attribute %s success, but save audit log failed, err: %v, rid: %s",
+				attrItem.Attribute().PropertyName, err, kit.Rid)
 			return err
 		}
 	}
@@ -312,30 +330,36 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	} else {
 		cond = metadata.NewPublicOrBizConditionByBizID(bizID)
 	}
+
+	// generate audit log of model attribute.
+	audit := auditlog.NewModelAttributeAuditLog(a.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, attID, metadata.FromUser, nil, data)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update model attribute, attID: %d, err: %v, rid: %s",
+			attID, err, kit.Rid)
+		return err
+	}
+
+	// to update.
 	cond[common.BKFieldID] = attID
 	input := metadata.UpdateOption{
 		Condition: cond,
 		Data:      data,
 	}
-
-	//get PreData
-	objAudit := NewObjectAttrAudit(kit, a.clientSet, attID).buildSnapshotForPre()
-
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(context.Background(), kit.Header, &input)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-
 	if !rsp.Result {
 		blog.Errorf("[operation-attr] failed to update the attribute by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	//get CurData and saveAuditLog
-	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
-	if err != nil {
-		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", attID, err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("update object attribute success, but save audit log failed, attID: %d, err: %v, rid: %s",
+			attID, err, kit.Rid)
 		return err
 	}
 
