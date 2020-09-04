@@ -13,16 +13,16 @@
 package middleware
 
 import (
-	"configcenter/src/common/auditlog"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 

@@ -13,8 +13,6 @@
 package hostsnap
 
 import (
-	"configcenter/src/common/auditlog"
-	"configcenter/src/common/http/rest"
 	"context"
 	"errors"
 	"fmt"
@@ -26,9 +24,11 @@ import (
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
