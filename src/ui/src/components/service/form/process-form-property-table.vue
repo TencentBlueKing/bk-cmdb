@@ -80,7 +80,7 @@
             },
             validateMsg () {
                 const hasError = this.errors.items.some(item => item.scope === 'bind_info')
-                return hasError ? this.$t('有未正确定义的监听信息') : null 
+                return hasError ? this.$t('有未正确定义的监听信息') : null
             }
         },
         methods: {
