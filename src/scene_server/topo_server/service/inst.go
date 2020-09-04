@@ -17,9 +17,7 @@ import (
 	"strings"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -119,31 +117,6 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 		if nil != err {
 			blog.Errorf("failed to create a new %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
 			return err
-		}
-
-		// register instance resource creator action to iam
-		if auth.EnableAuthorize() {
-			var instID int64
-			if instID, err = setInst.GetInstID(); err != nil {
-				blog.ErrorJSON("get inst id failed, err: %s, inst: %s, rid: %s", err, setInst, ctx.Kit.Rid)
-				return err
-			}
-			var instName string
-			if instName, err = setInst.GetInstName(); err != nil {
-				blog.ErrorJSON("get inst name failed, err: %s, inst: %s, rid: %s", err, setInst, ctx.Kit.Rid)
-				return err
-			}
-			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.SysInstance),
-				ID:      strconv.FormatInt(instID, 10),
-				Name:    instName,
-				Creator: ctx.Kit.User,
-			}
-			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
-			if err != nil {
-				blog.Errorf("register created instance to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
 		}
 		return nil
 	})

@@ -17,20 +17,6 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 	return ResourceCreatorActions{
 		Config: []ResourceCreatorAction{
 			{
-				ResourceID: Host,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditResourcePoolHost,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteResourcePoolHost,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
 				ResourceID: SysResourcePoolDirectory,
 				Actions: []CreatorRelatedAction{
 					{
@@ -57,20 +43,6 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 					},
 					{
 						ID:         FindBusiness,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: SysInstance,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditSysInstance,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteSysInstance,
 						IsRequired: false,
 					},
 				},
