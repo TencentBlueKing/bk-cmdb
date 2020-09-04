@@ -294,24 +294,23 @@ func (m *associationInstance) SearchInstanceAssociationRelated(ctx core.ContextP
 		Condition: condMapStr,
 	}
 
-	//count
-	var count uint64
-
 	//search bkObjIDInstAsst
 	Items, err := m.searchInstanceAssociation(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search inst association array err [%#v], rid: %s", err, ctx.ReqID)
+		blog.Errorf("search inst related association failed, err [%#v], rid: %s", err, ctx.ReqID)
 		return nil, err
 	}
 
+	//count
+	count := len(Items)
+
 	//result
-	queryResult := &metadata.QueryResult{}
-	queryResult.Info = make([]mapstr.MapStr, 0)
-	for _, item := range Items {
-		count = count + 1
-		queryResult.Info = append(queryResult.Info, mapstr.NewFromStruct(item, "field"))
+	queryResult := new(metadata.QueryResult)
+	queryResult.Info = make([]mapstr.MapStr, count)
+	for i, item := range Items {
+		queryResult.Info[i] = mapstr.NewFromStruct(item, "field")
 	}
-	queryResult.Count = count
+	queryResult.Count = uint64(count)
 
 	return queryResult, nil
 }

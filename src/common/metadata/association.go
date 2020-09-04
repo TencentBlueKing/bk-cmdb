@@ -117,6 +117,18 @@ type SearchAssociationInstRequest struct {
 	Condition mapstr.MapStr `json:"condition"` // construct condition mapstr by condition.Condition
 }
 
+type SearchAssociationRelatedInstRequest struct {
+	Fields    []string                          `json:"fields"`
+	Limit     SearchLimit                       `json:"limit"`
+	SortArr   []SearchSort                      `json:"sort"`
+	Condition AssociationRelatedInstRequestCond `json:"condition"` // construct condition mapstr by condition.Condition
+}
+
+type AssociationRelatedInstRequestCond struct {
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	InstID   int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+}
+
 type SearchAssociationInstResult struct {
 	BaseResp `json:",inline"`
 	Data     []*InstAsst `json:"data"`
@@ -136,9 +148,17 @@ type DeleteAssociationInstRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 }
 
+type DeleteAssociationRelatedInstRequest struct {
+	AssociationRelatedInstRequestCond `json:",inline"`
+}
+
 type DeleteAssociationInstResult struct {
 	BaseResp `json:",inline"`
 	Data     string `json:"data"`
+}
+
+type DeleteAssociationRelatedInstResult struct {
+	BaseResp `json:",inline"`
 }
 
 type AssociationKindIDs struct {

@@ -15,7 +15,6 @@ package operation
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"configcenter/src/apimachinery"
@@ -97,10 +96,10 @@ type AssociationOperationInterface interface {
 	DeleteObject(params types.ContextParams, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
 
 	SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
-	SearchInstAssociationRelated(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.ReadInstAssociationResult, err error)
+	SearchInstAssociationRelated(params types.ContextParams, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.ReadInstAssociationResult, err error)
 	CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
-	DeleteInstAssociationRelated(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
+	DeleteInstAssociationRelated(params types.ContextParams, request *metadata.DeleteAssociationRelatedInstRequest) (resp *metadata.DeleteAssociationRelatedInstResult, err error)
 
 	ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error)
 
@@ -780,17 +779,20 @@ func (assoc *association) SearchInst(params types.ContextParams, request *metada
 }
 
 //Search all associations of certain model instance,by regarding the instance as both Association source and Association target.
-func (assoc *association) SearchInstAssociationRelated(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (*metadata.ReadInstAssociationResult, error) {
+func (assoc *association) SearchInstAssociationRelated(params types.ContextParams, request *metadata.SearchAssociationRelatedInstRequest) (*metadata.ReadInstAssociationResult, error) {
 	cond := &metadata.QueryCondition{
-		Condition: request.Condition,
-		Fields:    request.Fields,
-		Limit:     request.Limit,
-		SortArr:   request.SortArr,
+		Fields:  request.Fields,
+		Limit:   request.Limit,
+		SortArr: request.SortArr,
+	}
+	cond.Condition = mapstr.MapStr{
+		common.BKObjIDField:  request.Condition.ObjectID,
+		common.BKInstIDField: request.Condition.InstID,
 	}
 
 	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociationRelated(context.Background(), params.Header, cond)
 	if err != nil {
-		blog.Errorf("search instance associations with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
+		blog.Errorf("search instance related association with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -1017,22 +1019,26 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 }
 
 //Delete all associations of certain model instance,by regarding the instance as both Association source and Association target.
-func (assoc *association) DeleteInstAssociationRelated(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
-	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociationRelated(context.Background(), params.Header, &metadata.DeleteOption{Condition: request.Condition})
+func (assoc *association) DeleteInstAssociationRelated(params types.ContextParams, request *metadata.DeleteAssociationRelatedInstRequest) (resp *metadata.DeleteAssociationRelatedInstResult, err error) {
+
+	cond := mapstr.MapStr{
+		common.BKObjIDField:  request.ObjectID,
+		common.BKInstIDField: request.InstID,
+	}
+	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociationRelated(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond})
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("delete instance related association failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-asst] failed to delete the inst association info , err: %s, rid: %s", rsp.ErrMsg, params.ReqID)
+		blog.Errorf("delete instance related association failed, err: %s, rid: %s", rsp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	resp = &metadata.DeleteAssociationInstResult{
+	resp = &metadata.DeleteAssociationRelatedInstResult{
 		BaseResp: rsp.BaseResp,
 	}
-	resp.Data = strconv.FormatUint(rsp.Data.Count, 10)
 
 	return resp, nil
 }

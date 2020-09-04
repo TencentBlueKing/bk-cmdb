@@ -221,7 +221,7 @@ func (s *coreService) DeleteInstanceAssociationRelated(ctx core.ContextParams, p
 
 	countBKObjID, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, inputData)
 	if nil != err {
-		blog.Errorf("delete instance association error %v, rid: %s", err, ctx.ReqID)
+		blog.Errorf("delete instance related association failed, error %v, rid: %s", err, ctx.ReqID)
 		return nil, err
 	}
 	cnt := countBKObjID.Count
@@ -229,8 +229,8 @@ func (s *coreService) DeleteInstanceAssociationRelated(ctx core.ContextParams, p
 	bkAsstObjIDCond := metadata.DeleteOption{Condition: mapstr.MapStr{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID}}
 	countBKAsstObjID, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, bkAsstObjIDCond)
 	if nil != err {
-		blog.Errorf("delete instance association error %v, rid: %s", err, ctx.ReqID)
-		return nil, err
+		blog.Errorf("delete instance related association failed, error %v, rid: %s", err, ctx.ReqID)
+		return cnt, err
 	}
 
 	cnt = countBKObjID.Count + countBKAsstObjID.Count

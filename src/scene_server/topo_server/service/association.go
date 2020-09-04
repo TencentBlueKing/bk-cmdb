@@ -327,14 +327,18 @@ func (s *Service) SearchAssociationInst(params types.ContextParams, pathParams, 
 
 //Search all associations of certain model instance,by regarding the instance as both Association source and Association target.
 func (s *Service) SearchAssociationRelatedInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	request := &metadata.SearchAssociationInstRequest{}
+	request := &metadata.SearchAssociationRelatedInstRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+	if request.Condition.InstID == 0 || request.Condition.ObjectID == "" {
+		return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
+	}
+
 	//Use fixed sort parameters
 	request.SortArr = []metadata.SearchSort{
 		{
-			IsDsc: true,
+			IsDsc: false,
 			Field: common.BKFieldID,
 		},
 	}
@@ -391,14 +395,17 @@ func (s *Service) DeleteAssociationInst(params types.ContextParams, pathParams, 
 
 //Delete all associations of certain model instance,by regarding the instance as both Association source and Association target.
 func (s *Service) DeleteAssociationRelatedInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	request := &metadata.DeleteAssociationInstRequest{}
+	request := &metadata.DeleteAssociationRelatedInstRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+	if request.InstID == 0 || request.ObjectID == "" {
+		return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
+	}
 
-	resp, err := s.Core.AssociationOperation().DeleteInstAssociationRelated(params, &metadata.DeleteAssociationInstRequest{Condition: request.Condition})
+	_, err := s.Core.AssociationOperation().DeleteInstAssociationRelated(params, &metadata.DeleteAssociationRelatedInstRequest{AssociationRelatedInstRequestCond: request.AssociationRelatedInstRequestCond})
 	if err != nil {
 		return nil, err
 	}
-	return resp.Data, nil
+	return nil, nil
 }
