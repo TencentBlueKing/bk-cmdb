@@ -331,10 +331,14 @@ func (s *Service) SearchAssociationRelatedInst(params types.ContextParams, pathP
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+	//check condition
 	if request.Condition.InstID == 0 || request.Condition.ObjectID == "" {
 		return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
 	}
-
+	//check fields,if there's any incorrect params,return err.
+	if len(request.Fields) == 0 {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, "there should be at least one param in 'fields'.")
+	}
 	//Use fixed sort parameters
 	request.SortArr = []metadata.SearchSort{
 		{
