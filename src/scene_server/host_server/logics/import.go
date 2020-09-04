@@ -136,6 +136,8 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			// remove unchangeable fields
 			delete(host, common.BKHostInnerIPField)
 			delete(host, common.BKCloudIDField)
+			delete(host, "import_from")
+			delete(host, common.CreateTimeField)
 
 			// generate audit log before really change it.
 			auditLog, err = audit.GenerateAuditLog(kit, metadata.AuditUpdate, intHostID, appID, innerIP, metadata.FromUser, nil, host)

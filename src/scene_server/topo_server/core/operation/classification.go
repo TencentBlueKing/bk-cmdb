@@ -261,9 +261,13 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	class := cls.Classify()
 	class.ID = id
 
+	// remove unchangeable fields.
+	data.Remove(metadata.ClassFieldClassificationID)
+	data.Remove(metadata.ClassificationFieldID)
+
 	// generate audit log of object classification.
 	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, class.ID, metadata.FromUser, nil, nil)
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, class.ID, metadata.FromUser, nil, data)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update object classification, objClsID: %d, err: %v, rid: %s",
 			id, err, kit.Rid)

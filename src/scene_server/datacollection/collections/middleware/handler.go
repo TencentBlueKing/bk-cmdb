@@ -276,11 +276,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		return nil
 	}
 
-	preUpdatedData := make(map[string]interface{})
-	for key, value := range inst {
-		preUpdatedData[key] = value
-	}
-
 	instID, err := util.GetInt64ByInterface(inst[instIDField])
 	if nil != err {
 		return fmt.Errorf("get bk_inst_id failed: %s %s", inst[instIDField], err.Error())
@@ -322,6 +317,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		return nil
 	}
 
+	// remove unchangeable fields.
 	delete(inst, common.BKObjIDField)
 	delete(inst, common.BKOwnerIDField)
 	delete(inst, common.BKDefaultField)
@@ -329,6 +325,27 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	delete(inst, common.LastTimeField)
 	delete(inst, common.CreateTimeField)
 
+	// ready audit interface of instance.
+	audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
+
+	// generate audit log before update instance.
+	kit := &rest.Kit{
+		Rid:             rid,
+		Header:          d.httpHeader,
+		Ctx:             d.ctx,
+		CCError:         d.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+		User:            common.CCSystemCollectorUserName,
+		SupplierAccount: common.BKDefaultOwnerID,
+	}
+	auditCond := map[string]interface{}{instIDField: instID}
+	auditLog, err := audit.GenerateAuditLogByCondGetData(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, auditCond, inst)
+	if err != nil {
+		blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+			objID, err, rid)
+		return err
+	}
+
+	// to update.
 	input := metadata.UpdateOption{
 		Data: inst,
 		Condition: map[string]interface{}{
@@ -348,35 +365,11 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	blog.Infof("update inst result: %v", resp)
 	d.TryUnsetRedis(instKeyStr)
 
-	if err := func() error {
-		// create and save the audit log.
-		audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
-
-		kit := &rest.Kit{
-			Rid:             rid,
-			Header:          d.httpHeader,
-			Ctx:             d.ctx,
-			CCError:         d.CCErr.CreateDefaultCCErrorIf(string(common.English)),
-			User:            common.CCSystemCollectorUserName,
-			SupplierAccount: common.BKDefaultOwnerID,
-		}
-		cond := map[string]interface{}{instIDField: instID}
-		auditLog, err := audit.GenerateAuditLogByCondGetData(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, cond, inst)
-		if err != nil {
-			blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
-				objID, err, rid)
-			return err
-		}
-
-		if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
-			blog.Errorf("save instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
-				objID, err, rid)
-			return err
-		}
-
-		return nil
-	}(); err != nil && blog.V(3) {
-		blog.Errorf("save inst update audit log failed, err: %s, rid: %s", err.Error(), rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+			objID, err, rid)
+		return err
 	}
 
 	// update registry to iam

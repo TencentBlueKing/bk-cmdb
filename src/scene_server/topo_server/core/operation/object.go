@@ -782,9 +782,14 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 
 	object := obj.Object()
 
+	// remove unchangeable fields.
+	data.Remove(metadata.ModelFieldObjectID)
+	data.Remove(metadata.ModelFieldID)
+	data.Remove(metadata.ModelFieldObjCls)
+
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.Object().ID, metadata.FromUser, nil, nil)
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.Object().ID, metadata.FromUser, nil, data)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
 			object.ObjectName, err, kit.Rid)
