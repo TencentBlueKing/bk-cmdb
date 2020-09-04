@@ -25,13 +25,12 @@ type attributeGroupAuditLog struct {
 	audit
 }
 
-// GenerateAuditLog generate audit of model attribute, if data is nil, then auto get current model attribute data by id.
+// GenerateAuditLog generate audit of object attribute group, if data is nil, will auto get current attribute group data by id.
 func (h *attributeGroupAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
 	data *metadata.Group, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
-	// get data by attribute instance id.
 	if data == nil {
+		// get current object attribute group data by id.
 		query := mapstr.MapStr{"id": id}
-		// get current model attribute data by id.
 		rsp, err := h.clientSet.Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, metadata.QueryCondition{Condition: query})
 		if err != nil {
 			blog.Errorf("generate audit log of attribute group failed, failed to read attribute group, err: %v, rid: %s",
@@ -39,13 +38,13 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata
 			return nil, err
 		}
 		if rsp.Result != true {
-			blog.Errorf("generate audit log of attribute group failed, failed to read attribute group, rsp code is %v, err: %s",
-				rsp.Code, rsp.ErrMsg)
+			blog.Errorf("generate audit log of attribute group failed, failed to read attribute group, rsp code is %v, err: %s, rid: %s",
+				rsp.Code, rsp.ErrMsg, kit.Rid)
 			return nil, err
 		}
 		if len(rsp.Data.Info) <= 0 {
-			blog.Errorf("generate audit log of model attribute failed, failed to read attribute group, err: %s",
-				kit.CCError.CCError(common.CCErrorModelNotFound))
+			blog.Errorf("generate audit log of model attribute failed, failed to read attribute group, err: %s, rid: %s",
+				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
 			return nil, err
 		}
 

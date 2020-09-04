@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -490,10 +491,19 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
-	//package audit response
-	err = NewObjectAudit(kit, o.clientSet, obj.Object().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
+	// generate audit log of object attribute group.
+	audit := auditlog.NewModelAuditLog(o.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, obj.Object().ID, metadata.FromUser, nil, nil)
 	if err != nil {
-		blog.Errorf("update object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+		blog.Errorf("create object %s success, but generate audit log failed, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
+		return nil, err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("create object %s success, but save audit log failed, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
 		return nil, err
 	}
 
@@ -588,8 +598,14 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaD
 		}
 	}
 
-	//get PreData
-	objAudit := NewObjectAudit(kit, o.clientSet, id).buildSnapshotForPre()
+	// generate audit log of object.
+	audit := auditlog.NewModelAuditLog(o.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, obj.Object().ID, metadata.FromUser, nil, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before delete object, objName: %s, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
+		return err
+	}
 
 	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
 	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
@@ -604,16 +620,17 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaD
 
 	// auth: deregister models
 	if err := o.authManager.DeregisterObject(kit.Ctx, kit.Header, object); err != nil {
-		blog.ErrorJSON("Delete Object success, but deregister object from iam failed, objects: %s, err: %s, rid: %s", object, err.Error(), kit.Rid)
+		blog.ErrorJSON("Delete Object success, but deregister object from iam failed, objects: %s, err: %s, rid: %s",
+			object, err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}
 
-	//saveAuditLog
-	err = objAudit.SaveAuditLog(metadata.AuditDelete)
-	if err != nil {
-		blog.Errorf("Delete object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
 		return err
 	}
+
 	return nil
 }
 
@@ -765,18 +782,16 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 
 	object := obj.Object()
 
-	/*
-		// auth: check authorization
-		if err := o.authManager.AuthorizeObjectByRawID(kit.Ctx, kit.Header, meta.Update, object.ObjectID); err != nil {
-			blog.V(2).Infof("update model %s failed, authorization failed, err: %+v, rid: %s", object.ObjectID, err, kit.Rid)
-			return err
-		}
-	*/
+	// generate audit log of object attribute group.
+	audit := auditlog.NewModelAuditLog(o.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.Object().ID, metadata.FromUser, nil, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
+		return err
+	}
 
-	//get PreData
-	objAudit := NewObjectAudit(kit, o.clientSet, id).buildSnapshotForPre()
-
-	// check repeated
+	// check repeated.
 	exists, err := obj.IsExists()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%#v), err: %s, rid: %s", data, err.Error(), kit.Rid)
@@ -804,11 +819,12 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 		return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
-	//get CurData and saveAuditLog
-	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
-	if err != nil {
-		blog.Errorf("update object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("update object %s success, but save audit log failed, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
 		return err
 	}
+
 	return nil
 }

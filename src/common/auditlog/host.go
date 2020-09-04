@@ -32,7 +32,7 @@ func (h *hostAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionTyp
 }
 
 // GenerateAuditLogByHostIDGetBizID generate audit log of host, auto get bizID by hostID and host topology relate,
-// if data is nil, then auto get host current data by hostID, meanwhile update hostIP if hostIP is "".
+// if data is nil, will auto get host current data by hostID, meanwhile update hostIP if hostIP is "".
 func (h *hostAuditLog) GenerateAuditLogByHostIDGetBizID(kit *rest.Kit, action metadata.ActionType, hostID int64,
 	hostIP string, OperateFrom metadata.OperateFromType, data, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	// get bizID by hostID and host topology related.
