@@ -146,7 +146,7 @@ func (h *HostSnap) Analyze(msg *string) error {
 		Rid:             rid,
 		Header:          header,
 		Ctx:             h.ctx,
-		CCError:         h.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+		CCError:         h.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)),
 		User:            common.CCSystemCollectorUserName,
 		SupplierAccount: common.BKDefaultOwnerID,
 	}
