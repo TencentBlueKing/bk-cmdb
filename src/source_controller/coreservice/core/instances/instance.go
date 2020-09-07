@@ -55,6 +55,7 @@ func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapSt
 func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
+	inputParam.Data.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	err := m.validCreateInstanceData(kit, objID, inputParam.Data)
 	if nil != err {
 		blog.Errorf("CreateModelInstance failed, valid error: %+v, rid: %s", err, rid)
@@ -120,25 +121,10 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 		return nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
-	var instMedataData metadata.Metadata
-	instMedataData.Label = make(metadata.Label)
-	for key, val := range inputParam.Condition {
-		if metadata.BKMetadata == key {
-			bizID := metadata.GetBusinessIDFromMeta(val)
-			if "" != bizID {
-				instMedataData.Label.Set(metadata.LabelBusinessID, bizID)
-			}
-			continue
-		}
-	}
-	if inputParam.Condition.Exists(metadata.BKMetadata) {
-		inputParam.Condition.Set(metadata.BKMetadata, instMedataData)
-	}
-
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID), inputParam.CanEditAll)
+		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, uint64(instID), inputParam.CanEditAll)
 		if nil != err {
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err

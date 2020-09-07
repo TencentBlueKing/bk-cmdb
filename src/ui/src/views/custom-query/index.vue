@@ -5,7 +5,7 @@
             {{$t('动态分组提示')}}
         </cmdb-tips>
         <div class="filter-wrapper clearfix">
-            <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_CUSTOM_QUERY })">
+            <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.C_CUSTOM_QUERY, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     class="api-btn"
@@ -39,7 +39,7 @@
             @sort-change="handleSortChange">
             <!-- <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column> -->
             <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed class-name="is-highlight"></bk-table-column>
-            <bk-table-column prop="id" label="ID" sortable="custom" fixed></bk-table-column>
+            <bk-table-column prop="id" label="ID" sortable="custom" fixed show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom"></bk-table-column>
             <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
                 <template slot-scope="{ row }">
@@ -59,7 +59,7 @@
                         @click.stop="getUserAPIDetail(row)">
                         {{$t('预览')}}
                     </bk-button>
-                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_CUSTOM_QUERY })">
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_CUSTOM_QUERY, relation: [bizId, row.id] }">
                         <bk-button slot-scope="{ disabled }"
                             :disabled="disabled"
                             :text="true"
@@ -67,7 +67,7 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.D_CUSTOM_QUERY })">
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.D_CUSTOM_QUERY, relation: [bizId, row.id] }">
                         <bk-button slot-scope="{ disabled }"
                             :disabled="disabled"
                             :text="true"
@@ -80,7 +80,7 @@
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$authResources({ type: $OPERATION.C_CUSTOM_QUERY })"
+                :auth="{ type: $OPERATION.C_CUSTOM_QUERY, relation: [bizId] }"
                 @create="showUserAPISlider('create')"
             ></cmdb-table-empty>
         </bk-table>
@@ -459,40 +459,43 @@
             async initObjectProperties () {
                 const res = await Promise.all([
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             bk_obj_id: 'host',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_host',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             bk_obj_id: 'set',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_set',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             bk_obj_id: 'module',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_module',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: 'biz',
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'post_searchObjectAttribute_biz',
                             fromCache: true

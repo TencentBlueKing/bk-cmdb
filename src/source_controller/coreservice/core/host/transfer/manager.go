@@ -18,11 +18,11 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
-
 	"gopkg.in/redis.v5"
 )
 
@@ -332,12 +332,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attributes []metadata.Attribute, hostIDs ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{}, 0)
 	for _, attribute := range attributes {
-		bizID, err := attribute.Metadata.ParseBizID()
-		if err != nil {
-			blog.Warnf("clearLegacyPrivateField, parse bizID from attribute failed, attribute: %+v, err: %s, rid: %s", attribute, err.Error(), kit.Rid)
-			continue
-		}
-		if bizID == 0 {
+		if attribute.BizID == 0 {
 			continue
 		}
 		doc[attribute.PropertyID] = nil
@@ -364,12 +359,7 @@ func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attribute
 func (manager *TransferManager) setDefaultPrivateField(kit *rest.Kit, attributes []metadata.Attribute, hostID ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{})
 	for _, attribute := range attributes {
-		bizID, err := attribute.Metadata.ParseBizID()
-		if err != nil {
-			blog.Warnf("clearLegacyPrivateField, parse bizID from attribute failed, attribute: %+v, err: %s, rid: %s", attribute, err.Error(), kit.Rid)
-			continue
-		}
-		if bizID == 0 {
+		if attribute.BizID == 0 {
 			continue
 		}
 		doc[attribute.PropertyID] = nil
@@ -449,34 +439,9 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 }
 
 // DeleteHost delete host module relation and host info
-func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
-
+func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false)
-	transfer.SetDeleteHost(kit)
-
-	err := transfer.ValidParameter(kit)
-	if err != nil {
-		blog.ErrorJSON("DeleteFromSystem failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
-		return nil, err
-	}
-
-	var exceptionArr []metadata.ExceptionResult
-	for _, hostID := range input.HostIDArr {
-		err := transfer.Transfer(kit, hostID)
-		if err != nil {
-			blog.ErrorJSON("DeleteFromSystem failed, Transfer module host relation failed. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, kit.Rid)
-			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.GetCode()),
-				OriginIndex: hostID,
-			})
-		}
-	}
-	if len(exceptionArr) > 0 {
-		return exceptionArr, kit.CCError.CCError(common.CCErrCoreServiceTransferHostModuleErr)
-	}
-
-	return nil, nil
+	return transfer.DeleteHosts(kit, input.HostIDArr)
 }
 
 func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID int64, hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {
@@ -537,4 +502,80 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	return hostIDArr, nil
+}
+
+func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+	// validate input bk_module_id
+	existHostIDs, err := manager.validTransferResourceDirParams(kit, input)
+	if err != nil {
+		blog.ErrorJSON("TransferResourceDirectory fail with validTransferResourceDirParams failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	wrongHostIDs := make([]int64, 0)
+	if len(existHostIDs) < len(input.HostID) {
+		for _, id := range input.HostID {
+			if !util.ContainsInt64(existHostIDs, id) {
+				wrongHostIDs = append(wrongHostIDs, id)
+			}
+		}
+	}
+
+	cond := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: existHostIDs,
+		},
+	}
+	data := map[string]interface{}{
+		common.BKModuleIDField: input.ModuleID,
+	}
+	updateErr := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Update(kit.Ctx, cond, data)
+	if updateErr != nil {
+		blog.ErrorJSON("TransferResourceDirectory fail with update table error: %v, cond: %v, data: %v, rid: %v", updateErr, cond, data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(wrongHostIDs) > 0 {
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotUnderAnyResourceDirectory, wrongHostIDs)
+	}
+
+	return nil
+}
+
+func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) ([]int64, errors.CCErrorCoder) {
+	// valid bk_module_id,资源池目录default=4,空闲机default=1
+	cond := mapstr.MapStr{}
+	cond[common.BKModuleIDField] = input.ModuleID
+	cond[common.BKDBOR] = []mapstr.MapStr{{common.BKDefaultField: 1}, {common.BKDefaultField: 4}}
+	count, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if count <= 0 {
+		blog.ErrorJSON("validTransferResourceDirParams bk_module_id bind resource directory not exist")
+		return nil, kit.CCError.CCError(common.CCErrCoreServiceResourceDirectoryNotExistErr)
+	}
+
+	// 确保主机在资源池目录下(default=1的业务)
+	bizInfo := &metadata.BizInst{}
+	filter := mapstr.MapStr{common.BKDefaultField: 1}
+	err = manager.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).One(kit.Ctx, bizInfo)
+	if err != nil {
+		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	opt := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.HostID}, common.BKAppIDField: bizInfo.BizID}
+	moduleHost := make([]metadata.ModuleHost, 0)
+	if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(opt).All(kit.Ctx, &moduleHost); err != nil {
+		blog.ErrorJSON("validTransferResourceDirParams failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, opt, err.Error(), kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	existHostIDs := make([]int64, 0)
+	for _, host := range moduleHost {
+		existHostIDs = append(existHostIDs, host.HostID)
+	}
+
+	return existHostIDs, nil
 }

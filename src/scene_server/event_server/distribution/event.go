@@ -78,7 +78,7 @@ type EventHandler struct {
 	pushersMu sync.RWMutex
 
 	// distributer handles all events distribution.
-	distributer *Distributer
+	distributer *Distributor
 
 	// metrics.
 	// eventHandleTotal is event handle total stat.
@@ -156,7 +156,7 @@ func (h *EventHandler) registerMetrics() {
 }
 
 // SetDistributer setups distributer to event handler.
-func (h *EventHandler) SetDistributer(distributer *Distributer) {
+func (h *EventHandler) SetDistributer(distributer *Distributor) {
 	h.distributer = distributer
 }
 

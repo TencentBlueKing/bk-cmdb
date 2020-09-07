@@ -24,8 +24,10 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac/iam"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -134,19 +136,21 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	}
 	s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
 
-	// register subscription to iam
-	iamResource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Name:       sub.SubscriptionName,
-			Type:       meta.EventPushing,
-			InstanceID: sub.SubscriptionID,
-		},
-	}
-	if err = s.auth.RegisterResource(s.ctx, iamResource); err != nil {
-		blog.Errorf("register subscribe to iam failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusOK, result)
-		return
+	// register cloud sync task resource creator action to iam
+	if auth.EnableAuthorize() {
+		iamInstance := metadata.IamInstanceWithCreator{
+			Type:    string(iam.SysEventPushing),
+			ID:      strconv.FormatInt(sub.SubscriptionID, 10),
+			Name:    sub.SubscriptionName,
+			Creator: sub.Operator,
+		}
+		_, err = s.authorizer.RegisterResourceCreatorAction(s.ctx, header, iamInstance)
+		if err != nil {
+			blog.Errorf("register created event subscription to iam failed, err: %s, rid: %s", err, rid)
+			result := &metadata.RespError{Msg: err}
+			_ = resp.WriteError(http.StatusInternalServerError, result)
+			return
+		}
 	}
 
 	result := &metadata.RspSubscriptionCreate{
@@ -195,21 +199,6 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	s.cache.Del(types.EventCacheDistIDPrefix+fmt.Sprint(sub.SubscriptionID),
 		types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(sub.SubscriptionID),
 		types.EventCacheDistCallBackCountPrefix+fmt.Sprint(sub.SubscriptionID))
-
-	// deregister subscription from iam
-	iamResource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Name:       sub.SubscriptionName,
-			Type:       meta.EventPushing,
-			InstanceID: sub.SubscriptionID,
-		},
-	}
-	if err = s.auth.DeregisterResource(s.ctx, iamResource); err != nil {
-		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusOK, result)
-		return
-	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
@@ -271,21 +260,6 @@ func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Respons
 	if err = s.updateSubscription(header, id, ownerID, sub); err != nil {
 		// 400, update target subscription failed.
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
-		return
-	}
-
-	// deregister subscription from iam
-	iamResource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Name:       sub.SubscriptionName,
-			Type:       meta.EventPushing,
-			InstanceID: sub.SubscriptionID,
-		},
-	}
-	if err := s.auth.UpdateResource(s.ctx, &iamResource); err != nil {
-		blog.Errorf("update subscribe to iam failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
-		resp.WriteError(http.StatusOK, result)
 		return
 	}
 
@@ -353,6 +327,7 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	rid := util.GetHTTPCCRequestID(header)
 	ownerID := util.GetOwnerID(header)
 
+
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	// decode request data.
@@ -367,6 +342,44 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	fields := data.Fields
 	condition := data.Condition
 	condition = util.SetModOwner(condition, ownerID)
+
+	// get authorized event subscription ids if auth is enabled
+	if auth.EnableAuthorize() {
+		authInput := meta.ListAuthorizedResourcesParam{
+			UserName:     util.GetUser(header),
+			ResourceType: meta.EventPushing,
+			Action:       meta.Find,
+		}
+
+		authorizedResources, err := s.authorizer.ListAuthorizedResources(util.NewContextFromHTTPHeader(header), header, authInput)
+		if err != nil {
+			blog.ErrorJSON("list authorized subscribe resources failed, err: %v, cond: %s, rid: %s", err, authInput, rid)
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+			return
+		}
+
+		subscriptions := make([]int64, 0)
+		for _, resourceID := range authorizedResources {
+			subscriptionID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("parse resourceID(%s) failed, err: %v, rid: %s", resourceID, err, rid)
+				_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+				return
+			}
+			subscriptions = append(subscriptions, subscriptionID)
+		}
+
+		condition = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				condition,
+				{
+					common.BKSubscriptionIDField: map[string]interface{}{
+						common.BKDBIN: subscriptions,
+					},
+				},
+			},
+		}
+	}
 
 	skip := data.Page.Start
 	limit := data.Page.Limit

@@ -16,7 +16,8 @@ export default [{
             i18n: '主机'
         },
         layout: {},
-        filterPropertyKey: 'resource_host_filter_properties'
+        filterPropertyKey: 'resource_host_filter_properties',
+        customInstanceColumn: 'resource_host_table_column_config'
     }),
     children: [{
         name: MENU_RESOURCE_HOST_DETAILS,
@@ -45,7 +46,7 @@ export default [{
     }]
 }, {
     name: 'hostHistory',
-    path: 'host/history',
+    path: 'history/host',
     component: () => import('@/views/history/index.vue'),
     meta: new Meta({
         menu: {

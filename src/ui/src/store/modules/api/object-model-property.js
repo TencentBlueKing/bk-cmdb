@@ -16,6 +16,7 @@ function createIdProperty (objId) {
         host: 'bk_host_id'
     }
     return {
+        id: Date.now(),
         bk_obj_id: objId,
         bk_property_id: keyMap[objId] || 'bk_inst_id',
         bk_property_name: 'ID',

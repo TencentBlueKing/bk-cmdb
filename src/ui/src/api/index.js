@@ -6,7 +6,6 @@ import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
 import { language } from '@/i18n'
 
-import middlewares from './middleware'
 // axios实例
 const axiosInstance = Axios.create({
     baseURL: window.API_PREFIX,
@@ -17,36 +16,14 @@ const axiosInstance = Axios.create({
 
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
-    config => {
-        try {
-            middlewares.forEach(middleware => {
-                if (typeof middleware.request === 'function') {
-                    config = middleware.request(config)
-                }
-            })
-        } catch (e) {
-            console.error(e)
-        }
-        return config
-    },
+    config => config,
     error => {
         return Promise.reject(error)
     }
 )
 
 axiosInstance.interceptors.response.use(
-    response => {
-        try {
-            middlewares.forEach(middleware => {
-                if (typeof middleware.response === 'function') {
-                    response = middleware.response(response)
-                }
-            })
-        } catch (e) {
-            console.error(e)
-        }
-        return response
-    },
+    response => response,
     error => {
         return Promise.reject(error)
     }
@@ -298,6 +275,7 @@ async function download (options = {}) {
         return Promise.resolve(response)
     } catch (e) {
         $error('Download failure')
+        console.error(e)
         return Promise.reject(e)
     }
 }

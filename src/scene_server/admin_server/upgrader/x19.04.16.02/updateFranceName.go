@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 )
 
 func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {

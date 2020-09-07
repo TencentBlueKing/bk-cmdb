@@ -1,5 +1,6 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
+import i18n from '@/i18n'
 
 /**
  * 拍平列表
@@ -246,18 +247,6 @@ export function clone (object) {
     return JSON.parse(JSON.stringify(object))
 }
 
-/**
- * 获取对象中的metada.label.bk_biz_id属性
- * @param {Object} object - 需拷贝的对象
- * @return {Object} 拷贝后的对象
- */
-export function getMetadataBiz (object = {}) {
-    const metadata = object.metadata || {}
-    const label = metadata.label || {}
-    const biz = label['bk_biz_id']
-    return biz
-}
-
 export function getValidateRules (property) {
     const rules = {}
     const {
@@ -293,13 +282,10 @@ export function getValidateRules (property) {
     return rules
 }
 
-export function getSort (sort, defaultSort) {
-    const order = sort.order
-    const prop = sort.prop
-    if (!prop) {
-        return defaultSort || ''
-    }
-    if (order === 'descending') {
+export function getSort (sort, defaultSort = {}) {
+    const order = sort.order || defaultSort.order || 'ascending'
+    const prop = sort.prop || defaultSort.prop || ''
+    if (prop && order === 'descending') {
         return `-${prop}`
     }
     return prop
@@ -351,6 +337,27 @@ export function localSort (data, compareKey) {
     })
 }
 
+export function createTopologyProperty () {
+    return {
+        bk_biz_id: 0,
+        bk_isapi: true,
+        bk_issystem: false,
+        bk_obj_id: 'host',
+        bk_property_group: undefined,
+        bk_property_group_name: undefined,
+        bk_property_id: '__bk_host_topology__',
+        bk_property_index: Infinity,
+        bk_property_name: i18n.t('业务拓扑'),
+        bk_property_type: 'topology',
+        editable: false,
+        id: Date.now(),
+        ispre: true,
+        isonly: true,
+        isreadonly: true,
+        isrequired: true
+    }
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -364,12 +371,12 @@ export default {
     clone,
     getInstFormValues,
     formatValues,
-    getMetadataBiz,
     getValidateRules,
     getSort,
     getValue,
     transformHostSearchParams,
     getDefaultPaginationConfig,
     getPageParams,
-    localSort
+    localSort,
+    createTopologyProperty
 }

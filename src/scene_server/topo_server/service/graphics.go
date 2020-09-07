@@ -19,13 +19,7 @@ import (
 )
 
 func (s *Service) SelectObjectTopoGraphics(ctx *rest.Contexts) {
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	resp, err := s.Core.GraphicsOperation().SelectObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), md.Metadata)
+	resp, err := s.Core.GraphicsOperation().SelectObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"))
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -43,7 +37,7 @@ func (s *Service) UpdateObjectTopoGraphics(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), requestBody.Data, nil)
+		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), requestBody.Data)
 		if err != nil {
 			return err
 		}
@@ -66,7 +60,7 @@ func (s *Service) UpdateObjectTopoGraphicsNew(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), input.Origin, input.Metadata)
+		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), input.Origin)
 		if err != nil {
 			return err
 		}

@@ -15,7 +15,7 @@ package service
 import (
 	"context"
 
-	"configcenter/src/auth"
+	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -34,7 +34,6 @@ import (
 type Service struct {
 	ctx    context.Context
 	engine *backbone.Engine
-	auth   auth.Authorize
 
 	// db is cc main database.
 	db dal.RDB
@@ -43,7 +42,9 @@ type Service struct {
 	cache *redis.Client
 
 	// distributer is event subscription distributer.
-	distributer *distribution.Distributer
+	distributer *distribution.Distributor
+
+	authorizer ac.AuthorizeInterface
 }
 
 // NewService creates a new Service object.
@@ -61,13 +62,13 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-// SetAuth setups authorize.
-func (s *Service) SetAuth(auth auth.Authorize) {
-	s.auth = auth
+
+func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
+	s.authorizer = authorizer
 }
 
 // SetDistributer setups event subscription distributer.
-func (s *Service) SetDistributer(distributer *distribution.Distributer) {
+func (s *Service) SetDistributer(distributer *distribution.Distributor) {
 	s.distributer = distributer
 }
 

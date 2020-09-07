@@ -27,9 +27,9 @@ import (
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
-func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) error {
+func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, objID string) error {
 
-	targetObj, err := assoc.obj.FindSingleObject(kit, objID, metaData)
+	targetObj, err := assoc.obj.FindSingleObject(kit, objID)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find the target object(%s), error info is %s, rid: %s", objID, err.Error(), kit.Rid)
 		return err
@@ -72,7 +72,7 @@ func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, objID string,
 	}
 
 	// delete objects
-	if err = assoc.obj.DeleteObject(kit, tObject.ID, false, metaData); nil != err && io.EOF != err {
+	if err = assoc.obj.DeleteObject(kit, tObject.ID, false); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s, rid: %s", tObject.ID, err.Error(), kit.Rid)
 		return err
 	}
@@ -139,8 +139,7 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 
 func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error) {
 	// find the mainline module's head, which is biz.
-	metaData := &data.Metadata
-	bizObj, err := assoc.obj.FindSingleObject(kit, common.BKInnerObjIDApp, metaData)
+	bizObj, err := assoc.obj.FindSingleObject(kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
@@ -167,7 +166,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 
 	// find the mainline parent object
-	parentObj, err := assoc.obj.FindSingleObject(kit, data.AsstObjID, metaData)
+	parentObj, err := assoc.obj.FindSingleObject(kit, data.AsstObjID)
 	switch t := err.(type) {
 	case nil:
 	default:
@@ -189,7 +188,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 
 	// check and create the association mainline object
-	if err = assoc.obj.IsValidObject(kit, data.ObjectID, metaData); nil == err {
+	if err = assoc.obj.IsValidObject(kit, data.ObjectID); nil == err {
 		blog.Errorf("[operation-asst] the object(%s) is duplicate, rid: %s", data.ObjectID, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, data.ObjectID)
 	}
@@ -200,7 +199,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		common.BKObjIconField:          data.ObjectIcon,
 		common.BKClassificationIDField: data.ClassificationID,
 	}
-	currentObj, err := assoc.obj.CreateObject(kit, true, objData, metaData)
+	currentObj, err := assoc.obj.CreateObject(kit, true, objData)
 	if err != nil {
 		return nil, err
 	}

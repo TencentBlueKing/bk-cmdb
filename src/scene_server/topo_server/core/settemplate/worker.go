@@ -28,7 +28,6 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	user := util.GetUser(header)
 	supplierAccount := util.GetOwnerID(header)
 	defaultCCError := util.GetDefaultCCError(header)
-	md := metadata.NewMetadata(set.BizID)
 
 	kit := &rest.Kit{
 		Rid:             rid,
@@ -38,7 +37,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 		User:            user,
 		SupplierAccount: supplierAccount,
 	}
-	moduleObj, err := bw.ObjectOperation.FindSingleObject(kit, common.BKInnerObjIDModule, &md)
+	moduleObj, err := bw.ObjectOperation.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if err != nil {
 		blog.Errorf("DoModuleSyncTask failed, FindSingleObject: module failed, err: %s, rid: %s", err.Error(), rid)
 		return err

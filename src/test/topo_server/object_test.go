@@ -981,11 +981,40 @@ var _ = Describe("object test", func() {
 				Expect(data.ObjectID).To(Equal(input.ObjectID))
 				Expect(data.PropertyID).To(Equal(input.PropertyID))
 				Expect(data.PropertyName).To(Equal(input.PropertyName))
-				Expect(data.PropertyGroup).To(Equal("bizdefault"))
+				Expect(data.PropertyGroup).To(Equal("default"))
 				Expect(data.IsEditable).To(Equal(input.IsEditable))
 				Expect(data.PropertyType).To(Equal(input.PropertyType))
 				Expect(data.OwnerID).To(Equal(input.OwnerID))
 				attrId1 = strconv.FormatInt(data.ID, 10)
+			})
+
+			It("create object attribute bk_obj_id='cc_obj' and bk_property_id='test_biz' and bk_property_name='test_biz' and invalid PropertyGroup with bizID", func() {
+				input := &metadata.ObjAttDes{
+					Attribute: metadata.Attribute{
+						OwnerID:       "0",
+						ObjectID:      "cc_obj",
+						PropertyID:    "test_biz",
+						PropertyName:  "test_biz",
+						PropertyGroup: "abcdefg",
+						IsEditable:    true,
+						PropertyType:  "singlechar",
+						BizID:         bizIdInt,
+					},
+				}
+				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+				util.RegisterResponse(rsp)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(true))
+				j, err := json.Marshal(rsp.Data)
+				data := metadata.Attribute{}
+				json.Unmarshal(j, &data)
+				Expect(data.ObjectID).To(Equal(input.ObjectID))
+				Expect(data.PropertyID).To(Equal(input.PropertyID))
+				Expect(data.PropertyName).To(Equal(input.PropertyName))
+				Expect(data.PropertyGroup).To(Equal("bizdefault"))
+				Expect(data.IsEditable).To(Equal(input.IsEditable))
+				Expect(data.PropertyType).To(Equal(input.PropertyType))
+				Expect(data.OwnerID).To(Equal(input.OwnerID))
 			})
 
 			It("update object attribute id="+attrId1, func() {
@@ -1037,7 +1066,7 @@ var _ = Describe("object test", func() {
 		Describe("object attribute group test", func() {
 			It("update object attribute property group", func() {
 				arr := []metadata.PropertyGroupObjectAtt{
-					metadata.PropertyGroupObjectAtt{},
+					{},
 				}
 				arr[0].Condition.ObjectID = "cc_obj"
 				arr[0].Condition.PropertyID = "test_singlechar"
@@ -1054,7 +1083,7 @@ var _ = Describe("object test", func() {
 
 			It("update nonexist object attribute property group", func() {
 				arr := []metadata.PropertyGroupObjectAtt{
-					metadata.PropertyGroupObjectAtt{},
+					{},
 				}
 				arr[0].Condition.ObjectID = "cc_obj"
 				arr[0].Condition.PropertyID = "test_singlechar"

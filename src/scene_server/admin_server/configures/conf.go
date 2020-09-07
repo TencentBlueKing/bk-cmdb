@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
@@ -26,6 +28,9 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
 )
 
 // ConfCenter discover configure changed. get, update configures
@@ -141,7 +146,8 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 		types.CCConfigureCommon,
 		types.CCConfigureExtra,
 	}
-	confFileSuffix := ".conf"
+
+	confFileSuffix := ".yaml"
 
 	for _, configName := range configs {
 		filePath := filepath.Join(confRootPath, configName+confFileSuffix)
@@ -151,6 +157,7 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 			continue
 		} else {
 			blog.Infof("write configure to center %s success", key)
+			cc.listenFileChange(key,filePath)
 		}
 	}
 
@@ -178,4 +185,40 @@ func (cc *ConfCenter) writeConfigure(confFilePath, key string) error {
 	}
 
 	return nil
+}
+
+var redisViper *viper.Viper
+var mongodbViper *viper.Viper
+var commonViper *viper.Viper
+var extraViper *viper.Viper
+
+//此方法给adminserver实现热更新,监听每个文件，当文件发生更改时，将改后的数据重新写到注册中心
+func (cc *ConfCenter) listenFileChange(configcenterPath string,filePath string) {
+	v := viper.New()
+	base := path.Base(filePath)
+	split := strings.Split(base, ".")
+	fileName := split[0]
+	v.SetConfigName(fileName)
+	v.AddConfigPath(path.Dir(filePath))
+	err := v.ReadInConfig()
+	if err != nil {
+		blog.Warnf("fail to read configure from %s ", base)
+	}
+	v.WatchConfig()
+	v.OnConfigChange(func(e fsnotify.Event) {
+		if err := cc.writeConfigure(filePath, configcenterPath); err != nil {
+			blog.Warnf("fail to write configure of %s into center", base)
+		} else {
+			blog.Infof("write configure to center %s success", configcenterPath)
+		}
+	})
+	if fileName == types.CCConfigureRedis {
+		redisViper = v
+	} else if fileName == types.CCConfigureMongo {
+		mongodbViper = v
+	} else if fileName == types.CCConfigureCommon {
+		commonViper = v
+	} else if fileName == types.CCConfigureExtra {
+		extraViper = v
+	}
 }

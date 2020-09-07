@@ -88,8 +88,8 @@ func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header
 }
 
 // DeleteHost delete host
-func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
+func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/delete/host"
 
 	err = h.client.Delete().
@@ -493,6 +493,30 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 	if result.Code > 0 || result.Result == false {
 		return errors.New(result.Code, result.ErrMsg)
 	}
+	return nil
+}
+
+func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(header)
+
+	result := metadata.BaseResp{}
+	subPath := "/host/transfer/resource/directory"
+
+	err := h.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+	if err != nil {
+		blog.Errorf("TransferHostResourceDirectory failed, http request failed, err: %+v, rid: %s", err, rid)
+		return errors.CCHttpError
+	}
+	if result.Code > 0 || result.Result == false {
+		return errors.New(result.Code, result.ErrMsg)
+	}
+
 	return nil
 }
 

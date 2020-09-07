@@ -62,7 +62,7 @@ type ModelAttribute interface {
 type ModelAttrUnique interface {
 	CreateModelAttrUnique(kit *rest.Kit, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error)
 	UpdateModelAttrUnique(kit *rest.Kit, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error)
-	DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (*metadata.DeletedCount, error)
+	DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) (*metadata.DeletedCount, error)
 	SearchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error)
 }
 
@@ -145,7 +145,7 @@ type HostOperation interface {
 	TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
 	TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
 	RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
-	DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
+	DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error
 	GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 	UpdateHostCloudAreaField(kit *rest.Kit, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
@@ -159,6 +159,8 @@ type HostOperation interface {
 
 	// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
 	GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error)
+
+	TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }
 
 // AssociationOperation association methods
@@ -200,6 +202,8 @@ type Core interface {
 	SetTemplateOperation() SetTemplateOperation
 	HostApplyRuleOperation() HostApplyRuleOperation
 	SystemOperation() SystemOperation
+	CloudOperation() CloudOperation
+	AuthOperation() AuthOperation
 }
 
 // ProcessOperation methods
@@ -282,9 +286,29 @@ type HostApplyRuleOperation interface {
 	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
+type CloudOperation interface {
+	CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
+	SearchAccount(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
+	UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder
+	DeleteAccount(kit *rest.Kit, accountID int64) errors.CCErrorCoder
+	SearchAccountConf(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder)
+
+	CreateSyncTask(kit *rest.Kit, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder)
+	SearchSyncTask(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder)
+	UpdateSyncTask(kit *rest.Kit, taskID int64, option mapstr.MapStr) errors.CCErrorCoder
+	DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCErrorCoder
+	CreateSyncHistory(kit *rest.Kit, account *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder)
+	SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
+	DeleteDestroyedHostRelated(kit *rest.Kit, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder
+}
+
 type SystemOperation interface {
 	GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder)
 	SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin, errors.CCErrorCoder)
+}
+
+type AuthOperation interface {
+	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder)
 }
 
 type core struct {
@@ -301,6 +325,8 @@ type core struct {
 	sys             SystemOperation
 	setTemplate     SetTemplateOperation
 	hostApplyRule   HostApplyRuleOperation
+	cloud           CloudOperation
+	auth            AuthOperation
 }
 
 // New create core
@@ -317,6 +343,8 @@ func New(
 	operation StatisticOperation,
 	hostApplyRule HostApplyRuleOperation,
 	sys SystemOperation,
+	cloud CloudOperation,
+	auth AuthOperation,
 ) Core {
 	return &core{
 		model:           model,
@@ -332,6 +360,8 @@ func New(
 		sys:             sys,
 		setTemplate:     setTemplate,
 		hostApplyRule:   hostApplyRule,
+		cloud:           cloud,
+		auth:            auth,
 	}
 }
 
@@ -385,4 +415,12 @@ func (m *core) SystemOperation() SystemOperation {
 
 func (m *core) HostApplyRuleOperation() HostApplyRuleOperation {
 	return m.hostApplyRule
+}
+
+func (m *core) CloudOperation() CloudOperation {
+	return m.cloud
+}
+
+func (m *core) AuthOperation() AuthOperation {
+	return m.auth
 }

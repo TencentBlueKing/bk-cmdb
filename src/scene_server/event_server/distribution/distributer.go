@@ -51,8 +51,8 @@ var (
 	defaultMasterCheckInterval = 3 * time.Second
 )
 
-// Distributer is event subscription distributer.
-type Distributer struct {
+// Distributor is event subscription distributer.
+type Distributor struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
@@ -98,9 +98,9 @@ type Distributer struct {
 	watchAndDistributeDuration *prometheus.HistogramVec
 }
 
-// NewDistributer creates a new Distributer instance.
-func NewDistributer(ctx context.Context, engine *backbone.Engine, db dal.RDB, cache *redis.Client, subWatcher reflector.Interface) *Distributer {
-	return &Distributer{
+// NewDistributer creates a new Distributor instance.
+func NewDistributer(ctx context.Context, engine *backbone.Engine, db dal.RDB, cache *redis.Client, subWatcher reflector.Interface) *Distributor {
+	return &Distributor{
 		ctx:                          ctx,
 		engine:                       engine,
 		db:                           db,
@@ -114,7 +114,7 @@ func NewDistributer(ctx context.Context, engine *backbone.Engine, db dal.RDB, ca
 }
 
 // registerMetrics registers prometheus metrics.
-func (d *Distributer) registerMetrics() {
+func (d *Distributor) registerMetrics() {
 	d.watchAndDistributeTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: fmt.Sprintf("%s_watch_dist_total", etypes.MetricsNamespacePrefix),
@@ -148,7 +148,7 @@ func (d *Distributer) registerMetrics() {
 }
 
 // LoadSubscriptions loads all subscriptions in cc.
-func (d *Distributer) LoadSubscriptions() error {
+func (d *Distributor) LoadSubscriptions() error {
 	// list and watch subscriptions.
 	opts := types.Options{
 		EventStruct: &metadata.Subscription{},
@@ -178,7 +178,7 @@ func (d *Distributer) LoadSubscriptions() error {
 
 // onUpsertSubscriptions handles event that target subscription inserted or updated.
 // It add or update subscription metadata and subscriber in local chains.
-func (d *Distributer) onUpsertSubscriptions(e *types.Event) {
+func (d *Distributor) onUpsertSubscriptions(e *types.Event) {
 	d.subscriptionsMu.Lock()
 	defer d.subscriptionsMu.Unlock()
 
@@ -220,7 +220,7 @@ func (d *Distributer) onUpsertSubscriptions(e *types.Event) {
 
 // onDeleteSubscriptions handles event that target subscription deleted.
 // It delete local subscription metadata and removes subscriber in local chains.
-func (d *Distributer) onDeleteSubscriptions(e *types.Event) {
+func (d *Distributor) onDeleteSubscriptions(e *types.Event) {
 	d.subscriptionsMu.Lock()
 	defer d.subscriptionsMu.Unlock()
 
@@ -240,7 +240,7 @@ func (d *Distributer) onDeleteSubscriptions(e *types.Event) {
 }
 
 // onListSubscriptionsDone handles event that after LIST-DONE at distributer first setup.
-func (d *Distributer) onListSubscriptionsDone() {
+func (d *Distributor) onListSubscriptionsDone() {
 	d.subscriptionsMu.RLock()
 	defer d.subscriptionsMu.RUnlock()
 
@@ -250,7 +250,7 @@ func (d *Distributer) onListSubscriptionsDone() {
 
 // getResourceCursor parses all subscribers and find oldest watcher cursor for distributer which
 // would watchs from the oldest cursor and distribute events to all subscribers by event handler.
-func (d *Distributer) getResourceCursor(cursorType watch.CursorType) (*watch.Cursor, error) {
+func (d *Distributor) getResourceCursor(cursorType watch.CursorType) (*watch.Cursor, error) {
 	d.subscribersMu.RLock()
 	defer d.subscribersMu.RUnlock()
 
@@ -297,7 +297,7 @@ func (d *Distributer) getResourceCursor(cursorType watch.CursorType) (*watch.Cur
 	return d.resourceCursors[cursorType], nil
 }
 
-func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
+func (d *Distributor) watchAndDistribute(cursorType watch.CursorType) error {
 	// get inner resource key.
 	resourcekey, err := event.GetResourceKeyWithCursorType(cursorType)
 	if err != nil {
@@ -343,7 +343,7 @@ func (d *Distributer) watchAndDistribute(cursorType watch.CursorType) error {
 
 // watchAndDistributeWithCursor watches with oldest cursor(NoEventCursor when find oldest cursor faild or no-exist) and
 // distributes events to event handler which would send event messages to subscribers.
-func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, key event.Key, opts *watch.WatchEventOptions) error {
+func (d *Distributor) watchAndDistributeWithCursor(cursorType watch.CursorType, key event.Key, opts *watch.WatchEventOptions) error {
 	blog.Info("start watching and distribute for resource[%+v] with opts[%+v]", cursorType, opts)
 	defer blog.Info("stop watching and distribute for resource[%+v] with opts[%+v]", cursorType, opts)
 
@@ -458,7 +458,7 @@ func (d *Distributer) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 }
 
 // addSubscriber adds new subscriber with target event type.
-func (d *Distributer) addSubscriber(eventType string, subid int64) {
+func (d *Distributor) addSubscriber(eventType string, subid int64) {
 	d.subscribersMu.Lock()
 	defer d.subscribersMu.Unlock()
 
@@ -479,7 +479,7 @@ func (d *Distributer) addSubscriber(eventType string, subid int64) {
 }
 
 // remSubscriber removes subscriber with target event type.
-func (d *Distributer) remSubscriber(eventType string, subid int64) {
+func (d *Distributor) remSubscriber(eventType string, subid int64) {
 	d.subscribersMu.Lock()
 	defer d.subscribersMu.Unlock()
 
@@ -500,7 +500,7 @@ func (d *Distributer) remSubscriber(eventType string, subid int64) {
 }
 
 // FindSubscribers returns all subscribers on event type.
-func (d *Distributer) FindSubscribers(eventType string) []int64 {
+func (d *Distributor) FindSubscribers(eventType string) []int64 {
 	d.subscribersMu.RLock()
 	defer d.subscribersMu.RUnlock()
 
@@ -512,7 +512,7 @@ func (d *Distributer) FindSubscribers(eventType string) []int64 {
 }
 
 // FindSubscription return target subscription base on subid.
-func (d *Distributer) FindSubscription(subid int64) *metadata.Subscription {
+func (d *Distributor) FindSubscription(subid int64) *metadata.Subscription {
 	d.subscriptionsMu.RLock()
 	defer d.subscriptionsMu.RUnlock()
 
@@ -520,7 +520,7 @@ func (d *Distributer) FindSubscription(subid int64) *metadata.Subscription {
 }
 
 // ListSubscriptionIDs return all subscription ids.
-func (d *Distributer) ListSubscriptionIDs() []int64 {
+func (d *Distributor) ListSubscriptionIDs() []int64 {
 	d.subscriptionsMu.RLock()
 	defer d.subscriptionsMu.RUnlock()
 
@@ -531,9 +531,9 @@ func (d *Distributer) ListSubscriptionIDs() []int64 {
 	return subids
 }
 
-// Start starts the Distributer, it would load all subscriptions in listwatch mode, and handle runtime
+// Start starts the Distributor, it would load all subscriptions in listwatch mode, and handle runtime
 // subscription update messages, push event to subscribers when tatget event happend.
-func (d *Distributer) Start(eventHandler *EventHandler) error {
+func (d *Distributor) Start(eventHandler *EventHandler) error {
 	d.eventHandler = eventHandler
 
 	// register metrics.

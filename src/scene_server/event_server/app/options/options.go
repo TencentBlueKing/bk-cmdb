@@ -13,7 +13,6 @@
 package options
 
 import (
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -51,7 +50,4 @@ type Config struct {
 
 	// Redis is cc redis configs.
 	Redis redis.Config
-
-	// Auth is authcenter config.
-	Auth authcenter.AuthConfig
 }

@@ -75,7 +75,7 @@
         },
         methods: {
             async getData () {
-                const data = await this.$store.dispatch('cloudarea/getCloudarea', {
+                const data = await this.$store.dispatch('cloud/area/findMany', {
                     params: {},
                     config: { ...this.requestConfig, ...{ fromCache: true } }
                 })

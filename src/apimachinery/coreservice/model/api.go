@@ -441,12 +441,11 @@ func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return
 }
 
-func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (resp *metadata.DeletedOptionResult, err error) {
+func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedOptionResult, err error) {
 	subPath := "/delete/model/%s/attributes/unique/%d"
 
 	err = m.client.Delete().
 		WithContext(ctx).
-		Body(meta).
 		SubResourcef(subPath, objID, id).
 		WithHeaders(h).
 		Do().

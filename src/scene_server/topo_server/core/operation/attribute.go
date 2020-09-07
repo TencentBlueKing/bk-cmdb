@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -27,17 +27,18 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
-	CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, metaData *metadata.Metadata) (model.AttributeInterface, error)
-	DeleteObjectAttribute(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) error
-	FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]*metadata.ObjAttDes, error)
-	FindObjectAttribute(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.AttributeInterface, error)
-	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, bizID int64) error
+	CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, modelBizID int64) (model.AttributeInterface, error)
+	DeleteObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) error
+	FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]*metadata.ObjAttDes, error)
+	FindObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.AttributeInterface, error)
+	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
 	UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error)
 
 	FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Attribute, error)
@@ -71,7 +72,7 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 	a.grp = grp
 }
 
-func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, metaData *metadata.Metadata) (model.AttributeInterface, error) {
+func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, modelBizID int64) (model.AttributeInterface, error) {
 
 	var err error
 	att := a.modelFactory.CreateAttribute(kit)
@@ -96,7 +97,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 
 	// check the object id
 	objID := att.Attribute().ObjectID
-	err = a.obj.IsValidObject(kit, objID, metaData)
+	err = a.obj.IsValidObject(kit, objID)
 	if nil != err {
 		return nil, kit.CCError.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
@@ -105,18 +106,18 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(att.Attribute().ObjectID)
 	cond.Field(common.BKPropertyGroupIDField).Eq(att.Attribute().PropertyGroup)
-	groupResult, err := a.grp.FindObjectGroup(kit, cond, metaData)
+	groupResult, err := a.grp.FindObjectGroup(kit, cond, modelBizID)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to search the attribute group data (%#v), error info is %s, rid: %s", cond.ToMapStr(), err.Error(), kit.Rid)
 		return nil, err
 	}
 	// create the default group
 	if 0 == len(groupResult) {
-		if nil != metaData {
+		if modelBizID > 0 {
 			cond := condition.CreateCondition()
 			cond.Field(common.BKObjIDField).Eq(att.Attribute().ObjectID)
 			cond.Field(common.BKPropertyGroupIDField).Eq(common.BKBizDefault)
-			groupResult, err := a.grp.FindObjectGroup(kit, cond, metaData)
+			groupResult, err := a.grp.FindObjectGroup(kit, cond, modelBizID)
 			if nil != err {
 				blog.Errorf("[operation-attr] failed to search the attribute group data (%#v), error info is %s, rid: %s", cond.ToMapStr(), err.Error(), kit.Rid)
 				return nil, err
@@ -129,11 +130,11 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 					GroupID:    common.BKBizDefault,
 					ObjectID:   att.Attribute().ObjectID,
 					OwnerID:    att.Attribute().OwnerID,
+					BizID:      modelBizID,
 				}
-				group.Metadata = *metaData
 
 				data := mapstr.NewFromStruct(group, "field")
-				_, err := a.grp.CreateObjectGroup(kit, data, metaData)
+				_, err := a.grp.CreateObjectGroup(kit, data, modelBizID)
 				if nil != err {
 					blog.Errorf("[operation-obj] failed to create the default group, err: %s, rid: %s", err.Error(), kit.Rid)
 					return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
@@ -171,9 +172,9 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 	return att, nil
 }
 
-func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) error {
+func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) error {
 
-	attrItems, err := a.FindObjectAttribute(kit, cond, metaData)
+	attrItems, err := a.FindObjectAttribute(kit, cond, modelBizID)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to find the attributes by the cond(%v), err: %v, rid: %s", cond.ToMapStr(), err, kit.Rid)
 		return kit.CCError.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
@@ -224,8 +225,8 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 	return nil
 }
 
-func (a *attribute) FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]*metadata.ObjAttDes, error) {
-	attrs, err := a.FindObjectAttribute(kit, cond, metaData)
+func (a *attribute) FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]*metadata.ObjAttDes, error) {
+	attrs, err := a.FindObjectAttribute(kit, cond, modelBizID)
 	if nil != err {
 		blog.ErrorJSON("FindObjectAttribute failed, err: %s, cond: %s", err, cond.ToMapStr())
 		return nil, err
@@ -244,7 +245,7 @@ func (a *attribute) FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.
 			metadata.GroupFieldObjectID: attribute.ObjectID,
 		})
 	}
-	grps, err := a.grp.FindObjectGroup(kit, grpCond, metaData)
+	grps, err := a.grp.FindObjectGroup(kit, grpCond, modelBizID)
 	if nil != err {
 		blog.ErrorJSON("FindObjectGroup failed, err: %s, grpCond: %s", err, grpCond.ToMapStr())
 		return nil, err
@@ -285,17 +286,12 @@ func (a *attribute) FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]
 	return resp.Data.Info, nil
 }
 
-func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.AttributeInterface, error) {
+func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.AttributeInterface, error) {
 	limits := cond.GetLimit()
 	sort := cond.GetSort()
 	start := cond.GetStart()
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
+	util.AddModelBizIDConditon(fCond, modelBizID)
 
 	opt := &metadata.QueryCondition{
 		Condition: fCond,
@@ -316,13 +312,13 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 	return model.CreateAttribute(kit, a.clientSet, rsp.Data.Info), nil
 }
 
-func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, bizID int64) error {
+func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
 	// TODO replace this logic with cond := metadata.NewPublicOrBizConditionByBizID(bizID) when old interface can't operate biz custom field
 	var cond map[string]interface{}
-	if bizID == 0 {
+	if modelBizID == 0 {
 		cond = make(map[string]interface{}, 0)
 	} else {
-		cond = metadata.NewPublicOrBizConditionByBizID(bizID)
+		cond = metadata.NewPublicOrBizConditionByBizID(modelBizID)
 	}
 
 	// generate audit log of model attribute.

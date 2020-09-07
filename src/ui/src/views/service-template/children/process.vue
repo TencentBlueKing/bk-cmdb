@@ -15,7 +15,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" prop="operation" v-if="showOperation">
                 <template slot-scope="{ row, $index }">
-                    <cmdb-auth :auth="$authResources(auth)">
+                    <cmdb-auth :auth="auth">
                         <bk-button slot-scope="{ disabled }"
                             class="mr10"
                             theme="primary"
@@ -25,7 +25,7 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth :auth="$authResources(auth)">
+                    <cmdb-auth :auth="auth">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             :disabled="disabled"

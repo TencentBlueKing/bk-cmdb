@@ -45,7 +45,7 @@ type DB interface {
 	IsNotFoundError(error) bool
 
 	Close() error
-
+	
 	// CommitTransaction 提交事务
 	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务

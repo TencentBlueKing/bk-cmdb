@@ -38,7 +38,7 @@ export default [{
     }]
 }, {
     name: 'instanceHistory',
-    path: 'instance/:objId/history',
+    path: 'history/instance/:objId',
     component: () => import('@/views/history/index.vue'),
     meta: new Meta({
         menu: {

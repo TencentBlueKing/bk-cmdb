@@ -16,34 +16,49 @@
             </div>
             <bk-table ref="table"
                 :data="list"
-                :max-height="193">
-                <bk-table-column prop="scope" :label="$t('资源所属')"></bk-table-column>
-                <bk-table-column prop="resource" :label="$t('资源')">
+                :max-height="193"
+                class="permission-table">
+                <bk-table-column prop="name" :label="$t('需要申请的权限')"></bk-table-column>
+                <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
-                        <div v-html="row.resource"></div>
+                        <template v-if="row.relations.length">
+                            <div class="permission-resource"
+                                v-for="(relation, index) in row.relations"
+                                :key="index">
+                                {{relation}}
+                            </div>
+                        </template>
+                        <span v-else>--</span>
                     </template>
                 </bk-table-column>
-                <bk-table-column prop="action" :label="$t('需要申请的权限')"></bk-table-column>
             </bk-table>
         </div>
         <div class="permission-footer" slot="footer">
-            <bk-button theme="primary"
-                :loading="$loading('getSkipUrl')"
-                @click="handleApplyPermission">
-                {{ i18n.apply }}
-            </bk-button>
-            <bk-button theme="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
+            <template v-if="applied">
+                <bk-button theme="primary" @click="handleRefresh">{{ i18n.applied }}</bk-button>
+                <bk-button class="ml10" @click="onCloseDialog">{{ i18n.close }}</bk-button>
+            </template>
+            <template v-else>
+                <bk-button theme="primary"
+                    :loading="$loading('getSkipUrl')"
+                    @click="handleApply">
+                    {{ i18n.apply }}
+                </bk-button>
+                <bk-button class="ml10" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
+            </template>
         </div>
     </bk-dialog>
 </template>
 <script>
     import permissionMixins from '@/mixins/permission'
+    import { IAM_ACTIONS, IAM_VIEWS_NAME } from '@/dictionary/iam-auth'
     export default {
         name: 'permissionModal',
         mixins: [permissionMixins],
         props: {},
         data () {
             return {
+                applied: false,
                 isModalShow: false,
                 permission: [],
                 list: [],
@@ -54,7 +69,9 @@
                     requiredPermissions: this.$t('需要申请的权限'),
                     noData: this.$t('无数据'),
                     apply: this.$t('去申请'),
-                    cancel: this.$t('取消')
+                    applied: this.$t('已完成'),
+                    cancel: this.$t('取消'),
+                    close: this.$t('关闭')
                 }
             }
         },
@@ -71,13 +88,51 @@
             show (permission) {
                 this.permission = permission
                 this.setList()
+                this.applied = false
                 this.isModalShow = true
             },
             setList () {
-                this.list = this.$getPermissionList(this.permission)
+                const list = []
+                const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
+                this.permission.actions.forEach(action => {
+                    const definition = Object.values(IAM_ACTIONS).find(definition => definition.id === action.id)
+                    if (action.related_resource_types.length) {
+                        action.related_resource_types.forEach(({ type, instances = [] }) => {
+                            const listItem = {
+                                id: definition.id,
+                                name: definition.name[languageIndex],
+                                relations: instances.map(instance => {
+                                    return instance.map(data => {
+                                        if (data.name) {
+                                            return `${IAM_VIEWS_NAME[data.type][languageIndex]}：${data.name || data.id}`
+                                        }
+                                        return `${IAM_VIEWS_NAME[data.type][languageIndex]}ID：${data.id}`
+                                    }).join(' / ')
+                                })
+                            }
+                            list.push(listItem)
+                        })
+                    } else {
+                        list.push({
+                            id: definition.id,
+                            name: definition.name[languageIndex],
+                            relations: []
+                        })
+                    }
+                })
+                this.list = list
             },
             onCloseDialog () {
                 this.isModalShow = false
+            },
+            async handleApply () {
+                try {
+                    await this.handleApplyPermission()
+                    this.applied = true
+                } catch (error) {}
+            },
+            handleRefresh () {
+                window.location.reload()
             }
         }
     }
@@ -96,6 +151,19 @@
                 color: #63656e;
                 font-size: 24px;
                 font-weight: normal;
+            }
+        }
+    }
+    .permission-table {
+        .permission-resource {
+            line-height: 24px;
+        }
+        /deep/ {
+            .bk-table-row {
+                td.is-first {
+                    vertical-align: top;
+                    line-height: 42px;
+                }
             }
         }
     }

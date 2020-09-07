@@ -14,13 +14,12 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
+	"encoding/json"
 
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/common/auth"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -75,8 +74,8 @@ type EventServer struct {
 	// eventHandler is event handler that handles all event senders.
 	eventHandler *distribution.EventHandler
 
-	// distributer handles all events distribution.
-	distributer *distribution.Distributer
+	// distributor handles all events distribution.
+	distributor *distribution.Distributor
 }
 
 // NewEventServer creates a new EventServer object.
@@ -107,6 +106,7 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 	newEventServer.engine = engine
 	newEventServer.service = svc.NewService(ctx, engine)
 
+
 	return newEventServer, nil
 }
 
@@ -135,21 +135,23 @@ func (es *EventServer) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 	es.hostConfigUpdateMu.Lock()
 	defer es.hostConfigUpdateMu.Unlock()
 
-	if len(curr.ConfigMap) > 0 {
+	if len(curr.ConfigData) > 0 {
 		// NOTE: allow to update configs with empty values?
 		// NOTE: what is prev used for? build a compare logic here?
 
 		if es.config == nil {
 			es.config = &options.Config{}
 		}
-
-		if data, err := json.MarshalIndent(curr.ConfigMap, "", "  "); err == nil {
+		
+		if data, err := json.MarshalIndent(curr.ConfigData, "", "  "); err == nil {
 			blog.Infof("on host config update event: \n%s", data)
 		}
 
 		// TODO: add your configs updates here.
 	}
+
 }
+
 
 // initConfigs inits configs for new EventServer server.
 func (es *EventServer) initConfigs() error {
@@ -184,12 +186,6 @@ func (es *EventServer) initConfigs() error {
 		return fmt.Errorf("init cc redis configs, %+v", err)
 	}
 
-	// cc auth.
-	es.config.Auth, err = es.engine.WithAuth()
-	if err != nil {
-		return fmt.Errorf("init cc auth configs, %+v", err)
-	}
-
 	return nil
 }
 
@@ -213,12 +209,8 @@ func (es *EventServer) initModules() error {
 	es.service.SetCache(redisCli)
 	blog.Infof("init modules, connected to cc redis, %+v", es.config.Redis)
 
-	authCli, err := authcenter.NewAuthCenter(nil, es.config.Auth, es.engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("new authcenter failed: %v, config: %+v", err, es.config.Auth)
-	}
-	es.service.SetAuth(authCli)
-	blog.Infof("enable auth center: %v", auth.IsAuthed())
+	// initialize auth authorizer
+	es.service.SetAuthorizer(iam.NewAuthorizer(es.engine.CoreAPI))
 
 	// init subscription stream watcher.
 	subWatcher, err := reflector.NewReflector(es.config.MongoDB.GetMongoConf())
@@ -233,17 +225,17 @@ func (es *EventServer) initModules() error {
 	es.identifierHandler = identifierHandler
 
 	// init distributer.
-	distributer := distribution.NewDistributer(es.ctx, es.engine, es.db, es.redisCli, es.subWatcher)
-	es.distributer = distributer
-	es.service.SetDistributer(distributer)
+	distributor := distribution.NewDistributer(es.ctx, es.engine, es.db, es.redisCli, es.subWatcher)
+	es.distributor = distributor
+	es.service.SetDistributer(distributor)
 	blog.Infof("init modules, create event distributer success")
 
 	// init event handler.
 	eventHandler := distribution.NewEventHandler(es.ctx, es.engine, es.redisCli)
 	es.eventHandler = eventHandler
-	es.eventHandler.SetDistributer(distributer)
+	es.eventHandler.SetDistributer(distributor)
 	blog.Infof("init modules, create event handler success")
-
+	
 	return nil
 }
 
@@ -265,7 +257,7 @@ func (es *EventServer) Run() error {
 	go es.identifierHandler.Run()
 
 	// run main logic comm distributer.
-	if err := es.distributer.Start(es.eventHandler); err != nil {
+	if err := es.distributor.Start(es.eventHandler); err != nil {
 		return fmt.Errorf("distributer start failed, %+v", err)
 	}
 	blog.Info("distributer starting now!")
@@ -285,8 +277,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err := eventServer.Run(); err != nil {
 		return err
 	}
-
-	// all modules is inited success, start the new server now.
+	
+	// all modules is initialized success, start the new server now.
 	if err := backbone.StartServer(ctx, cancel, eventServer.Engine(), eventServer.Service().WebService(), true); err != nil {
 		return err
 	}

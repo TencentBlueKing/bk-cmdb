@@ -21,7 +21,7 @@
         </bk-table-column>
         <bk-table-column width="150" :resizable="false">
             <div class="options-wrapper" slot-scope="{ row }">
-                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }">
+                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"
@@ -29,7 +29,7 @@
                         {{$t('编辑')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!row.relation.process_template_id">
+                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }" v-if="!row.relation.process_template_id">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"

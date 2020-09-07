@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -38,20 +38,19 @@ type rowInfo struct {
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
-	CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr, metadata *metadata.Metadata) (mapstr.MapStr, error)
-	FindObjectBatch(kit *rest.Kit, objIDs []string, metaData *metadata.Metadata) (mapstr.MapStr, error)
-	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr, metadata *metadata.Metadata) (model.Object, error)
+	CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
+	FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
+	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (model.Object, error)
 	CanDelete(kit *rest.Kit, targetObj model.Object) error
-	DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaData *metadata.Metadata) error
-	FindObject(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.Object, error)
-	FindObjectTopo(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]metadata.ObjectTopo, error)
-	// Deprecated: not allowed to use anymore.
-	FindSingleObject(kit *rest.Kit, objectID string, metaData *metadata.Metadata) (model.Object, error)
-	FindObjectWithID(kit *rest.Kit, object string, objectID int64, metaData *metadata.Metadata) (model.Object, error)
+	DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
+	FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Object, error)
+	FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]metadata.ObjectTopo, error)
+	FindSingleObject(kit *rest.Kit, objectID string) (model.Object, error)
+	FindObjectWithID(kit *rest.Kit, object string, objectID int64) (model.Object, error)
 	UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
-	IsValidObject(kit *rest.Kit, objID string, metaData *metadata.Metadata) error
+	IsValidObject(kit *rest.Kit, objID string) error
 }
 
 // NewObjectOperation create a new object operation instance
@@ -86,12 +85,12 @@ func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, 
 }
 
 // IsValidObject check whether objID is a real model's bk_obj_id field in backend
-func (o *object) IsValidObject(kit *rest.Kit, objID string, metaData *metadata.Metadata) error {
+func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 
 	checkObjCond := condition.CreateCondition()
 	checkObjCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
 
-	objItems, err := o.FindObject(kit, checkObjCond, metaData)
+	objItems, err := o.FindObject(kit, checkObjCond)
 	if nil != err {
 		blog.Errorf("failed to check the object repeated, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrCommParamsIsInvalid, err.Error())
@@ -107,7 +106,7 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string, metaData *metadata.M
 // CreateObjectBatch manipulate model in cc_ObjDes
 // this method does'nt act as it's name, it create or update model's attributes indeed.
 // it only operate on model already exist, that it to say no new model will be created.
-func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr, metaData *metadata.Metadata) (mapstr.MapStr, error) {
+func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
 	inputDataMap := map[string]ImportObjectData{}
 	if err := data.MarshalJSONInto(&inputDataMap); nil != err {
 		return nil, err
@@ -117,7 +116,7 @@ func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr, metaData *
 	hasError := false
 	for objID, inputData := range inputDataMap {
 		subResult := mapstr.New()
-		if err := o.IsValidObject(kit, objID, metaData); nil != err {
+		if err := o.IsValidObject(kit, objID); nil != err {
 			blog.Errorf("create model patch, but not a valid model id, model id: %s, rid: %s", objID, kit.Rid)
 			subResult["error"] = fmt.Sprintf("the model(%s) is invalid", objID)
 			result[objID] = subResult
@@ -147,9 +146,6 @@ func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr, metaData *
 			}
 			targetAttr.OwnerID = kit.SupplierAccount
 			targetAttr.ObjectID = objID
-			if metaData != nil {
-				targetAttr.Metadata = *metaData
-			}
 
 			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
 				continue
@@ -163,7 +159,7 @@ func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr, metaData *
 			grpCond := condition.CreateCondition()
 			grpCond.Field(metadata.GroupFieldObjectID).Eq(objID)
 			grpCond.Field(metadata.GroupFieldGroupName).Eq(targetAttr.PropertyGroupName)
-			grps, err := o.grp.FindObjectGroup(kit, grpCond, metaData)
+			grps, err := o.grp.FindObjectGroup(kit, grpCond, targetAttr.BizID)
 			if nil != err {
 				blog.Errorf("create object patch, but find object group failed, object id: %s, group: %s, rid: %s", objID, targetAttr.PropertyGroupName, kit.Rid)
 				itemErr = append(itemErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
@@ -174,15 +170,13 @@ func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr, metaData *
 			if 0 != len(grps) {
 				targetAttr.PropertyGroup = grps[0].Group().GroupID // should be only one group
 			} else {
-				newGrp := o.modelFactory.CreateGroup(kit, metaData)
+				newGrp := o.modelFactory.CreateGroup(kit, targetAttr.BizID)
 				g := metadata.Group{
 					GroupName: targetAttr.PropertyGroupName,
 					GroupID:   model.NewGroupID(false),
 					ObjectID:  objID,
 					OwnerID:   kit.SupplierAccount,
-				}
-				if metaData != nil {
-					g.Metadata = *metaData
+					BizID:     targetAttr.BizID,
 				}
 				newGrp.SetGroup(g)
 				err := newGrp.Save(nil)
@@ -205,7 +199,8 @@ func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr, metaData *
 			attrCond := condition.CreateCondition()
 			attrCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
 			attrCond.Field(metadata.AttributeFieldPropertyID).Eq(attrID)
-			attrs, err := o.attr.FindObjectAttribute(kit, attrCond, metaData)
+
+			attrs, err := o.attr.FindObjectAttribute(kit, attrCond, targetAttr.BizID)
 			if nil != err {
 				addErr = append(addErr, rowInfo{Row: idx, Info: err.Error(), PropertyID: targetAttr.PropertyID})
 				hasError = true
@@ -265,11 +260,11 @@ func (o *object) setCreateObjectBatchObjResult(kit *rest.Kit, objID string, resu
 	}
 }
 
-func (o *object) FindObjectBatch(kit *rest.Kit, objIDs []string, metaData *metadata.Metadata) (mapstr.MapStr, error) {
+func (o *object) FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error) {
 	result := mapstr.New()
 
 	for _, objID := range objIDs {
-		obj, err := o.FindSingleObject(kit, objID, metaData)
+		obj, err := o.FindSingleObject(kit, objID)
 		if nil != err {
 			return nil, err
 		}
@@ -284,7 +279,7 @@ func (o *object) FindObjectBatch(kit *rest.Kit, objIDs []string, metaData *metad
 			grpCond := condition.CreateCondition()
 			grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
 			grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
-			grps, err := o.grp.FindObjectGroup(kit, grpCond, metaData)
+			grps, err := o.grp.FindObjectGroup(kit, grpCond, attribute.BizID)
 			if nil != err {
 				return nil, err
 			}
@@ -303,16 +298,12 @@ func (o *object) FindObjectBatch(kit *rest.Kit, objIDs []string, metaData *metad
 	return result, nil
 }
 
-// Deprecated:
-// It's not allowed to find a object with only bk_obj_id field, because it
-// may find the wrong object, as the public object id is unique, but the private business
-// object id can be same across the different business.
-func (o *object) FindSingleObject(kit *rest.Kit, objectID string, metaData *metadata.Metadata) (model.Object, error) {
+func (o *object) FindSingleObject(kit *rest.Kit, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(objectID)
 
-	objs, err := o.FindObject(kit, cond, metaData)
+	objs, err := o.FindObject(kit, cond)
 	if nil != err {
 		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s, rid: %s", kit.SupplierAccount, objectID, err.Error(), kit.Rid)
 		return nil, err
@@ -339,11 +330,11 @@ func (o *object) FindSingleObject(kit *rest.Kit, objectID string, metaData *meta
 	return nil, kit.CCError.New(common.CCErrTopoObjectSelectFailed, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
 
-func (o *object) FindObjectWithID(kit *rest.Kit, object string, objectID int64, metaData *metadata.Metadata) (model.Object, error) {
+func (o *object) FindObjectWithID(kit *rest.Kit, object string, objectID int64) (model.Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(objectID)
 
-	objs, err := o.FindObject(kit, cond, metaData)
+	objs, err := o.FindObject(kit, cond)
 	if nil != err {
 		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s, rid: %s", kit.SupplierAccount, objectID, err.Error(), kit.Rid)
 		return nil, err
@@ -370,7 +361,7 @@ func (o *object) FindObjectWithID(kit *rest.Kit, object string, objectID int64, 
 	return nil, kit.CCError.New(common.CCErrTopoObjectSelectFailed, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
 
-func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr, metaData *metadata.Metadata) (model.Object, error) {
+func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(kit)
 	err := obj.Parse(data)
 	if nil != err {
@@ -405,7 +396,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 
 	object := obj.Object()
 	// create the default group
-	grp := obj.CreateGroup(metaData)
+	grp := obj.CreateGroup(0)
 	groupData := metadata.Group{
 		IsDefault:  true,
 		GroupIndex: -1,
@@ -414,11 +405,8 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		ObjectID:   object.ObjectID,
 		OwnerID:    object.OwnerID,
 	}
-	if nil != metaData {
-		groupData.Metadata = *metaData
-	}
-	grp.SetGroup(groupData)
 
+	grp.SetGroup(groupData)
 	if err = grp.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default group, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
@@ -442,9 +430,6 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		PropertyID:        obj.GetInstNameFieldName(),
 		PropertyName:      obj.GetDefaultInstPropertyName(),
 	})
-	if nil != metaData {
-		attr.Attribute().Metadata = *metaData
-	}
 	if err = attr.Create(); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
@@ -484,11 +469,6 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	if err = uni.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
-	}
-
-	// auth: register model to iam
-	if err := o.authManager.RegisterObject(kit.Ctx, kit.Header, object); err != nil {
-		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
 	// generate audit log of object attribute group.
@@ -567,7 +547,7 @@ func (o *object) CanDelete(kit *rest.Kit, targetObj model.Object) error {
 }
 
 // DeleteObject delete model by id
-func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaData *metadata.Metadata) error {
+func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error {
 	if id <= 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
 	}
@@ -575,7 +555,7 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaD
 	// get model by id
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldID).Eq(id)
-	objs, err := o.FindObject(kit, cond, metaData)
+	objs, err := o.FindObject(kit, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s, rid: %s", cond, err.Error(), kit.Rid)
 		return err
@@ -618,13 +598,6 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaD
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	// auth: deregister models
-	if err := o.authManager.DeregisterObject(kit.Ctx, kit.Header, object); err != nil {
-		blog.ErrorJSON("Delete Object success, but deregister object from iam failed, objects: %s, err: %s, rid: %s",
-			object, err.Error(), kit.Rid)
-		return kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-	}
-
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
 		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
@@ -634,8 +607,8 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaD
 	return nil
 }
 
-func (o *object) isFrom(kit *rest.Kit, fromObjID, toObjID string, metaData *metadata.Metadata) (bool, error) {
-	asstItems, err := o.asst.SearchObjectAssociation(kit, fromObjID, metaData)
+func (o *object) isFrom(kit *rest.Kit, fromObjID, toObjID string) (bool, error) {
+	asstItems, err := o.asst.SearchObjectAssociation(kit, fromObjID)
 	if nil != err {
 		return false, err
 	}
@@ -649,8 +622,8 @@ func (o *object) isFrom(kit *rest.Kit, fromObjID, toObjID string, metaData *meta
 	return false, nil
 }
 
-func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]metadata.ObjectTopo, error) {
-	objs, err := o.FindObject(kit, cond, metaData)
+func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]metadata.ObjectTopo, error) {
+	objs, err := o.FindObject(kit, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find object, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
@@ -659,7 +632,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition, metaDat
 	results := make([]metadata.ObjectTopo, 0)
 	for _, obj := range objs {
 		object := obj.Object()
-		asstItems, err := o.asst.SearchObjectAssociation(kit, object.ObjectID, metaData)
+		asstItems, err := o.asst.SearchObjectAssociation(kit, object.ObjectID)
 		if nil != err {
 			return nil, err
 		}
@@ -692,7 +665,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition, metaDat
 			cond = condition.CreateCondition()
 			cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
 
-			asstObjs, err := o.FindObject(kit, cond, metaData)
+			asstObjs, err := o.FindObject(kit, cond)
 			if nil != err {
 				blog.Errorf("[operation-obj] failed to find object, err: %s, rid: %s", err.Error(), kit.Rid)
 				return nil, err
@@ -722,7 +695,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition, metaDat
 				tmp.To.ClassificationID = cls.Classify().ClassificationID
 				tmp.To.Position = assocObject.Position
 				tmp.To.ObjName = assocObject.ObjectName
-				ok, err := o.isFrom(kit, assocObject.ObjectID, object.ObjectID, metaData)
+				ok, err := o.isFrom(kit, assocObject.ObjectID, object.ObjectID)
 				if nil != err {
 					return nil, err
 				}
@@ -742,16 +715,9 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition, metaDat
 	return results, nil
 }
 
-func (o *object) FindObject(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.Object, error) {
+func (o *object) FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Object, error) {
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		// search model from special business
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		// search global shared model
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
+
 	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(), kit.Rid)
@@ -810,18 +776,6 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	if err = obj.Update(data); nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), err: %s, rid: %s", id, data, err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrTopoObjectUpdateFailed, err.Error())
-	}
-
-	bizID, err := metadata.BizIDFromMetadata(object.Metadata)
-	if err != nil {
-		blog.Error("update object: %s, but parse business id failed, err: %v, rid: %s", object.ObjectID, err, kit.Rid)
-		return kit.CCError.New(common.CCErrTopoObjectUpdateFailed, err.Error())
-	}
-
-	// auth update register info
-	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(kit.Ctx, kit.Header, bizID, id); err != nil {
-		blog.Errorf("update object %s success, but update to auth failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
-		return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
 	// save audit log.

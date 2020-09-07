@@ -76,11 +76,13 @@
 <style lang="scss" scoped>
     .cmdb-tips {
         display: flex;
+        min-height: 30px;
         font-size: 12px;
         background: #F0F8FF;
         border-radius: 2px;
         border: 1px solid #A3C5FD;
-        padding: 6px 16px;
+        padding: 0px 16px;
+        align-items: center;
         .icon {
             flex: 16px 0 0;
             text-align: center;
@@ -105,9 +107,9 @@
         }
         .icon-cc-tips-close {
             align-self: center;
-            width: 14px;
-            height: 14px;
-            font-size: 14px;
+            width: 12px;
+            height: 12px;
+            font-size: 12px;
             color: #979BA5;
             cursor: pointer;
         }

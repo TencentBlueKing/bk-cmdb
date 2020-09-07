@@ -39,11 +39,16 @@ type DiscoveryInterface interface {
 	CoreService() Interface
 	OperationServer() Interface
 	TaskServer() Interface
+	CloudServer() Interface
+	AuthServer() Interface
 	ServiceManageInterface
 }
 
 type Interface interface {
+	// 获取注册在zk上的所有服务节点
 	GetServers() ([]string, error)
+	// 最新的服务节点信息存放在该channel里，可被用来消费，以监听服务节点的变化
+	GetServersChan() chan []string
 }
 
 // NewServiceDiscovery new a simple discovery module which can be used to get alive server address
@@ -131,6 +136,14 @@ func (d *discover) OperationServer() Interface {
 
 func (d *discover) TaskServer() Interface {
 	return d.servers[types.CC_MODULE_TASK]
+}
+
+func (d *discover) CloudServer() Interface {
+	return d.servers[types.CC_MODULE_CLOUD]
+}
+
+func (d *discover) AuthServer() Interface {
+	return d.servers[types.CC_MODULE_AUTH]
 }
 
 // IsMaster check whether current is master

@@ -157,75 +157,6 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Data.Exists("test_123")).To(Equal(false))
 	})
 
-	It("create inst with metadata", func() {
-		metadata := map[string]interface{}{
-			"label": map[string]interface{}{
-				"bk_biz_id": "2",
-			},
-		}
-		input := map[string]interface{}{
-			"test_sglchar": "abbb",
-			"bk_inst_name": "wejeidjew1",
-			"test_unique":  "12345678",
-			"metadata":     metadata,
-		}
-		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data["metadata"].(map[string]interface{})).To(Equal(metadata))
-	})
-
-	It("create inst with metadata more key", func() {
-		metadata := map[string]interface{}{
-			"label": map[string]interface{}{
-				"bk_biz_id": "2",
-			},
-			"key": "1",
-		}
-		input := map[string]interface{}{
-			"test_sglchar": "abbb",
-			"bk_inst_name": "wejeidjew2",
-			"test_unique":  "123456789",
-			"metadata":     metadata,
-		}
-		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		meta := map[string]interface{}{
-			"label": map[string]interface{}{
-				"bk_biz_id": "2",
-			},
-		}
-		Expect(rsp.Data["metadata"].(map[string]interface{})).To(Equal(meta))
-	})
-
-	It("create inst with metadata label more key", func() {
-		metadata := map[string]interface{}{
-			"label": map[string]interface{}{
-				"bk_biz_id": "2",
-				"key":       "1",
-			},
-		}
-		input := map[string]interface{}{
-			"test_sglchar": "abbb",
-			"bk_inst_name": "wejeidjew3",
-			"test_unique":  "1234567890",
-			"metadata":     metadata,
-		}
-		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		meta := map[string]interface{}{
-			"label": map[string]interface{}{
-				"bk_biz_id": "2",
-			},
-		}
-		Expect(rsp.Data["metadata"].(map[string]interface{})).To(Equal(meta))
-	})
-
 	It("create inst missing required field", func() {
 		input := map[string]interface{}{
 			"bk_inst_name": "wejeidjew4",
@@ -240,11 +171,11 @@ var _ = Describe("inst test", func() {
 		input := &metadata.CreateUniqueRequest{
 			MustCheck: false,
 			Keys: []metadata.UniqueKey{
-				metadata.UniqueKey{
+				{
 					Kind: "property",
 					ID:   propertyID1,
 				},
-				metadata.UniqueKey{
+				{
 					Kind: "property",
 					ID:   propertyID2,
 				},
@@ -263,7 +194,7 @@ var _ = Describe("inst test", func() {
 		input := &metadata.CreateUniqueRequest{
 			MustCheck: false,
 			Keys: []metadata.UniqueKey{
-				metadata.UniqueKey{
+				{
 					Kind: "property",
 					ID:   propertyID1,
 				},
@@ -303,7 +234,7 @@ var _ = Describe("inst test", func() {
 	It("update object attribute unique", func() {
 		input := &metadata.UpdateUniqueRequest{
 			Keys: []metadata.UniqueKey{
-				metadata.UniqueKey{
+				{
 					Kind: "property",
 					ID:   propertyID2,
 				},
@@ -318,7 +249,7 @@ var _ = Describe("inst test", func() {
 	It("update object attribute unique duplicate inst", func() {
 		input := &metadata.UpdateUniqueRequest{
 			Keys: []metadata.UniqueKey{
-				metadata.UniqueKey{
+				{
 					Kind: "property",
 					ID:   propertyID1,
 				},

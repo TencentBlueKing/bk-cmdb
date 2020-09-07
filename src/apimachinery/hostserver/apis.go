@@ -17,7 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/paraparse"
 )
 
 func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
@@ -78,6 +78,20 @@ func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat 
 func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/add"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) AddHostToResourcePool(ctx context.Context, h http.Header, dat metadata.AddHostToResourcePoolHostList) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/add/resource"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -288,20 +302,6 @@ func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
 func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/resource/idle"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat *metadata.HostToAppModule) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/host/add/module"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -547,6 +547,81 @@ func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
+
+	resp = new(metadata.CreatedOneOptionResult)
+	subPath := "/create/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error) {
+
+	resp = new(metadata.CreateManyCloudAreaResult)
+	subPath := "/createmany/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
+
+	resp = new(metadata.Response)
+	subPath := "/update/cloudarea/%d"
+
+	err = hs.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, cloudID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error) {
+
+	resp = new(metadata.SearchResp)
+	subPath := "/findmany/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error) {
+
+	resp = new(metadata.Response)
+	subPath := "/delete/cloudarea/%d"
+
+	err = hs.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, cloudID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

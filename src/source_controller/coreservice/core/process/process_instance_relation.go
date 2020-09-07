@@ -123,7 +123,6 @@ func (p *processOperation) ListProcessInstanceRelation(kit *rest.Kit, option met
 		filter[common.BKProcIDField] = processIDFilter
 	}
 
-	blog.Debug("filter: %v", filter)
 	var total uint64
 	var err error
 	if total, err = p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx); nil != err {

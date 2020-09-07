@@ -16,16 +16,25 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('objId') }">
-                <cmdb-selector
-                    class="bk-select-full-width"
+                <bk-select class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
-                    :has-children="true"
-                    :auto-select="false"
-                    :list="asstList"
                     v-validate="'required'"
                     name="objId"
-                    v-model="relationInfo['bk_obj_id']"
-                ></cmdb-selector>
+                    v-model="relationInfo.bk_obj_id">
+                    <bk-option-group
+                        v-for="(group, index) in asstList"
+                        :key="index"
+                        :name="group.name">
+                        <cmdb-auth-option
+                            v-for="model in group.children"
+                            :key="model.bk_obj_id"
+                            :id="model.bk_obj_id"
+                            :name="model.bk_obj_name"
+                            :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+                            :ignore="relationInfo.ispre || isEdit">
+                        </cmdb-auth-option>
+                    </bk-option-group>
+                </bk-select>
                 <p class="form-error">{{errors.first('objId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -36,16 +45,25 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstObjId') }">
-                <cmdb-selector
-                    class="bk-select-full-width"
+                <bk-select class="bk-select-full-width"
                     :disabled="relationInfo.ispre || isEdit"
-                    :has-children="true"
-                    :auto-select="false"
-                    :list="asstList"
                     v-validate="'required'"
                     name="asstObjId"
-                    v-model="relationInfo['bk_asst_obj_id']"
-                ></cmdb-selector>
+                    v-model="relationInfo.bk_asst_obj_id">
+                    <bk-option-group
+                        v-for="(group, index) in asstList"
+                        :key="index"
+                        :name="group.name">
+                        <cmdb-auth-option
+                            v-for="model in group.children"
+                            :key="model.bk_obj_id"
+                            :id="model.bk_obj_id"
+                            :name="model.bk_obj_name"
+                            :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+                            :ignore="relationInfo.ispre || isEdit">
+                        </cmdb-auth-option>
+                    </bk-option-group>
+                </bk-select>
                 <p class="form-error">{{errors.first('asstObjId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -164,16 +182,6 @@
         },
         data () {
             return {
-                mappingList: [{
-                    id: 'n:n',
-                    name: 'N-N'
-                }, {
-                    id: '1:n',
-                    name: '1-N'
-                }, {
-                    id: '1:1',
-                    name: '1-1'
-                }],
                 relationInfo: {
                     ispre: false,
                     id: 0,
@@ -184,7 +192,6 @@
                     bk_asst_id: '',
                     mapping: ''
                 },
-                specialModel: ['process', 'plat'],
                 originRelationInfo: {}
             }
         },
@@ -194,9 +201,27 @@
                 'getModelById'
             ]),
             ...mapGetters('objectModel', [
-                'activeModel',
-                'isInjectable'
+                'activeModel'
             ]),
+            isSelfRelation () {
+                return this.relationInfo.bk_obj_id === this.relationInfo.bk_asst_obj_id
+            },
+            mappingList () {
+                const mappingList = [{
+                    id: 'n:n',
+                    name: 'N-N'
+                }, {
+                    id: '1:n',
+                    name: '1-N'
+                }, {
+                    id: '1:1',
+                    name: '1-1'
+                }]
+                if (this.isSelfRelation) {
+                    mappingList.splice(1, 1)
+                }
+                return mappingList
+            },
             usefulRelationList () {
                 return this.relationList.filter(relation => relation.id !== 'bk_mainline')
             },
@@ -231,12 +256,9 @@
                 this.classifications.forEach(classify => {
                     if (classify['bk_objects'].length) {
                         const objects = []
-                        classify['bk_objects'].forEach(({ bk_obj_id: objId, bk_obj_name: objName }) => {
-                            if (!this.specialModel.includes(objId)) {
-                                objects.push({
-                                    id: objId,
-                                    name: objName
-                                })
+                        classify['bk_objects'].forEach(model => {
+                            if (!model.bk_ishidden) {
+                                objects.push(model)
                             }
                         })
                         if (objects.length) {
@@ -312,20 +334,14 @@
                 if (this.isEdit) {
                     await this.updateObjectAssociation({
                         id: this.relationInfo.id,
-                        params: this.$injectMetadata(this.updateParams, {
-                            clone: true,
-                            inject: this.isInjectable
-                        }),
+                        params: this.updateParams,
                         config: {
                             requestId: 'updateObjectAssociation'
                         }
                     })
                 } else {
                     await this.createObjectAssociation({
-                        params: this.$injectMetadata(this.createParams, {
-                            clone: true,
-                            inject: this.isInjectable
-                        }),
+                        params: this.createParams,
                         config: {
                             requestId: 'createObjectAssociation'
                         }

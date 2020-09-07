@@ -29,7 +29,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                    <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.bk_biz_id] }">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             size="small"
@@ -102,27 +102,26 @@
                     show: false,
                     biz: {},
                     name: ''
-                }
+                },
+                columnsConfigKey: 'biz_custom_table_columns'
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'isAdminView', 'userName']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['bizId']),
             customBusinessColumns () {
-                return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
+                return this.usercustom[this.columnsConfigKey] || []
             }
         },
         async created () {
             try {
                 this.properties = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                    params: {
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
-                        requestId: 'post_searchObjectAttribute_biz',
-                        fromCache: true
+                        requestId: 'post_searchObjectAttribute_biz'
                     }
                 })
                 // 配合全文检索过滤列表

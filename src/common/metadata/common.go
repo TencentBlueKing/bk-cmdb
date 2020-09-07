@@ -227,9 +227,8 @@ type BkHostInfo struct {
 }
 
 type DefaultModuleHostConfigParams struct {
-	ApplicationID int64    `json:"bk_biz_id"`
-	HostIDs       []int64  `json:"bk_host_id"`
-	Metadata      Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostIDs       []int64 `json:"bk_host_id"`
 }
 
 // common search struct
@@ -275,4 +274,15 @@ func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// BkBaseResp base response defined in blueking api protocol
+type BkBaseResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type BKResponse struct {
+	BkBaseResp `json:",inline"`
+	Data       interface{} `json:"data"`
 }

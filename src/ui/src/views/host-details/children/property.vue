@@ -181,7 +181,10 @@
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             isPropertyEditable (property) {
-                return property.editable && !property.bk_isapi
+                const isSystemLimited = property.editable && !property.bk_isapi
+                // bk_cloud_inst_id 有值得为云主机，云主机的外网IP不可编辑
+                const isCloudHost = property.bk_property_id === 'bk_host_outerip' && this.host.bk_cloud_inst_id
+                return isSystemLimited || isCloudHost
             },
             setEditState (property) {
                 const value = this.host[property.bk_property_id]
@@ -202,10 +205,10 @@
                     this.loadingState.push(property)
                     this.exitForm()
                     await this.$store.dispatch('hostUpdate/updateHost', {
-                        params: this.$injectMetadata({
+                        params: {
                             [property.bk_property_id]: value,
                             bk_host_id: String(this.host.bk_host_id)
-                        }),
+                        },
                         config: {
                             requestId: 'updateHostInfo'
                         }

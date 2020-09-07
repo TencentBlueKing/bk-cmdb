@@ -11,7 +11,7 @@
             v-for="(option, index) in authorizedBusiness"
             :key="index"
             :id="option.bk_biz_id"
-            :name="option.bk_biz_name">
+            :name="`[${option.bk_biz_id}] ${option.bk_biz_name}`">
         </bk-option>
         <div class="business-extension" slot="extension" v-if="showApplyPermission || showApplyCreate">
             <a href="javascript:void(0)" class="extension-link"
@@ -64,12 +64,10 @@
         methods: {
             async handleApplyPermission () {
                 try {
-                    const permission = []
-                    const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
-                    if (Object.keys(operation).length) {
-                        const translated = await translateAuth(Object.values(operation))
-                        permission.push(...translated)
-                    }
+                    const permission = translateAuth({
+                        type: this.$OPERATION.R_BIZ_RESOURCE,
+                        relation: []
+                    })
                     const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
                     window.open(url)
                 } catch (e) {

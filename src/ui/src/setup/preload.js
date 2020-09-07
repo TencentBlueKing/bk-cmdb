@@ -6,7 +6,7 @@ const preloadConfig = {
 
 export function getClassifications (app) {
     return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
-        params: app.$injectMetadata(),
+        params: {},
         config: {
             ...preloadConfig,
             requestId: 'post_searchClassificationsObjects'

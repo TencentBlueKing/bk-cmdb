@@ -73,12 +73,11 @@
             },
             filteredClassifications () {
                 const result = []
-                const filterModels = ['plat', 'process']
                 const filterClassify = ['bk_biz_topo']
                 this.classifications.forEach(classification => {
                     if (!filterClassify.includes(classification.bk_classification_id)) {
                         const models = classification.bk_objects.filter(model => {
-                            const isInvisible = filterModels.includes(model.bk_obj_id)
+                            const isInvisible = model.bk_ishidden
                             const isPaused = model.bk_ispaused
                             const isMatched = this.matchedModels ? this.matchedModels.includes(model.bk_obj_id) : true
                             return !isInvisible && !isPaused && isMatched

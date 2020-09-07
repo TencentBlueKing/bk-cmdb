@@ -91,7 +91,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'isAdminView']),
+            ...mapGetters(['supplierAccount']),
             ...mapState('hostApply', ['ruleDraft']),
             business () {
                 return this.$store.state.objectBiz.bizId

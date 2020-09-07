@@ -174,10 +174,11 @@
             async getProperties () {
                 try {
                     this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: 'process',
-                            bk_supplier_account: this.supplierAccount
-                        })
+                            bk_supplier_account: this.supplierAccount,
+                            bk_biz_id: this.bizId
+                        }
                     })
                 } catch (e) {
                     console.error(e)
@@ -203,10 +204,11 @@
             async getDifference () {
                 try {
                     const differences = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
-                        params: this.$injectMetadata({
+                        params: {
                             bk_module_ids: this.modules,
-                            service_template_id: this.templateId
-                        }, { injectBizId: true })
+                            service_template_id: this.templateId,
+                            bk_biz_id: this.bizId
+                        }
                     })
                     const processList = []
                     const differenceType = ['changed', 'added', 'removed']
@@ -276,7 +278,7 @@
             },
             getServiceCategory () {
                 return this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                    params: this.$injectMetadata({}, { injectBizId: true })
+                    params: { bk_biz_id: this.bizId }
                 })
             },
             getCagetoryPath (id) {
@@ -347,10 +349,11 @@
             },
             getModuleServiceInstances (moduleId) {
                 return this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_module_id: moduleId,
                         with_name: true
-                    }, { injectBizId: true })
+                    }
                 })
             },
             handleViewDiff (instance, module) {
@@ -364,11 +367,12 @@
             },
             handleConfirm () {
                 this.$store.dispatch('businessSynchronous/syncServiceInstanceByTemplate', {
-                    params: this.$injectMetadata({
+                    params: {
                         service_template_id: this.templateId,
                         bk_module_ids: this.modules,
-                        service_instances: this.getServiceInstanceIds()
-                    }, { injectBizId: true })
+                        service_instances: this.getServiceInstanceIds(),
+                        bk_biz_id: this.bizId
+                    }
                 }).then(() => {
                     this.$success(this.$t('同步成功'))
                     this.handleGoBackModule()

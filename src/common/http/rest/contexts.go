@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"configcenter/src/auth"
+	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -169,7 +169,7 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 		Data: data,
 	}
 	if err != nil {
-		if err == auth.NoAuthorizeError {
+		if err == ac.NoAuthorizeError {
 			body, err := json.Marshal(data)
 			if err != nil {
 				blog.ErrorfDepthf(2, "rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err)
@@ -351,6 +351,41 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 	}
 
 	c.writeAsJson(&body)
+}
+
+func (c *Contexts) RespBkEntity(data interface{}) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+
+	body := &metadata.BKResponse{
+		BkBaseResp: metadata.BkBaseResp{
+			Code:    common.CCSuccess,
+			Message: common.CCSuccessStr,
+		},
+		Data: data,
+	}
+	if err := c.resp.WriteAsJson(body); err != nil {
+		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+		return
+	}
+}
+
+func (c *Contexts) RespBkError(errCode int, errMsg string) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+
+	body := &metadata.BkBaseResp{
+		Code:    errCode,
+		Message: errMsg,
+	}
+	if err := c.resp.WriteAsJson(body); err != nil {
+		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+		return
+	}
 }
 
 func (c *Contexts) writeAsJson(resp *metadata.Response) {

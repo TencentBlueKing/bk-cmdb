@@ -142,6 +142,10 @@ func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events 
 				}
 			}
 
+		} else if events[0].Detail == nil {
+			// compatible for event happens but not hit(with different event type), last cursor is returned with no detail
+			result.Watched = false
+			result.Events = []*watch.WatchEventDetail{events[0]}
 		} else {
 			result.Watched = true
 			result.Events = events

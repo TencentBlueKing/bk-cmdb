@@ -76,13 +76,13 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
 	}
 
-	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
+	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys, inputParam.Data.MustCheck)
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam, err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
-	err = m.recheckUniqueForExistsInstances(kit, objID, properties, inputParam.Data.MustCheck, inputParam.Data.Metadata)
+	err = m.recheckUniqueForExistsInstances(kit, objID, properties, inputParam.Data.MustCheck)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v err: %#v, rid: %s", objID, inputParam, err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommDuplicateItem, "instance")
@@ -102,10 +102,6 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		Ispre:     false,
 		OwnerID:   kit.SupplierAccount,
 		LastTime:  metadata.Now(),
-	}
-	_, err = inputParam.Data.Metadata.Label.GetBusinessID()
-	if nil == err {
-		unique.Metadata = inputParam.Data.Metadata
 	}
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
 	if nil != err {
@@ -156,13 +152,13 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		return kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
 	}
 
-	properties, err := m.getUniqueProperties(kit, objID, unique.Keys, unique.MustCheck, unique.Metadata)
+	properties, err := m.getUniqueProperties(kit, objID, unique.Keys, unique.MustCheck)
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
-	err = m.recheckUniqueForExistsInstances(kit, objID, properties, unique.MustCheck, unique.Metadata)
+	err = m.recheckUniqueForExistsInstances(kit, objID, properties, unique.MustCheck)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommDuplicateItem, "instance")
@@ -171,9 +167,6 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
-	if len(unique.Metadata.Label) > 0 {
-		cond.Field(metadata.BKMetadata).Eq(unique.Metadata)
-	}
 	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
 
 	oldUnique := metadata.ObjectUnique{}
@@ -196,7 +189,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	return nil
 }
 
-func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id uint64, meta metadata.DeleteModelAttrUnique) error {
+func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) error {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKFieldID).Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
@@ -225,13 +218,6 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	}
 
 	fCond := cond.ToMapStr()
-	if len(meta.Label) > 0 {
-		fCond.Merge(metadata.PublicAndBizCondition(meta.Metadata))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
-
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Delete(kit.Ctx, fCond)
 	if nil != err {
 		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v, rid: %s", err, fCond, kit.Rid)
@@ -242,7 +228,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 }
 
 // get properties via keys
-func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) ([]metadata.Attribute, error) {
+func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey, mustCheck bool) ([]metadata.Attribute, error) {
 	propertyIDs := make([]int64, 0)
 	for _, key := range keys {
 		propertyIDs = append(propertyIDs, int64(key.ID))
@@ -255,12 +241,6 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 	attCond.Field(common.BKFieldID).In(propertyIDs)
 	fCond := attCond.ToMapStr()
 	fCond = util.SetQueryOwner(fCond, kit.SupplierAccount)
-	if len(meta.Label) > 0 {
-		fCond.Merge(metadata.PublicAndBizCondition(meta))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
 
 	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(fCond).All(kit.Ctx, &properties)
 	if err != nil {
@@ -283,17 +263,11 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 // for create or update a model instance unique check usage.
 // the must_check is true, must be check exactly, no matter the check filed is empty or not.
 // the must_check is false, only when all the filed is not empty, then it's check exactly, otherwise, skip this check.
-func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID string, properties []metadata.Attribute, mustCheck bool, meta metadata.Metadata) error {
+func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID string, properties []metadata.Attribute, mustCheck bool) error {
 	// now, set the pipeline.
 	pipeline := make([]interface{}, 0)
 
 	instCond := mapstr.MapStr{}
-	if len(meta.Label) > 0 {
-		instCond.Merge(metadata.PublicAndBizCondition(meta))
-		instCond.Remove(metadata.BKMetadata)
-	} else {
-		instCond.Merge(metadata.BizLabelNotExist)
-	}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
 		instCond.Set(common.BKObjIDField, objID)
 	}

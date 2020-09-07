@@ -29,7 +29,7 @@
         </bk-table>
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                     <bk-button
                         theme="primary"
                         slot-scope="{ disabled }"
@@ -167,8 +167,8 @@
                     operator: '$in',
                     value: this.hostIds
                 }
-                return this.$injectMetadata({
-                    bk_biz_id: this.business,
+                return {
+                    bk_biz_id: this.bizId,
                     condition: ['biz', 'set', 'module', 'host'].map(model => {
                         return {
                             bk_obj_id: model,
@@ -177,7 +177,7 @@
                         }
                     }),
                     ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
-                })
+                }
             },
             getTopopath (info) {
                 const topology = []
@@ -200,13 +200,11 @@
                 return topology.map(item => item.path).join('\n')
             },
             getPropertyGroups () {
-                const modelId = 'host'
-                const model = this.getModelById(modelId)
                 return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
-                    objId: modelId,
-                    params: this.$injectMetadata({}, {
-                        inject: !!this.$tools.getMetadataBiz(model)
-                    })
+                    objId: 'host',
+                    params: {
+                        bk_biz_id: this.bizId
+                    }
                 })
             },
             getCloudName (cloud) {

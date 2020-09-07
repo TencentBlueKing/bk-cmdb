@@ -12,17 +12,15 @@
 package service
 
 import (
-	"context"
 	"net/http"
 	"time"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
@@ -36,18 +34,6 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-type srvComm struct {
-	header        http.Header
-	rid           string
-	ccErr         errors.DefaultCCErrorIf
-	ccLang        language.DefaultCCLanguageIf
-	ctx           context.Context
-	ctxCancelFunc context.CancelFunc
-	user          string
-	ownerID       string
-	lgc           *logics.Logics
-}
-
 type ProcServer struct {
 	*backbone.Engine
 	EsbConfigChn       chan esbutil.EsbConfig
@@ -58,26 +44,6 @@ type ProcServer struct {
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
 	EnableTxn          bool
-}
-
-func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
-	rid := util.GetHTTPCCRequestID(header)
-	lang := util.GetLanguage(header)
-	ctx, cancel := ps.Engine.CCCtx.WithCancel()
-	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
-
-	errors.SetGlobalCCError(ps.CCErr)
-	return &srvComm{
-		header:        header,
-		rid:           util.GetHTTPCCRequestID(header),
-		ccErr:         ps.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:        ps.Language.CreateDefaultCCLanguageIf(lang),
-		ctx:           ctx,
-		ctxCancelFunc: cancel,
-		user:          util.GetUser(header),
-		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(ps.Engine, header, ps.EsbSrv, &ps.procHostInstConfig),
-	}
 }
 
 func (ps *ProcServer) WebService() *restful.Container {
@@ -210,10 +176,10 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
-	esbAddr, addrOk := current.ConfigMap["esb.addr"]
-	esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
-	esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
-	if addrOk && appCodeOk && appSecretOk {
+	esbAddr, addrErr := cfnc.String("procServer.esb.addr")
+	esbAppCode, appCodeErr := cfnc.String("procServer.esb.appCode")
+	esbAppSecret, appSecretErr := cfnc.String("procServer.esb.appSecret")
+	if addrErr == nil && appCodeErr == nil  && appSecretErr == nil {
 		go func() {
 			ps.EsbConfigChn <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
 		}()
@@ -221,25 +187,29 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 
 	ps.Config = &options.Config{}
 
-	hostInstPrefix := "host instance"
+	hostInstPrefix := "procServer.host-instance"
 	procHostInstConfig := &ps.procHostInstConfig
-	if val, ok := current.ConfigMap[hostInstPrefix+".maxEventCount"]; ok {
-		eventCount, err := util.GetIntByInterface(val)
+	maxEventCountVal, err := cfnc.String(hostInstPrefix + ".maxEventCount")
+	if err == nil {
+		eventCount, err := util.GetIntByInterface(maxEventCountVal)
 		if nil == err {
 			procHostInstConfig.MaxEventCount = eventCount
 		}
 	}
-	if val, ok := current.ConfigMap[hostInstPrefix+".maxModuleIDCount"]; ok {
-		midCount, err := util.GetIntByInterface(val)
+
+	maxModuleIDCountVal, err := cfnc.String(hostInstPrefix + ".maxModuleIDCount")
+	if err == nil {
+		midCount, err := util.GetIntByInterface(maxModuleIDCountVal)
 		if nil == err {
 			procHostInstConfig.MaxRefreshModuleCount = midCount
 		}
 	}
-	if val, ok := current.ConfigMap[hostInstPrefix+".getModuleIDInterval"]; ok {
-		getMidInterval, err := util.GetIntByInterface(val)
+
+	getModuleIDInterval, err := cfnc.String(hostInstPrefix + ".getModuleIDInterval")
+	if err == nil {
+		getMidInterval, err := util.GetIntByInterface(getModuleIDInterval)
 		if nil == err {
 			procHostInstConfig.GetModuleIDInterval = time.Duration(getMidInterval) * time.Second
 		}
 	}
-	ps.ConfigMap = current.ConfigMap
 }

@@ -28,6 +28,7 @@ import (
 )
 
 type HostModuleLog struct {
+	kit       *rest.Kit
 	logic     *Logics
 	header    http.Header
 	hostIDArr []int64
@@ -35,11 +36,12 @@ type HostModuleLog struct {
 	cur       []metadata.ModuleHost
 }
 
-func (lgc *Logics) NewHostModuleLog(hostID []int64) *HostModuleLog {
+func (lgc *Logics) NewHostModuleLog(kit *rest.Kit, hostID []int64) *HostModuleLog {
 	return &HostModuleLog{
+		kit:       kit,
 		logic:     lgc,
 		hostIDArr: hostID,
-		header:    lgc.header,
+		header:    kit.Header,
 	}
 }
 
@@ -77,10 +79,10 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		return err
 	}
 
-	defaultBizID, err := h.logic.GetDefaultAppID(ctx)
+	defaultBizID, err := h.logic.GetDefaultAppID(h.kit)
 	if err != nil {
-		blog.ErrorJSON("save audit GetDefaultAppID failed, err: %s, rid: %s", err, h.logic.rid)
-		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFailed)
+		blog.ErrorJSON("save audit GetDefaultAppID failed, err: %s, rid: %s", err, h.kit.Rid)
+		return h.kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
 	var setIDs, moduleIDs, appIDs []int64
@@ -159,13 +161,13 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 	for _, appInfo := range appInfoArr {
 		bizID, err := appInfo.Int64(common.BKAppIDField)
 		if err != nil {
-			blog.ErrorJSON("appInfo get biz id err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.logic.rid)
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			blog.ErrorJSON("appInfo get biz id err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.kit.Rid)
+			return h.kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		name, err := appInfo.String(common.BKAppNameField)
 		if err != nil {
-			blog.ErrorJSON("appInfo get biz name err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.logic.rid)
-			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			blog.ErrorJSON("appInfo get biz name err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.kit.Rid)
+			return h.kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 
 		appIDNameMap[bizID] = name
@@ -173,14 +175,6 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 
 	// audit interface for generate and save audit log.
 	var audit = auditlog.NewHostModuleAudit(h.logic.CoreAPI.CoreService())
-	var kit = &rest.Kit{
-		Rid:             h.logic.rid,
-		Header:          h.logic.header,
-		Ctx:             ctx,
-		CCError:         h.logic.ccErr,
-		User:            h.logic.user,
-		SupplierAccount: h.logic.ownerID,
-	}
 	logs := make([]metadata.AuditLog, 0)
 
 	for _, host := range hostInfos {
@@ -243,8 +237,8 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 	}
 
 	// save audit log.
-	if err := audit.SaveAuditLog(kit, logs...); err != nil {
-		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+	if err := audit.SaveAuditLog(h.kit, logs...); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, h.kit.Rid)
 		return err
 	}
 
@@ -258,12 +252,12 @@ func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.Mod
 	}
 	result, err := h.logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, h.header, conds)
 	if err != nil {
-		blog.Errorf("getHostModuleConfig http do error, err:%s,input:%+v,rid:%s", err.Error(), conds, h.logic.rid)
-		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getHostModuleConfig http do error, err:%s,input:%+v,rid:%s", err.Error(), conds, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getHostModuleConfig http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, conds, h.logic.rid)
-		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("getHostModuleConfig http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, conds, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return result.Data.Info, nil
 }
@@ -279,12 +273,12 @@ func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors
 
 	result, err := h.logic.CoreAPI.CoreService().Host().GetHosts(ctx, h.header, query)
 	if err != nil {
-		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
-		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetHosts http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
-		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("GetHosts http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info, nil
@@ -301,12 +295,12 @@ func (h *HostModuleLog) getModules(ctx context.Context, moduleIds []int64) ([]ma
 	}
 	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDModule, query)
 	if err != nil {
-		blog.Errorf("getModules http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
-		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getModules http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getModules http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
-		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("getModules http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info, nil
@@ -323,12 +317,12 @@ func (h *HostModuleLog) getSets(ctx context.Context, setIDs []int64) ([]mapstr.M
 	}
 	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.Errorf("getSets http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
-		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getSets http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getSets http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
-		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("getSets http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return result.Data.Info, nil
 }
@@ -344,12 +338,123 @@ func (h *HostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.M
 	}
 	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDApp, query)
 	if err != nil {
-		blog.Errorf("getApps http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
-		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getApps http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getApps http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
-		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("getApps http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return result.Data.Info, nil
+}
+
+type CloudAreaAuditLog struct {
+	kit            *rest.Kit
+	logic          *Logics
+	header         http.Header
+	ownerID        string
+	MultiCloudArea map[int64]*SingleCloudArea
+}
+
+type SingleCloudArea struct {
+	CloudName string
+	PreData   map[string]interface{}
+	CurData   map[string]interface{}
+}
+
+func (lgc *Logics) NewCloudAreaLog(kit *rest.Kit) *CloudAreaAuditLog {
+	return &CloudAreaAuditLog{
+		kit:            kit,
+		logic:          lgc,
+		header:         kit.Header,
+		ownerID:        kit.SupplierAccount,
+		MultiCloudArea: make(map[int64]*SingleCloudArea),
+	}
+}
+
+func (c *CloudAreaAuditLog) WithPrevious(ctx context.Context, platIDs ...int64) errors.CCError {
+	return c.buildAuditLogData(ctx, true, false, platIDs...)
+}
+
+func (c *CloudAreaAuditLog) WithCurrent(ctx context.Context, platIDs ...int64) errors.CCError {
+	return c.buildAuditLogData(ctx, false, true, platIDs...)
+}
+
+func (c *CloudAreaAuditLog) buildAuditLogData(ctx context.Context, withPrevious, withCurrent bool, platIDs ...int64) errors.CCError {
+	var err error
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: platIDs}},
+	}
+
+	res, err := c.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, c.header, common.BKInnerObjIDPlat, query)
+	if nil != err {
+		return err
+	}
+
+	if len(res.Data.Info) <= 0 {
+		return errors.New(common.CCErrTopoCloudNotFound, "")
+	}
+
+	for _, data := range res.Data.Info {
+		cloudID, err := data.Int64(common.BKCloudIDField)
+		if err != nil {
+			return err
+		}
+
+		cloudName, err := data.String(common.BKCloudNameField)
+		if err != nil {
+			return err
+		}
+
+		if c.MultiCloudArea[cloudID] == nil {
+			c.MultiCloudArea[cloudID] = new(SingleCloudArea)
+		}
+
+		c.MultiCloudArea[cloudID].CloudName = cloudName
+
+		if withPrevious {
+			c.MultiCloudArea[cloudID].PreData = data
+		}
+
+		if withCurrent {
+			c.MultiCloudArea[cloudID].CurData = data
+		}
+	}
+
+	return nil
+}
+
+func (c *CloudAreaAuditLog) SaveAuditLog(ctx context.Context, action metadata.ActionType) errors.CCError {
+	logs := make([]metadata.AuditLog, 0)
+	for cloudID, cloudarea := range c.MultiCloudArea {
+		logs = append(logs, metadata.AuditLog{
+			AuditType:    metadata.CloudResourceType,
+			ResourceType: metadata.CloudAreaRes,
+			Action:       action,
+			ResourceID:   cloudID,
+			ResourceName: cloudarea.CloudName,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
+
+					Details: &metadata.BasicContent{
+						PreData: cloudarea.PreData,
+						CurData: cloudarea.CurData,
+					},
+				},
+				ModelID: common.BKInnerObjIDPlat,
+			},
+		})
+	}
+
+	auditResult, err := c.logic.CoreAPI.CoreService().Audit().SaveAuditLog(ctx, c.header, logs...)
+	if err != nil {
+		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %+v,rid:%s", err, auditResult, c.kit.Rid)
+		return c.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+	}
+	if auditResult.Result != true {
+		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %s,rid:%s", err, auditResult, c.kit.Rid)
+		return c.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
+	}
+
+	return nil
 }

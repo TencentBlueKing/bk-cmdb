@@ -243,6 +243,7 @@
         },
         async created () {
             Bus.$on('toggle-host-filter', this.handleToggleFilter)
+            Bus.$on('reset-host-filter', this.handleReset)
             this.propertyPromise = new Promise((resolve, reject) => {
                 this.propertyResolver = () => {
                     this.propertyResolver = null
@@ -264,6 +265,7 @@
         },
         beforeDestroy () {
             Bus.$off('toggle-host-filter', this.handleToggleFilter)
+            Bus.$off('reset-host-filter', this.handleReset)
             this.unwatch()
             this.$store.commit('hosts/clearFilter')
         },
@@ -635,6 +637,7 @@
             position: absolute;
             right: 0px;
             top: 0px;
+            font-size: 20px;
             color: #979BA5;
             &:hover {
                 color: #63656E;
@@ -670,9 +673,14 @@
         margin: 14px 0 0 0;
         .filter-add-button {
             /deep/ {
-                span {
-                    display: inline-block;
-                    vertical-align: middle;
+                > div {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .bk-icon {
+                    position: initial;
+                    font-size: 20px;
                 }
             }
         }

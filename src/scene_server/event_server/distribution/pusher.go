@@ -56,7 +56,7 @@ type EventPusher struct {
 	cache *redis.Client
 
 	// distributer handles all events distribution.
-	distributer *Distributer
+	distributer *Distributor
 
 	// metrics.
 	// pusherHandleTotal is event pusher handle total stat.
@@ -67,7 +67,7 @@ type EventPusher struct {
 }
 
 // NewEventPusher creates a new EventPusher object.
-func NewEventPusher(ctx context.Context, engine *backbone.Engine, subid int64, cache *redis.Client, distributer *Distributer,
+func NewEventPusher(ctx context.Context, engine *backbone.Engine, subid int64, cache *redis.Client, distributer *Distributor,
 	pusherHandleTotal *prometheus.CounterVec, pusherHandleDuration *prometheus.HistogramVec) *EventPusher {
 	return &EventPusher{
 		ctx:                  ctx,

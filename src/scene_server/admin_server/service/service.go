@@ -15,7 +15,7 @@ package service
 import (
 	"context"
 
-	"configcenter/src/auth/authcenter"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -37,7 +37,7 @@ type Service struct {
 	ccApiSrvAddr string
 	ctx          context.Context
 	Config       options.Config
-	authCenter   *authcenter.AuthCenter
+	iam          *iam.Iam
 }
 
 func NewService(ctx context.Context) *Service {
@@ -54,8 +54,8 @@ func (s *Service) SetCache(cache *redis.Client) {
 	s.cache = cache
 }
 
-func (s *Service) SetAuthCenter(authCenter *authcenter.AuthCenter) {
-	s.authCenter = authCenter
+func (s *Service) SetIam(iam *iam.Iam) {
+	s.iam = iam
 }
 
 func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {

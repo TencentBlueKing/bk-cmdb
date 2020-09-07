@@ -62,13 +62,13 @@ func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 
 // CreateModule create a new module
 func (s *Service) CreateModule(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule, dataWithMetadata.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("create module failed, failed to search set model, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -105,7 +105,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 	var module inst.Inst
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		module, err = s.Core.ModuleOperation().CreateModule(ctx.Kit, obj, bizID, setID, dataWithMetadata.Data)
+		module, err = s.Core.ModuleOperation().CreateModule(ctx.Kit, obj, bizID, setID, data)
 		if err != nil {
 			blog.Errorf("[api-module] create module failed, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
 			return err
@@ -152,13 +152,7 @@ func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors
 
 // DeleteModule delete the module
 func (s *Service) DeleteModule(ctx *rest.Contexts) {
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule, md.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -207,12 +201,6 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		// auth: deregister module to iam
-		if err := s.AuthManager.DeregisterModuleByID(ctx.Kit.Ctx, ctx.Kit.Header, moduleID); err != nil {
-			blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
-
 		err = s.Core.ModuleOperation().DeleteModule(ctx.Kit, obj, bizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
 			blog.Errorf("delete module failed, delete operation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
@@ -230,13 +218,13 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 
 // UpdateModule update the module
 func (s *Service) UpdateModule(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule, dataWithMetadata.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -280,7 +268,7 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.ModuleOperation().UpdateModule(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, moduleID)
+		err = s.Core.ModuleOperation().UpdateModule(ctx.Kit, data, obj, bizID, setID, moduleID)
 		if err != nil {
 			blog.Errorf("update module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -372,7 +360,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 func (s *Service) SearchModule(ctx *rest.Contexts) {
 	data := struct {
 		parser.SearchParams `json:",inline"`
-		Metadata            *metadata.Metadata `json:"metadata"`
+		ModelBizID          int64 `json:"bk_biz_id"`
 	}{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -383,7 +371,7 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 		paramsCond.Condition = mapstr.New()
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule, data.Metadata)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

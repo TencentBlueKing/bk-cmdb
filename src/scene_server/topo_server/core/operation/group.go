@@ -23,18 +23,19 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // GroupOperationInterface group operation methods
 type GroupOperationInterface interface {
-	CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, metaData *metadata.Metadata) (model.GroupInterface, error)
+	CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, modelBizID int64) (model.GroupInterface, error)
 	DeleteObjectGroup(kit *rest.Kit, groupID int64) error
-	FindObjectGroup(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.GroupInterface, error)
-	FindGroupByObject(kit *rest.Kit, objID string, cond condition.Condition, metaData *metadata.Metadata) ([]model.GroupInterface, error)
+	FindObjectGroup(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error)
+	FindGroupByObject(kit *rest.Kit, objID string, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error)
 	UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondition) error
-	UpdateObjectAttributeGroup(kit *rest.Kit, cond []metadata.PropertyGroupObjectAtt, metaData *metadata.Metadata) error
+	UpdateObjectAttributeGroup(kit *rest.Kit, cond []metadata.PropertyGroupObjectAtt, modelBizID int64) error
 	DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, groupID string) error
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface)
 }
@@ -59,8 +60,8 @@ func (g *group) SetProxy(modelFactory model.Factory, instFactory inst.Factory, o
 	g.obj = obj
 }
 
-func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, metaData *metadata.Metadata) (model.GroupInterface, error) {
-	grp := g.modelFactory.CreateGroup(kit, metaData)
+func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, modelBizID int64) (model.GroupInterface, error) {
+	grp := g.modelFactory.CreateGroup(kit, modelBizID)
 
 	_, err := grp.Parse(data)
 	if nil != err {
@@ -69,7 +70,7 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, metaData *m
 	}
 
 	//  check the object
-	if err = g.obj.IsValidObject(kit, grp.Group().ObjectID, metaData); nil != err {
+	if err = g.obj.IsValidObject(kit, grp.Group().ObjectID); nil != err {
 		blog.Errorf("[operation-grp] the group (%#v) is in valid, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 	}
@@ -129,14 +130,10 @@ func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
 	return nil
 }
 
-func (g *group) FindObjectGroup(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.GroupInterface, error) {
+func (g *group) FindObjectGroup(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error) {
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
+	util.AddModelBizIDConditon(fCond, modelBizID)
+
 	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(context.Background(), kit.Header, metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
@@ -151,14 +148,9 @@ func (g *group) FindObjectGroup(kit *rest.Kit, cond condition.Condition, metaDat
 	return model.CreateGroup(kit, g.clientSet, rsp.Data.Info), nil
 }
 
-func (g *group) FindGroupByObject(kit *rest.Kit, objID string, cond condition.Condition, metaData *metadata.Metadata) ([]model.GroupInterface, error) {
+func (g *group) FindGroupByObject(kit *rest.Kit, objID string, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error) {
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
+	util.AddModelBizIDConditon(fCond, modelBizID)
 
 	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), kit.Header, objID, metadata.QueryCondition{Condition: fCond})
 	if nil != err {
@@ -174,13 +166,13 @@ func (g *group) FindGroupByObject(kit *rest.Kit, objID string, cond condition.Co
 	return model.CreateGroup(kit, g.clientSet, rsp.Data.Info), nil
 }
 
-func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.PropertyGroupObjectAtt, metaData *metadata.Metadata) error {
+func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.PropertyGroupObjectAtt, modelBizID int64) error {
 	for _, cond := range conds {
 		// if the target group doesn't exist, don't change the original group
 		grpCond := condition.CreateCondition()
 		grpCond.Field(metadata.GroupFieldGroupID).Eq(cond.Data.PropertyGroupID)
 		grpCond.Field(metadata.GroupFieldObjectID).Eq(cond.Condition.ObjectID)
-		grps, err := g.FindObjectGroup(kit, grpCond, metaData)
+		grps, err := g.FindObjectGroup(kit, grpCond, modelBizID)
 		if nil != err {
 			blog.Errorf("[operation-grp] failed to get the group  by the condition (%#v), error info is %s , rid: %s", cond, err.Error(), kit.Rid)
 			return err

@@ -62,6 +62,7 @@ func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
 	if err != nil {
 		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
@@ -107,10 +108,11 @@ func (s *coreService) DeleteHostFromSystem(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().DeleteFromSystem(ctx.Kit, inputData)
+
+	err := s.core.HostOperation().DeleteFromSystem(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("DeleteHost  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("delete host error. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -296,4 +298,21 @@ func (s *coreService) GetDistinctHostIDsByTopoRelation(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(metadata.DistinctID{IDArr: hostIDArr})
+}
+
+func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {
+	input := &metadata.TransferHostResourceDirectory{}
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	err := s.core.HostOperation().TransferResourceDirectory(ctx.Kit, input)
+	if err != nil {
+		blog.ErrorJSON("TransferHostResourceDirectory  error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }

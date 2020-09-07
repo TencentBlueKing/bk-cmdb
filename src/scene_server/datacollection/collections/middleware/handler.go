@@ -232,7 +232,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			return fmt.Errorf("search model failed: %s", resp.ErrMsg)
 		}
 		blog.Infof("create inst result: %v", resp)
-		instID := int64(resp.Data.Created.ID)
 
 		// add audit log.
 		if err := func() error {
@@ -242,7 +241,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				Rid:             rid,
 				Header:          d.httpHeader,
 				Ctx:             d.ctx,
-				CCError:         d.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+				CCError:         d.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(d.httpHeader)),
 				User:            common.CCSystemCollectorUserName,
 				SupplierAccount: common.BKDefaultOwnerID,
 			}
@@ -266,12 +265,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			return nil
 		}(); err != nil && blog.V(3) {
 			blog.Errorf("save inst create audit log failed, err: %+v, rid: %s", err.Error(), rid)
-		}
-
-		// update registry to iam
-		if err := d.authManager.RegisterInstancesByID(d.ctx, d.httpHeader, objID, instID); err != nil {
-			blog.Errorf("UpdateOrCreateInst success, but RegisterInstancesByID failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err, rid)
-			return err
 		}
 		return nil
 	}
@@ -327,16 +320,16 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 
 	// ready audit interface of instance.
 	audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
-
-	// generate audit log before update instance.
 	kit := &rest.Kit{
 		Rid:             rid,
 		Header:          d.httpHeader,
 		Ctx:             d.ctx,
-		CCError:         d.CCErr.CreateDefaultCCErrorIf(string(common.English)),
+		CCError:         d.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(d.httpHeader)),
 		User:            common.CCSystemCollectorUserName,
 		SupplierAccount: common.BKDefaultOwnerID,
 	}
+	
+	// generate audit log before update instance.
 	auditCond := map[string]interface{}{instIDField: instID}
 	auditLog, err := audit.GenerateAuditLogByCondGetData(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, auditCond, inst)
 	if err != nil {
@@ -369,12 +362,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 		blog.Errorf("save instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
 			objID, err, rid)
-		return err
-	}
-
-	// update registry to iam
-	if err := d.authManager.UpdateRegisteredInstanceByID(d.ctx, d.httpHeader, objID, instID); err != nil {
-		blog.Errorf("UpdateOrCreateInst success, but UpdateRegisteredInstanceByID failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err, rid)
 		return err
 	}
 

@@ -121,16 +121,6 @@
             return {
                 relationList: [],
                 modelRelationList: [],
-                mappingList: [{
-                    id: 'n:n',
-                    name: 'N-N'
-                }, {
-                    id: '1:n',
-                    name: '1-N'
-                }, {
-                    id: '1:1',
-                    name: '1-1'
-                }],
                 relationInfo: {
                     bk_obj_id: this.fromObjId,
                     bk_asst_obj_id: this.toObjId,
@@ -142,6 +132,25 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
+            isSelfRelation () {
+                return this.relationInfo.bk_obj_id === this.relationInfo.bk_asst_obj_id
+            },
+            mappingList () {
+                const mappingList = [{
+                    id: 'n:n',
+                    name: 'N-N'
+                }, {
+                    id: '1:n',
+                    name: '1-N'
+                }, {
+                    id: '1:1',
+                    name: '1-1'
+                }]
+                if (this.isSelfRelation) {
+                    mappingList.splice(1, 1)
+                }
+                return mappingList
+            },
             objAsstId () {
                 const {
                     relationInfo
@@ -215,20 +224,20 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    })
+                    }
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_asst_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    })
+                    }
                 })
             },
             async saveRelation () {
@@ -242,7 +251,7 @@
                     }
                 }
                 const res = await this.createObjectAssociation({
-                    params: this.$injectMetadata(params),
+                    params: params,
                     config: {
                         requestId: 'createObjectAssociation'
                     }

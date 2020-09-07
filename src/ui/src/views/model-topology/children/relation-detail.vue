@@ -127,11 +127,11 @@
             ]),
             async initData () {
                 const asstList = await this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             id: this.asstId
                         }
-                    })
+                    }
                 })
                 if (this.asstId !== '') {
                     this.relationInfo = asstList.find(asst => asst.id === this.asstId)
@@ -148,9 +148,9 @@
             async saveRelation () {
                 await this.updateObjectAssociation({
                     id: this.relationInfo.id,
-                    params: this.$injectMetadata({
+                    params: {
                         bk_obj_asst_name: this.relationInfo['bk_obj_asst_name']
-                    }),
+                    },
                     config: {
                         requestId: 'updateObjectAssociation'
                     }
@@ -170,10 +170,7 @@
                         await this.deleteObjectAssociation({
                             id: this.relationInfo.id,
                             config: {
-                                requestId: 'deleteObjectAssociation',
-                                data: this.$injectMetadata({}, {
-                                    inject: !!this.$tools.getMetadataBiz(this.relationInfo)
-                                })
+                                requestId: 'deleteObjectAssociation'
                             }
                         })
                         this.$emit('save', {

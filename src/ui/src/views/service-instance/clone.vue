@@ -93,9 +93,10 @@
             },
             getServiceInstanceProcesses () {
                 return this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.business,
                         service_instance_id: this.instanceId
-                    }, { injectBizId: true }),
+                    },
                     config: {
                         requestId: 'getServiceInstanceProcesses'
                     }

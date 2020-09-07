@@ -20,7 +20,6 @@ import (
 
 type ChartConfig struct {
 	ConfigID   uint64 `json:"config_id" bson:"config_id"`
-	Metadata   `field:"metadata" json:"metadata" bson:"metadata"`
 	ReportType string `json:"report_type" bson:"report_type"`
 	Name       string `json:"name" bson:"name"`
 	CreateTime Time   `json:"create_time" bson:"create_time"`
@@ -144,7 +143,7 @@ type AttributesOption struct {
 	ID        string `json:"id" bson:"id"`
 	Name      string `json:"name" bson:"name"`
 	Type      string `json:"type" bson:"type"`
-	IsDefault string `json:"is_default" bson:"is_default"`
+	IsDefault bool   `json:"is_default" bson:"is_default"`
 }
 
 type ChartClassification struct {

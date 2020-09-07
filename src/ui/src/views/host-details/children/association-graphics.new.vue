@@ -412,7 +412,7 @@
                 return this.getInstRelationTopo({
                     objId,
                     instId,
-                    params: this.$injectMetadata(),
+                    params: {},
                     config: {
                         requestId: this.getRelationRequestId,
                         clearCache: true
@@ -657,10 +657,9 @@
             getInstDetails () {
                 const modelId = this.hoverNodeData.objId
                 const instId = this.hoverNodeData.instId
-                const model = this.getModelById(modelId)
                 return this.$store.dispatch('objectCommonInst/searchInst', {
                     objId: modelId,
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             [modelId]: [{
                                 field: 'bk_inst_id',
@@ -670,30 +669,20 @@
                         },
                         fields: {},
                         page: { start: 0, limit: 1 }
-                    }, {
-                        inject: !!this.$tools.getMetadataBiz(model)
-                    })
+                    }
                 }).then(({ info }) => info[0])
             },
             getProperties () {
-                const modelId = this.hoverNodeData.objId
-                const model = this.getModelById(modelId)
                 return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                    params: this.$injectMetadata({
-                        'bk_obj_id': modelId
-                    }, {
-                        inject: !!this.$tools.getMetadataBiz(model)
-                    })
+                    params: {
+                        'bk_obj_id': this.hoverNodeData.objId
+                    }
                 })
             },
             getPropertyGroups () {
-                const modelId = this.hoverNodeData.objId
-                const model = this.getModelById(modelId)
                 return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
-                    objId: modelId,
-                    params: this.$injectMetadata({}, {
-                        inject: !!this.$tools.getMetadataBiz(model)
-                    })
+                    objId: this.hoverNodeData.objId,
+                    params: {}
                 })
             },
             toggleFullScreen (fullScreen) {

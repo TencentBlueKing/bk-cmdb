@@ -15,6 +15,7 @@ package host
 import (
 	"gopkg.in/redis.v5"
 
+	"configcenter/src/source_controller/coreservice/cache"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/host/searcher"
 	"configcenter/src/source_controller/coreservice/core/host/transfer"
@@ -32,7 +33,7 @@ type hostManager struct {
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDependence, hostApplyDependence transfer.HostApplyRuleDependence) core.HostOperation {
+func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDependence, hostApplyDependence transfer.HostApplyRuleDependence, cacheSet *cache.ClientSet) core.HostOperation {
 
 	coreMgr := &hostManager{
 		DbProxy:   dbProxy,
@@ -40,6 +41,6 @@ func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDepen
 		dependent: dependent,
 	}
 	coreMgr.hostTransfer = transfer.New(dbProxy, cache, dependent, hostApplyDependence)
-	coreMgr.hostSearcher = searcher.New(dbProxy, cache)
+	coreMgr.hostSearcher = searcher.New(dbProxy, cache, cacheSet)
 	return coreMgr
 }

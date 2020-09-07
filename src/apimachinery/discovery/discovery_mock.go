@@ -78,6 +78,14 @@ func (d *MockDiscovery) TaskServer() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) CloudServer() Interface {
+	return &mockServer{}
+}
+
+func (d *MockDiscovery) AuthServer() Interface {
+	return &mockServer{}
+}
+
 func (d *MockDiscovery) IsMaster() bool {
 	return true
 }
@@ -90,4 +98,8 @@ func (*mockServer) GetServers() ([]string, error) {
 
 func (*mockServer) IsMaster(string) bool {
 	return true
+}
+
+func (s *mockServer) GetServersChan() chan []string {
+	return nil
 }

@@ -1,5 +1,10 @@
 <template>
-    <div class="dialog-wrapper" v-transfer-dom v-show="showWrapper">
+    <div class="dialog-wrapper"
+        v-transfer-dom
+        v-show="showWrapper"
+        :style="{
+            zIndex
+        }">
         <div ref="resizeTrigger">
             <transition name="dialog-fade">
                 <div class="dialog-body" ref="body"
@@ -56,7 +61,8 @@
                 timer: null,
                 bodyHeight: 0,
                 showWrapper: false,
-                showBody: false
+                showBody: false,
+                zIndex: 2000
             }
         },
         computed: {
@@ -84,6 +90,7 @@
                 handler (value) {
                     if (value) {
                         this.showWrapper = true
+                        this.zIndex = window.__bk_zIndex_manager.nextZIndex()
                         this.$nextTick(() => {
                             this.showBody = true
                         })

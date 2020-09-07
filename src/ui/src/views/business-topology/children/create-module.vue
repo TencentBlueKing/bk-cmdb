@@ -187,11 +187,12 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-                            params: this.$injectMetadata({
+                            params: {
+                                bk_biz_id: this.business,
                                 page: {
                                     sort: 'name'
                                 }
-                            }, { injectBizId: true }),
+                            },
                             config: {
                                 requestId: this.request.serviceTemplate
                             }
@@ -215,7 +216,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata({}, { injectBizId: true }),
+                            params: { bk_biz_id: this.business },
                             config: {
                                 requestId: this.request.serviceCategory
                             }

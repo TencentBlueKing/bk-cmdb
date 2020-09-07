@@ -15,8 +15,8 @@ package operation
 import (
 	"context"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -35,9 +35,9 @@ type ClassificationOperationInterface interface {
 
 	// FindSingleClassification(kit *rest.Kit, classificationID string) (model.Classification, error)
 	CreateClassification(kit *rest.Kit, data mapstr.MapStr) (model.Classification, error)
-	DeleteClassification(kit *rest.Kit, id int64, cond condition.Condition, metadata *metadata.Metadata) error
-	FindClassification(kit *rest.Kit, cond condition.Condition, metadata *metadata.Metadata) ([]model.Classification, error)
-	FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition, metadata *metadata.Metadata) ([]metadata.ClassificationWithObject, error)
+	DeleteClassification(kit *rest.Kit, id int64, cond condition.Condition) error
+	FindClassification(kit *rest.Kit, cond condition.Condition) ([]model.Classification, error)
+	FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition) ([]metadata.ClassificationWithObject, error)
 	UpdateClassification(kit *rest.Kit, data mapstr.MapStr, id int64, cond condition.Condition) error
 }
 
@@ -79,11 +79,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, err
 	}
 
-	// auth: register new created classify
 	class := cls.Classify()
-	if err := c.authManager.RegisterClassification(kit.Ctx, kit.Header, class); err != nil {
-		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
 
 	// generate audit log of object classification.
 	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
@@ -104,7 +100,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 	return cls, nil
 }
 
-func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond condition.Condition, metaData *metadata.Metadata) error {
+func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond condition.Condition) error {
 
 	if 0 < id {
 		if nil == cond {
@@ -113,11 +109,7 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 		cond.Field(metadata.ClassificationFieldID).Eq(id)
 	}
 
-	if nil != metaData {
-		cond.Field(metadata.BKMetadata).Eq(*metaData)
-	}
-
-	clsItems, err := c.FindClassification(kit, cond, metaData)
+	clsItems, err := c.FindClassification(kit, cond)
 	if nil != err {
 		return err
 	}
@@ -131,10 +123,6 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 		if 0 != len(objs) {
 			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, kit.Rid)
 			return kit.CCError.Error(common.CCErrTopoObjectClassificationHasObject)
-		}
-
-		if err := c.authManager.DeregisterClassification(kit.Ctx, kit.Header, cls.Classify()); err != nil {
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 
 	}
@@ -169,14 +157,8 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	return nil
 }
 
-func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]metadata.ClassificationWithObject, error) {
+func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition) ([]metadata.ClassificationWithObject, error) {
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
 
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
@@ -226,14 +208,8 @@ func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condi
 	return datas, nil
 }
 
-func (c *classification) FindClassification(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.Classification, error) {
+func (c *classification) FindClassification(kit *rest.Kit, cond condition.Condition) ([]model.Classification, error) {
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		// fCond.Merge(metadata.BizLabelNotExist)
-	}
 
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
@@ -246,7 +222,7 @@ func (c *classification) FindClassification(kit *rest.Kit, cond condition.Condit
 		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	clsItems := model.CreateClassification(kit, c.clientSet, rsp.Data.Info, metaData)
+	clsItems := model.CreateClassification(kit, c.clientSet, rsp.Data.Info)
 	return clsItems, nil
 }
 
@@ -278,19 +254,6 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	if err := cls.Update(data); nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
 		return err
-	}
-
-	// auth: update registered classifications
-	if len(class.ClassificationID) > 0 {
-		if err := c.authManager.UpdateRegisteredClassificationByID(kit.Ctx, kit.Header, class.ClassificationID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	} else {
-		if err := c.authManager.UpdateRegisteredClassificationByRawID(kit.Ctx, kit.Header, class.ID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
 	}
 
 	// save audit log.

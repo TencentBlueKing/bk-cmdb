@@ -41,7 +41,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <cmdb-auth v-if="showEdit" class="inline-block-middle" :auth="authResources(editAuth)">
+                <cmdb-auth v-if="showEdit" class="inline-block-middle" :auth="editAuth">
                     <bk-button slot-scope="{ disabled }"
                         class="button-edit"
                         theme="primary"
@@ -50,7 +50,7 @@
                         {{editText}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth v-if="showDelete" class="inline-block-middle" :auth="authResources(deleteAuth)">
+                <cmdb-auth v-if="showDelete" class="inline-block-middle" :auth="deleteAuth">
                     <bk-button slot-scope="{ disabled }"
                         hover-theme="danger"
                         class="button-delete"
@@ -98,12 +98,12 @@
                 default: true
             },
             editAuth: {
-                type: [String, Array, Object],
-                default: ''
+                type: Object,
+                default: null
             },
             deleteAuth: {
-                type: [String, Array, Object],
-                default: ''
+                type: Object,
+                default: null
             }
         },
         data () {
@@ -128,12 +128,6 @@
             RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.resizeEvent)
         },
         methods: {
-            authResources (auth) {
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                if (typeof auth === 'object') return auth
-                return this.$authResources({ type: auth })
-            },
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight

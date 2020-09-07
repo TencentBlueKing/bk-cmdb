@@ -208,9 +208,10 @@
                 try {
                     await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
                         config: {
-                            data: this.$injectMetadata({
-                                service_instance_ids: this.serviceInstanceIds
-                            }, { injectBizId: true }),
+                            data: {
+                                service_instance_ids: this.serviceInstanceIds,
+                                bk_biz_id: this.bizId
+                            },
                             requestId: this.request.confirm
                         }
                     })

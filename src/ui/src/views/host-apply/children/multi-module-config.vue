@@ -33,7 +33,7 @@
                 </div>
                 <div class="item-content">
                     <div class="choose-toolbar" v-if="!isDel">
-                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                        <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                             <bk-button
                                 icon="plus"
                                 slot-scope="{ disabled }"
@@ -63,7 +63,7 @@
             </div>
         </div>
         <div class="config-ft">
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })" v-if="!isDel">
+            <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }" v-if="!isDel">
                 <bk-button
                     theme="primary"
                     slot-scope="{ disabled }"
@@ -73,7 +73,7 @@
                     {{$t('下一步')}}
                 </bk-button>
             </cmdb-auth>
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })" v-else>
+            <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }" v-else>
                 <bk-button
                     theme="primary"
                     slot-scope="{ disabled }"

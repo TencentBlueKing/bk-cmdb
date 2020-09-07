@@ -13,14 +13,13 @@
 package logics
 
 import (
-	"context"
-
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
-func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostModuleFind, isDetail bool) (*metadata.SearchHost, error) {
+func (lgc *Logics) FindHostByModuleIDs(kit *rest.Kit, data *metadata.HostModuleFind, isDetail bool) (*metadata.SearchHost, error) {
 	retHostInfo := &metadata.SearchHost{
 		Info: make([]mapstr.MapStr, 0),
 	}
@@ -35,20 +34,13 @@ func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostM
 	bizID := data.AppID
 	var err error
 	if bizID == 0 {
-		// if bk_biz_id and metadata are both not set, then return error
-		if data.Metadata == nil {
-			return retHostInfo, lgc.ccErr.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField+", "+common.MetadataField)
-		}
-		bizID, err = data.Metadata.Label.GetBusinessID()
-		if nil != err {
-			return retHostInfo, err
-		}
+		return retHostInfo, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 	}
 	hostSearchParam.AppID = bizID
 
 	hostSearchParam.Condition = []metadata.SearchCondition{hostFindCond, moduleFindCond, setFindCond, bizFindCond}
 
-	findHostInst := NewSearchHost(ctx, lgc, hostSearchParam)
+	findHostInst := NewSearchHost(kit, lgc, hostSearchParam)
 	findHostInst.ParseCondition()
 
 	err = findHostInst.SearchHostByConds()

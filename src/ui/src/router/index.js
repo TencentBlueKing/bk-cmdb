@@ -125,16 +125,16 @@ function cancelRequest (app) {
 
 const checkViewAuthorize = async to => {
     // owener判断已经发现无业务时
-    if (to.meta.view === 'permission') {
-        return false
-    }
-    const auth = to.meta.auth || {}
-    const view = auth.view
-    if (view) {
-        const viewAuthData = typeof view === 'function' ? view(to, router.app) : view
-        const viewAuth = await router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
-        to.meta.view = viewAuth ? 'default' : 'permission'
-    }
+    // if (to.meta.view === 'permission') {
+    //     return false
+    // }
+    // const auth = to.meta.auth || {}
+    // const view = auth.view
+    // if (view) {
+    //     const viewAuthData = typeof view === 'function' ? view(to, router.app) : view
+    //     const viewAuth = await router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
+    //     to.meta.view = viewAuth ? 'default' : 'permission'
+    // }
     return Promise.resolve()
 }
 
@@ -149,28 +149,22 @@ const checkAvailable = (to, from) => {
     return true
 }
 
-// 因产品形态调整，去掉了管理模式与业务模式，为避免修改过多逻辑，此处做兼容处理
-const setAdminView = to => {
-    const isAdminView = to.matched.length && to.matched[0].name !== MENU_BUSINESS
-    router.app.$store.commit('setAdminView', isAdminView)
-}
-
 const setupStatus = {
     preload: true,
     afterload: true
 }
 
 router.beforeEach((to, from, next) => {
-    cancelRequest(router.app)
-    router.app.$store.commit('setTitle', '')
-    if (to.meta.view !== 'permission') {
-        Vue.set(to.meta, 'view', 'default')
-    }
-    if (to.name === from.name) {
-        return next()
-    }
     Vue.nextTick(async () => {
         try {
+            cancelRequest(router.app)
+            router.app.$store.commit('setTitle', '')
+            if (to.meta.view !== 'permission') {
+                Vue.set(to.meta, 'view', 'default')
+            }
+            if (to.name === from.name) {
+                return next()
+            }
             if (setupStatus.preload) {
                 setLoading(true)
                 setupStatus.preload = false
@@ -182,7 +176,6 @@ router.beforeEach((to, from, next) => {
             if (!shouldContinue) {
                 return false
             }
-            setAdminView(to)
 
             const isAvailable = checkAvailable(to, from)
             if (!isAvailable) {

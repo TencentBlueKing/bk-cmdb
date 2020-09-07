@@ -28,6 +28,8 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
+	"configcenter/src/source_controller/coreservice/core/auth"
+	"configcenter/src/source_controller/coreservice/core/cloud"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
@@ -110,25 +112,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	s.db = db
 	s.rds = cache
 
-	// connect the remote mongodb
-	instance := instances.New(db, s, cache, lang)
-	hostApplyRuleCore := hostapplyrule.New(db, instance)
-	s.core = core.New(
-		model.New(db, s, lang, cache),
-		instance,
-		association.New(db, s),
-		datasynchronize.New(db, s),
-		mainline.New(db, lang),
-		host.New(db, cache, s, hostApplyRuleCore),
-		auditlog.New(db),
-		process.New(db, s, cache),
-		label.New(db),
-		settemplate.New(db),
-		operation.New(db),
-		hostApplyRuleCore,
-		dbSystem.New(db),
-	)
-
 	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
 	if eventErr != nil {
 		blog.Errorf("new reflector failed, err: %v", eventErr)
@@ -141,6 +124,27 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		return cacheErr
 	}
 	s.cacheSet = c
+
+	// connect the remote mongodb
+	instance := instances.New(db, s, cache, lang)
+	hostApplyRuleCore := hostapplyrule.New(db, instance)
+	s.core = core.New(
+		model.New(db, s, lang, cache),
+		instance,
+		association.New(db, s),
+		datasynchronize.New(db, s),
+		mainline.New(db, lang),
+		host.New(db, cache, s, hostApplyRuleCore, c),
+		auditlog.New(db),
+		process.New(db, s, cache),
+		label.New(db),
+		settemplate.New(db),
+		operation.New(db),
+		hostApplyRuleCore,
+		dbSystem.New(db),
+		cloud.New(db),
+		auth.New(db),
+	)
 
 	watcher, watchErr := stream.NewStream(s.cfg.Mongo.GetMongoConf())
 	if watchErr != nil {

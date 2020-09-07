@@ -23,7 +23,7 @@
 </template>
 
 <script>
-    import { MENU_RESOURCE_HOST, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -106,9 +106,9 @@
                             this.$warn(this.$t('不支持混合搜索'))
                             return
                         } else if (ipList.length) {
-                            this.checkTargetPage(ipList, 'ip')
+                            this.navigateToResource(ipList, 'ip')
                         } else {
-                            this.checkTargetPage(asstList, 'bk_asset_id')
+                            this.navigateToResource(asstList, 'bk_asset_id')
                         }
                     } catch (e) {
                         console.error(e)
@@ -118,84 +118,12 @@
                     this.textareaDom && this.textareaDom.focus()
                 }
             },
-            async checkTargetPage (list, type) {
-                try {
-                    const params = {
-                        bk_biz_id: -1,
-                        condition: [{
-                            bk_obj_id: 'biz',
-                            condition: [],
-                            fields: []
-                        }],
-                        ip: {
-                            data: [],
-                            flag: 'bk_host_innerip|bk_host_outerip',
-                            exact: 1
-                        }
-                    }
-                    if (type === 'ip') {
-                        params.ip.data = list
-                    } else {
-                        params.condition.push({
-                            bk_obj_id: 'host',
-                            condition: [{
-                                field: 'bk_asset_id',
-                                operator: '$in',
-                                value: list
-                            }]
-                        })
-                    }
-                    const { info } = await this.$store.dispatch('hostSearch/searchHost', {
-                        params: params,
-                        config: {
-                            requestId: this.request.search,
-                            cancelPrevious: true
-                        }
-                    })
-                    const bizSet = new Set()
-                    const resourceBizId = -1
-                    info.forEach(({ biz }) => {
-                        biz.forEach(data => {
-                            if (data.default === 1) { // 资源池的dfault为1
-                                bizSet.add(resourceBizId)
-                            } else {
-                                bizSet.add(data.bk_biz_id)
-                            }
-                        })
-                    })
-                    if (bizSet.size === 1) {
-                        const bizId = bizSet.values().next().value
-                        if (bizId === resourceBizId) {
-                            this.navigateToResource(list, 1, type)
-                        } else {
-                            this.navigateToBusiness(list, bizId, type)
-                        }
-                    } else {
-                        this.navigateToResource(list, 'all', type)
-                    }
-                } catch (error) {
-                    console.error(error)
-                }
-            },
-            navigateToResource (list, scope, type) {
+            navigateToResource (list, field) {
                 this.$routerActions.redirect({
                     name: MENU_RESOURCE_HOST,
                     query: {
-                        [type]: list.join(','),
-                        scope: scope,
-                        exact: 1
-                    },
-                    history: true
-                })
-            },
-            navigateToBusiness (list, bizId, type) {
-                this.$routerActions.redirect({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    params: {
-                        bizId
-                    },
-                    query: {
-                        [type]: list.join(','),
+                        [field]: list.join(','),
+                        scope: 'all',
                         exact: 1
                     },
                     history: true

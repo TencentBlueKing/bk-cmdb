@@ -40,7 +40,7 @@
                         <template v-else>
                             <cmdb-auth
                                 style="margin: 8px 0 0 8px; font-size: 0;"
-                                :auth="authResources"
+                                :auth="authData"
                                 v-show="property !== editState.property">
                                 <bk-button slot-scope="{ disabled }"
                                     text
@@ -131,11 +131,7 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-            isPublicModel () {
-                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
-                return !this.$tools.getMetadataBiz(model)
-            },
-            authResources () {
+            authData () {
                 if (this.resourceType === 'business') {
                     return this.INST_AUTH.U_BUSINESS
                 }
@@ -191,7 +187,7 @@
                         await this.updateInst({
                             objId: this.instState.bk_obj_id,
                             instId: this.instState.bk_inst_id,
-                            params: this.$injectMetadata(values, { inject: !this.isPublicModel })
+                            params: values
                         })
                     }
 
@@ -373,7 +369,7 @@
             border-radius: 2px;
             border: 1px solid #c4c6cc;
             line-height: 30px;
-            font-size: 12px;
+            font-size: 20px;
             text-align: center;
             cursor: pointer;
             &.form-confirm {

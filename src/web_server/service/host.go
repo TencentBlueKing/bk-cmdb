@@ -84,7 +84,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, &metadata.Metadata{})
+	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, 0)
 
 	c.JSON(http.StatusOK, result)
 }
@@ -116,14 +116,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 	objID := common.BKInnerObjIDHost
 	filterFields := logics.GetFilterFields(objID)
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
-	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, &metadata.Metadata{})
+	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, 0)
 	if nil != err {
 		blog.Errorf("ExportHost failed, get host model fields failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, &metadata.Metadata{})
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
@@ -180,7 +180,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -188,7 +188,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	}
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
-	err = s.Logics.BuildExcelTemplate(ctx, objID, file, c.Request.Header, defLang, metaInfo)
+	err = s.Logics.BuildExcelTemplate(ctx, objID, file, c.Request.Header, defLang, modelBizID)
 	if nil != err {
 		blog.Errorf("BuildDownLoadExcelTemplate failed, build excel template failed, object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
@@ -394,7 +394,7 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, &metadata.Metadata{})
+	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, 0)
 
 	c.JSON(http.StatusOK, result)
 }

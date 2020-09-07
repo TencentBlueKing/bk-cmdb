@@ -22,7 +22,7 @@
                         <div class="category-name">
                             <span class="category-name-text" :title="mainCategory.name">{{mainCategory.name}}</span>
                             <cmdb-auth v-if="!mainCategory['is_built_in']"
-                                :auth="$authResources({ type: $OPERATION.U_SERVICE_CATEGORY })">
+                                :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
                                 <bk-button slot-scope="{ disabled }"
                                     class="main-edit-btn"
                                     theme="primary"
@@ -36,7 +36,7 @@
                         </div>
                         <cmdb-dot-menu class="dot-menu-operation" v-if="!mainCategory['is_built_in']">
                             <div class="menu-operational">
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_CATEGORY })">
+                                <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
                                     <bk-button slot-scope="{ disabled }"
                                         class="menu-btn"
                                         :disabled="disabled"
@@ -45,7 +45,7 @@
                                         {{$t('添加二级分类')}}
                                     </bk-button>
                                 </cmdb-auth>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_CATEGORY })">
+                                <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }">
                                     <template slot-scope="{ disabled }">
                                         <bk-button v-if="disabled || !mainCategory['child_category_list'].length"
                                             class="menu-btn"
@@ -100,7 +100,7 @@
                             <div class="child-title">
                                 <span>{{childCategory['name']}}</span>
                                 <div class="child-edit" v-if="!childCategory['is_built_in']">
-                                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_SERVICE_CATEGORY })">
+                                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
                                         <bk-button slot-scope="{ disabled }"
                                             class="child-edit-btn"
                                             theme="primary"
@@ -110,7 +110,7 @@
                                             <i class="icon-cc-edit-shape"></i>
                                         </bk-button>
                                     </cmdb-auth>
-                                    <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_CATEGORY })"
+                                    <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }"
                                         v-if="!childCategory['usage_amount']">
                                         <bk-button slot-scope="{ disabled }"
                                             class="child-edit-btn"
@@ -147,7 +147,7 @@
                     </div>
                 </div>
                 <div class="child-category"></div>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_CATEGORY })"
+                <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }"
                     v-if="!showAddMianCategory">
                     <bk-button slot-scope="{ disabled }"
                         class="add-btn"
@@ -161,7 +161,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import categoryInput from './children/category-input'
     export default {
         components: {
@@ -189,6 +189,9 @@
                 list: []
             }
         },
+        computed: {
+            ...mapGetters('objectBiz', ['bizId'])
+        },
         created () {
             this.getCategoryList()
         },
@@ -201,7 +204,7 @@
             ]),
             getCategoryList () {
                 this.searchServiceCategory({
-                    params: this.$injectMetadata({}, { injectBizId: true })
+                    params: { bk_biz_id: this.bizId }
                 }).then((data) => {
                     const categoryList = data.info.map(item => {
                         return {
@@ -220,11 +223,12 @@
             },
             createdCategory (name, rootId) {
                 this.createServiceCategory({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_root_id: rootId,
                         bk_parent_id: rootId,
                         name
-                    }, { injectBizId: true })
+                    }
                 }).then(res => {
                     this.$success(this.$t('保存成功'))
                     this.showAddMianCategory = false
@@ -268,10 +272,11 @@
                     this.handleCloseEditMain()
                 } else {
                     this.updateServiceCategory({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             id: data.id,
                             name: type === 'main' ? this.mainCategoryName : this.childCategoryName
-                        }, { injectBizId: true })
+                        }
                     }).then(res => {
                         this.$success(this.$t('保存成功'))
                         this.handleCloseEditChild()
@@ -297,7 +302,7 @@
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
                             params: {
-                                data: this.$injectMetadata({ id }, { injectBizId: true })
+                                data: { id, bk_biz_id: this.bizId }
                             },
                             config: {
                                 requestId: 'delete_proc_services_category'

@@ -13,9 +13,10 @@
                                 <li class="property-item"
                                     v-if="!uneditableProperties.includes(property.bk_property_id)"
                                     :key="propertyIndex">
-                                    <div class="property-name" :title="property['bk_property_name']">
-                                        <bk-checkbox class="property-name-checkbox"
+                                    <cmdb-auth tag="div" class="property-name" :title="property['bk_property_name']" v-bind="authProps">
+                                        <bk-checkbox class="property-name-checkbox" slot-scope="{ disabled }"
                                             :id="`property-name-${property['bk_property_id']}`"
+                                            :disabled="disabled"
                                             v-model="editable[property['bk_property_id']]">
                                             <span class="property-name-text"
                                                 :for="`property-name-${property['bk_property_id']}`"
@@ -27,7 +28,7 @@
                                             v-if="property['placeholder']"
                                             v-bk-tooltips="htmlEncode(property['placeholder'])">
                                         </i>
-                                    </div>
+                                    </cmdb-auth>
                                     <div class="property-value">
                                         <component class="form-component"
                                             :is="`cmdb-form-${property['bk_property_type']}`"
@@ -59,7 +60,7 @@
         </div>
         <div class="form-options" :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <cmdb-auth class="inline-block-middle" :auth="authResources">
+                <cmdb-auth class="inline-block-middle" v-bind="authProps">
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
@@ -82,8 +83,8 @@
         mixins: [formMixins],
         props: {
             saveAuth: {
-                type: [String, Array],
-                default: ''
+                type: [Object, Array],
+                default: null
             }
         },
         data () {
@@ -136,11 +137,16 @@
             hasAvaliableGroups () {
                 return this.groupedProperties.some(properties => !!properties.length)
             },
-            authResources () {
-                const auth = this.saveAuth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
+            authProps () {
+                if (this.saveAuth) {
+                    return {
+                        auth: this.saveAuth
+                    }
+                }
+                return {
+                    auth: [],
+                    ignore: true
+                }
             }
         },
         watch: {

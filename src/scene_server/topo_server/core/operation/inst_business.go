@@ -18,8 +18,8 @@ import (
 	"regexp"
 	"strings"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -34,11 +34,11 @@ import (
 
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
-	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr, metaData *metadata.Metadata) (inst.Inst, error)
-	DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) error
+	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
+	DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64) error
 	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
-	GetInternalModule(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) (count int, result *metadata.InnterAppTopo, err error)
-	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64, metaData *metadata.Metadata) error
+	GetInternalModule(kit *rest.Kit, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
+	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
 	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 	GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (achieveName string, err error)
@@ -88,7 +88,7 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	return 0 != len(rsp.Data.Info), nil
 }
 
-func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr, metaData *metadata.Metadata) (inst.Inst, error) {
+func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	defaultFieldVal, err := data.Int64(common.BKDefaultField)
 	if nil != err {
@@ -167,20 +167,8 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
-	// register business to auth
-	bizName, err := data.String(common.BKAppNameField)
-	if err != nil {
-		blog.Errorf("create business, but got invalid business name. err: %v, rid: %s", err, kit.Rid)
-		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
-	}
-
-	if err := b.authManager.RegisterBusinessesByID(kit.Ctx, kit.Header, bizID); err != nil {
-		blog.Errorf("create business: %s, but register business resource failed, err: %v, rid: %s", bizName, err, kit.Rid)
-		return bizInst, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
-
 	// create set
-	objSet, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
+	objSet, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -192,7 +180,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	setData.Set(common.BKSetNameField, common.DefaultResSetName)
 	setData.Set(common.BKDefaultField, common.DefaultResSetFlag)
 
-	setInst, err := b.set.CreateSet(kit, objSet, bizID, setData, metaData)
+	setInst, err := b.set.CreateSet(kit, objSet, bizID, setData)
 	if nil != err {
 		blog.Errorf("create business failed to create business, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -205,7 +193,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	}
 
 	// create module
-	objModule, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule, metaData)
+	objModule, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -270,25 +258,20 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	return bizInst, nil
 }
 
-func (b *business) DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) error {
-	if err := b.authManager.DeregisterBusinessByRawID(kit.Ctx, kit.Header, bizID); err != nil {
-		blog.Errorf("delete business: %d, but deregister business from auth failed, err: %v, rid: %s", bizID, err, kit.Rid)
-		return kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-	}
-
-	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
+func (b *business) DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64) error {
+	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 
-	bizModel, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDApp, metaData)
+	bizModel, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 
-	if err = b.set.DeleteSet(kit, setObj, bizID, nil, metaData); nil != err {
+	if err = b.set.DeleteSet(kit, setObj, bizID, nil); nil != err {
 		blog.Errorf("[operation-biz] failed to delete the set, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrTopoAppDeleteFailed, err.Error())
 	}
@@ -404,9 +387,9 @@ func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (a
 	return fmt.Sprintf("%s-archived-%d", bizName, maxNum+1), nil
 }
 
-func (b *business) GetInternalModule(kit *rest.Kit, obj model.Object, bizID int64, metaData *metadata.Metadata) (count int, result *metadata.InnterAppTopo, err error) {
+func (b *business) GetInternalModule(kit *rest.Kit, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
 	// get set model
-	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet, metaData)
+	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
 	if nil != err {
 		return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
@@ -423,7 +406,7 @@ func (b *business) GetInternalModule(kit *rest.Kit, obj model.Object, bizID int6
 	}
 
 	// get module model
-	moduleObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule, metaData)
+	moduleObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
 	if nil != err {
 		return 0, nil, kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
@@ -473,22 +456,9 @@ func (b *business) GetInternalModule(kit *rest.Kit, obj model.Object, bizID int6
 	return 0, result, nil
 }
 
-func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64, metaData *metadata.Metadata) error {
-	if biz, exist := data.Get(common.BKAppNameField); exist {
-		bizName, err := data.String(common.BKAppNameField)
-		if err != nil {
-			blog.Errorf("update business, but got invalid business name: %v, id: %d, rid: %s", biz, bizID, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommParamsIsInvalid)
-		}
-
-		if err := b.authManager.UpdateRegisteredBusinessByID(kit.Ctx, kit.Header, bizID); err != nil {
-			blog.Errorf("update business name: %s, but update resource to auth failed, err: %v, rid: %s", bizName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	}
-
+func (b *business) UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error {
 	innerCond := condition.CreateCondition()
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
-	return b.inst.UpdateInst(kit, data, obj, innerCond, bizID, metaData)
+	return b.inst.UpdateInst(kit, data, obj, innerCond, bizID)
 }

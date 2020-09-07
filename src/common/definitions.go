@@ -256,41 +256,20 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
+	// BKCloudInstIDField the cloud instance id field
+	BKCloudInstIDField = "bk_cloud_inst_id"
+
+	// BKCloudHostStatusField the cloud host status field
+	BKCloudHostStatusField = "bk_cloud_host_status"
+
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"
-
-	// BKLastTimeCloudSync the last time cloud sync
-	BKLastTimeCloudSync = "bk_last_sync_time"
 
 	// BKCloudTaskID the cloud sync task id
 	BKCloudTaskID = "bk_task_id"
 
-	// BKSyncStatus the cloud sync status
-	BKSyncStatus = "bk_sync_status"
-
 	// BKNewAddHost the cloud sync new add hosts
 	BKNewAddHost = "new_add"
-
-	// BKAttrChangedHost the cloud sync attr changed hosts
-	BKAttrChangedHost = "attr_changed"
-
-	// BKCloudConfirm whether new add cloud hosts need confirm
-	BKCloudConfirm = "bk_confirm"
-
-	// BKAttrConfirm the cloud hosts attr changed need confirm
-	BKAttrConfirm = "bk_attr_confirm"
-
-	// BKCloudSyncTaskName the cloud sync task name field
-	BKCloudSyncTaskName = "bk_task_name"
-
-	// BKCloudAccountType the cloud account type field
-	BKCloudAccountType = "bk_account_type"
-
-	// BKCloudSyncAccountAdmin the cloud sync account admin
-	BKCloudSyncAccountAdmin = "bk_account_admin"
-
-	// BKResourceType the cloud sync resource type
-	BKResourceType = "bk_resource_type"
 
 	// BKImportFrom the host import from field
 	BKImportFrom = "import_from"
@@ -722,8 +701,11 @@ const (
 	// NormalSetDefaultFlag user create set default field value
 	NormalSetDefaultFlag int64 = 0
 
-	// default recycle module flat
+	// DefaultRecycleModuleFlag default recycle module flag
 	DefaultRecycleModuleFlag int = 3
+
+	// DefaultResSelfDefinedModuleFlag the default resource self-defined module flag
+	DefaultResSelfDefinedModuleFlag int = 4
 )
 
 const (
@@ -931,6 +913,10 @@ const (
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
 	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
+
+	BKHTTPSecretsToken   = "BK-Secrets-Token"
+	BKHTTPSecretsProject = "BK-Secrets-Project"
+	BKHTTPSecretsEnv     = "BK-Secrets-Env"
 )
 
 // transaction related
@@ -1050,6 +1036,18 @@ const BKStatusField = "status"
 const (
 	BKProcInstanceOpUser             = "proc instance user"
 	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
+
+	BKCloudSyncUser = "cloud_sync_user"
+)
+
+const (
+	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
+	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
+	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
+	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
+	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
+	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
+	RedisMongoCacheSyncKey                    = BKCacheKeyV3Prefix + "mongodb:cache"
 )
 
 // association fields
@@ -1170,4 +1168,47 @@ type LanguageType string
 const (
 	Chinese LanguageType = "zh-cn"
 	English LanguageType = "en"
+)
+
+// cloud sync const
+const (
+	BKCloudAccountID             = "bk_account_id"
+	BKCloudAccountName           = "bk_account_name"
+	BKCloudVendor                = "bk_cloud_vendor"
+	BKCloudSyncTaskName          = "bk_task_name"
+	BKCloudSyncTaskID            = "bk_task_id"
+	BKCloudSyncStatus            = "bk_sync_status"
+	BKCloudSyncStatusDescription = "bk_status_description"
+	BKCloudLastSyncTime          = "bk_last_sync_time"
+	BKCreator                    = "bk_creator"
+	BKStatus                     = "bk_status"
+	BKStatusDetail               = "bk_status_detail"
+	BKLastEditor                 = "bk_last_editor"
+	BKSecretID                   = "bk_secret_id"
+	BKVpcID                      = "bk_vpc_id"
+	BKVpcName                    = "bk_vpc_name"
+	BKRegion                     = "bk_region"
+	BKCloudSyncVpcs              = "bk_sync_vpcs"
+
+	// 是否为被销毁的云主机
+	IsDestroyedCloudHost = "is_destroyed_cloud_host"
+)
+
+const (
+	BKCloudHostStatusUnknown   = "1"
+	BKCloudHostStatusStarting  = "2"
+	BKCloudHostStatusRunning   = "3"
+	BKCloudHostStatusStopping  = "4"
+	BKCloudHostStatusStopped   = "5"
+	BKCloudHostStatusDestroyed = "6"
+)
+
+const (
+	BKCloudAreaStatusNormal   = "1"
+	BKCloudAreaStatusAbnormal = "2"
+)
+
+// configcenter
+const (
+	BKDefaultConfigCenter = "zookeeper"
 )

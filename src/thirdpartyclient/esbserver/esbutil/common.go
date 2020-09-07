@@ -45,5 +45,4 @@ func GetEsbQueryParameters(esbConfig EsbConfig, header http.Header) map[string]s
 		"bk_app_secret": esbConfig.AppSecret,
 		"bk_username":   util.GetUser(header),
 	}
-
 }

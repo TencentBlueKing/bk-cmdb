@@ -17,9 +17,10 @@ import (
 	"net/http"
 	"strings"
 
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/parser"
+	"configcenter/src/ac/iam"
+	"configcenter/src/ac/parser"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -40,7 +41,7 @@ const (
 	OperationType   RequestType = "operation"
 	TaskType        RequestType = "task"
 	AdminType       RequestType = "admin"
-
+	CloudType       RequestType = "cloud"
 )
 
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
@@ -102,6 +103,9 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 	case AdminType:
 		servers, err = s.discovery.MigrateServer().GetServers()
+
+	case CloudType:
+		servers, err = s.discovery.CloudServer().GetServers()
 	}
 
 	if err != nil {
@@ -125,7 +129,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		path := req.Request.URL.Path
 
 		blog.V(7).Infof("authFilter on url: %s, rid: %s", path, rid)
-		if s.authorizer.Enabled() == false {
+		if !auth.EnableAuthorize() {
 			blog.V(7).Infof("auth disabled, skip auth filter, rid: %s", rid)
 			fchain.ProcessFilter(req, resp)
 			return
@@ -140,17 +144,8 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			fchain.ProcessFilter(req, resp)
 			return
 		}
-		if path == "/api/v3/auth/admin_entrance" {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
 
 		if path == "/api/v3/auth/skip_url" {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-
-		if path == "/api/v3/auth/convert" {
 			fchain.ProcessFilter(req, resp)
 			return
 		}
@@ -179,21 +174,8 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		// check if authorize is nil or not, which means to check if the authorize instance has
-		// already been initialized or not. if not, api server should not be used.
-		if nil == s.authorizer {
-			blog.Errorf("authorize instance has not been initialized, rid: %s", rid)
-			rsp := metadata.BaseResp{
-				Code:   common.CCErrCommCheckAuthorizeFailed,
-				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
-				Result: false,
-			}
-			resp.WriteAsJson(rsp)
-			return
-		}
-
 		blog.V(7).Infof("auth filter parse attribute result: %v, rid: %s", attribute, rid)
-		decision, err := s.authorizer.Authorize(req.Request.Context(), attribute)
+		decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User, attribute.Resources...)
 		if err != nil {
 			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
 			rsp := metadata.BaseResp{
@@ -205,9 +187,17 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if !decision.Authorized {
-			blog.V(4).Infof("authcenter.AdoptPermissions attribute: %+v, rid: %s", attribute, rid)
-			permissions, err := authcenter.AdoptPermissions(req.Request.Header, s.engine.CoreAPI, attribute.Resources)
+		authorized := true
+		for _, decision := range decisions {
+			if !decision.Authorized {
+				authorized = false
+				break
+			}
+		}
+
+		if !authorized {
+			blog.V(4).Infof("iam.AdoptPermissions attribute: %+v, rid: %s", attribute, rid)
+			permissions, err := iam.AdoptPermissions(req.Request.Header, attribute.Resources)
 			if err != nil {
 				blog.Errorf("adopt permission failed, err: %v, rid: %s", err, rid)
 				rsp := metadata.BaseResp{
@@ -218,7 +208,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 				resp.WriteAsJson(rsp)
 				return
 			}
-			blog.Warnf("authFilter failed, url: %s, reason: %+v, permissions: %+v, rid: %s", path, decision, permissions, rid)
+			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permissions: %s, rid: %s", path, attribute, permissions, rid)
 			rsp := metadata.BaseResp{
 				Code:        common.CCNoPermission,
 				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),

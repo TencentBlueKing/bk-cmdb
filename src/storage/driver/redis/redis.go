@@ -13,6 +13,7 @@
 package redis
 
 import (
+	cc "configcenter/src/common/backbone/configcenter"
 	"sync"
 
 	"configcenter/src/common"
@@ -64,7 +65,7 @@ func ClientInstance(prefix string) *redis.Client {
 
 func ParseConfig(prefix string, configMap map[string]string) (*dalRedis.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
-	config := dalRedis.ParseConfigFromKV(prefix, configMap)
+	config := cc.Redis(prefix)
 	if config.Address == "" {
 		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".Address] configuration item")
 		return nil, lastConfigErr

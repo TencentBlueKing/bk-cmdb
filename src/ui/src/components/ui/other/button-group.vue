@@ -36,7 +36,7 @@
             @show="toggleDropdownState(true)"
             @hide="toggleDropdownState(false)">
             <bk-button slot="dropdown-trigger">
-                <span>{{$t('更多')}}</span>
+                <span>{{triggerText || $t('更多')}}</span>
                 <i :class="['bk-icon icon-angle-down', { 'icon-flip': isDropdownShow }]"></i>
             </bk-button>
             <ul class="dropdown-list" slot="dropdown-content">
@@ -78,7 +78,11 @@
                 type: Array,
                 required: true
             },
-            expand: Boolean
+            expand: Boolean,
+            triggerText: {
+                type: String,
+                default: ''
+            }
         },
         data () {
             return {

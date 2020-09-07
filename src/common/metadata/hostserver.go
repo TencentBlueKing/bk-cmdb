@@ -68,6 +68,22 @@ type HostList struct {
 	InputType     HostInputType                    `json:"input_type"`
 }
 
+type AddHostToResourcePoolHostList struct {
+	HostInfo  []map[string]interface{} `json:"host_info"`
+	Directory int64                    `json:"directory"`
+}
+
+type AddHostToResourcePoolResult struct {
+	Success []AddOneHostToResourcePoolResult `json:"success,omitempty"`
+	Error   []AddOneHostToResourcePoolResult `json:"error,omitempty"`
+}
+
+type AddOneHostToResourcePoolResult struct {
+	Index    int    `json:"index"`
+	HostID   int64  `json:"bk_host_id,omitempty"`
+	ErrorMsg string `json:"error_message,omitempty"`
+}
+
 type AddHostFromAgentHostList struct {
 	HostInfo map[string]interface{} `json:"host_info"`
 }
@@ -119,11 +135,10 @@ type HostCommonSearch struct {
 }
 
 type HostModuleFind struct {
-	ModuleIDS []int64   `json:"bk_module_ids"`
-	Metadata  *Metadata `json:"metadata"`
-	AppID     int64     `json:"bk_biz_id"`
-	Fields    []string  `json:"fields"`
-	Page      BasePage  `json:"page"`
+	ModuleIDS []int64  `json:"bk_module_ids"`
+	AppID     int64    `json:"bk_biz_id"`
+	Fields    []string `json:"fields"`
+	Page      BasePage `json:"page"`
 }
 
 type FindHostsBySrvTplOpt struct {
@@ -198,6 +213,52 @@ func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindHostsByTopoOpt struct {
+	ObjID  string   `json:"bk_obj_id"`
+	InstID int64    `json:"bk_inst_id"`
+	Fields []string `json:"fields"`
+	Page   BasePage `json:"page"`
+}
+
+func (o *FindHostsByTopoOpt) Validate() (rawError errors.RawErrorInfo) {
+	if o.ObjID == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if o.ObjID == common.BKInnerObjIDApp {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if o.InstID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKInstIDField},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page"},
 		}
 	}
 
@@ -352,10 +413,6 @@ func (option ListHosts) Validate() (errKey string, err error) {
 		}
 	}
 
-	if len(option.Fields) == 0 {
-		return "fields", errors.New(common.CCErrCommParamsNeedSet, "fields can't be empty")
-	}
-
 	return "", nil
 }
 
@@ -439,7 +496,7 @@ func (sh SearchHost) ExtractHostIDs() *[]int64 {
 
 type SearchHostResult struct {
 	BaseResp `json:",inline"`
-	Data     SearchHost `json:"data"`
+	Data     *SearchHost `json:"data"`
 }
 
 type HostCloneInputParams struct {
@@ -472,9 +529,8 @@ type TransferHostAcrossBusinessParameter struct {
 
 // HostModuleRelationParameter get host and module  relation parameter
 type HostModuleRelationParameter struct {
-	AppID  int64    `json:"bk_biz_id"`
-	HostID []int64  `json:"bk_host_id"`
-	Page   BasePage `json:"page"`
+	AppID  int64   `json:"bk_biz_id"`
+	HostID []int64 `json:"bk_host_id"`
 }
 
 // DeleteHostFromBizParameter delete host from business
@@ -484,9 +540,20 @@ type DeleteHostFromBizParameter struct {
 }
 
 // CloudAreaParameter search cloud area parameter
-type CloudAreaParameter struct {
-	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
-	Page      BasePage      `json:"page" bson:"page" field:"page"`
+type CloudAreaSearchParam struct {
+	SearchCloudOption `json:",inline"`
+	HostCount         bool `json:"host_count"`
+	SyncTaskIDs       bool `json:"sync_task_ids"`
+}
+
+type CreateManyCloudAreaResult struct {
+	BaseResp `json:",inline"`
+	Data     []CreateManyCloudAreaElem `json:"data"`
+}
+
+type CreateManyCloudAreaElem struct {
+	CloudID int64  `json:"bk_cloud_id"`
+	ErrMsg  string `json:"err_msg"`
 }
 
 type TopoNode struct {

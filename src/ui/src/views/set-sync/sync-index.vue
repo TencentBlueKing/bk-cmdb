@@ -55,7 +55,7 @@
                 </div>
             </div>
             <div class="options" :class="{ 'is-sticky': hasScrollbar }">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
                     <template slot-scope="{ disabled }">
                         <bk-button v-if="canSyncStatus()"
                             class="mr10"
@@ -74,6 +74,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
@@ -93,14 +94,12 @@
             }
         },
         computed: {
-            business () {
-                return this.$store.getters['objectBiz/bizId']
-            },
+            ...mapGetters('objectBiz', ['bizId']),
             setTemplateId () {
                 return this.$route.params['setTemplateId']
             },
             setInstancesId () {
-                const id = `${this.business}_${this.setTemplateId}`
+                const id = `${this.bizId}_${this.setTemplateId}`
                 let syncIdMap = this.$store.state.setFeatures.syncIdMap
                 const sessionSyncIdMap = sessionStorage.getItem('setSyncIdMap')
                 if (!Object.keys(syncIdMap).length && sessionSyncIdMap) {
@@ -142,7 +141,7 @@
             async getSetTemplateInfo () {
                 try {
                     const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setTemplateId: this.setTemplateId
                     })
                     this.templateName = info.name
@@ -158,7 +157,7 @@
                         return
                     }
                     const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setTemplateId: this.setTemplateId,
                         params: {
                             bk_set_ids: this.setInstancesId
@@ -197,7 +196,7 @@
             async handleConfirmSync () {
                 try {
                     await this.$store.dispatch('setSync/syncTemplateToInstances', {
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setTemplateId: this.setTemplateId,
                         params: {
                             bk_set_ids: this.setInstancesId
@@ -228,7 +227,7 @@
             },
             handleCloseInstance (id) {
                 this.$store.commit('setFeatures/deleteInstancesId', {
-                    id: `${this.business}_${this.setTemplateId}`,
+                    id: `${this.bizId}_${this.setTemplateId}`,
                     deleteId: id
                 })
                 this.diffList = this.diffList.filter(instance => instance.bk_set_id !== id)

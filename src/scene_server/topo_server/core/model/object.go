@@ -50,7 +50,7 @@ type Object interface {
 
 	CreateMainlineObjectAssociation(relateToObjID string) error
 
-	CreateGroup(metadata *metadata.Metadata) GroupInterface
+	CreateGroup(bizID int64) GroupInterface
 	CreateAttribute() AttributeInterface
 
 	GetGroups() ([]GroupInterface, error)
@@ -581,8 +581,8 @@ func (o *object) Save(data mapstr.MapStr) error {
 
 }
 
-func (o *object) CreateGroup(metaData *metadata.Metadata) GroupInterface {
-	return NewGroup(o.kit, o.clientSet, metaData)
+func (o *object) CreateGroup(bizID int64) GroupInterface {
+	return NewGroup(o.kit, o.clientSet, bizID)
 }
 
 func (o *object) CreateUnique() Unique {
@@ -666,7 +666,7 @@ func (o *object) GetGroups() ([]GroupInterface, error) {
 
 	rstItems := make([]GroupInterface, 0)
 	for _, item := range rsp.Data.Info {
-		grp := NewGroup(o.kit, o.clientSet, nil)
+		grp := NewGroup(o.kit, o.clientSet, 0)
 		grp.SetGroup(item)
 		rstItems = append(rstItems, grp)
 	}

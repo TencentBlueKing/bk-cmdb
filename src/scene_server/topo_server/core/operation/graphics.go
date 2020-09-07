@@ -16,8 +16,8 @@ import (
 	"context"
 	"strconv"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -26,8 +26,8 @@ import (
 )
 
 type GraphicsOperationInterface interface {
-	SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string, metaData *metadata.Metadata) ([]metadata.TopoGraphics, error)
-	UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string, datas []metadata.TopoGraphics, metaData *metadata.Metadata) error
+	SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string) ([]metadata.TopoGraphics, error)
+	UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string, datas []metadata.TopoGraphics) error
 
 	SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface)
 }
@@ -51,13 +51,11 @@ func (g *graphics) SetProxy(obj ObjectOperationInterface, asst AssociationOperat
 	g.asst = asst
 }
 
-func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string, metaData *metadata.Metadata) ([]metadata.TopoGraphics, error) {
+func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string) ([]metadata.TopoGraphics, error) {
 	graphCondition := &metadata.TopoGraphics{}
 	graphCondition.SetScopeType(scopeType)
 	graphCondition.SetScopeID(scopeID)
-	if nil != metaData {
-		graphCondition.SetMetaData(*metaData)
-	}
+
 	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(context.Background(), kit.Header, graphCondition)
 	if nil != err {
 		return nil, err
@@ -77,13 +75,13 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 
 	nodes := make([]metadata.TopoGraphics, 0)
 	if scopeType == "global" {
-		objs, err := g.obj.FindObject(kit, condition.CreateCondition(), metaData)
+		objs, err := g.obj.FindObject(kit, condition.CreateCondition())
 		if err != nil {
 			blog.Errorf("SelectObject failed %v, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoGraphicsSearchFailed, err.Error())
 		}
 
-		assts, err := g.asst.SearchObjectAssociation(kit, "", metaData)
+		assts, err := g.asst.SearchObjectAssociation(kit, "")
 		if err != nil {
 			blog.Errorf("SelectObjectAsst failed %v, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoGraphicsSearchFailed, err.Error())
@@ -156,13 +154,10 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	return nodes, nil
 }
 
-func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string, datas []metadata.TopoGraphics, metaData *metadata.Metadata) error {
+func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID string, datas []metadata.TopoGraphics) error {
 	for index := range datas {
 		datas[index].SetScopeType(scopeType)
 		datas[index].SetScopeID(scopeID)
-		if nil != metaData {
-			datas[index].SetMetaData(*metaData)
-		}
 	}
 
 	rsp, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(context.Background(), kit.Header, datas)

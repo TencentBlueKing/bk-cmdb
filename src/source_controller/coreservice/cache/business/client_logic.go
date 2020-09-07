@@ -469,6 +469,30 @@ func (c *Client) genSetListKeys(bizID int64) ([]string, error) {
 	return keys, nil
 }
 
+func (c *Client) listModuleDetailFromMongo(ids []int64) ([]string, error) {
+	filter := mapstr.MapStr{
+		common.BKModuleIDField: mapstr.MapStr{
+			common.BKDBIN: ids,
+		},
+	}
+
+	all := make([]mapstr.MapStr, 0)
+	if err := c.db.Table(common.BKTableNameBaseModule).Find(filter).All(context.Background(), &all); err != nil {
+		blog.Errorf("list module %d update from mongo failed, err: %v", ids, err)
+		return nil, err
+	}
+
+	result := make([]string, len(all))
+	for idx, m := range all {
+		js, err := json.Marshal(m)
+		if err != nil {
+			return nil, err
+		}
+		result[idx] = string(js)
+	}
+	return result, nil
+}
+
 func (c *Client) getModuleDetailFromMongo(id int64) (string, error) {
 	mod := make(map[string]interface{})
 	filter := mapstr.MapStr{
@@ -495,6 +519,31 @@ func (c *Client) getSetDetailFromMongo(id int64) (string, error) {
 	}
 	js, _ := json.Marshal(set)
 	return string(js), nil
+}
+
+func (c *Client) listSetDetailFromMongo(ids []int64) ([]string, error) {
+	filter := mapstr.MapStr{
+		common.BKSetIDField: mapstr.MapStr{
+			common.BKDBIN: ids,
+		},
+	}
+
+	sets := make([]map[string]interface{}, 0)
+	if err := c.db.Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &sets); err != nil {
+		blog.Errorf("get set %v update from mongo failed, err: %v", ids, err)
+		return nil, err
+	}
+
+	all := make([]string, len(sets))
+	for idx, set := range sets {
+		js, err := json.Marshal(set)
+		if err != nil {
+			return nil, err
+		}
+		all[idx] = string(js)
+	}
+
+	return all, nil
 }
 
 func (c *Client) genCustomLevelListKeys(objID string, bizID int64) ([]string, error) {
@@ -578,4 +627,31 @@ func (c *Client) getCustomLevelDetail(objID string, instID int64) (string, error
 		return "", err
 	}
 	return string(js), nil
+}
+
+func (c *Client) listCustomLevelDetail(objID string, instIDs []int64) ([]string, error) {
+	filter := mapstr.MapStr{
+		common.BKObjIDField: objID,
+		common.BKInstIDField: mapstr.MapStr{
+			common.BKDBIN: instIDs,
+		},
+	}
+
+	instance := make([]map[string]interface{}, 0)
+	err := c.db.Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
+	if err != nil {
+		blog.Errorf("get custom level object: %s, inst: %v from mongodb failed, err: %v", objID, instIDs, err)
+		return nil, err
+	}
+
+	all := make([]string, len(instance))
+	for idx := range instance {
+		js, err := json.Marshal(instance[idx])
+		if err != nil {
+			return nil, err
+		}
+		all[idx] = string(js)
+	}
+
+	return all, nil
 }

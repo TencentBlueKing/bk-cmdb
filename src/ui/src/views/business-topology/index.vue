@@ -32,7 +32,7 @@
                     <div class="default-node-info" v-if="!showNodeInfo">
                         <div class="info-item">
                             <label class="name">{{$t('节点名称')}}</label>
-                            <span class="value">{{nodeName}}</span>
+                            <span class="value">{{`[${nodeId}] ${nodeName}`}}</span>
                         </div>
                     </div>
                     <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo"></service-node-info>
@@ -80,6 +80,9 @@
             showNodeInfo () {
                 return this.selectedNode && this.selectedNode.data.default === 0
             },
+            nodeId () {
+                return this.selectedNode ? this.selectedNode.data.bk_inst_id : '--'
+            },
             nodeName () {
                 return this.selectedNode && this.selectedNode.data.bk_inst_name
             }
@@ -126,12 +129,13 @@
             getProperties (models) {
                 return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
                     injectId: 'host',
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_obj_id: {
                             $in: models.map(model => model.bk_obj_id)
                         },
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: this.request.properties
                     }

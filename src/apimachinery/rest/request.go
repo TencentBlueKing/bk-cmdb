@@ -336,6 +336,7 @@ func (r *Request) Do() *Result {
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status
+			result.Header = resp.Header
 			result.Rid = rid
 
 			return result
@@ -366,6 +367,7 @@ type Result struct {
 	Err        error
 	StatusCode int
 	Status     string
+	Header     http.Header
 }
 
 func (r *Result) Into(obj interface{}) error {
@@ -430,7 +432,7 @@ func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
 	if elements[3].Exists() {
 		raw := elements[3].Raw
 		if len(raw) != 0 {
-			perm := make([]metadata.Permission, 0)
+			perm := new(metadata.IamPermission)
 			if err := json.Unmarshal([]byte(raw), &perm); err != nil {
 				blog.Errorf("invalid http response, invalid permission field, body: %s, rid: %s", r.Body, r.Rid)
 				return nil, fmt.Errorf("http response with invalid permission field, body: %s", r.Body)
@@ -498,8 +500,8 @@ func (r *Result) IntoJsonCntInfoString() (*metadata.JsonCntInfoResp, error) {
 	if elements[3].Exists() {
 		raw := elements[3].Raw
 		if len(raw) != 0 {
-			perm := make([]metadata.Permission, 0)
-			if err := json.Unmarshal([]byte(raw), &perm); err != nil {
+			perm := new(metadata.IamPermission)
+			if err := json.Unmarshal([]byte(raw), perm); err != nil {
 				blog.Errorf("invalid http response, invalid permission field, body: %s, rid: %s", r.Body, r.Rid)
 				return nil, fmt.Errorf("http response with invalid permission field, body: %s", r.Body)
 			}

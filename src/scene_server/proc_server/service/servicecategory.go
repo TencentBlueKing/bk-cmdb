@@ -50,25 +50,15 @@ func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 
 func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
-	meta := &struct {
-		Metadata metadata.Metadata `json:"metadata"`
-		BizID    int64             `json:"bk_biz_id"`
+	biz := &struct {
+		BizID int64 `json:"bk_biz_id"`
 	}{}
-	if err := ctx.DecodeInto(meta); err != nil {
+	if err := ctx.DecodeInto(biz); err != nil {
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-	}
-	bizID := meta.BizID
-	if bizID == 0 {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(meta.Metadata)
-		if err != nil {
-			blog.Errorf("get service category list failed, parse biz id from metadata failed, metadata: %+v, err: %+v, rid: %s", meta.Metadata, err, rid)
-			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
-		}
 	}
 
 	listOption := metadata.ListServiceCategoriesOption{
-		BusinessID:     bizID,
+		BusinessID:     biz.BizID,
 		WithStatistics: withStatistics,
 	}
 	/*
@@ -110,18 +100,8 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service category, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	newCategory := &metadata.ServiceCategory{
-		BizID:    bizID,
+		BizID:    input.BizID,
 		Name:     input.Name,
 		ParentID: input.ParentID,
 	}
@@ -134,15 +114,6 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 			blog.Errorf("create service category failed, err: %v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-
-		/*
-			if err := ps.AuthManager.RegisterServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, *category); err != nil {
-				blog.Errorf("create service category success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-				err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-				ctx.RespAutoError(err)
-				return
-			}
-		*/
 
 		return nil
 	})
@@ -169,15 +140,6 @@ func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
 			blog.Errorf("update service category failed, err: %v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-
-		/*
-			if err := ps.AuthManager.UpdateRegisteredServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, *category); err != nil {
-				blog.Errorf("update service category success, but update register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-				err := ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-				ctx.RespAutoError(err)
-				return
-			}
-		*/
 
 		return nil
 	})
@@ -213,16 +175,6 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 			blog.Errorf("delete service category failed, err: %v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-
-		/*
-			// deregister iam resource
-			if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
-				blog.Errorf("delete service category success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-				err := ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-				ctx.RespAutoError(err)
-				return
-			}
-		*/
 
 		return nil
 	})

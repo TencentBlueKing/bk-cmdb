@@ -17,33 +17,12 @@
 <script>
     import { translateAuth } from '@/setup/permission'
     export default {
-        data () {
-            return {
-                permission: []
-            }
-        },
-        watch: {
-            $route: {
-                immediate: true,
-                handler () {
-                    this.setPermission()
-                }
-            }
-        },
         methods: {
-            async setPermission () {
-                const permission = []
-                const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
-                if (Object.keys(operation).length) {
-                    const translated = await translateAuth(Object.values(operation))
-                    permission.push(...translated)
-                }
-                this.permission = permission
-            },
             async handleApplyPermission () {
                 try {
+                    const { view, permission } = this.$route.meta.auth || {}
                     const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
-                        params: this.permission,
+                        params: view ? translateAuth(view) : permission,
                         config: {
                             requestId: 'getSkipUrl'
                         }

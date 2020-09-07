@@ -13,8 +13,11 @@
 package service
 
 import (
-	"configcenter/src/auth/meta"
+	"strconv"
+
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -28,18 +31,8 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := option.BizID
-	if bizID == 0 && option.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*option.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	newTemplate := &metadata.ServiceTemplate{
-		BizID:             bizID,
+		BizID:             option.BizID,
 		Name:              option.Name,
 		ServiceCategoryID: option.ServiceCategoryID,
 		SupplierAccount:   ctx.Kit.SupplierAccount,
@@ -54,9 +47,19 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 			return err
 		}
 
-		if err := ps.AuthManager.RegisterServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
-			blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		// register service template resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.BizProcessServiceTemplate),
+				ID:      strconv.FormatInt(tpl.ID, 10),
+				Name:    tpl.Name,
+				Creator: ctx.Kit.User,
+			}
+			_, err = ps.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created service template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 
 		return nil
@@ -109,15 +112,6 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := option.BizID
-	if bizID == 0 && option.Metadata != nil {
-		_, err := metadata.BizIDFromMetadata(*option.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	updateParam := &metadata.ServiceTemplate{
 		ID:                option.ID,
 		Name:              option.Name,
@@ -132,12 +126,6 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 			blog.Errorf("update service template failed, err: %v", err)
 			return err
 		}
-
-		if err := ps.AuthManager.UpdateRegisteredServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
-			blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		}
-
 		return nil
 	})
 
@@ -154,15 +142,6 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
 
 	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
@@ -170,32 +149,10 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	option := metadata.ListServiceTemplateOption{
-		BusinessID:        bizID,
+		BusinessID:        input.BizID,
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 	}
-
-	if ps.AuthManager.Enabled() {
-		authorizedIDs, err := ps.AuthManager.ListAuthorizedServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-		if err != nil {
-			blog.Errorf("ListAuthorizedServiceTemplateIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
-			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
-			ctx.RespAutoError(err)
-			return
-		}
-		if option.ServiceTemplateIDs == nil {
-			option.ServiceTemplateIDs = authorizedIDs
-		} else {
-			ids := make([]int64, 0)
-			for _, id := range option.ServiceTemplateIDs {
-				if util.InArray(id, authorizedIDs) {
-					ids = append(ids, id)
-				}
-			}
-			option.ServiceTemplateIDs = ids
-		}
-	}
-
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
@@ -212,49 +169,17 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
 	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
 		return
 	}
 
 	option := metadata.ListServiceTemplateOption{
-		BusinessID:        bizID,
+		BusinessID:        input.BizID,
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 		Search:            input.Search,
 	}
-
-	if ps.AuthManager.Enabled() {
-		authorizedIDs, err := ps.AuthManager.ListAuthorizedServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-		if err != nil {
-			blog.Errorf("ListAuthorizedServiceTemplateIDs failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
-			err := ctx.Kit.CCError.Error(common.CCErrCommListAuthorizedResourcedFromIAMFailed)
-			ctx.RespAutoError(err)
-			return
-		}
-		if option.ServiceTemplateIDs == nil {
-			option.ServiceTemplateIDs = authorizedIDs
-		} else {
-			ids := make([]int64, 0)
-			for _, id := range option.ServiceTemplateIDs {
-				if util.InArray(id, authorizedIDs) {
-					ids = append(ids, id)
-				}
-			}
-			option.ServiceTemplateIDs = ids
-		}
-	}
-
 	listResult, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
@@ -312,33 +237,11 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 && input.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*input.Metadata)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service template, but get business id failed, err: %v", err)
-			return
-		}
-	}
-
-	iamResources, err := ps.AuthManager.MakeResourcesByServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Delete, bizID, input.ServiceTemplateID)
-	if err != nil {
-		blog.Errorf("make iam resource by service template failed, templateID: %d, err: %+v, rid: %s", input.ServiceTemplateID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
-		err = ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
+		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
 		if err != nil {
 			blog.Errorf("delete service template: %d failed", input.ServiceTemplateID)
 			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceTemplateFailed)
-		}
-
-		if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
-			blog.Errorf("delete service template success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 		return nil
 	})

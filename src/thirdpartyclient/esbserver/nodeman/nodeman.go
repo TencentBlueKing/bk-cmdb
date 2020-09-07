@@ -31,6 +31,7 @@ func (p *nodeman) SearchPackage(ctx context.Context, h http.Header, processname 
 		Into(resp)
 	return
 }
+
 func (p *nodeman) SearchProcess(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessResult, err error) {
 	resp = new(SearchPluginProcessResult)
 	subPath := "/v2/nodeman/process/%s/"
@@ -44,6 +45,7 @@ func (p *nodeman) SearchProcess(ctx context.Context, h http.Header, processname 
 		Into(resp)
 	return
 }
+
 func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessInfoResult, err error) {
 	resp = new(SearchPluginProcessInfoResult)
 	subPath := "/v2/nodeman/process_info/%s/"
@@ -57,14 +59,12 @@ func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header, processn
 		Into(resp)
 	return
 }
+
 func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string, data *UpgradePluginRequest) (resp *UpgradePluginResult, err error) {
 	resp = new(UpgradePluginResult)
 	subPath := "/v2/nodeman/%s/tasks/"
 
-	params := struct {
-		*esbutil.EsbCommParams
-		*UpgradePluginRequest
-	}{
+	params := esbUpgradePluginParams{
 		EsbCommParams:        esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
 		UpgradePluginRequest: data,
 	}
@@ -79,6 +79,7 @@ func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string
 		Into(resp)
 	return
 }
+
 func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, taskID int64) (resp *SearchTaskResult, err error) {
 	resp = new(SearchTaskResult)
 	subPath := "/v2/nodeman/%d/tasks/%d/"
@@ -92,6 +93,7 @@ func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, ta
 		Into(resp)
 	return
 }
+
 func (p *nodeman) SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error) {
 	resp = new(SearchPluginHostResult)
 	subPath := "/v2/nodeman/0/host_status/get_host/"

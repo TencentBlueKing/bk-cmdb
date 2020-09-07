@@ -55,7 +55,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <cmdb-auth class="inline-block-middle" :auth="saveAuthResources">
+                <cmdb-auth class="inline-block-middle" :auth="saveAuth">
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
@@ -104,8 +104,8 @@
                 default: true
             },
             saveAuth: {
-                type: [String, Array],
-                default: ''
+                type: Object,
+                default: null
             },
             renderTips: Function
         },
@@ -133,12 +133,6 @@
                 return this.$groupedProperties.map(properties => {
                     return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                 })
-            },
-            saveAuthResources () {
-                const auth = this.saveAuth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
             }
         },
         watch: {
@@ -186,14 +180,16 @@
                 return !property.editable || property.isreadonly || this.disabledProperties.includes(property.bk_property_id)
             },
             isRequired (property) {
-                if (property.isrequired) {
-                    return true
-                }
-                const unique = this.objectUnique.find(unique => unique.must_check)
-                if (unique) {
-                    return unique.keys.some(key => key.key_id === property.id)
-                }
-                return false
+                return property.isrequired
+                // 后台无对应逻辑，前端屏蔽唯一校验配置中为空必须校验的字段设置为必填的逻辑
+                // if (property.isrequired) {
+                //     return true
+                // }
+                // const unique = this.objectUnique.find(unique => unique.must_check)
+                // if (unique) {
+                //     return unique.keys.some(key => key.key_id === property.id)
+                // }
+                // return false
             },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')

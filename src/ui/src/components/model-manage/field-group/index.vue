@@ -17,9 +17,9 @@
                         <div class="header-title">
                             <div class="group-name" :title="group.info.bk_group_name">
                                 {{group.info['bk_group_name']}}
-                                <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
+                                <span v-if="isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
                             </div>
-                            <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))" @click.stop>
+                            <div class="title-icon-btn" v-if="!isBuiltInGroup(group.info)" @click.stop>
                                 <cmdb-auth class="ml10" :auth="authResources" @update-auth="handleReceiveAuth">
                                     <bk-button slot-scope="{ disabled }"
                                         class="icon-btn"
@@ -82,12 +82,12 @@
                                 <span class="drag-logo"></span>
                                 <div class="drag-content">
                                     <div class="field-name">
-                                        <span :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
+                                        <span :title="property.bk_property_name">{{property.bk_property_name}}</span>
                                         <i v-if="property.isrequired">*</i>
                                     </div>
-                                    <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
+                                    <p>{{fieldTypeMap[property.bk_property_type]}}</p>
                                 </div>
-                                <template v-if="!property['ispre']">
+                                <template v-if="!property.ispre">
                                     <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
                                         <bk-button slot-scope="{ disabled }"
                                             class="property-icon-btn"
@@ -129,7 +129,7 @@
                         <bk-button slot-scope="{ disabled }"
                             class="add-group-trigger"
                             :text="true"
-                            :disabled="disabled || activeModel['bk_ispaused']"
+                            :disabled="disabled || activeModel.bk_ispaused"
                             @click.stop="handleAddGroup">
                             <i class="bk-icon icon-plus-circle"></i>
                             {{customObjId ? $t('新建业务分组') : $t('添加分组')}}
@@ -159,9 +159,9 @@
                             :class="{
                                 checked: dialog.selectedProperties.includes(property)
                             }"
-                            :title="property['bk_property_name']"
+                            :title="property.bk_property_name"
                             @click="handleSelectProperty(property)">
-                            {{property['bk_property_name']}}
+                            {{property.bk_property_name}}
                         </label>
                     </li>
                 </ul>
@@ -281,6 +281,7 @@
     import fieldDetailsView from './field-view'
     import CmdbColumnsConfig from '@/components/columns-config/columns-config'
     import { mapGetters, mapActions, mapState } from 'vuex'
+    import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
     export default {
         components: {
             vueDraggable,
@@ -354,16 +355,26 @@
         },
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
-            ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected']),
-            ...mapGetters('objectModel', ['isInjectable', 'activeModel']),
+            ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModel', ['activeModel']),
+            isGlobalView () {
+                const topRoute = this.$route.matched[0]
+                return topRoute ? topRoute.name !== MENU_BUSINESS : true
+            },
+            bizId () {
+                if (this.isGlobalView) {
+                    return null
+                }
+                return parseInt(this.$route.params.bizId)
+            },
             objId () {
                 return this.$route.params.modelId || this.customObjId
             },
             isReadOnly () {
-                return this.activeModel && this.activeModel['bk_ispaused']
+                return this.activeModel && this.activeModel.bk_ispaused
             },
             sortedProperties () {
-                const propertiesSorted = this.isAdminView ? this.groupedProperties : this.metadataGroupedProperties
+                const propertiesSorted = this.isGlobalView ? this.groupedProperties : this.bizGroupedProperties
                 let properties = []
                 propertiesSorted.forEach(group => {
                     properties = properties.concat(group.properties)
@@ -373,13 +384,13 @@
             groupedPropertiesCount () {
                 const count = {}
                 this.groupedProperties.forEach(({ info, properties }) => {
-                    const groupId = info['bk_group_id']
+                    const groupId = info.bk_group_id
                     count[groupId] = properties.length
                 })
                 return count
             },
-            metadataGroupedProperties () {
-                return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group.info))
+            bizGroupedProperties () {
+                return this.groupedProperties.filter(group => this.isBizCustomData(group.info))
             },
             curModel () {
                 if (!this.objId) return {}
@@ -392,10 +403,16 @@
                 return ['bk_host_manage', 'bk_biz_topo', 'bk_organization'].includes(this.curModel.bk_classification_id)
             },
             authResources () {
-                return this.$authResources({
-                    resource_id: this.modelId,
+                if (this.customObjId) { // 业务自定义字段
+                    return {
+                        type: this.$OPERATION.U_BIZ_MODEL_CUSTOM_FIELD,
+                        relation: [this.$store.getters['objectBiz/bizId']]
+                    }
+                }
+                return {
+                    relation: [this.modelId],
                     type: this.$OPERATION.U_MODEL
-                })
+                }
             },
             disabledConfig () {
                 const disabled = {
@@ -429,18 +446,21 @@
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            isBizCustomData (data) {
+                return data.hasOwnProperty('bk_biz_id') && data.bk_biz_id > 0
+            },
             isBuiltInGroup (group) {
-                if (group) {
-                    return !(group.metadata && group.metadata.label && group.metadata.label.bk_biz_id)
+                if (this.isGlobalView) {
+                    return false
                 }
-                return false
+                return !this.isBizCustomData(group)
             },
             isFieldEditable (item, checkIspre = true) {
                 if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
-                if (!this.isAdminView) {
-                    return !!this.$tools.getMetadataBiz(item)
+                if (!this.isGlobalView) {
+                    return this.isBizCustomData(item)
                 }
                 return true
             },
@@ -448,34 +468,34 @@
                 if (this.isReadOnly) {
                     return false
                 }
-                if (this.isAdminView) {
+                if (this.isGlobalView) {
                     return true
                 }
-                return !!this.$tools.getMetadataBiz(group)
+                return this.isBizCustomData(group)
             },
             canRiseGroup (index, group) {
-                if (this.isAdminView) {
+                if (this.isGlobalView) {
                     return index !== 0
                 }
-                const metadataIndex = this.metadataGroupedProperties.indexOf(group)
-                return metadataIndex !== 0
+                const customDataIndex = this.bizGroupedProperties.indexOf(group)
+                return customDataIndex !== 0
             },
             canDropGroup (index, group) {
-                if (this.isAdminView) {
+                if (this.isGlobalView) {
                     return index !== (this.groupedProperties.length - 1)
                 }
-                const metadataIndex = this.metadataGroupedProperties.indexOf(group)
-                return metadataIndex !== (this.metadataGroupedProperties.length - 1)
+                const customDataIndex = this.bizGroupedProperties.indexOf(group)
+                return customDataIndex !== (this.bizGroupedProperties.length - 1)
             },
             handleRiseGroup (index, group) {
-                this.groupedProperties[index - 1]['info']['bk_group_index'] = index
-                group['info']['bk_group_index'] = index - 1
+                this.groupedProperties[index - 1].info.bk_group_index = index
+                group.info.bk_group_index = index - 1
                 this.updateGroupIndex()
                 this.resortGroups()
             },
             handleDropGroup (index, group) {
-                this.groupedProperties[index + 1]['info']['bk_group_index'] = index
-                group.info['bk_group_index'] = index + 1
+                this.groupedProperties[index + 1].info.bk_group_index = index
+                group.info.bk_group_index = index + 1
                 this.updateGroupIndex()
                 this.resortGroups()
             },
@@ -495,18 +515,18 @@
             },
             init (properties, groups) {
                 properties = this.setPropertIndex(properties)
-                groups = this.separateMetadataGroups(groups)
+                groups = this.separateBizCustomGroups(groups)
                 groups = this.setGroupIndex(groups)
                 const groupState = {}
                 const groupedProperties = groups.map(group => {
-                    groupState[group['bk_group_id']] = group['is_collapse']
+                    groupState[group.bk_group_id] = group.is_collapse
                     return {
                         info: group,
                         properties: properties.filter(property => {
-                            if (['default', 'none'].includes(property['bk_property_group']) && group['bk_group_id'] === 'default') {
+                            if (['default', 'none'].includes(property.bk_property_group) && group.bk_group_id === 'default') {
                                 return true
                             }
-                            return property['bk_property_group'] === group['bk_group_id']
+                            return property.bk_property_group === group.bk_group_id
                         })
                     }
                 })
@@ -519,7 +539,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata({}, { inject: this.isInjectable }),
+                    params: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
                     config: {
                         requestId: `get_searchGroup_${this.objId}`,
                         cancelPrevious: true
@@ -527,45 +547,47 @@
                 })
             },
             getProperties () {
+                const params = {
+                    'bk_obj_id': this.objId,
+                    'bk_supplier_account': this.supplierAccount
+                }
+                if (!this.isGlobalView) {
+                    params.bk_biz_id = this.bizId
+                }
                 return this.searchObjectAttribute({
-                    params: this.$injectMetadata({
-                        'bk_obj_id': this.objId,
-                        'bk_supplier_account': this.supplierAccount
-                    }, {
-                        inject: this.isInjectable
-                    }),
+                    params: params,
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,
                         cancelPrevious: true
                     }
                 })
             },
-            separateMetadataGroups (groups) {
+            separateBizCustomGroups (groups) {
                 const publicGroups = []
-                const metadataGroups = []
+                const bizCustomGroups = []
                 groups.forEach(group => {
-                    if (this.$tools.getMetadataBiz(group)) {
-                        metadataGroups.push(group)
+                    if (this.isBizCustomData(group)) {
+                        bizCustomGroups.push(group)
                     } else {
                         publicGroups.push(group)
                     }
                 })
                 publicGroups.sort((groupA, groupB) => {
-                    return groupA['bk_group_index'] - groupB['bk_group_index']
+                    return groupA.bk_group_index - groupB.bk_group_index
                 })
-                metadataGroups.sort((groupA, groupB) => {
-                    return groupA['bk_group_index'] - groupB['bk_group_index']
+                bizCustomGroups.sort((groupA, groupB) => {
+                    return groupA.bk_group_index - groupB.bk_group_index
                 })
-                return [...publicGroups, ...metadataGroups]
+                return [...publicGroups, ...bizCustomGroups]
             },
             setGroupIndex (groups) {
                 groups.forEach((group, index) => {
-                    group['bk_group_index'] = index
+                    group.bk_group_index = index
                 })
                 return groups
             },
             setPropertIndex (properties) {
-                properties.sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
+                properties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
                 return properties
             },
             handleCancelAddProperty () {
@@ -588,7 +610,7 @@
                 const deletedIndex = deletedProperties.indexOf(property)
                 if (selectedIndex !== -1) {
                     selectedProperties.splice(selectedIndex, 1)
-                    const isDeleteFromGroup = property['bk_property_group'] === this.dialog.group.info['bk_group_id']
+                    const isDeleteFromGroup = property.bk_property_group === this.dialog.group.info.bk_group_id
                     if (isDeleteFromGroup && deletedIndex === -1) {
                         deletedProperties.push(property)
                     }
@@ -597,7 +619,7 @@
                     }
                 } else {
                     selectedProperties.push(property)
-                    const isAddFromOtherGroup = property['bk_property_group'] !== this.dialog.group.info['bk_group_id']
+                    const isAddFromOtherGroup = property.bk_property_group !== this.dialog.group.info.bk_group_id
                     if (isAddFromOtherGroup && addedIndex === -1) {
                         addedProperties.push(property)
                     }
@@ -615,14 +637,14 @@
                 if (addedProperties.length || deletedProperties.length) {
                     this.groupedProperties.forEach(group => {
                         if (group === this.dialog.group) {
-                            const resortedProperties = [...selectedProperties].sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
+                            const resortedProperties = [...selectedProperties].sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
                             group.properties = resortedProperties
                         } else {
                             const resortedProperties = group.properties.filter(property => !addedProperties.includes(property))
-                            if (group.info['bk_group_id'] === 'none') {
+                            if (group.info.bk_group_id === 'none') {
                                 Array.prototype.push.apply(resortedProperties, deletedProperties)
                             }
-                            resortedProperties.sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
+                            resortedProperties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
                             group.properties = resortedProperties
                         }
                     })
@@ -630,7 +652,7 @@
                 this.handleCancelAddProperty()
             },
             filter (property) {
-                return property['bk_property_name'].toLowerCase().indexOf(this.dialog.filter.toLowerCase()) !== -1
+                return property.bk_property_name.toLowerCase().indexOf(this.dialog.filter.toLowerCase()) !== -1
             },
             handleEditGroup (group) {
                 this.groupDialog.isShow = true
@@ -638,8 +660,8 @@
                 this.groupDialog.type = 'update'
                 this.groupDialog.title = this.$t('编辑分组')
                 this.groupDialog.group = group
-                this.groupForm.isCollapse = group.info['is_collapse']
-                this.groupForm.groupName = group.info['bk_group_name']
+                this.groupForm.isCollapse = group.info.is_collapse
+                this.groupForm.groupName = group.info.bk_group_name
             },
             async handleUpdateGroup () {
                 const valid = await this.$validator.validate('groupName')
@@ -647,28 +669,32 @@
                     return
                 }
                 const curGroup = this.groupDialog.group
-                const isExist = this.groupedProperties.some(originalGroup => originalGroup !== curGroup && originalGroup.info['bk_group_name'] === this.groupForm.groupName)
+                const isExist = this.groupedProperties.some(originalGroup => originalGroup !== curGroup && originalGroup.info.bk_group_name === this.groupForm.groupName)
                 if (isExist) {
                     this.$error(this.$t('该名字已经存在'))
                     return
                 }
+                const params = {
+                    condition: {
+                        id: curGroup.info.id
+                    },
+                    data: {
+                        'bk_group_name': this.groupForm.groupName,
+                        'is_collapse': this.groupForm.isCollapse
+                    }
+                }
+                if (!this.isGlobalView) {
+                    params.bk_biz_id = this.bizId
+                }
                 await this.updateGroup({
-                    params: this.$injectMetadata({
-                        condition: {
-                            id: curGroup.info.id
-                        },
-                        data: {
-                            'bk_group_name': this.groupForm.groupName,
-                            'is_collapse': this.groupForm.isCollapse
-                        }
-                    }, { inject: this.isInjectable }),
+                    params: params,
                     config: {
                         requestId: `put_updateGroup_name_${curGroup.info.id}`,
                         cancelPrevious: true
                     }
                 })
-                curGroup.info['bk_group_name'] = this.groupForm.groupName
-                curGroup.info['is_collapse'] = this.groupForm.isCollapse
+                curGroup.info.bk_group_name = this.groupForm.groupName
+                curGroup.info.is_collapse = this.groupForm.isCollapse
                 this.groupState[curGroup.info.bk_group_id] = this.groupForm.isCollapse
                 this.groupDialog.isShow = false
             },
@@ -691,23 +717,25 @@
                     return
                 }
                 const groupedProperties = this.groupedProperties
-                const isExist = groupedProperties.some(group => group.info['bk_group_name'] === this.groupForm.groupName)
+                const isExist = groupedProperties.some(group => group.info.bk_group_name === this.groupForm.groupName)
                 if (isExist) {
                     this.$error(this.$t('该名字已经存在'))
                     return
                 }
                 const groupId = Date.now().toString()
+                const params = {
+                    bk_group_id: groupId,
+                    bk_group_index: groupedProperties.length + 1,
+                    bk_group_name: this.groupForm.groupName,
+                    bk_obj_id: this.objId,
+                    bk_supplier_account: this.supplierAccount,
+                    is_collapse: this.groupForm.isCollapse
+                }
+                if (!this.isGlobalView) {
+                    params.bk_biz_id = this.bizId
+                }
                 this.createGroup({
-                    params: this.$injectMetadata({
-                        'bk_group_id': groupId,
-                        'bk_group_index': groupedProperties.length + 1,
-                        'bk_group_name': this.groupForm.groupName,
-                        'bk_obj_id': this.objId,
-                        'bk_supplier_account': this.supplierAccount,
-                        'is_collapse': this.groupForm.isCollapse
-                    }, {
-                        inject: this.isInjectable
-                    }),
+                    params: params,
                     config: {
                         requestId: `post_createGroup_${groupId}`
                     }
@@ -730,9 +758,7 @@
                     config: {
                         requestId: `delete_deleteGroup_${group.info.id}`,
                         fromCache: true,
-                        data: this.$injectMetadata({}, {
-                            inject: this.isInjectable
-                        })
+                        data: this.isGlobalView ? {} : { bk_biz_id: this.bizId }
                     }
                 }).then(() => {
                     this.groupedProperties.splice(index, 1)
@@ -740,25 +766,26 @@
                 })
             },
             resortGroups () {
-                this.groupedProperties.sort((groupA, groupB) => groupA.info['bk_group_index'] - groupB.info['bk_group_index'])
+                this.groupedProperties.sort((groupA, groupB) => groupA.info.bk_group_index - groupB.info.bk_group_index)
             },
             updateGroupIndex () {
-                const groupToUpdate = this.groupedProperties.filter((group, index) => group.info['bk_group_index'] !== index)
+                const groupToUpdate = this.groupedProperties.filter((group, index) => group.info.bk_group_index !== index)
                 groupToUpdate.forEach(group => {
+                    const params = {
+                        condition: {
+                            id: group.info.id
+                        },
+                        data: {
+                            'bk_group_index': group.info['bk_group_index']
+                        }
+                    }
+                    if (!this.isGlobalView) {
+                        params.bk_biz_id = this.bizId
+                    }
                     this.updateGroup({
-                        params: this.$injectMetadata({
-                            condition: {
-                                id: group.info.id
-                            },
-                            data: {
-                                'bk_group_index': group.info['bk_group_index']
-                            }
-                        }, {
-                            inject: this.isInjectable
-                        }),
+                        params: params,
                         config: {
                             requestId: `put_updateGroup_index_${group.info.id}`,
-                            cancelWhenRouteChange: false,
                             cancelPrevious: true
                         }
                     })
@@ -788,16 +815,19 @@
                         }
                     }
                 }
+                const params = {
+                    bk_property_group: curGroup,
+                    bk_property_index: curIndex
+                }
+                if (!this.isGlobalView) {
+                    params.bk_biz_id = this.bizId
+                }
                 await this.updatePropertySort({
                     objId: this.objId,
                     propertyId: property.id,
-                    params: this.$injectMetadata({
-                        bk_property_group: curGroup,
-                        bk_property_index: curIndex
-                    }, { inject: this.isInjectable }),
+                    params: params,
                     config: {
-                        requestId: `updatePropertySort_${this.objId}`,
-                        cancelWhenRouteChange: false
+                        requestId: `updatePropertySort_${this.objId}`
                     }
                 })
                 const properties = await this.getProperties()
@@ -827,14 +857,12 @@
             },
             handleDeleteField ({ property: field, index, fieldIndex }) {
                 this.$bkInfo({
-                    title: this.$tc('确定删除字段？', field['bk_property_name'], { name: field['bk_property_name'] }),
+                    title: this.$tc('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
                     confirmFn: async () => {
                         await this.$store.dispatch('objectModelProperty/deleteObjectAttribute', {
                             id: field.id,
                             config: {
-                                data: this.$injectMetadata({}, {
-                                    inject: this.isInjectable
-                                }),
+                                data: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
                                 requestId: 'deleteObjectAttribute',
                                 originalResponse: true
                             }

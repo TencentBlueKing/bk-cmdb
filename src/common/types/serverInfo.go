@@ -50,6 +50,8 @@ const (
 	CC_MODULE_SYNCHRONZESERVER = "sync"
 	CC_MODULE_OPERATION        = "operation"
 	CC_MODULE_TASK             = "task"
+	CC_MODULE_CLOUD            = "cloud"
+	CC_MODULE_AUTH             = "auth"
 )
 
 // AllModule all cc module
@@ -66,6 +68,8 @@ var AllModule = map[string]bool{
 	// CC_MODULE_SYNCHRONZESERVER: true,
 	CC_MODULE_OPERATION: true,
 	CC_MODULE_TASK:      true,
+	CC_MODULE_CLOUD:            true,
+	CC_MODULE_AUTH:             true,
 }
 
 // cc functionality define
