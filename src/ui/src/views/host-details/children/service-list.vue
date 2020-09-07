@@ -93,14 +93,16 @@
 
         <bk-sideslider
             v-transfer-dom
-            :width="640"
+            :width="800"
             :title="$t('进程详情')"
             :is-show.sync="showDetails">
             <cmdb-details slot="content" v-if="showDetails"
                 :show-options="false"
                 :inst="processInst"
                 :properties="properties"
-                :property-groups="propertyGroups">
+                :property-groups="propertyGroups"
+                :invisible-name-properties="invisibleNameProperties"
+                :flex-properties="flexProperties">
             </cmdb-details>
         </bk-sideslider>
     </div>
@@ -162,7 +164,9 @@
                 propertyGroups: [],
                 properties: [],
                 showDetails: false,
-                processInst: {}
+                processInst: {},
+                invisibleNameProperties: ['bind_info'],
+                flexProperties: ['bind_info']
             }
         },
         computed: {
