@@ -14,7 +14,6 @@
 
 <style lang="scss" scoped>
     .json-details-layout {
-        margin: 20px 40px;
         padding: 20px;
         background: #455070;
         color: #bfc6e0;

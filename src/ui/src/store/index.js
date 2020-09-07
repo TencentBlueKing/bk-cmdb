@@ -63,6 +63,7 @@ import organization from './modules/api/organization'
 import businessHost from './modules/view/business-host.js'
 import resourceHost from './modules/view/resource-host.js'
 import cloudarea from './modules/api/cloudarea'
+import audit from './modules/api/audit.js'
 
 Vue.use(Vuex)
 
@@ -127,6 +128,7 @@ export default new Vuex.Store({
         resourceDirectory,
         resource,
         cloudarea,
-        organization
+        organization,
+        audit
     }
 })
