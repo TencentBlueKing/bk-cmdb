@@ -652,6 +652,7 @@ func (s *Service) ListHostsWithNoBiz(ctx *rest.Contexts) {
 		return
 	}
 
+	parameter.Page.Sort = common.BKHostIDField
 	option := &meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Fields:             parameter.Fields,

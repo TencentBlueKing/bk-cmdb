@@ -325,12 +325,14 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 			common.BKResourceTypeField:                                     metadata.GetResourceTypeByObjID(objectID, isMainline),
 		},
 		{
-			common.BKOperationDetailField + ".src_instance_id": instanceID,
-			common.BKResourceTypeField:                         metadata.InstanceAssociationRes,
+			common.BKOperationDetailField + ".src_instance_id":                instanceID,
+			common.BKOperationDetailField + ".basic_asst_detail.src_model_id": objectID,
+			common.BKResourceTypeField:                                        metadata.InstanceAssociationRes,
 		},
 		{
-			common.BKOperationDetailField + ".target_instance_id": instanceID,
-			common.BKResourceTypeField:                            metadata.InstanceAssociationRes,
+			common.BKOperationDetailField + ".target_instance_id":                instanceID,
+			common.BKOperationDetailField + ".basic_asst_detail.target_model_id": objectID,
+			common.BKResourceTypeField:                                           metadata.InstanceAssociationRes,
 		},
 	}
 	if objectID == common.BKInnerObjIDHost {

@@ -1,3 +1,14 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package proc_server_test
 
 import (
@@ -686,6 +697,14 @@ var _ = Describe("no service template test", func() {
 						"bk_process_name":      "p3",
 						"bk_start_param_regex": "1234",
 						"bk_process_id":        processId,
+						"bind_info": []map[string]interface{}{
+							map[string]interface{}{
+								"ip":       "127.0.0.1",
+								"port":     "1024",
+								"protocol": "1",
+								"enable":   true,
+							},
+						},
 					},
 				},
 			}
@@ -831,9 +850,7 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField: bizId,
 				"process_ids":       []int64{processId},
 				"update_data": map[string]interface{}{
-					common.BKProcPortEnable:   true,
 					common.BKDescriptionField: "aaa",
-					common.BKProtocol:         "1",
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstancesByIDs(context.Background(), header, input)
@@ -864,9 +881,21 @@ var _ = Describe("no service template test", func() {
 			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(int64(1)))
 			Expect(data.Info[0].Property[common.BKProcessNameField]).To(Equal("p3"))
-			Expect(data.Info[0].Property[common.BKProcPortEnable]).To(Equal(true))
 			Expect(data.Info[0].Property[common.BKDescriptionField]).To(Equal("aaa"))
-			Expect(data.Info[0].Property[common.BKProtocol]).To(Equal("1"))
+			bindInfo := map[string]interface{}{
+				"ip":       "127.0.0.1",
+				"port":     "1024",
+				"protocol": "1",
+				"enable":   true,
+			}
+			ExpectBindInfoArr, err := commonutil.GetMapInterfaceByInerface(data.Info[0].Property[common.BKProcBindInfo])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(ExpectBindInfoArr)).To(Equal(int(1)))
+			expectBindInfo, ok := ExpectBindInfoArr[0].(map[string]interface{})
+			delete(expectBindInfo, "template_row_id")
+			Expect(ok).To(Equal(true))
+			Expect(expectBindInfo).To(Equal(bindInfo))
+
 		})
 
 		It("delete process instance", func() {
@@ -988,14 +1017,14 @@ var _ = Describe("list_biz_host_process test", func() {
 					"processes": []map[string]interface{}{
 						{
 							"process_info": map[string]interface{}{
-								common.BKPort:             "123",
+								//common.BKPort:             "123",
 								common.BKFuncName:         "p11111",
 								common.BKProcessNameField: "p11111",
 							},
 						},
 						{
 							"process_info": map[string]interface{}{
-								common.BKProtocol:         "2",
+								//common.BKProtocol:         "2",
 								common.BKFuncName:         "p22222",
 								common.BKProcessNameField: "p22222",
 							},
@@ -1007,7 +1036,7 @@ var _ = Describe("list_biz_host_process test", func() {
 					"processes": []map[string]interface{}{
 						{
 							"process_info": map[string]interface{}{
-								common.BKBindIP:           "0.0.0.0",
+								//common.BKBindIP:           "0.0.0.0",
 								common.BKFuncName:         "p33333",
 								common.BKProcessNameField: "p33333",
 							},
@@ -1045,8 +1074,8 @@ var _ = Describe("list_biz_host_process test", func() {
 		Expect(data.Info[0].HostID).To(Or(Equal(hostId3), Equal(hostId4)))
 		Expect(data.Info[1].HostID).To(Or(Equal(hostId3), Equal(hostId4)))
 		Expect(data.Info[2].HostID).To(Or(Equal(hostId3), Equal(hostId4)))
-		Expect("0.0.0.0").To(Or(Equal(data.Info[0].BindIP), Equal(data.Info[1].BindIP), Equal(data.Info[2].BindIP)))
-		Expect("123").To(Or(Equal(data.Info[0].Port), Equal(data.Info[1].Port), Equal(data.Info[2].Port)))
-		Expect("2").To(Or(Equal(string(data.Info[0].Protocol)), Equal(string(data.Info[1].Protocol)), Equal(string(data.Info[2].Protocol))))
+		//Expect("0.0.0.0").To(Or(Equal(data.Info[0].BindIP), Equal(data.Info[1].BindIP), Equal(data.Info[2].BindIP)))
+		//Expect("123").To(Or(Equal(data.Info[0].Port), Equal(data.Info[1].Port), Equal(data.Info[2].Port)))
+		//Expect("2").To(Or(Equal(string(data.Info[0].Protocol)), Equal(string(data.Info[1].Protocol)), Equal(string(data.Info[2].Protocol))))
 	})
 })

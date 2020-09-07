@@ -98,6 +98,7 @@
     "process_property_bk_gateway_port": "网关端口",
     "process_property_bk_gateway_protocol": "网关协议",
     "process_property_bk_gateway_city": "网关所在城市",
+    "process_property_bind_info": "绑定信息",
     "bk_switch_property_bk_asset_id": "固资编号",
     "bk_switch_property_bk_sn": "SN",
     "bk_switch_property_bk_name": "名称",

@@ -130,7 +130,7 @@
                         const isapi = property['bk_isapi']
                         const isonly = property.isonly
                         const isAsst = ['singleasst', 'multiasst'].includes(property['bk_property_type'])
-                        return editable && !isapi && !isonly && !isAsst
+                        return editable && !isapi && !isonly && !isAsst && !this.uneditableProperties.includes(property.bk_property_id)
                     })
                 })
             },

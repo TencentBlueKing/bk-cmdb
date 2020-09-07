@@ -4,6 +4,7 @@
         :placeholder="localPlaceholder"
         :maxlength="maxlength"
         :disabled="disabled"
+        v-bind="$attrs"
         @change="handleChange"
         @enter="handleEnter">
     </bk-input>

@@ -28,7 +28,6 @@ const Component = Vue.extend({
 
 export default {
     show (data = {}) {
-        console.log(data)
         const vm = new Component({
             store,
             i18n,

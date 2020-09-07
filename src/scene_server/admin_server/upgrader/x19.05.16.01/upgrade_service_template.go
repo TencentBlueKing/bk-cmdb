@@ -71,7 +71,7 @@ type ProcessTemplate struct {
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Property *metadata.ProcessProperty `field:"property" json:"property,omitempty" bson:"property"`
+	Property *ProcessProperty `field:"property" json:"property,omitempty" bson:"property"`
 
 	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
@@ -88,8 +88,8 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
-	HostID            int64  `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
+	HostID            int64 `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id"`
@@ -373,9 +373,9 @@ func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 	return db.Table(common.BKTableNameBaseProcess).Update(ctx, nil, mapstr.MapStr{"old_flag": true})
 }
 
-func procInstToProcTemplate(inst Process) *metadata.ProcessProperty {
+func procInstToProcTemplate(inst Process) *ProcessProperty {
 	var True = true
-	template := metadata.ProcessProperty{}
+	template := ProcessProperty{}
 	if inst.ProcNum != nil && *inst.ProcNum > 0 {
 		template.ProcNum.Value = inst.ProcNum
 		template.ProcNum.AsDefaultValue = &True
@@ -467,4 +467,35 @@ func procInstToProcTemplate(inst Process) *metadata.ProcessProperty {
 	}
 
 	return &template
+}
+
+type ProcessProperty struct {
+	ProcNum            metadata.PropertyInt64    `field:"proc_num" json:"proc_num" bson:"proc_num" validate:"max=10000,min=1"`
+	StopCmd            metadata.PropertyString   `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd"`
+	RestartCmd         metadata.PropertyString   `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd"`
+	ForceStopCmd       metadata.PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd"`
+	FuncName           metadata.PropertyString   `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" validate:"required"`
+	WorkPath           metadata.PropertyString   `field:"work_path" json:"work_path" bson:"work_path"`
+	BindIP             metadata.PropertyBindIP   `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
+	Priority           metadata.PropertyInt64    `field:"priority" json:"priority" bson:"priority" validate:"max=10000,min=1"`
+	ReloadCmd          metadata.PropertyString   `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd"`
+	ProcessName        metadata.PropertyString   `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" validate:"required"`
+	Port               metadata.PropertyPort     `field:"port" json:"port" bson:"port"`
+	PidFile            metadata.PropertyString   `field:"pid_file" json:"pid_file" bson:"pid_file"`
+	AutoStart          metadata.PropertyBool     `field:"auto_start" json:"auto_start" bson:"auto_start"`
+	AutoTimeGapSeconds metadata.PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" validate:"max=10000,min=1"`
+	StartCmd           metadata.PropertyString   `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
+	FuncID             metadata.PropertyString   `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id"`
+	User               metadata.PropertyString   `field:"user" json:"user" bson:"user"`
+	TimeoutSeconds     metadata.PropertyInt64    `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
+	Protocol           metadata.PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
+	Description        metadata.PropertyString   `field:"description" json:"description" bson:"description"`
+	StartParamRegex    metadata.PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
+	PortEnable         metadata.PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	GatewayIP          metadata.PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
+	GatewayPort        metadata.PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
+	GatewayProtocol    metadata.PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
+	GatewayCity        metadata.PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
+
+	BindInfo metadata.ProcPropertyBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }

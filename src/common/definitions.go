@@ -465,11 +465,20 @@ const (
 	// BKProcGatewayCity the process gateway city
 	BKProcGatewayCity = "bk_gateway_city"
 
+	// BKProcBindInfo the process bind info
+	BKProcBindInfo = "bind_info"
+
 	// BKUser the user
 	BKUser = "user"
 
 	// BKProtocol the protocol
 	BKProtocol = "protocol"
+
+	// BKIP the ip
+	BKIP = "ip"
+
+	// BKEnable the enable
+	BKEnable = "enable"
 
 	// the process object name
 	BKProcessObjectName = "process"
@@ -743,8 +752,11 @@ const (
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
 
-	// FieldTypeList the lis type
+	// FieldTypeList the list type
 	FieldTypeList string = "list"
+
+	// FieldTypeTable the table type, inner type.
+	FieldTypeTable string = "table"
 
 	// FieldTypeOrganization the organization field type
 	FieldTypeOrganization string = "organization"

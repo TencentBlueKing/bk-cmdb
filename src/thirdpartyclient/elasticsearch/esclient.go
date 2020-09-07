@@ -57,6 +57,7 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 		client, err = elastic.NewClient(
 			elastic.SetHttpClient(httpClient),
 			elastic.SetURL(esConf.EsUrl),
+			elastic.SetSniff(false),
 			elastic.SetBasicAuth(esConf.EsUser, esConf.EsPassword))
 		if err != nil {
 			blog.Errorf("create new http es client error, err: %v", err)

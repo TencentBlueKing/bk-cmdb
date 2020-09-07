@@ -102,6 +102,8 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
             values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
         } else if (['organization'].includes(propertyType)) {
             values[propertyId] = inst[propertyId] || null
+        } else if (['table'].includes(propertyType)) {
+            values[propertyId] = inst[propertyId] || []
         } else {
             values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
         }
