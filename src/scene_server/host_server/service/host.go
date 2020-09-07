@@ -1128,7 +1128,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	idleModuleID := moduleIDArr[0]
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
-	audit := s.Logic.NewHostModuleLog(ctx.Kit, hostIDArr)
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, hostIDArr)
 
 	var exceptionArr []meta.ExceptionResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {

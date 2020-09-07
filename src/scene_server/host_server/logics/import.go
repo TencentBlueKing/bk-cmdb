@@ -199,6 +199,7 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 	res := new(metadata.AddHostToResourcePoolResult)
 	instance := NewImportInstance(kit, kit.SupplierAccount, lgc)
 	logContents := make([]metadata.AuditLog, 0)
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 
 	for index, host := range hostList.HostInfo {
 		if nil == host {
@@ -251,34 +252,27 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 			HostID: hostID,
 		})
 
-		curData, _, err := lgc.GetHostInstanceDetails(kit, hostID)
+		// generate audit log for create host.
+		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, hostID, bizID, innerIP, metadata.FromUser, nil, nil)
 		if err != nil {
-			return hostIDs, res, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
+				hostID, bizID, err, kit.Rid)
+			res.Error = append(res.Error, metadata.AddOneHostToResourcePoolResult{
+				Index:    index,
+				HostID:   hostID,
+				ErrorMsg: err.Error(),
+			})
+			continue
 		}
 
-		logContents = append(logContents, metadata.AuditLog{
-			AuditType:    metadata.HostType,
-			ResourceType: metadata.HostRes,
-			Action:       metadata.AuditCreate,
-			BusinessID:   bizID,
-			ResourceID:   hostID,
-			ResourceName: host[common.BKHostInnerIPField].(string),
-			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: metadata.BasicOpDetail{
-					Details: &metadata.BasicContent{
-						PreData: nil,
-						CurData: curData,
-					},
-				},
-				ModelID: common.BKInnerObjIDHost,
-			},
-		})
+		logContents = append(logContents, *auditLog)
 	}
 
+	// save audit log.
 	if len(logContents) > 0 {
-		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), kit.Header, logContents...)
-		if err != nil {
-			return hostIDs, res, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
+			blog.Errorf("save host audit log failed after create host, err: %v, rid: %s", err, kit.Rid)
+			return hostIDs, res, err
 		}
 	}
 

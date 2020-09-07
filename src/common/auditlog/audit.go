@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 // audit provides common methods for all audit log utilities
@@ -168,4 +169,29 @@ func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 	}
 
 	return resp.Data.Info[0].Spec.ObjectName, nil
+}
+
+// getDefaultAppID get default businessID under designated supplier account.
+func (a *audit) getDefaultAppID(kit *rest.Kit) (int64, error) {
+	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
+	fields := []string{common.BKAppIDField, common.BkSupplierAccount}
+
+	results, err := a.getInstByCond(kit, common.BKInnerObjIDApp, cond, fields)
+	if err != nil {
+		blog.Errorf("get default appID failed, err: %v, rid :%s", err, kit.Rid)
+		return 0, err
+	}
+
+	for _, data := range results {
+		ownID, _ := data.String(common.BkSupplierAccount)
+
+		if kit.SupplierAccount == ownID {
+			bizID, _ := data.Int64(common.BKAppIDField)
+			return bizID, nil
+		}
+
+	}
+
+	blog.Errorf("no such default business when supplier account is %s, rid: %s", kit.SupplierAccount, kit.Rid)
+	return 0, fmt.Errorf("no such default business when supplier account is %s", kit.SupplierAccount)
 }

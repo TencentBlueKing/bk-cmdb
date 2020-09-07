@@ -13,16 +13,339 @@
 package auditlog
 
 import (
+	"context"
+	"fmt"
+
 	"configcenter/src/apimachinery/coreservice"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
-type hostModuleAuditLog struct {
-	audit
+type hostModuleLog struct {
+	kit       *rest.Kit
+	audit     audit
+	hostIDArr []int64
+	pre       []metadata.ModuleHost
+	cur       []metadata.ModuleHost
+}
+
+func NewHostModuleLog(clientSet coreservice.CoreServiceClientInterface, kit *rest.Kit, hostID []int64) *hostModuleLog {
+	return &hostModuleLog{
+		audit: audit{
+			clientSet: clientSet,
+		},
+		kit:       kit,
+		hostIDArr: hostID,
+	}
+}
+
+func (h *hostModuleLog) WithPrevious(ctx context.Context) errors.CCError {
+	if h.pre != nil {
+		return nil
+	}
+	var err error
+	h.pre, err = h.getHostModuleConfig(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *hostModuleLog) WithCurrent(ctx context.Context) errors.CCError {
+	if h.cur != nil {
+		return nil
+	}
+	var err error
+	h.cur, err = h.getHostModuleConfig(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *hostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
+	hostInfos, err := h.getInnerIP(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := h.WithCurrent(ctx); err != nil {
+		return err
+	}
+
+	defaultBizID, err := h.audit.getDefaultAppID(h.kit)
+	if err != nil {
+		blog.ErrorJSON("save audit GetDefaultAppID failed, err: %s, rid: %s", err, h.kit.Rid)
+		return h.kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	var setIDs, moduleIDs, appIDs []int64
+	for _, val := range h.pre {
+		setIDs = append(setIDs, val.SetID)
+		moduleIDs = append(moduleIDs, val.ModuleID)
+		appIDs = append(appIDs, val.AppID)
+	}
+	for _, val := range h.cur {
+		setIDs = append(setIDs, val.SetID)
+		moduleIDs = append(moduleIDs, val.ModuleID)
+		appIDs = append(appIDs, val.AppID)
+	}
+
+	modules, err := h.getModules(ctx, moduleIDs)
+	if err != nil {
+		return err
+	}
+
+	moduleNameMap := make(map[int64]string)
+	for _, module := range modules {
+		moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
+		if err != nil {
+			return err
+		}
+		moduleName, err := module.String(common.BKModuleNameField)
+		if err != nil {
+			return err
+		}
+		moduleNameMap[moduleID] = moduleName
+	}
+
+	sets, err := h.getSets(ctx, setIDs)
+	if err != nil {
+		return err
+	}
+
+	setNameMap := make(map[int64]string)
+	for _, setInfo := range sets {
+		setID, err := util.GetInt64ByInterface(setInfo[common.BKSetIDField])
+		if err != nil {
+			return err
+		}
+		setNameMap[setID], err = setInfo.String(common.BKSetNameField)
+		if err != nil {
+			return err
+		}
+	}
+
+	preHostRelationMap := make(map[int64]map[int64][]metadata.Module)
+	preHostAppMap := make(map[int64]int64)
+	for _, val := range h.pre {
+		if _, ok := preHostRelationMap[val.HostID]; false == ok {
+			preHostRelationMap[val.HostID] = make(map[int64][]metadata.Module)
+		}
+		preHostAppMap[val.HostID] = val.AppID
+		preHostRelationMap[val.HostID][val.SetID] = append(preHostRelationMap[val.HostID][val.SetID], metadata.Module{ModuleID: val.ModuleID, ModuleName: moduleNameMap[val.ModuleID]})
+	}
+
+	curHostRelationMap := make(map[int64]map[int64][]metadata.Module)
+	curHostAppMap := make(map[int64]int64)
+	for _, val := range h.cur {
+		if _, ok := curHostRelationMap[val.HostID]; false == ok {
+			curHostRelationMap[val.HostID] = make(map[int64][]metadata.Module)
+		}
+		curHostAppMap[val.HostID] = val.AppID
+		curHostRelationMap[val.HostID][val.SetID] = append(curHostRelationMap[val.HostID][val.SetID], metadata.Module{ModuleID: val.ModuleID, ModuleName: moduleNameMap[val.ModuleID]})
+	}
+
+	appInfoArr, err := h.getApps(ctx, appIDs)
+	if err != nil {
+		return err
+	}
+
+	appIDNameMap := make(map[int64]string, 0)
+	for _, appInfo := range appInfoArr {
+		bizID, err := appInfo.Int64(common.BKAppIDField)
+		if err != nil {
+			blog.ErrorJSON("appInfo get biz id err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.kit.Rid)
+			return h.kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+		}
+		name, err := appInfo.String(common.BKAppNameField)
+		if err != nil {
+			blog.ErrorJSON("appInfo get biz name err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.kit.Rid)
+			return h.kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+		}
+
+		appIDNameMap[bizID] = name
+	}
+
+	var logs = make([]metadata.AuditLog, 0)
+	for _, host := range hostInfos {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			return err
+		}
+
+		hostIP, err := host.String(common.BKHostInnerIPField)
+		if err != nil {
+			return err
+		}
+
+		sets := make([]metadata.Topo, 0)
+		for setID, modules := range preHostRelationMap[hostID] {
+			sets = append(sets, metadata.Topo{
+				SetID:   setID,
+				SetName: setNameMap[setID],
+				Module:  modules,
+			})
+		}
+
+		preBizID := preHostAppMap[hostID]
+		preData := metadata.HostBizTopo{
+			BizID:   preBizID,
+			BizName: appIDNameMap[preBizID],
+			Set:     sets,
+		}
+
+		sets = make([]metadata.Topo, 0)
+		for setID, modules := range curHostRelationMap[hostID] {
+			sets = append(sets, metadata.Topo{
+				SetID:   setID,
+				SetName: setNameMap[setID],
+				Module:  modules,
+			})
+		}
+		curBizID := curHostAppMap[hostID]
+		curData := metadata.HostBizTopo{
+			BizID:   curBizID,
+			BizName: appIDNameMap[curBizID],
+			Set:     sets,
+		}
+
+		var action metadata.ActionType
+		var bizID int64
+		if preBizID != curBizID && preBizID == defaultBizID {
+			action = metadata.AuditAssignHost
+			bizID = curBizID
+		} else if preBizID != curBizID && curBizID == defaultBizID {
+			action = metadata.AuditUnassignHost
+			bizID = preBizID
+		} else {
+			action = metadata.AuditTransferHostModule
+			bizID = curBizID
+		}
+
+		// generate audit log.
+		logs = append(logs, *h.generateAuditLog(action, hostID, bizID, hostIP, preData, curData))
+	}
+
+	// save audit log.
+	if err := h.audit.SaveAuditLog(h.kit, logs...); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, h.kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (h *hostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
+	conds := &metadata.HostModuleRelationRequest{
+		HostIDArr: h.hostIDArr,
+		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
+	}
+	result, err := h.audit.clientSet.Host().GetHostModuleRelation(ctx, h.kit.Header, conds)
+	if err != nil {
+		blog.Errorf("getHostModuleConfig http do error, err:%s,input:%+v,rid:%s", err.Error(), conds, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getHostModuleConfig http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, conds, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
+	}
+	return result.Data.Info, nil
+}
+
+func (h *hostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors.CCError) {
+	query := &metadata.QueryInput{
+		Start:     0,
+		Limit:     len(h.hostIDArr),
+		Sort:      common.BKAppIDField,
+		Condition: common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: h.hostIDArr}},
+		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
+	}
+
+	result, err := h.audit.clientSet.Host().GetHosts(ctx, h.kit.Header, query)
+	if err != nil {
+		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetHosts http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
+	}
+
+	return result.Data.Info, nil
+}
+
+func (h *hostModuleLog) getModules(ctx context.Context, moduleIds []int64) ([]mapstr.MapStr, errors.CCError) {
+	if moduleIds == nil {
+		return make([]mapstr.MapStr, 0), nil
+	}
+	query := &metadata.QueryCondition{
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleIds}},
+		Fields:    []string{common.BKModuleIDField, common.BKSetIDField, common.BKModuleNameField, common.BKAppIDField, common.BKOwnerIDField},
+	}
+	result, err := h.audit.clientSet.Instance().ReadInstance(ctx, h.kit.Header, common.BKInnerObjIDModule, query)
+	if err != nil {
+		blog.Errorf("getModules http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getModules http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
+	}
+
+	return result.Data.Info, nil
+}
+
+func (h *hostModuleLog) getSets(ctx context.Context, setIDs []int64) ([]mapstr.MapStr, errors.CCError) {
+	if setIDs == nil {
+		return make([]mapstr.MapStr, 0), nil
+	}
+	query := &metadata.QueryCondition{
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKSetIDField: mapstr.MapStr{common.BKDBIN: setIDs}},
+		Fields:    []string{common.BKSetNameField, common.BKSetIDField, common.BKOwnerIDField},
+	}
+	result, err := h.audit.clientSet.Instance().ReadInstance(ctx, h.kit.Header, common.BKInnerObjIDSet, query)
+	if err != nil {
+		blog.Errorf("getSets http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getSets http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
+	}
+	return result.Data.Info, nil
+}
+
+func (h *hostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.MapStr, errors.CCError) {
+	if appIDs == nil {
+		return make([]mapstr.MapStr, 0), nil
+	}
+	query := &metadata.QueryCondition{
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: appIDs}},
+		Fields:    []string{common.BKAppIDField, common.BKAppNameField, common.BKOwnerIDField},
+	}
+	result, err := h.audit.clientSet.Instance().ReadInstance(ctx, h.kit.Header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		blog.Errorf("getApps http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getApps http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
+	}
+	return result.Data.Info, nil
 }
 
 // GenerateAuditLog generate audit log of host module relate.
-func (h *hostModuleAuditLog) GenerateAuditLog(action metadata.ActionType, hostID, bizID int64, hostIP string,
+func (h *hostModuleLog) generateAuditLog(action metadata.ActionType, hostID, bizID int64, hostIP string,
 	preData, curData metadata.HostBizTopo) *metadata.AuditLog {
 	var auditLog = metadata.AuditLog{
 		AuditType:    metadata.HostType,
@@ -38,12 +361,4 @@ func (h *hostModuleAuditLog) GenerateAuditLog(action metadata.ActionType, hostID
 	}
 
 	return &auditLog
-}
-
-func NewHostModuleAudit(clientSet coreservice.CoreServiceClientInterface) *hostModuleAuditLog {
-	return &hostModuleAuditLog{
-		audit: audit{
-			clientSet: clientSet,
-		},
-	}
 }

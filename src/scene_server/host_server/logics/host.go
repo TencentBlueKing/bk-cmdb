@@ -184,7 +184,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 
 	}
 
-	hmAudit := lgc.NewHostModuleLog(kit, []int64{hostID})
+	hmAudit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, []int64{hostID})
 	if err := hmAudit.WithPrevious(kit.Ctx); err != nil {
 		return err
 	}
@@ -379,14 +379,15 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		blog.Errorf("TransferHostAcrossBusiness Host does not belong to the current application; error, params:{appID:%d, hostID:%+v}, rid:%s", srcBizID, notExistHostIDs, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrHostNotINAPP, notExistHostIDs)
 	}
-	audit := lgc.NewHostModuleLog(kit, hostID)
+
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, hostID)
 	if err := audit.WithPrevious(kit.Ctx); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
 	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID, DstApplicationID: dstAppID, DstModuleIDArr: moduleID}
 	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, conf)
-	if err != nil {
+	if doErr != nil {
 		blog.Errorf("TransferHostAcrossBusiness http do error, err:%s, input:%+v, rid:%s", doErr.Error(), conf, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
