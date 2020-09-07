@@ -30,7 +30,7 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata
 	data *metadata.Group, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	if data == nil {
 		// get current object attribute group data by id.
-		query := mapstr.MapStr{"id": id}
+		query := mapstr.MapStr{metadata.GroupFieldID: id}
 		rsp, err := h.clientSet.Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, metadata.QueryCondition{Condition: query})
 		if err != nil {
 			blog.Errorf("generate audit log of attribute group failed, failed to read attribute group, err: %v, rid: %s",

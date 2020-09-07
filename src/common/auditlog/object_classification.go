@@ -30,7 +30,7 @@ func (h *objectClsAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Acti
 	data *metadata.Classification, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	if data == nil {
 		// get current model classification data by id.
-		query := mapstr.MapStr{"id": id}
+		query := mapstr.MapStr{metadata.ClassificationFieldID: id}
 		rsp, err := h.clientSet.Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 		if err != nil {
 			blog.Errorf("generate audit log of model classification failed, failed to read model classification, err: %v, rid: %s",
@@ -50,7 +50,7 @@ func (h *objectClsAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Acti
 
 		data = &rsp.Data.Info[0]
 	}
-	
+
 	objClsName := data.ClassificationName
 
 	var basicDetail *metadata.BasicContent

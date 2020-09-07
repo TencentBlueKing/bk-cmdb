@@ -143,7 +143,7 @@ func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[
 	}
 	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
 	if !ok {
-		blog.Errorf("GetHostInstanceDetails http response format error, convert bk_biz_id to int error, inst: %#v  input:% #v, rid: %s",
+		blog.Errorf("getHostInstanceDetailByHostID http response format error, convert bk_host_innerip to string error, inst: %#v  input:% #v, rid: %s",
 			hostInfo, hostID, kit.Rid)
 		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
 
@@ -154,8 +154,7 @@ func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[
 
 // getObjNameByObjID get the object name corresponding to object id.
 func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
-	query := mapstr.MapStr{"bk_obj_id": objID}
-
+	query := mapstr.MapStr{common.BKObjIDField: objID}
 	// get objectName.
 	resp, err := a.clientSet.Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {

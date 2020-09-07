@@ -53,7 +53,7 @@ func (h *hostAuditLog) generateAuditLog(kit *rest.Kit, action metadata.ActionTyp
 		var innerIP string
 		var err error
 
-		data, innerIP, err = h.getHostInstanceDetailByHostID(kit, bizID)
+		data, innerIP, err = h.getHostInstanceDetailByHostID(kit, hostID)
 		if err != nil {
 			blog.Errorf("generate host audit log failed, failed to get host instance by bizID, hostID: %d, err: %v, rid: %s",
 				hostID, err, kit.Rid)

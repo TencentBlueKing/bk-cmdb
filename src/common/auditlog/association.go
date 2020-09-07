@@ -30,7 +30,7 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *meta
 	*metadata.AuditLog, error) {
 
 	if data == nil {
-		cond := metadata.QueryCondition{Condition: map[string]interface{}{common.BKFieldID: id}}
+		cond := metadata.QueryCondition{Condition: map[string]interface{}{metadata.AssociationFieldAssociationId: id}}
 		result, err := a.clientSet.Association().ReadInstAssociation(kit.Ctx, kit.Header, &cond)
 		if err != nil {
 			blog.Errorf("generate inst asst audit log failed, get instance association failed, err: %v, rid: %s", err, kit.Rid)

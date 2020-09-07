@@ -30,7 +30,7 @@ func (h *objectAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionT
 	data *metadata.Object, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	if data == nil {
 		// get current model data by id.
-		query := mapstr.MapStr{"id": id}
+		query := mapstr.MapStr{metadata.ModelFieldID: id}
 		rsp, err := h.clientSet.Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 		if err != nil {
 			blog.Errorf("generate audit log of model failed, failed to read model, err: %v, rid: %s",
