@@ -20,8 +20,6 @@ import (
 	"strings"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -67,13 +65,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 
 	var errMsg, updateErrMsg, successMsg []string
 	logContents := make([]metadata.AuditLog, 0)
-	auditHeaders, err := lgc.GetHostAttributes(kit, metadata.BizLabelNotExist)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	lang := util.GetLanguage(kit.Header)
-	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(lang)
-	iamInstances := make([]metadata.IamInstance, 0)
+	
+	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 	for index, host := range hostInfos {
 		if nil == host {
 			continue
@@ -145,14 +138,6 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 			host[common.BKHostIDField] = intHostID
 			hostIDMap[generateHostCloudKey(innerIP, iSubAreaVal)] = intHostID
 			action = metadata.AuditCreate
-
-			// record created host instance that would be registered to iam
-			if auth.EnableAuthorize() {
-				iamInstances = append(iamInstances, metadata.IamInstance{
-					ID:   strconv.FormatInt(intHostID, 10),
-					Name: innerIP,
-				})
-			}
 		}
 		// add current host operate result to  batch add result
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
@@ -163,29 +148,19 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 
-		bizName := ""
-		if appID > 0 {
-			bizName, err = auditlog.NewAudit(lgc.CoreAPI, kit.Header).GetInstNameByID(kit.Ctx, common.BKInnerObjIDApp, appID)
-			if err != nil {
-				return nil, nil, nil, nil, err
-			}
-		}
-
 		// add audit log
 		logContents = append(logContents, metadata.AuditLog{
 			AuditType:    metadata.HostType,
 			ResourceType: metadata.HostRes,
 			Action:       action,
+			BusinessID:   appID,
+			ResourceID:   intHostID,
+			ResourceName: innerIP,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					BusinessID:   appID,
-					BusinessName: bizName,
-					ResourceID:   intHostID,
-					ResourceName: innerIP,
 					Details: &metadata.BasicContent{
-						PreData:    preData,
-						CurData:    curData,
-						Properties: auditHeaders,
+						PreData: preData,
+						CurData: curData,
 					},
 				},
 				ModelID: common.BKInnerObjIDHost,
@@ -225,12 +200,6 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 	res := new(metadata.AddHostToResourcePoolResult)
 	instance := NewImportInstance(kit, kit.SupplierAccount, lgc)
 	logContents := make([]metadata.AuditLog, 0)
-	auditHeaders, err := lgc.GetHostAttributes(kit, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	iamInstances := make([]metadata.IamInstance, 0)
 
 	for index, host := range hostList.HostInfo {
 		if nil == host {
@@ -287,41 +256,24 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 		if err != nil {
 			return hostIDs, res, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
-		bizName := ""
-		if bizID > 0 {
-			bizName, err = auditlog.NewAudit(lgc.CoreAPI, kit.Header).GetInstNameByID(kit.Ctx, common.BKInnerObjIDApp, bizID)
-			if err != nil {
-				return hostIDs, res, err
-			}
-		}
 
 		logContents = append(logContents, metadata.AuditLog{
 			AuditType:    metadata.HostType,
 			ResourceType: metadata.HostRes,
-			Action:       metadata.AuditCreate,
+			Action:       metadata.AuditCreate,	
+			BusinessID:   bizID,
+			ResourceID:   hostID,
+			ResourceName: host[common.BKHostInnerIPField].(string),
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					BusinessID:   bizID,
-					BusinessName: bizName,
-					ResourceID:   hostID,
-					ResourceName: host[common.BKHostInnerIPField].(string),
 					Details: &metadata.BasicContent{
 						PreData:    nil,
 						CurData:    curData,
-						Properties: auditHeaders,
 					},
 				},
 				ModelID: common.BKInnerObjIDHost,
 			},
 		})
-
-		// record created host instance that would be registered to iam
-		if auth.EnableAuthorize() {
-			iamInstances = append(iamInstances, metadata.IamInstance{
-				ID:   strconv.FormatInt(hostID, 10),
-				Name: innerIP,
-			})
-		}
 	}
 
 	if len(logContents) > 0 {

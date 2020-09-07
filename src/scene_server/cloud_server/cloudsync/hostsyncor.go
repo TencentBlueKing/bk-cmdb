@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -565,14 +564,10 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 	if err != nil {
 		blog.Errorf("addHosts getHostDetailByInstIDs err:%s, instIDs:%#v, rid:%s", err.Error(), instIDs, h.kit.Rid)
 	}
-
-	properties, err := auditlog.NewAudit(h.logics.CoreAPI, h.kit.Header).GetAuditLogProperty(h.kit.Ctx, common.BKInnerObjIDHost)
-	if err != nil {
-		blog.Errorf("addHosts GetAuditLogProperty err:%s, rid:%s", err.Error(), h.kit.Rid)
-	}
+	
 
 	for _, cur := range curData {
-		auditLog, err := h.logics.GetAddHostLog(h.kit, cur, properties)
+		auditLog, err := h.logics.GetAddHostLog(h.kit, cur)
 		if err != nil {
 			blog.Errorf("addHosts GetAddHostLog err:%s, cur:%#v, rid:%s", err.Error(), cur, h.kit.Rid)
 			return nil, err
@@ -724,13 +719,8 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		CurDataMap[hostID] = data
 	}
 
-	properties, err := auditlog.NewAudit(h.logics.CoreAPI, h.kit.Header).GetAuditLogProperty(h.kit.Ctx, common.BKInnerObjIDHost)
-	if err != nil {
-		blog.Errorf("updateHosts GetAuditLogProperty err:%s, rid:%s", err.Error(), h.kit.Rid)
-	}
-
 	for hostID, cur := range CurDataMap {
-		auditLog, err := h.logics.GetUpdateHostLog(h.kit, preDataMap[hostID], cur, properties)
+		auditLog, err := h.logics.GetUpdateHostLog(h.kit, preDataMap[hostID], cur)
 		if err != nil {
 			blog.Errorf("updateHosts GetUpdateHostLog err:%s, rid:%s", err.Error(), h.kit.Rid)
 			return nil, err
@@ -825,13 +815,8 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 		CurDataMap[hostID] = data
 	}
 
-	properties, err := auditlog.NewAudit(h.logics.CoreAPI, h.kit.Header).GetAuditLogProperty(h.kit.Ctx, common.BKInnerObjIDHost)
-	if err != nil {
-		blog.Errorf("updateHosts GetAuditLogProperty err:%s, rid:%s", err.Error(), h.kit.Rid)
-	}
-
 	for hostID, cur := range CurDataMap {
-		auditLog, err := h.logics.GetUpdateHostLog(h.kit, preDataMap[hostID], cur, properties)
+		auditLog, err := h.logics.GetUpdateHostLog(h.kit, preDataMap[hostID], cur)
 		if err != nil {
 			blog.Errorf("updateHosts GetUpdateHostLog err:%s, rid:%s", err.Error(), h.kit.Rid)
 			return nil, err

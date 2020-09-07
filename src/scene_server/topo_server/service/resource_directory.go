@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -39,12 +38,13 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	// 给资源池目录加上资源池(业务id)和空闲机池（集群id）, service_category_id, service_template_id
-	bizName, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
+	_, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
 		blog.ErrorJSON("CreateResourceDirectory fail with getResourcePoolIDAndSetID failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+	
 	data[common.BKAppIDField] = bizID
 	data[common.BKSetIDField] = setID
 	data[common.BKServiceCategoryIDField] = 0
@@ -77,13 +77,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Header)
-	properties, err := audit.GetAuditLogProperty(ctx.Kit.Ctx, common.BKInnerObjIDModule)
-	if err != nil {
-		blog.ErrorJSON("CreateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
+
 	query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: rsp.Data.Created.ID}}
 	readInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
@@ -101,16 +95,14 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.ResourceDirRes,
 		Action:       metadata.AuditCreate,
+		BusinessID:   bizID,
+		ResourceID:   int64(rsp.Data.Created.ID),
+		ResourceName: moduleName,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				BusinessName: bizName,
-				ResourceID:   int64(rsp.Data.Created.ID),
-				ResourceName: moduleName,
 				Details: &metadata.BasicContent{
 					PreData:    nil,
 					CurData:    readInstanceResult.Data.Info[0],
-					Properties: properties,
 				},
 			},
 			ModelID: common.BKInnerObjIDModule,
@@ -257,7 +249,7 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	bizName, bizID, _, err := s.getResourcePoolIDAndSetID(ctx)
+	_, bizID, _, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
 		blog.ErrorJSON("UpdateResourceDirectory success, but create auditLog fail, getResourcePoolIDAndSetID failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -281,28 +273,19 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(errors.New(curData.Code, curData.ErrMsg))
 		return
 	}
-
-	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Header)
-	properties, err := audit.GetAuditLogProperty(ctx.Kit.Ctx, common.BKInnerObjIDModule)
-	if err != nil {
-		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
+	
 	auditLog := metadata.AuditLog{
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.ResourceDirRes,
 		Action:       metadata.AuditUpdate,
+		BusinessID:   bizID,
+		ResourceID:   intModuleID,
+		ResourceName: moduleName,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				BusinessName: bizName,
-				ResourceID:   intModuleID,
-				ResourceName: moduleName,
 				Details: &metadata.BasicContent{
 					PreData:    preData.Data.Info[0],
 					CurData:    curData.Data.Info[0],
-					Properties: properties,
 				},
 			},
 			ModelID: common.BKInnerObjIDModule,
@@ -456,7 +439,8 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	bizName, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
+	
+	_, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
 		blog.ErrorJSON("DeleteResourceDirectory fail with getResourcePoolIDAndSetID fail, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -540,27 +524,19 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Header)
-	properties, err := audit.GetAuditLogProperty(ctx.Kit.Ctx, common.BKInnerObjIDModule)
-	if err != nil {
-		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
+
 	auditLog := metadata.AuditLog{
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.ResourceDirRes,
 		Action:       metadata.AuditDelete,
+		BusinessID:   bizID,
+		ResourceID:   intModuleID,
+		ResourceName: moduleName,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				BusinessName: bizName,
-				ResourceID:   intModuleID,
-				ResourceName: moduleName,
 				Details: &metadata.BasicContent{
 					PreData:    curData.Data.Info[0],
 					CurData:    nil,
-					Properties: properties,
 				},
 			},
 			ModelID: common.BKInnerObjIDModule,

@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -36,28 +35,18 @@ type HostLog struct {
 	Content *metadata.BasicContent
 }
 
-func (lgc *Logics) NewHostLog(kit *rest.Kit, ownerID string) *HostLog {
+func (lgc *Logics) NewHostLog(kit *rest.Kit) *HostLog {
 	return &HostLog{
 		kit:     kit,
 		logic:   lgc,
 		header:  kit.Header,
-		ownerID: ownerID,
+		ownerID: kit.SupplierAccount,
 		Content: new(metadata.BasicContent),
 	}
 }
 
-func (h *HostLog) WithPrevious(ctx context.Context, hostID int64, properties []metadata.Property) errors.CCError {
+func (h *HostLog) WithPrevious(hostID int64) errors.CCError {
 	var err error
-	if len(h.Content.Properties) == 0 {
-		if properties != nil && len(properties) != 0 {
-			h.Content.Properties = properties
-		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(h.kit, metadata.BizLabelNotExist)
-			if err != nil {
-				return err
-			}
-		}
-	}
 
 	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(h.kit, hostID)
 	if err != nil {
@@ -67,18 +56,8 @@ func (h *HostLog) WithPrevious(ctx context.Context, hostID int64, properties []m
 	return nil
 }
 
-func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []metadata.Property) errors.CCError {
+func (h *HostLog) WithCurrent(hostID int64) errors.CCError {
 	var err error
-	if len(h.Content.Properties) == 0 {
-		if properties != nil && len(properties) != 0 {
-			h.Content.Properties = properties
-		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(h.kit, metadata.BizLabelNotExist)
-			if err != nil {
-				return err
-			}
-		}
-	}
 
 	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(h.kit, hostID)
 	if err != nil {
@@ -88,26 +67,17 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []me
 	return nil
 }
 
-func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, action metadata.ActionType) (metadata.AuditLog, error) {
-	bizName := ""
-	var err error
-	if bizID > 0 {
-		bizName, err = auditlog.NewAudit(h.logic.CoreAPI, h.header).GetInstNameByID(ctx, common.BKInnerObjIDApp, bizID)
-		if err != nil {
-			return metadata.AuditLog{}, err
-		}
-	}
+func (h *HostLog) AuditLog(hostID int64, bizID int64, action metadata.ActionType) (metadata.AuditLog, error) {
 	return metadata.AuditLog{
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
 		Action:       action,
+		BusinessID:   bizID,
+		ResourceID:   hostID,
+		ResourceName: h.ip,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				BusinessName: bizName,
-				ResourceID:   hostID,
-				ResourceName: h.ip,
-				Details:      h.Content,
+				Details: h.Content,
 			},
 			ModelID: common.BKInnerObjIDHost,
 		},
@@ -316,13 +286,12 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 			AuditType:    metadata.HostType,
 			ResourceType: metadata.HostRes,
 			Action:       action,
+			BusinessID:   bizID,
+			ResourceID:   hostID,
+			ResourceName: hostIP,
 			OperationDetail: &metadata.HostTransferOpDetail{
-				BusinessID:   bizID,
-				BusinessName: appIDNameMap[bizID],
-				HostID:       hostID,
-				HostInnerIP:  hostIP,
-				PreData:      preData,
-				CurData:      curData,
+				PreData: preData,
+				CurData: curData,
 			},
 		})
 	}
@@ -448,7 +417,6 @@ type CloudAreaAuditLog struct {
 	logic          *Logics
 	header         http.Header
 	ownerID        string
-	Properties     []metadata.Property
 	MultiCloudArea map[int64]*SingleCloudArea
 }
 
@@ -478,22 +446,15 @@ func (c *CloudAreaAuditLog) WithCurrent(ctx context.Context, platIDs ...int64) e
 
 func (c *CloudAreaAuditLog) buildAuditLogData(ctx context.Context, withPrevious, withCurrent bool, platIDs ...int64) errors.CCError {
 	var err error
-	if len(c.Properties) == 0 {
-		audit := auditlog.NewAudit(c.logic.CoreAPI, c.header)
-		properties, err := audit.GetAuditLogProperty(ctx, common.BKInnerObjIDPlat)
-		if err != nil {
-			return err
-		}
-		c.Properties = properties
-	}
-
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: platIDs}},
 	}
+	
 	res, err := c.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, c.header, common.BKInnerObjIDPlat, query)
 	if nil != err {
 		return err
 	}
+	
 	if len(res.Data.Info) <= 0 {
 		return errors.New(common.CCErrTopoCloudNotFound, "")
 	}
@@ -534,14 +495,14 @@ func (c *CloudAreaAuditLog) SaveAuditLog(ctx context.Context, action metadata.Ac
 			AuditType:    metadata.CloudResourceType,
 			ResourceType: metadata.CloudAreaRes,
 			Action:       action,
+			ResourceID:   cloudID,
+			ResourceName: cloudarea.CloudName,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					ResourceID:   cloudID,
-					ResourceName: cloudarea.CloudName,
+
 					Details: &metadata.BasicContent{
 						PreData:    cloudarea.PreData,
 						CurData:    cloudarea.CurData,
-						Properties: c.Properties,
 					},
 				},
 				ModelID: common.BKInnerObjIDPlat,

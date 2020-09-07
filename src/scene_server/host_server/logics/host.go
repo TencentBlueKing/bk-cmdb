@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([]metadata.Property, error) {
+func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([]metadata.Attribute, error) {
 	searchOp := mapstr.MapStr{
 		common.BKObjIDField: common.BKInnerObjIDHost,
 	}
@@ -45,18 +45,7 @@ func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
-	headers := make([]metadata.Property, 0)
-	for _, p := range result.Data.Info {
-		if p.PropertyID == common.BKChildStr {
-			continue
-		}
-		headers = append(headers, metadata.Property{
-			PropertyID:   p.PropertyID,
-			PropertyName: p.PropertyName,
-		})
-	}
-
-	return headers, nil
+	return result.Data.Info, nil
 }
 
 func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, string, errors.CCError) {
@@ -155,11 +144,11 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 			return kit.CCError.New(result.Code, result.ErrMsg)
 		}
 		// add create host log
-		audit := lgc.NewHostLog(kit, kit.SupplierAccount)
-		if err := audit.WithCurrent(kit.Ctx, hostID, nil); err != nil {
+		audit := lgc.NewHostLog(kit)
+		if err := audit.WithCurrent(hostID); err != nil {
 			return err
 		}
-		auditLog, err := audit.AuditLog(kit.Ctx, hostID, appID, metadata.AuditCreate)
+		auditLog, err := audit.AuditLog(hostID, appID, metadata.AuditCreate)
 		if err != nil {
 			return err
 		}
@@ -418,21 +407,18 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 
 // DeleteHostFromBusiness  delete host from business,
 func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult, errors.CCError) {
-	hostFields, err := lgc.GetHostAttributes(kit, metadata.BizLabelNotExist)
-	if err != nil {
-		blog.ErrorJSON("DeleteHostFromBusiness get host attribute failed, err: %s, rid:%s", err, kit.Rid)
-		return nil, err
-	}
 
 	logContentMap := make(map[int64]metadata.AuditLog, 0)
 	for _, hostID := range hostIDArr {
-		logger := lgc.NewHostLog(kit, kit.SupplierAccount)
-		if err := logger.WithPrevious(kit.Ctx, hostID, hostFields); err != nil {
-			blog.ErrorJSON("DeleteHostFromBusiness get pre host data failed, err: %s, host id: %s, rid: %s", err, hostID, kit.Rid)
+		logger := lgc.NewHostLog(kit)
+		err := logger.WithPrevious(hostID)
+		if err != nil {
+			blog.ErrorJSON("DeleteHostFromBusiness get pre host data failed, err: %s, host id: %s, rid: %s", 
+			err, hostID, kit.Rid)
 			return nil, err
 		}
 
-		logContentMap[hostID], err = logger.AuditLog(kit.Ctx, hostID, bizID, metadata.AuditDelete)
+		logContentMap[hostID], err = logger.AuditLog(hostID, bizID, metadata.AuditDelete)
 		if err != nil {
 			blog.ErrorJSON("DeleteHostFromBusiness get host[%d] biz[%d] data failed, err: %v, rid:%s", hostID, bizID, err, kit.Rid)
 			return nil, err

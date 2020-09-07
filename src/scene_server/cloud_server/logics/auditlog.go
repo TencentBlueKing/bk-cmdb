@@ -19,7 +19,6 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -84,7 +83,6 @@ func (log *SyncTaskAuditLog) buildLogData(kit *rest.Kit, taskID int64) (metadata
 
 	log.taskID = taskID
 	log.taskName = res.Info[0].TaskName
-	log.content.Properties = syncTaskAuditLogProperty
 
 	return res.Info[0], nil
 }
@@ -158,8 +156,6 @@ func (log *AccountAuditLog) SaveAuditLog(kit *rest.Kit, action metadata.ActionTy
 		ResourceType: metadata.CloudAccountRes,
 		Action:       action,
 		OperationDetail: &metadata.BasicOpDetail{
-			ResourceID:   log.accountID,
-			ResourceName: log.accountName,
 			Details:      log.Content,
 		},
 	}
@@ -178,7 +174,6 @@ func (log *AccountAuditLog) SaveAuditLog(kit *rest.Kit, action metadata.ActionTy
 }
 
 func (log *AccountAuditLog) buildLogData(kit *rest.Kit, accountID int64) (map[string]interface{}, errors.CCError) {
-	log.Content.Properties = accountAuditLogProperty
 
 	cond := metadata.SearchCloudOption{
 		Condition: mapstr.MapStr{common.BKCloudAccountID: accountID},
@@ -202,34 +197,7 @@ func (log *AccountAuditLog) buildLogData(kit *rest.Kit, accountID int64) (map[st
 	return data, nil
 }
 
-var accountAuditLogProperty = []metadata.Property{
-	{"bk_account_name", "账户名称"},
-	{"bk_cloud_vendor", "账户类型"},
-	{"bk_description", "备注"},
-}
-
-var syncTaskAuditLogProperty = []metadata.Property{
-	{"bk_task_id", "任务ID"},
-	{"bk_task_name", "任务名称"},
-	{"bk_account_id", "云账户ID"},
-	{"bk_resource_type", "同步资源类型"},
-	{"bk_last_sync_time", "上次同步时间"},
-}
-
-func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}, properties []metadata.Property) (*metadata.AuditLog, error) {
-	// 获取资源池业务ID和名称
-	bizID, bizName, err := lgc.GetDefaultBizIDAndName(kit)
-	if err != nil {
-		blog.Errorf("GetAddHostLog fail,err:%s, curData:%+v", err.Error(), curData)
-		return nil, err
-	}
-
-	// 获取主机ID和内网IP
-	hostID, innerIP, err := getHostIDAndIP(curData)
-	if err != nil {
-		blog.Errorf("GetAddHostLog fail,err:%s, curData:%+v", err.Error(), curData)
-		return nil, err
-	}
+func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}) (*metadata.AuditLog, error) {
 
 	auditLog := metadata.AuditLog{
 		AuditType:    metadata.HostType,
@@ -238,14 +206,9 @@ func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}, 
 		OperateFrom:  metadata.FromCloudSync,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				BusinessName: bizName,
-				ResourceID:   hostID,
-				ResourceName: innerIP,
 				Details: &metadata.BasicContent{
 					PreData:    nil,
 					CurData:    curData,
-					Properties: properties,
 				},
 			},
 			ModelID: common.BKInnerObjIDHost,
@@ -317,37 +280,29 @@ func getHostIDAndIP(hostInfo map[string]interface{}) (int64, string, error) {
 }
 
 // 获取主机的业务ID和业务Name
-func (lgc *Logics) GetBizIDAndName(kit *rest.Kit, hostID int64) (int64, string, error) {
+func (lgc *Logics) GetBizIDAndName(kit *rest.Kit, hostID int64) (int64, error) {
 	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}}
 	moduleHost, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, input)
 	if err != nil {
 		blog.Errorf("GetBizIDAndName fail, err:%s, input:%+v", err.Error(), input)
-		return 0, "", err
+		return 0, err
 	}
 	if !moduleHost.Result {
 		blog.Errorf("GetBizIDAndName fail, err code:%d, err msg:%s, input:%+v", moduleHost.Code, moduleHost.ErrMsg, input)
-		return 0, "", fmt.Errorf("%s", moduleHost.ErrMsg)
+		return 0, fmt.Errorf("%s", moduleHost.ErrMsg)
 	}
 
 	if len(moduleHost.Data.Info) == 0 {
 		blog.Errorf("GetBizIDAndName fail, host biz is not found, input:%+v", input)
-		return 0, "", fmt.Errorf("%s", "host biz is not found")
+		return 0, fmt.Errorf("%s", "host biz is not found")
 	}
 
 	bizID := moduleHost.Data.Info[0].AppID
 
-	audit := auditlog.NewAudit(lgc.CoreAPI, kit.Header)
-
-	bizName, err := audit.GetInstNameByID(context.Background(), common.BKInnerObjIDApp, bizID)
-	if err != nil {
-		blog.Errorf("GetBizIDAndName fail, err:%s, bizID:%d", err.Error(), bizID)
-		return 0, "", err
-	}
-
-	return bizID, bizName, nil
+	return bizID, nil
 }
 
-func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]interface{}, properties []metadata.Property) (*metadata.AuditLog, error) {
+func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]interface{}) (*metadata.AuditLog, error) {
 	// 获取主机ID和内网IP
 	hostID, innerIP, err := getHostIDAndIP(preData)
 	if err != nil {
@@ -356,7 +311,7 @@ func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]i
 	}
 
 	// 获取主机的业务ID和业务Name
-	bizID, bizName, err := lgc.GetBizIDAndName(kit, hostID)
+	bizID, err := lgc.GetBizIDAndName(kit, hostID)
 	if err != nil {
 		blog.Errorf("GetUpdateHostLog fail,err:%s, preData:%+v, curData:%+v", err.Error(), preData, curData)
 		return nil, err
@@ -367,16 +322,14 @@ func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]i
 		ResourceType: metadata.HostRes,
 		Action:       metadata.AuditUpdate,
 		OperateFrom:  metadata.FromCloudSync,
+		BusinessID:   bizID,
+		ResourceID:   hostID,
+		ResourceName: innerIP,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   bizID,
-				BusinessName: bizName,
-				ResourceID:   hostID,
-				ResourceName: innerIP,
 				Details: &metadata.BasicContent{
 					PreData:    preData,
 					CurData:    curData,
-					Properties: properties,
 				},
 			},
 			ModelID: common.BKInnerObjIDHost,
@@ -389,7 +342,6 @@ func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]i
 type CloudAreaAuditLog struct {
 	logic          *Logics
 	kit            *rest.Kit
-	Properties     []metadata.Property
 	MultiCloudArea map[int64]*SingleCloudArea
 }
 
@@ -417,14 +369,6 @@ func (c *CloudAreaAuditLog) WithCurrent(platIDs ...int64) errors.CCError {
 
 func (c *CloudAreaAuditLog) buildAuditLogData(withPrevious, withCurrent bool, platIDs ...int64) errors.CCError {
 	var err error
-	if len(c.Properties) == 0 {
-		audit := auditlog.NewAudit(c.logic.CoreAPI, c.kit.Header)
-		properties, err := audit.GetAuditLogProperty(c.kit.Ctx, common.BKInnerObjIDPlat)
-		if err != nil {
-			return err
-		}
-		c.Properties = properties
-	}
 
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: platIDs}},
@@ -473,14 +417,14 @@ func (c *CloudAreaAuditLog) SaveAuditLog(action metadata.ActionType) errors.CCEr
 			AuditType:    metadata.CloudResourceType,
 			ResourceType: metadata.CloudAreaRes,
 			Action:       action,
+			ResourceID:   cloudID,
+			ResourceName: cloudarea.CloudName,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					ResourceID:   cloudID,
-					ResourceName: cloudarea.CloudName,
+
 					Details: &metadata.BasicContent{
 						PreData:    cloudarea.PreData,
 						CurData:    cloudarea.CurData,
-						Properties: c.Properties,
 					},
 				},
 				ModelID: common.BKInnerObjIDPlat,

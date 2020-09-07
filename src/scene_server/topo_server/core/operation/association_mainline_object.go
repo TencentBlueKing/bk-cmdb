@@ -16,6 +16,7 @@ import (
 	"io"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -224,13 +225,23 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 
 	// create audit log for the created instances
-	audit := NewSupplementary().Audit(kit, assoc.clientSet, currentObj, assoc.inst)
-	currAuditLog := audit.CreateSnapshot(-1, map[string]interface{}{
+	cond := map[string]interface{}{
 		currentObj.GetInstIDFieldName(): map[string]interface{}{
 			common.BKDBIN: createdInstIDs,
 		},
-	})
-	audit.CommitCreateLog(nil, currAuditLog, nil, nil)
+	}
+	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
+	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, currentObj.GetObjectID(), nil, cond, nil)
+	if err != nil {
+		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
 
 	return currentObj, nil
 }
