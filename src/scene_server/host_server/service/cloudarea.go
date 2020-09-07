@@ -19,6 +19,7 @@ import (
 	"configcenter/src/ac/iam"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -171,15 +172,17 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 			}
 		}
 
-		// add auditLog
-		auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
-		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platIDs...); err != nil {
-			blog.ErrorJSON("CreatePlatBatch failed,  WithCurrent err: %v, rid: %s", err, ctx.Kit.Rid)
+		// generate audit log.
+		audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+		logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditCreate, platIDs, metadata.FromUser, nil)
+		if err != nil {
+			blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditCreate); err != nil {
-			blog.ErrorJSON("CreatePlatBatch failed,  SaveAuditLog err: %v, rid: %s", err, ctx.Kit.Rid)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -257,15 +260,17 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 
 		platID := int64(res.Data.Created.ID)
 
-		// add auditLog
-		auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
-		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platID); err != nil {
-			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
+		// generate audit log.
+		audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+		logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditCreate, []int64{platID}, metadata.FromUser, nil)
+		if err != nil {
+			blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditCreate); err != nil {
-			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -345,10 +350,11 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 		return
 	}
 
-	// add auditLog preData
-	auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
-	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
-		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
+	// generate audit log.
+	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+	logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditDelete, []int64{platID}, metadata.FromUser, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before delete cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -369,10 +375,12 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 			return res.CCError()
 		}
 
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditDelete); err != nil {
-			blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return res.CCError()
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after delete cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
 		}
+
 		return nil
 	})
 
@@ -413,14 +421,6 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 		return
 	}
 
-	// auditLog preData
-	auditLog := s.Logic.NewCloudAreaLog(ctx.Kit)
-	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
-		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	// update plat
 	user := ctx.Kit.User
 
@@ -447,6 +447,16 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 		},
 	}
 
+	// generate audit log.
+	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+	logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditUpdate, []int64{platID}, metadata.FromUser, toUpdate)
+	if err != nil {
+		blog.Errorf("generate audit log failed after update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// to update.
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		res, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, updateOption)
 		if nil != err {
@@ -458,14 +468,10 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 			return errors.New(res.Code, res.ErrMsg)
 		}
 
-		// update auditLog
-		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platID); err != nil {
-			blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditUpdate); err != nil {
-			blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
 		}
 
 		return nil
