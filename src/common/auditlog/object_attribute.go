@@ -51,7 +51,7 @@ func (h *objectAttributeAuditLog) GenerateAuditLog(kit *rest.Kit, action metadat
 		data = &rsp.Data.Info[0]
 	}
 
-	bizID, _ := data.Metadata.ParseBizID()
+	bizID := data.BizID
 	propertyName := data.PropertyName
 	objID := data.ObjectID
 	objName, err := h.getObjNameByObjID(kit, objID)

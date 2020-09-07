@@ -51,7 +51,7 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata
 		data = &rsp.Data.Info[0]
 	}
 
-	bizID, _ := data.Metadata.ParseBizID()
+	bizID := data.BizID
 	groupName := data.GroupName
 	objID := data.ObjectID
 	objName, err := h.getObjNameByObjID(kit, objID)
