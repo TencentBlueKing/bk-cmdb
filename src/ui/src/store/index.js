@@ -31,7 +31,6 @@ import objectModule from './modules/api/object-module.js'
 import objectRelation from './modules/api/object-relation.js'
 import objectSet from './modules/api/object-set.js'
 import objectUnique from './modules/api/object-unique.js'
-import operationAudit from './modules/api/operation-audit.js'
 import procConfig from './modules/api/proc-config.js'
 import userCustom from './modules/api/user-custom.js'
 import userPrivilege from './modules/api/user-privilege.js'
@@ -100,7 +99,6 @@ export default new Vuex.Store({
         objectRelation,
         objectSet,
         objectUnique,
-        operationAudit,
         procConfig,
         userCustom,
         userPrivilege,
