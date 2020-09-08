@@ -43,6 +43,13 @@ class HostStore {
         return null
     }
 
+    get isAllResourceHost () {
+        return this.hosts.every(host => {
+            const [biz] = host.biz
+            return biz.default === 1
+        })
+    }
+
     clear () {
         this.hosts = []
     }
