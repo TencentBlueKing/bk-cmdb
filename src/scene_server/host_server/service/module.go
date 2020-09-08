@@ -156,21 +156,22 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 		return
 	}
 
-	var cond metadata.HostModuleRelationRequest
+	rawErr := data.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	cond := metadata.HostModuleRelationRequest{
+		HostIDArr: data.HostID,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
 	if data.AppID != 0 {
 		cond.ApplicationID = data.AppID
 	}
-	
-	if len(data.HostID) > 0 {
-		if len(data.HostID) > 500 {
-			blog.Errorf("GetHostModuleRelation host id length %d exceeds 500, rid: %s", len(data.HostID), ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommXXExceedLimit, common.BKHostIDField, 500))
-			return
-		}
-		cond.HostIDArr = data.HostID
-	}
-	
-	cond.Page = metadata.BasePage{Limit: common.BKNoLimit}
+
 	moduleHostConfig, err := s.Logic.GetHostModuleRelation(ctx.Kit, cond)
 
 	if err != nil {
@@ -204,7 +205,7 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	
+
 	ctx.RespEntity(nil)
 	return
 }
@@ -234,7 +235,7 @@ func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(exceptionArr, txnErr)
 		return
 	}
-	
+
 	ctx.RespEntity(nil)
 	return
 }
