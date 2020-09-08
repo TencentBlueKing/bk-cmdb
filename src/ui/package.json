@@ -39,7 +39,7 @@
     "utf8-byte-length": "^1.0.4",
     "v-click-outside": "1.0.5",
     "vee-validate": "^2.2.14",
-    "vue": "^2.6.11",
+    "vue": "2.5.22",
     "vue-clipboard2": "0.2.1",
     "vue-i18n": "8.12.0",
     "vue-infinite-loading": "^2.4.4",
@@ -97,7 +97,7 @@
     "url-loader": "^0.5.8",
     "vue-loader": "^13.3.0",
     "vue-style-loader": "^3.0.1",
-    "vue-template-compiler": "^2.6.11",
+    "vue-template-compiler": "2.5.22",
     "webpack": "^3.6.0",
     "webpack-bundle-analyzer": "^2.9.0",
     "webpack-dev-server": "^2.9.1",
@@ -116,6 +116,6 @@
   "readme": "ERROR: No README data found!",
   "_id": "bk-cmdb-ui@1.0.0",
   "peerDependencies": {
-    "vue": "^2.6.11"
+    "vue": "2.5.22"
   }
 }
