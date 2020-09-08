@@ -34,7 +34,8 @@
                 isShow: false,
                 properties: [],
                 propertyGroups: [],
-                bindedProperties: [],
+                // 绑定信息暂不支持批量编辑
+                bindedProperties: ['bind_info'],
                 pending: true
             }
         },

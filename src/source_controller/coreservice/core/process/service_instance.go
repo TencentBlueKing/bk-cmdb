@@ -132,13 +132,28 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 		filter := map[string]interface{}{common.BKHostIDField: instance.HostID}
 
 		for _, processTemplate := range listProcTplResult.Info {
-			if metadata.IsAsDefaultValue(processTemplate.Property.BindIP.AsDefaultValue) && processTemplate.Property.BindIP.Value.NeedIPFromHost() {
-				if err = p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
-					common.BKHostOuterIPField).One(kit.Ctx, &host); err != nil {
-					return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				}
-				break
+			if !metadata.IsAsDefaultValue(processTemplate.Property.BindInfo.AsDefaultValue) {
+				continue
 			}
+
+			needIP := false
+			for _, value := range processTemplate.Property.BindInfo.Value {
+				if metadata.IsAsDefaultValue(value.Std.IP.AsDefaultValue) && value.Std.IP.Value.NeedIPFromHost() {
+					needIP = true
+					break
+				}
+
+			}
+
+			if !needIP {
+				continue
+			}
+
+			if err = p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
+				common.BKHostOuterIPField).One(kit.Ctx, &host); err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			break
 		}
 
 		for _, processTemplate := range listProcTplResult.Info {
@@ -558,9 +573,13 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 		if process.ProcessName != nil && len(*process.ProcessName) > 0 {
 			instanceName += fmt.Sprintf("_%s", *process.ProcessName)
 		}
-		if process.Port != nil && len(*process.Port) > 0 {
-			instanceName += fmt.Sprintf("_%s", *process.Port)
+		for _, bindInfo := range process.BindInfo {
+			if bindInfo.Std != nil && bindInfo.Std.Port != nil {
+				instanceName += fmt.Sprintf("_%s", *bindInfo.Std.Port)
+				break
+			}
 		}
+
 	}
 	return instanceName, nil
 }

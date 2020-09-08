@@ -60,7 +60,6 @@
     "host_property_bk_province_name": "province name",
     "host_property_bk_isp_name": "isp name",
     "host_property_bk_state": "current status",
-
     "process_property_bk_biz_id": "business id",
     "process_property_bk_process_name": "process alias name",
     "process_property_description": "comment",
@@ -90,6 +89,7 @@
     "process_property_bk_gateway_port": "gateway port",
     "process_property_bk_gateway_protocol": "gateway protocol",
     "process_property_bk_gateway_city": "gateway city",
+    "process_property_bind_info": "bind information",
     "bk_switch_property_bk_asset_id": "asset id",
     "bk_switch_property_bk_sn": "SN",
     "bk_switch_property_bk_inst_name": "middleware",

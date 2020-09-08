@@ -688,6 +688,7 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 		return
 	}
 
+	parameter.Page.Sort = common.BKHostIDField
 	option := &meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Fields:             parameter.Fields,

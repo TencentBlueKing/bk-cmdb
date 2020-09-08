@@ -13,6 +13,7 @@
 package instances
 
 import (
+	"strconv"
 	"strings"
 
 	"configcenter/src/common"
@@ -244,31 +245,37 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 		return err
 	}
 
-	bindInnerProcessIDs := make([]int64, 0)
-	bindOuterProcessIDs := make([]int64, 0)
 	for _, processTemplate := range processTemplates {
-		bindIP := processTemplate.Property.BindIP.Value
-		if bindIP != nil {
-			if *bindIP == metadata.BindInnerIP {
-				bindInnerProcessIDs = append(bindInnerProcessIDs, processTemplateMap[processTemplate.ID]...)
+		bindInfo := processTemplate.Property.BindInfo
+		if !metadata.IsAsDefaultValue(bindInfo.AsDefaultValue) {
+			continue
+		}
+
+		data := make(map[string]interface{})
+
+		for index, value := range bindInfo.Value {
+			if value.Std == nil {
+				continue
 			}
-			if *bindIP == metadata.BindOuterIP {
-				bindOuterProcessIDs = append(bindOuterProcessIDs, processTemplateMap[processTemplate.ID]...)
+
+			ip := value.Std.IP
+			if !metadata.IsAsDefaultValue(ip.AsDefaultValue) {
+				continue
+			}
+
+			if ip.Value != nil {
+				if *ip.Value == metadata.BindInnerIP {
+					data[common.BKProcBindInfo+strconv.Itoa(index)+common.BKIP] = firstInnerIP
+				}
 			}
 		}
-	}
 
-	if len(bindInnerProcessIDs) != 0 {
-		if err := m.updateProcessBindIP(kit, firstInnerIP, bindInnerProcessIDs); err != nil {
-			blog.Errorf("update process bind inner ip failed, err: %v, inner ip: %s, processIDs: %+v, rid: %s", err, innerIP, bindInnerProcessIDs, kit.Rid)
-			return err
-		}
-	}
+		if len(data) != 0 {
+			if err := m.updateProcessBindIP(kit, data, processTemplateMap[processTemplate.ID]); err != nil {
+				blog.Errorf("update process bind ip failed, err: %v, rid: %s", err, kit.Rid)
+				return err
+			}
 
-	if len(bindOuterProcessIDs) != 0 {
-		if err := m.updateProcessBindIP(kit, firstOuterIP, bindOuterProcessIDs); err != nil {
-			blog.Errorf("update process bind outer ip failed, err: %v, inner ip: %s, processIDs: %+v, rid: %s", err, innerIP, bindOuterProcessIDs, kit.Rid)
-			return err
 		}
 	}
 
@@ -301,12 +308,11 @@ func getFirstIP(ip interface{}) string {
 }
 
 // updateHostProcessBindIP update processes using changed ip
-func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, ip string, processIDs []int64) error {
+func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]interface{}, processIDs []int64) error {
 	processFilter := map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: processIDs}}
-	bindIPData := map[string]interface{}{common.BKBindIP: ip}
 
-	if err := m.dbProxy.Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, bindIPData); err != nil {
-		blog.Errorf("update process failed, err: %v, processIDs: %+v, ip: %s, rid: %s", err, processIDs, ip, kit.Rid)
+	if err := m.dbProxy.Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, data); err != nil {
+		blog.Errorf("update process failed, err: %v, processIDs: %+v, data: %+v, rid: %s", err, processIDs, data, kit.Rid)
 		return err
 	}
 

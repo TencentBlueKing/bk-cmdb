@@ -1,4 +1,5 @@
 /*
+/*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
@@ -8,7 +9,7 @@
  * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
 
 package process
 
@@ -69,13 +70,6 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 
-	// process template bk_enable_port not set vaule, default value must be true
-	if template.Property.PortEnable.AsDefaultValue == nil {
-		blTrue := true
-		template.Property.PortEnable.AsDefaultValue = &blTrue
-		template.Property.PortEnable.Value = &blTrue
-	}
-
 	template.ID = int64(id)
 
 	template.Creator = kit.User
@@ -85,7 +79,7 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 	template.SupplierAccount = kit.SupplierAccount
 
 	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Insert(kit.Ctx, &template); nil != err {
-		blog.Errorf("CreateProcessTemplate failed, mongodb failed, table: %s, template: %+v, err: %+v, rid: %s", common.BKTableNameProcessTemplate, template, err, kit.Rid)
+		blog.ErrorJSON("CreateProcessTemplate failed, mongodb failed, table: %s, template: %s, err: %s, rid: %s", common.BKTableNameProcessTemplate, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	return &template, nil

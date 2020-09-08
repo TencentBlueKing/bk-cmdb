@@ -95,7 +95,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	setMap := make(map[int64]metadata.SetInst)
 	for _, setInstance := range setInstResult.Data.Info {
 		set := metadata.SetInst{}
-		if err := mapstruct.Decode2Struct(setInstance, &set); err != nil {
+		if err := mapstruct.Decode2StructWithHook(setInstance, &set); err != nil {
 			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance failed, set: %+v, err: %s, rid: %s", setInstance, err.Error(), rid)
 			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
 		}
@@ -368,7 +368,7 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 
 	for _, item := range setResult.Data.Info {
 		set := metadata.SetInst{}
-		if err := mapstruct.Decode2Struct(item, &set); err != nil {
+		if err := mapstruct.Decode2StructWithHook(item, &set); err != nil {
 			blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, unmarshal set data failed, set: %s, err: %s, rid: %s", item, err.Error(), rid)
 			return result, kit.CCError.CCError(common.CCErrCommParseDBFailed)
 		}
