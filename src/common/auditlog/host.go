@@ -34,16 +34,16 @@ func (h *hostAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionTyp
 // GenerateAuditLogByHostIDGetBizID generate audit log of host, auto get bizID by hostID and host topology relate,
 // if data is nil, will auto get host current data by hostID, meanwhile update hostIP if hostIP is "".
 func (h *hostAuditLog) GenerateAuditLogByHostIDGetBizID(kit *rest.Kit, action metadata.ActionType, hostID int64,
-	hostIP string, OperateFrom metadata.OperateFromType, data, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+	innerIP string, OperateFrom metadata.OperateFromType, data, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
 	// get bizID by hostID and host topology related.
 	bizID, err := h.getBizIDByHostID(kit, hostID)
 	if err != nil {
-		blog.Errorf("generate host audit log failed, failed to get bizID by hostID, hostID: %d, hostIP: %s, err: %v, rid: %s",
-			hostID, hostIP, err, kit.Rid)
+		blog.Errorf("generate host audit log failed, failed to get bizID by hostID, hostID: %d, innerIP: %s, err: %v, rid: %s",
+			hostID, innerIP, err, kit.Rid)
 		return nil, err
 	}
 
-	return h.generateAuditLog(kit, action, hostID, bizID, hostIP, OperateFrom, data, updateFields)
+	return h.generateAuditLog(kit, action, hostID, bizID, innerIP, OperateFrom, data, updateFields)
 }
 
 func (h *hostAuditLog) generateAuditLog(kit *rest.Kit, action metadata.ActionType, hostID, bizID int64, hostIP string,

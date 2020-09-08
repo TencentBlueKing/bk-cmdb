@@ -57,8 +57,11 @@ func (h *cloudAreaAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Acti
 	// to generate audit log.
 	var logs = make([]metadata.AuditLog, 0)
 	for cloudID, cloudData := range mutilCloudArea {
-		cloudName, _ := cloudData.String(common.BKCloudNameField)
-
+		cloudName, err := cloudData.String(common.BKCloudNameField)
+		if err != nil {
+			return nil, err
+		}
+		
 		var basicDetail *metadata.BasicContent
 		switch action {
 		case metadata.AuditCreate:
