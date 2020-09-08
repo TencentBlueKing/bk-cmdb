@@ -95,7 +95,7 @@ func (h *resourceDirAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Ac
 	return auditLog, nil
 }
 
-func NewReSourceDirAuditLog(clientSet coreservice.CoreServiceClientInterface) *resourceDirAuditLog {
+func NewResourceDirAuditLog(clientSet coreservice.CoreServiceClientInterface) *resourceDirAuditLog {
 	return &resourceDirAuditLog{
 		audit: audit{
 			clientSet: clientSet,

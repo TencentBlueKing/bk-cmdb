@@ -593,8 +593,8 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 		blog.Errorf("addHosts getHostDetailByInstIDs err:%s, instIDs:%#v, rid:%s", err.Error(), instIDs, h.kit.Rid)
 	}
 
-	for _, cur := range curData {
-		hostID, innerIP, err := getHostIDAndIP(cur)
+	for _, data := range curData {
+		hostID, innerIP, err := getHostIDAndIP(data)
 		if err != nil {
 			blog.Errorf("generate audit log failed after create host, failed to get hostID and hostIP, err: %v, rid: %s",
 				err, h.kit.Rid)
@@ -603,7 +603,7 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 
 		// generate audit log.
 		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(h.kit, metadata.AuditCreate, hostID, innerIP, metadata.FromCloudSync,
-			cur, nil)
+			data, nil)
 		if err != nil {
 			blog.Errorf("generate audit log failed after create host, hostID: %d, innerIP: %s, err: %v, rid: %s",
 				hostID, innerIP, err, h.kit.Rid)
@@ -726,8 +726,8 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			return nil, err
 		}
 		if len(preData) <= 0 {
-			blog.Errorf("updateHosts getHostDetailByInstIDs, instID:%s, rid:%s", host.InstanceId, h.kit.Rid)
-			return nil, err
+			blog.Errorf("generate audit log failed, not find host data, instID: %s, rid: %s", host.InstanceId, h.kit.Rid)
+			return nil, fmt.Errorf("generate audit log failed, not find host data when bk_cloud_inst_id is %s", host.InstanceId)
 		}
 
 		hostID, innerIP, err := getHostIDAndIP(preData[0])

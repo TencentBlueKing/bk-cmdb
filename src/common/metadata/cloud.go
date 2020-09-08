@@ -38,6 +38,7 @@ type CloudAccount struct {
 func (c *CloudAccount) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(c)
 }
+
 func (c *CloudAccount) Validate() (rawError errors.RawErrorInfo) {
 	if c.AccountName == "" {
 		return errors.RawErrorInfo{

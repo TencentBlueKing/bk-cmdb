@@ -61,7 +61,7 @@ func (h *cloudAreaAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Acti
 		if err != nil {
 			return nil, err
 		}
-		
+
 		var basicDetail *metadata.BasicContent
 		switch action {
 		case metadata.AuditCreate:

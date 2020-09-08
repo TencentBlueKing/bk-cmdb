@@ -275,6 +275,7 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 
 		return nil
 	})
+
 	if txnErr != nil {
 		ctx.RespAutoError(txnErr)
 		return

@@ -92,7 +92,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	// generate audit log.
-	audit := auditlog.NewReSourceDirAuditLog(s.Engine.CoreAPI.CoreService())
+	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
 	auditLog, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditCreate, int64(rsp.Data.Created.ID), bizID, metadata.FromUser, readInstanceResult.Data.Info[0], nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed after create resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
@@ -210,7 +210,7 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	// generate audit log.
-	audit := auditlog.NewReSourceDirAuditLog(s.Engine.CoreAPI.CoreService())
+	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
 	auditLog, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditUpdate, intModuleID, bizID, metadata.FromUser, nil, input)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
@@ -445,7 +445,7 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	// generate audit log.
-	audit := auditlog.NewReSourceDirAuditLog(s.Engine.CoreAPI.CoreService())
+	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
 	auditLog, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditDelete, intModuleID, bizID, metadata.FromUser, curData.Data.Info[0], nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before delete resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
