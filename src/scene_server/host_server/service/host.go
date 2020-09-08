@@ -361,7 +361,7 @@ func (s *Service) HostSnapInfo(ctx *rest.Contexts) {
 // HostSnapInfoBatch get the host snapshot in batch
 func (s *Service) HostSnapInfoBatch(ctx *rest.Contexts) {
 
-	option := meta.SearchInstBatchOption{}
+	option := meta.HostSnapBatchOption{}
 	if err := json.NewDecoder(ctx.Request.Request.Body).Decode(&option); err != nil {
 		blog.Errorf("HostSnapInfoBatch failed, decode body err: %v, rid:%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
