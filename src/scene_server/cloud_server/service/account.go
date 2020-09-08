@@ -259,11 +259,6 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 			return err
 		}
 
-		// remove unchangeable fields.
-		delete(option, common.BKCloudVendor)
-		delete(option, common.BKCloudIDField)
-		delete(option, common.BKOwnerIDField)
-
 		// to update.
 		err = s.CoreAPI.CoreService().Cloud().UpdateAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID, option)
 		if err != nil {
