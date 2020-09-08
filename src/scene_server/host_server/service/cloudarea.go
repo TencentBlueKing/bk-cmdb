@@ -451,7 +451,7 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
 	logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditUpdate, []int64{platID}, metadata.FromUser, toUpdate)
 	if err != nil {
-		blog.Errorf("generate audit log failed after update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("generate audit log failed before update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

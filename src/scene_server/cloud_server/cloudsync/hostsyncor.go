@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -480,13 +481,18 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 
 	cloudID := int64(createRes.Data.Created.ID)
 
-	auditLog := h.logics.NewCloudAreaLog(h.kit)
-	// create auditLog
-	if err := auditLog.WithCurrent(cloudID); err != nil {
-		blog.Errorf("updateDestroyedCloudArea WithCurrent err:%s, cloudID:%#v, rid:%s", err.Error(), cloudID, h.kit.Rid)
+	// generate audit log.
+	audit := auditlog.NewCloudAreaAuditLog(h.logics.CoreAPI.CoreService())
+	logs, err := audit.GenerateAuditLog(h.kit, metadata.AuditCreate, []int64{cloudID}, metadata.FromUser, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, h.kit.Rid)
+		return cloudID, err
 	}
-	if err := auditLog.SaveAuditLog(metadata.AuditUpdate); err != nil {
-		blog.Errorf("updateDestroyedCloudArea SaveAuditLog err:%s, cloudID:%#v, rid:%s", err.Error(), cloudID, h.kit.Rid)
+
+	// save audit log.
+	if err := audit.SaveAuditLog(h.kit, logs...); err != nil {
+		blog.Errorf("save audit log failed after create cloud area, err: %v, rid: %s", err, h.kit.Rid)
+		return cloudID, err
 	}
 
 	return cloudID, nil
@@ -564,7 +570,6 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 	if err != nil {
 		blog.Errorf("addHosts getHostDetailByInstIDs err:%s, instIDs:%#v, rid:%s", err.Error(), instIDs, h.kit.Rid)
 	}
-	
 
 	for _, cur := range curData {
 		auditLog, err := h.logics.GetAddHostLog(h.kit, cur)
@@ -837,11 +842,6 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 
 // 更新被销毁vpc对应的云区域状态为异常
 func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
-	auditLog := h.logics.NewCloudAreaLog(h.kit)
-	if err := auditLog.WithPrevious(cloudIDs...); err != nil {
-		blog.Errorf("updateDestroyedCloudArea WithPrevious err:%s, cloudIDs:%#v, rid:%s", err.Error(), cloudIDs, h.kit.Rid)
-	}
-
 	input := &metadata.UpdateOption{
 		// must set CanEditAll as true to update the field which can't be editable
 		CanEditAll: true,
@@ -854,6 +854,15 @@ func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 		common.BKStatusDetail: "the correspond vpc is destroyed",
 	}
 
+	// generate audit log.
+	audit := auditlog.NewCloudAreaAuditLog(h.logics.CoreAPI.CoreService())
+	logs, err := audit.GenerateAuditLog(h.kit, metadata.AuditUpdate, cloudIDs, metadata.FromUser, input.Data)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update cloud area, err: %v, rid: %s", err, h.kit.Rid)
+		return err
+	}
+
+	// to update.
 	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(h.kit.Ctx, h.kit.Header, common.BKInnerObjIDPlat, input)
 	if err != nil {
 		blog.Errorf("updateDestroyedCloudArea fail,err:%s, input:%+v, rid:%s", err.Error(), *input, h.kit.Rid)
@@ -864,12 +873,10 @@ func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 		return uResult.CCError()
 	}
 
-	// update auditLog
-	if err := auditLog.WithCurrent(cloudIDs...); err != nil {
-		blog.Errorf("updateDestroyedCloudArea WithCurrent err:%s, cloudIDs:%#v, rid:%s", err.Error(), cloudIDs, h.kit.Rid)
-	}
-	if err := auditLog.SaveAuditLog(metadata.AuditUpdate); err != nil {
-		blog.Errorf("updateDestroyedCloudArea SaveAuditLog err:%s, cloudIDs:%#v, rid:%s", err.Error(), cloudIDs, h.kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(h.kit, logs...); err != nil {
+		blog.Errorf("save audit log failed after update cloud area, err: %v, rid: %s", err, h.kit.Rid)
+		return err
 	}
 
 	return nil

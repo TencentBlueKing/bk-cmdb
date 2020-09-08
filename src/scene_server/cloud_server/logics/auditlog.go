@@ -19,17 +19,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
-
-type CloudAuditLog interface {
-	WithPrevious(*rest.Kit, int64) errors.CCError
-	WithCurrent(*rest.Kit, int64) errors.CCError
-	SaveAuditLog(*rest.Kit, metadata.ActionType) errors.CCError
-}
 
 func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}) (*metadata.AuditLog, error) {
 
@@ -171,110 +164,4 @@ func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]i
 	}
 
 	return &auditLog, nil
-}
-
-type CloudAreaAuditLog struct {
-	logic          *Logics
-	kit            *rest.Kit
-	MultiCloudArea map[int64]*SingleCloudArea
-}
-
-type SingleCloudArea struct {
-	CloudName string
-	PreData   map[string]interface{}
-	CurData   map[string]interface{}
-}
-
-func (lgc *Logics) NewCloudAreaLog(kit *rest.Kit) *CloudAreaAuditLog {
-	return &CloudAreaAuditLog{
-		logic:          lgc,
-		kit:            kit,
-		MultiCloudArea: make(map[int64]*SingleCloudArea),
-	}
-}
-
-func (c *CloudAreaAuditLog) WithPrevious(platIDs ...int64) errors.CCError {
-	return c.buildAuditLogData(true, false, platIDs...)
-}
-
-func (c *CloudAreaAuditLog) WithCurrent(platIDs ...int64) errors.CCError {
-	return c.buildAuditLogData(false, true, platIDs...)
-}
-
-func (c *CloudAreaAuditLog) buildAuditLogData(withPrevious, withCurrent bool, platIDs ...int64) errors.CCError {
-	var err error
-
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: platIDs}},
-	}
-	res, err := c.logic.CoreAPI.CoreService().Instance().ReadInstance(c.kit.Ctx, c.kit.Header, common.BKInnerObjIDPlat, query)
-	if nil != err {
-		return err
-	}
-	if len(res.Data.Info) <= 0 {
-		return errors.New(common.CCErrTopoCloudNotFound, "")
-	}
-
-	for _, data := range res.Data.Info {
-		cloudID, err := data.Int64(common.BKCloudIDField)
-		if err != nil {
-			return err
-		}
-
-		cloudName, err := data.String(common.BKCloudNameField)
-		if err != nil {
-			return err
-		}
-
-		if c.MultiCloudArea[cloudID] == nil {
-			c.MultiCloudArea[cloudID] = new(SingleCloudArea)
-		}
-
-		c.MultiCloudArea[cloudID].CloudName = cloudName
-
-		if withPrevious {
-			c.MultiCloudArea[cloudID].PreData = data
-		}
-
-		if withCurrent {
-			c.MultiCloudArea[cloudID].CurData = data
-		}
-	}
-
-	return nil
-}
-
-func (c *CloudAreaAuditLog) SaveAuditLog(action metadata.ActionType) errors.CCError {
-	logs := make([]metadata.AuditLog, 0)
-	for cloudID, cloudarea := range c.MultiCloudArea {
-		logs = append(logs, metadata.AuditLog{
-			AuditType:    metadata.CloudResourceType,
-			ResourceType: metadata.CloudAreaRes,
-			Action:       action,
-			ResourceID:   cloudID,
-			ResourceName: cloudarea.CloudName,
-			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: metadata.BasicOpDetail{
-
-					Details: &metadata.BasicContent{
-						PreData: cloudarea.PreData,
-						CurData: cloudarea.CurData,
-					},
-				},
-				ModelID: common.BKInnerObjIDPlat,
-			},
-		})
-	}
-
-	auditResult, err := c.logic.CoreAPI.CoreService().Audit().SaveAuditLog(c.kit.Ctx, c.kit.Header, logs...)
-	if err != nil {
-		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %+v,rid:%s", err, auditResult, c.kit.Rid)
-		return c.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
-	}
-	if auditResult.Result != true {
-		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %s,rid:%s", err, auditResult, c.kit.Rid)
-		return c.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
-	}
-
-	return nil
 }
