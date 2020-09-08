@@ -118,8 +118,6 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
-		delete(host, common.BKHostInnerIPField)
-		delete(host, common.BKCloudIDField)
 		delete(host, common.BKImportFrom)
 		delete(host, common.CreateTimeField)
 
