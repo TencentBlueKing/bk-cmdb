@@ -83,8 +83,11 @@ func (h *cloudAreaAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Acti
 			ResourceID:   cloudID,
 			ResourceName: cloudName,
 			OperateFrom:  OperateFrom,
-			OperationDetail: &metadata.BasicOpDetail{
-				Details: basicDetail,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
+					Details: basicDetail,
+				},
+				ModelID: common.BKInnerObjIDPlat,
 			},
 		})
 	}
