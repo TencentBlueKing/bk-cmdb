@@ -533,6 +533,17 @@ type HostModuleRelationParameter struct {
 	HostID []int64 `json:"bk_host_id"`
 }
 
+func (h *HostModuleRelationParameter) Validate() (rawError errors.RawErrorInfo) {
+	if len(h.HostID) == 0 || len(h.HostID) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_host_id", common.BKMaxInstanceLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // DeleteHostFromBizParameter delete host from business
 type DeleteHostFromBizParameter struct {
 	AppID     int64   `json:"bk_biz_id"`
