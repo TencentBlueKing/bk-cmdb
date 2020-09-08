@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -111,14 +112,19 @@ func (lgc *Logics) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (
 		return nil, err
 	}
 
-	// add auditLog
-	auditLog := lgc.NewSyncTaskAuditLog(kit, kit.SupplierAccount)
-	if err := auditLog.WithCurrent(kit, result.TaskID); err != nil {
-		blog.Errorf("CreateSyncTask failed, rid:%s, task:%+v, err:%+v", kit.Rid, task, err)
+	// generate audit log.
+	audit := auditlog.NewSyncTaskAuditLog(lgc.CoreAPI.CoreService())
+	auditLog, auditErr := audit.GenerateAuditLog(kit, metadata.AuditCreate, result.TaskID, metadata.FromUser, result, nil)
+	if auditErr != nil {
+		blog.Errorf("generate audit log failed after create sync task, taskID: %d, err: %v, rid: %s",
+			result.TaskID, auditErr, kit.Rid)
 		return nil, err
 	}
-	if err := auditLog.SaveAuditLog(kit, metadata.AuditCreate); err != nil {
-		blog.Errorf("CreateSyncTask failed, rid:%s, task:%+v, err:%+v", kit.Rid, task, err)
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed after create sync task, taskID: %d, err: %v, rid: %s",
+			result.TaskID, err, kit.Rid)
 		return nil, err
 	}
 
@@ -243,48 +249,50 @@ func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.Multipl
 
 func (lgc *Logics) UpdateSyncTask(kit *rest.Kit, taskID int64, option map[string]interface{}) error {
 
-	// add auditLog preData
-	auditLog := lgc.NewSyncTaskAuditLog(kit, kit.SupplierAccount)
-	if err := auditLog.WithPrevious(kit, taskID); err != nil {
-		blog.Errorf("UpdateSyncTask failed, rid:%s, taskID:%d, option:%+v, err:%+v", kit.Rid, taskID, option, err)
-		return err
+	// generate audit log.
+	audit := auditlog.NewSyncTaskAuditLog(lgc.CoreAPI.CoreService())
+	auditLog, auditErr := audit.GenerateAuditLog(kit, metadata.AuditUpdate, taskID, metadata.FromUser, nil, option)
+	if auditErr != nil {
+		blog.Errorf("generate audit log failed before update sync task, taskID: %d, err: %v, rid: %s", taskID, auditErr, kit.Rid)
+		return auditErr
 	}
 
+	// to update.
 	err := lgc.CoreAPI.CoreService().Cloud().UpdateSyncTask(kit.Ctx, kit.Header, taskID, option)
 	if err != nil {
 		blog.Errorf("UpdateSyncTask failed, rid:%s, taskID:%d, option:%+v, err:%+v", kit.Rid, taskID, option, err)
 		return err
 	}
 
-	// add auditLog
-	if err := auditLog.WithCurrent(kit, taskID); err != nil {
-		blog.Errorf("UpdateSyncTask failed, rid:%s, taskID:%d, option:%+v, err:%+v", kit.Rid, taskID, option, err)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed after update sync task, taskID: %d, err: %v, rid: %s", taskID, err, kit.Rid)
 		return err
 	}
-	if err := auditLog.SaveAuditLog(kit, metadata.AuditUpdate); err != nil {
-		blog.Errorf("UpdateSyncTask failed, rid:%s, taskID:%d, option:%+v, err:%+v", kit.Rid, taskID, option, err)
-		return err
-	}
-
 	return nil
 }
 
 func (lgc *Logics) DeleteSyncTask(kit *rest.Kit, taskID int64) error {
-	// add auditLog preData
-	auditLog := lgc.NewSyncTaskAuditLog(kit, kit.SupplierAccount)
-	if err := auditLog.WithPrevious(kit, taskID); err != nil {
-		blog.Errorf("DeleteSyncTask failed, rid:%s, taskID:%d, err:%+v", kit.Rid, taskID, err)
-		return err
+
+	// generate audit log.
+	audit := auditlog.NewSyncTaskAuditLog(lgc.CoreAPI.CoreService())
+	auditLog, auditErr := audit.GenerateAuditLog(kit, metadata.AuditDelete, taskID, metadata.FromUser, nil, nil)
+	if auditErr != nil {
+		blog.Errorf("generate audit log failed before delete sync task, taskID: %d, err: %v, rid: %s", taskID,
+			auditErr, kit.Rid)
+		return auditErr
 	}
 
+	// to delete.
 	err := lgc.CoreAPI.CoreService().Cloud().DeleteSyncTask(kit.Ctx, kit.Header, taskID)
 	if err != nil {
 		blog.Errorf("DeleteSyncTask failed, rid:%s, taskID:%d, err:%+v", kit.Rid, taskID, err)
 		return err
 	}
 
-	if err := auditLog.SaveAuditLog(kit, metadata.AuditDelete); err != nil {
-		blog.Errorf("DeleteSyncTask failed, rid:%s, taskID:%d, err:%+v", kit.Rid, taskID, err)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed after delete sync task, taskID: %d, err: %v, rid: %s", taskID, err, kit.Rid)
 		return err
 	}
 

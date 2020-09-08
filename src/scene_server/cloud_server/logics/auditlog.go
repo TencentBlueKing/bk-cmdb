@@ -32,86 +32,6 @@ type CloudAuditLog interface {
 	SaveAuditLog(*rest.Kit, metadata.ActionType) errors.CCError
 }
 
-type SyncTaskAuditLog struct {
-	logic    *Logics
-	header   http.Header
-	ownerID  string
-	taskName string
-	taskID   int64
-	content  metadata.CloudSyncTaskOpContent
-}
-
-func (lgc *Logics) NewSyncTaskAuditLog(kit *rest.Kit, ownerID string) *SyncTaskAuditLog {
-	return &SyncTaskAuditLog{
-		logic:   lgc,
-		header:  kit.Header,
-		ownerID: ownerID,
-	}
-}
-
-func (log *SyncTaskAuditLog) WithPrevious(kit *rest.Kit, taskID int64) errors.CCError {
-	preData, err := log.buildLogData(kit, taskID)
-	if err != nil {
-		return err
-	}
-	log.content.PreData = &preData
-
-	return nil
-}
-
-func (log *SyncTaskAuditLog) WithCurrent(kit *rest.Kit, taskID int64) errors.CCError {
-	curData, err := log.buildLogData(kit, taskID)
-	if err != nil {
-		return err
-	}
-	log.content.CurData = &curData
-
-	return nil
-}
-
-func (log *SyncTaskAuditLog) buildLogData(kit *rest.Kit, taskID int64) (metadata.CloudSyncTask, errors.CCError) {
-	option := metadata.SearchCloudOption{
-		Condition: mapstr.MapStr{common.BKCloudSyncTaskID: taskID},
-	}
-	res, err := log.logic.CoreAPI.CoreService().Cloud().SearchSyncTask(kit.Ctx, kit.Header, &option)
-	if err != nil {
-		return metadata.CloudSyncTask{}, err
-	}
-	if len(res.Info) <= 0 {
-		return metadata.CloudSyncTask{}, kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountID)
-	}
-
-	log.taskID = taskID
-	log.taskName = res.Info[0].TaskName
-
-	return res.Info[0], nil
-}
-
-func (log *SyncTaskAuditLog) SaveAuditLog(kit *rest.Kit, action metadata.ActionType) errors.CCError {
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.CloudResourceType,
-		ResourceType: metadata.CloudSyncTaskRes,
-		Action:       action,
-		OperationDetail: &metadata.CloudSyncTaskOpDetail{
-			TaskName: log.taskName,
-			TaskID:   log.taskID,
-			Details:  &log.content,
-		},
-	}
-
-	auditResult, err := log.logic.CoreAPI.CoreService().Audit().SaveAuditLog(kit.Ctx, log.header, auditLog)
-	if err != nil {
-		blog.ErrorJSON("SaveAuditLog add cloud sync task audit log failed, err: %s, result: %+v,rid:%s", err, auditResult, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
-	}
-	if auditResult.Result != true {
-		blog.ErrorJSON("SaveAuditLog add cloud sync task audit log failed, err: %s, result: %s,rid:%s", err, auditResult, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
-	}
-
-	return nil
-}
-
 type AccountAuditLog struct {
 	logic       *Logics
 	header      http.Header
@@ -156,7 +76,7 @@ func (log *AccountAuditLog) SaveAuditLog(kit *rest.Kit, action metadata.ActionTy
 		ResourceType: metadata.CloudAccountRes,
 		Action:       action,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details:      log.Content,
+			Details: log.Content,
 		},
 	}
 
@@ -207,8 +127,8 @@ func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}) 
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				Details: &metadata.BasicContent{
-					PreData:    nil,
-					CurData:    curData,
+					PreData: nil,
+					CurData: curData,
 				},
 			},
 			ModelID: common.BKInnerObjIDHost,
@@ -328,8 +248,8 @@ func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]i
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				Details: &metadata.BasicContent{
-					PreData:    preData,
-					CurData:    curData,
+					PreData: preData,
+					CurData: curData,
 				},
 			},
 			ModelID: common.BKInnerObjIDHost,
@@ -423,8 +343,8 @@ func (c *CloudAreaAuditLog) SaveAuditLog(action metadata.ActionType) errors.CCEr
 				BasicOpDetail: metadata.BasicOpDetail{
 
 					Details: &metadata.BasicContent{
-						PreData:    cloudarea.PreData,
-						CurData:    cloudarea.CurData,
+						PreData: cloudarea.PreData,
+						CurData: cloudarea.CurData,
 					},
 				},
 				ModelID: common.BKInnerObjIDPlat,

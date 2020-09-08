@@ -229,6 +229,11 @@ type CloudSyncTask struct {
 	LastTime          time.Time      `json:"last_time" bson:"last_time"`
 }
 
+// ToMapStr to mapstr
+func (o *CloudSyncTask) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(o)
+}
+
 type VpcSyncInfo struct {
 	VpcID        string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 	VpcName      string `json:"bk_vpc_name" bson:"bk_vpc_name"`
