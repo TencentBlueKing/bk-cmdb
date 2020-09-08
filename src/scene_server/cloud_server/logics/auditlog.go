@@ -15,7 +15,6 @@ package logics
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"configcenter/src/common"
@@ -30,91 +29,6 @@ type CloudAuditLog interface {
 	WithPrevious(*rest.Kit, int64) errors.CCError
 	WithCurrent(*rest.Kit, int64) errors.CCError
 	SaveAuditLog(*rest.Kit, metadata.ActionType) errors.CCError
-}
-
-type AccountAuditLog struct {
-	logic       *Logics
-	header      http.Header
-	ownerID     string
-	accountName string
-	accountID   int64
-	Content     *metadata.BasicContent
-}
-
-func (lgc *Logics) NewAccountAuditLog(kit *rest.Kit, ownerID string) *AccountAuditLog {
-	return &AccountAuditLog{
-		logic:   lgc,
-		header:  kit.Header,
-		ownerID: ownerID,
-		Content: new(metadata.BasicContent),
-	}
-}
-
-func (log *AccountAuditLog) WithPrevious(kit *rest.Kit, accountID int64) errors.CCError {
-	data, err := log.buildLogData(kit, accountID)
-	if err != nil {
-		return err
-	}
-	log.Content.PreData = data
-
-	return nil
-}
-
-func (log *AccountAuditLog) WithCurrent(kit *rest.Kit, accountID int64) errors.CCError {
-	data, err := log.buildLogData(kit, accountID)
-	if err != nil {
-		return err
-	}
-	log.Content.CurData = data
-
-	return nil
-}
-
-func (log *AccountAuditLog) SaveAuditLog(kit *rest.Kit, action metadata.ActionType) errors.CCError {
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.CloudResourceType,
-		ResourceType: metadata.CloudAccountRes,
-		Action:       action,
-		OperationDetail: &metadata.BasicOpDetail{
-			Details: log.Content,
-		},
-	}
-
-	auditResult, err := log.logic.CoreAPI.CoreService().Audit().SaveAuditLog(kit.Ctx, log.header, auditLog)
-	if err != nil {
-		blog.ErrorJSON("SaveAuditLog add cloud account audit log failed, err: %s, result: %+v,rid:%s", err, auditResult, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
-	}
-	if auditResult.Result != true {
-		blog.ErrorJSON("SaveAuditLog add cloud account audit log failed, err: %s, result: %s,rid:%s", err, auditResult, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
-	}
-
-	return nil
-}
-
-func (log *AccountAuditLog) buildLogData(kit *rest.Kit, accountID int64) (map[string]interface{}, errors.CCError) {
-
-	cond := metadata.SearchCloudOption{
-		Condition: mapstr.MapStr{common.BKCloudAccountID: accountID},
-	}
-	res, err := log.logic.CoreAPI.CoreService().Cloud().SearchAccount(kit.Ctx, kit.Header, &cond)
-	if err != nil {
-		return nil, err
-	}
-	if len(res.Info) <= 0 {
-		return nil, kit.CCError.CCErrorf(common.CCErrCloudAccountIDNoExistFail)
-	}
-	data := map[string]interface{}{
-		common.BKCloudAccountName: res.Info[0].AccountName,
-		common.BKCloudVendor:      res.Info[0].CloudVendor,
-		common.BKDescriptionField: res.Info[0].Description,
-	}
-
-	log.accountName = res.Info[0].AccountName
-	log.accountID = accountID
-
-	return data, nil
 }
 
 func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}) (*metadata.AuditLog, error) {

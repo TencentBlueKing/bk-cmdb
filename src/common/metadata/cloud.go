@@ -35,6 +35,9 @@ type CloudAccount struct {
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
 }
 
+func (c *CloudAccount) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(c)
+}
 func (c *CloudAccount) Validate() (rawError errors.RawErrorInfo) {
 	if c.AccountName == "" {
 		return errors.RawErrorInfo{
@@ -230,8 +233,8 @@ type CloudSyncTask struct {
 }
 
 // ToMapStr to mapstr
-func (o *CloudSyncTask) ToMapStr() mapstr.MapStr {
-	return mapstr.SetValueToMapStrByTags(o)
+func (c *CloudSyncTask) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(c)
 }
 
 type VpcSyncInfo struct {
