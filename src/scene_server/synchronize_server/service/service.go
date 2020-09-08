@@ -22,8 +22,10 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/synchronize_server/app/options"
 	"configcenter/src/scene_server/synchronize_server/logics"
@@ -72,20 +74,60 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 	}
 }
 
-func (s *Service) WebService() *restful.WebService {
+func (s *Service) WebService() *restful.Container {
+	container := restful.NewContainer()
+
 	ws := new(restful.WebService)
 	ws.Path("/synchronize/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.HTTPRequestIDFilter()).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/search").To(s.Find))
 	ws.Route(ws.POST("/set/identifier/flag").To(s.SetIdentifierFlag))
 
-	return ws
+	container.Add(ws)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// coreservice
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+		coreSrv.IsHealthy = false
+		coreSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, coreSrv)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "cloud server is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_SYNCHRONZESERVER,
+		HealthMeta: meta,
+		AtTime:     metadata.Now(),
+	}
+
 	answer := metric.HealthResponse{
 		Code:    common.CCSuccess,
+		Data:    info,
 		OK:      meta.IsHealthy,
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
