@@ -67,9 +67,16 @@ type AuditQueryCondition struct {
 	// ResourceName filters audit logs by resource name, such as instance name, host ip etc., support fuzzy query
 	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
-	OperationTime []string `json:"operation_time"`
+	OperationTime OperationTimeCondition `json:"operation_time"`
 	// Category is used by front end, filters audit logs as business(business resource related to business), resource(instance resource not related to business), host or other category
 	Category string `json:"category"`
+	// ObjID is used for instance audit log filter like host deletion history
+	ObjID string `json:"bk_obj_id"`
+}
+
+type OperationTimeCondition struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
 }
 
 type AuditLog struct {
@@ -159,6 +166,11 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 		return nil
 	}
+
+	if audit.OperationDetail == nil {
+		return nil
+	}
+
 	switch audit.ResourceType {
 	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
@@ -224,6 +236,11 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 		return nil
 	}
+
+	if audit.OperationDetail == nil {
+		return nil
+	}
+
 	switch audit.ResourceType {
 	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
@@ -586,8 +603,8 @@ type CloudSyncTaskOpDetail struct {
 }
 
 type CloudSyncTaskOpContent struct {
-	PreData    *CloudSyncTask `json:"pre_data" bson:"pre_data"`
-	CurData    *CloudSyncTask `json:"cur_data" bson:"cur_data"`
+	PreData *CloudSyncTask `json:"pre_data" bson:"pre_data"`
+	CurData *CloudSyncTask `json:"cur_data" bson:"cur_data"`
 }
 
 func (c *CloudSyncTaskOpDetail) WithName() string {

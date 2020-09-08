@@ -13,6 +13,8 @@
 package auditlog
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -20,6 +22,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
+
+	"github.com/coccyx/timeparser"
 )
 
 var _ core.AuditOperation = (*auditManager)(nil)
@@ -69,6 +73,31 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryCondition) ([]metadata.AuditLog, uint64, error) {
 	condition := param.Condition
 	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
+
+	// parse operation time condition, since json marshal and unmarshal will turn time to string, we need to do it here
+	if condition.Exists(common.BKOperationTimeField) {
+		timeCond, err := condition.MapStr(common.BKOperationTimeField)
+		if err != nil {
+			blog.Errorf("parse operation time condition failed, error: %s, rid: %s", err, kit.Rid)
+			return nil, 0, err
+		}
+
+		for key, value := range timeCond {
+			timeVal, ok := value.(string)
+			if !ok {
+				blog.Errorf("parse operation time failed, time(%v) is not string type, rid: %s", value, kit.Rid)
+				return nil, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+			}
+
+			t, err := timeparser.TimeParserInLocation(timeVal, time.Local)
+			if nil != err {
+				blog.Errorf("parse operation time failed, error: %s, time: %s, rid: %s", err, timeVal, kit.Rid)
+				return nil, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+			}
+			timeCond[key] = t.Local()
+		}
+	}
+
 	blog.V(5).Infof("Search table common.BKTableNameAuditLog with parameters: %+v, rid: %s", condition, kit.Rid)
 
 	rows := make([]metadata.AuditLog, 0)
