@@ -13,46 +13,40 @@
 package service
 
 import (
-	ejson "encoding/json"
-	"net/http"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/watch"
 	ewatcher "configcenter/src/scene_server/event_server/watcher"
 	"configcenter/src/source_controller/coreservice/event"
-
-	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
-	header := req.Request.Header
-	rid := util.GetHTTPCCRequestID(header)
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+func (s *Service) WatchEvent(ctx *rest.Contexts) {
+	rid := ctx.Kit.Rid
+	defErr := ctx.Kit.CCError
+	req := ctx.Request
 
 	resource := req.PathParameter("resource")
 	options := new(watch.WatchEventOptions)
-	if err := ejson.NewDecoder(req.Request.Body).Decode(options); err != nil {
+	if err := ctx.DecodeInto(&options); err != nil {
 		blog.Errorf("watch event, but decode request body failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)}
-		resp.WriteError(http.StatusOK, result)
+		ctx.RespAutoError(defErr.Error(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 	options.Resource = watch.CursorType(resource)
 
 	if err := options.Validate(); err != nil {
 		blog.Errorf("watch event, but got invalid request options, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
 		return
 	}
 
 	key, err := event.GetResourceKeyWithCursorType(options.Resource)
 	if err != nil {
 		blog.Errorf("watch event, but get resource key with cursor type failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
 		return
 	}
 
@@ -64,12 +58,12 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 		events, err := watcher.WatchWithCursor(key, options, rid)
 		if err != nil {
 			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, rid)
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+			ctx.RespAutoError(err)
 			return
 		}
 
 		// if not events is hit, then we return user's cursor, so that they can watch with this cursor again.
-		resp.WriteEntity(s.generateResp(options.Cursor, options.Resource, events))
+		ctx.RespEntity(s.generateResp(options.Cursor, options.Resource, events))
 		return
 	}
 
@@ -78,11 +72,11 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 		events, err := watcher.WatchWithStartFrom(key, options, rid)
 		if err != nil {
 			blog.Errorf("watch event with start from: %s, err: %v, rid: %s", time.Unix(options.StartFrom, 0).Format(time.RFC3339), err, rid)
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+			ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
 			return
 		}
 
-		resp.WriteEntity(s.generateResp("", options.Resource, events))
+		ctx.RespEntity(s.generateResp("", options.Resource, events))
 		return
 	}
 
@@ -90,14 +84,14 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 	events, err := watcher.WatchFromNow(key, options, rid)
 	if err != nil {
 		blog.Errorf("watch event from now, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
 		return
 	}
 
-	resp.WriteEntity(s.generateResp("", options.Resource, []*watch.WatchEventDetail{events}))
+	ctx.RespEntity(s.generateResp("", options.Resource, []*watch.WatchEventDetail{events}))
 }
 
-func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.Response {
+func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events []*watch.WatchEventDetail) *watch.WatchResp {
 	result := new(watch.WatchResp)
 	if len(events) == 0 {
 		result.Watched = false
@@ -152,5 +146,5 @@ func (s *Service) generateResp(startCursor string, rsc watch.CursorType, events 
 		}
 	}
 
-	return metadata.NewSuccessResp(result)
+	return result
 }
