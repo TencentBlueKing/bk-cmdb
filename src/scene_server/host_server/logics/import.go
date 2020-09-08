@@ -66,7 +66,7 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 
 	var errMsg, updateErrMsg, successMsg []string
 
-	// ready interface and kit for audit log.
+	// for audit log.
 	logContents := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
@@ -118,11 +118,13 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
-		delete(host, common.BKImportFrom)
-		delete(host, common.CreateTimeField)
 
 		var auditLog *metadata.AuditLog
 		if existInDB {
+			// remove unchangeable fields
+			delete(host, common.BKImportFrom)
+			delete(host, common.CreateTimeField)
+
 			var err error
 
 			// generate audit log before really change it.
@@ -169,7 +171,7 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	// to save audit log.
 	if len(logContents) > 0 {
 		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
-			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("save audit log failed, but add host success, err: %v", err)
 		}
 	}
 
