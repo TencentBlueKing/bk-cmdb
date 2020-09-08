@@ -414,8 +414,9 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 }
 
 const (
-	findObjectInstanceAssociationLatestPattern   = "/api/v3/find/instassociation"
-	createObjectInstanceAssociationLatestPattern = "/api/v3/create/instassociation"
+	findObjectInstanceAssociationLatestPattern        = "/api/v3/find/instassociation"
+	findObjectInstanceAssociationRelatedLatestPattern = "/api/v3/find/instassociation/related"
+	createObjectInstanceAssociationLatestPattern      = "/api/v3/create/instassociation"
 )
 
 var (
@@ -431,6 +432,20 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: ps.RequestCtx.BizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find instance's association operation.
+	if ps.hitPattern(findObjectInstanceAssociationRelatedLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: ps.RequestCtx.BizID,
