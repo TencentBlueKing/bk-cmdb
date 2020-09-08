@@ -13,8 +13,6 @@
 package auditlog
 
 import (
-	"fmt"
-
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -45,7 +43,7 @@ func (h *cloudAccountAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.A
 		if len(res.Info) <= 0 {
 			blog.Errorf("generate audit log of cloud account failed, not find cloud account, rid: %s",
 				kit.Rid)
-			return nil, fmt.Errorf("generate audit log of cloud account failed, not find cloud account")
+			return nil, kit.CCError.CCErrorf(common.CCErrCloudAccountIDNoExistFail)
 		}
 
 		data = &res.Info[0].CloudAccount

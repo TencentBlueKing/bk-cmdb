@@ -133,7 +133,7 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 		if auditErr != nil {
 			blog.Errorf("generate audit log failed after create cloud account, accountID: %d, err: %v, rid: %s",
 				res.AccountID, auditErr, ctx.Kit.Rid)
-			return err
+			return auditErr
 		}
 
 		// save audit log.
@@ -256,7 +256,7 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 		if auditErr != nil {
 			blog.Errorf("generate audit log failed before update cloud account, accountID: %d, err: %v, rid: %s",
 				accountID, auditErr, ctx.Kit.Rid)
-			return err
+			return auditErr
 		}
 
 		// to update.
@@ -300,7 +300,7 @@ func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 		if auditErr != nil {
 			blog.Errorf("generate audit log failed before delete cloud account, accountID: %d, err: %v, rid: %s",
 				accountID, auditErr, ctx.Kit.Rid)
-			return err
+			return auditErr
 		}
 
 		// to delete.
