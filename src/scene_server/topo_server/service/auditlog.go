@@ -14,14 +14,11 @@ package service
 
 import (
 	"strconv"
-	"time"
-	
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-
-	"github.com/coccyx/timeparser"
 )
 
 // SearchAuditDict returns all audit types with their name and actions for front-end display
@@ -72,7 +69,7 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 		cond[common.BKAppIDField] = condition.BizID
 	}
 
-	if condition.ResourceID != 0 {
+	if condition.ResourceID != nil {
 		cond[common.BKResourceIDField] = condition.ResourceID
 	}
 
@@ -82,13 +79,18 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 		}
 	}
 
-	// parse operation time from string array to start time and end time
-	if condition.OperationTime != nil && len(condition.OperationTime) > 0 {
-		timeCond, err := parseOperationTimeCondition(ctx.Kit, condition.OperationTime)
-		if err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
+	if condition.ObjID != "" {
+		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = condition.User
+	}
+
+	// parse operation start time and end time from string to time condition
+	timeCond, err := parseOperationTimeCondition(ctx.Kit, condition.OperationTime)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(timeCond) != 0 {
 		cond[common.BKOperationTimeField] = timeCond
 	}
 
@@ -134,28 +136,18 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-func parseOperationTimeCondition(kit *rest.Kit, times []string) (map[string]interface{}, error) {
-	if 2 != len(times) {
-		blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{}, error) {
+	timeCond := make(map[string]interface{})
+
+	if len(operationTime.Start) != 0 {
+		timeCond[common.BKDBGTE] = operationTime.Start
 	}
 
-	startTime, err := timeparser.TimeParserInLocation(times[0], time.Local)
-	if nil != err {
-		blog.Errorf("parse start time failed, error: %s, time: %s, rid: %s", err, times[0], kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+	if len(operationTime.End) != 0 {
+		timeCond[common.BKDBLTE] = operationTime.End
 	}
 
-	endTime, err := timeparser.TimeParserInLocation(times[1], time.Local)
-	if nil != err {
-		blog.Errorf("parse end time failed, error: %s, time: %s, rid: %s", err, times[1], kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
-	}
-
-	return map[string]interface{}{
-		common.BKDBGTE: startTime.Local(),
-		common.BKDBLTE: endTime.Local(),
-	}, nil
+	return timeCond, nil
 }
 
 func parseAuditTypeCondition(kit *rest.Kit, condition metadata.AuditQueryCondition) (interface{}, bool) {
