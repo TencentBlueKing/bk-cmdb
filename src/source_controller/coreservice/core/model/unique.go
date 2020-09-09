@@ -15,11 +15,9 @@ package model
 import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal"
 )
 
 type modelAttrUnique struct {
-	dbProxy dal.RDB
 }
 
 func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error) {

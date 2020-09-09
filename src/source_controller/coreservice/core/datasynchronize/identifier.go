@@ -21,13 +21,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type setIdentifierFlag struct {
-	params  *metadata.SetIdenifierFlag
-	dbProxy dal.RDB
+	params *metadata.SetIdenifierFlag
 
 	// db collection name
 	tableName string
@@ -36,10 +35,9 @@ type setIdentifierFlag struct {
 }
 
 // NewSetIdentifierFlag net set identifier handler
-func NewSetIdentifierFlag(dbProxy dal.RDB, params *metadata.SetIdenifierFlag) *setIdentifierFlag {
+func NewSetIdentifierFlag(params *metadata.SetIdenifierFlag) *setIdentifierFlag {
 	return &setIdentifierFlag{
-		params:  params,
-		dbProxy: dbProxy,
+		params: params,
 	}
 }
 
@@ -98,7 +96,7 @@ func (s *setIdentifierFlag) addFlag(kit *rest.Kit) errors.CCErrorCoder {
 	fixMetadataCondMap := condMap.Clone()
 	fixMetadataCondMap[common.MetadataField] = nil
 
-	err := s.dbProxy.Table(s.tableName).Update(kit.Ctx, fixMetadataCondMap, mapstr.MapStr{common.MetadataField: mapstr.New()})
+	err := mongodb.Client().Table(s.tableName).Update(kit.Ctx, fixMetadataCondMap, mapstr.MapStr{common.MetadataField: mapstr.New()})
 	if err != nil {
 		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, rid:%s", err.Error(), fixMetadataCondMap, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
@@ -107,7 +105,7 @@ func (s *setIdentifierFlag) addFlag(kit *rest.Kit) errors.CCErrorCoder {
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
-	err = s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, types.ModeUpdate{Op: types.UpdateOpAddToSet, Doc: data})
+	err = mongodb.Client().Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, types.ModeUpdate{Op: types.UpdateOpAddToSet, Doc: data})
 	if err != nil {
 		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
@@ -123,7 +121,7 @@ func (s *setIdentifierFlag) replaceFlag(kit *rest.Kit) errors.CCErrorCoder {
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): []string{s.params.Flag},
 	}
-	err := s.dbProxy.Table(s.tableName).Update(kit.Ctx, condMap, data)
+	err := mongodb.Client().Table(s.tableName).Update(kit.Ctx, condMap, data)
 	if err != nil {
 		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
@@ -140,7 +138,7 @@ func (s *setIdentifierFlag) deleteFlag(kit *rest.Kit) errors.CCErrorCoder {
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
-	err := s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, types.ModeUpdate{Op: types.UpdateOpPull, Doc: data})
+	err := mongodb.Client().Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, types.ModeUpdate{Op: types.UpdateOpPull, Doc: data})
 	if err != nil {
 		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)

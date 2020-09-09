@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // get counts in table based on filters, returns in the same order
@@ -42,7 +43,7 @@ func (s *coreService) GetCountByFilter(ctx *rest.Contexts) {
 		go func(idx int, filter map[string]interface{}, ctx *rest.Contexts) {
 			filter = util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
 			var count uint64
-			count, err = s.db.Table(table).Find(filter).Count(ctx.Kit.Ctx)
+			count, err = mongodb.Client().Table(table).Find(filter).Count(ctx.Kit.Ctx)
 			if err != nil {
 				blog.ErrorJSON("GetCountByFilter failed, error: %s, table: %s, filter: %s, rid: %s", err.Error(), table, filter, ctx.Kit.Rid)
 				return

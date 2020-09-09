@@ -134,7 +134,7 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 	return nil
 }
 
-// NewMgo returns new RDB
+// InitTxnManager TxnID management of initial transaction
 func (c *Mongo) InitTxnManager(r *redis.Client) error {
 	return c.tm.InitTxnManager(r)
 }

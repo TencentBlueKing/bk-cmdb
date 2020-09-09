@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
@@ -47,7 +48,7 @@ func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit, relation
 	// TODO: asset bizID == category.BizID
 
 	relation.SupplierAccount = kit.SupplierAccount
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx, &relation); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx, &relation); nil != err {
 		blog.Errorf("CreateProcessInstanceRelation failed, mongodb failed, table: %s, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, relation, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
@@ -60,9 +61,9 @@ func (p *processOperation) GetProcessInstanceRelation(kit *rest.Kit, processInst
 	filter := map[string]int64{
 		common.BKProcessIDField: processInstanceID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).One(kit.Ctx, &relation); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).One(kit.Ctx, &relation); nil != err {
 		blog.Errorf("GetProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, relation: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, relation, err, kit.Rid)
-		if p.dbProxy.IsNotFoundError(err) {
+		if mongodb.Client().IsNotFoundError(err) {
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -89,7 +90,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(kit *rest.Kit, processI
 	filter := map[string]int64{"process_id": processInstanceID}
 
 	// do update
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx, filter, relation); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx, filter, relation); nil != err {
 		blog.Errorf("UpdateProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, filter, relation, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
@@ -126,12 +127,12 @@ func (p *processOperation) ListProcessInstanceRelation(kit *rest.Kit, option met
 	blog.Debug("filter: %v", filter)
 	var total uint64
 	var err error
-	if total, err = p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx); nil != err {
+	if total, err = mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx); nil != err {
 		blog.Errorf("ListProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Sort(option.Page.Sort).Start(
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Sort(option.Page.Sort).Start(
 		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx, &relations); nil != err {
 		blog.Errorf("ListProcessInstanceRelation failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -154,13 +155,13 @@ func (p *processOperation) ListHostProcessRelation(kit *rest.Kit, option *metada
 		}
 	}
 	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
-	count, err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("ListHostProcessRelation count mongodb failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	relations := make([]metadata.HostProcessRelation, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
 		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &relations); err != nil {
 		blog.ErrorJSON("ListHostProcessRelation select mongodb failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -207,7 +208,7 @@ func (p *processOperation) DeleteProcessInstanceRelation(kit *rest.Kit, option m
 		return kit.CCError.CCErrorf(common.CCErrCommParametersCountNotEnough)
 	}
 
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, deleteFilter); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}

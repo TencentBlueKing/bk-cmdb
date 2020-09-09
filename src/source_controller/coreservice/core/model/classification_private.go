@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (bool, error) {
@@ -47,11 +48,11 @@ func (m *modelClassification) isExists(kit *rest.Kit, classificationID string, m
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
 	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
-	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
-	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+	err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
+	if nil != err && !mongodb.Client().IsNotFoundError(err) {
 		return origin, false, err
 	}
-	return origin, !m.dbProxy.IsNotFoundError(err), nil
+	return origin, !mongodb.Client().IsNotFoundError(err), nil
 }
 
 func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, exists bool, err error) {
@@ -68,7 +69,7 @@ func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Conditio
 
 	filter := mapstr.MapStr{metadata.ModelFieldObjCls: mapstr.MapStr{common.BKDBIN: clsIDS}}
 	util.SetQueryOwner(filter, kit.SupplierAccount)
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, filter, err.Error())
 		return 0, false, err

@@ -20,11 +20,10 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type associationKind struct {
-	dbProxy dal.RDB
 	*associationModel
 }
 
@@ -183,7 +182,7 @@ func (m *associationKind) SetManyAssociationKind(kit *rest.Kit, inputParam metad
 	return dataResult, nil
 }
 func (m *associationKind) UpdateAssociationKind(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
-	cnt, err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(inputParam.Condition).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameAsstDes).Find(inputParam.Condition).Count(kit.Ctx)
 	if nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
@@ -224,7 +223,7 @@ func (m *associationKind) DeleteAssociationKind(kit *rest.Kit, inputParam metada
 		blog.Errorf(" pre association can not be delete [%#v], rid: %s", inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrorTopoPreAssKindCanNotBeDelete)
 	}
-	err = m.dbProxy.Table(common.BKTableNameAsstDes).Delete(kit.Ctx, inputParam.Condition)
+	err = mongodb.Client().Table(common.BKTableNameAsstDes).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete association kind by condition [%#v],error:%s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
 		return &metadata.DeletedCount{}, err
@@ -250,7 +249,7 @@ func (m *associationKind) CascadeDeleteAssociationKind(kit *rest.Kit, inputParam
 		}
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameAsstDes).Delete(kit.Ctx, inputParam.Condition)
+	err = mongodb.Client().Table(common.BKTableNameAsstDes).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete association kind by condition [%#v],error:%s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
 		return &metadata.DeletedCount{}, err

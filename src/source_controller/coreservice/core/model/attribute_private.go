@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // isExists 需要支持的情况
@@ -43,11 +44,11 @@ func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, meta 
 
 	condMap := util.SetModOwner(filter, kit.SupplierAccount)
 	oneAttribute = &metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).One(kit.Ctx, oneAttribute)
+	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condMap).One(kit.Ctx, oneAttribute)
 	blog.V(5).Infof("isExists cond:%#v, rid:%s", condMap, kit.Rid)
-	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+	if nil != err && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("request(%s): database findOne operation is failed, error info is %s", kit.Rid, err.Error())
 		return oneAttribute, false, err
 	}
-	return oneAttribute, !m.dbProxy.IsNotFoundError(err), nil
+	return oneAttribute, !mongodb.Client().IsNotFoundError(err), nil
 }

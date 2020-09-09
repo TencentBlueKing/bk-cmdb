@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // SearchMainlineBusinessTopo get topo tree of mainline model
@@ -34,7 +35,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header htt
 	}
 	blog.V(9).Infof("model mainline: %+v, rid: %s", bizTopoNode, rid)
 
-	im, err := NewInstanceMainline(m.lang.CreateDefaultCCLanguageIf(util.GetLanguage(header)), m.DbProxy, bkBizID)
+	im, err := NewInstanceMainline(m.lang.CreateDefaultCCLanguageIf(util.GetLanguage(header)), mongodb.Client(), bkBizID)
 	if err != nil {
 		blog.Errorf("SearchMainlineInstanceTopo failed, NewInstanceMainline failed, bizID: %d, err: %+v, rid: %s", bkBizID, err, rid)
 		return nil, fmt.Errorf("new mainline instance by business:%d failed, %+v", bkBizID, err)
