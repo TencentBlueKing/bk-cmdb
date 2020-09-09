@@ -94,7 +94,6 @@
                 ref="define"
                 v-if="slider.isShow"
                 :id="slider.id"
-                :biz-id="bizId"
                 :type="slider.type"
                 :object="object"
                 @create="handleSuccess"
