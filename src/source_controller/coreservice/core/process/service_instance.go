@@ -150,7 +150,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 				continue
 			}
 
-			if err = p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
+			if err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
 				common.BKHostOuterIPField).One(kit.Ctx, &host); err != nil {
 				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 			}
