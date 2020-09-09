@@ -12,12 +12,11 @@
         <tr>
             <td align="right"><label class="option-label">{{$t('业务')}}</label></td>
             <td>
-                <bk-select class="option-value"
+                <audit-business-selector class="option-value"
                     searchable
-                    category="business"
                     :placeholder="$t('请选择xx', { name: $t('业务') })"
                     v-model="condition.bk_biz_id">
-                </bk-select>
+                </audit-business-selector>
             </td>
             <td align="right"><label class="option-label">{{$t('操作对象')}}</label></td>
             <td>
@@ -82,12 +81,14 @@
 <script>
     import AuditTargetSelector from './audit-target-selector'
     import AuditActionSelector from './audit-action-selector'
+    import AuditBusinessSelector from '@/components/audit-history/audit-business-selector'
     import RouterQuery from '@/router/query'
     export default {
         name: 'audit-business-options',
         components: {
             AuditTargetSelector,
-            AuditActionSelector
+            AuditActionSelector,
+            AuditBusinessSelector
         },
         data () {
             return {

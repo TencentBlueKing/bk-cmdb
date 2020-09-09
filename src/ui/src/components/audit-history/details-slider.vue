@@ -6,25 +6,40 @@
         @hidden="handleHidden">
         <div class="details-content" slot="content"
             v-bkloading="{ isLoading: pending }">
-            <details-json :details="details"></details-json>
+            <component
+                v-if="details"
+                :is="detailsType"
+                :details="details">
+            </component>
         </div>
     </bk-sideslider>
 </template>
 
 <script>
     import DetailsJson from './details-json'
+    import DetailsTable from './details-table'
     export default {
         components: {
-            DetailsJson
+            [DetailsJson.name]: DetailsJson,
+            [DetailsTable.name]: DetailsTable
         },
         props: {
             id: Number
         },
         data () {
             return {
-                details: {},
+                details: null,
                 isShow: false,
                 pending: true
+            }
+        },
+        computed: {
+            detailsType () {
+                if (!this.details) {
+                    return null
+                }
+                const withCompare = ['host', 'module', 'set', 'mainline_instance', 'model_instance', 'business', 'cloud_area']
+                return withCompare.includes(this.details.resource_type) ? DetailsTable.name : DetailsJson.name
             }
         },
         async created () {
@@ -43,7 +58,7 @@
                     this.details = await this.$store.dispatch('audit/getDetails', { id: this.id })
                 } catch (error) {
                     console.error(error)
-                    this.details = {}
+                    this.details = null
                 } finally {
                     this.pending = false
                 }

@@ -6,6 +6,7 @@
 
 <script>
     export default {
+        name: 'details-json',
         props: {
             details: Object
         }
@@ -20,7 +21,7 @@
         border-radius: 2px;
         font-size: 12px;
         line-height: 20px;
-        height: calc(100% - 40px);
+        height: 100%;
         overflow: auto;
     }
 </style>

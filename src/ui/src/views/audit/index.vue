@@ -35,9 +35,12 @@
                 :formatter="getActionName">
             </bk-table-column>
             <bk-table-column
-                v-if="active === 'business'"
+                v-if="['host', 'business'].includes(active)"
                 prop="bk_biz_name"
                 :label="$t('所属业务')">
+                <template slot-scope="{ row }">
+                    <audit-business-selector type="info" :value="row.bk_biz_id"></audit-business-selector>
+                </template>
             </bk-table-column>
             <bk-table-column
                 prop="resource_name"
@@ -68,6 +71,7 @@
     import AuditResourceOptions from './children/audit-resource-options'
     import AuditOtherOptions from './children/audit-other-options'
     import AuditHostOptions from './children/audit-host-options'
+    import AuditBusinessSelector from '@/components/audit-history/audit-business-selector'
     import RouterQuery from '@/router/query'
     import AuditDetails from '@/components/audit-history/details.js'
     export default {
@@ -75,7 +79,8 @@
             [AuditBusinessOptions.name]: AuditBusinessOptions,
             [AuditResourceOptions.name]: AuditResourceOptions,
             [AuditOtherOptions.name]: AuditOtherOptions,
-            [AuditHostOptions.name]: AuditHostOptions
+            [AuditHostOptions.name]: AuditHostOptions,
+            AuditBusinessSelector
         },
         data () {
             return {
