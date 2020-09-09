@@ -134,7 +134,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 			}
 		}
 
-		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{Data: host}) //HostController().Host().AddHost(ctx, kit.Header, host)
+		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{Data: host})
 		if err != nil {
 			blog.Errorf("EnterIP http do error, err:%s, input:%+v, rid:%s", err.Error(), host, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -437,9 +437,11 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 	}
 
 	// to save audit log.
-	var logContents []metadata.AuditLog
+	logContents := make([]metadata.AuditLog, len(logContentMap))
+	index := 0
 	for _, item := range logContentMap {
-		logContents = append(logContents, *item)
+		logContents[index] = *item
+		index++
 	}
 
 	if len(logContents) > 0 {
