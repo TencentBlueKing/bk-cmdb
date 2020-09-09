@@ -545,9 +545,9 @@ var _ = Describe("audit test", func() {
 	It("search audit list", func() {
 		input := &metadata.AuditQueryInput{
 			Condition: metadata.AuditQueryCondition{
-				OperationTime: []string{
-					"2018-07-20 00:00:00",
-					"2018-07-21 23:59:59",
+				OperationTime: metadata.OperationTimeCondition{
+					Start: "2018-07-20 00:00:00",
+					End:   "2018-07-21 23:59:59",
 				},
 			},
 			Page: metadata.BasePage{
