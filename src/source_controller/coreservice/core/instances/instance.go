@@ -13,6 +13,9 @@
 package instances
 
 import (
+	"strconv"
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -135,7 +138,8 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 	}
 
 	for _, origin := range origins {
-		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, origin, inputParam.CanEditAll)
+		originCopy := origin.Clone()
+		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, originCopy, inputParam.CanEditAll)
 		if nil != err {
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
@@ -148,7 +152,167 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 		return nil, err
 	}
 
+	if objID == common.BKInnerObjIDHost {
+		if err := m.updateHostProcessBindIP(kit, inputParam.Data, origins); err != nil {
+			return nil, err
+		}
+	}
+
 	return &metadata.UpdatedCount{Count: uint64(len(origins))}, nil
+}
+
+// updateHostProcessBindIP if hosts' ips are updated, update processes which binds the changed ip
+func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData mapstr.MapStr, origins []mapstr.MapStr) error {
+	innerIP, innerIPExist := updateData[common.BKHostInnerIPField]
+	outerIP, outerIPExist := updateData[common.BKHostOuterIPField]
+
+	firstInnerIP := getFirstIP(innerIP)
+	firstOuterIP := getFirstIP(outerIP)
+
+	// get all hosts whose first ip changes
+	innerIPUpdatedHostMap := make(map[int64]bool)
+	outerIPUpdatedHostMap := make(map[int64]bool)
+	hostIDs := make([]int64, 0)
+	var err error
+
+	for _, origin := range origins {
+		var hostID int64
+
+		if innerIPExist && getFirstIP(origin[common.BKHostInnerIPField]) != firstInnerIP {
+			hostID, err = util.GetInt64ByInterface(origin[common.BKHostIDField])
+			if err != nil {
+				blog.Errorf("host ID invalid, err: %v, host: %+v, rid: %s", err, origin, kit.Rid)
+				return err
+			}
+			innerIPUpdatedHostMap[hostID] = true
+		}
+
+		if outerIPExist && getFirstIP(origin[common.BKHostOuterIPField]) != firstOuterIP {
+			if hostID == 0 {
+				hostID, err = util.GetInt64ByInterface(origin[common.BKHostIDField])
+				if err != nil {
+					blog.Errorf("host ID invalid, err: %v, host: %+v, rid: %s", err, origin, kit.Rid)
+					return err
+				}
+			}
+			outerIPUpdatedHostMap[hostID] = true
+		}
+
+		if hostID != 0 {
+			hostIDs = append(hostIDs, hostID)
+		}
+	}
+
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
+	// get hosts related process and template relations
+	processRelations := make([]metadata.ProcessInstanceRelation, 0)
+	processRelationFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+
+	err = m.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Fields(
+		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &processRelations)
+	if err != nil {
+		blog.Errorf("get process relation failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDs, kit.Rid)
+		return err
+	}
+
+	if len(processRelations) == 0 {
+		return nil
+	}
+
+	processTemplateIDs := make([]int64, len(processRelations))
+	processTemplateMap := make(map[int64][]int64)
+	for index, relation := range processRelations {
+		processTemplateIDs[index] = relation.ProcessTemplateID
+		processTemplateMap[relation.ProcessTemplateID] = append(processTemplateMap[relation.ProcessTemplateID], relation.ProcessID)
+	}
+
+	// get all processes whose templates has corresponding bind ip
+	processTemplates := make([]metadata.ProcessTemplate, 0)
+	processTemplateFilter := map[string]interface{}{
+		common.BKFieldID:                      map[string]interface{}{common.BKDBIN: processTemplateIDs},
+		"property.bind_info.as_default_value": true,
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
+		common.BKFieldID, "property.bind_info").All(kit.Ctx, &processTemplates)
+	if err != nil {
+		blog.Errorf("get process template failed, err: %v, processTemplateIDs: %+v, rid: %s", err, processTemplateIDs, kit.Rid)
+		return err
+	}
+
+	for _, processTemplate := range processTemplates {
+		data := make(map[string]interface{})
+
+		for index, value := range processTemplate.Property.BindInfo.Value {
+			if value.Std == nil {
+				continue
+			}
+
+			ip := value.Std.IP
+			if !metadata.IsAsDefaultValue(ip.AsDefaultValue) {
+				continue
+			}
+
+			if ip.Value != nil {
+				if innerIPExist && *ip.Value == metadata.BindInnerIP {
+					data[common.BKProcBindInfo+"."+strconv.Itoa(index)+"."+common.BKIP] = firstInnerIP
+				}
+
+				if outerIPExist && *ip.Value == metadata.BindOuterIP {
+					data[common.BKProcBindInfo+"."+strconv.Itoa(index)+"."+common.BKIP] = firstOuterIP
+				}
+			}
+		}
+
+		if len(data) != 0 {
+			if err := m.updateProcessBindIP(kit, data, processTemplateMap[processTemplate.ID]); err != nil {
+				blog.Errorf("update process bind ip failed, err: %v, rid: %s", err, kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func getFirstIP(ip interface{}) string {
+	switch t := ip.(type) {
+	case string:
+		index := strings.Index(t, ",")
+		if index == -1 {
+			return t
+		}
+
+		return t[:index]
+	case []string:
+		if len(t) == 0 {
+			return ""
+		}
+
+		return t[0]
+	case []interface{}:
+		if len(t) == 0 {
+			return ""
+		}
+
+		return util.GetStrByInterface(t[0])
+	}
+	return util.GetStrByInterface(ip)
+}
+
+// updateHostProcessBindIP update processes using changed ip
+func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]interface{}, processIDs []int64) error {
+	processFilter := map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: processIDs}}
+
+	if err := m.dbProxy.Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, data); err != nil {
+		blog.Errorf("update process failed, err: %v, processIDs: %+v, data: %+v, rid: %s", err, processIDs, data, kit.Rid)
+		return err
+	}
+
+	return nil
 }
 
 func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {

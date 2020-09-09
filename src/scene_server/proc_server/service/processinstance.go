@@ -255,9 +255,13 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 	// make sure all process valid
 	foundProcessIDs := make([]int64, 0)
 	serviceInstanceIDs := make([]int64, 0)
+	hostIDs := make([]int64, 0)
 	for _, relation := range relations.Info {
 		foundProcessIDs = append(foundProcessIDs, relation.ProcessID)
 		serviceInstanceIDs = append(serviceInstanceIDs, relation.ServiceInstanceID)
+		if relation.ProcessTemplateID != common.ServiceTemplateIDNotSet {
+			hostIDs = append(hostIDs, relation.HostID)
+		}
 	}
 	invalidProcessIDs := make([]string, 0)
 	for _, processID := range processIDs {
@@ -291,6 +295,11 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 	process2ServiceInstanceMap := make(map[int64]*metadata.ProcessInstanceRelation)
 	for i, _ := range relations.Info {
 		process2ServiceInstanceMap[relations.Info[i].ProcessID] = &relations.Info[i]
+	}
+
+	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	var processTemplate *metadata.ProcessTemplate
@@ -337,7 +346,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 				blog.Errorf("update process instance failed, process related template not found, relation: %+v, err: %v, rid: %s", relation, err, rid)
 				return nil, err
 			}
-			processData = processTemplate.ExtractInstanceUpdateData(&process)
+			processData = processTemplate.ExtractInstanceUpdateData(&process, hostMap[relation.HostID])
 			clearFields = processTemplate.GetEditableFields(clearFields)
 		}
 		// set field value as nil

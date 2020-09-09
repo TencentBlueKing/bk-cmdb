@@ -421,22 +421,53 @@ const (
 	BindLocalHost SocketBindType = "1"
 	BindAll       SocketBindType = "2"
 	BindInnerIP   SocketBindType = "3"
-	BindOtterIP   SocketBindType = "4"
+	BindOuterIP   SocketBindType = "4"
 )
 
-func (p *SocketBindType) IP() string {
-	// TODO: support BindInnerIP and BindOtterIP
+func (p *SocketBindType) NeedIPFromHost() bool {
+	if p == nil {
+		return false
+	}
+
+	switch *p {
+	case BindInnerIP, BindOuterIP:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *SocketBindType) IP(host map[string]interface{}) string {
 	if p == nil {
 		return ""
 	}
+
+	var ip string
+
 	switch *p {
 	case BindLocalHost:
 		return "127.0.0.1"
 	case BindAll:
 		return "0.0.0.0"
+	case BindInnerIP:
+		if host == nil {
+			return ""
+		}
+		ip = util.GetStrByInterface(host[common.BKHostInnerIPField])
+	case BindOuterIP:
+		if host == nil {
+			return ""
+		}
+		ip = util.GetStrByInterface(host[common.BKHostOuterIPField])
 	default:
 		return ""
 	}
+
+	index := strings.Index(strings.Trim(ip, ","), ",")
+	if index == -1 {
+		return ip
+	}
+	return ip[:index]
 }
 
 func (p *SocketBindType) String() string {
@@ -451,7 +482,7 @@ func (p *SocketBindType) String() string {
 		return "0.0.0.0"
 	case BindInnerIP:
 		return "第一内网IP"
-	case BindOtterIP:
+	case BindOuterIP:
 		return "第一外网IP"
 	default:
 		return ""
@@ -459,8 +490,7 @@ func (p *SocketBindType) String() string {
 }
 
 func (p SocketBindType) Validate() error {
-	// validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOtterIP}
-	validValues := []SocketBindType{BindLocalHost, BindAll}
+	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP}
 	if util.InArray(p, validValues) == false {
 		return fmt.Errorf("invalid socket bind type, value: %s, available values: %+v", p, validValues)
 	}
@@ -677,7 +707,7 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 	return false
 }
 
-func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Process {
+func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host map[string]interface{}) *Process {
 	now := time.Now()
 	processInstance := &Process{
 		LastTime:        now,
@@ -779,7 +809,7 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.StartParamRegex = property.StartParamRegex.Value
 	}
 
-	processInstance.BindInfo = property.BindInfo.NewProcBindInfo()
+	processInstance.BindInfo = property.BindInfo.NewProcBindInfo(host)
 
 	return processInstance
 }
@@ -829,7 +859,7 @@ func GetAllProcessPropertyFields() []string {
 }
 
 // ExtractChangeInfo get changes that will be applied to process instance
-func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, bool) {
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interface{}) (mapstr.MapStr, bool, bool) {
 	t := pt.Property
 	var changed, isNamePortChanged bool
 	if t == nil || i == nil {
@@ -1048,13 +1078,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 		}
 	}
 
-	bindInfo, bindInfoChanged, bindInfoIsNamePortChanged := t.BindInfo.ExtractChangeInfoBindInfo(i)
+	bindInfo, bindInfoChanged, bindInfoIsNamePortChanged := t.BindInfo.ExtractChangeInfoBindInfo(i, host)
 	process[common.BKProcBindInfo] = bindInfo
 	if bindInfoChanged {
 		changed = true
+
 	}
 	if bindInfoIsNamePortChanged {
 		bindInfoIsNamePortChanged = true
+
 	}
 
 	return process, changed, isNamePortChanged
@@ -1099,9 +1131,11 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == false {
 		editableFields = append(editableFields, "proc_num")
 	}
+
 	if IsAsDefaultValue(property.Description.AsDefaultValue) == false {
 		editableFields = append(editableFields, "description")
 	}
+
 	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == false {
 		editableFields = append(editableFields, "timeout")
 	}
@@ -1123,6 +1157,7 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == false {
 		editableFields = append(editableFields, "work_path")
 	}
+
 	if IsAsDefaultValue(property.Priority.AsDefaultValue) == false {
 		editableFields = append(editableFields, "priority")
 	}
@@ -1131,11 +1166,12 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	}
 	//
 	editableFields = append(editableFields, common.BKProcBindInfo)
+
 	return editableFields
 }
 
 // InstanceUpdate is used for update instance's value
-func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]interface{} {
+func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) map[string]interface{} {
 	data := make(map[string]interface{})
 	property := pt.Property
 	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == false {
@@ -1178,11 +1214,13 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["proc_num"] = *input.ProcNum
 		}
 	}
+
 	if IsAsDefaultValue(property.Description.AsDefaultValue) == false {
 		if input.Description != nil {
 			data["description"] = *input.Description
 		}
 	}
+
 	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == false {
 		if input.TimeoutSeconds != nil {
 			data["timeout"] = *input.TimeoutSeconds
@@ -1218,6 +1256,7 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["work_path"] = *input.WorkPath
 		}
 	}
+
 	if IsAsDefaultValue(property.Priority.AsDefaultValue) == false {
 		if input.Priority != nil {
 			data["priority"] = *input.Priority
@@ -1230,7 +1269,7 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 	}
 
 	// bind info 每次都是全量更新
-	data[common.BKProcBindInfo] = pt.Property.BindInfo.ExtractInstanceUpdateData(input)
+	data[common.BKProcBindInfo] = pt.Property.BindInfo.ExtractInstanceUpdateData(input, host)
 
 	return data
 }

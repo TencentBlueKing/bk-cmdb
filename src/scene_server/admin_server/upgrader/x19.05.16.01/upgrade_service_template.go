@@ -157,6 +157,8 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		biz2Module[module.BizID][module.ModuleName] = append(biz2Module[module.BizID][module.ModuleName], module)
 	}
 
+	hostMap := make(map[int64]map[string]interface{}, 0)
+
 	for bizID, bizModules := range biz2Module {
 		ownerID := common.BKDefaultOwnerID
 		for modulename, modules := range bizModules {
@@ -306,7 +308,22 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						inst.LastTime = time.Now()
 						if inst.BindIP != nil {
 							tplBindIP := metadata.SocketBindType(*inst.BindIP)
-							*inst.BindIP = tplBindIP.IP()
+
+							if tplBindIP == metadata.BindInnerIP || tplBindIP == metadata.BindOuterIP {
+								if hostMap[moduleHost.HostID] == nil {
+									host := metadata.HostMapStr{}
+									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}
+									if err = db.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
+										common.BKHostOuterIPField).One(ctx, &host); err != nil {
+										return err
+									}
+									hostMap[moduleHost.HostID] = host
+								}
+							}
+
+							bindIP := tplBindIP.IP(hostMap[moduleHost.HostID])
+
+							*inst.BindIP = bindIP
 						} else {
 							inst.BindIP = new(string)
 						}

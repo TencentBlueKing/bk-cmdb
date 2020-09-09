@@ -126,8 +126,38 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 			blog.Errorf("CreateServiceInstance failed, get process templates failed, listProcessTemplateOption: %+v, err: %+v, rid: %s", listProcessTemplateOption, ccErr, kit.Rid)
 			return nil, ccErr
 		}
+
+		// get host data for bind IP if needed
+		host := metadata.HostMapStr{}
+		filter := map[string]interface{}{common.BKHostIDField: instance.HostID}
+
 		for _, processTemplate := range listProcTplResult.Info {
-			processData := processTemplate.NewProcess(module.BizID, kit.SupplierAccount)
+			if !metadata.IsAsDefaultValue(processTemplate.Property.BindInfo.AsDefaultValue) {
+				continue
+			}
+
+			needIP := false
+			for _, value := range processTemplate.Property.BindInfo.Value {
+				if metadata.IsAsDefaultValue(value.Std.IP.AsDefaultValue) && value.Std.IP.Value.NeedIPFromHost() {
+					needIP = true
+					break
+				}
+
+			}
+
+			if !needIP {
+				continue
+			}
+
+			if err = p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
+				common.BKHostOuterIPField).One(kit.Ctx, &host); err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			break
+		}
+
+		for _, processTemplate := range listProcTplResult.Info {
+			processData := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
 			process, ccErr := p.dependence.CreateProcessInstance(kit, processData)
 			if ccErr != nil {
 				blog.Errorf("CreateServiceInstance failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, kit.Rid)
