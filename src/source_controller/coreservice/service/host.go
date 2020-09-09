@@ -21,9 +21,10 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 
-	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/redis.v5"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
@@ -155,9 +156,9 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	result := make(metadata.HostMapStr, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
 	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
-	err = s.db.Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
+	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
 	// TODO: return error for not found and deal error with all callers
-	if err != nil && !s.db.IsNotFoundError(err) {
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
@@ -196,7 +197,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
 	result := make([]metadata.HostMapStr, 0)
-	dbInst := s.db.Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
+	dbInst := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
 	if 0 < len(fieldArr) {
 		dbInst.Fields(fieldArr...)
 	}
@@ -206,7 +207,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
@@ -226,7 +227,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	hostID := ctx.Request.PathParameter(common.BKHostIDField)
 	key := common.RedisSnapKeyPrefix + hostID
-	result, err := s.rds.Get(key).Result()
+	result, err := redis.Client().Get(key).Result()
 	if nil != err && err != redis.Nil {
 		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
@@ -255,7 +256,7 @@ func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
 		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
 	}
 
-	res, err := s.rds.MGet(keys...).Result()
+	res, err := redis.Client().MGet(keys...).Result()
 	if err != nil {
 		if err == redis.Nil {
 			ctx.RespEntity(map[int64]string{})

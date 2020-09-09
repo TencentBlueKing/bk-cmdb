@@ -54,7 +54,11 @@
                     return (this.value || []).map(row => {
                         const rowValue = {}
                         Object.keys(row).forEach(key => {
-                            rowValue[key] = row[key].value
+                            if (key === 'row_id') {
+                                rowValue[key] = row[key]
+                            } else {
+                                rowValue[key] = row[key].value
+                            }
                         })
                         return rowValue
                     })
@@ -137,9 +141,13 @@
                     // 获取新value中每行对应的老数据的index，用于正确的获取checkbox勾选状态
                     const index = isAddOrDelete ? this.localValue.indexOf(row) : rowIndex
                     Object.keys(row).forEach(key => {
-                        templateRowValue[key] = {
-                            value: row[key],
-                            as_default_value: !!(this.lockStates[index] || {})[key]
+                        if (key === 'row_id') {
+                            templateRowValue[key] = row[key]
+                        } else {
+                            templateRowValue[key] = {
+                                value: row[key],
+                                as_default_value: !!(this.lockStates[index] || {})[key]
+                            }
                         }
                     })
                     return templateRowValue

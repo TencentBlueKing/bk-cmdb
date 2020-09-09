@@ -19,24 +19,22 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type association struct {
 	base     *synchronizeAdapter
 	dataType metadata.SynchronizeOperateDataType
 	// instance data classify
-	dbProxy      dal.RDB
 	DataClassify string
 }
 
-func NewSynchronizeAssociationAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
+func NewSynchronizeAssociationAdapter(s *metadata.SynchronizeParameter) dataTypeInterface {
 
 	return &association{
-		base:         newSynchronizeAdapter(s, dbProxy),
+		base:         newSynchronizeAdapter(s),
 		dataType:     s.OperateDataType,
 		DataClassify: s.DataClassify,
-		dbProxy:      dbProxy,
 	}
 }
 
@@ -94,7 +92,7 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(kit *rest.Kit) 
 		newItem := item.Info.Clone()
 
 		newItem.Remove(common.MetadataField)
-		cnt, err := a.dbProxy.Table(tableName).Find(newItem).Count(kit.Ctx)
+		cnt, err := mongodb.Client().Table(tableName).Find(newItem).Count(kit.Ctx)
 		if err != nil {
 			blog.Errorf("saveSynchronizeAssociationModuleHostConfig query db error,err:%s.DataSign:%s,condition:%#v,rid:%s", err.Error(), a.DataClassify, newItem, kit.Rid)
 			a.base.errorArray[item.ID] = synchronizeAdapterError{
@@ -104,7 +102,7 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(kit *rest.Kit) 
 			continue
 		}
 		if cnt == 0 {
-			err := a.dbProxy.Table(tableName).Insert(kit.Ctx, item.Info)
+			err := mongodb.Client().Table(tableName).Insert(kit.Ctx, item.Info)
 			if err != nil {
 				blog.Errorf("saveSynchronizeAssociationModuleHostConfig save data to db error,err:%s.DataSign:%s,info:%#v,rid:%s", err.Error(), a.DataClassify, item, kit.Rid)
 				a.base.errorArray[item.ID] = synchronizeAdapterError{
@@ -114,7 +112,7 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(kit *rest.Kit) 
 				continue
 			}
 		} else {
-			err := a.dbProxy.Table(tableName).Update(kit.Ctx, newItem, item.Info)
+			err := mongodb.Client().Table(tableName).Update(kit.Ctx, newItem, item.Info)
 			if err != nil {
 				blog.Errorf("saveSynchronizeAssociationModuleHostConfig update data to db error,err:%s.DataSign:%s,info:%#v,rid:%s", err.Error(), a.DataClassify, item, kit.Rid)
 				a.base.errorArray[item.ID] = synchronizeAdapterError{

@@ -26,9 +26,8 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 )
 
 var _ core.ModelOperation = (*modelManager)(nil)
@@ -38,27 +37,25 @@ type modelManager struct {
 	*modelAttribute
 	*modelClassification
 	*modelAttrUnique
-	dbProxy   dal.RDB
-	cache     *redis.Client
 	language  language.CCLanguageIf
 	dependent OperationDependences
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, dependent OperationDependences, language language.CCLanguageIf, cache *redis.Client) core.ModelOperation {
+func New(dependent OperationDependences, language language.CCLanguageIf) core.ModelOperation {
 
-	coreMgr := &modelManager{dbProxy: dbProxy, dependent: dependent, language: language, cache: cache}
-	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr, language: language, cache: cache}
-	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
-	coreMgr.modelAttributeGroup = &modelAttributeGroup{dbProxy: dbProxy, model: coreMgr}
-	coreMgr.modelAttrUnique = &modelAttrUnique{dbProxy: dbProxy}
+	coreMgr := &modelManager{dependent: dependent, language: language}
+	coreMgr.modelAttribute = &modelAttribute{model: coreMgr, language: language}
+	coreMgr.modelClassification = &modelClassification{model: coreMgr}
+	coreMgr.modelAttributeGroup = &modelAttributeGroup{model: coreMgr}
+	coreMgr.modelAttrUnique = &modelAttrUnique{}
 
 	return coreMgr
 }
 
 func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
-	locker := lock.NewLocker(m.cache)
+	locker := lock.NewLocker(redis.Client())
 	// fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
 	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
 
@@ -119,7 +116,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		common.BKObjNameField: inputParam.Spec.ObjectName,
 	}
 
-	sameNameCount, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
+	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), kit.Rid)
 		return dataResult, err

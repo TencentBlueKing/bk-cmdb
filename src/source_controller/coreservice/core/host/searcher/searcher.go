@@ -22,21 +22,15 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/cache"
-	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type Searcher struct {
-	DbProxy  dal.RDB
-	Cache    *redis.Client
 	CacheSet *cache.ClientSet
 }
 
-func New(db dal.RDB, cache *redis.Client, CacheSet *cache.ClientSet) Searcher {
+func New(CacheSet *cache.ClientSet) Searcher {
 	return Searcher{
-		DbProxy:  db,
-		Cache:    cache,
 		CacheSet: CacheSet,
 	}
 }
@@ -69,7 +63,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	hostIDFilter := map[string]interface{}{}
 	if len(relationFilter) > 0 {
 
-		hostIDs, err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(ctx, common.BKHostIDField, relationFilter)
+		hostIDs, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(ctx, common.BKHostIDField, relationFilter)
 		if err != nil {
 			blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", relationFilter, err, rid)
 			return nil, err
@@ -131,7 +125,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		}
 	}
 
-	total, err := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Count(ctx)
+	total, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Count(ctx)
 	if err != nil {
 		blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
 		return nil, err
@@ -141,7 +135,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
-	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start).Fields(option.Fields...)
+	query := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start).Fields(option.Fields...)
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	} else {

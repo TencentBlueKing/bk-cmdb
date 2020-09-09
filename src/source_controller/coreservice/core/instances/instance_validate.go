@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var updateIgnoreKeys = []string{
@@ -198,7 +198,7 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 		common.BKServiceCategoryIDField: svcCategoryID,
 		common.BKAppIDField:             bizID,
 	}
-	if err := m.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).One(kit.Ctx, &tpl); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).One(kit.Ctx, &tpl); err != nil {
 		return valid.errIf.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 	instanceData[common.BKModuleNameField] = tpl.Name
@@ -207,13 +207,13 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 }
 
 // getHostRelatedBizID 根据主机ID获取所属业务ID
-func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int64, ccErr errors.CCErrorCoder) {
+func getHostRelatedBizID(kit *rest.Kit, hostID int64) (bizID int64, ccErr errors.CCErrorCoder) {
 	rid := kit.Rid
 	filter := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
 	hostConfig := make([]metadata.ModuleHost, 0)
-	if err := dbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
 		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -246,7 +246,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 		}
 	} else {
-		bizID, err = getHostRelatedBizID(kit, m.dbProxy, int64(instID))
+		bizID, err = getHostRelatedBizID(kit, int64(instID))
 		if err != nil {
 			blog.ErrorJSON("validUpdateInstanceData failed, getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
@@ -308,7 +308,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
 	mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
 	mainlineAsst := make([]*metadata.Association, 0)
-	if err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
 		blog.ErrorJSON("search mainline asst failed, err: %s, cond: %s, rid: %s", err.Error(), mainlineCond, kit.Rid)
 		return err
 	}

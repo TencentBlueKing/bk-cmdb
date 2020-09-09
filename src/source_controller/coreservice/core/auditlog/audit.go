@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -31,14 +31,11 @@ import (
 var _ core.AuditOperation = (*auditManager)(nil)
 
 type auditManager struct {
-	dbProxy dal.RDB
 }
 
 // New create a new instance manager instance
-func New(dbProxy dal.RDB) core.AuditOperation {
-	return &auditManager{
-		dbProxy: dbProxy,
-	}
+func New() core.AuditOperation {
+	return &auditManager{}
 }
 
 func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
@@ -58,7 +55,7 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 	if len(logRows) == 0 {
 		return nil
 	}
-	return m.dbProxy.Table(common.BKTableNameAuditLog).Insert(kit.Ctx, logRows)
+	return mongodb.Client().Table(common.BKTableNameAuditLog).Insert(kit.Ctx, logRows)
 }
 
 func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.AuditLog, uint64, error) {
@@ -71,12 +68,12 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) 
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.AuditLog, 0)
 	blog.V(5).Infof("Search table common.BKTableNameAuditLog with parameters: %+v, rid: %s", condition, kit.Rid)
-	err := m.dbProxy.Table(common.BKTableNameAuditLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(kit.Ctx, &rows)
+	err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(kit.Ctx, &rows)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, err
 	}
-	cnt, err := m.dbProxy.Table(common.BKTableNameAuditLog).Find(condition).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(condition).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, err
@@ -110,7 +107,7 @@ func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 	if basicContent == nil || basicContent.Details == nil || basicContent.Details.PreData == nil || basicContent.Details.CurData == nil {
 		return false
 	}
-	
+
 	preData := basicContent.Details.PreData
 	curData := basicContent.Details.CurData
 	bl := cmp.Equal(preData, curData, getIgnoreOptions(modelID))

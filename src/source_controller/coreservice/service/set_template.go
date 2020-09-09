@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) CreateSetTemplate(ctx *rest.Contexts) {
@@ -164,8 +165,8 @@ func (s *coreService) CountSetTplInstances(ctx *rest.Contexts) {
 		},
 	}
 	result := make([]metadata.CountSetTplInstItem, 0)
-	if err := s.db.Table(common.BKTableNameBaseSet).AggregateAll(ctx.Kit.Ctx, pipeline, &result); err != nil {
-		if s.db.IsNotFoundError(err) == true {
+	if err := mongodb.Client().Table(common.BKTableNameBaseSet).AggregateAll(ctx.Kit.Ctx, pipeline, &result); err != nil {
+		if mongodb.Client().IsNotFoundError(err) == true {
 			result = make([]metadata.CountSetTplInstItem, 0)
 		} else {
 			blog.Errorf("CountSetTplInstances failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)

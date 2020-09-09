@@ -22,9 +22,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
+
 	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
@@ -33,7 +34,6 @@ type customLevel struct {
 	key   customKeyGen
 	rds   *redis.Client
 	event reflector.Interface
-	db    dal.DB
 	lock  tools.RefreshingLock
 	// key is object id
 	customWatch map[string]context.CancelFunc
@@ -368,7 +368,7 @@ func (m *customLevel) getMainlineTopology() ([]MainlineTopoAssociation, error) {
 	filter := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
-	err := m.db.Table(common.BKTableNameObjAsst).Find(filter).All(context.Background(), &relations)
+	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(filter).All(context.Background(), &relations)
 	if err != nil {
 		blog.Errorf("get mainline topology association failed, err: %v", err)
 		return nil, err
@@ -404,7 +404,7 @@ func (m *customLevel) getCustomObjInstName(instID int64) (name string, err error
 	filter := mapstr.MapStr{
 		common.BKInstIDField: instID,
 	}
-	err = m.db.Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), instance)
+	err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), instance)
 	if err != nil {
 		blog.Errorf("find mainline custom level with instance: %d, failed, err: %v", instID, err)
 		return "", err

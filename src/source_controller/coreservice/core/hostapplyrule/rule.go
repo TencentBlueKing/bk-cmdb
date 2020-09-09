@@ -26,11 +26,10 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type hostApplyRule struct {
-	dbProxy    dal.RDB
 	dependence HostApplyDependence
 }
 
@@ -38,9 +37,8 @@ type HostApplyDependence interface {
 	UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 }
 
-func New(dbProxy dal.RDB, dependence HostApplyDependence) core.HostApplyRuleOperation {
+func New(dependence HostApplyDependence) core.HostApplyRuleOperation {
 	rule := &hostApplyRule{
-		dbProxy:    dbProxy,
 		dependence: dependence,
 	}
 	return rule
@@ -51,7 +49,7 @@ func (p *hostApplyRule) validateModuleID(kit *rest.Kit, bizID int64, moduleID in
 		common.BKAppIDField:    bizID,
 		common.BKModuleIDField: moduleID,
 	}
-	count, err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("ValidateModuleID failed, validate module id failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -87,9 +85,9 @@ func (p *hostApplyRule) listHostAttributes(kit *rest.Kit, bizID int64, hostAttri
 		},
 	}
 	attributes := make([]metadata.Attribute, 0)
-	err := p.dbProxy.Table(common.BKTableNameObjAttDes).Find(filter).All(kit.Ctx, &attributes)
+	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).All(kit.Ctx, &attributes)
 	if err != nil {
-		if p.dbProxy.IsNotFoundError(err) {
+		if mongodb.Client().IsNotFoundError(err) {
 			blog.Errorf("get host attribute failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 			return attributes, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
@@ -157,15 +155,15 @@ func (p *hostApplyRule) CreateHostApplyRule(kit *rest.Kit, bizID int64, option m
 	}
 
 	// generate id field
-	id, err := p.dbProxy.NextSequence(kit.Ctx, common.BKTableNameHostApplyRule)
+	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameHostApplyRule)
 	if nil != err {
 		blog.Errorf("CreateHostApplyRule failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
 		return rule, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	rule.ID = int64(id)
 
-	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx, rule); err != nil {
-		if p.dbProxy.IsDuplicatedError(err) {
+	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx, rule); err != nil {
+		if mongodb.Client().IsDuplicatedError(err) {
 			blog.Errorf("CreateHostApplyRule failed, duplicated error, doc: %+v, err: %+v, rid: %s", rule, err, kit.Rid)
 			return rule, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKAttributeIDField)
 		}
@@ -205,7 +203,7 @@ func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID i
 	filter := map[string]interface{}{
 		common.BKFieldID: ruleID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Update(kit.Ctx, filter, rule); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Update(kit.Ctx, filter, rule); err != nil {
 		blog.ErrorJSON("UpdateHostApplyRule failed, db update failed, filter: %s, doc: %s, err: %s, rid: %s", filter, rule, err, kit.Rid)
 		return rule, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
@@ -227,7 +225,7 @@ func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64, ruleIDs 
 	if bizID != 0 {
 		filter[common.BKAppIDField] = bizID
 	}
-	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Delete(kit.Ctx, filter); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Delete(kit.Ctx, filter); err != nil {
 		blog.Errorf("DeleteHostApplyRule failed, db remove failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
@@ -242,8 +240,8 @@ func (p *hostApplyRule) GetHostApplyRule(kit *rest.Kit, bizID int64, ruleID int6
 		common.BKAppIDField:      bizID,
 		common.BKFieldID:         ruleID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(filter).One(kit.Ctx, &rule); err != nil {
-		if p.dbProxy.IsNotFoundError(err) {
+	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).One(kit.Ctx, &rule); err != nil {
+		if mongodb.Client().IsNotFoundError(err) {
 			blog.Errorf("GetHostApplyRule failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 			return rule, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
@@ -261,8 +259,8 @@ func (p *hostApplyRule) GetHostApplyRuleByAttributeID(kit *rest.Kit, bizID, modu
 		common.BKModuleIDField:    moduleID,
 		common.BKAttributeIDField: attributeID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(filter).One(kit.Ctx, &rule); err != nil {
-		if p.dbProxy.IsNotFoundError(err) {
+	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).One(kit.Ctx, &rule); err != nil {
+		if mongodb.Client().IsNotFoundError(err) {
 			blog.Errorf("GetHostApplyRuleByAttributeID failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 			return rule, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
@@ -295,7 +293,7 @@ func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64, option met
 			common.BKDBIN: option.AttributeIDs,
 		}
 	}
-	query := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(filter)
+	query := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter)
 	total, err := query.Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("ListHostApplyRule failed, db count failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
@@ -339,7 +337,7 @@ func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64, opt
 		common.BkSupplierAccount: kit.SupplierAccount,
 	}
 	modules := make([]metadata.Module, 0)
-	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
 		blog.ErrorJSON("SearchRuleRelatedModules failed, find modules failed, filter: %s, err: %s, rid: %s", moduleFilter, err.Error(), rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -354,7 +352,7 @@ func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64, opt
 		common.BkSupplierAccount: kit.SupplierAccount,
 	}
 	rules := make([]metadata.HostApplyRule, 0)
-	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(ruleFilter).All(kit.Ctx, &rules); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).All(kit.Ctx, &rules); err != nil {
 		blog.ErrorJSON("SearchRuleRelatedModules failed, find rules failed, filter: %s, err: %s, rid: %s", ruleFilter, err.Error(), rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -370,7 +368,7 @@ func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64, opt
 		},
 	}
 	attributes := make([]metadata.Attribute, 0)
-	if err := p.dbProxy.Table(common.BKTableNameObjAttDes).Find(attributeFilter).All(kit.Ctx, &attributes); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attributeFilter).All(kit.Ctx, &attributes); err != nil {
 		blog.ErrorJSON("SearchRuleRelatedModules failed, find attributes failed, filter: %s, err: %s, rid: %s", attributeFilter, err.Error(), rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -477,7 +475,7 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			common.BKAttributeIDField: item.AttributeID,
 			common.BKModuleIDField:    item.ModuleID,
 		}
-		count, err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(ruleFilter).Count(kit.Ctx)
+		count, err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).Count(kit.Ctx)
 		if err != nil {
 			blog.ErrorJSON("BatchUpdateHostApplyRule failed, find rule failed, filter: %s, err: %s, rid: %s", ruleFilter, err.Error(), rid)
 			ccErr := kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -513,7 +511,7 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 				common.LastTimeField:        now,
 				common.ModifierField:        kit.User,
 			}
-			if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Update(kit.Ctx, ruleFilter, updateData); err != nil {
+			if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Update(kit.Ctx, ruleFilter, updateData); err != nil {
 				blog.ErrorJSON("BatchUpdateHostApplyRule failed, update rule failed, filter: %s, doc: %s, err: %s, rid: %s", ruleFilter, updateData, err.Error(), rid)
 				ccErr := kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 				itemResult.SetError(ccErr)
@@ -523,7 +521,7 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 		}
 
 		// create new rule
-		newRuleID, err := p.dbProxy.NextSequence(kit.Ctx, common.BKTableNameHostApplyRule)
+		newRuleID, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameHostApplyRule)
 		if err != nil {
 			blog.ErrorJSON("BatchUpdateHostApplyRule failed, generate id field failed, err: %s, rid: %s", err.Error(), rid)
 			ccErr := kit.CCError.CCError(common.CCErrCommGenerateRecordIDFailed)
@@ -543,7 +541,7 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			LastTime:        now,
 			SupplierAccount: kit.SupplierAccount,
 		}
-		if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx, rule); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx, rule); err != nil {
 			blog.ErrorJSON("BatchUpdateHostApplyRule failed, insert rule failed, doc: %s, err: %s, rid: %s", rule, err.Error(), rid)
 			ccErr := kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 			itemResult.SetError(ccErr)

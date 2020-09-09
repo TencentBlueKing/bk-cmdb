@@ -26,15 +26,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
-
-	redis "gopkg.in/redis.v5"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 )
 
 type modelAttribute struct {
 	model    *modelManager
-	dbProxy  dal.RDB
-	cache    *redis.Client
 	language language.CCLanguageIf
 }
 
@@ -66,7 +63,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		// fmt.Sprintf("coreservice:create:model:%s:attr:%s", objID, attr.PropertyID)
 		redisKey := lock.GetLockKey(lock.CreateModuleAttrFormat, objID, attr.PropertyID)
 
-		locker := lock.NewLocker(m.cache)
+		locker := lock.NewLocker(redis.Client())
 		looked, err := locker.Lock(redisKey, time.Second*35)
 		defer locker.Unlock()
 		if err != nil {
@@ -208,7 +205,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 	// attributes exist check
 	cond := inputParam.Condition
 	cond = util.SetModOwner(cond, kit.SupplierAccount)
-	exists, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
+	exists, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, condition: %v, err: %s", kit.Rid, inputParam.Condition, err.Error())
 		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -229,7 +226,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 	condition[common.BKObjIDField] = objID
 	condition[common.BKPropertyGroupField] = inputParam.Data[common.BKPropertyGroupField]
 	condition[common.BKPropertyIndexField] = inputParam.Data[common.BKPropertyIndexField]
-	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condition).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condition).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
 		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -239,7 +236,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 			common.BKPropertyIndexField: inputParam.Data[common.BKPropertyIndexField],
 			common.BKPropertyGroupField: inputParam.Data[common.BKPropertyGroupField],
 		}
-		err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond, data)
+		err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond, data)
 		if nil != err {
 			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
 			return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -258,7 +255,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 	condition[common.BKPropertyIndexField] = mapstr.MapStr{"$gte": inputParam.Data[common.BKPropertyIndexField]}
 	condition["id"] = mapstr.MapStr{"$ne": inputParam.Condition["id"]}
 	resultAttrs := []metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condition).All(kit.Ctx, &resultAttrs)
+	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condition).All(kit.Ctx, &resultAttrs)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
 		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -268,7 +265,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 		opt := mapstr.MapStr{}
 		opt["id"] = attr.ID
 		data := mapstr.MapStr{common.BKPropertyIndexField: attr.PropertyIndex + 1}
-		err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(kit.Ctx, opt, data)
+		err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, opt, data)
 		if nil != err {
 			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
 			return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -280,7 +277,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 		common.BKPropertyIndexField: inputParam.Data[common.BKPropertyIndexField],
 		common.BKPropertyGroupField: inputParam.Data[common.BKPropertyGroupField],
 	}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond, data)
+	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond, data)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
 		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)

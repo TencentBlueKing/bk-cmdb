@@ -52,11 +52,13 @@
         },
         methods: {
             ipText (value) {
-                if (['1', '2'].includes(value)) {
-                    const ip = ['127.0.0.1', '0.0.0.0']
-                    return ip[value - 1]
+                const map = {
+                    '1': '127.0.0.1',
+                    '2': '0.0.0.0',
+                    '3': this.$t('第一内网IP'),
+                    '4': this.$t('第一外网IP')
                 }
-                return value || '--'
+                return map[value] || value || '--'
             },
             setPopoverList () {
                 this.$nextTick(() => {

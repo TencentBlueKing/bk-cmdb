@@ -21,12 +21,10 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 )
 
 type modelClassification struct {
-	model   *modelManager
-	dbProxy dal.RDB
+	model *modelManager
 }
 
 func (m *modelClassification) CreateOneModelClassification(kit *rest.Kit, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {

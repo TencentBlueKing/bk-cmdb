@@ -19,11 +19,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 )
 
 type associationModel struct {
-	dbProxy dal.RDB
 }
 
 func (m *associationModel) CreateModelAssociation(kit *rest.Kit, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {

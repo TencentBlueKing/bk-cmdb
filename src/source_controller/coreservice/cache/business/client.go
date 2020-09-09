@@ -23,15 +23,15 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
+
 	"gopkg.in/redis.v5"
 )
 
 type Client struct {
 	rds   *redis.Client
 	event reflector.Interface
-	db    dal.DB
 	lock  tools.RefreshingLock
 }
 
@@ -53,7 +53,7 @@ func (c *Client) GetBizBaseList() ([]BizBaseInfo, error) {
 	blog.Errorf("get biz base list from cache failed, will get from mongodb, err: %v", err)
 	// get from db directly.
 	list := make([]BizBaseInfo, 0)
-	err = c.db.Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField, common.BKAppNameField).All(context.Background(), &list)
+	err = mongodb.Client().Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField, common.BKAppNameField).All(context.Background(), &list)
 	if err != nil {
 		blog.Errorf("sync biz list to refresh cache, but get biz list from mongodb failed, err: %v", err)
 		return nil, err
@@ -291,7 +291,7 @@ func (c *Client) GetModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 		common.BKAppIDField: bizID,
 	}
 
-	err = c.db.Table(common.BKTableNameBaseModule).Find(filter).All(context.Background(), &list)
+	err = mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).All(context.Background(), &list)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +381,7 @@ func (c *Client) GetSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 		common.BKAppIDField: bizID,
 	}
 
-	err = c.db.Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &list)
+	err = mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &list)
 	if err != nil {
 		return nil, err
 	}

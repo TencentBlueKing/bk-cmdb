@@ -19,8 +19,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
+
 	"gopkg.in/redis.v5"
 )
 
@@ -28,7 +28,7 @@ var client *Client
 var clientOnce sync.Once
 var cache *cacheCollection
 
-func NewClient(rds *redis.Client, db dal.DB) *Client {
+func NewClient(rds *redis.Client) *Client {
 
 	if client != nil {
 		return client
@@ -36,9 +36,8 @@ func NewClient(rds *redis.Client, db dal.DB) *Client {
 
 	clientOnce.Do(func() {
 		client = &Client{
-			rds:  rds,
-			db:   db,
 			lock: tools.NewRefreshingLock(),
+			rds:  rds,
 		}
 	})
 
@@ -46,7 +45,7 @@ func NewClient(rds *redis.Client, db dal.DB) *Client {
 }
 
 // Attention, it can only be called for once.
-func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
+func NewCache(event reflector.Interface, rds *redis.Client) error {
 
 	if cache != nil {
 		return nil
@@ -55,9 +54,8 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 	// cache has not been initialized.
 	biz := &business{
 		key:   bizKey,
-		rds:   rds,
 		event: event,
-		db:    db,
+		rds:   rds,
 	}
 
 	if err := biz.Run(); err != nil {
@@ -67,10 +65,9 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 	module := &moduleSet{
 		key:        moduleKey,
 		collection: common.BKTableNameBaseModule,
-		rds:        rds,
 		event:      event,
-		db:         db,
 		lock:       tools.NewRefreshingLock(),
+		rds:        rds,
 	}
 	if err := module.Run(); err != nil {
 		return fmt.Errorf("run module cache failed, err: %v", err)
@@ -79,10 +76,9 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 	set := &moduleSet{
 		key:        setKey,
 		collection: common.BKTableNameBaseSet,
-		rds:        rds,
 		event:      event,
-		db:         db,
 		lock:       tools.NewRefreshingLock(),
+		rds:        rds,
 	}
 	if err := set.Run(); err != nil {
 		return fmt.Errorf("run set cache failed, err: %v", err)
@@ -90,11 +86,10 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 
 	custom := &customLevel{
 		key:         customKey,
-		rds:         rds,
 		event:       event,
-		db:          db,
 		lock:        tools.NewRefreshingLock(),
 		customWatch: make(map[string]context.CancelFunc),
+		rds:         rds,
 	}
 	if err := custom.Run(); err != nil {
 		return fmt.Errorf("run biz custom level cache failed, err: %v", err)

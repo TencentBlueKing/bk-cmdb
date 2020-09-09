@@ -97,7 +97,7 @@
                 if (this.mode === 'create') {
                     return this.options.filter(property => !property.bk_isapi)
                 }
-                return this.options
+                return this.options.filter(property => property.editable)
             },
             localValue: {
                 get () {

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
@@ -64,20 +65,20 @@ func (m *operationManager) ModelInst(kit *rest.Kit, wg *sync.WaitGroup) error {
 	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
 	modelInstNumber := make([]metadata.StringIDCount, 0)
 	modelInfo := make([]metadata.Object, 0)
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelInfo); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelInfo); err != nil {
 		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
 
 	condition := mapstr.MapStr{}
-	count, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(condition).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(condition).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
 	if count > 0 {
 		pipeline := []M{{common.BKDBGroup: M{"_id": "$bk_obj_id", "count": M{common.BKDBSum: 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &modelInstCount); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &modelInstCount); err != nil {
 			blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, kit.Rid)
 			return err
 		}
@@ -116,7 +117,7 @@ func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) er
 	cond := mapstr.MapStr{}
 	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
 	modelData := make([]metadata.Object, 0)
-	if err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelData); nil != err {
+	if err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelData); nil != err {
 		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond, err.Error())
 		return err
 	}
@@ -182,14 +183,14 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 	condition[common.OperationReportType] = common.HostChangeBizChart
 	condition[common.CreateTimeField] = nowStrFormat
 	bizHostChange := make([]metadata.HostChangeChartData, 0)
-	if err = m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(kit.Ctx, &bizHostChange); err != nil {
+	if err = mongodb.Client().Table(common.BKTableNameChartData).Find(condition).All(kit.Ctx, &bizHostChange); err != nil {
 		blog.Errorf("get host change data fail, err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
 
 	if len(bizHostChange) > 0 {
 		bizHostChange[0].Data = bizHost
-		if err = m.dbProxy.Table(common.BKTableNameChartData).Update(kit.Ctx, condition, bizHostChange[0]); err != nil {
+		if err = mongodb.Client().Table(common.BKTableNameChartData).Update(kit.Ctx, condition, bizHostChange[0]); err != nil {
 			blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, kit.Rid)
 			return err
 		}
@@ -201,7 +202,7 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 		OwnerID:    kit.SupplierAccount,
 		CreateTime: nowStrFormat,
 	}
-	if err = m.dbProxy.Table(common.BKTableNameChartData).Insert(kit.Ctx, firstBizHostChange); err != nil {
+	if err = mongodb.Client().Table(common.BKTableNameChartData).Insert(kit.Ctx, firstBizHostChange); err != nil {
 		blog.Errorf("update biz host change fail, err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
@@ -214,20 +215,20 @@ func (m *operationManager) SearchBizHost(kit *rest.Kit) ([]metadata.StringIDCoun
 
 	opt := mapstr.MapStr{"bk_data_status": M{common.BKDBNE: "disabled"}, common.BKAppIDField: M{common.BKDBNE: 1}}
 	bizInfo := make([]metadata.BizInst, 0)
-	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(kit.Ctx, &bizInfo); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(opt).All(kit.Ctx, &bizInfo); err != nil {
 		blog.Errorf("SearchBizHost, get biz info fail, err: %v, rid: %v ", err, kit.Rid)
 		return nil, err
 	}
 
 	cond := mapstr.MapStr{}
-	count, err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("SearchBizHost aggregate: biz' host count fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
 	if count > 0 {
 		pipeline := []M{{common.BKDBGroup: M{"_id": "$bk_biz_id", "count": M{common.BKDBAddToSet: "$bk_host_id"}}}}
-		if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(kit.Ctx, pipeline, &bizHostCount); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).AggregateAll(kit.Ctx, pipeline, &bizHostCount); err != nil {
 			blog.Errorf("SearchBizHost aggregate: biz' host count fail, err: %v, rid: %v", err, kit.Rid)
 			return nil, err
 		}
@@ -257,12 +258,12 @@ func (m *operationManager) HostCloudChartData(kit *rest.Kit, inputParam metadata
 	respData := make([]metadata.StringIDCount, 0)
 	opt := mapstr.MapStr{}
 	cloudMapping := make([]metadata.CloudMapping, 0)
-	if err := m.dbProxy.Table(common.BKTableNameBasePlat).Find(opt).All(kit.Ctx, &cloudMapping); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(opt).All(kit.Ctx, &cloudMapping); err != nil {
 		blog.Errorf("hostCloudChartData, search cloud mapping fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
 	pipeline := []M{{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
-	if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
 		blog.Errorf("hostCloudChartData, aggregate: model's instance count fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
@@ -292,7 +293,7 @@ func (m *operationManager) HostBizChartData(kit *rest.Kit, inputParam metadata.C
 
 	opt := mapstr.MapStr{"bk_data_status": M{common.BKDBNE: "disabled"}, common.BKAppIDField: M{common.BKDBNE: 1}}
 	bizInfo := make([]metadata.BizInst, 0)
-	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(kit.Ctx, &bizInfo); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(opt).All(kit.Ctx, &bizInfo); err != nil {
 		blog.Errorf("HostBizChartData, get biz info fail, err: %v, rid: %v ", err, kit.Rid)
 		return nil, err
 	}
@@ -309,12 +310,12 @@ func (m *operationManager) UpdateInnerChartData(kit *rest.Kit, reportType string
 	}
 	// 此处不用update，因为第一次初始数据的时候会导致数据写不进去
 	cond := M{common.OperationReportType: reportType}
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Delete(kit.Ctx, cond); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartData).Delete(kit.Ctx, cond); err != nil {
 		blog.Errorf("update chart %v data fail, err: %v, rid: %v", reportType, err, kit.Rid)
 		return err
 	}
 
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(kit.Ctx, chartData); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartData).Insert(kit.Ctx, chartData); err != nil {
 		blog.Errorf("update chart %v data fail, err: %v, rid: %v", reportType, err, kit.Rid)
 		return err
 	}
@@ -345,7 +346,7 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 		},
 	}
 	createInstCount := make([]metadata.StringIDCount, 0)
-	if err := m.dbProxy.Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, createPipe, &createInstCount); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, createPipe, &createInstCount); err != nil {
 		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, kit.Rid)
 		return nil, err
 	}
@@ -371,7 +372,7 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 			},
 		},
 	}
-	if err := m.dbProxy.Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, deletePipe, &deleteInstCount); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, deletePipe, &deleteInstCount); err != nil {
 		blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
@@ -400,7 +401,7 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 			},
 		},
 	}
-	if err := m.dbProxy.Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, updatePipe, &updateInstCount); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, updatePipe, &updateInstCount); err != nil {
 		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
@@ -419,7 +420,7 @@ func (m *operationManager) clearDataOverDate(kit *rest.Kit) {
 	cond := mapstr.MapStr{}
 	cond[common.OperationReportType] = common.HostChangeBizChart
 	bizHostChange := make([]metadata.HostChangeChartData, 0)
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(cond).All(kit.Ctx, &bizHostChange); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartData).Find(cond).All(kit.Ctx, &bizHostChange); err != nil {
 		blog.Errorf("get host change data fail, err: %v, rid: %v", err, kit.Rid)
 		return
 	}
@@ -438,7 +439,7 @@ func (m *operationManager) clearDataOverDate(kit *rest.Kit) {
 	}
 
 	cond[common.CreateTimeField] = mapstr.MapStr{common.BKDBIN: shouldClear}
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Delete(kit.Ctx, cond); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartData).Delete(kit.Ctx, cond); err != nil {
 		blog.Errorf("get host change data fail, err: %v, rid: %v", err, kit.Rid)
 		return
 	}

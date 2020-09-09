@@ -17,6 +17,8 @@ import (
 
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
+
+	"gopkg.in/redis.v5"
 )
 
 // RDB rename the RDB into DB
@@ -50,4 +52,7 @@ type DB interface {
 	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务
 	AbortTransaction(context.Context, *metadata.TxnCapable) error
+
+	// InitTxnManager TxnID management of initial transaction
+	InitTxnManager(r *redis.Client) error
 }

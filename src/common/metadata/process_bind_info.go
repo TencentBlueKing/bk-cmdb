@@ -21,18 +21,18 @@ import (
 )
 
 /*
-version: 1.0 test
-description:  由于在不同的运行版本中,进程的绑定信息的二维结构中，数据的列是不一样的。 所以又下面的实现
+   version: 1.0 test
+   description:  由于在不同的运行版本中,进程的绑定信息的二维结构中，数据的列是不一样的。 所以又下面的实现
 
-通过定义数据反序列化的方法来实现struct 的同一个属性在不同运行版本的环境上，实现进程绑定信息的多态。
-主要是利用interface 的特性来实现，
+   通过定义数据反序列化的方法来实现struct 的同一个属性在不同运行版本的环境上，实现进程绑定信息的多态。
+   主要是利用interface 的特性来实现，
 
-defaultPropertyBindInfoHandle，defaultProcBindInfoHandle 是在使用反序列化 进程，进程模板中进程
-绑定信息实际结构的对象
+   defaultPropertyBindInfoHandle，defaultProcBindInfoHandle 是在使用反序列化 进程，进程模板中进程
+   绑定信息实际结构的对象
 
-下面是defaultPropertyBindInfoHandle，defaultProcBindInfoHandle中UJSON和UBSON 含义的介绍
-UJSON json反序列的方法，用于HTTP的消息处理,将数据解析到不同的struct上。 这个结构需要是ProcPropertyBindInfo，ProcBindInfoInterface interface 的实现
-UBSON  bson 反序列化的方法， 用于数据库存储,将数据解析到不同的struct上。这个结构需要是ProcPropertyBindInfo，ProcBindInfoInterface interface 的实现
+   下面是defaultPropertyBindInfoHandle，defaultProcBindInfoHandle中UJSON和UBSON 含义的介绍
+   UJSON json反序列的方法，用于HTTP的消息处理,将数据解析到不同的struct上。 这个结构需要是ProcPropertyBindInfo，ProcBindInfoInterface interface 的实现
+   UBSON  bson 反序列化的方法， 用于数据库存储,将数据解析到不同的struct上。这个结构需要是ProcPropertyBindInfo，ProcBindInfoInterface interface 的实现
 
 */
 
@@ -105,6 +105,9 @@ type propertyBindInfoValueInterface interface {
 
 	// toMap  获取要保持格式的数据
 	toMap() map[string]interface{}
+
+	// NewProcBindInfo 通过模板生成进程的时候使用
+	NewProcBindInfo() map[string]interface{}
 }
 
 // ProcBindInfo 给服务模板使用的，来存储，校验服务实例中进程绑定的信息
@@ -166,7 +169,7 @@ func (pbi *ProcPropertyBindInfo) Validate() (string, error) {
 	return "", nil
 }
 
-func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process) ([]ProcBindInfo, bool, bool) {
+func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[string]interface{}) ([]ProcBindInfo, bool, bool) {
 	var changed, isNamePortChanged bool
 
 	procBindInfoMap := make(map[int64]ProcBindInfo, len(i.BindInfo))
@@ -188,11 +191,11 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process) ([]ProcBi
 				inputProcBindInfo.Std.IP = nil
 				changed = true
 			} else if row.Std.IP.Value != nil && inputProcBindInfo.Std.IP == nil {
-				ip := row.Std.IP.Value.IP()
+				ip := row.Std.IP.Value.IP(host)
 				inputProcBindInfo.Std.IP = &ip
 				changed = true
-			} else if row.Std.IP.Value != nil && inputProcBindInfo.Std.IP != nil && row.Std.IP.Value.IP() != *inputProcBindInfo.Std.IP {
-				ip := row.Std.IP.Value.IP()
+			} else if row.Std.IP.Value != nil && inputProcBindInfo.Std.IP != nil && row.Std.IP.Value.IP(host) != *inputProcBindInfo.Std.IP {
+				ip := row.Std.IP.Value.IP(host)
 				inputProcBindInfo.Std.IP = &ip
 				changed = true
 			}
@@ -259,12 +262,12 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process) ([]ProcBi
 
 }
 
-func (pbi *ProcPropertyBindInfo) ExtractInstanceUpdateData(input *Process) []ProcBindInfo {
-	return pbi.changeInstanceBindInfo(input.BindInfo)
+func (pbi *ProcPropertyBindInfo) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) []ProcBindInfo {
+	return pbi.changeInstanceBindInfo(input.BindInfo, host)
 }
 
 // changeInstanceBindInfo 根据模板和进程中的绑定信息来组成真正的进程绑定信息
-func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindInfo) []ProcBindInfo {
+func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindInfo, host map[string]interface{}) []ProcBindInfo {
 	procBindInfoMap := make(map[int64]ProcBindInfo, 0)
 
 	for _, item := range bindInfoArr {
@@ -290,7 +293,7 @@ func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindIn
 			if row.Std.IP.Value == nil {
 				inputProcBindInfo.Std.IP = nil
 			} else {
-				ip := row.Std.IP.Value.IP()
+				ip := row.Std.IP.Value.IP(host)
 				inputProcBindInfo.Std.IP = &ip
 			}
 		}
@@ -358,9 +361,9 @@ func cloneProcBindInfoArr(procBindInfoArr []ProcBindInfo) (newData []ProcBindInf
 }
 
 // Compare 对比模板和实例数据，发现数据是否变化
-func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcBindInfo) (newBindInfoArr []ProcBindInfo, change bool) {
+func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcBindInfo, host map[string]interface{}) (newBindInfoArr []ProcBindInfo, change bool) {
 	tmpBindInfoArr := cloneProcBindInfoArr(procBindInfoArr)
-	newBindInfoArr = pbi.changeInstanceBindInfo(tmpBindInfoArr)
+	newBindInfoArr = pbi.changeInstanceBindInfo(tmpBindInfoArr, host)
 
 	if len(procBindInfoArr) != len(newBindInfoArr) {
 		change = true
@@ -378,6 +381,7 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 			change = true
 			return
 		}
+
 		if row.Std == nil && tmpBindInfo.Std != nil ||
 			row.Std != nil && tmpBindInfo.Std == nil {
 			change = true
@@ -392,6 +396,7 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 		if (row.Std.Port == nil && tmpBindInfo.Std.Port != nil) ||
 			(row.Std.Port != nil && tmpBindInfo.Std.Port == nil) ||
 			(row.Std.Port != nil && tmpBindInfo.Std.Port != nil && *row.Std.Port != *tmpBindInfo.Std.Port) {
+
 			change = true
 			return
 		}
@@ -443,6 +448,61 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 	}
 
 	return
+}
+
+// NewProcBindInfo 通过模板生成进程的时候使用
+func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) []ProcBindInfo {
+	var procBindInfoArr []ProcBindInfo
+
+	for _, row := range pbi.Value {
+		if row.Std == nil {
+			continue
+		}
+		procBindInfo := ProcBindInfo{
+			Std: &stdProcBindInfo{},
+		}
+
+		procBindInfo.Std.TemplateRowID = row.Std.RowID
+
+		/*** 处理标准字段 ***/
+
+		if IsAsDefaultValue(row.Std.IP.AsDefaultValue) == true {
+			if row.Std.IP.Value == nil {
+				procBindInfo.Std.IP = nil
+			} else {
+				ip := row.Std.IP.Value.IP(host)
+				procBindInfo.Std.IP = &ip
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Port.AsDefaultValue) == true {
+			procBindInfo.Std.Port = row.Std.Port.Value
+		}
+
+		if IsAsDefaultValue(row.Std.Protocol.AsDefaultValue) == true {
+			if row.Std.Protocol.Value == nil {
+				procBindInfo.Std.Protocol = nil
+			} else {
+				protocol := string(*row.Std.Protocol.Value)
+				procBindInfo.Std.Protocol = &protocol
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Enable.AsDefaultValue) == true {
+			if row.Std.Enable.Value == nil {
+				procBindInfo.Std.Enable = nil
+			} else {
+				procBindInfo.Std.Enable = row.Std.Enable.Value
+			}
+		}
+
+		if row.extra != nil {
+			procBindInfo.extra = row.extra.NewProcBindInfo()
+		}
+
+		procBindInfoArr = append(procBindInfoArr, procBindInfo)
+	}
+	return procBindInfoArr
 }
 
 // allFieldValIsNil 判断所有的字段是否为nil
@@ -538,6 +598,7 @@ func (pbi stdProcPropertyBindInfoValue) toKV() map[string]interface{} {
 /*** ProcBindInfo 依赖的方法  ****/
 
 func (pbi *ProcBindInfo) UnmarshalJSON(data []byte) error {
+	fmt.Printf("%s", string(data))
 	err := defaultProcBindInfoHandle.UJSON(data, pbi)
 	if err != nil {
 		return err
