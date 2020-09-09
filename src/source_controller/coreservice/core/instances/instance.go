@@ -206,7 +206,7 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 	processRelations := make([]metadata.ProcessInstanceRelation, 0)
 	processRelationFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
 
-	err = m.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Fields(
+	err = mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Fields(
 		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &processRelations)
 	if err != nil {
 		blog.Errorf("get process relation failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDs, kit.Rid)
@@ -231,7 +231,7 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 		"property.bind_info.as_default_value": true,
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
+	err = mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
 		common.BKFieldID, "property.bind_info").All(kit.Ctx, &processTemplates)
 	if err != nil {
 		blog.Errorf("get process template failed, err: %v, processTemplateIDs: %+v, rid: %s", err, processTemplateIDs, kit.Rid)
@@ -302,7 +302,7 @@ func getFirstIP(ip interface{}) string {
 func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]interface{}, processIDs []int64) error {
 	processFilter := map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: processIDs}}
 
-	if err := m.dbProxy.Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, data); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, data); err != nil {
 		blog.Errorf("update process failed, err: %v, processIDs: %+v, data: %+v, rid: %s", err, processIDs, data, kit.Rid)
 		return err
 	}
