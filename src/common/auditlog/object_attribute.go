@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -26,8 +25,10 @@ type objectAttributeAuditLog struct {
 }
 
 // GenerateAuditLog generate audit of model attribute, if data is nil, will auto get current model attribute data by id.
-func (h *objectAttributeAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
-	data *metadata.Attribute, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *objectAttributeAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.Attribute) (
+	*metadata.AuditLog, error) {
+	kit := parameter.kit
+
 	if data == nil {
 		// get current model attribute data by id.
 		query := mapstr.MapStr{metadata.AttributeFieldID: id}
@@ -51,49 +52,27 @@ func (h *objectAttributeAuditLog) GenerateAuditLog(kit *rest.Kit, action metadat
 		data = &rsp.Data.Info[0]
 	}
 
-	bizID := data.BizID
-	propertyName := data.PropertyName
-	objID := data.ObjectID
-	objName, err := h.getObjNameByObjID(kit, objID)
+	objName, err := h.getObjNameByObjID(kit, data.ObjectID)
 	if err != nil {
 		return nil, err
 	}
 
-	var basicDetail *metadata.BasicContent
-	switch action {
-	case metadata.AuditCreate:
-		basicDetail = &metadata.BasicContent{
-			CurData: data.ToMapStr(),
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.BasicContent{
-			PreData: data.ToMapStr(),
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.BasicContent{
-			PreData:      data.ToMapStr(),
-			UpdateFields: updateFields,
-		}
-	}
-
-	var auditLog = &metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModelAttributeRes,
-		Action:       action,
-		BusinessID:   bizID,
+		Action:       parameter.action,
+		BusinessID:   data.BizID,
 		ResourceID:   id,
-		ResourceName: propertyName,
-		OperateFrom:  OperateFrom,
+		ResourceName: data.PropertyName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.ModelAttrOpDetail{
-			BkObjID:   objID,
+			BkObjID:   data.ObjectID,
 			BkObjName: objName,
 			BasicOpDetail: metadata.BasicOpDetail{
-				Details: basicDetail,
+				Details: parameter.NewBasicContent(data.ToMapStr()),
 			},
 		},
-	}
-
-	return auditLog, nil
+	}, nil
 }
 
 func NewObjectAttributeAuditLog(clientSet coreservice.CoreServiceClientInterface) *objectAttributeAuditLog {

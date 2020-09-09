@@ -13,6 +13,7 @@
 package auditlog
 
 import (
+	hutil "configcenter/src/scene_server/host_server/util"
 	"fmt"
 	"strings"
 
@@ -23,7 +24,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 // audit provides common methods for all audit log utilities
@@ -85,77 +85,30 @@ func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (stri
 
 	insts, err := a.getInstByCond(kit, objID, map[string]interface{}{instIDField: instID}, []string{instNameField})
 	if err != nil {
-		blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts failed, err: %v, rid: %s", instID, err, kit.Rid)
+		blog.Errorf("failed to getting instance name, instID: %d, objID: %d, err: %v, rid: %s",
+			instID, objID, err, kit.Rid)
 		return "", err
 	}
 
 	if len(insts) != 1 {
-		blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts find %d insts, rid: %s", instID, len(insts), kit.Rid)
+		blog.Errorf("failed to getting instance name, instance not one, instID: %d, objID: %d, rid: %s", instID, objID, kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
 	instName, convErr := insts[0].String(instNameField)
 	if convErr != nil {
-		blog.ErrorfDepthf(1, "GetInstNameByID %d ReadInstance parse inst name failed, data: %+v, rid: %s", instID, insts[0], kit.Rid)
+		blog.Errorf("getting instance name failed, failed to %s fields convert to string, instID: %d, data: %+v, rid: %s",
+			instNameField, instID, insts[0], kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, instNameField, "string", convErr.Error())
 	}
 
 	return instName, nil
 }
 
-// getBizIDByHostID get the bizID for host belong business.
-func (a *audit) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, error) {
-	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
-	moduleHost, err := a.clientSet.Host().GetHostModuleRelation(kit.Ctx, kit.Header, input)
-	if err != nil {
-		blog.Errorf("", hostID, err, kit.Rid)
-		return 0, err
-	}
-	if !moduleHost.Result {
-		blog.Errorf("", hostID, moduleHost.ErrMsg, kit.Rid)
-		return 0, fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
-	}
-
-	var bizID int64
-	if len(moduleHost.Data.Info) > 0 {
-		bizID = moduleHost.Data.Info[0].AppID
-	}
-
-	return bizID, nil
-}
-
-// getHostInstanceDetailByHostID get host data and hostIP by hostID.
-func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string, error) {
-	// get host details.
-	result, err := a.clientSet.Host().GetHostByID(kit.Ctx, kit.Header, hostID)
-	if err != nil {
-		blog.Errorf("getHostInstanceDetailByHostID http do error, err: %s, input: %+v, rid: %s", err.Error(), hostID, kit.Rid)
-		return nil, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !result.Result {
-		blog.Errorf("getHostInstanceDetailByHostID http response error, err code: %d, err msg: %s, input: %+v, rid: %s",
-			result.Code, result.ErrMsg, hostID, kit.Rid)
-		return nil, "", kit.CCError.New(result.Code, result.ErrMsg)
-	}
-
-	hostInfo := result.Data
-	if len(hostInfo) == 0 {
-		return nil, "", nil
-	}
-	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
-	if !ok {
-		blog.Errorf("getHostInstanceDetailByHostID http response format error, convert bk_host_innerip to string error, inst: %#v  input:% #v, rid: %s",
-			hostInfo, hostID, kit.Rid)
-		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
-
-	}
-
-	return hostInfo, ip, nil
-}
-
 // getObjNameByObjID get the object name corresponding to object id.
 func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 	query := mapstr.MapStr{common.BKObjIDField: objID}
+
 	// get objectName.
 	resp, err := a.clientSet.Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
@@ -183,10 +136,19 @@ func (a *audit) getDefaultAppID(kit *rest.Kit) (int64, error) {
 	}
 
 	for _, data := range results {
-		ownID, _ := data.String(common.BkSupplierAccount)
+		ownID, err := data.String(common.BkSupplierAccount)
+		if err != nil {
+			return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+				common.BkSupplierAccount, "string", err.Error())
+		}
 
 		if kit.SupplierAccount == ownID {
-			bizID, _ := data.Int64(common.BKAppIDField)
+			bizID, err := data.Int64(common.BKAppIDField)
+			if err != nil {
+				return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+					common.BKAppIDField, "int64", err.Error())
+			}
+
 			return bizID, nil
 		}
 

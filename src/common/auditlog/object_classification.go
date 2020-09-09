@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -26,8 +25,9 @@ type objectClsAuditLog struct {
 }
 
 // GenerateAuditLog generate audit of model classification, if data is nil, will auto get current model classification data by id.
-func (h *objectClsAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
-	data *metadata.Classification, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *objectClsAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.Classification) (
+	*metadata.AuditLog, error) {
+	kit := parameter.kit
 	if data == nil {
 		// get current model classification data by id.
 		query := mapstr.MapStr{metadata.ClassificationFieldID: id}
@@ -51,38 +51,17 @@ func (h *objectClsAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Acti
 		data = &rsp.Data.Info[0]
 	}
 
-	objClsName := data.ClassificationName
-
-	var basicDetail *metadata.BasicContent
-	switch action {
-	case metadata.AuditCreate:
-		basicDetail = &metadata.BasicContent{
-			CurData: data.ToMapStr(),
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.BasicContent{
-			PreData: data.ToMapStr(),
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.BasicContent{
-			PreData:      data.ToMapStr(),
-			UpdateFields: updateFields,
-		}
-	}
-
-	var auditLog = &metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModelClassificationRes,
-		Action:       action,
+		Action:       parameter.action,
 		ResourceID:   id,
-		ResourceName: objClsName,
-		OperateFrom:  OperateFrom,
+		ResourceName: data.ClassificationName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details: basicDetail,
+			Details: parameter.NewBasicContent(data.ToMapStr()),
 		},
-	}
-
-	return auditLog, nil
+	}, nil
 }
 
 func NewObjectClsAuditLog(clientSet coreservice.CoreServiceClientInterface) *objectClsAuditLog {

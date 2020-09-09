@@ -483,7 +483,8 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 
 	// generate audit log.
 	audit := auditlog.NewCloudAreaAuditLog(h.logics.CoreAPI.CoreService())
-	logs, err := audit.GenerateAuditLog(h.kit, metadata.AuditCreate, []int64{cloudID}, metadata.FromUser, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.kit, metadata.AuditCreate)
+	logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{cloudID})
 	if err != nil {
 		blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, h.kit.Rid)
 		return cloudID, err
@@ -588,6 +589,7 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 	// 添加审计日志
 	audit := auditlog.NewHostAudit(h.logics.CoreAPI.CoreService())
 	logContext := make([]metadata.AuditLog, 0)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.kit, metadata.AuditCreate).WithOperateFrom(metadata.FromCloudSync)
 	curData, err := h.getHostDetailByInstIDs(h.kit, instIDs)
 	if err != nil {
 		blog.Errorf("addHosts getHostDetailByInstIDs err:%s, instIDs:%#v, rid:%s", err.Error(), instIDs, h.kit.Rid)
@@ -602,8 +604,7 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 		}
 
 		// generate audit log.
-		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(h.kit, metadata.AuditCreate, hostID, innerIP, metadata.FromCloudSync,
-			data, nil)
+		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, data)
 		if err != nil {
 			blog.Errorf("generate audit log failed after create host, hostID: %d, innerIP: %s, err: %v, rid: %s",
 				hostID, innerIP, err, h.kit.Rid)
@@ -721,8 +722,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		// generate audit log.
 		preData, err := h.getHostDetailByInstIDs(h.kit, []string{host.InstanceId})
 		if err != nil {
-			blog.Errorf("updateHosts getHostDetailByInstIDs err:%s, instID:%s, rid:%s", err.Error(), host.InstanceId,
-				h.kit.Rid)
+			blog.Errorf("get host detail failed, err: %v, instID: %s, rid:%s", err, host.InstanceId, h.kit.Rid)
 			return nil, err
 		}
 		if len(preData) <= 0 {
@@ -738,8 +738,9 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		}
 
 		// generate audit log.
-		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(h.kit, metadata.AuditUpdate, hostID, innerIP,
-			metadata.FromCloudSync, preData[0], updateInfo)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.kit, metadata.AuditUpdate).
+			WithOperateFrom(metadata.FromCloudSync).WithUpdateFields(updateInfo)
+		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, preData[0])
 		if err != nil {
 			blog.Errorf("generate audit log failed before update host, hostID: %d, innerIP: %s, err: %v, rid: %s",
 				hostID, innerIP, err, h.kit.Rid)
@@ -834,8 +835,9 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 		innerIPs = append(innerIPs, innerIP)
 
 		// generate audit log.
-		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(h.kit, metadata.AuditUpdate, hostID, innerIP,
-			metadata.FromCloudSync, data, updateHostData)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.kit, metadata.AuditUpdate).
+			WithOperateFrom(metadata.FromCloudSync).WithUpdateFields(updateHostData)
+		tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, data)
 		if err != nil {
 			blog.Errorf("generate audit log failed before update host, hostID: %d, err: %v, rid: %s",
 				hostID, err, h.kit.Rid)
@@ -883,7 +885,8 @@ func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 
 	// generate audit log.
 	audit := auditlog.NewCloudAreaAuditLog(h.logics.CoreAPI.CoreService())
-	logs, err := audit.GenerateAuditLog(h.kit, metadata.AuditUpdate, cloudIDs, metadata.FromUser, input.Data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(h.kit, metadata.AuditUpdate).WithUpdateFields(input.Data)
+	logs, err := audit.GenerateAuditLog(generateAuditParameter, cloudIDs)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update cloud area, err: %v, rid: %s", err, h.kit.Rid)
 		return err

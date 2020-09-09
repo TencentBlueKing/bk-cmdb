@@ -129,7 +129,9 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 
 		// generate audit log.
 		audit := auditlog.NewCloudAccountAuditLog(s.CoreAPI.CoreService())
-		auditLog, auditErr := audit.GenerateAuditLog(ctx.Kit, metadata.AuditCreate, res.AccountID, metadata.FromUser, res, nil)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+
+		auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, res.AccountID, res)
 		if auditErr != nil {
 			blog.Errorf("generate audit log failed after create cloud account, accountID: %d, err: %v, rid: %s",
 				res.AccountID, auditErr, ctx.Kit.Rid)
@@ -252,7 +254,8 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		// generate audit log.
 		audit := auditlog.NewCloudAccountAuditLog(s.CoreAPI.CoreService())
-		auditLog, auditErr := audit.GenerateAuditLog(ctx.Kit, metadata.AuditUpdate, accountID, metadata.FromUser, nil, option)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).WithUpdateFields(option)
+		auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, accountID, nil)
 		if auditErr != nil {
 			blog.Errorf("generate audit log failed before update cloud account, accountID: %d, err: %v, rid: %s",
 				accountID, auditErr, ctx.Kit.Rid)
@@ -297,7 +300,8 @@ func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		// generate audit log.
 		audit := auditlog.NewCloudAccountAuditLog(s.CoreAPI.CoreService())
-		auditLog, auditErr := audit.GenerateAuditLog(ctx.Kit, metadata.AuditDelete, accountID, metadata.FromUser, nil, nil)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
+		auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, accountID, nil)
 		if auditErr != nil {
 			blog.Errorf("generate audit log failed before delete cloud account, accountID: %d, err: %v, rid: %s",
 				accountID, auditErr, ctx.Kit.Rid)

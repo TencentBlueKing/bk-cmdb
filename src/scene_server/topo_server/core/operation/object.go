@@ -473,7 +473,8 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, obj.Object().ID, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.Object().ID, nil)
 	if err != nil {
 		blog.Errorf("create object %s success, but generate audit log failed, err: %v, rid: %s",
 			object.ObjectName, err, kit.Rid)
@@ -580,7 +581,8 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 
 	// generate audit log of object.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, obj.Object().ID, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.Object().ID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before delete object, objName: %s, err: %v, rid: %s",
 			object.ObjectName, err, kit.Rid)
@@ -755,7 +757,8 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.Object().ID, metadata.FromUser, nil, data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.Object().ID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
 			object.ObjectName, err, kit.Rid)

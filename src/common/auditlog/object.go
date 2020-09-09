@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -26,8 +25,9 @@ type objectAuditLog struct {
 }
 
 // GenerateAuditLog generate audit of model, if data is nil, will auto get current model data by id.
-func (h *objectAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
-	data *metadata.Object, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.Object) (
+	*metadata.AuditLog, error) {
+	kit := parameter.kit
 	if data == nil {
 		// get current model data by id.
 		query := mapstr.MapStr{metadata.ModelFieldID: id}
@@ -40,7 +40,7 @@ func (h *objectAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionT
 		if rsp.Result != true {
 			blog.Errorf("generate audit log of model failed, failed to read model, rsp code is %v, err: %s, rid: %s",
 				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, err
+			return nil, parameter.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 		if len(rsp.Data.Info) <= 0 {
 			blog.Errorf("generate audit log of model failed, failed to read model, err: %s, rid: %s",
@@ -51,38 +51,17 @@ func (h *objectAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionT
 		data = &rsp.Data.Info[0].Spec
 	}
 
-	objName := data.ObjectName
-
-	var basicDetail *metadata.BasicContent
-	switch action {
-	case metadata.AuditCreate:
-		basicDetail = &metadata.BasicContent{
-			CurData: data.ToMapStr(),
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.BasicContent{
-			PreData: data.ToMapStr(),
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.BasicContent{
-			PreData:      data.ToMapStr(),
-			UpdateFields: updateFields,
-		}
-	}
-
-	var auditLog = &metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModelRes,
-		Action:       action,
+		Action:       parameter.action,
 		ResourceID:   id,
-		ResourceName: objName,
-		OperateFrom:  OperateFrom,
+		ResourceName: data.ObjectName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details: basicDetail,
+			Details: parameter.NewBasicContent(data.ToMapStr()),
 		},
-	}
-
-	return auditLog, nil
+	}, nil
 }
 
 func NewObjectAuditLog(clientSet coreservice.CoreServiceClientInterface) *objectAuditLog {

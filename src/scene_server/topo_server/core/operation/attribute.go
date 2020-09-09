@@ -155,7 +155,9 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, mod
 
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, att.Attribute().ID, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, att.Attribute().ID, nil)
 	if err != nil {
 		blog.Errorf("create object attribute %s success, but generate audit log failed, err: %v, rid: %s",
 			att.Attribute().PropertyName, err, kit.Rid)
@@ -192,11 +194,12 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 	// 	return kit.CCError.New(common.CCErrCommAuthorizeFailed, err.Error())
 	// }
 
-	for _, attrItem := range attrItems {
+	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 
+	for _, attrItem := range attrItems {
 		// generate audit log of model attribute.
-		audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
-		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, attrItem.Attribute().ID, metadata.FromUser, attrItem.Attribute(), nil)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attrItem.Attribute().ID, attrItem.Attribute())
 		if err != nil {
 			blog.Errorf("generate audit log failed before delete model attribute %s, err: %v, rid: %s",
 				attrItem.Attribute().PropertyName, err, kit.Rid)
@@ -323,7 +326,8 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, attID, metadata.FromUser, nil, data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update model attribute, attID: %d, err: %v, rid: %s",
 			attID, err, kit.Rid)

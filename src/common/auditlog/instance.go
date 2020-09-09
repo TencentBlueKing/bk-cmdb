@@ -29,27 +29,27 @@ type instanceAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of instance.
-func (i *instanceAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, objID string, operateFrom metadata.OperateFromType,
-	data []mapstr.MapStr, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
-	return i.generateAuditLog(kit, action, objID, operateFrom, data, updateFields)
+func (i *instanceAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, objID string, data []mapstr.MapStr) (
+	[]metadata.AuditLog, error) {
+	return i.generateAuditLog(parameter, objID, data)
 }
 
 // GenerateAuditLogByCondGetData generate audit log of instance, auto get current instance by objID and condition.
-func (i *instanceAuditLog) GenerateAuditLogByCondGetData(kit *rest.Kit, action metadata.ActionType, objID string, operateFrom metadata.OperateFromType,
-	condition, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
-	data, err := i.getInstByCond(kit, objID, condition, nil)
+func (i *instanceAuditLog) GenerateAuditLogByCondGetData(parameter *generateAuditCommonParameter, objID string,
+	condition map[string]interface{}) ([]metadata.AuditLog, error) {
+	data, err := i.getInstByCond(parameter.kit, objID, condition, nil)
 	if err != nil {
-		blog.ErrorJSON("get instances failed, err: %s, condition: %s, rid: %s", err, condition, kit.Rid)
+		blog.ErrorJSON("get instances failed, err: %s, condition: %s, rid: %s", err, condition, parameter.kit.Rid)
 		return nil, err
 	}
-	return i.generateAuditLog(kit, action, objID, operateFrom, data, updateFields)
+	return i.generateAuditLog(parameter, objID, data)
 }
 
-func (i *instanceAuditLog) generateAuditLog(kit *rest.Kit, action metadata.ActionType, objID string, operateFrom metadata.OperateFromType,
-	data []mapstr.MapStr, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
+func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParameter, objID string, data []mapstr.MapStr) (
+	[]metadata.AuditLog, error) {
 	auditLogs := make([]metadata.AuditLog, len(data))
-
-	isMainline, err := i.isMainline(kit, objID)
+	kit := parameter.kit
+	isMainline, err := i.isMainline(parameter.kit, objID)
 	if err != nil {
 		blog.Errorf("check if object is mainline failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -72,6 +72,9 @@ func (i *instanceAuditLog) generateAuditLog(kit *rest.Kit, action metadata.Actio
 			blog.ErrorJSON("failed to get biz id from metadata, error info is %s, inst: %s, rid: %s", err.Error(), inst, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, common.BKAppIDField, "int", err.Error())
 		}
+
+		action := parameter.action
+		updateFields := parameter.updateFields
 
 		var details *metadata.BasicContent
 		switch action {
@@ -105,7 +108,7 @@ func (i *instanceAuditLog) generateAuditLog(kit *rest.Kit, action metadata.Actio
 			Action:       action,
 			BusinessID:   bizID,
 			ResourceID:   id,
-			OperateFrom:  operateFrom,
+			OperateFrom:  parameter.operateFrom,
 			ResourceName: util.GetStrByInterface(inst[metadata.GetInstNameFieldName(objID)]),
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{

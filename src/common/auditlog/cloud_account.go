@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -26,8 +25,10 @@ type cloudAccountAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of cloud account, if data is nil, will auto get data by accountID.
-func (h *cloudAccountAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, accountID int64, OperateFrom metadata.OperateFromType,
-	data *metadata.CloudAccount, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *cloudAccountAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, accountID int64,
+	data *metadata.CloudAccount, ) (*metadata.AuditLog, error) {
+	kit := parameter.kit
+
 	if data == nil {
 		// get data by accountID.
 		cond := metadata.SearchCloudOption{
@@ -49,38 +50,17 @@ func (h *cloudAccountAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.A
 		data = &res.Info[0].CloudAccount
 	}
 
-	accountName := data.AccountName
-
-	var basicDetail *metadata.BasicContent
-	switch action {
-	case metadata.AuditCreate:
-		basicDetail = &metadata.BasicContent{
-			CurData: data.ToMapStr(),
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.BasicContent{
-			PreData: data.ToMapStr(),
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.BasicContent{
-			PreData:      data.ToMapStr(),
-			UpdateFields: updateFields,
-		}
-	}
-
-	var auditLog = &metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.CloudResourceType,
 		ResourceType: metadata.CloudAccountRes,
-		Action:       action,
+		Action:       parameter.action,
 		ResourceID:   accountID,
-		ResourceName: accountName,
-		OperateFrom:  OperateFrom,
+		ResourceName: data.AccountName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details: basicDetail,
+			Details: parameter.NewBasicContent(data.ToMapStr()),
 		},
-	}
-
-	return auditLog, nil
+	}, nil
 }
 
 func NewCloudAccountAuditLog(clientSet coreservice.CoreServiceClientInterface) *cloudAccountAuditLog {

@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
 
@@ -26,8 +25,9 @@ type instanceAssociationAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of instance association, if data is nil, will auto get data by id and instance association.
-func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *metadata.InstAsst, id int64, action metadata.ActionType) (
+func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.InstAsst) (
 	*metadata.AuditLog, error) {
+	kit := parameter.kit
 
 	if data == nil {
 		cond := metadata.QueryCondition{Condition: map[string]interface{}{metadata.AssociationFieldAssociationId: id}}
@@ -58,9 +58,10 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *meta
 	return &metadata.AuditLog{
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.InstanceAssociationRes,
-		Action:       action,
+		Action:       parameter.action,
 		ResourceID:   data.InstID,
 		ResourceName: srcInstName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.InstanceAssociationOpDetail{
 			AssociationOpDetail: metadata.AssociationOpDetail{
 				AssociationID:   data.ObjectAsstID,

@@ -128,7 +128,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 			var err error
 
 			// generate audit log before really change it.
-			auditLog, err = audit.GenerateAuditLog(kit, metadata.AuditUpdate, intHostID, appID, innerIP, metadata.FromUser, nil, host)
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(host)
+			auditLog, err = audit.GenerateAuditLog(generateAuditParameter, intHostID, appID, innerIP, nil)
 			if err != nil {
 				blog.Errorf("generate host audit log failed before update host, hostID: %d, bizID: %d, err: %v, rid: %s",
 					intHostID, innerIP, err, kit.Rid)
@@ -151,7 +152,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 			hostIDMap[generateHostCloudKey(innerIP, iSubAreaVal)] = intHostID
 
 			// to generate audit log.
-			auditLog, err = audit.GenerateAuditLog(kit, metadata.AuditCreate, intHostID, appID, innerIP, metadata.FromUser, nil, nil)
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+			auditLog, err = audit.GenerateAuditLog(generateAuditParameter, intHostID, appID, innerIP, nil)
 			if err != nil {
 				blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
 					intHostID, appID, err, kit.Rid)
@@ -253,7 +255,8 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 		})
 
 		// generate audit log for create host.
-		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, hostID, bizID, innerIP, metadata.FromUser, nil, nil)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, bizID, innerIP, nil)
 		if err != nil {
 			blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
 				hostID, bizID, err, kit.Rid)

@@ -152,8 +152,9 @@ func (h *HostSnap) Analyze(msg *string) error {
 	}
 
 	// generate audit log for update host.
-	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(kit, metadata.AuditUpdate, hostID, innerIP, metadata.FromDataCollection,
-		nil, setter)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(setter)
+	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, nil)
 	if err != nil {
 		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err

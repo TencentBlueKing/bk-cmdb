@@ -83,7 +83,8 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 
 	// generate audit log of object classification.
 	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, class.ID, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, class.ID, nil)
 	if err != nil {
 		blog.Errorf("create object classification %s success, but generate audit log failed, err: %v, rid: %s",
 			class.ClassificationName, err, kit.Rid)
@@ -129,7 +130,8 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 
 	// generate audit log of object classification.
 	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, id, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, id, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before delete object classification, objClsID: %d, err: %v, rid: %s",
 			id, err, kit.Rid)
@@ -243,7 +245,8 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 
 	// generate audit log of object classification.
 	audit := auditlog.NewObjectClsAuditLog(c.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, class.ID, metadata.FromUser, nil, data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, class.ID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update object classification, objClsID: %d, err: %v, rid: %s",
 			id, err, kit.Rid)

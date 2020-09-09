@@ -174,7 +174,8 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 
 		// generate audit log.
 		audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
-		logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditCreate, platIDs, metadata.FromUser, nil)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+		logs, err := audit.GenerateAuditLog(generateAuditParameter, platIDs)
 		if err != nil {
 			blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -262,7 +263,8 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 
 		// generate audit log.
 		audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
-		logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditCreate, []int64{platID}, metadata.FromUser, nil)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+		logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{platID})
 		if err != nil {
 			blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -352,7 +354,8 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 
 	// generate audit log.
 	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
-	logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditDelete, []int64{platID}, metadata.FromUser, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
+	logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{platID})
 	if err != nil {
 		blog.Errorf("generate audit log failed before delete cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -449,7 +452,8 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 
 	// generate audit log.
 	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
-	logs, err := audit.GenerateAuditLog(ctx.Kit, metadata.AuditUpdate, []int64{platID}, metadata.FromUser, toUpdate)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).WithUpdateFields(toUpdate)
+	logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{platID})
 	if err != nil {
 		blog.Errorf("generate audit log failed before update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

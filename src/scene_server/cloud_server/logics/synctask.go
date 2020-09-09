@@ -114,7 +114,8 @@ func (lgc *Logics) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (
 
 	// generate audit log.
 	audit := auditlog.NewSyncTaskAuditLog(lgc.CoreAPI.CoreService())
-	auditLog, auditErr := audit.GenerateAuditLog(kit, metadata.AuditCreate, result.TaskID, metadata.FromUser, result, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, result.TaskID, result)
 	if auditErr != nil {
 		blog.Errorf("generate audit log failed after create sync task, taskID: %d, err: %v, rid: %s",
 			result.TaskID, auditErr, kit.Rid)
@@ -251,7 +252,8 @@ func (lgc *Logics) UpdateSyncTask(kit *rest.Kit, taskID int64, option map[string
 
 	// generate audit log.
 	audit := auditlog.NewSyncTaskAuditLog(lgc.CoreAPI.CoreService())
-	auditLog, auditErr := audit.GenerateAuditLog(kit, metadata.AuditUpdate, taskID, metadata.FromUser, nil, option)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(option)
+	auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, taskID, nil)
 	if auditErr != nil {
 		blog.Errorf("generate audit log failed before update sync task, taskID: %d, err: %v, rid: %s", taskID, auditErr, kit.Rid)
 		return auditErr
@@ -276,7 +278,8 @@ func (lgc *Logics) DeleteSyncTask(kit *rest.Kit, taskID int64) error {
 
 	// generate audit log.
 	audit := auditlog.NewSyncTaskAuditLog(lgc.CoreAPI.CoreService())
-	auditLog, auditErr := audit.GenerateAuditLog(kit, metadata.AuditDelete, taskID, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, taskID, nil)
 	if auditErr != nil {
 		blog.Errorf("generate audit log failed before delete sync task, taskID: %d, err: %v, rid: %s", taskID,
 			auditErr, kit.Rid)

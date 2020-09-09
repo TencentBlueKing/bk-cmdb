@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -26,8 +25,10 @@ type attributeGroupAuditLog struct {
 }
 
 // GenerateAuditLog generate audit of object attribute group, if data is nil, will auto get current attribute group data by id.
-func (h *attributeGroupAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, id int64, OperateFrom metadata.OperateFromType,
-	data *metadata.Group, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *attributeGroupAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.Group) (
+	*metadata.AuditLog, error) {
+	kit := parameter.kit
+
 	if data == nil {
 		// get current object attribute group data by id.
 		query := mapstr.MapStr{metadata.GroupFieldID: id}
@@ -51,49 +52,27 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata
 		data = &rsp.Data.Info[0]
 	}
 
-	bizID := data.BizID
-	groupName := data.GroupName
-	objID := data.ObjectID
-	objName, err := h.getObjNameByObjID(kit, objID)
+	objName, err := h.getObjNameByObjID(kit, data.ObjectID)
 	if err != nil {
 		return nil, err
 	}
 
-	var basicDetail *metadata.BasicContent
-	switch action {
-	case metadata.AuditCreate:
-		basicDetail = &metadata.BasicContent{
-			CurData: data.ToMapStr(),
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.BasicContent{
-			PreData: data.ToMapStr(),
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.BasicContent{
-			PreData:      data.ToMapStr(),
-			UpdateFields: updateFields,
-		}
-	}
-
-	var auditLog = &metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModelGroupRes,
-		Action:       action,
-		BusinessID:   bizID,
+		Action:       parameter.action,
+		BusinessID:   data.BizID,
 		ResourceID:   id,
-		ResourceName: groupName,
-		OperateFrom:  OperateFrom,
+		ResourceName: data.GroupName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.ModelAttrOpDetail{
-			BkObjID:   objID,
+			BkObjID:   data.ObjectID,
 			BkObjName: objName,
 			BasicOpDetail: metadata.BasicOpDetail{
-				Details: basicDetail,
+				Details: parameter.NewBasicContent(data.ToMapStr()),
 			},
 		},
-	}
-
-	return auditLog, nil
+	}, nil
 }
 
 func NewAttributeGroupAuditLog(clientSet coreservice.CoreServiceClientInterface) *attributeGroupAuditLog {

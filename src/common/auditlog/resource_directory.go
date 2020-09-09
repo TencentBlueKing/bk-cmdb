@@ -18,7 +18,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -28,25 +27,23 @@ type resourceDirAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of resource directory, if data is nil, will auto get data by instModuleID.
-func (h *resourceDirAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, instModuleID, bizID int64, OperateFrom metadata.OperateFromType,
-	data mapstr.MapStr, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *resourceDirAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, instModuleID, bizID int64, data mapstr.MapStr) (*metadata.AuditLog, error) {
 	if data == nil {
-		//
 		query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: instModuleID}}
-		rsp, err := h.clientSet.Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query)
+		rsp, err := h.clientSet.Instance().ReadInstance(parameter.kit.Ctx, parameter.kit.Header, common.BKInnerObjIDModule, query)
 		if err != nil {
 			blog.Errorf("generate audit log of resource directory failed, failed to read resource directory, err: %v, rid: %s",
-				err.Error(), kit.Rid)
+				err.Error(), parameter.kit.Rid)
 			return nil, err
 		}
 		if rsp.Result != true {
 			blog.Errorf("generate audit log of resource directory failed, failed to read resource directory, rsp code is %v, err: %s, rid: %s",
-				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, err
+				rsp.Code, rsp.ErrMsg, parameter.kit.Rid)
+			return nil, parameter.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 		if len(rsp.Data.Info) <= 0 {
-			blog.Errorf("generate audit log of resource directory failed, not find resource directory, rid: %s",
-				kit.Rid)
+			blog.Errorf("generate audit log of resource directory failed, not find resource directory, instModuleID: %d, rid: %s",
+				instModuleID, parameter.kit.Rid)
 			return nil, fmt.Errorf("generate audit log of resource directory failed, not find resource directory")
 		}
 
@@ -56,43 +53,25 @@ func (h *resourceDirAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Ac
 	// get resource directory name.
 	moduleName, err := data.String(common.BKModuleNameField)
 	if err != nil {
-		return nil, err
+		return nil, parameter.kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule,
+			common.BKModuleNameField, "string", err.Error())
 	}
 
-	var basicDetail *metadata.BasicContent
-	switch action {
-	case metadata.AuditCreate:
-		basicDetail = &metadata.BasicContent{
-			CurData: data,
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.BasicContent{
-			PreData: data,
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.BasicContent{
-			PreData:      data,
-			UpdateFields: updateFields,
-		}
-	}
-
-	var auditLog = &metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.ResourceDirRes,
-		Action:       action,
+		Action:       parameter.action,
 		BusinessID:   bizID,
 		ResourceID:   instModuleID,
 		ResourceName: moduleName,
-		OperateFrom:  OperateFrom,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				Details: basicDetail,
+				Details: parameter.NewBasicContent(data),
 			},
 			ModelID: common.BKInnerObjIDModule,
 		},
-	}
-
-	return auditLog, nil
+	}, nil
 }
 
 func NewResourceDirAuditLog(clientSet coreservice.CoreServiceClientInterface) *resourceDirAuditLog {

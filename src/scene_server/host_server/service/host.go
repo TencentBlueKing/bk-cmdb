@@ -189,10 +189,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		// for audit log.
 		logContentMap := make(map[int64]*meta.AuditLog, 0)
 		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditDelete)
 
 		// to generate audit log about deleting host, and host information.
 		for _, hostID := range iHostIDArr {
-			logContentMap[hostID], err = audit.GenerateAuditLog(ctx.Kit, meta.AuditDelete, hostID, appID, "", meta.FromUser, nil, nil)
+			logContentMap[hostID], err = audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
 			if err != nil {
 				blog.Errorf("generate host audit log failed before delete host, hostID, %d, bizID: %d, err: %v, rid: %s",
 					hostID, appID, err, ctx.Kit.Rid)
@@ -767,7 +768,8 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 					}
 
 					// generator audit log.
-					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(ctx.Kit, meta.AuditUpdate, hostID, "", meta.FromUser, nil, updateData)
+					generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updateData)
+					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, "", nil)
 					if err != nil {
 						blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s",
 							hostID, err, ctx.Kit.Rid)
@@ -802,9 +804,10 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 		if hasHostUpdateWithoutHostApplyFiled == false {
 			// 退化到批量编辑
 			// generator audit log.
-			var auditLogs = make([]meta.AuditLog, len(hostIDArr))
+			auditLogs := make([]meta.AuditLog, len(hostIDArr))
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(data)
 			for i, hostID := range hostIDArr {
-				tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(ctx.Kit, meta.AuditUpdate, hostID, "", meta.FromUser, nil, data)
+				tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, "", nil)
 				if err != nil {
 					blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 					return err
@@ -905,7 +908,8 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 			}
 
 			// generate audit log.
-			auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(ctx.Kit, meta.AuditUpdate, update.HostID, "", meta.FromUser, nil, data)
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(data)
+			auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, update.HostID, "", nil)
 			if err != nil {
 				blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", update.HostID, err, ctx.Kit.Rid)
 				return err
@@ -1418,7 +1422,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 					}
 
 					// generate audit log.
-					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(ctx.Kit, meta.AuditUpdate, intHostID, "", meta.FromUser, nil, updateData)
+					generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updateData)
+					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, intHostID, "", nil)
 					if err != nil {
 						blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
 						errMsg = append(errMsg, err.Error())
@@ -1454,7 +1459,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 				intHostID := indexHostIDMap[index]
 
 				// generate audit log.
-				auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(ctx.Kit, meta.AuditUpdate, intHostID, "", meta.FromUser, nil, hostInfo)
+				generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(hostInfo)
+				auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, intHostID, "", nil)
 				if err != nil {
 					blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
 					errMsg = append(errMsg, err.Error())

@@ -18,7 +18,6 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -28,8 +27,10 @@ type syncTaskAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of cloud sync task, if data is nil, will auto get data by taskID.
-func (h *syncTaskAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, taskID int64, OperateFrom metadata.OperateFromType,
-	data *metadata.CloudSyncTask, updateFields map[string]interface{}) (*metadata.AuditLog, error) {
+func (h *syncTaskAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, taskID int64, data *metadata.CloudSyncTask) (
+	*metadata.AuditLog, error) {
+	kit := parameter.kit
+
 	if data == nil {
 		// get data by taskID.
 		option := metadata.SearchCloudOption{
@@ -51,38 +52,17 @@ func (h *syncTaskAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Actio
 		data = &res.Info[0]
 	}
 
-	taskName := data.TaskName
-
-	var basicDetail *metadata.BasicContent
-	switch action {
-	case metadata.AuditCreate:
-		basicDetail = &metadata.BasicContent{
-			CurData: data.ToMapStr(),
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.BasicContent{
-			PreData: data.ToMapStr(),
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.BasicContent{
-			PreData:      data.ToMapStr(),
-			UpdateFields: updateFields,
-		}
-	}
-
-	var auditLog = &metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.CloudResourceType,
 		ResourceType: metadata.CloudSyncTaskRes,
-		Action:       action,
+		Action:       parameter.action,
 		ResourceID:   taskID,
-		ResourceName: taskName,
-		OperateFrom:  OperateFrom,
+		ResourceName: data.TaskName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details: basicDetail,
+			Details: parameter.NewBasicContent(data.ToMapStr()),
 		},
-	}
-
-	return auditLog, nil
+	}, nil
 }
 
 func NewSyncTaskAuditLog(clientSet coreservice.CoreServiceClientInterface) *syncTaskAuditLog {

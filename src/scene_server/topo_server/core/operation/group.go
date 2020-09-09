@@ -84,7 +84,8 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, modelBizID 
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, grp.Group().ID, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, grp.Group().ID, nil)
 	if err != nil {
 		blog.Errorf("create object attribute group %s success, but generate audit log failed, err: %v, rid: %s",
 			grp.Group().GroupName, err, kit.Rid)
@@ -104,7 +105,8 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, modelBizID 
 func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
 	// generate audit log of object attribute group.
 	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, groupID, metadata.FromUser, nil, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, groupID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before delete attribute group, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -241,7 +243,8 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewAttributeGroupAuditLog(g.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditUpdate, cond.Condition.ID, metadata.FromUser, nil, input.Data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(input.Data)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, cond.Condition.ID, nil)
 	if err != nil {
 		blog.Errorf("generate audit log failed before update attribute group, groupName: %s, err: %v, rid: %s",
 			cond.Data.Name, err, kit.Rid)

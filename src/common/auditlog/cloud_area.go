@@ -15,7 +15,6 @@ package auditlog
 import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -25,11 +24,12 @@ type cloudAreaAuditLog struct {
 }
 
 // GenerateAuditLog batch generate audit log for cloud area, auto get cloud area data by cloud ID.
-func (h *cloudAreaAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.ActionType, platIDs []int64,
-	OperateFrom metadata.OperateFromType, updateFields map[string]interface{}) ([]metadata.AuditLog, error) {
+func (h *cloudAreaAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, platIDs []int64) ([]metadata.AuditLog, error) {
 	if len(platIDs) == 0 {
 		return make([]metadata.AuditLog, 0), nil
 	}
+
+	kit := parameter.kit
 
 	// build query condition for read cloud.
 	var err error
@@ -39,56 +39,41 @@ func (h *cloudAreaAuditLog) GenerateAuditLog(kit *rest.Kit, action metadata.Acti
 
 	// to query plat.
 	res, err := h.clientSet.Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat, query)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
 	// mapping from cloudID to cloudData.
-	var mutilCloudArea = make(map[int64]mapstr.MapStr)
+	mutilCloudArea := make(map[int64]mapstr.MapStr)
 	for _, data := range res.Data.Info {
 		cloudID, err := data.Int64(common.BKCloudIDField)
 		if err != nil {
-			return nil, err
+			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDPlat,
+				common.BKCloudIDField, "int64", err.Error())
 		}
 
 		mutilCloudArea[cloudID] = data
 	}
 
 	// to generate audit log.
-	var logs = make([]metadata.AuditLog, 0)
+	logs := make([]metadata.AuditLog, 0)
 	for cloudID, cloudData := range mutilCloudArea {
 		cloudName, err := cloudData.String(common.BKCloudNameField)
 		if err != nil {
-			return nil, err
-		}
-
-		var basicDetail *metadata.BasicContent
-		switch action {
-		case metadata.AuditCreate:
-			basicDetail = &metadata.BasicContent{
-				CurData: cloudData,
-			}
-		case metadata.AuditDelete:
-			basicDetail = &metadata.BasicContent{
-				PreData: cloudData,
-			}
-		case metadata.AuditUpdate:
-			basicDetail = &metadata.BasicContent{
-				PreData:      cloudData,
-				UpdateFields: updateFields,
-			}
+			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDPlat,
+				common.BKCloudNameField, "string", err.Error())
 		}
 
 		logs = append(logs, metadata.AuditLog{
 			AuditType:    metadata.CloudResourceType,
 			ResourceType: metadata.CloudAreaRes,
-			Action:       action,
+			Action:       parameter.action,
 			ResourceID:   cloudID,
 			ResourceName: cloudName,
-			OperateFrom:  OperateFrom,
+			OperateFrom:  parameter.operateFrom,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					Details: basicDetail,
+					Details: parameter.NewBasicContent(cloudData),
 				},
 				ModelID: common.BKInnerObjIDPlat,
 			},

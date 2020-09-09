@@ -80,7 +80,7 @@ func (h *hostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 
 	defaultBizID, err := h.audit.getDefaultAppID(h.kit)
 	if err != nil {
-		blog.ErrorJSON("save audit GetDefaultAppID failed, err: %s, rid: %s", err, h.kit.Rid)
+		blog.ErrorJSON("save audit failed, failed to get default appID, err: %s, rid: %s", err, h.kit.Rid)
 		return h.kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
@@ -229,7 +229,18 @@ func (h *hostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		}
 
 		// generate audit log.
-		logs = append(logs, *h.generateAuditLog(action, hostID, bizID, hostIP, preData, curData))
+		logs = append(logs, metadata.AuditLog{
+			AuditType:    metadata.HostType,
+			ResourceType: metadata.HostRes,
+			Action:       action,
+			BusinessID:   bizID,
+			ResourceID:   hostID,
+			ResourceName: hostIP,
+			OperationDetail: &metadata.HostTransferOpDetail{
+				PreData: preData,
+				CurData: curData,
+			},
+		})
 	}
 
 	// save audit log.
@@ -248,11 +259,12 @@ func (h *hostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.Mod
 	}
 	result, err := h.audit.clientSet.Host().GetHostModuleRelation(ctx, h.kit.Header, conds)
 	if err != nil {
-		blog.Errorf("getHostModuleConfig http do error, err:%s,input:%+v,rid:%s", err.Error(), conds, h.kit.Rid)
+		blog.Errorf("get host module config failed, http do error, err: %s, input: %+v, rid: %s", err.Error(), conds, h.kit.Rid)
 		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getHostModuleConfig http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, conds, h.kit.Rid)
+		blog.Errorf("get host module config failed, http respond error, err code: %d, err msg: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, conds, h.kit.Rid)
 		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return result.Data.Info, nil
@@ -269,11 +281,12 @@ func (h *hostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors
 
 	result, err := h.audit.clientSet.Host().GetHosts(ctx, h.kit.Header, query)
 	if err != nil {
-		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		blog.Errorf("get hosts failed, http do error, err: %v, input: %+v, rid: %s", err, query, h.kit.Rid)
 		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetHosts http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		blog.Errorf("get hosts failed, http respond error, err code: %d, err msg: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, query, h.kit.Rid)
 		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
@@ -291,11 +304,12 @@ func (h *hostModuleLog) getModules(ctx context.Context, moduleIds []int64) ([]ma
 	}
 	result, err := h.audit.clientSet.Instance().ReadInstance(ctx, h.kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
-		blog.Errorf("getModules http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		blog.Errorf("get modules failed, http do error, err: %v, input: %+v, rid: %s", err, query, h.kit.Rid)
 		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getModules http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		blog.Errorf("get modules failed, http respond error, err code: %d, err msg: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, query, h.kit.Rid)
 		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
@@ -313,11 +327,12 @@ func (h *hostModuleLog) getSets(ctx context.Context, setIDs []int64) ([]mapstr.M
 	}
 	result, err := h.audit.clientSet.Instance().ReadInstance(ctx, h.kit.Header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.Errorf("getSets http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		blog.Errorf("get sets failed, err: %v, input: %+v, rid: %s", err, query, h.kit.Rid)
 		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getSets http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		blog.Errorf("get sets failed, http response error, err code: %d, err msg: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, query, h.kit.Rid)
 		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return result.Data.Info, nil
@@ -334,11 +349,12 @@ func (h *hostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.M
 	}
 	result, err := h.audit.clientSet.Instance().ReadInstance(ctx, h.kit.Header, common.BKInnerObjIDApp, query)
 	if err != nil {
-		blog.Errorf("getApps http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.kit.Rid)
+		blog.Errorf("get business failed, http do error, err: %v, input: %+v, rid: %s", err, query, h.kit.Rid)
 		return nil, h.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getApps http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.kit.Rid)
+		blog.Errorf("get business failed, http response error, err code: %d, err msg: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, query, h.kit.Rid)
 		return nil, h.kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return result.Data.Info, nil
@@ -347,7 +363,7 @@ func (h *hostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.M
 // GenerateAuditLog generate audit log of host module relate.
 func (h *hostModuleLog) generateAuditLog(action metadata.ActionType, hostID, bizID int64, hostIP string,
 	preData, curData metadata.HostBizTopo) *metadata.AuditLog {
-	var auditLog = metadata.AuditLog{
+	return &metadata.AuditLog{
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
 		Action:       action,
@@ -359,6 +375,4 @@ func (h *hostModuleLog) generateAuditLog(action metadata.ActionType, hostID, biz
 			CurData: curData,
 		},
 	}
-
-	return &auditLog
 }

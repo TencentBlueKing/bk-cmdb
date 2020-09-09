@@ -248,7 +248,8 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 
 			// generate audit log for create instance.
 			data := []mapstr.MapStr{mapstr.NewFromMap(bodyData)}
-			auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, objID, metadata.FromDataCollection, data, nil)
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate).WithOperateFrom(metadata.FromDataCollection)
+			auditLog, err := audit.GenerateAuditLog(generateAuditParameter, objID, data)
 			if err != nil {
 				blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
 					objID, err, rid)
@@ -328,10 +329,12 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		User:            common.CCSystemCollectorUserName,
 		SupplierAccount: common.BKDefaultOwnerID,
 	}
-	
+
 	// generate audit log before update instance.
 	auditCond := map[string]interface{}{instIDField: instID}
-	auditLog, err := audit.GenerateAuditLogByCondGetData(kit, metadata.AuditUpdate, objID, metadata.FromDataCollection, auditCond, inst)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(inst)
+	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, objID, auditCond)
 	if err != nil {
 		blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
 			objID, err, rid)

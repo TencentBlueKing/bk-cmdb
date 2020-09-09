@@ -146,7 +146,8 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 
 		// add audit log for create host.
 		audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, hostID, appID, "", metadata.FromUser, nil, nil)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
 		if err != nil {
 			blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
 				hostID, appID, err, kit.Rid)
@@ -410,10 +411,10 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 	// ready audit log of delete host.
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	logContentMap := make(map[int64]*metadata.AuditLog, 0)
-
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 	for _, hostID := range hostIDArr {
 		var err error
-		logContentMap[hostID], err = audit.GenerateAuditLog(kit, metadata.AuditDelete, hostID, bizID, "", metadata.FromUser, nil, nil)
+		logContentMap[hostID], err = audit.GenerateAuditLog(generateAuditParameter, hostID, bizID, "", nil)
 		if err != nil {
 			blog.Errorf("generate host audit log failed before delete host, hostID: %d, bizID: %d, err: %v, rid: %s", hostID, bizID, err, kit.Rid)
 			return nil, err
