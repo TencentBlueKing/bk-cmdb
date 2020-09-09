@@ -12,8 +12,8 @@
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="property in table.header"
-                show-overflow-tooltip
-                :min-width="property.bk_property_id === 'bk_host_id' ? 80 : 120"
+                :show-overflow-tooltip="property.bk_property_type !== 'topology'"
+                :min-width="getColumnMinWidth(property)"
                 :key="property.bk_property_id"
                 :label="$tools.getHeaderPropertyName(property)"
                 :sortable="isPropertySortable(property) ? 'custom' : false"
@@ -21,7 +21,12 @@
                 :fixed="['bk_host_id'].includes(property.bk_property_id)"
                 :class-name="['bk_host_id'].includes(property.bk_property_id) ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
+                    <cmdb-host-topo-path
+                        v-if="property.bk_property_type === 'topology'"
+                        :host="row">
+                    </cmdb-host-topo-path>
                     <cmdb-property-value
+                        v-else
                         :theme="['bk_host_id'].includes(property.bk_property_id) ? 'primary' : 'default'"
                         :value="row | hostValueFilter(property.bk_obj_id, property.bk_property_id)"
                         :show-unit="false"
@@ -46,9 +51,12 @@
     } from '@/dictionary/menu-symbol'
     import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
     import RouterQuery from '@/router/query'
+    import CmdbHostTopoPath from '@/components/host-topo-path/host-topo-path.vue'
+    import HostStore from '../transfer/host-store'
     export default {
         components: {
-            hostListOptions
+            hostListOptions,
+            CmdbHostTopoPath
         },
         filters: {
             hostValueFilter
@@ -64,6 +72,7 @@
                 propertyGroups: [],
                 directory: null,
                 scope: 1,
+                topologyProperty: Object.freeze(this.$tools.createTopologyProperty()),
                 table: {
                     checked: [],
                     selection: [],
@@ -86,7 +95,7 @@
                 columnsConfig: {
                     selected: []
                 },
-                columnsConfigDisabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name'],
+                columnsConfigDisabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id'],
                 request: {
                     property: Symbol('property'),
                     propertyGroup: Symbol('propertyGroup'),
@@ -106,8 +115,8 @@
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
                 const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
-                const hostProperties = this.properties.host
-                return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
+                const hostProperties = this.properties.host.concat([this.topologyProperty])
+                return [...hostProperties, ...businessProperties, ...moduleProperties, ...setProperties]
             }
         },
         watch: {
@@ -198,8 +207,14 @@
                 this.table.header = this.$tools.getHeaderProperties(this.columnsConfigProperties, customColumns, this.columnsConfigDisabledColumns)
                 this.columnsConfig.selected = this.table.header.map(property => property['bk_property_id'])
             },
+            getColumnMinWidth (property) {
+                if (property.bk_property_type === 'topology') {
+                    return 200
+                }
+                return 100
+            },
             isPropertySortable (property) {
-                return property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
+                return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)
             },
             async getHostList (event) {
                 try {
@@ -274,6 +289,7 @@
             handleSelectionChange (selection) {
                 this.table.selection = selection
                 this.table.checked = selection.map(item => item.host.bk_host_id)
+                HostStore.setSelected(selection)
             },
             handleValueClick (item, property) {
                 if (property.bk_obj_id !== 'host' || property.bk_property_id !== 'bk_host_id') {

@@ -65,6 +65,8 @@
                 Bus.$emit('reset-host-filter')
                 RouterQuery.set({
                     scope: tab,
+                    ip: '',
+                    bk_asset_id: '',
                     page: 1,
                     _t: Date.now()
                 })
