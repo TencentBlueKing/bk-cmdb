@@ -55,7 +55,7 @@ for i = 1,KEYS[3] do
 	next = js.next_cursor
 	elements[i] = ele;
 
-	if(next == KEYS[4]) then
+	if(js.cursor == KEYS[4]) then
 		break
 	end;
 end;
