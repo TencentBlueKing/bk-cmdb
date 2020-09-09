@@ -20,6 +20,7 @@
                                 class="search-input"
                                 autocomplete="off"
                                 maxlength="32"
+                                clearable
                                 :placeholder="placeholder"
                                 v-model.trim="keywords"
                                 @input="handleInputSearch"
@@ -27,7 +28,6 @@
                                 @blur="isFocus = false"
                                 @enter="handleShowResult">
                             </bk-input>
-                            <i class="bk-icon search-clear icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
                             <bk-button theme="primary" class="search-btn" @click="handleShowResult">
                                 <i class="bk-icon icon-search"></i>
                                 {{$t('搜索')}}
@@ -40,6 +40,7 @@
                         class="search-input"
                         autocomplete="off"
                         maxlength="32"
+                        clearable
                         :placeholder="placeholder"
                         v-model.trim="keywords"
                         @input="handleInputSearch"
@@ -47,7 +48,6 @@
                         @blur="$emit('focus', false)"
                         @enter="handleShowResult">
                     </bk-input>
-                    <i class="bk-icon search-clear icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
                     <bk-button theme="primary" class="search-btn" @click="handleShowResult">
                         <i class="bk-icon icon-search"></i>
                         {{$t('搜索')}}

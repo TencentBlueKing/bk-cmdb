@@ -270,6 +270,25 @@ func (i *Identifier) findHostServiceInst(kit *rest.Kit, hostIDs []int64) error {
 
 	procs := make(map[int64]metadata.HostIdentProcess, 0)
 	for _, procInfo := range procInfos {
+		// deprecated 为了保持兼容格式
+		for _, item := range procInfo.BindInfo {
+			if item.Std == nil {
+				continue
+			}
+			if procInfo.BindIP == "" && item.Std.IP != nil {
+				procInfo.BindIP = *item.Std.IP
+			}
+			if procInfo.Port == "" && item.Std.Port != nil {
+				procInfo.Port = *item.Std.Port
+			}
+			if procInfo.Protocol == "" && item.Std.Protocol != nil {
+				procInfo.Protocol = *item.Std.Protocol
+			}
+			if item.Std.Enable != nil && *item.Std.Enable {
+				procInfo.PortEnable = *item.Std.Enable
+			}
+		}
+
 		if moduleIDs, ok := procModuleRelation[procInfo.ProcessID]; ok {
 			procInfo.BindModules = moduleIDs
 		}

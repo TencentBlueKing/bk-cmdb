@@ -601,7 +601,7 @@ func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) 
 				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
 			}
 		case "bind_ip":
-			bindIP, ok := val.(string)
+			/* bindIP, ok := val.(string)
 			if !ok {
 				return nil, fmt.Errorf("%s not string. val:%s", key, val)
 			}
@@ -610,7 +610,7 @@ func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) 
 			processProperty.BindIP.AsDefaultValue = &blTrue
 			if err := processProperty.BindIP.Validate(); err != nil {
 				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
+			} */
 		case "priority":
 			priority, err := util.GetInt64ByInterface(val)
 			if err != nil {
@@ -642,15 +642,15 @@ func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) 
 				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
 			}
 		case "port":
-			port, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.Port.Value = &port
-			processProperty.Port.AsDefaultValue = &blTrue
-			if err := processProperty.Port.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
+		/* 	port, ok := val.(string)
+		if !ok {
+			return nil, fmt.Errorf("%s not string. val:%s", key, val)
+		}
+		processProperty.Port.Value = &port
+		processProperty.Port.AsDefaultValue = &blTrue
+		if err := processProperty.Port.Validate(); err != nil {
+			return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
+		} */
 		case "pid_file":
 			pidFile, ok := val.(string)
 			if !ok {
@@ -722,16 +722,16 @@ func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) 
 				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
 			}
 		case "protocol":
-			protocol, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			protocalAlias := metadata.ProtocolType(protocol)
-			processProperty.Protocol.Value = &protocalAlias
-			processProperty.Protocol.AsDefaultValue = &blTrue
-			if err := processProperty.Protocol.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
+		/* 	protocol, ok := val.(string)
+		if !ok {
+			return nil, fmt.Errorf("%s not string. val:%s", key, val)
+		}
+		protocalAlias := metadata.ProtocolType(protocol)
+		processProperty.Protocol.Value = &protocalAlias
+		processProperty.Protocol.AsDefaultValue = &blTrue
+		if err := processProperty.Protocol.Validate(); err != nil {
+			return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
+		} */
 		case "description":
 			desc, ok := val.(string)
 			if !ok {

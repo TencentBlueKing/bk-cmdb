@@ -72,8 +72,20 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                show-overflow-tooltip>
-                <template slot-scope="{ row }">{{(row.property || {})[column.id] | formatter(column.property)}}</template>
+                :show-overflow-tooltip="column.id !== 'bind_info'">
+                <template slot-scope="{ row }">
+                    <cmdb-property-value v-if="column.id !== 'bind_info'"
+                        :value="(row.property || {})[column.id]"
+                        :show-unit="false"
+                        :show-title="true"
+                        :property="column.property">
+                    </cmdb-property-value>
+                    <process-bind-info-value v-else
+                        :value="(row.property || {})[column.id]"
+                        :property="column.property"
+                        :popover-optoins="{ placement: 'bottom' }">
+                    </process-bind-info-value>
+                </template>
             </bk-table-column>
         </bk-table>
     </div>
@@ -85,9 +97,13 @@
         MENU_BUSINESS_DELETE_SERVICE
     } from '@/dictionary/menu-symbol'
     import { processTableHeader } from '@/dictionary/table-header'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     import { mapState } from 'vuex'
     import authMixin from '../mixin-auth'
     export default {
+        components: {
+            ProcessBindInfoValue
+        },
         mixins: [authMixin],
         props: {
             instance: {
