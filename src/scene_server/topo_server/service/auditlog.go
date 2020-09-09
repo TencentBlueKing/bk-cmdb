@@ -14,10 +14,9 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -219,43 +218,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		query.Condition = cond
 	}
 
-	// switch between two different control mechanism
-	// TODO use global authorization for now, need more specific auth control
-	if s.AuthManager.RegisterAuditCategoryEnabled == false {
-		if err := s.AuthManager.AuthorizeAuditRead(ctx.Kit.Ctx, ctx.Kit.Header, 0); err != nil {
-			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			resp, err := s.AuthManager.GenAuthorizeAuditReadNoPermissionsResponse(ctx.Kit.Ctx, ctx.Kit.Header, 0)
-			if err != nil {
-				ctx.RespAutoError(fmt.Errorf("try authorize failed, err: %v", err))
-				return
-			}
-			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
-			return
-		}
-	} else {
-		var hasAuthorize bool
-		for _, bizID := range []int64{businessID, 0} {
-			authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
-			if err != nil {
-				blog.Errorf("AuditQuery failed, make audit query condition from auth failed, %+v, rid: %s", err, ctx.Kit.Rid)
-				ctx.RespAutoError(fmt.Errorf("make audit query condition from auth failed, %+v", err))
-				return
-			}
-
-			if hasAuthorization == true {
-				query.Condition[common.BKDBOR] = authCondition
-				blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, ctx.Kit.Rid)
-				hasAuthorize = hasAuthorization
-				break
-			}
-		}
-		if hasAuthorize == false {
-			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit, rid: %s", ctx.Kit.User, ctx.Kit.Rid)
-			ctx.RespAutoError(auth.NoAuthorizeError)
-			return
-		}
-	}
-
 	blog.V(5).Infof("AuditQuery, AuditOperation parameter: %+v, rid: %s", query, ctx.Kit.Rid)
 	resp, err := s.Core.AuditOperation().Query(ctx.Kit, query)
 	if nil != err {
@@ -363,12 +325,14 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 			common.BKResourceTypeField:                                     metadata.GetResourceTypeByObjID(objectID, isMainline),
 		},
 		{
-			common.BKOperationDetailField + ".src_instance_id": instanceID,
-			common.BKResourceTypeField:                         metadata.InstanceAssociationRes,
+			common.BKOperationDetailField + ".src_instance_id":                instanceID,
+			common.BKOperationDetailField + ".basic_asst_detail.src_model_id": objectID,
+			common.BKResourceTypeField:                                        metadata.InstanceAssociationRes,
 		},
 		{
-			common.BKOperationDetailField + ".target_instance_id": instanceID,
-			common.BKResourceTypeField:                            metadata.InstanceAssociationRes,
+			common.BKOperationDetailField + ".target_instance_id":                instanceID,
+			common.BKOperationDetailField + ".basic_asst_detail.target_model_id": objectID,
+			common.BKResourceTypeField:                                           metadata.InstanceAssociationRes,
 		},
 	}
 	if objectID == common.BKInnerObjIDHost {
@@ -388,36 +352,36 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 		err = s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
 	case common.BKInnerObjIDProc:
 		err = s.AuthManager.AuthorizeByProcessID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
+		if err != nil && err == ac.NoAuthorizeError {
 			resp, err := s.AuthManager.GenProcessNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, businessID)
 			if err != nil {
 				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetAppFailed, businessID))
 				return
 			}
-			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			ctx.RespEntityWithError(resp, ac.NoAuthorizeError)
 			return
 		}
 	case common.BKInnerObjIDModule:
 		err = s.AuthManager.AuthorizeByModuleID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
-			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError)
+		if err != nil && err == ac.NoAuthorizeError {
+			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), ac.NoAuthorizeError)
 			return
 		}
 	case common.BKInnerObjIDSet:
 		err = s.AuthManager.AuthorizeBySetID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
-			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError)
+		if err != nil && err == ac.NoAuthorizeError {
+			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), ac.NoAuthorizeError)
 			return
 		}
 	case common.BKInnerObjIDApp:
 		err = s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
-		if err != nil && err == auth.NoAuthorizeError {
+		if err != nil && err == ac.NoAuthorizeError {
 			resp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, businessID)
 			if err != nil {
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoGetAppFailed))
 				return
 			}
-			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			ctx.RespEntityWithError(resp, ac.NoAuthorizeError)
 			return
 		}
 	default:

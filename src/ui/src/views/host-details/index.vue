@@ -1,35 +1,37 @@
 <template>
     <div class="details-layout">
-        <cmdb-host-info
-            ref="info"
-            @info-toggle="setInfoHeight">
-        </cmdb-host-info>
-        <bk-tab class="details-tab"
-            type="unborder-card"
-            :active.sync="active"
-            :style="{
-                '--infoHeight': infoHeight
-            }">
-            <bk-tab-panel name="property" :label="$t('主机属性')">
-                <cmdb-host-property></cmdb-host-property>
-            </bk-tab-panel>
-            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
-                <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
-            </bk-tab-panel>
-            <bk-tab-panel name="status" :label="$t('实时状态')">
-                <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
-            </bk-tab-panel>
-            <bk-tab-panel name="association" :label="$t('关联')">
-                <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
-            </bk-tab-panel>
-            <bk-tab-panel name="history" :label="$t('变更记录')">
-                <cmdb-audit-history v-if="active === 'history'"
-                    resource-type="host"
-                    target="host"
-                    :inst-id="id">
-                </cmdb-audit-history>
-            </bk-tab-panel>
-        </bk-tab>
+        <div v-bkloading="{ isLoading: loading }" style="height: 100%;">
+            <cmdb-host-info
+                ref="info"
+                @info-toggle="setInfoHeight">
+            </cmdb-host-info>
+            <bk-tab class="details-tab" v-if="!loading"
+                type="unborder-card"
+                :active.sync="active"
+                :style="{
+                    '--infoHeight': infoHeight
+                }">
+                <bk-tab-panel name="property" :label="$t('主机属性')">
+                    <cmdb-host-property></cmdb-host-property>
+                </bk-tab-panel>
+                <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
+                    <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
+                </bk-tab-panel>
+                <bk-tab-panel name="status" :label="$t('实时状态')">
+                    <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
+                </bk-tab-panel>
+                <bk-tab-panel name="association" :label="$t('关联')">
+                    <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('变更记录')">
+                    <cmdb-audit-history v-if="active === 'history'"
+                        resource-type="host"
+                        target="host"
+                        :inst-id="id">
+                    </cmdb-audit-history>
+                </bk-tab-panel>
+            </bk-tab>
+        </div>
     </div>
 </template>
 
@@ -53,10 +55,12 @@
         data () {
             return {
                 active: this.$route.query.tab || 'property',
-                infoHeight: '81px'
+                infoHeight: '81px',
+                loading: true
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             ...mapState('hostDetails', ['info', 'isBusinessHost']),
             ...mapGetters('hostDetails', ['isBusinessHost']),
             id () {
@@ -95,10 +99,19 @@
             setBreadcrumbs (ip) {
                 this.$store.commit('setTitle', `${this.$t('主机详情')}【${ip}】`)
             },
-            getData () {
-                this.getProperties()
-                this.getPropertyGroups()
-                this.getHostInfo()
+            async getData () {
+                try {
+                    this.loading = true
+                    await Promise.all([
+                        this.getProperties(),
+                        this.getPropertyGroups(),
+                        this.getHostInfo()
+                    ])
+                } catch (error) {
+                    console.error(error)
+                } finally {
+                    this.loading = false
+                }
             },
             async getHostInfo () {
                 try {
@@ -121,7 +134,7 @@
                     operator: '$eq',
                     value: this.id
                 }
-                return this.$injectMetadata({
+                return {
                     bk_biz_id: this.business,
                     condition: ['biz', 'set', 'module', 'host'].map(model => {
                         return {
@@ -131,14 +144,19 @@
                         }
                     }),
                     ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
-                })
+                }
             },
             async getProperties () {
                 try {
+                    const params = {
+                        bk_supplier_account: this.supplierAccount,
+                        bk_obj_id: 'host'
+                    }
+                    if (this.business > 0) {
+                        params.bk_biz_id = this.business
+                    }
                     const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                        params: this.$injectMetadata({
-                            bk_obj_id: 'host'
-                        })
+                        params: params
                     })
                     this.$store.commit('hostDetails/setHostProperties', properties)
                 } catch (e) {
@@ -150,7 +168,7 @@
                 try {
                     const propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
                         objId: 'host',
-                        params: this.$injectMetadata()
+                        params: this.business > 0 ? { bk_biz_id: this.business } : {}
                     })
                     this.$store.commit('hostDetails/setHostPropertyGroups', propertyGroups)
                 } catch (e) {

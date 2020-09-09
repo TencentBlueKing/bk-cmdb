@@ -21,11 +21,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	meta "configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
+
 	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
@@ -34,7 +34,6 @@ type customLevel struct {
 	key   customKeyGen
 	rds   *redis.Client
 	event reflector.Interface
-	db    dal.DB
 	lock  tools.RefreshingLock
 	// key is object id
 	customWatch map[string]context.CancelFunc
@@ -280,9 +279,6 @@ func (m *customLevel) onMainlineTopologyListDone() {
 func (m *customLevel) onUpsertCustomInstance(e *types.Event) {
 	blog.V(4).Infof("received biz custom level instance upsert event, detail: %s", e.String())
 
-	// just help us to know that we used metadata here.
-	_ = meta.Metadata{}
-
 	fields := gjson.GetManyBytes(e.DocBytes, "bk_obj_id", "bk_inst_id", "bk_inst_name", "metadata.label.bk_biz_id", "bk_parent_id")
 	objID := fields[0].String()
 	if len(objID) == 0 {
@@ -372,7 +368,7 @@ func (m *customLevel) getMainlineTopology() ([]MainlineTopoAssociation, error) {
 	filter := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
-	err := m.db.Table(common.BKTableNameObjAsst).Find(filter).All(context.Background(), &relations)
+	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(filter).All(context.Background(), &relations)
 	if err != nil {
 		blog.Errorf("get mainline topology association failed, err: %v", err)
 		return nil, err
@@ -408,7 +404,7 @@ func (m *customLevel) getCustomObjInstName(instID int64) (name string, err error
 	filter := mapstr.MapStr{
 		common.BKInstIDField: instID,
 	}
-	err = m.db.Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), instance)
+	err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), instance)
 	if err != nil {
 		blog.Errorf("find mainline custom level with instance: %d, failed, err: %v", instID, err)
 		return "", err

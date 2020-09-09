@@ -4,12 +4,6 @@ import {
     MENU_BUSINESS_SERVICE,
     MENU_BUSINESS_SET_TEMPLATE
 } from '@/dictionary/menu-symbol'
-import {
-    C_SET_TEMPLATE,
-    U_SET_TEMPLATE,
-    D_SET_TEMPLATE,
-    U_TOPO
-} from '@/dictionary/auth'
 
 export default [{
     name: MENU_BUSINESS_SET_TEMPLATE,
@@ -20,14 +14,6 @@ export default [{
         menu: {
             i18n: '集群模板',
             parent: MENU_BUSINESS_SERVICE
-        },
-        auth: {
-            operation: {
-                C_SET_TEMPLATE,
-                U_SET_TEMPLATE,
-                D_SET_TEMPLATE,
-                U_TOPO
-            }
         }
     })
 }, {
@@ -39,16 +25,7 @@ export default [{
         menu: {
             i18n: '集群模板',
             relative: MENU_BUSINESS_SET_TEMPLATE
-        },
-        auth: {
-            operation: {
-                C_SET_TEMPLATE,
-                U_SET_TEMPLATE,
-                D_SET_TEMPLATE,
-                U_TOPO
-            }
-        },
-        layout: {}
+        }
     })
 }, {
     name: 'syncHistory',
@@ -59,7 +36,6 @@ export default [{
         menu: {
             i18n: '同步历史',
             relative: MENU_BUSINESS_SET_TEMPLATE
-        },
-        layout: {}
+        }
     })
 }]

@@ -13,7 +13,6 @@
 package logics
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -21,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -36,16 +36,16 @@ type InstNameAsst struct {
 	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
 }
 
-func (lgc *Logics) getInstAsst(ctx context.Context, owerID, objID string, IDs []string, query *meta.QueryInput) ([]InstNameAsst, int, errors.CCError) {
-	return lgc.getRawInstAsst(ctx, owerID, objID, IDs, query, false)
+func (lgc *Logics) getInstAsst(kit *rest.Kit, objID string, IDs []string, query *meta.QueryInput) ([]InstNameAsst, int, errors.CCError) {
+	return lgc.getRawInstAsst(kit, objID, IDs, query, false)
 
 }
 
-func (lgc *Logics) getInstAsstDetail(ctx context.Context, owerID, objID string, IDs []string, query *meta.QueryInput) ([]InstNameAsst, int, errors.CCError) {
-	return lgc.getRawInstAsst(ctx, owerID, objID, IDs, query, true)
+func (lgc *Logics) getInstAsstDetail(kit *rest.Kit, objID string, IDs []string, query *meta.QueryInput) ([]InstNameAsst, int, errors.CCError) {
+	return lgc.getRawInstAsst(kit, objID, IDs, query, true)
 }
 
-func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, IDs []string, query *meta.QueryInput, isDetail bool) ([]InstNameAsst, int, errors.CCError) {
+func (lgc *Logics) getRawInstAsst(kit *rest.Kit, objID string, IDs []string, query *meta.QueryInput, isDetail bool) ([]InstNameAsst, int, errors.CCError) {
 	var instName, instID string
 	tmpIDs := []int{}
 	for _, ID := range IDs {
@@ -54,8 +54,8 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		}
 		tmpID, err := strconv.Atoi(ID)
 		if nil != err {
-			blog.Errorf("getRawInstAsst get objID(%s) inst id not integer, inst id:(%+v), rid:%s", objID, IDs, lgc.rid)
-			return nil, 0, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, objID, "association id", "int", err.Error())
+			blog.Errorf("getRawInstAsst get objID(%s) inst id not integer, inst id:(%+v), rid:%s", objID, IDs, kit.Rid)
+			return nil, 0, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, objID, "association id", "int", err.Error())
 		}
 		tmpIDs = append(tmpIDs, tmpID)
 	}
@@ -66,8 +66,8 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 	if nil != query.Condition {
 		newCondtion, err := mapstr.NewFromInterface(query.Condition)
 		if err != nil {
-			blog.Errorf("getRawInstAsst get objID(%s) inst id not integer, inst id:(%+v), rid:%s", objID, IDs, lgc.rid)
-			return nil, 0, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, objID, "query condition", "map[string]interface{}", err.Error())
+			blog.Errorf("getRawInstAsst get objID(%s) inst id not integer, inst id:(%+v), rid:%s", objID, IDs, kit.Rid)
+			return nil, 0, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, objID, "query condition", "map[string]interface{}", err.Error())
 		}
 		condition = newCondtion
 	}
@@ -121,14 +121,14 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		rawObjID = objID
 	}
 	input.Condition = condition
-	rtn, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, rawObjID, input)
+	rtn, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, rawObjID, input)
 	if err != nil {
-		blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, input, lgc.rid)
-		return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, input, kit.Rid)
+		return nil, 0, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rtn.Result {
-		blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, input, lgc.rid)
-		return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
+		blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, input, kit.Rid)
+		return nil, 0, kit.CCError.New(rtn.Code, rtn.ErrMsg)
 	}
 
 	delarry := func(s []string, i int) []string {
@@ -152,7 +152,7 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 
 				itemInstID, err := util.GetInt64ByInterface(dataVal)
 				if nil != err {
-					blog.Errorf("not found assocte object ID %s from %v, rid: %s", instID, info, lgc.rid)
+					blog.Errorf("not found assocte object ID %s from %v, rid: %s", instID, info, kit.Rid)
 					return nil, 0, fmt.Errorf("not found assocte object ID %s from %v", instID, info)
 				}
 				if 0 != len(IDs) {

@@ -14,25 +14,24 @@ package searcher
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/source_controller/coreservice/cache"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type Searcher struct {
-	DbProxy dal.RDB
-	Cache   *redis.Client
+	CacheSet *cache.ClientSet
 }
 
-func New(db dal.RDB, cache *redis.Client) Searcher {
+func New(CacheSet *cache.ClientSet) Searcher {
 	return Searcher{
-		DbProxy: db,
-		Cache:   cache,
+		CacheSet: CacheSet,
 	}
 }
 
@@ -63,17 +62,12 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	}
 	hostIDFilter := map[string]interface{}{}
 	if len(relationFilter) > 0 {
-		relations := make([]metadata.ModuleHost, 0)
-		if err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(ctx, &relations); err != nil {
+
+		hostIDs, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(ctx, common.BKHostIDField, relationFilter)
+		if err != nil {
 			blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", relationFilter, err, rid)
 			return nil, err
 		}
-
-		hostIDs := make([]int64, 0)
-		for _, relation := range relations {
-			hostIDs = append(hostIDs, relation.HostID)
-		}
-		hostIDs = util.IntArrayUnique(hostIDs)
 
 		hostIDFilter = map[string]interface{}{
 			common.BKHostIDField: map[string]interface{}{
@@ -91,7 +85,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", hostIDFilter, err, rid)
 		return nil, err
 	}
-	if propertyFilter != nil {
+	if len(propertyFilter) > 0 {
 		filters = append(filters, propertyFilter)
 	}
 	finalFilter := map[string]interface{}{}
@@ -100,7 +94,38 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		finalFilter[common.BKDBAND] = filters
 	}
 
-	total, err := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Count(ctx)
+	if len(filters) == 0 {
+
+		// return info use cache
+		// fix: has question when multi-supplier
+		sort := strings.TrimLeft(option.Page.Sort, "+-")
+		if len(option.Page.Sort) == 0 || sort == common.BKHostIDField || strings.Contains(sort, ",") == false && strings.HasPrefix(sort, common.BKHostIDField+":") {
+			opt := &metadata.ListHostWithPage{
+				Fields: option.Fields,
+				Page:   option.Page,
+			}
+			total, infos, err := s.CacheSet.Host.ListHostsWithPage(ctx, opt)
+			if err != nil {
+				blog.ErrorJSON("list host from redis error, filter: %s, err: %s, rid: %s", opt, err.Error(), rid)
+				// HOOK: 缓存出现错误从db中获取数据
+			} else {
+				searchResult = &metadata.ListHostResult{}
+				searchResult.Count = int(total)
+
+				searchResult.Info = make([]map[string]interface{}, 0)
+				if err := json.UnmarshalArray(infos, &searchResult.Info); err != nil {
+					blog.ErrorJSON("list host from redis error, filter: %s, item host: %s, err: %s,rid: %s", opt, infos, err, rid)
+					// TODO： use cc error. keep the same as before code
+					return nil, err
+				}
+
+				return searchResult, nil
+			}
+
+		}
+	}
+
+	total, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Count(ctx)
 	if err != nil {
 		blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
 		return nil, err
@@ -110,7 +135,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
-	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start).Fields(option.Fields...)
+	query := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start).Fields(option.Fields...)
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	} else {

@@ -23,15 +23,15 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
+
 	"gopkg.in/redis.v5"
 )
 
 type Client struct {
 	rds   *redis.Client
 	event reflector.Interface
-	db    dal.DB
 	lock  tools.RefreshingLock
 }
 
@@ -53,7 +53,7 @@ func (c *Client) GetBizBaseList() ([]BizBaseInfo, error) {
 	blog.Errorf("get biz base list from cache failed, will get from mongodb, err: %v", err)
 	// get from db directly.
 	list := make([]BizBaseInfo, 0)
-	err = c.db.Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField, common.BKAppNameField).All(context.Background(), &list)
+	err = mongodb.Client().Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField, common.BKAppNameField).All(context.Background(), &list)
 	if err != nil {
 		blog.Errorf("sync biz list to refresh cache, but get biz list from mongodb failed, err: %v", err)
 		return nil, err
@@ -291,7 +291,7 @@ func (c *Client) GetModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 		common.BKAppIDField: bizID,
 	}
 
-	err = c.db.Table(common.BKTableNameBaseModule).Find(filter).All(context.Background(), &list)
+	err = mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).All(context.Background(), &list)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,49 @@ func (c *Client) GetModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 	return list, nil
 }
 
-func (c *Client) GetModule(moduleID int64) (string, error) {
+func (c *Client) ListModuleDetails(moduleIDs []int64) ([]string, error) {
+	if len(moduleIDs) == 0 {
+		return make([]string, 0), nil
+	}
+
+	keys := make([]string, len(moduleIDs))
+	// try refresh the module at first.
+	for idx, module := range moduleIDs {
+		c.tryRefreshInstanceDetail(module, refreshInstance{
+			mainKey:        moduleKey.detailKey(module),
+			lockKey:        moduleKey.detailLockKey(module),
+			expireKey:      moduleKey.detailExpireKey(module),
+			expireDuration: moduleKey.detailExpireDuration,
+			getDetail:      c.getModuleDetailFromMongo,
+		})
+		keys[idx] = moduleKey.detailKey(module)
+	}
+
+	modules, err := c.rds.MGet(keys...).Result()
+	if err == nil {
+		list := make([]string, len(modules))
+		for idx, m := range modules {
+			if m == nil {
+				detail, err := c.getModuleDetailFromMongo(moduleIDs[idx])
+				if err != nil {
+					blog.Errorf("get module %d detail from db failed, err: %v", moduleIDs[idx], err)
+					return nil, err
+				}
+
+				list[idx] = detail
+				continue
+			}
+			list[idx] = m.(string)
+		}
+		return list, nil
+	}
+	blog.Errorf("get modules details from redis failed, err: %v", err)
+
+	// can not get from redis, get from db directly.
+	return c.listModuleDetailFromMongo(moduleIDs)
+}
+
+func (c *Client) GetModuleDetail(moduleID int64) (string, error) {
 	// try refresh the module cache
 	c.tryRefreshInstanceDetail(moduleID, refreshInstance{
 		mainKey:        moduleKey.detailKey(moduleID),
@@ -339,7 +381,7 @@ func (c *Client) GetSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 		common.BKAppIDField: bizID,
 	}
 
-	err = c.db.Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &list)
+	err = mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &list)
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +390,7 @@ func (c *Client) GetSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 }
 
 func (c *Client) GetSet(setID int64) (string, error) {
-	// try refresh the module cache
+	// try refresh the set cache
 	c.tryRefreshInstanceDetail(setID, refreshInstance{
 		mainKey:        setKey.detailKey(setID),
 		lockKey:        setKey.detailLockKey(setID),
@@ -361,9 +403,51 @@ func (c *Client) GetSet(setID int64) (string, error) {
 	if err == nil && len(set) != 0 {
 		return set, nil
 	}
-	blog.Errorf("get set: %d failed from redis, err: %v", err)
+	blog.Errorf("get set: %d failed from redis failed, err: %v", setID, err)
 	// get from db directly.
 	return c.getSetDetailFromMongo(setID)
+}
+
+func (c *Client) ListSetDetails(setIDs []int64) ([]string, error) {
+	if len(setIDs) == 0 {
+		return make([]string, 0), nil
+	}
+	keys := make([]string, len(setIDs))
+	// try refresh the set cache
+	for idx, set := range setIDs {
+		c.tryRefreshInstanceDetail(set, refreshInstance{
+			mainKey:        setKey.detailKey(set),
+			lockKey:        setKey.detailLockKey(set),
+			expireKey:      setKey.detailExpireKey(set),
+			expireDuration: setKey.detailExpireDuration,
+			getDetail:      c.getSetDetailFromMongo,
+		})
+
+		keys[idx] = setKey.detailKey(set)
+	}
+
+	sets, err := c.rds.MGet(keys...).Result()
+	if err == nil && len(sets) != 0 {
+		all := make([]string, len(sets))
+		for idx, s := range sets {
+			if s == nil {
+				detail, err := c.getSetDetailFromMongo(setIDs[idx])
+				if err != nil {
+					blog.Errorf("get set %d from mongodb failed, err: %v", setIDs[idx], err)
+					return nil, err
+				}
+				all[idx] = detail
+				continue
+			}
+			all[idx] = s.(string)
+		}
+
+		return all, nil
+	}
+	blog.Errorf("get sets: %v failed from redis failed, err: %v", setIDs, err)
+
+	// get from db directly.
+	return c.listSetDetailFromMongo(setIDs)
 }
 
 func (c *Client) GetCustomLevelBaseList(objectID string, bizID int64) ([]CustomInstanceBase, error) {
@@ -398,13 +482,58 @@ func (c *Client) GetCustomLevelDetail(objID string, instID int64) (string, error
 		},
 	})
 
-	set, err := c.rds.Get(customKey.detailKey(objID, instID)).Result()
-	if err == nil && len(set) != 0 {
-		return set, nil
+	custom, err := c.rds.Get(customKey.detailKey(objID, instID)).Result()
+	if err == nil && len(custom) != 0 {
+		return custom, nil
 	}
 	blog.Errorf("get biz custom level, obj:%s, inst: %d failed from redis, err: %v", objID, instID, err)
 	// get from db directly.
 	return c.getCustomLevelDetail(objID, instID)
+}
+
+func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string, error) {
+
+	if len(instIDs) == 0 {
+		return make([]string, 0), nil
+	}
+
+	keys := make([]string, len(instIDs))
+	for idx, instID := range instIDs {
+		c.tryRefreshInstanceDetail(instID, refreshInstance{
+			mainKey:        customKey.detailKey(objID, instID),
+			lockKey:        customKey.detailLockKey(objID, instID),
+			expireKey:      customKey.detailExpireKey(objID, instID),
+			expireDuration: customKey.detailExpireDuration,
+			getDetail: func(instID int64) (s string, err error) {
+				return c.getCustomLevelDetail(objID, instID)
+			},
+		})
+
+		keys[idx] = customKey.detailKey(objID, instID)
+	}
+
+	customs, err := c.rds.MGet(keys...).Result()
+	if err == nil && len(customs) != 0 {
+		all := make([]string, len(customs))
+		for idx, cu := range customs {
+			if cu == nil {
+				detail, err := c.getCustomLevelDetail(objID, instIDs[idx])
+				if err != nil {
+					blog.Errorf("get %s/%d detail from mongodb failed, err: %v", objID, instIDs[idx], err)
+					return nil, err
+				}
+				all[idx] = detail
+				continue
+			}
+
+			all[idx] = cu.(string)
+		}
+		return all, nil
+	}
+
+	blog.Errorf("get biz custom level, obj:%s, inst: %v failed from redis, err: %v", objID, instIDs, err)
+	// get from db directly.
+	return c.listCustomLevelDetail(objID, instIDs)
 }
 
 func (c *Client) GetTopology() ([]string, error) {

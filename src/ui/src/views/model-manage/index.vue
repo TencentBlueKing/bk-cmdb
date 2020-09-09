@@ -12,7 +12,7 @@
                 {{$t('模型顶部提示')}}
             </cmdb-tips>
             <div class="fl">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_MODEL })">
+                <cmdb-auth :auth="{ type: $OPERATION.C_MODEL }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled || modelType === 'disabled'"
@@ -20,7 +20,7 @@
                         {{$t('新建模型')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_MODEL_GROUP })">
+                <cmdb-auth :auth="{ type: $OPERATION.C_MODEL_GROUP }">
                     <bk-button slot-scope="{ disabled }"
                         theme="default"
                         :disabled="disabled || modelType === 'disabled'"
@@ -62,17 +62,16 @@
                 :key="classIndex">
                 <div class="group-title">
                     <div class="title-info"
-                        v-if="classification.bk_classification_type === 'inner'"
-                        v-bk-tooltips="groupToolTips">
-                        <span class="mr5">{{classification['bk_classification_name']}}</span>
-                        <span class="number">({{classification['bk_objects'].length}})</span>
-                    </div>
-                    <div class="title-info" v-else>
+                        v-bk-tooltips="{
+                            disabled: isEditable(classification),
+                            content: $t('内置模型组不支持添加和修改'),
+                            placement: 'right'
+                        }">
                         <span class="mr5">{{classification['bk_classification_name']}}</span>
                         <span class="number">({{classification['bk_objects'].length}})</span>
                     </div>
                     <template v-if="isEditable(classification) && modelType === 'enable'">
-                        <cmdb-auth v-if="!mainLoading" class="group-btn ml5" :auth="$authResources({ type: $OPERATION.C_MODEL })">
+                        <cmdb-auth v-if="!mainLoading" class="group-btn ml5" :auth="{ type: $OPERATION.C_MODEL, relation: [classification.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 text
@@ -81,10 +80,7 @@
                                 <i class="icon-cc-add-line"></i>
                             </bk-button>
                         </cmdb-auth>
-                        <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="$authResources({
-                            resource_id: classification.id,
-                            type: $OPERATION.U_MODEL_GROUP
-                        })">
+                        <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="{ type: $OPERATION.U_MODEL_GROUP, relation: [classification.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 text
@@ -93,10 +89,7 @@
                                 <i class="icon-cc-edit"></i>
                             </bk-button>
                         </cmdb-auth>
-                        <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="$authResources({
-                            resource_id: classification.id,
-                            type: $OPERATION.D_MODEL_GROUP
-                        })">
+                        <cmdb-auth v-if="!mainLoading" class="group-btn" :auth="{ type: $OPERATION.D_MODEL_GROUP, relation: [classification.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 text
@@ -249,10 +242,6 @@
                 sucessDialog: {
                     isShow: false
                 },
-                groupToolTips: {
-                    content: this.$t('内置模型组不支持添加和修改'),
-                    placement: 'right'
-                },
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -274,7 +263,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -284,7 +273,7 @@
                     enableClassifications.push({
                         ...classification,
                         'bk_objects': classification['bk_objects'].filter(model => {
-                            return !model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                            return !model.bk_ispaused && !model.bk_ishidden
                         })
                     })
                 })
@@ -294,7 +283,7 @@
                 const disabledClassifications = []
                 this.classifications.forEach(classification => {
                     const disabledModels = classification['bk_objects'].filter(model => {
-                        return model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                        return model.bk_ispaused && !model.bk_ishidden
                     })
                     if (disabledModels.length) {
                         disabledClassifications.push({
@@ -351,7 +340,7 @@
                 await Promise.all([
                     this.getModelStatistics(),
                     this.searchClassificationsObjects({
-                        params: this.$injectMetadata(),
+                        params: {},
                         config: {
                             requestId: this.request.searchClassifications
                         }
@@ -392,16 +381,7 @@
                 this.topPadding = this.$refs.mainInject.$el.offsetHeight
             },
             isEditable (classification) {
-                if (classification['bk_classification_type'] === 'inner') {
-                    return false
-                }
-                if (this.isAdminView) {
-                    return true
-                }
-                return !!this.$tools.getMetadataBiz(classification)
-            },
-            isInner (model) {
-                return !this.$tools.getMetadataBiz(model)
+                return !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classification.bk_classification_id)
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
@@ -443,11 +423,11 @@
                 if (res.includes(false)) {
                     return
                 }
-                const params = this.$injectMetadata({
+                const params = {
                     bk_supplier_account: this.supplierAccount,
                     bk_classification_id: this.groupDialog.data['bk_classification_id'],
                     bk_classification_name: this.groupDialog.data['bk_classification_name']
-                })
+                }
                 if (this.groupDialog.isEdit) {
                     // eslint-disable-next-line
                     const res = await this.updateClassification({
@@ -473,12 +453,7 @@
                     title: this.$t('确认要删除此分组'),
                     confirmFn: async () => {
                         await this.deleteClassification({
-                            id: group.id,
-                            config: {
-                                data: this.$injectMetadata({}, {
-                                    inject: !!this.$tools.getMetadataBiz(group)
-                                })
-                            }
+                            id: group.id
                         })
                         this.$store.commit('objectModelClassify/deleteClassify', group['bk_classification_id'])
                         this.searchModel = ''
@@ -490,21 +465,21 @@
                 this.modelDialog.isShow = true
             },
             async saveModel (data) {
-                const params = this.$injectMetadata({
+                const params = {
                     bk_supplier_account: this.supplierAccount,
                     bk_obj_name: data['bk_obj_name'],
                     bk_obj_icon: data['bk_obj_icon'],
                     bk_classification_id: data['bk_classification_id'],
                     bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
-                })
+                }
                 const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
                 this.curCreateModel = createModel
                 this.sucessDialog.isShow = true
                 this.$http.cancel('post_searchClassificationsObjects')
                 this.getModelStatistics()
                 this.searchClassificationsObjects({
-                    params: this.$injectMetadata()
+                    params: {}
                 })
                 this.modelDialog.isShow = false
                 this.modelDialog.groupId = ''

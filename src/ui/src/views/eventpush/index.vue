@@ -7,7 +7,7 @@
             {{$t('事件推送顶部提示')}}
         </cmdb-tips>
         <div class="btn-wrapper clearfix">
-            <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_EVENT })">
+            <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.C_EVENT }">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="disabled"
@@ -45,7 +45,7 @@
             </bk-table-column>
             <bk-table-column prop="setting" :label="$t('配置')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_EVENT })">
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_EVENT, relation: [row.subscription_id] }">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             text
@@ -54,7 +54,7 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.D_EVENT })">
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.D_EVENT, relation: [row.subscription_id] }">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             text
@@ -68,7 +68,6 @@
             <cmdb-table-empty slot="empty" :stuff="table.stuff">
                 <template>
                     <p>{{$t('暂时没有数据')}}</p>
-                    <p>{{$t('事件推送功能提示')}}</p>
                 </template>
             </cmdb-table-empty>
         </bk-table>

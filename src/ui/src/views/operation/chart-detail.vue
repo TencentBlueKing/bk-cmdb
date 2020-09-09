@@ -155,7 +155,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
 
     export default {
         name: 'chart-detail',
@@ -225,12 +225,16 @@
                 staList: [],
                 chartType: true,
                 showDia: true,
-                hostFilter: ['host', 'module', 'biz', 'set', 'process', 'plat'],
+                hostFilter: ['host', 'module', 'biz', 'set'],
                 editTitle: '',
                 maxNum: 0
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModelClassify', [
+                'getModelById'
+            ]),
             filterList () {
                 return this.demList.filter(item => {
                     if (this.hostType === 'host') {
@@ -241,7 +245,8 @@
             },
             staticFilter () {
                 return this.staList.filter(item => {
-                    return this.hostFilter.indexOf(item.bk_obj_id) === -1
+                    const model = this.getModelById(item.bk_obj_id)
+                    return !model.bk_ishidden && !this.hostFilter.includes(item.bk_obj_id)
                 })
             },
             typeFilter () {
@@ -271,7 +276,7 @@
             if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
         },
         mounted () {
-            this.$refs.dialog.dialogIndex = this.$refs.dialog.getDialogIndex()
+            this.showDia = true
         },
         methods: {
             ...mapActions('operationChart', [
@@ -309,7 +314,8 @@
             async getDemList (id) {
                 this.demList = await this.getStaticDimeObj({
                     params: {
-                        bk_obj_id: id
+                        bk_obj_id: id,
+                        bk_supplier_account: this.supplierAccount
                     }
                 })
                 this.$validator.reset()

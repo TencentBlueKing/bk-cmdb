@@ -14,11 +14,9 @@ package mongo
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -63,46 +61,6 @@ func (c Config) BuildURI() string {
 	c.Password = strings.Replace(c.Password, ":", "%3a", -1)
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/%s?authMechanism=%s", c.User, c.Password, c.Address, c.Database, c.Mechanism)
 	return uri
-}
-
-// ParseConfigFromKV returns a new config
-func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
-	c := Config{
-		Address:   configmap[prefix+".host"],
-		Port:      configmap[prefix+".port"],
-		User:      configmap[prefix+".usr"],
-		Password:  configmap[prefix+".pwd"],
-		Database:  configmap[prefix+".database"],
-		Mechanism: configmap[prefix+".mechanism"],
-		RsName:    configmap[prefix+".rsName"],
-	}
-
-	if c.RsName == "" {
-		blog.Errorf("rsName not set")
-	}
-	if c.Mechanism == "" {
-		c.Mechanism = "SCRAM-SHA-1"
-	}
-
-	maxOpenConns, err := strconv.ParseUint(configmap[prefix+".maxOpenConns"], 10, 64)
-	if err != nil {
-		blog.Errorf("parse mongo.maxOpenConns config error: %s, use default value: %d", err.Error(), DefaultMaxOpenConns)
-		maxOpenConns = DefaultMaxOpenConns
-	}
-	if maxOpenConns > MaximumMaxOpenConns {
-		blog.Errorf("mongo.maxOpenConns config %d exceeds maximum value, use maximum value %d", maxOpenConns, MaximumMaxOpenConns)
-		maxOpenConns = MaximumMaxOpenConns
-	}
-	c.MaxOpenConns = maxOpenConns
-
-	maxIdleConns, err := strconv.ParseUint(configmap[prefix+".maxIdleConns"], 10, 64)
-	if err != nil || maxIdleConns < MinimumMaxIdleOpenConns {
-		blog.Errorf("parse mongo.maxIdleConns config encounters error %v or %d less than minimum value, use minimum value %d", err, maxIdleConns, MinimumMaxIdleOpenConns)
-		maxIdleConns = MinimumMaxIdleOpenConns
-	}
-	c.MaxIdleConns = maxIdleConns
-
-	return c
 }
 
 func (c Config) GetMongoConf() local.MongoConf {

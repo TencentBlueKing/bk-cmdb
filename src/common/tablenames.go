@@ -101,6 +101,11 @@ const (
 
 	// rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
+
+	// cloud sync tables
+	BKTableNameCloudSyncTask    = "cc_CloudSyncTask"
+	BKTableNameCloudAccount     = "cc_CloudAccount"
+	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
 )
 
 // AllTables alltables
@@ -111,9 +116,7 @@ var AllTables = []string{
 	BKTableNameProcInstanceDetail,
 	BKTableNameProcOperateTask,
 	BKTableNamePropertyGroup,
-	BKTableNameAsstDes,
 	BKTableNameObjDes,
-	BKTableNameObjUnique,
 	BKTableNameObjAttDes,
 	BKTableNameObjClassification,
 	BKTableNameInstAsst,
@@ -158,6 +161,9 @@ var AllTables = []string{
 	BKTableNameAPITask,
 	BKTableNameSetTemplateSyncStatus,
 	BKTableNameSetTemplateSyncHistory,
+	BKTableNameCloudSyncTask,
+	BKTableNameCloudAccount,
+	BKTableNameCloudSyncHistory,
 }
 
 // GetInstTableName returns inst data table name

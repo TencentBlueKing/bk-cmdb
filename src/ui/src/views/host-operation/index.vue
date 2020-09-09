@@ -229,7 +229,7 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
             ...mapGetters('businessHost', [
                 'getDefaultSearchCondition',
                 'failHostList'
@@ -391,6 +391,7 @@
                     this.loading = false
                     if (e.code === 9900403) {
                         this.$route.meta.view = 'permission'
+                        this.$route.meta.auth.permission = e.permission
                     }
                 }
             },
@@ -556,7 +557,8 @@
                 const props = {
                     moduleType: this.type,
                     title: this.type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块'),
-                    defaultChecked: this.targetModules
+                    defaultChecked: this.targetModules,
+                    business: this.currentBusiness
                 }
                 const selection = this.hostInfo
                 const firstSelectionModules = selection[0].module.map(module => module.bk_module_id).sort()

@@ -49,7 +49,7 @@ const actions = {
         return $http.post(`find/objecttopo/scope_type/global/scope_id/0`, params).then(data => {
             return data.filter(node => {
                 const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
-                return model && !model.bk_ispaused && !['plat', 'process'].includes(node.bk_obj_id)
+                return model && !model.bk_ispaused && !model.bk_ishidden
             })
         })
     },

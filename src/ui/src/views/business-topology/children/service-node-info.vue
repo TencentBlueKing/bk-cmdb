@@ -51,7 +51,7 @@
                                     <span class="text link">{{templateInfo.setTemplateName}}</span>
                                     <i class="icon-cc-share"></i>
                                 </div>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                                <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [business] }">
                                     <bk-button slot-scope="{ disabled }"
                                         :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
                                         :disabled="!hasChange || disabled"
@@ -66,7 +66,7 @@
                 </template>
             </div>
             <template slot="details-options">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [business] }">
                     <template slot-scope="{ disabled }">
                         <bk-button class="button-edit"
                             theme="primary"
@@ -76,7 +76,7 @@
                         </bk-button>
                     </template>
                 </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
+                <cmdb-auth :auth="{ type: $OPERATION.D_TOPO, relation: [business] }">
                     <template slot-scope="{ disabled }">
                         <span class="inline-block-middle" v-if="moduleFromSetTemplate"
                             v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
@@ -93,6 +93,9 @@
                     </template>
                 </cmdb-auth>
             </template>
+            <div :slot="nodeNamePropertyId" v-bk-overflow-tips>
+                {{`[${instance[nodePrimaryPropertyId] || '--'}] ${instance[nodeNamePropertyId] || '--'}`}}
+            </div>
         </cmdb-details>
         <template v-else-if="type === 'update'">
             <cmdb-form class="topology-form"
@@ -102,6 +105,7 @@
                 :disabled-properties="disabledProperties"
                 :inst="instance"
                 :type="type"
+                :save-auth="{ type: $OPERATION.U_TOPO, relation: [business] }"
                 @on-submit="handleSubmit"
                 @on-cancel="handleCancel">
                 <div class="service-category" v-if="!withTemplate && isModuleNode" slot="prepend">
@@ -194,6 +198,28 @@
                 }
                 return null
             },
+            nodeNamePropertyId () {
+                if (this.modelId) {
+                    const map = {
+                        biz: 'bk_biz_name',
+                        set: 'bk_set_name',
+                        module: 'bk_module_name'
+                    }
+                    return map[this.modelId] || 'bk_inst_name'
+                }
+                return null
+            },
+            nodePrimaryPropertyId () {
+                if (this.modelId) {
+                    const map = {
+                        biz: 'bk_biz_id',
+                        set: 'bk_set_id',
+                        module: 'bk_module_id'
+                    }
+                    return map[this.modelId] || 'bk_inst_id'
+                }
+                return null
+            },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
             },
@@ -275,10 +301,11 @@
                 } else {
                     const action = 'objectModelProperty/searchObjectAttribute'
                     properties = await this.$store.dispatch(action, {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.business,
                             bk_obj_id: modelId,
                             bk_supplier_account: this.$store.getters.supplierAccount
-                        }),
+                        },
                         config: {
                             requestId: 'getModelProperties'
                         }
@@ -299,7 +326,7 @@
                     const action = 'objectModelFieldGroup/searchGroup'
                     groups = await this.$store.dispatch(action, {
                         objId: modelId,
-                        params: this.$injectMetadata(),
+                        params: { bk_biz_id: this.business },
                         config: {
                             requestId: 'getModelPropertyGroups'
                         }
@@ -414,7 +441,7 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata({}, { injectBizId: true })
+                            params: { bk_biz_id: this.business }
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.$store.commit('businessHost/setCategories', {
@@ -494,7 +521,7 @@
                     module: 'bk_module_name'
                 }
                 try {
-                    await (promiseMap[this.modelId] || this.updateCustomInstance)(this.$injectMetadata(value))
+                    await (promiseMap[this.modelId] || this.updateCustomInstance)({ ...value, bk_biz_id: this.business })
                     this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']
                     this.instance = Object.assign({}, this.instance, value)
                     this.getServiceInfo(this.instance)
@@ -576,7 +603,7 @@
                     setId: this.selectedNode.data.bk_inst_id,
                     config: {
                         requestId: 'deleteNodeInstance',
-                        data: this.$injectMetadata({})
+                        data: { bk_biz_id: this.business }
                     }
                 })
             },
@@ -587,7 +614,7 @@
                     moduleId: this.selectedNode.data.bk_inst_id,
                     config: {
                         requestId: 'deleteNodeInstance',
-                        data: this.$injectMetadata({})
+                        data: { bk_biz_id: this.business }
                     }
                 })
             },
@@ -597,7 +624,7 @@
                     instId: this.selectedNode.data.bk_inst_id,
                     config: {
                         requestId: 'deleteNodeInstance',
-                        data: this.$injectMetadata()
+                        data: { bk_biz_id: this.business }
                     }
                 })
             },
@@ -617,9 +644,10 @@
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
                             config: {
                                 requestId: 'removeServiceTemplate',
-                                data: this.$injectMetadata({
-                                    bk_module_id: this.instance.bk_module_id
-                                }, { injectBizId: true })
+                                data: {
+                                    bk_module_id: this.instance.bk_module_id,
+                                    bk_biz_id: this.business
+                                }
                             }
                         })
                         this.selectedNode.data.service_template_id = 0

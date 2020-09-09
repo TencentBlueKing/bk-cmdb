@@ -8,7 +8,7 @@
         </cmdb-tips>
         <div class="options clearfix">
             <div class="fl">
-                <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.C_SET_TEMPLATE })">
+                <cmdb-auth class="fl" :auth="{ type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
@@ -48,10 +48,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" width="180">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="$authResources({
-                        resource_id: row.id,
-                        type: $OPERATION.U_SET_TEMPLATE
-                    })">
+                    <cmdb-auth :auth="{ type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, row.id] }">
                         <bk-button slot-scope="{ disabled }"
                             text
                             :disabled="disabled"
@@ -66,11 +63,7 @@
                         v-bk-tooltips.top="$t('不可删除')">
                         {{$t('删除')}}
                     </span>
-                    <cmdb-auth v-else
-                        :auth="$authResources({
-                            resource_id: row.id,
-                            type: $OPERATION.D_SET_TEMPLATE
-                        })">
+                    <cmdb-auth :auth="{ type: $OPERATION.D_SET_TEMPLATE, relation: [bizId, row.id] }" v-else>
                         <bk-button slot-scope="{ disabled }"
                             text
                             class="ml15"
@@ -85,7 +78,7 @@
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$authResources({ type: $OPERATION.C_SET_TEMPLATE })"
+                :auth="{ type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }"
                 @create="handleCreate"
             ></cmdb-table-empty>
         </bk-table>
@@ -93,6 +86,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
@@ -115,9 +109,7 @@
             }
         },
         computed: {
-            business () {
-                return this.$store.state.objectBiz.bizId
-            }
+            ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
             originList () {
@@ -130,7 +122,7 @@
         methods: {
             async getSetTemplates () {
                 const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
-                    bizId: this.business,
+                    bizId: this.bizId,
                     params: {
                         page: {
                             sort: this.table.sort
@@ -152,7 +144,7 @@
                 try {
                     if (this.originList.length) {
                         const data = await this.$store.dispatch('setTemplate/getSetTemplateStatus', {
-                            bizId: this.business,
+                            bizId: this.bizId,
                             params: {
                                 set_template_ids: this.originList.map(item => item.id)
                             }

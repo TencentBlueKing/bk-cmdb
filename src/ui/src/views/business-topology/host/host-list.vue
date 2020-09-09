@@ -98,7 +98,7 @@
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
             ...mapGetters('businessHost', [
                 'columnsConfigProperties',
                 'selectedNode',
@@ -106,7 +106,7 @@
             ]),
             ...mapGetters('hosts', ['condition']),
             customColumns () {
-                return this.usercustom['business_topology_table_column_config'] || []
+                return this.usercustom[this.$route.meta.customInstanceColumn] || []
             },
             globalCustomColumns () {
                 return this.globalUsercustom['host_global_custom_table_columns'] || []
@@ -236,7 +236,8 @@
             handleTransfer (type) {
                 if (['idle', 'business'].includes(type)) {
                     const props = {
-                        moduleType: type
+                        moduleType: type,
+                        business: this.currentBusiness
                     }
                     if (type === 'idle') {
                         props.title = this.$t('转移主机到空闲模块')

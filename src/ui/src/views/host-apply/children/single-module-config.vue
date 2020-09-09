@@ -4,7 +4,7 @@
             <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
                 <div class="choose-hd">
                     <span class="label">{{$t('自动应用字段')}}</span>
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                    <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                         <bk-button
                             icon="plus"
                             slot-scope="{ disabled }"
@@ -25,7 +25,7 @@
                     </property-config-table>
                 </div>
                 <div class="choose-ft">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                    <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                         <bk-button
                             theme="primary"
                             slot-scope="{ disabled }"

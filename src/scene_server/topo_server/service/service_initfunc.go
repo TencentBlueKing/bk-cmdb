@@ -33,6 +33,9 @@ func (s *Service) initAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/{owner_id}/{bk_biz_id}", Handler: s.SearchBusinessTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/cache/topotree", Handler: s.SearchTopologyTree})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/cache/topo/node_path/biz/{bk_biz_id}",
+		Handler: s.SearchTopologyNodePath})
+
 	// TODO: delete this api, it's not used by front.
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", Handler: s.SearchMainLineChildInstTopo})
 
@@ -269,6 +272,21 @@ func (s *Service) initFullTextSearch(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// 资源池目录
+func (s *Service) initResourceDirectory(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/resource/directory", Handler: s.CreateResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/resource/directory/{bk_module_id}", Handler: s.UpdateResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/resource/directory", Handler: s.SearchResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/resource/directory/{bk_module_id}", Handler: s.DeleteResourceDirectory})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *Service) initService(web *restful.WebService) {
 	s.initAssociation(web)
 	s.initAuditLog(web)
@@ -296,4 +314,6 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initFullTextSearch(web)
 	s.initSetTemplate(web)
 	s.initInternalTask(web)
+
+	s.initResourceDirectory(web)
 }

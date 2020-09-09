@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	bkc "configcenter/src/common"
 	"configcenter/src/common/backbone"
 

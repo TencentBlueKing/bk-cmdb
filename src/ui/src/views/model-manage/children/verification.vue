@@ -3,7 +3,7 @@
         <div class="options">
             <cmdb-auth class="inline-block-middle"
                 v-if="!isTopoModel"
-                :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })"
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
                 @update-auth="handleReceiveAuth">
                 <bk-button slot-scope="{ disabled }"
                     class="create-btn"
@@ -108,10 +108,8 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
-                'activeModel',
-                'isInjectable'
+                'activeModel'
             ]),
             isTopoModel () {
                 return ['bk_biz_topo', 'bk_organization'].includes(this.activeModel.bk_classification_id)
@@ -139,9 +137,6 @@
                 if (item.ispre || this.isReadOnly) {
                     return false
                 }
-                if (!this.isAdminView) {
-                    return !!this.$tools.getMetadataBiz(item)
-                }
                 return true
             },
             getRuleName (keys) {
@@ -158,11 +153,9 @@
             },
             async initAttrList () {
                 this.attributeList = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                    params: {
                         bk_obj_id: this.activeModel['bk_obj_id']
-                    }, {
-                        inject: this.isInjectable
-                    }),
+                    },
                     config: {
                         requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
                     }
@@ -192,9 +185,7 @@
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],
                             id: verification.id,
-                            params: this.$injectMetadata({}, {
-                                inject: !!this.$tools.getMetadataBiz(verification)
-                            }),
+                            params: {},
                             config: {
                                 requestId: 'deleteObjectUniqueConstraints'
                             }
@@ -206,7 +197,7 @@
             async searchVerification () {
                 const res = await this.searchObjectUniqueConstraints({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata({}, { inject: this.isInjectable }),
+                    params: {},
                     config: {
                         requestId: 'searchObjectUniqueConstraints'
                     }

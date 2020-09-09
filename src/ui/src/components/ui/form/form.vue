@@ -11,10 +11,10 @@
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
                             <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                                <li class="property-item"
+                                <li :class="['property-item', { flex: flexProperties.includes(property['bk_property_id']) }]"
                                     v-if="checkEditable(property)"
                                     :key="propertyIndex">
-                                    <div class="property-name">
+                                    <div class="property-name" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
                                         <span class="property-name-text" :class="{ required: isRequired(property) }">{{property['bk_property_name']}}</span>
                                         <i class="property-name-tooltips icon-cc-tips"
                                             v-if="property['placeholder']"
@@ -35,6 +35,7 @@
                                                 :data-vv-as="property['bk_property_name']"
                                                 :placeholder="getPlaceholder(property)"
                                                 :auto-select="false"
+                                                v-bind="$attrs"
                                                 v-validate="getValidateRules(property)"
                                                 v-model.trim="values[property['bk_property_id']]">
                                             </component>
@@ -55,7 +56,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <cmdb-auth class="inline-block-middle" :auth="saveAuthResources">
+                <cmdb-auth class="inline-block-middle" :auth="saveAuth">
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
@@ -104,10 +105,19 @@
                 default: true
             },
             saveAuth: {
-                type: [String, Array],
-                default: ''
+                type: Object,
+                default: null
             },
-            renderTips: Function
+            renderTips: Function,
+            flexProperties: {
+                type: Array,
+                default: () => []
+            },
+            invisibleNameProperties: {
+                type: Array,
+                default: () => []
+            },
+            customValidator: Function
         },
         data () {
             return {
@@ -133,12 +143,6 @@
                 return this.$groupedProperties.map(properties => {
                     return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                 })
-            },
-            saveAuthResources () {
-                const auth = this.saveAuth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
             }
         },
         watch: {
@@ -186,14 +190,16 @@
                 return !property.editable || property.isreadonly || this.disabledProperties.includes(property.bk_property_id)
             },
             isRequired (property) {
-                if (property.isrequired) {
-                    return true
-                }
-                const unique = this.objectUnique.find(unique => unique.must_check)
-                if (unique) {
-                    return unique.keys.some(key => key.key_id === property.id)
-                }
-                return false
+                return property.isrequired
+                // 后台无对应逻辑，前端屏蔽唯一校验配置中为空必须校验的字段设置为必填的逻辑
+                // if (property.isrequired) {
+                //     return true
+                // }
+                // const unique = this.objectUnique.find(unique => unique.must_check)
+                // if (unique) {
+                //     return unique.keys.some(key => key.key_id === property.id)
+                // }
+                // return false
             },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
@@ -218,24 +224,29 @@
 
                 return rules
             },
-            handleSave () {
-                this.$validator.validateAll().then(result => {
-                    if (result) {
-                        this.$emit(
-                            'on-submit',
-                            this.$tools.formatValues(this.values, this.properties),
-                            this.$tools.formatValues(this.changedValues, this.properties),
-                            this.inst,
-                            this.type
-                        )
-                    } else {
-                        this.uncollapseGroup()
-                    }
-                })
+            async handleSave () {
+                const validatePromise = [this.$validator.validateAll()]
+                if (typeof this.customValidator === 'function') {
+                    validatePromise.push(this.customValidator())
+                }
+                const results = await Promise.all(validatePromise)
+                const isValid = results.every(result => result)
+                if (isValid) {
+                    this.$emit(
+                        'on-submit',
+                        this.$tools.formatValues(this.values, this.properties),
+                        this.$tools.formatValues(this.changedValues, this.properties),
+                        this.inst,
+                        this.type
+                    )
+                } else {
+                    this.uncollapseGroup()
+                }
             },
             uncollapseGroup () {
                 this.errors.items.forEach(item => {
-                    const property = this.properties.find(property => property['bk_property_id'] === item.field)
+                    const compareKey = item.scope || item.field
+                    const property = this.properties.find(property => property['bk_property_id'] === compareKey)
                     const group = property['bk_property_group']
                     this.groupState[group] = false
                 })
@@ -279,7 +290,7 @@
             flex: 0 0 50%;
             max-width: 50%;
             // flex: 0 1 auto;
-            .property-name{
+            .property-name {
                 display: block;
                 margin: 2px 0 6px;
                 color: $cmdbTextColor;
@@ -320,6 +331,13 @@
                         flex: 1;
                     }
                 }
+            }
+
+            &.flex {
+                flex: 1;
+                padding-right: 54px;
+                width: 100%;
+                max-width: unset;
             }
         }
     }

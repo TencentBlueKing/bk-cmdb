@@ -13,8 +13,8 @@
 package core
 
 import (
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common/language"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -64,7 +64,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	classificationOperation := operation.NewClassificationOperation(client, authManager)
 	groupOperation := operation.NewGroupOperation(client)
 	objectOperation := operation.NewObjectOperation(client, authManager)
-	instOperation := operation.NewInstOperation(client, languageIf)
+	instOperation := operation.NewInstOperation(client, languageIf, authManager)
 	moduleOperation := operation.NewModuleOperation(client, authManager)
 	setOperation := operation.NewSetOperation(client, languageIf)
 	businessOperation := operation.NewBusinessOperation(client, authManager)

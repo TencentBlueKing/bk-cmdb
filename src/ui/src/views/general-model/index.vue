@@ -2,7 +2,7 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST, parent_layers: parentLayers })">
+                <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.C_INST, relation: [model.id] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
@@ -10,7 +10,11 @@
                         {{$t('新建')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST], parent_layers: parentLayers })">
+                <cmdb-auth class="fl mr10"
+                    :auth="[
+                        { type: $OPERATION.C_INST, relation: [model.id] },
+                        { type: $OPERATION.U_INST, relation: [model.id] }
+                    ]">
                     <bk-button slot-scope="{ disabled }"
                         class="models-button"
                         :disabled="disabled"
@@ -32,15 +36,12 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
-                    <bk-button slot-scope="{ disabled }"
-                        hover-theme="danger"
-                        class="models-button button-delete"
-                        :disabled="!table.checked.length || disabled"
-                        @click="handleMultipleDelete">
-                        {{$t('删除')}}
-                    </bk-button>
-                </cmdb-auth>
+                <bk-button class="models-button button-delete fl mr10"
+                    hover-theme="danger"
+                    :disabled="!table.checked.length"
+                    @click="handleMultipleDelete">
+                    {{$t('删除')}}
+                </bk-button>
             </div>
             <div class="options-button fr">
                 <icon-button class="ml5"
@@ -133,13 +134,7 @@
             </bk-table-column>
             <bk-table-column fixed="right" :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth
-                        :auth="$authResources({
-                            type: $OPERATION.D_INST,
-                            resource_id: row.bk_inst_id,
-                            resource_name: row.bk_inst_name,
-                            parent_layers: parentLayers
-                        })">
+                    <cmdb-auth :auth="{ type: $OPERATION.D_INST, relation: [model.id, row.bk_inst_id] }">
                         <template slot-scope="{ disabled }">
                             <bk-button theme="primary" text :disabled="disabled" @click.stop="handleDelete(row)">{{$t('删除')}}</bk-button>
                         </template>
@@ -148,10 +143,7 @@
             </bk-table-column>
             <cmdb-table-empty
                 slot="empty"
-                :auth="$authResources({
-                    type: $OPERATION.C_INST,
-                    parent_layers: parentLayers
-                })"
+                :auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
                 :stuff="table.stuff"
                 @create="handleCreate">
             </cmdb-table-empty>
@@ -172,7 +164,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-auth="attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST"
+                        :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
                         :object-unique="objectUnique"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
@@ -208,8 +200,6 @@
             <cmdb-import v-if="importSlider.show" slot="content"
                 :template-url="url.template"
                 :import-url="url.import"
-                :download-payload="url.downloadPayload"
-                :import-payload="url.importPayload"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
@@ -284,7 +274,7 @@
         },
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
@@ -295,7 +285,7 @@
                 return this.getModelById(this.objId) || {}
             },
             customConfigKey () {
-                return `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                return `${this.objId}_custom_table_columns`
             },
             customColumns () {
                 return this.usercustom[this.customConfigKey] || []
@@ -308,14 +298,8 @@
                 return {
                     import: prefix + 'import',
                     export: prefix + 'export',
-                    template: `${window.API_HOST}importtemplate/${this.objId}`,
-                    downloadPayload: this.$injectMetadata({}, { inject: !this.isPublicModel }),
-                    importPayload: this.$injectMetadata({}, { inject: !this.isPublicModel })
+                    template: `${window.API_HOST}importtemplate/${this.objId}`
                 }
-            },
-            isPublicModel () {
-                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
-                return !this.$tools.getMetadataBiz(model)
             },
             parentLayers () {
                 return [{
@@ -356,9 +340,10 @@
             this.unwatch = RouterQuery.watch('*', ({
                 page = 1,
                 limit = this.table.pagination.limit,
-                filter = ''
+                filter = '',
+                field = 'bk_inst_name'
             }) => {
-                this.filter.id = 'bk_inst_name'
+                this.filter.id = field
                 this.filter.value = filter
                 this.table.pagination.current = parseInt(page)
                 this.table.pagination.limit = parseInt(limit)
@@ -395,10 +380,10 @@
                     this.resetData()
                     this.properties = await this.searchObjectAttribute({
                         injectId: this.objId,
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
-                        }, { inject: !this.isPublicModel }),
+                        },
                         config: {
                             requestId: `post_searchObjectAttribute_${this.objId}`,
                             fromCache: false
@@ -417,14 +402,12 @@
                 }
             },
             handleFilterValueChange () {
-                const query = {
+                RouterQuery.set({
                     _t: Date.now(),
-                    page: 1
-                }
-                if (this.filter.id === 'bk_inst_name') {
-                    query.filter = this.filter.value
-                }
-                RouterQuery.set(query)
+                    page: 1,
+                    field: this.filter.id,
+                    filter: this.filter.value
+                })
             },
             resetData () {
                 this.table = {
@@ -449,7 +432,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata({}, { inject: !this.isPublicModel }),
+                    params: {},
                     config: {
                         fromCache: false,
                         requestId: `post_searchGroup_${this.objId}`
@@ -462,9 +445,7 @@
             getObjectUnique () {
                 return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
                     objId: this.objId,
-                    params: this.$injectMetadata({}, {
-                        inject: !this.isPublicModel
-                    })
+                    params: {}
                 }).then(data => {
                     this.objectUnique = data
                     return data
@@ -527,7 +508,7 @@
             getInstList (config = { cancelPrevious: true }) {
                 return this.searchInst({
                     objId: this.objId,
-                    params: this.$injectMetadata(this.getSearchParams(), { inject: !this.isPublicModel }),
+                    params: this.getSearchParams(),
                     config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
@@ -623,10 +604,7 @@
                     confirmFn: () => {
                         this.deleteInst({
                             objId: this.objId,
-                            instId: inst['bk_inst_id'],
-                            config: {
-                                data: this.$injectMetadata({}, { inject: !this.isPublicModel })
-                            }
+                            instId: inst['bk_inst_id']
                         }).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('删除成功'))
@@ -642,7 +620,7 @@
                     this.updateInst({
                         objId: this.objId,
                         instId: originalValues['bk_inst_id'],
-                        params: this.$injectMetadata(values, { inject: !this.isPublicModel })
+                        params: values
                     }).then(() => {
                         this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.handleCancel()
@@ -654,7 +632,7 @@
                 } else {
                     delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
                     this.createInst({
-                        params: this.$injectMetadata(values, { inject: !this.isPublicModel }),
+                        params: values,
                         objId: this.objId
                     }).then(() => {
                         RouterQuery.set({
@@ -679,14 +657,14 @@
             handleMultipleSave (values) {
                 this.batchUpdateInst({
                     objId: this.objId,
-                    params: this.$injectMetadata({
+                    params: {
                         update: this.table.checked.map(instId => {
                             return {
                                 'datas': values,
                                 'inst_id': instId
                             }
                         })
-                    }, { inject: !this.isPublicModel }),
+                    },
                     config: {
                         requestId: `${this.objId}BatchUpdate`
                     }
@@ -714,11 +692,11 @@
                 this.batchDeleteInst({
                     objId: this.objId,
                     config: {
-                        data: this.$injectMetadata({
+                        data: {
                             'delete': {
                                 'inst_ids': this.table.checked
                             }
-                        }, { inject: !this.isPublicModel })
+                        }
                     }
                 }).then(() => {
                     this.$success(this.$t('删除成功'))
@@ -738,6 +716,7 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.customConfigKey]: []
                 })
+                this.columnsConfig.show = false
             },
             routeToHistory () {
                 this.$routerActions.redirect({
@@ -776,9 +755,6 @@
                 const customFields = this.usercustom[this.customConfigKey]
                 if (customFields) {
                     data.append('export_custom_fields', customFields)
-                }
-                if (!this.isPublicModel) {
-                    data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
                 }
                 this.$http.download({
                     url: this.url.export,

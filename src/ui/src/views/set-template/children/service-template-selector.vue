@@ -78,6 +78,7 @@
 
 <script>
     import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'serviceTemplateSelector',
         props: {
@@ -112,6 +113,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             isSelectAll () {
                 return this.localSelected.length === this.allTemplates.length
             }
@@ -124,7 +126,7 @@
             async getTemplates () {
                 try {
                     const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-                        params: this.$injectMetadata({}),
+                        params: { bk_biz_id: this.bizId },
                         config: {
                             requestId: 'getServiceTemplate'
                         }
@@ -179,9 +181,10 @@
                 }
                 try {
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             service_template_id: template.id
-                        }, { injectBizId: true }),
+                        },
                         config: {
                             requestId: this.processRequestId,
                             cancelPrevious: true
@@ -227,7 +230,7 @@
             async getServiceCategory () {
                 try {
                     const data = await this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
-                        params: this.$injectMetadata({}),
+                        params: { bk_biz_id: this.bizId },
                         config: {
                             requestId: 'getServiceCategoryWithoutAmount'
                         }

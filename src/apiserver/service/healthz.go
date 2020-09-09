@@ -90,6 +90,14 @@ func (s *service) healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, taskSrv)
 
+	// cloud server
+	cloudSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CLOUD}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CLOUD); err != nil {
+		cloudSrv.IsHealthy = false
+		cloudSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, cloudSrv)
+
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false

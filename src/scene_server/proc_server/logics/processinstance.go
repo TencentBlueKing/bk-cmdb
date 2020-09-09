@@ -171,7 +171,9 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]in
 
 // it works to find the different attribute value between the process instance and it's bounded process template.
 // return with the changed attribute's details.
-func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, host map[string]interface{},
+	attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+
 	changes := make([]metadata.ProcessChangedAttribute, 0)
 	if t == nil || i == nil {
 		return changes
@@ -259,18 +261,19 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.BindIP.AsDefaultValue) {
-		if (t.BindIP.Value == nil && i.BindIP != nil) ||
-			(t.BindIP.Value != nil && i.BindIP == nil) ||
-			(t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP) {
+	if metadata.IsAsDefaultValue(t.BindInfo.AsDefaultValue) {
+		newBindInfo, change := t.BindInfo.DiffWithProcessTemplate(i.BindInfo, host)
+		if change {
+
 			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["bind_ip"].ID,
-				PropertyID:            "bind_ip",
-				PropertyName:          attrMap["bind_ip"].PropertyName,
-				PropertyValue:         i.BindIP,
-				TemplatePropertyValue: t.BindIP.Value.IP(),
+				ID:                    attrMap[common.BKProcBindInfo].ID,
+				PropertyID:            common.BKProcBindInfo,
+				PropertyName:          attrMap[common.BKProcBindInfo].PropertyName,
+				PropertyValue:         i.BindInfo,
+				TemplatePropertyValue: newBindInfo,
 			})
 		}
+
 	}
 
 	if metadata.IsAsDefaultValue(t.Priority.AsDefaultValue) {
@@ -311,20 +314,6 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 				PropertyName:          attrMap["bk_process_name"].PropertyName,
 				PropertyValue:         i.ProcessName,
 				TemplatePropertyValue: t.ProcessName,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.Port.AsDefaultValue) {
-		if (t.Port.Value == nil && i.Port != nil) ||
-			(t.Port.Value != nil && i.Port == nil) ||
-			(t.Port.Value != nil && i.Port != nil && *t.Port.Value != *i.Port) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["port"].ID,
-				PropertyID:            "port",
-				PropertyName:          attrMap["port"].PropertyName,
-				PropertyValue:         i.Port,
-				TemplatePropertyValue: t.Port,
 			})
 		}
 	}
@@ -427,20 +416,6 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.Protocol.AsDefaultValue) {
-		if (t.Protocol.Value == nil && i.Protocol != nil) ||
-			(t.Protocol.Value != nil && i.Protocol == nil) ||
-			(t.Protocol.Value != nil && i.Protocol != nil && *t.Protocol.Value != *i.Protocol) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["protocol"].ID,
-				PropertyID:            "protocol",
-				PropertyName:          attrMap["protocol"].PropertyName,
-				PropertyValue:         i.Protocol,
-				TemplatePropertyValue: t.Protocol,
-			})
-		}
-	}
-
 	if metadata.IsAsDefaultValue(t.Description.AsDefaultValue) {
 		if (t.Description.Value == nil && i.Description != nil) ||
 			(t.Description.Value != nil && i.Description == nil) ||
@@ -465,76 +440,6 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 				PropertyName:          attrMap["bk_start_param_regex"].PropertyName,
 				PropertyValue:         i.StartParamRegex,
 				TemplatePropertyValue: t.StartParamRegex,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.PortEnable.AsDefaultValue) {
-		if (t.PortEnable.Value == nil && i.PortEnable != nil) ||
-			(t.PortEnable.Value != nil && i.PortEnable == nil) ||
-			(t.PortEnable.Value != nil && i.PortEnable != nil && *t.PortEnable.Value != *i.PortEnable) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcPortEnable].ID,
-				PropertyID:            common.BKProcPortEnable,
-				PropertyName:          attrMap[common.BKProcPortEnable].PropertyName,
-				PropertyValue:         i.PortEnable,
-				TemplatePropertyValue: t.PortEnable,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.GatewayIP.AsDefaultValue) {
-		if (t.GatewayIP.Value == nil && i.GatewayIP != nil) ||
-			(t.GatewayIP.Value != nil && i.GatewayIP == nil) ||
-			(t.GatewayIP.Value != nil && i.GatewayIP != nil && *t.GatewayIP.Value != *i.GatewayIP) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayIP].ID,
-				PropertyID:            common.BKProcGatewayIP,
-				PropertyName:          attrMap[common.BKProcGatewayIP].PropertyName,
-				PropertyValue:         i.GatewayIP,
-				TemplatePropertyValue: t.GatewayIP,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.GatewayPort.AsDefaultValue) {
-		if (t.GatewayPort.Value == nil && i.GatewayPort != nil) ||
-			(t.GatewayPort.Value != nil && i.GatewayPort == nil) ||
-			(t.GatewayPort.Value != nil && i.GatewayPort != nil && *t.GatewayPort.Value != *i.GatewayPort) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayPort].ID,
-				PropertyID:            common.BKProcGatewayPort,
-				PropertyName:          attrMap[common.BKProcGatewayPort].PropertyName,
-				PropertyValue:         i.GatewayPort,
-				TemplatePropertyValue: t.GatewayPort,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.GatewayProtocol.AsDefaultValue) {
-		if (t.GatewayProtocol.Value == nil && i.GatewayProtocol != nil) ||
-			(t.GatewayProtocol.Value != nil && i.GatewayProtocol == nil) ||
-			(t.GatewayProtocol.Value != nil && i.GatewayProtocol != nil && *t.GatewayProtocol.Value != *i.GatewayProtocol) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayProtocol].ID,
-				PropertyID:            common.BKProcGatewayProtocol,
-				PropertyName:          attrMap[common.BKProcGatewayProtocol].PropertyName,
-				PropertyValue:         i.GatewayProtocol,
-				TemplatePropertyValue: t.GatewayProtocol,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.GatewayCity.AsDefaultValue) {
-		if (t.GatewayCity.Value == nil && i.GatewayCity != nil) ||
-			(t.GatewayCity.Value != nil && i.GatewayCity == nil) ||
-			(t.GatewayCity.Value != nil && i.GatewayCity != nil && *t.GatewayCity.Value != *i.GatewayCity) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap[common.BKProcGatewayCity].ID,
-				PropertyID:            common.BKProcGatewayCity,
-				PropertyName:          attrMap[common.BKProcGatewayCity].PropertyName,
-				PropertyValue:         i.GatewayCity,
-				TemplatePropertyValue: t.GatewayCity,
 			})
 		}
 	}

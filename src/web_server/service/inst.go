@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
@@ -48,7 +47,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -85,7 +84,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang, metaInfo)
+	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang, modelBizID)
 
 	if nil != err {
 		msg := getReturnStr(errCode, err.Error(), data)
@@ -111,7 +110,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	instIDStr := c.PostForm(common.BKInstIDField)
 	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
-	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -119,7 +118,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 
 	kvMap := mapstr.MapStr{}
-	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap, metaInfo)
+	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap)
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
 		fmt.Println("return msg: ", msg)
@@ -132,7 +131,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	file = xlsx.NewFile()
 
 	customFields := logics.GetCustomFields(nil, customFieldsStr)
-	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, metaInfo)
+	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, modelBizID)
 	if err != nil {
 		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v, rid: %s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
@@ -140,7 +139,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 		return
 	}
 
-	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, metaInfo)
+	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

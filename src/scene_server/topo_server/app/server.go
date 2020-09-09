@@ -19,8 +19,7 @@ import (
 	"net/http"
 	"time"
 
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -42,12 +41,10 @@ type TopoServer struct {
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.configReady = true
-
-	t.Config.ConfigMap = current.ConfigMap
-	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, string(current.ConfigData))
 
 	var err error
-	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
+	t.Config.Es, err = elasticsearch.ParseConfigFromKV("topoServer.es", nil)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
 	}
@@ -116,17 +113,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return err
 	}
-	server.Config.Auth, err = engine.WithAuth()
-	if err != nil {
-		return err
-	}
 
-	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
-	if err != nil {
-		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
-		return err
-	}
-	// TODO  redis, auth 可以在backbone 完成
+	// TODO 可以在backbone 完成
 	if err := redis.InitClient("redis", &server.Config.Redis); err != nil {
 		blog.Errorf("it is failed to connect reids. err:%s", err.Error())
 		return err
@@ -142,7 +130,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		essrv.Client = esClient
 	}
 
-	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
+	authManager := extensions.NewAuthManager(engine.CoreAPI)
 	server.Service = &service.Service{
 		Language:    engine.Language,
 		Engine:      engine,

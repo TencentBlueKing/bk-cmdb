@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"

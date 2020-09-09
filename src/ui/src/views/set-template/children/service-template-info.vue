@@ -11,8 +11,19 @@
                 :key="head.id"
                 :prop="head.id"
                 :label="head.name"
-                show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row[head.id] | formatter(head.property)}}</template>
+                :show-overflow-tooltip="head.id !== 'bind_info'">
+                <template slot-scope="{ row }">
+                    <cmdb-property-value v-if="head.id !== 'bind_info'"
+                        :value="row[head.id]"
+                        :show-unit="false"
+                        :show-title="false"
+                        :property="head.property">
+                    </cmdb-property-value>
+                    <process-bind-info-value v-else
+                        :value="row[head.id]"
+                        :property="head.property">
+                    </process-bind-info-value>
+                </template>
             </bk-table-column>
         </bk-table>
     </section>
@@ -20,8 +31,13 @@
 
 <script>
     import { processTableHeader } from '@/dictionary/table-header'
+    import { mapGetters } from 'vuex'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     export default {
         name: 'serviceTemplateInfo',
+        components: {
+            ProcessBindInfoValue
+        },
         props: {
             id: {
                 type: Number,
@@ -36,6 +52,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             header () {
                 const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
@@ -80,9 +97,10 @@
             async getServiceProcesses () {
                 try {
                     const result = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             service_template_id: this.id
-                        }),
+                        },
                         config: {
                             requestId: 'getServiceProcesses'
                         }
@@ -125,7 +143,7 @@
             },
             getServiceCategory () {
                 return this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
-                    params: this.$injectMetadata({}),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: 'getServiceCategoryWithoutAmount'
                     }

@@ -14,22 +14,18 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"configcenter/src/auth/authcenter"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
-	"configcenter/src/scene_server/admin_server/authsynchronizer"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 )
@@ -41,33 +37,23 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	process := new(MigrateServer)
-	config, err := configcenter.ParseConfigWithFile(op.ServConf.ExConfig)
-	if nil != err {
+	process.Config = new(options.Config)
+	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-
-	process.Config = new(options.Config)
-	// ignore err, because ConfigMap is map[string]string
-	out, _ := json.MarshalIndent(config.ConfigMap, "", "  ")
-	blog.V(3).Infof("config updated: \n%s", out)
-
-	mongoConf := mongo.ParseConfigFromKV("mongodb", config.ConfigMap)
+	mongoConf := cc.Mongo("mongodb")
 	process.Config.MongoDB = mongoConf
-
-	redisConf := redis.ParseConfigFromKV("redis", config.ConfigMap)
+	redisConf := cc.Redis("redis")
 	process.Config.Redis = redisConf
+	process.Config.Errors.Res, _ = cc.String("errors.res")
+	process.Config.Language.Res, _ = cc.String("language.res")
+	process.Config.Configures.Dir, _ = cc.String("confs.dir")
+	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
+	process.Config.ProcSrvConfig.CCApiSrvAddr, _ = cc.String("procsrv.ccApi")
 
-	process.Config.Errors.Res = config.ConfigMap["errors.res"]
-	process.Config.Language.Res = config.ConfigMap["language.res"]
-	process.Config.Configures.Dir = config.ConfigMap["confs.dir"]
-
-	process.Config.Register.Address = config.ConfigMap["register-server.addrs"]
-
-	process.Config.ProcSrvConfig.CCApiSrvAddr, _ = config.ConfigMap["procsrv.cc_api"]
-
-	process.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", config.ConfigMap)
-	if err != nil && auth.IsAuthed() {
-		blog.Errorf("parse authcenter error: %v, config: %+v", err, config.ConfigMap)
+	process.Config.Iam, err = iam.ParseConfigFromKV("auth", nil)
+	if err != nil && auth.EnableAuthorize() {
+		blog.Errorf("parse iam error: %v", err)
 	}
 	service := svc.NewService(ctx)
 
@@ -90,10 +76,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	// adminserver conf not depend discovery
 	err = process.ConfigCenter.Start(
-		config.ConfigMap["confs.dir"],
-		config.ConfigMap["errors.res"],
-		config.ConfigMap["language.res"],
+		process.Config.Configures.Dir,
+		process.Config.Errors.Res,
+		process.Config.Language.Res,
 	)
+
 	if err != nil {
 		return err
 	}
@@ -117,20 +104,14 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		process.Service.SetCache(cache)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 
-		if auth.IsAuthed() {
+		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
-			authCli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
+
+			iamCli, err := iam.NewIam(nil, process.Config.Iam, engine.Metric().Registry())
 			if err != nil {
-				return fmt.Errorf("new authcenter client failed: %v", err)
+				return fmt.Errorf("new iam client failed: %v", err)
 			}
-			process.Service.SetAuthCenter(authCli)
-
-			if process.Config.AuthCenter.EnableSync {
-				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry(), service.Engine)
-				authSynchronizer.Run()
-				blog.Info("enable auth center and enable auth sync function.")
-			}
-
+			process.Service.SetIam(iamCli)
 		} else {
 			blog.Infof("disable auth center access.")
 		}

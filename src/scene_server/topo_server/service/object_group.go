@@ -26,8 +26,8 @@ import (
 // CreateObjectGroup create a new object group
 
 func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	dataWithModelBizID := MapStrWithModelBizID{}
+	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -35,15 +35,9 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 	var rsp model.GroupInterface
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		rsp, err = s.Core.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		rsp, err = s.Core.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithModelBizID.Data, dataWithModelBizID.ModelBizID)
 		if nil != err {
 			return err
-		}
-
-		// auth: register attribute group
-		if err := s.AuthManager.RegisterModelAttributeGroup(ctx.Kit.Ctx, ctx.Kit.Header, rsp.Group()); err != nil {
-			blog.Errorf("create object group success, but register attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -76,7 +70,7 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		if cond.Condition.ID != 0 {
 			searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
 		}
-		result, err := s.Core.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.Metadata)
+		result, err := s.Core.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.ModelBizID)
 		if err != nil {
 			blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -84,12 +78,6 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		attributeGroups := make([]metadata.Group, 0)
 		for _, item := range result {
 			attributeGroups = append(attributeGroups, item.Group())
-		}
-
-		// auth: register attribute group
-		if err := s.AuthManager.UpdateRegisteredModelAttributeGroup(ctx.Kit.Ctx, ctx.Kit.Header, attributeGroups...); err != nil {
-			blog.Errorf("update object group success, but update attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -114,12 +102,6 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 		if nil != err {
 			return err
 		}
-		// auth: deregister attribute group
-		if err := s.AuthManager.DeregisterModelAttributeGroupByID(ctx.Kit.Ctx, ctx.Kit.Header, gid); err != nil {
-			blog.Errorf("delete object group failed, deregister attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
-
 		return nil
 	})
 
@@ -133,8 +115,8 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 // UpdateObjectAttributeGroupProperty update the object attribute belongs to group information
 func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 	requestBody := struct {
-		Data               []metadata.PropertyGroupObjectAtt `json:"data" field:"json"`
-		*metadata.Metadata `json:"metadata"`
+		Data       []metadata.PropertyGroupObjectAtt `json:"data" field:"json"`
+		ModelBizID int64                             `json:"bk_biz_id"`
 	}{}
 	if err := ctx.DecodeInto(&requestBody); err != nil {
 		ctx.RespAutoError(err)
@@ -148,7 +130,7 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.Metadata)
+		err := s.Core.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.ModelBizID)
 		if nil != err {
 			return err
 		}
@@ -184,12 +166,12 @@ func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
 func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
 	cond := condition.CreateCondition()
 
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
+	modelType := new(ModelType)
+	if err := ctx.DecodeInto(modelType); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Core.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), cond, md.Metadata)
+	resp, err := s.Core.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), cond, modelType.BizID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return

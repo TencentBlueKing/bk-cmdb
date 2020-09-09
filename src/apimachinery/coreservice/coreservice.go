@@ -17,8 +17,10 @@ import (
 
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
+	"configcenter/src/apimachinery/coreservice/auth"
 	"configcenter/src/apimachinery/coreservice/cache"
 	"configcenter/src/apimachinery/coreservice/count"
+	"configcenter/src/apimachinery/coreservice/cloud"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
@@ -54,6 +56,8 @@ type CoreServiceClientInterface interface {
 	Txn() transaction.Interface
 	Count() count.CountClientInterface
 	Cache() cache.Interface
+	Cloud() cloud.CloudInterface
+	Auth() auth.AuthClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -134,4 +138,12 @@ func (c *coreService) Count() count.CountClientInterface {
 
 func (c *coreService) Cache() cache.Interface {
 	return cache.NewCacheClient(c.restCli)
+}
+
+func (c *coreService) Cloud() cloud.CloudInterface {
+	return cloud.NewCloudInterfaceClient(c.restCli)
+}
+
+func (c *coreService) Auth() auth.AuthClientInterface {
+	return auth.NewAuthClientInterface(c.restCli)
 }

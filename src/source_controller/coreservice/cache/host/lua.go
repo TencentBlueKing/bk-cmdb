@@ -73,7 +73,7 @@ func (c *Client) getHostDetailWithIP(innerIP string, cloudID int64) (*string, er
 	}
 
 	// now, we need to refresh the cache.
-	hostID, detail, err := getHostDetailsFromMongoWithIP(c.db, innerIP, cloudID)
+	hostID, detail, err := getHostDetailsFromMongoWithIP(innerIP, cloudID)
 	if err != nil {
 		return nil, fmt.Errorf("get host detail with ip failed, err: %v", err)
 	}

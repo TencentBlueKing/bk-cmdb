@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (id uint64, err error) {
@@ -29,7 +30,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
 	}
 	tableName := common.GetInstTableName(objID)
-	id, err = m.dbProxy.NextSequence(kit.Ctx, tableName)
+	id, err = mongodb.Client().NextSequence(kit.Ctx, tableName)
 	if nil != err {
 		return id, err
 	}
@@ -42,7 +43,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	inputParam.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
-	err = m.dbProxy.Table(tableName).Insert(kit.Ctx, inputParam)
+	err = mongodb.Client().Table(tableName).Insert(kit.Ctx, inputParam)
 	return id, err
 }
 
@@ -57,7 +58,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	ts := time.Now()
 	data.Set(common.LastTimeField, ts)
 	data.Remove(common.BKObjIDField)
-	return m.dbProxy.Table(tableName).Update(kit.Ctx, cond, data)
+	return mongodb.Client().Table(tableName).Update(kit.Ctx, cond, data)
 }
 
 func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
@@ -68,14 +69,14 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 	}
 	if objID == common.BKInnerObjIDHost {
 		hosts := make([]metadata.HostMapStr, 0)
-		err = m.dbProxy.Table(tableName).Find(cond).All(kit.Ctx, &hosts)
+		err = mongodb.Client().Table(tableName).Find(cond).All(kit.Ctx, &hosts)
 		for _, host := range hosts {
 			origins = append(origins, mapstr.MapStr(host))
 		}
 	} else {
-		err = m.dbProxy.Table(tableName).Find(cond).All(kit.Ctx, &origins)
+		err = mongodb.Client().Table(tableName).Find(cond).All(kit.Ctx, &origins)
 	}
-	return origins, !m.dbProxy.IsNotFoundError(err), err
+	return origins, !mongodb.Client().IsNotFoundError(err), err
 }
 
 func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID uint64, instanceManager *instanceManager) (origin mapstr.MapStr, err error) {
@@ -87,10 +88,10 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID ui
 	}
 	if objID == common.BKInnerObjIDHost {
 		host := make(metadata.HostMapStr)
-		err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &host)
+		err = mongodb.Client().Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &host)
 		origin = mapstr.MapStr(host)
 	} else {
-		err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
+		err = mongodb.Client().Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
 	}
 	if nil != err {
 		return nil, err
@@ -110,7 +111,7 @@ func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr
 	}
 
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
-	count, err = m.dbProxy.Table(tableName).Find(cond).Count(kit.Ctx)
+	count, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 
 	return count, err
 }

@@ -1,9 +1,9 @@
 <template>
     <div :class="['topo-wrapper', { hover: isTopoHover }]">
         <div class="toolbar">
-            <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="$authResources({ type: $OPERATION.SYSTEM_TOPOLOGY })" @update-auth="handleReceiveAuth"></cmdb-auth>
+            <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="{ type: $OPERATION.SYSTEM_TOPOLOGY }" @update-auth="handleReceiveAuth"></cmdb-auth>
             <template v-if="!topoEdit.isEdit">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.SYSTEM_MODEL_GRAPHICS })">
+                <cmdb-auth :auth="{ type: $OPERATION.SYSTEM_MODEL_GRAPHICS }">
                     <bk-button slot-scope="{ disabled }"
                         class="edit-button"
                         theme="primary"
@@ -175,8 +175,6 @@
         },
         data () {
             return {
-                specialModel: ['process', 'plat'],
-
                 // 关联数据
                 associationList: [],
 
@@ -215,11 +213,12 @@
                 },
                 loading: true,
                 isTopoHover: false,
-                createAuth: false
+                createAuth: false,
+                hideModelConfigKey: 'model_custom_hide_models'
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected', 'supplierAccount', 'userName', 'mainFullScreen']),
+            ...mapGetters(['supplierAccount', 'userName', 'mainFullScreen']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', [
@@ -236,13 +235,10 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.specialModel.includes(model['bk_obj_id']) && !model.bk_ispaused
+                        return !model.bk_ishidden && !model.bk_ispaused
                     })
                     return classify
                 })
-            },
-            hideModelConfigKey () {
-                return `${this.userName}_model_${this.isAdminView ? 'adminView' : this.bizId}_hide_models`
             },
             hideModels () {
                 return this.usercustom[this.hideModelConfigKey] || {}
@@ -559,7 +555,8 @@
                     node.connectedEdges().addClass('hover')
 
                     // 显示tooltip
-                    if (this.topoEdit.isEdit && !this.specialModel.includes(nodeData.id)) {
+                    const model = this.getModelById(nodeData.id)
+                    if (this.topoEdit.isEdit && !model.bk_ishidden) {
                         // 设置tooltip状态数据
                         this.topoTooltip.hoverNode = nodeData
 
@@ -655,7 +652,7 @@
                 const [asstData, mainLineData, nodeData] = await Promise.all([
                     this.getAssociationType(),
                     this.getMainLineModel(),
-                    this.$store.dispatch('globalModels/searchModelAction', this.$injectMetadata())
+                    this.$store.dispatch('globalModels/searchModelAction')
                 ])
 
                 this.associationList = asstData
@@ -1060,7 +1057,7 @@
                 this.slider.isShow = false
             },
             canAddBusinessLevel (model) {
-                return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             isMainNode (model) {
                 const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
@@ -1140,7 +1137,7 @@
             async handleCreateBusinessLevel (data) {
                 try {
                     await this.createMainlineObject({
-                        params: this.$injectMetadata({
+                        params: {
                             'bk_asst_obj_id': this.addBusinessLevel.parent['bk_obj_id'],
                             'bk_classification_id': 'bk_biz_topo',
                             'bk_obj_icon': data['bk_obj_icon'],
@@ -1148,12 +1145,12 @@
                             'bk_obj_name': data['bk_obj_name'],
                             'bk_supplier_account': this.supplierAccount,
                             'creator': this.userName
-                        })
+                        }
                     })
 
                     // 更新分组数据
                     await this.searchClassificationsObjects({
-                        params: this.$injectMetadata({}),
+                        params: {},
                         config: {
                             clearCache: true,
                             requestId: 'post_searchClassificationsObjects'

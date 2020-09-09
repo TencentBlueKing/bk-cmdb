@@ -42,12 +42,18 @@
                         </div>
                         <div class="process-info clearfix"
                             v-else-if="current.type === 'changed'">
-                            <div class="info-item fl"
+                            <div :class="['info-item fl', { table: changed.property.bk_property_type === 'table' }]"
                                 v-for="(changed, index) in changedProperties"
                                 :key="index"
                                 v-bk-overflow-tips>
                                 {{changed.property.bk_property_name}}：
-                                <span class="info-item-value">{{getChangedValue(changed)}}</span>
+                                <span class="info-item-value">
+                                    <cmdb-property-value
+                                        :show-title="false"
+                                        :value="getChangedValue(changed)"
+                                        :property="changed.property">
+                                    </cmdb-property-value>
+                                </span>
                             </div>
                         </div>
                         <div class="process-info"
@@ -174,10 +180,11 @@
             async getProperties () {
                 try {
                     this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: 'process',
-                            bk_supplier_account: this.supplierAccount
-                        })
+                            bk_supplier_account: this.supplierAccount,
+                            bk_biz_id: this.bizId
+                        }
                     })
                 } catch (e) {
                     console.error(e)
@@ -203,10 +210,11 @@
             async getDifference () {
                 try {
                     const differences = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
-                        params: this.$injectMetadata({
+                        params: {
                             bk_module_ids: this.modules,
-                            service_template_id: this.templateId
-                        }, { injectBizId: true })
+                            service_template_id: this.templateId,
+                            bk_biz_id: this.bizId
+                        }
                     })
                     const processList = []
                     const differenceType = ['changed', 'added', 'removed']
@@ -276,7 +284,7 @@
             },
             getServiceCategory () {
                 return this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                    params: this.$injectMetadata({}, { injectBizId: true })
+                    params: { bk_biz_id: this.bizId }
                 })
             },
             getCagetoryPath (id) {
@@ -316,7 +324,7 @@
             getChangedValue (changed) {
                 const property = changed.property
                 let value = changed.template_property_value
-                value = typeof value === 'object' ? value.value : value
+                value = Object.prototype.toString.call(value) === '[object Object]' ? value.value : value
                 return formatter(value, property)
             },
             getModuleTopoPath (moduleId) {
@@ -347,10 +355,11 @@
             },
             getModuleServiceInstances (moduleId) {
                 return this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_module_id: moduleId,
                         with_name: true
-                    }, { injectBizId: true })
+                    }
                 })
             },
             handleViewDiff (instance, module) {
@@ -364,11 +373,12 @@
             },
             handleConfirm () {
                 this.$store.dispatch('businessSynchronous/syncServiceInstanceByTemplate', {
-                    params: this.$injectMetadata({
+                    params: {
                         service_template_id: this.templateId,
                         bk_module_ids: this.modules,
-                        service_instances: this.getServiceInstanceIds()
-                    }, { injectBizId: true })
+                        service_instances: this.getServiceInstanceIds(),
+                        bk_biz_id: this.bizId
+                    }
                 }).then(() => {
                     this.$success(this.$t('同步成功'))
                     this.handleGoBackModule()
@@ -495,7 +505,6 @@
             }
         }
     }
-    .change-details {}
     .details-info {
         .process-info {
             padding: 0 0 0 22px;
@@ -506,6 +515,13 @@
                 @include ellipsis;
                 .info-item-value {
                     color: #313238;
+                }
+
+                &.table {
+                    width: 100%;
+                    /deep/ .table-value {
+                        width: 800px;
+                    }
                 }
             }
         }

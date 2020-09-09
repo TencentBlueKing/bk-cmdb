@@ -15,6 +15,9 @@ import {
 
     MENU_RESOURCE_EVENTPUSH,
     MENU_RESOURCE_MANAGEMENT,
+    MENU_RESOURCE_CLOUD_AREA,
+    MENU_RESOURCE_CLOUD_ACCOUNT,
+    MENU_RESOURCE_CLOUD_RESOURCE,
 
     MENU_MODEL_MANAGEMENT,
     MENU_MODEL_TOPOLOGY,
@@ -95,6 +98,21 @@ const menus = [{
         i18n: '资源目录',
         icon: 'icon-cc-square',
         route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGEMENT)
+    }, {
+        id: MENU_RESOURCE_CLOUD_AREA,
+        i18n: '云区域',
+        icon: 'icon-cc-network-segment',
+        route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_AREA, 'resource')
+    }, {
+        id: MENU_RESOURCE_CLOUD_ACCOUNT,
+        i18n: '云账户',
+        icon: 'icon-cc-cloud-account',
+        route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_ACCOUNT, 'resource')
+    }, {
+        id: MENU_RESOURCE_CLOUD_RESOURCE,
+        i18n: '云资源发现',
+        icon: 'icon-cc-cloud-discover',
+        route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_RESOURCE, 'resource')
     }, {
         id: MENU_RESOURCE_EVENTPUSH,
         i18n: '事件订阅',

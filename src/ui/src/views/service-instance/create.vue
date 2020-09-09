@@ -62,7 +62,7 @@
             </div>
         </div>
         <div class="options" :class="{ 'is-sticky': hasScrollbar }">
-            <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <cmdb-auth class="mr5" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="!hosts.length || disabled"
@@ -142,9 +142,6 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', ['getDefaultSearchCondition']),
-            business () {
-                return this.$store.getters['objectBiz/bizId']
-            },
             moduleId () {
                 return parseInt(this.$route.params.moduleId)
             },
@@ -225,7 +222,10 @@
                 try {
                     this.$store.commit('setGlobalLoading', this.hasScrollbar)
                     const data = await this.$store.dispatch('serviceInstance/createProcServiceInstancePreview', {
-                        params: this.$injectMetadata(this.confirmParams, { injectBizId: true }),
+                        params: {
+                            ...this.confirmParams,
+                            bk_biz_id: this.bizId
+                        },
                         config: {
                             requestId: this.request.preview,
                             globalPermission: false
@@ -244,7 +244,7 @@
             },
             getHostInfo () {
                 const params = {
-                    bk_biz_id: this.business,
+                    bk_biz_id: this.bk_biz_id,
                     ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
                     page: {},
                     condition: this.getDefaultSearchCondition()
@@ -296,13 +296,31 @@
                 return []
             },
             getSourceProcesses (instance) {
+                const ipMap = {
+                    '1': '127.0.0.1',
+                    '2': '0.0.0.0',
+                    '3': this.$t('第一内网IP'),
+                    '4': this.$t('第一外网IP')
+                }
                 const templates = this.getServiceTemplates(instance)
                 return templates.map(template => {
                     const value = {}
-                    const ip = ['127.0.0.1', '0.0.0.0']
                     Object.keys(template.property).forEach(key => {
-                        if (key === 'bind_ip') {
-                            value[key] = ip[template.property[key].value - 1]
+                        if (key === 'bind_info') {
+                            value[key] = this.$tools.clone(template.property[key].value) || []
+                            value[key].forEach(row => {
+                                Object.keys(row).forEach(field => {
+                                    if (field === 'ip') {
+                                        row[field] = ipMap[row[field].value]
+                                    } else if (field === 'row_id') {
+                                        // 实例数据中使用 template_row_id
+                                        row['template_row_id'] = row[field]
+                                        delete row[field]
+                                    } else if (row[field] !== null && typeof row[field] === 'object') {
+                                        row[field] = row[field].value
+                                    }
+                                })
+                            })
                         } else {
                             value[key] = template.property[key].value
                         }
@@ -342,7 +360,8 @@
                     const confirmTable = this.$refs.confirmTable
                     const withTemplate = this.withTemplate
                     const params = {
-                        bk_module_id: this.moduleId
+                        bk_module_id: this.moduleId,
+                        bk_biz_id: this.bizId
                     }
                     if (serviceInstanceTables) {
                         params.instances = serviceInstanceTables.map(table => {
@@ -363,7 +382,7 @@
                     }
 
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-                        params: this.$injectMetadata(params, { injectBizId: true })
+                        params: params
                     })
 
                     this.$success(this.$t('添加成功'))

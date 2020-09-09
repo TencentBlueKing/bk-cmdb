@@ -70,7 +70,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -107,7 +107,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, header, 3, false, defLang, metaInfo)
+	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, header, 3, false, defLang, modelBizID)
 	if 0 == len(attrItems) {
 		var msg string
 		if nil != err {
@@ -131,7 +131,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 			"meta": nil,
 			"attr": attrItems,
 		},
-		metadata.BKMetadata: metaInfo,
+		common.BKAppIDField: modelBizID,
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, common.BKDefaultOwnerID, objID, params)
@@ -232,11 +232,7 @@ func setExcelRow(ctx context.Context, row *xlsx.Row, item interface{}) *xlsx.Row
 }
 
 type ExportObjectBody struct {
-	Metadata struct {
-		Label struct {
-			BkBizID string `json:"bk_biz_id"`
-		} `json:"label"`
-	} `json:"metadata"`
+	BizID int64 `json:"bk_biz_id"`
 }
 
 // ExportObject export object
@@ -261,10 +257,9 @@ func (s *Service) ExportObject(c *gin.Context) {
 		c.String(http.StatusBadRequest, msg)
 		return
 	}
-	metaInfo := metadata.NewMetaDataFromBusinessID(requestBody.Metadata.Label.BkBizID)
 
 	// get the all attribute of the object
-	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo)
+	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, requestBody.BizID)
 	if nil != err {
 		blog.Error("export model, but get object data failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)

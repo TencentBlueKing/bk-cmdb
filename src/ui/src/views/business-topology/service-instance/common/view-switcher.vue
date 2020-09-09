@@ -15,7 +15,8 @@
                 showOnInit: !tipsDisabled,
                 hideOnClick: false,
                 trigger: 'manual',
-                theme: 'view-switer-tips'
+                theme: 'view-switer-tips',
+                zIndex: getZIndex()
             }"
             @click="handleSwitch('process')">
             {{$t('进程')}}
@@ -49,6 +50,9 @@
             }
         },
         methods: {
+            getZIndex () {
+                return window.__bk_zIndex_manager.nextZIndex()
+            },
             handleSwitch (active) {
                 RouterQuery.set({ 'view': active })
             },

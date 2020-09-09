@@ -111,13 +111,13 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 
 // GetImportHosts get import hosts
 // return inst array data, errmsg collection, error
-func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, modelBizID int64) (map[int]map[string]interface{}, []string, error) {
 	ctx := util.NewContextFromHTTPHeader(header)
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, meta)
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -132,11 +132,11 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 
 // ImportHosts import host info
 func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	meta *metadata.Metadata) *metadata.ResponseDataMapStr {
+	modelBizID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, meta)
+	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, modelBizID)
 
 	if nil != err {
 		blog.Errorf("ImportHost  get import hosts from excel err, error:%s, rid: %s", err.Error(), rid)
@@ -213,11 +213,11 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 // UpdateHosts update excel import hosts
 func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	meta *metadata.Metadata) *metadata.ResponseDataMapStr {
+	modelBizID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, meta)
+	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, modelBizID)
 
 	if nil != err {
 		blog.Errorf("ImportHost  get import hosts from excel err, error:%s, rid: %s", err.Error(), rid)

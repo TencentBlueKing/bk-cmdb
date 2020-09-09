@@ -39,3 +39,13 @@ type gse struct {
 	config *esbutil.EsbConfigSrv
 	client rest.ClientInterface
 }
+
+type esbGseProcParams struct {
+	*esbutil.EsbCommParams
+	*metadata.GseProcRequest `json:"inline"`
+}
+
+type esbTaskIDParams struct {
+	*esbutil.EsbCommParams
+	TaskID string `json:"task_id"`
+}

@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -37,7 +38,7 @@ import (
 // InstOperationInterface inst operation methods
 type InstOperationInterface interface {
 	CreateInst(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
-	CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo *InstBatchInfo, metaData *metadata.Metadata) (*BatchResult, error)
+	CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
 	DeleteInst(kit *rest.Kit, obj model.Object, cond condition.Condition, needCheckHost bool) error
 	DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, instID int64) error
 	DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID []int64, needCheckHost bool) error
@@ -47,16 +48,17 @@ type InstOperationInterface interface {
 	FindInstChildTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstParentTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []CommonInstTopoV2, err error)
-	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64, metaData *metadata.Metadata) error
+	UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 }
 
 // NewInstOperation create a new inst operation instance
-func NewInstOperation(client apimachinery.ClientSetInterface, languageIf language.CCLanguageIf) InstOperationInterface {
+func NewInstOperation(client apimachinery.ClientSetInterface, languageIf language.CCLanguageIf, authManager *extensions.AuthManager) InstOperationInterface {
 	return &commonInst{
-		clientSet: client,
-		language:  languageIf,
+		clientSet:   client,
+		language:    languageIf,
+		authManager: authManager,
 	}
 }
 
@@ -81,6 +83,7 @@ type commonInst struct {
 	asst         AssociationOperationInterface
 	obj          ObjectOperationInterface
 	language     language.CCLanguageIf
+	authManager  *extensions.AuthManager
 }
 
 func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface) {
@@ -91,16 +94,7 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 }
 
 // CreateInstBatch
-func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo *InstBatchInfo, metaData *metadata.Metadata) (*BatchResult, error) {
-	var err error
-	var bizID int64
-	if metaData != nil {
-		bizID, err = metadata.BizIDFromMetadata(*metaData)
-		if err != nil {
-			return nil, fmt.Errorf("parse business id from metadata failed, err: %+v", err)
-		}
-	}
-
+func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
 	object := obj.Object()
 
 	// forbidden create inner model instance with common api
@@ -198,10 +192,6 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			continue
 		}
 
-		// create with metadata
-		if bizID != 0 {
-			colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-		}
 		// set data
 		// call CoreService.CreateInstance
 		err = item.Create()
@@ -240,16 +230,11 @@ func (c *commonInst) isValidBizInstID(kit *rest.Kit, obj metadata.Object, instID
 
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+
 	if bizID != 0 {
-		or := cond.NewOR()
-		or.Item(mapstr.MapStr{common.BKAppIDField: bizID})
-		meta := metadata.Metadata{
-			Label: map[string]string{
-				common.BKAppIDField: strconv.FormatInt(bizID, 10),
-			},
-		}
-		or.Item(mapstr.MapStr{metadata.BKMetadata: meta})
+		cond.Field(common.BKAppIDField).Eq(bizID)
 	}
+
 	if obj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(obj.ObjectID)
 	}
@@ -573,9 +558,9 @@ func (c *commonInst) DeleteInst(kit *rest.Kit, obj model.Object, cond condition.
 
 	return nil
 }
-func (c *commonInst) convertInstIDIntoStruct(kit *rest.Kit, asstObj metadata.Association, instIDS []string, needAsstDetail bool, metaData *metadata.Metadata) ([]metadata.InstNameAsst, error) {
+func (c *commonInst) convertInstIDIntoStruct(kit *rest.Kit, asstObj metadata.Association, instIDS []string, needAsstDetail bool, modelBizID int64) ([]metadata.InstNameAsst, error) {
 
-	obj, err := c.obj.FindSingleObject(kit, asstObj.AsstObjID, metaData)
+	obj, err := c.obj.FindSingleObject(kit, asstObj.AsstObjID)
 	if nil != err {
 		return nil, err
 	}
@@ -651,7 +636,7 @@ func (c *commonInst) convertInstIDIntoStruct(kit *rest.Kit, asstObj metadata.Ass
 
 func (c *commonInst) searchAssociationInst(kit *rest.Kit, objID string, query *metadata.QueryInput) ([]int64, error) {
 
-	obj, err := c.obj.FindSingleObject(kit, objID, nil)
+	obj, err := c.obj.FindSingleObject(kit, objID)
 	if nil != err {
 		return nil, err
 	}
@@ -1046,7 +1031,7 @@ func (c *commonInst) FindInst(kit *rest.Kit, obj model.Object, cond *metadata.Qu
 	return rsp.Count, inst.CreateInst(kit, c.clientSet, obj, rsp.Info), nil
 }
 
-func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64, metaData *metadata.Metadata) error {
+func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
@@ -1063,9 +1048,6 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Obj
 
 	// update insts
 	fCond := cond.ToMapStr()
-	if nil != metaData {
-		fCond.Set(metadata.BKMetadata, *metaData)
-	}
 	inputParams := metadata.UpdateOption{
 		Data:      data,
 		Condition: fCond,

@@ -39,11 +39,11 @@ type GroupInterface interface {
 
 var _ GroupInterface = (*group)(nil)
 
-func NewGroup(param *rest.Kit, cli apimachinery.ClientSetInterface, metaData *metadata.Metadata) GroupInterface {
+func NewGroup(param *rest.Kit, cli apimachinery.ClientSetInterface, bizID int64) GroupInterface {
 	return &group{
 		grp:       metadata.Group{},
 		kit:       param,
-		metadata:  metaData,
+		bizID:     bizID,
 		clientSet: cli,
 		ownerID:   param.SupplierAccount,
 	}
@@ -62,7 +62,7 @@ type group struct {
 	grp       metadata.Group
 	isNew     bool
 	kit       *rest.Kit
-	metadata  *metadata.Metadata
+	bizID     int64
 	clientSet apimachinery.ClientSetInterface
 	ownerID   string
 }
@@ -248,8 +248,8 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 }
 
 func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
-	if nil != g.metadata {
-		cond.Field(metadata.BKMetadata).Eq(*g.metadata)
+	if g.bizID > 0 {
+		cond.Field(common.BKAppIDField).Eq(g.bizID)
 	}
 	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), g.kit.Header, g.GetObjectID(), metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {

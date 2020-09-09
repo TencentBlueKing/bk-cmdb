@@ -22,15 +22,14 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
+
 	"gopkg.in/redis.v5"
 )
 
 type Client struct {
 	rds   *redis.Client
 	event reflector.Interface
-	db    dal.DB
 	lock  tools.RefreshingLock
 }
 
@@ -59,7 +58,7 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 	}
 
 	// data has already expired, need to refresh from db
-	ips, cloudID, detail, err := getHostDetailsFromMongoWithHostID(c.db, opt.HostID)
+	ips, cloudID, detail, err := getHostDetailsFromMongoWithHostID(opt.HostID)
 	if err != nil {
 		blog.Errorf("get host with id: %d, and cache expired, but get from mongo failed, err: %v, rid: %s", opt.HostID, err, rid)
 		return "", err
@@ -128,7 +127,7 @@ func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWith
 			ids[i] = opt.IDs[idx]
 		}
 
-		toAdd, err := listHostDetailsFromMongoWithHostID(c.db, ids)
+		toAdd, err := listHostDetailsFromMongoWithHostID(ids)
 		if err != nil {
 			blog.Errorf("list host with ids, but get from db failed, host: %v, rid: %s", ids, rid)
 			return nil, err
@@ -174,7 +173,7 @@ func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWi
 
 	if len(opt.HostIDs) != 0 {
 		// find with host id directly.
-		total, err := c.countHost(ctx, nil)
+		total, err := c.countHost(ctx, map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: opt.HostIDs}})
 		if err != nil {
 			blog.Errorf("list host with page, but count failed, err: %v, rid: %v", err, rid)
 			return 0, nil, err
@@ -229,7 +228,7 @@ func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWi
 
 	if len(toRefreshIds) != 0 {
 
-		refresh, err := listHostDetailsFromMongoWithHostID(c.db, toRefreshIds)
+		refresh, err := listHostDetailsFromMongoWithHostID(toRefreshIds)
 		if err != nil {
 			blog.Errorf("list host with ids, but get from db failed, host: %v, rid: %s", toRefreshIds, rid)
 			return 0, nil, err

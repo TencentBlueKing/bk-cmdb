@@ -16,10 +16,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
@@ -48,23 +48,9 @@ func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit, relation
 	// TODO: asset bizID == category.BizID
 
 	relation.SupplierAccount = kit.SupplierAccount
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx, &relation); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx, &relation); nil != err {
 		blog.Errorf("CreateProcessInstanceRelation failed, mongodb failed, table: %s, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, relation, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
-	}
-
-	// push process instance relation create event
-	event := eventclient.NewEventWithHeader(kit.Header)
-	event.EventType = metadata.EventTypeRelation
-	event.ObjType = metadata.EventObjTypeProcModule
-	event.Action = metadata.EventActionCreate
-	event.Data = []metadata.EventData{
-		{CurData: relation},
-	}
-	err = p.eventCli.Push(kit.Ctx, event)
-	if err != nil {
-		blog.Errorf("process instance relation event push failed, error:%v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
 	}
 	return relation, nil
 }
@@ -75,9 +61,9 @@ func (p *processOperation) GetProcessInstanceRelation(kit *rest.Kit, processInst
 	filter := map[string]int64{
 		common.BKProcessIDField: processInstanceID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).One(kit.Ctx, &relation); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).One(kit.Ctx, &relation); nil != err {
 		blog.Errorf("GetProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, relation: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, relation, err, kit.Rid)
-		if p.dbProxy.IsNotFoundError(err) {
+		if mongodb.Client().IsNotFoundError(err) {
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -103,33 +89,10 @@ func (p *processOperation) UpdateProcessInstanceRelation(kit *rest.Kit, processI
 
 	filter := map[string]int64{"process_id": processInstanceID}
 
-	preData := make([]map[string]interface{}, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).All(kit.Ctx, &preData); nil != err {
-		blog.Errorf("UpdateProcessInstanceRelation failed, find relation in mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-
 	// do update
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx, filter, relation); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx, filter, relation); nil != err {
 		blog.Errorf("UpdateProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, filter, relation, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
-	}
-
-	// push process instance relation update event
-	var eventArr []*metadata.EventInst
-	for _, data := range preData {
-		event := eventclient.NewEventWithHeader(kit.Header)
-		event.EventType = metadata.EventTypeRelation
-		event.ObjType = metadata.EventObjTypeProcModule
-		event.Action = metadata.EventActionUpdate
-		event.Data = []metadata.EventData{
-			{PreData: data, CurData: relation},
-		}
-		eventArr = append(eventArr, event)
-	}
-	if err := p.eventCli.Push(kit.Ctx, eventArr...); err != nil {
-		blog.Errorf("process instance relation event push failed, error:%v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
 	}
 	return relation, nil
 }
@@ -161,15 +124,14 @@ func (p *processOperation) ListProcessInstanceRelation(kit *rest.Kit, option met
 		filter[common.BKProcIDField] = processIDFilter
 	}
 
-	blog.Debug("filter: %v", filter)
 	var total uint64
 	var err error
-	if total, err = p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx); nil != err {
+	if total, err = mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx); nil != err {
 		blog.Errorf("ListProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Sort(option.Page.Sort).Start(
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Sort(option.Page.Sort).Start(
 		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx, &relations); nil != err {
 		blog.Errorf("ListProcessInstanceRelation failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -192,13 +154,13 @@ func (p *processOperation) ListHostProcessRelation(kit *rest.Kit, option *metada
 		}
 	}
 	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
-	count, err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("ListHostProcessRelation count mongodb failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	relations := make([]metadata.HostProcessRelation, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
 		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &relations); err != nil {
 		blog.ErrorJSON("ListHostProcessRelation select mongodb failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -245,33 +207,9 @@ func (p *processOperation) DeleteProcessInstanceRelation(kit *rest.Kit, option m
 		return kit.CCError.CCErrorf(common.CCErrCommParametersCountNotEnough)
 	}
 
-	preData := make([]map[string]interface{}, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(deleteFilter).All(kit.Ctx, &preData); nil != err {
-		blog.Errorf("DeleteProcessInstanceRelation failed, find relation in mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, deleteFilter); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
-	}
-
-	// push process instance relation delete event
-	var eventArr []*metadata.EventInst
-	for _, data := range preData {
-		event := eventclient.NewEventWithHeader(kit.Header)
-		event.EventType = metadata.EventTypeRelation
-		event.ObjType = metadata.EventObjTypeProcModule
-		event.Action = metadata.EventActionDelete
-		event.Data = []metadata.EventData{
-			{PreData: data},
-		}
-		eventArr = append(eventArr, event)
-	}
-	err := p.eventCli.Push(kit.Ctx, eventArr...)
-	if err != nil {
-		blog.Errorf("process instance relation event push failed, error:%v, rid: %s", err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
 	}
 	return nil
 }

@@ -1,4 +1,5 @@
 import RouterQuery from '@/router/query'
+import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 export default {
     props: {
         properties: {
@@ -20,6 +21,27 @@ export default {
             }
         }
     },
+    computed: {
+        isGlobalView () {
+            const topRoute = this.$route.matched[0]
+            return topRoute ? topRoute.name !== MENU_BUSINESS : true
+        },
+        saveAuth () {
+            return this.selection.map(({ host, biz, module }) => {
+                const isBizHost = biz[0].default === 0
+                if (isBizHost) {
+                    return {
+                        type: this.$OPERATION.U_HOST,
+                        relation: [biz[0].bk_biz_id, host.bk_host_id]
+                    }
+                }
+                return {
+                    type: this.$OPERATION.U_RESOURCE_HOST,
+                    relation: [module[0].bk_module_id, host.bk_host_id]
+                }
+            })
+        }
+    },
     methods: {
         async handleMultipleEdit () {
             try {
@@ -30,6 +52,7 @@ export default {
                 this.slider.props.objectUnique = objectUnique
                 this.slider.props.propertyGroups = groups
                 this.slider.props.properties = this.properties
+                this.slider.props.saveAuth = this.saveAuth
                 this.slider.title = this.$t('主机属性')
                 this.slider.component = 'cmdb-form-multiple'
                 this.slider.show = true
@@ -84,7 +107,7 @@ export default {
         getPropertyGroups () {
             return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
                 objId: 'host',
-                params: this.$injectMetadata()
+                params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId) }
             })
         }
     }

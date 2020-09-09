@@ -7,15 +7,24 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                show-overflow-tooltip>
+                :show-overflow-tooltip="column.id !== 'bind_info'">
                 <template slot-scope="{ row }">
-                    <span v-if="column.id === 'bind_ip'">{{row[column.id] | ipText}}</span>
-                    <span v-else>{{row[column.id] | formatter(column.property)}}</span>
+                    <cmdb-property-value
+                        v-if="column.id !== 'bind_info'"
+                        :show-title="false"
+                        :show-on="'cell'"
+                        :value="row[column.id]"
+                        :property="column.property">
+                    </cmdb-property-value>
+                    <process-bind-info-value v-else
+                        :value="row[column.id]"
+                        :property="column.property">
+                    </process-bind-info-value>
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" prop="operation" v-if="showOperation">
                 <template slot-scope="{ row, $index }">
-                    <cmdb-auth :auth="$authResources(auth)">
+                    <cmdb-auth :auth="auth">
                         <bk-button slot-scope="{ disabled }"
                             class="mr10"
                             theme="primary"
@@ -25,7 +34,7 @@
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
-                    <cmdb-auth :auth="$authResources(auth)">
+                    <cmdb-auth :auth="auth">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             :disabled="disabled"
@@ -42,15 +51,10 @@
 
 <script>
     import { processTableHeader } from '@/dictionary/table-header'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     export default {
-        filters: {
-            ipText (value) {
-                if (['1', '2'].includes(value)) {
-                    const ip = ['127.0.0.1', '0.0.0.0']
-                    return ip[value - 1]
-                }
-                return value || '--'
-            }
+        components: {
+            ProcessBindInfoValue
         },
         props: {
             auth: {

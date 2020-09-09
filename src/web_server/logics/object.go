@@ -21,17 +21,16 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 )
 
 // GetObjectData get object data
-func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, meta metadata.Metadata) ([]interface{}, error) {
+func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, modelBizID int64) ([]interface{}, error) {
 
 	condition := mapstr.MapStr{
 		"condition": []string{
 			objID,
 		},
-		"metadata": meta,
+		common.BKAppIDField: modelBizID,
 	}
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectData(context.Background(), header, condition)

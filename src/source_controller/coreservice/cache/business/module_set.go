@@ -21,9 +21,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
+
 	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
@@ -33,7 +34,6 @@ type moduleSet struct {
 	collection string
 	rds        *redis.Client
 	event      reflector.Interface
-	db         dal.DB
 
 	lock tools.RefreshingLock
 }
@@ -208,7 +208,7 @@ func (ms *moduleSet) getModuleNameFromMongo(id int64) (string, error) {
 	filter := mapstr.MapStr{
 		common.BKModuleIDField: id,
 	}
-	if err := ms.db.Table(common.BKTableNameBaseModule).Find(filter).One(context.Background(), mod); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).One(context.Background(), mod); err != nil {
 		blog.Errorf("get module %d name from mongo failed, err: %v", id, err)
 		return "", err
 	}
@@ -221,7 +221,7 @@ func (ms *moduleSet) getSetNameFromMongo(id int64) (string, error) {
 		common.BKSetIDField: id,
 	}
 
-	if err := ms.db.Table(common.BKTableNameBaseSet).Find(filter).One(context.Background(), mod); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).One(context.Background(), mod); err != nil {
 		blog.Errorf("get module %d name from mongo failed, err: %v", id, err)
 		return "", err
 	}

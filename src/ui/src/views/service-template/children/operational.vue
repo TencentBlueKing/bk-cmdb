@@ -56,6 +56,9 @@
                                     :placeholder="$t('请选择一级分类')"
                                     :searchable="true"
                                     :list="mainList"
+                                    :popover-options="{
+                                        boundary: 'window'
+                                    }"
                                     v-validate="'required'"
                                     name="mainClassificationId"
                                     v-model="formData['mainClassification']"
@@ -70,7 +73,6 @@
                                     :auto-select="true"
                                     :searchable="true"
                                     :list="secondaryList"
-                                    :empty-text="emptyText"
                                     v-validate="'required'"
                                     name="secondaryClassificationId"
                                     v-model="formData['secondaryClassification']">
@@ -113,7 +115,7 @@
             <h3>{{$t('服务进程')}}</h3>
             <div class="precess-box">
                 <div class="process-create" v-if="isFormMode">
-                    <cmdb-auth :auth="$authResources(auth)">
+                    <cmdb-auth :auth="auth">
                         <bk-button slot-scope="{ disabled }"
                             class="create-btn"
                             theme="default"
@@ -145,7 +147,7 @@
                 'info-footer': true,
                 'is-sticky': sticky
             }">
-            <cmdb-auth class="mr5" :auth="$authResources(auth)">
+            <cmdb-auth class="mr5" :auth="auth">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="disabled"
@@ -221,7 +223,6 @@
                 processList: [],
                 originTemplateValues: {},
                 hasUsed: false,
-                emptyText: this.$t('请选择一级分类'),
                 attribute: {
                     type: null,
                     dataIndex: null,
@@ -261,6 +262,7 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
+            ...mapGetters('objectBiz', ['bizId']),
             templateId () {
                 return this.$route.params.templateId
             },
@@ -273,12 +275,13 @@
             auth () {
                 if (this.isCreateMode) {
                     return {
-                        type: this.$OPERATION.C_SERVICE_TEMPLATE
+                        type: this.$OPERATION.C_SERVICE_TEMPLATE,
+                        relation: [this.bizId]
                     }
                 }
                 return {
-                    resource_id: Number(this.templateId) || null,
-                    type: this.$OPERATION.U_SERVICE_TEMPLATE
+                    type: this.$OPERATION.U_SERVICE_TEMPLATE,
+                    relation: [this.bizId, Number(this.templateId)]
                 }
             },
             setActive () {
@@ -387,10 +390,11 @@
             },
             getProperties () {
                 return this.searchObjectAttribute({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         bk_obj_id: 'process',
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    },
                     config: {
                         requestId: this.request.properties,
                         fromCache: true
@@ -400,7 +404,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'process',
-                    params: this.$injectMetadata(),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: this.request.propertyGroups,
                         fromCache: true
@@ -419,7 +423,7 @@
             },
             getServiceClassification () {
                 return this.searchServiceCategory({
-                    params: this.$injectMetadata({}, { injectBizId: true }),
+                    params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: this.request.category
                     }
@@ -428,9 +432,10 @@
             getProcessList () {
                 this.processLoading = true
                 this.getBatchProcessTemplate({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         service_template_id: Number(this.templateId)
-                    }, { injectBizId: true }),
+                    },
                     config: {
                         requestId: this.request.processList
                     }
@@ -447,7 +452,6 @@
             },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
-                this.emptyText = this.$t('没有二级分类')
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
                 }
@@ -462,6 +466,32 @@
                         data[key].value = null
                     } else if (property && property.bk_property_type === 'bool' && !data[key].as_default_value) {
                         data[key].value = null
+                    } else if (property && property.bk_property_type === 'table') {
+                        // 过滤掉无效数据行
+                        if (Array.isArray(data[key].value)) {
+                            const list = data[key].value.filter(row => {
+                                const values = Object.keys(row).map(key => row[key].value).filter(value => {
+                                    if (typeof value !== 'boolean') {
+                                        return !!value
+                                    }
+                                    return true
+                                })
+                                return values.length > 0
+                            })
+                            list.forEach(row => {
+                                Object.keys(row).forEach(key => {
+                                    // 未勾选未填写需设置值为null
+                                    if (row[key] !== null
+                                        && typeof row[key] === 'object'
+                                        && !row[key].as_default_value
+                                        && typeof row[key].value !== 'boolean'
+                                        && !row[key].value) {
+                                        row[key].value = null
+                                    }
+                                })
+                            })
+                            data[key].value = list
+                        }
                     } else if (!data[key].as_default_value) {
                         data[key].value = ''
                     }
@@ -473,22 +503,24 @@
                 const processValues = this.formatSubmitData(data)
                 if (type === 'create') {
                     this.createProcessTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             service_template_id: this.originTemplateValues['id'],
                             processes: [{
                                 spec: processValues
                             }]
-                        }, { injectBizId: true })
+                        }
                     }).then(() => {
                         this.getProcessList()
                         this.handleCancelProcess()
                     })
                 } else {
                     this.updateProcessTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             process_template_id: values['process_id'],
                             process_property: processValues
-                        }, { injectBizId: true })
+                        }
                     }).then(() => {
                         this.getProcessList()
                         this.handleCancelProcess()
@@ -525,9 +557,10 @@
                         } else {
                             this.deleteProcessTemplate({
                                 params: {
-                                    data: this.$injectMetadata({
+                                    data: {
+                                        bk_biz_id: this.bizId,
                                         process_templates: [template['process_id']]
-                                    }, { injectBizId: true })
+                                    }
                                 }
                             }).then(() => {
                                 this.$success(this.$t('删除成功'))
@@ -539,7 +572,8 @@
             },
             handleSubmitProcessList () {
                 this.createProcessTemplate({
-                    params: this.$injectMetadata({
+                    params: {
+                        bk_biz_id: this.bizId,
                         service_template_id: this.formData.templateId,
                         processes: this.processList.map(process => {
                             delete process.sign_id
@@ -547,7 +581,7 @@
                                 spec: this.formatSubmitData(process)
                             }
                         })
-                    }, { injectBizId: true })
+                    }
                 }).then(() => {
                     this.$success(this.$t('创建成功'))
                     this.handleCancelOperation()
@@ -555,11 +589,10 @@
                     // 新建进程失败静默删除服务模板
                     await this.deleteServiceTemplate({
                         params: {
-                            data: this.$injectMetadata({
+                            data: {
+                                bk_biz_id: this.bizId,
                                 service_template_id: this.formData.templateId
-                            }, {
-                                injectBizId: true
-                            })
+                            }
                         }
                     })
                     this.formData.templateId = ''
@@ -573,11 +606,12 @@
                 if (!await this.$validator.validateAll()) return
                 if (this.formData.templateId) {
                     this.updateServiceTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             id: this.formData.templateId,
                             name: this.formData.templateName,
                             service_category_id: this.formData.secondaryClassification
-                        }, { injectBizId: true })
+                        }
                     }).then(() => {
                         if (this.isCreateMode) {
                             this.handleSubmitProcessList()
@@ -602,10 +636,11 @@
             },
             handleCreateTemplate () {
                 this.createServiceTemplate({
-                    params: this.$injectMetadata({
+                    params: {
                         name: this.formData.templateName,
+                        bk_biz_id: this.bizId,
                         service_category_id: this.formData.secondaryClassification
-                    }, { injectBizId: true })
+                    }
                 }).then(data => {
                     if (this.processList.length) {
                         this.formData.templateId = data.id
@@ -689,10 +724,11 @@
                     }
                     this.isEditNameLoading = true
                     await this.updateServiceTemplate({
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             id: this.formData.templateId,
                             name: this.formData.templateName
-                        }, { injectBizId: true })
+                        }
                     })
                     this.isEditName = false
                     this.isEditNameLoading = false
@@ -703,12 +739,17 @@
             },
             async handleSaveCategory () {
                 try {
+                    const isValid = await this.$validator.validateAll()
+                    if (!isValid) {
+                        return false
+                    }
                     this.isEditCategoryLoading = true
                     await this.updateServiceTemplate({
-                        params: this.$injectMetadata({
+                        params: {
                             id: this.formData.templateId,
+                            bk_biz_id: this.bizId,
                             service_category_id: this.formData.secondaryClassification
-                        }, { injectBizId: true })
+                        }
                     })
                     this.isEditCategory = false
                     this.isEditCategoryLoading = false

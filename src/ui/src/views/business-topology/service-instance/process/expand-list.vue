@@ -17,26 +17,31 @@
             :key="property.bk_property_id"
             :label="property.bk_property_name"
             :prop="property.bk_property_id"
-            show-overflow-tooltip>
-            <cmdb-property-value slot-scope="{ row }"
-                :value="row.property[property.bk_property_id]"
-                :show-unit="false"
-                :show-title="true"
-                :property="property">
-            </cmdb-property-value>
+            :show-overflow-tooltip="property.bk_property_id !== 'bind_info'">
+            <template slot-scope="{ row }">
+                <cmdb-property-value v-if="property.bk_property_id !== 'bind_info'"
+                    :value="row.property[property.bk_property_id]"
+                    :show-unit="false"
+                    :show-title="true"
+                    :property="property">
+                </cmdb-property-value>
+                <process-bind-info-value v-else
+                    :value="row.property[property.bk_property_id]"
+                    :property="property">
+                </process-bind-info-value>
+            </template>
         </bk-table-column>
         <bk-table-column :label="$t('操作')" width="150" fixed="right" :resizable="false">
             <template slot-scope="{ row }">
-                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }">
+                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"
                         @click="handleEdit(row)">
                         {{$t('编辑')}}
-         
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!row.relation.process_template_id">
+                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }" v-if="!row.relation.process_template_id">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"
@@ -55,8 +60,12 @@
     import { mapGetters } from 'vuex'
     import Bus from '../common/bus'
     import Form from '@/components/service/form/form.js'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     import RouterQuery from '@/router/query'
     export default {
+        components: {
+            ProcessBindInfoValue
+        },
         props: {
             process: Object
         },

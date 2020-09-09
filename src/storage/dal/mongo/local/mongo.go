@@ -134,7 +134,7 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 	return nil
 }
 
-// NewMgo returns new RDB
+// InitTxnManager TxnID management of initial transaction
 func (c *Mongo) InitTxnManager(r *redis.Client) error {
 	return c.tm.InitTxnManager(r)
 }
@@ -504,6 +504,9 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameBaseSet:
 	case common.BKTableNameBaseModule:
 	case common.BKTableNameSetTemplate:
+	case common.BKTableNameBaseInst:
+	case common.BKTableNameBaseProcess:
+	case common.BKTableNameProcessInstanceRelation:
 	default:
 		// do not archive the delete docs
 		return nil

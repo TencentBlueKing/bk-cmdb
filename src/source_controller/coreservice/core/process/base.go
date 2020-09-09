@@ -16,19 +16,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type processOperation struct {
-	dbProxy    dal.RDB
 	dependence OperationDependence
-	eventCli   eventclient.Client
 }
 
 // OperationDependence methods definition
@@ -38,11 +33,9 @@ type OperationDependence interface {
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, dependence OperationDependence, cache *redis.Client) core.ProcessOperation {
+func New(dependence OperationDependence) core.ProcessOperation {
 	processOps := &processOperation{
-		dbProxy:    dbProxy,
 		dependence: dependence,
-		eventCli:   eventclient.NewClientViaRedis(cache, dbProxy),
 	}
 	return processOps
 }
@@ -57,7 +50,7 @@ func (p *processOperation) validateBizID(kit *rest.Kit, bizID int64) (int64, err
 	filter := map[string]interface{}{
 		common.BKAppIDField: bizID,
 	}
-	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseApp, err, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -79,7 +72,7 @@ func (p *processOperation) validateModuleID(kit *rest.Kit, moduleID int64) (*met
 	filter := map[string]interface{}{
 		common.BKModuleIDField: moduleID,
 	}
-	err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).One(kit.Ctx, module)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).One(kit.Ctx, module)
 	if nil != err {
 		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -99,7 +92,7 @@ func (p *processOperation) validateHostID(kit *rest.Kit, hostID int64) (string, 
 		common.BKHostIDField: hostID,
 	}
 	host := metadata.HostMapStr{}
-	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField).One(kit.Ctx, &host)
+	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField).One(kit.Ctx, &host)
 	if nil != err {
 		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)

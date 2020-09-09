@@ -29,21 +29,18 @@ import (
 )
 
 type DeleteCategoryInput struct {
-	Metadata *Metadata `json:"metadata"`
-	ID       int64     `json:"id"`
+	ID int64 `json:"id"`
 }
 
 type CreateProcessTemplateBatchInput struct {
-	Metadata          *Metadata       `json:"metadata"`
 	BizID             int64           `json:"bk_biz_id"`
 	ServiceTemplateID int64           `json:"service_template_id"`
 	Processes         []ProcessDetail `json:"processes"`
 }
 
 type DeleteProcessTemplateBatchInput struct {
-	Metadata         *Metadata `json:"metadata"`
-	BizID            int64     `json:"bk_biz_id"`
-	ProcessTemplates []int64   `json:"process_templates"`
+	BizID            int64   `json:"bk_biz_id"`
+	ProcessTemplates []int64 `json:"process_templates"`
 }
 
 type ProcessDetail struct {
@@ -51,8 +48,7 @@ type ProcessDetail struct {
 }
 
 type ListServiceTemplateInput struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
+	BizID int64 `json:"bk_biz_id"`
 	// this field can be empty, it a optional condition.
 	ServiceCategoryID int64    `json:"service_category_id"`
 	Page              BasePage `json:"page"`
@@ -67,13 +63,11 @@ type ListServiceTemplateWithDetailResult struct {
 }
 
 type DeleteServiceTemplatesInput struct {
-	Metadata          *Metadata `json:"metadata"`
-	BizID             int64     `json:"bk_biz_id"`
-	ServiceTemplateID int64     `json:"service_template_id"`
+	BizID             int64 `json:"bk_biz_id"`
+	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata                   *Metadata                     `json:"metadata"`
 	BizID                      int64                         `json:"bk_biz_id"`
 	Name                       string                        `json:"name"`
 	ModuleID                   int64                         `json:"bk_module_id"`
@@ -82,34 +76,29 @@ type CreateServiceInstanceForServiceTemplateInput struct {
 }
 
 type CreateServiceInstancePreviewInput struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
-	HostIDs  []int64   `json:"bk_host_ids"`
+	BizID    int64   `json:"bk_biz_id"`
+	ModuleID int64   `json:"bk_module_id"`
+	HostIDs  []int64 `json:"bk_host_ids"`
 }
 
 type CreateRawProcessInstanceInput struct {
-	Metadata          *Metadata               `json:"metadata"`
 	BizID             int64                   `json:"bk_biz_id"`
 	ServiceInstanceID int64                   `json:"service_instance_Id"`
 	Processes         []ProcessInstanceDetail `json:"processes"`
 }
 
 type UpdateRawProcessInstanceInput struct {
-	Metadata  *Metadata                `json:"metadata"`
 	BizID     int64                    `json:"bk_biz_id"`
 	Processes []Process                `json:"-"`
 	Raw       []map[string]interface{} `json:"processes"`
 }
 
 type DeleteProcessInstanceInServiceInstanceInput struct {
-	Metadata           *Metadata `json:"metadata"`
-	BizID              int64     `json:"bk_biz_id"`
-	ProcessInstanceIDs []int64   `json:"process_instance_ids"`
+	BizID              int64   `json:"bk_biz_id"`
+	ProcessInstanceIDs []int64 `json:"process_instance_ids"`
 }
 
 type GetServiceInstanceInModuleInput struct {
-	Metadata  *Metadata          `json:"metadata"`
 	BizID     int64              `json:"bk_biz_id"`
 	ModuleID  int64              `json:"bk_module_id"`
 	HostIDs   []int64            `json:"bk_host_ids"`
@@ -119,7 +108,6 @@ type GetServiceInstanceInModuleInput struct {
 }
 
 type ListServiceInstanceDetailRequest struct {
-	Metadata           *Metadata          `json:"metadata"`
 	BizID              int64              `json:"bk_biz_id"`
 	SetID              int64              `json:"bk_set_id"`
 	ModuleID           int64              `json:"bk_module_id"`
@@ -130,21 +118,18 @@ type ListServiceInstanceDetailRequest struct {
 }
 
 type DiffModuleWithTemplateOption struct {
-	Metadata  *Metadata `json:"metadata"`
-	BizID     int64     `json:"bk_biz_id"`
-	ModuleIDs []int64   `json:"bk_module_ids"`
+	BizID     int64   `json:"bk_biz_id"`
+	ModuleIDs []int64 `json:"bk_module_ids"`
 }
 
 type DiffOneModuleWithTemplateOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
 }
 
 type DeleteServiceInstanceOption struct {
-	Metadata           *Metadata `json:"metadata"`
-	BizID              int64     `json:"bk_biz_id"`
-	ServiceInstanceIDs []int64   `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
+	BizID              int64   `json:"bk_biz_id"`
+	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
 type CoreDeleteServiceInstanceOption struct {
@@ -153,10 +138,9 @@ type CoreDeleteServiceInstanceOption struct {
 }
 
 type FindServiceAndProcessInstanceOption struct {
-	Metadata          *Metadata `json:"metadata" field:"metadata" bson:"metadata"`
-	BizID             int64     `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
-	ModuleID          int64     `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
-	ServiceTemplateID int64     `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
+	BizID             int64 `json:"bk_biz_id" field:"bk_biz_id" bson:"bk_biz_id"`
+	ModuleID          int64 `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
+	ServiceTemplateID int64 `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
 }
 
 // to describe the differences between service instance and it's service template's
@@ -250,11 +234,10 @@ type ProcessInstanceDetail struct {
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
-	Metadata            *Metadata `json:"metadata"`
-	BizID               int64     `json:"bk_biz_id"`
-	ProcessTemplatesIDs []int64   `json:"process_template_ids"`
-	ServiceTemplateID   int64     `json:"service_template_id"`
-	Page                BasePage  `json:"page" field:"page" bson:"page"`
+	BizID               int64    `json:"bk_biz_id"`
+	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
+	ServiceTemplateID   int64    `json:"service_template_id"`
+	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
 
 type UpdateProcessByIDsInput struct {
@@ -293,7 +276,7 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 		}
 	}
 
-	if _, ok := o.UpdateData[common.BKProcessIDField]; ok{
+	if _, ok := o.UpdateData[common.BKProcessIDField]; ok {
 		return cErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{"update_data.bk_process_id"},
@@ -304,20 +287,17 @@ func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
 }
 
 type SyncServiceInstanceByTemplateOption struct {
-	Metadata  *Metadata `json:"metadata"`
-	BizID     int64     `json:"bk_biz_id"`
-	ModuleIDs []int64   `json:"bk_module_ids"`
+	BizID     int64   `json:"bk_biz_id"`
+	ModuleIDs []int64 `json:"bk_module_ids"`
 }
 
 // 用于同步单个模块的服务实例
 type SyncModuleServiceInstanceByTemplateOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
 }
 
 type ListServiceInstancesWithHostInput struct {
-	Metadata  *Metadata          `json:"metadata"`
 	BizID     int64              `json:"bk_biz_id"`
 	HostID    int64              `json:"bk_host_id"`
 	SearchKey *string            `json:"search_key"`
@@ -326,9 +306,8 @@ type ListServiceInstancesWithHostInput struct {
 }
 
 type ListProcessInstancesOption struct {
-	Metadata          *Metadata `json:"metadata"`
-	BizID             int64     `json:"bk_biz_id"`
-	ServiceInstanceID int64     `json:"service_instance_id"`
+	BizID             int64 `json:"bk_biz_id"`
+	ServiceInstanceID int64 `json:"service_instance_id"`
 }
 
 type ListProcessInstancesWithHostOption struct {
@@ -403,13 +382,11 @@ func (o *ListProcessInstancesDetailsByIDsOption) Validate() (rawError cErr.RawEr
 }
 
 type RemoveTemplateBindingOnModuleOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID int64     `json:"bk_module_id"`
+	BizID    int64 `json:"bk_biz_id"`
+	ModuleID int64 `json:"bk_module_id"`
 }
 
 type UpdateProcessTemplateInput struct {
-	Metadata          *Metadata              `json:"metadata"`
 	BizID             int64                  `json:"bk_biz_id"`
 	ProcessTemplateID int64                  `json:"process_template_id"`
 	Property          map[string]interface{} `json:"process_property"`
@@ -421,22 +398,53 @@ const (
 	BindLocalHost SocketBindType = "1"
 	BindAll       SocketBindType = "2"
 	BindInnerIP   SocketBindType = "3"
-	BindOtterIP   SocketBindType = "4"
+	BindOuterIP   SocketBindType = "4"
 )
 
-func (p *SocketBindType) IP() string {
-	// TODO: support BindInnerIP and BindOtterIP
+func (p *SocketBindType) NeedIPFromHost() bool {
+	if p == nil {
+		return false
+	}
+
+	switch *p {
+	case BindInnerIP, BindOuterIP:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *SocketBindType) IP(host map[string]interface{}) string {
 	if p == nil {
 		return ""
 	}
+
+	var ip string
+
 	switch *p {
 	case BindLocalHost:
 		return "127.0.0.1"
 	case BindAll:
 		return "0.0.0.0"
+	case BindInnerIP:
+		if host == nil {
+			return ""
+		}
+		ip = util.GetStrByInterface(host[common.BKHostInnerIPField])
+	case BindOuterIP:
+		if host == nil {
+			return ""
+		}
+		ip = util.GetStrByInterface(host[common.BKHostOuterIPField])
 	default:
 		return ""
 	}
+
+	index := strings.Index(strings.Trim(ip, ","), ",")
+	if index == -1 {
+		return ip
+	}
+	return ip[:index]
 }
 
 func (p *SocketBindType) String() string {
@@ -451,7 +459,7 @@ func (p *SocketBindType) String() string {
 		return "0.0.0.0"
 	case BindInnerIP:
 		return "第一内网IP"
-	case BindOtterIP:
+	case BindOuterIP:
 		return "第一外网IP"
 	default:
 		return ""
@@ -459,8 +467,7 @@ func (p *SocketBindType) String() string {
 }
 
 func (p SocketBindType) Validate() error {
-	// validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOtterIP}
-	validValues := []SocketBindType{BindLocalHost, BindAll}
+	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP}
 	if util.InArray(p, validValues) == false {
 		return fmt.Errorf("invalid socket bind type, value: %s, available values: %+v", p, validValues)
 	}
@@ -494,37 +501,74 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	ProcNum         *int64        `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num" mapstructure:"proc_num"`
-	StopCmd         *string       `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd" mapstructure:"stop_cmd"`
-	RestartCmd      *string       `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd" structs:"restart_cmd" mapstructure:"restart_cmd"`
-	ForceStopCmd    *string       `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd" structs:"face_stop_cmd" mapstructure:"face_stop_cmd"`
-	ProcessID       int64         `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id" mapstructure:"bk_process_id"`
-	FuncName        *string       `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name" mapstructure:"bk_func_name"`
-	WorkPath        *string       `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path" mapstructure:"work_path"`
-	BindIP          *string       `field:"bind_ip" json:"bind_ip" bson:"bind_ip" structs:"bind_ip" mapstructure:"bind_ip"`
-	Priority        *int64        `field:"priority" json:"priority" bson:"priority" structs:"priority" mapstructure:"priority"`
-	ReloadCmd       *string       `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd" mapstructure:"reload_cmd"`
-	ProcessName     *string       `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name" mapstructure:"bk_process_name"`
-	Port            *string       `field:"port" json:"port" bson:"port" structs:"port" mapstructure:"port"`
-	PidFile         *string       `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file" mapstructure:"pid_file"`
-	AutoStart       *bool         `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start" mapstructure:"auto_start"`
-	AutoTimeGap     *int64        `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" structs:"auto_time_gap" mapstructure:"auto_time_gap"`
-	LastTime        time.Time     `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time" mapstructure:"last_time"`
-	CreateTime      time.Time     `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time" mapstructure:"create_time"`
-	BusinessID      int64         `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id" mapstructure:"bk_biz_id"`
-	StartCmd        *string       `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd" mapstructure:"start_cmd"`
-	FuncID          *string       `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id" structs:"bk_func_id" mapstructure:"bk_func_id"`
-	User            *string       `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
-	TimeoutSeconds  *int64        `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
-	Protocol        *ProtocolType `field:"protocol" json:"protocol" bson:"protocol" structs:"protocol" mapstructure:"protocol"`
-	Description     *string       `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
-	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
-	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
-	PortEnable      *bool         `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
-	GatewayIP       *string       `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip" structs:"bk_gateway_ip" mapstructure:"bk_gateway_ip"`
-	GatewayPort     *string       `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port" structs:"bk_gateway_port" mapstructure:"bk_gateway_port"`
-	GatewayProtocol *ProtocolType `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol" structs:"bk_gateway_protocol" mapstructure:"bk_gateway_protocol"`
-	GatewayCity     *string       `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city" structs:"bk_gateway_city" mapstructure:"bk_gateway_city"`
+	ProcNum      *int64  `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num" mapstructure:"proc_num"`
+	StopCmd      *string `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd" mapstructure:"stop_cmd"`
+	RestartCmd   *string `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd" structs:"restart_cmd" mapstructure:"restart_cmd"`
+	ForceStopCmd *string `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd" structs:"face_stop_cmd" mapstructure:"face_stop_cmd"`
+	ProcessID    int64   `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id" mapstructure:"bk_process_id"`
+	FuncName     *string `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name" mapstructure:"bk_func_name"`
+	WorkPath     *string `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path" mapstructure:"work_path"`
+	//BindIP          *string       `field:"bind_ip" json:"bind_ip" bson:"bind_ip" structs:"bind_ip" mapstructure:"bind_ip"`
+	Priority    *int64  `field:"priority" json:"priority" bson:"priority" structs:"priority" mapstructure:"priority"`
+	ReloadCmd   *string `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd" mapstructure:"reload_cmd"`
+	ProcessName *string `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name" mapstructure:"bk_process_name"`
+	//Port           *string   `field:"port" json:"port" bson:"port" structs:"port" mapstructure:"port"`
+	PidFile        *string   `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file" mapstructure:"pid_file"`
+	AutoStart      *bool     `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start" mapstructure:"auto_start"`
+	AutoTimeGap    *int64    `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" structs:"auto_time_gap" mapstructure:"auto_time_gap"`
+	LastTime       time.Time `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time" mapstructure:"last_time"`
+	CreateTime     time.Time `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time" mapstructure:"create_time"`
+	BusinessID     int64     `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id" mapstructure:"bk_biz_id"`
+	StartCmd       *string   `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd" mapstructure:"start_cmd"`
+	FuncID         *string   `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id" structs:"bk_func_id" mapstructure:"bk_func_id"`
+	User           *string   `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
+	TimeoutSeconds *int64    `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
+	//Protocol        *ProtocolType `field:"protocol" json:"protocol" bson:"protocol" structs:"protocol" mapstructure:"protocol"`
+	Description     *string `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
+	SupplierAccount string  `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	StartParamRegex *string `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
+	//PortEnable      *bool         `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	//GatewayIP       *string       `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip" structs:"bk_gateway_ip" mapstructure:"bk_gateway_ip"`
+	//GatewayPort     *string       `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port" structs:"bk_gateway_port" mapstructure:"bk_gateway_port"`
+	//GatewayProtocol *ProtocolType `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol" structs:"bk_gateway_protocol" mapstructure:"bk_gateway_protocol"`
+	//GatewayCity     *string       `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city" structs:"bk_gateway_city" mapstructure:"bk_gateway_city"`
+
+	BindInfo []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
+}
+
+func (p *Process) Map() map[string]interface{} {
+	var bindInfoArr []map[string]interface{}
+	for _, row := range p.BindInfo {
+		bindInfoArr = append(bindInfoArr, row.toKV())
+	}
+	procMap := map[string]interface{}{
+		common.BKProcInstNum:      p.ProcNum,
+		common.BKProcStopCmd:      p.StopCmd,
+		common.BKProcRestartCmd:   p.RestartCmd,
+		"face_stop_cmd":           p.ForceStopCmd,
+		common.BKProcessIDField:   p.ProcessID,
+		common.BKFuncName:         p.FuncName,
+		common.BKWorkPath:         p.WorkPath,
+		"priority":                p.Priority,
+		common.BKProcReloadCmd:    p.ReloadCmd,
+		common.BKProcessNameField: p.ProcessName,
+		common.BKProcPidFile:      p.PidFile,
+		"auto_start":              p.AutoStart,
+		"AutoTimeGap":             p.AutoTimeGap,
+		common.BKAppIDField:       p.BusinessID,
+		common.BKProcStartCmd:     p.StartCmd,
+		common.BKFuncIDField:      p.FuncID,
+		common.BKUser:             p.User,
+		common.BKProcTimeOut:      p.TimeoutSeconds,
+		common.BKDescriptionField: p.Description,
+		common.BKOwnerIDField:     p.SupplierAccount,
+		common.BKStartParamRegex:  p.StartParamRegex,
+		common.BKProcBindInfo:     bindInfoArr,
+		common.CreateTimeField:    p.CreateTime,
+		common.LastTimeField:      p.LastTime,
+	}
+
+	return procMap
 }
 
 type ServiceCategory struct {
@@ -640,7 +684,7 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 	return false
 }
 
-func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Process {
+func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host map[string]interface{}) *Process {
 	now := time.Now()
 	processInstance := &Process{
 		LastTime:        now,
@@ -687,15 +731,6 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.WorkPath = property.WorkPath.Value
 	}
 
-	processInstance.BindIP = nil
-	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
-		bindIP := property.BindIP.Value.IP()
-		if len(bindIP) > 0 {
-			processInstance.BindIP = new(string)
-			*processInstance.BindIP = bindIP
-		}
-	}
-
 	processInstance.Priority = nil
 	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
 		processInstance.Priority = property.Priority.Value
@@ -704,11 +739,6 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	processInstance.ReloadCmd = nil
 	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) {
 		processInstance.ReloadCmd = property.ReloadCmd.Value
-	}
-
-	processInstance.Port = nil
-	if IsAsDefaultValue(property.Port.AsDefaultValue) {
-		processInstance.Port = property.Port.Value
 	}
 
 	processInstance.PidFile = nil
@@ -746,11 +776,6 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
 	}
 
-	processInstance.Protocol = nil
-	if IsAsDefaultValue(property.Protocol.AsDefaultValue) {
-		processInstance.Protocol = property.Protocol.Value
-	}
-
 	processInstance.Description = nil
 	if IsAsDefaultValue(property.Description.AsDefaultValue) {
 		processInstance.Description = property.Description.Value
@@ -761,30 +786,7 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.StartParamRegex = property.StartParamRegex.Value
 	}
 
-	processInstance.PortEnable = nil
-	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) {
-		processInstance.PortEnable = property.PortEnable.Value
-	}
-
-	processInstance.GatewayIP = nil
-	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) {
-		processInstance.GatewayIP = property.GatewayIP.Value
-	}
-
-	processInstance.GatewayPort = nil
-	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) {
-		processInstance.GatewayPort = property.GatewayPort.Value
-	}
-
-	processInstance.GatewayProtocol = nil
-	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) {
-		processInstance.GatewayProtocol = property.GatewayProtocol.Value
-	}
-
-	processInstance.GatewayCity = nil
-	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) {
-		processInstance.GatewayCity = property.GatewayCity.Value
-	}
+	processInstance.BindInfo = property.BindInfo.NewProcBindInfo(host)
 
 	return processInstance
 }
@@ -834,7 +836,7 @@ func GetAllProcessPropertyFields() []string {
 }
 
 // ExtractChangeInfo get changes that will be applied to process instance
-func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, bool) {
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interface{}) (mapstr.MapStr, bool, bool) {
 	t := pt.Property
 	var changed, isNamePortChanged bool
 	if t == nil || i == nil {
@@ -920,32 +922,6 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 		}
 	}
 
-	if IsAsDefaultValue(t.BindIP.AsDefaultValue) {
-		if t.BindIP.Value == nil && i.BindIP != nil {
-			process["bind_ip"] = nil
-			changed = true
-		} else if t.BindIP.Value != nil && i.BindIP == nil {
-			process["bind_ip"] = t.BindIP.Value.IP()
-			changed = true
-		} else if t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP {
-			process["bind_ip"] = t.BindIP.Value.IP()
-			changed = true
-		}
-	}
-
-	if IsAsDefaultValue(t.Priority.AsDefaultValue) {
-		if t.Priority.Value != nil && i.Priority == nil {
-			process["priority"] = *t.Priority.Value
-			changed = true
-		} else if t.Priority.Value == nil && i.Priority != nil {
-			process["priority"] = nil
-			changed = true
-		} else if t.Priority.Value != nil && i.Priority != nil && *t.Priority.Value != *i.Priority {
-			process["priority"] = *t.Priority.Value
-			changed = true
-		}
-	}
-
 	if IsAsDefaultValue(t.ReloadCmd.AsDefaultValue) {
 		if t.ReloadCmd.Value == nil && i.ReloadCmd != nil {
 			process["reload_cmd"] = nil
@@ -972,35 +948,6 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 			process["bk_process_name"] = *t.ProcessName.Value
 			changed = true
 			isNamePortChanged = true
-		}
-	}
-
-	if IsAsDefaultValue(t.Port.AsDefaultValue) {
-		if t.Port.Value == nil && i.Port != nil {
-			process["port"] = nil
-			changed = true
-			isNamePortChanged = true
-		} else if t.Port.Value != nil && i.Port == nil {
-			process["port"] = *t.Port.Value
-			changed = true
-			isNamePortChanged = true
-		} else if t.Port.Value != nil && i.Port != nil && *t.Port.Value != *i.Port {
-			process["port"] = *t.Port.Value
-			changed = true
-			isNamePortChanged = true
-		}
-	}
-
-	if IsAsDefaultValue(t.PidFile.AsDefaultValue) {
-		if t.PidFile.Value == nil && i.PidFile != nil {
-			process["pid_file"] = nil
-			changed = true
-		} else if t.PidFile.Value != nil && i.PidFile == nil {
-			process["pid_file"] = *t.PidFile.Value
-			changed = true
-		} else if t.PidFile.Value != nil && i.PidFile != nil && *t.PidFile.Value != *i.PidFile {
-			process["pid_file"] = *t.PidFile.Value
-			changed = true
 		}
 	}
 
@@ -1082,19 +1029,6 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 		}
 	}
 
-	if IsAsDefaultValue(t.Protocol.AsDefaultValue) {
-		if t.Protocol.Value == nil && i.Protocol != nil {
-			process["protocol"] = nil
-			changed = true
-		} else if t.Protocol.Value != nil && i.Protocol == nil {
-			process["protocol"] = *t.Protocol.Value
-			changed = true
-		} else if t.Protocol.Value != nil && i.Protocol != nil && *t.Protocol.Value != *i.Protocol {
-			process["protocol"] = *t.Protocol.Value
-			changed = true
-		}
-	}
-
 	if IsAsDefaultValue(t.Description.AsDefaultValue) {
 		if t.Description.Value == nil && i.Description != nil {
 			process["description"] = nil
@@ -1121,69 +1055,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, b
 		}
 	}
 
-	if IsAsDefaultValue(t.PortEnable.AsDefaultValue) {
-		if t.PortEnable.Value == nil && i.PortEnable != nil {
-			process[common.BKProcPortEnable] = nil
-			changed = true
-		} else if t.PortEnable.Value != nil && i.PortEnable == nil {
-			process[common.BKProcPortEnable] = *t.PortEnable.Value
-			changed = true
-		} else if t.PortEnable.Value != nil && i.PortEnable != nil && *t.PortEnable.Value != *i.PortEnable {
-			process[common.BKProcPortEnable] = *t.PortEnable.Value
-			changed = true
-		}
-	}
+	bindInfo, bindInfoChanged, bindInfoIsNamePortChanged := t.BindInfo.ExtractChangeInfoBindInfo(i, host)
+	process[common.BKProcBindInfo] = bindInfo
+	if bindInfoChanged {
+		changed = true
 
-	if IsAsDefaultValue(t.GatewayIP.AsDefaultValue) {
-		if t.GatewayIP.Value == nil && i.GatewayIP != nil {
-			process["bk_gateway_ip"] = nil
-			changed = true
-		} else if t.GatewayIP.Value != nil && i.GatewayIP == nil {
-			process["bk_gateway_ip"] = *t.GatewayIP.Value
-			changed = true
-		} else if t.GatewayIP.Value != nil && i.GatewayIP != nil && *t.GatewayIP.Value != *i.GatewayIP {
-			process["bk_gateway_ip"] = *t.GatewayIP.Value
-			changed = true
-		}
 	}
+	if bindInfoIsNamePortChanged {
+		bindInfoIsNamePortChanged = true
 
-	if IsAsDefaultValue(t.GatewayPort.AsDefaultValue) {
-		if t.GatewayPort.Value == nil && i.GatewayPort != nil {
-			process["bk_gateway_port"] = nil
-			changed = true
-		} else if t.GatewayPort.Value != nil && i.GatewayPort == nil {
-			process["bk_gateway_port"] = *t.GatewayPort.Value
-			changed = true
-		} else if t.GatewayPort.Value != nil && i.GatewayPort != nil && *t.GatewayPort.Value != *i.GatewayPort {
-			process["bk_gateway_port"] = *t.GatewayPort.Value
-			changed = true
-		}
-	}
-
-	if IsAsDefaultValue(t.GatewayProtocol.AsDefaultValue) {
-		if t.GatewayProtocol.Value == nil && i.GatewayProtocol != nil {
-			process["bk_gateway_protocol"] = nil
-			changed = true
-		} else if t.GatewayProtocol.Value != nil && i.GatewayProtocol == nil {
-			process["bk_gateway_protocol"] = *t.GatewayProtocol.Value
-			changed = true
-		} else if t.GatewayProtocol.Value != nil && i.GatewayProtocol != nil && *t.GatewayProtocol.Value != *i.GatewayProtocol {
-			process["bk_gateway_protocol"] = *t.GatewayProtocol.Value
-			changed = true
-		}
-	}
-
-	if IsAsDefaultValue(t.GatewayCity.AsDefaultValue) {
-		if t.GatewayCity.Value == nil && i.GatewayCity != nil {
-			process["bk_gateway_city"] = nil
-			changed = true
-		} else if t.GatewayCity.Value != nil && i.GatewayCity == nil {
-			process["bk_gateway_city"] = *t.GatewayCity.Value
-			changed = true
-		} else if t.GatewayCity.Value != nil && i.GatewayCity != nil && *t.GatewayCity.Value != *i.GatewayCity {
-			process["bk_gateway_city"] = *t.GatewayCity.Value
-			changed = true
-		}
 	}
 
 	return process, changed, isNamePortChanged
@@ -1228,15 +1108,11 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == false {
 		editableFields = append(editableFields, "proc_num")
 	}
-	if IsAsDefaultValue(property.Port.AsDefaultValue) == false {
-		editableFields = append(editableFields, "port")
-	}
+
 	if IsAsDefaultValue(property.Description.AsDefaultValue) == false {
 		editableFields = append(editableFields, "description")
 	}
-	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == false {
-		editableFields = append(editableFields, "protocol")
-	}
+
 	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == false {
 		editableFields = append(editableFields, "timeout")
 	}
@@ -1258,35 +1134,21 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == false {
 		editableFields = append(editableFields, "work_path")
 	}
-	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == false {
-		editableFields = append(editableFields, "bind_ip")
-	}
+
 	if IsAsDefaultValue(property.Priority.AsDefaultValue) == false {
 		editableFields = append(editableFields, "priority")
 	}
 	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == false {
 		editableFields = append(editableFields, "start_cmd")
 	}
-	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) == false {
-		editableFields = append(editableFields, common.BKProcPortEnable)
-	}
-	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) == false {
-		editableFields = append(editableFields, "bk_gateway_ip")
-	}
-	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) == false {
-		editableFields = append(editableFields, "bk_gateway_port")
-	}
-	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) == false {
-		editableFields = append(editableFields, "bk_gateway_protocol")
-	}
-	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) == false {
-		editableFields = append(editableFields, "bk_gateway_city")
-	}
+	//
+	editableFields = append(editableFields, common.BKProcBindInfo)
+
 	return editableFields
 }
 
 // InstanceUpdate is used for update instance's value
-func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]interface{} {
+func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) map[string]interface{} {
 	data := make(map[string]interface{})
 	property := pt.Property
 	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == false {
@@ -1329,21 +1191,13 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["proc_num"] = *input.ProcNum
 		}
 	}
-	if IsAsDefaultValue(property.Port.AsDefaultValue) == false {
-		if input.Port != nil {
-			data["port"] = *input.Port
-		}
-	}
+
 	if IsAsDefaultValue(property.Description.AsDefaultValue) == false {
 		if input.Description != nil {
 			data["description"] = *input.Description
 		}
 	}
-	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == false {
-		if input.Protocol != nil {
-			data["protocol"] = *input.Protocol
-		}
-	}
+
 	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == false {
 		if input.TimeoutSeconds != nil {
 			data["timeout"] = *input.TimeoutSeconds
@@ -1379,11 +1233,7 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["work_path"] = *input.WorkPath
 		}
 	}
-	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == false {
-		if input.BindIP != nil {
-			data["bind_ip"] = *input.BindIP
-		}
-	}
+
 	if IsAsDefaultValue(property.Priority.AsDefaultValue) == false {
 		if input.Priority != nil {
 			data["priority"] = *input.Priority
@@ -1394,62 +1244,42 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["start_cmd"] = *input.StartCmd
 		}
 	}
-	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) == false {
-		if input.PortEnable != nil {
-			data[common.BKProcPortEnable] = *input.PortEnable
-		}
-	}
-	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) == false {
-		if input.GatewayIP != nil {
-			data["bk_gateway_ip"] = *input.GatewayIP
-		}
-	}
-	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) == false {
-		if input.GatewayPort != nil {
-			data["bk_gateway_port"] = *input.GatewayPort
-		}
-	}
-	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) == false {
-		if input.GatewayProtocol != nil {
-			data["bk_gateway_protocol"] = *input.GatewayProtocol
-		}
-	}
-	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) == false {
-		if input.GatewayCity != nil {
-			data["bk_gateway_city"] = *input.GatewayCity
-		}
-	}
+
+	// bind info 每次都是全量更新
+	data[common.BKProcBindInfo] = pt.Property.BindInfo.ExtractInstanceUpdateData(input, host)
 
 	return data
 }
 
 type ProcessProperty struct {
-	ProcNum            PropertyInt64    `field:"proc_num" json:"proc_num" bson:"proc_num" validate:"max=10000,min=1"`
-	StopCmd            PropertyString   `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd"`
-	RestartCmd         PropertyString   `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd"`
-	ForceStopCmd       PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd"`
-	FuncName           PropertyString   `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" validate:"required"`
-	WorkPath           PropertyString   `field:"work_path" json:"work_path" bson:"work_path"`
-	BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
-	Priority           PropertyInt64    `field:"priority" json:"priority" bson:"priority" validate:"max=10000,min=1"`
-	ReloadCmd          PropertyString   `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd"`
-	ProcessName        PropertyString   `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" validate:"required"`
-	Port               PropertyPort     `field:"port" json:"port" bson:"port"`
-	PidFile            PropertyString   `field:"pid_file" json:"pid_file" bson:"pid_file"`
-	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start" bson:"auto_start"`
-	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" validate:"max=10000,min=1"`
-	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
-	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id"`
-	User               PropertyString   `field:"user" json:"user" bson:"user"`
-	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
-	Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
-	Description        PropertyString   `field:"description" json:"description" bson:"description"`
-	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
-	PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
-	GatewayIP          PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
-	GatewayPort        PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
-	GatewayProtocol    PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
-	GatewayCity        PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
+	ProcNum      PropertyInt64  `field:"proc_num" json:"proc_num" bson:"proc_num" validate:"max=10000,min=1"`
+	StopCmd      PropertyString `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd"`
+	RestartCmd   PropertyString `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd"`
+	ForceStopCmd PropertyString `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd"`
+	FuncName     PropertyString `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" validate:"required"`
+	WorkPath     PropertyString `field:"work_path" json:"work_path" bson:"work_path"`
+	//BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
+	Priority    PropertyInt64  `field:"priority" json:"priority" bson:"priority" validate:"max=10000,min=1"`
+	ReloadCmd   PropertyString `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd"`
+	ProcessName PropertyString `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" validate:"required"`
+	//Port               PropertyPort     `field:"port" json:"port" bson:"port"`
+	PidFile            PropertyString `field:"pid_file" json:"pid_file" bson:"pid_file"`
+	AutoStart          PropertyBool   `field:"auto_start" json:"auto_start" bson:"auto_start"`
+	AutoTimeGapSeconds PropertyInt64  `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" validate:"max=10000,min=1"`
+	StartCmd           PropertyString `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
+	FuncID             PropertyString `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id"`
+	User               PropertyString `field:"user" json:"user" bson:"user"`
+	TimeoutSeconds     PropertyInt64  `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
+	//Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
+	Description     PropertyString `field:"description" json:"description" bson:"description"`
+	StartParamRegex PropertyString `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
+	//PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	//GatewayIP       PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
+	//GatewayPort     PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
+	//GatewayProtocol PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
+	//GatewayCity     PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
+
+	BindInfo ProcPropertyBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
@@ -1461,7 +1291,12 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
 		field := selfType.Field(fieldIdx)
 		fieldVal := selfVal.Field(fieldIdx)
+		tag := field.Tag.Get("json")
+		fieldName := strings.Split(tag, ",")[0]
 
+		if fieldName == common.BKProcBindInfo {
+			continue
+		}
 		// check implements interface
 		fieldValType := fieldVal.Addr().Type()
 		if !fieldValType.Implements(propertyInterfaceType) {
@@ -1474,10 +1309,13 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		out := checkResult[0]
 		if !out.IsNil() {
 			err := out.Interface().(error)
-			tag := field.Tag.Get("json")
-			fieldName := strings.Split(tag, ",")[0]
+
 			return fieldName, err
 		}
+	}
+
+	if fieldName, err := pt.BindInfo.Validate(); err != nil {
+		return fieldName, err
 	}
 
 	if pt.ProcessName.Value == nil || len(*pt.ProcessName.Value) == 0 {
@@ -1512,6 +1350,7 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 
 // Update all not nil field from input to pt
 // rawProperty allows us set property field to nil
+//  参数rawProperty，input 数据是一样的，只不过一个是map,一个struct。 因为struct 是有默认行为的。 rawProperty为了获取用户是否输入
 func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]interface{}) {
 	selfType := reflect.TypeOf(pt).Elem()
 	selfVal := reflect.ValueOf(pt).Elem()
@@ -1524,7 +1363,12 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 			continue
 		}
 		fieldTag := selfType.Field(fieldIdx).Tag.Get("json")
+		// 如果rawProperty不存在的字段，表示没有传递该字段，表示的型行为是不修改改字段
 		if _, ok := rawProperty[fieldTag]; ok == false {
+			continue
+		}
+		// bind info 是特有方法更新
+		if fieldTag == common.BKProcBindInfo {
 			continue
 		}
 		inputField := inputVal.Field(fieldIdx)
@@ -1550,6 +1394,9 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 			selfFieldValue.Set(inputFieldValue)
 		}
 	}
+	bindInfo := &pt.BindInfo
+	bindInfo.Update(input, rawProperty)
+
 	return
 }
 
@@ -1643,8 +1490,36 @@ func (ti *PropertyPort) Validate() error {
 		if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
 			return fmt.Errorf("port format invalid")
 		}
+		var tmpPortArr []propertyPortItem
+		strPortItemArr := strings.Split(*ti.Value, ",")
+		for _, strPortItem := range strPortItemArr {
+			portArr := strings.Split(strPortItem, "-")
+			var start, end int64
+			start, _ = util.GetInt64ByInterface(portArr[0])
+			if len(portArr) > 1 {
+				end, _ = util.GetInt64ByInterface(portArr[1])
+			} else {
+				end = start
+			}
+			if start > end {
+				return fmt.Errorf("port format invalid, start > end")
+			}
+			for _, tmpItem := range tmpPortArr {
+				if !(end < tmpItem.start || start > tmpItem.end) {
+					return fmt.Errorf("port format invalid,  port duplicate:" + strPortItem)
+				}
+			}
+			tmpPortArr = append(tmpPortArr, propertyPortItem{start: start, end: end})
+		}
+
 	}
 	return nil
+}
+
+// propertyPortItem 记录进程端口起始范围
+type propertyPortItem struct {
+	start int64
+	end   int64
 }
 
 type PropertyBindIP struct {
@@ -1789,7 +1664,6 @@ type Proc2Module struct {
 }
 
 type LabelAggregationOption struct {
-	Metadata *Metadata `json:"metadata"`
-	BizID    int64     `json:"bk_biz_id"`
-	ModuleID *int64    `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
+	BizID    int64  `json:"bk_biz_id"`
+	ModuleID *int64 `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
 }

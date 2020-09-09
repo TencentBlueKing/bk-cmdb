@@ -27,8 +27,7 @@ type ObjectUnique struct {
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	Ispre     bool        `json:"ispre" bson:"ispre"`
 	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
-	LastTime  Time `json:"last_time" bson:"last_time"`
+	LastTime  Time        `json:"last_time" bson:"last_time"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
@@ -65,7 +64,6 @@ type CreateUniqueRequest struct {
 	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool        `json:"must_check" bson:"must_check"`
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
-	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 type CreateUniqueResult struct {
@@ -77,7 +75,6 @@ type UpdateUniqueRequest struct {
 	MustCheck bool        `json:"must_check" bson:"must_check"`
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	LastTime  Time        `json:"last_time" bson:"last_time"`
-	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 type UpdateUniqueResult struct {

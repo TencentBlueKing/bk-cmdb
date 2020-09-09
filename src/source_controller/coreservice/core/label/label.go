@@ -20,18 +20,15 @@ import (
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type labelOperation struct {
-	dbProxy dal.RDB
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB) core.LabelOperation {
-	labelOps := &labelOperation{
-		dbProxy: dbProxy,
-	}
+func New() core.LabelOperation {
+	labelOps := &labelOperation{}
 	return labelOps
 }
 
@@ -50,7 +47,7 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 			common.BKDBIN: option.InstanceIDs,
 		},
 	}
-	if count, err := p.dbProxy.Table(tableName).Find(countFilter).Count(kit.Ctx); err != nil {
+	if count, err := mongodb.Client().Table(tableName).Find(countFilter).Count(kit.Ctx); err != nil {
 		blog.ErrorJSON("AddLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter, err.Error(), kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	} else if count != uint64(len(option.InstanceIDs)) {
@@ -63,7 +60,7 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 			idField: instanceID,
 		}
 		data := &selector.LabelInstance{}
-		if err := p.dbProxy.Table(tableName).Find(filter).One(kit.Ctx, data); err != nil {
+		if err := mongodb.Client().Table(tableName).Find(filter).One(kit.Ctx, data); err != nil {
 			blog.Errorf("AddLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
@@ -72,7 +69,7 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 		} else {
 			data.Labels = option.Labels
 		}
-		if err := p.dbProxy.Table(tableName).Update(kit.Ctx, filter, data); err != nil {
+		if err := mongodb.Client().Table(tableName).Update(kit.Ctx, filter, data); err != nil {
 			blog.Errorf("AddLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 		}
@@ -90,7 +87,7 @@ func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option sel
 			common.BKDBIN: option.InstanceIDs,
 		},
 	}
-	if count, err := p.dbProxy.Table(tableName).Find(countFilter).Count(kit.Ctx); err != nil {
+	if count, err := mongodb.Client().Table(tableName).Find(countFilter).Count(kit.Ctx); err != nil {
 		blog.ErrorJSON("RemoveLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter, err.Error(), kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	} else if count != uint64(len(option.InstanceIDs)) {
@@ -103,7 +100,7 @@ func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option sel
 			idField: instanceID,
 		}
 		data := &selector.LabelInstance{}
-		if err := p.dbProxy.Table(tableName).Find(filter).One(kit.Ctx, data); err != nil {
+		if err := mongodb.Client().Table(tableName).Find(filter).One(kit.Ctx, data); err != nil {
 			blog.Errorf("RemoveLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
@@ -112,7 +109,7 @@ func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option sel
 		} else {
 			data.Labels = make(map[string]string)
 		}
-		if err := p.dbProxy.Table(tableName).Update(kit.Ctx, filter, data); err != nil {
+		if err := mongodb.Client().Table(tableName).Update(kit.Ctx, filter, data); err != nil {
 			blog.Errorf("RemoveLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 		}

@@ -83,7 +83,7 @@ type UpdateModelAttrUnique struct {
 }
 
 type DeleteModelAttrUnique struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 }
 
 type CreateModelInstance struct {
@@ -543,4 +543,49 @@ func (h *DistinctHostIDByTopoRelationRequest) Empty() bool {
 		return false
 	}
 	return true
+}
+
+type CloudAccountResult struct {
+	BaseResp `json:",inline"`
+	Data     CloudAccount `json:"data"`
+}
+
+type MultipleCloudAccountResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudAccount `json:"data"`
+}
+
+type TransferHostResourceDirectory struct {
+	ModuleID int64   `json:"bk_module_id"`
+	HostID   []int64 `json:"bk_host_id"`
+}
+
+type MultipleCloudAccountConfResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudAccountConf `json:"data"`
+}
+
+type CreateSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     CloudSyncTask `json:"data"`
+}
+
+type CreateSyncHistoryesult struct {
+	BaseResp `json:",inline"`
+	Data     SyncHistory `json:"data"`
+}
+
+type MultipleCloudSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudSyncTask `json:"data"`
+}
+
+type MultipleSyncHistoryResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleSyncHistory `json:"data"`
+}
+
+type MultipleSyncRegionResult struct {
+	BaseResp `json:",inline"`
+	Data     []*Region `json:"data"`
 }

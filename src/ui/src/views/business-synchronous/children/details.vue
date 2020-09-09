@@ -4,11 +4,33 @@
             :data="detailsData"
             :max-height="$APP.height - 120">
             <bk-table-column prop="property_name" :label="$t('属性名称')" show-overflow-tooltip></bk-table-column>
-            <bk-table-column prop="property_value" :label="$t('变更前')" show-overflow-tooltip>
-                <template slot-scope="{ row }">{{getCellValue(row, 'before')}}</template>
+            <bk-table-column prop="property_value" :label="$t('变更前')">
+                <template slot-scope="{ row }">
+                    <cmdb-property-value v-if="row.property_id !== 'bind_info'"
+                        v-bk-overflow-tips
+                        :show-title="true"
+                        :value="getCellValue(row, 'before')"
+                        :property="properties.find(property => property.bk_property_id === row.property_id)">
+                    </cmdb-property-value>
+                    <process-bind-info-value v-else
+                        :value="getCellValue(row, 'before')"
+                        :property="properties.find(property => property.bk_property_id === row.property_id)">
+                    </process-bind-info-value>
+                </template>
             </bk-table-column>
-            <bk-table-column prop="show_value" :label="$t('变更后')" show-overflow-tooltip>
-                <template slot-scope="{ row }">{{getCellValue(row, 'after')}}</template>
+            <bk-table-column prop="show_value" :label="$t('变更后')">
+                <template slot-scope="{ row }">
+                    <cmdb-property-value v-if="row.property_id !== 'bind_info'"
+                        v-bk-overflow-tips
+                        :show-title="true"
+                        :value="getCellValue(row, 'after')"
+                        :property="properties.find(property => property.bk_property_id === row.property_id)">
+                    </cmdb-property-value>
+                    <process-bind-info-value v-else
+                        :value="getCellValue(row, 'after')"
+                        :property="properties.find(property => property.bk_property_id === row.property_id)">
+                    </process-bind-info-value>
+                </template>
             </bk-table-column>
         </bk-table>
     </div>
@@ -16,7 +38,12 @@
 
 <script>
     import formatter from '@/filters/formatter'
+    import { mapGetters } from 'vuex'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     export default {
+        components: {
+            ProcessBindInfoValue
+        },
         props: {
             module: Object,
             instance: Object,
@@ -30,6 +57,9 @@
             return {
                 detailsData: []
             }
+        },
+        computed: {
+            ...mapGetters('objectBiz', ['bizId'])
         },
         created () {
             switch (this.type) {
@@ -53,9 +83,10 @@
             async initTemplateData () {
                 try {
                     const { info } = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
+                        params: {
+                            bk_biz_id: this.bizId,
                             service_template_id: this.instance.service_instance.service_template_id
-                        }, { injectBizId: true })
+                        }
                     })
                     const process = info.find(process => process.id === this.module.process_template_id)
                     const details = []
@@ -100,8 +131,9 @@
             getCellValue (row, type) {
                 const propertyId = row.property_id
                 let value = row.property_value
+                const templateValue = row.template_property_value
                 if (type === 'after') {
-                    value = typeof row.template_property_value === 'object' ? row.template_property_value.value : row.template_property_value
+                    value = Object.prototype.toString.call(templateValue) === '[object Object]' ? templateValue.value : templateValue
                 }
                 if (this.type !== 'others') {
                     const property = this.properties.find(property => property.bk_property_id === propertyId)

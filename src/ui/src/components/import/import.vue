@@ -1,5 +1,6 @@
 <template>
     <div class="import-wrapper">
+        <slot name="prepend"></slot>
         <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
             <img src="../../assets/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />
@@ -153,9 +154,6 @@
                     this.fileInfo.size = this.formatSize(fileInfo.size, 2)
                     const formData = new FormData()
                     formData.append('file', files[0])
-                    if (this.importPayload.hasOwnProperty('metadata')) {
-                        formData.append('metadata', JSON.stringify(this.importPayload.metadata))
-                    }
                     this.isLoading = true
                     this.$http.post(this.importUrl, formData, { transformData: false, globalError: false }).then(res => {
                         const defaultResult = {

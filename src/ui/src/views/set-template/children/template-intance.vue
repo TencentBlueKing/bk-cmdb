@@ -3,7 +3,7 @@
         <div class="instance-main">
             <div class="options clearfix">
                 <div class="fl">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                    <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
                         <bk-button slot-scope="{ disabled }"
                             theme="primary"
                             :disabled="disabled || !checkedList.length"
@@ -91,7 +91,7 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')" width="180">
                     <template slot-scope="{ row }">
-                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                        <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
                             <template slot-scope="{ disabled }">
                                 <bk-button v-if="row.status === 'failure'"
                                     text
@@ -122,6 +122,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         props: {
@@ -154,9 +155,7 @@
             }
         },
         computed: {
-            business () {
-                return this.$store.state.objectBiz.bizId
-            },
+            ...mapGetters('objectBiz', ['bizId']),
             filterList () {
                 return [{
                     id: 'all',
@@ -280,7 +279,7 @@
             },
             getSetInstancesWithStatus (requestId, otherParams, config) {
                 return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
-                    bizId: this.business,
+                    bizId: this.bizId,
                     params: {
                         ...this.searchParams,
                         ...(otherParams || {})
@@ -295,7 +294,7 @@
             async getSetInstancesWithTopo () {
                 try {
                     const data = await this.$store.dispatch('setTemplate/getSetInstancesWithTopo', {
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setTemplateId: this.templateId,
                         params: {
                             limit: {
@@ -316,7 +315,7 @@
             },
             async getInstancesInfo () {
                 const instancesInfo = await this.$store.dispatch('setSync/getInstancesSyncStatus', {
-                    bizId: this.business,
+                    bizId: this.bizId,
                     setTemplateId: this.templateId,
                     params: {
                         bk_set_ids: this.setsId
@@ -381,7 +380,7 @@
             },
             handleBatchSync () {
                 this.$store.commit('setFeatures/setSyncIdMap', {
-                    id: `${this.business}_${this.templateId}`,
+                    id: `${this.bizId}_${this.templateId}`,
                     instancesId: this.checkedList
                 })
                 this.$routerActions.redirect({
@@ -394,7 +393,7 @@
             },
             handleSync (row) {
                 this.$store.commit('setFeatures/setSyncIdMap', {
-                    id: `${this.business}_${this.templateId}`,
+                    id: `${this.bizId}_${this.templateId}`,
                     instancesId: [row.bk_set_id]
                 })
                 this.$routerActions.redirect({
@@ -408,7 +407,7 @@
             async handleRetry (row) {
                 try {
                     await this.$store.dispatch('setSync/syncTemplateToInstances', {
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setTemplateId: this.templateId,
                         params: {
                             bk_set_ids: [row.bk_set_id]

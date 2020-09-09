@@ -73,7 +73,6 @@ func addSetVersionField(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 
 	now := metadata.Now()
 	attribute := metadata.Attribute{
-		Metadata:          metadata.Metadata{},
 		ID:                int64(id),
 		OwnerID:           conf.OwnerID,
 		ObjectID:          common.BKInnerObjIDSet,

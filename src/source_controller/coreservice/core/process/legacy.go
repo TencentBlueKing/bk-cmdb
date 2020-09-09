@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (p *processOperation) GetProc2Module(kit *rest.Kit, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
@@ -27,7 +28,7 @@ func (p *processOperation) GetProc2Module(kit *rest.Kit, option *metadata.GetPro
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
 
 	result := make([]metadata.Proc2Module, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcModule).Find(filter).All(kit.Ctx, &result); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameProcModule).Find(filter).All(kit.Ctx, &result); err != nil {
 		blog.Errorf("get process2module config failed. err: %v, rid:%s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrProcSelectProc2Module)
 	}

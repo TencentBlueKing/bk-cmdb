@@ -21,14 +21,12 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
 )
 
 var _ core.ModelAttributeGroup = nil
 
 type modelAttributeGroup struct {
-	model   *modelManager
-	dbProxy dal.RDB
+	model *modelManager
 }
 
 func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {
@@ -42,7 +40,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID str
 	inputParam.Data.ObjectID = objID
 	inputParam.Data.OwnerID = kit.SupplierAccount
 
-	_, isExists, err := g.groupIDIsExists(kit, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
+	_, isExists, err := g.groupIDIsExists(kit, objID, inputParam.Data.GroupID, inputParam.Data.BizID)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupID, err.Error())
 		return dataResult, err
@@ -52,7 +50,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID str
 		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupID)
 	}
 
-	_, isExists, err = g.groupNameIsExists(kit, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
+	_, isExists, err = g.groupNameIsExists(kit, objID, inputParam.Data.GroupName, inputParam.Data.BizID)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupName, err.Error())
 		return dataResult, err
@@ -85,7 +83,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(kit *rest.Kit, objID string
 	inputParam.Data.ObjectID = objID
 	inputParam.Data.OwnerID = kit.SupplierAccount
 
-	_, isExists, err := g.groupNameIsExists(kit, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
+	_, isExists, err := g.groupNameIsExists(kit, objID, inputParam.Data.GroupName, inputParam.Data.BizID)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupName, err.Error())
 		return dataResult, err
@@ -94,7 +92,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(kit *rest.Kit, objID string
 		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
 
-	existsGroup, isExists, err := g.groupIDIsExists(kit, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
+	existsGroup, isExists, err := g.groupIDIsExists(kit, objID, inputParam.Data.GroupID, inputParam.Data.BizID)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupID, err.Error())
 		return dataResult, err
@@ -169,7 +167,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(kit *rest.Kit, objID str
 			if item.GroupName == name {
 				continue
 			}
-			_, exists, err := g.groupNameIsExists(kit, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			_, exists, err := g.groupNameIsExists(kit, item.ObjectID, name, 0)
 			if nil != err {
 				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, name, err.Error())
 				return &metadata.UpdatedCount{}, err
@@ -216,7 +214,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit
 			if item.GroupName == name {
 				continue
 			}
-			_, exists, err := g.groupNameIsExists(kit, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			_, exists, err := g.groupNameIsExists(kit, item.ObjectID, name, 0)
 			if nil != err {
 				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, name, err.Error())
 				return &metadata.UpdatedCount{}, err

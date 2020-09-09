@@ -17,8 +17,19 @@
                     :key="column.id"
                     :prop="column.id"
                     :label="column.name"
-                    show-overflow-tooltip>
-                    <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+                    :show-overflow-tooltip="column.id !== 'bind_info'">
+                    <template slot-scope="{ row }">
+                        <cmdb-property-value v-if="column.id !== 'bind_info'"
+                            :value="row[column.id]"
+                            :show-unit="false"
+                            :show-title="true"
+                            :property="column.property">
+                        </cmdb-property-value>
+                        <process-bind-info-value v-else
+                            :value="row[column.id]"
+                            :property="column.property">
+                        </process-bind-info-value>
+                    </template>
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')" fixed="right">
                     <template slot-scope="{ row }">
@@ -36,7 +47,7 @@
             </bk-table>
         </div>
         <div class="page-options" :class="{ 'is-sticky': hasScrollbar }">
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+            <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
                 <bk-button slot-scope="{ disabled }"
                     class="options-button"
                     theme="primary"
@@ -47,41 +58,20 @@
             </cmdb-auth>
             <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
-        <bk-sideslider
-            v-transfer-dom
-            :is-show.sync="processForm.show"
-            :title="processForm.title"
-            :width="800"
-            :before-close="handleBeforeClose">
-            <cmdb-form slot="content"
-                ref="processForm"
-                v-if="processForm.show"
-                :properties="properties"
-                :property-groups="propertyGroups"
-                :object-unique="processForm.type === 'single' ? [] : propertyUnique"
-                :inst="processForm.instance"
-                @on-submit="handleSubmit"
-                @on-cancel="handleBeforeClose">
-                <template slot="bind_ip">
-                    <cmdb-input-select
-                        :disabled="checkDisabled"
-                        :name="'bindIp'"
-                        :placeholder="$t('请选择或输入IP')"
-                        :options="processBindIp"
-                        :validate="validateRules"
-                        v-model="bindIp">
-                    </cmdb-input-select>
-                </template>
-            </cmdb-form>
-        </bk-sideslider>
     </div>
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import { processTableHeader } from '@/dictionary/table-header'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
+    import ProcessForm from '@/components/service/form/form.js'
     export default {
         name: 'clone-to-source',
+        components: {
+            ProcessBindInfoValue
+        },
         props: {
             sourceProcesses: {
                 type: Array,
@@ -95,20 +85,14 @@
                 checked: [],
                 cloneProcesses: this.$tools.clone(this.sourceProcesses),
                 properties: [],
-                propertyGroups: [],
                 propertyUnique: [],
-                processForm: {
-                    show: false,
-                    type: 'single',
-                    title: '',
-                    instance: {}
-                },
-                processBindIp: [],
-                bindIp: '',
-                hasScrollbar: false
+                hasScrollbar: false,
+                formValuesReflect: {},
+                processFormType: 'single'
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             header () {
                 const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
@@ -134,34 +118,24 @@
                         })
                 })
             },
-            bindIpProperty () {
-                return this.properties.find(property => property['bk_property_id'] === 'bind_ip') || {}
-            },
             hostId () {
                 return parseInt(this.$route.params.hostId)
             },
-            validateRules () {
-                const rules = {}
-                if (this.bindIpProperty.isrequired) {
-                    rules['required'] = true
-                }
-                rules['regex'] = this.bindIpProperty.option
-                return rules
+            bindInfoProperty () {
+                return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
             },
-            checkDisabled () {
-                const property = this.bindIpProperty
-                if (this.processForm.type === 'create') {
-                    return false
+            bindInfo: {
+                get () {
+                    return this.formValuesReflect.bind_info || []
+                },
+                set (values) {
+                    this.formValuesReflect.bind_info = values
                 }
-                return !property.editable || property.isreadonly
             }
         },
         watch: {
             sourceProcesses (source) {
                 this.cloneProcesses = this.$tools.clone(source)
-            },
-            bindIp (value) {
-                this.$refs.processForm.values.bind_ip = value
             }
         },
         mounted () {
@@ -172,13 +146,11 @@
         },
         async created () {
             try {
-                const [properties, propertyGroups, propertyUnique] = await Promise.all([
+                const [properties, propertyUnique] = await Promise.all([
                     this.getProcessProperties(),
-                    this.getProcessPropertyGroups(),
                     this.getProcessPropertyUnique()
                 ])
                 this.properties = properties
-                this.propertyGroups = propertyGroups
                 this.propertyUnique = propertyUnique
             } catch (e) {
                 console.error(e)
@@ -194,17 +166,6 @@
                     },
                     config: {
                         requestId: 'get_service_process_properties',
-                        fromCache: true
-                    }
-                })
-            },
-            getProcessPropertyGroups () {
-                const action = 'objectModelFieldGroup/searchGroup'
-                return this.$store.dispatch(action, {
-                    objId: 'process',
-                    params: {},
-                    config: {
-                        requestId: 'get_service_process_property_groups',
                         fromCache: true
                     }
                 })
@@ -227,113 +188,60 @@
                 this.checked = selection.map(row => row.bk_process_id)
             },
             handleBatchEdit () {
-                this.getInstanceIpByHost(this.hostId)
-                this.processForm.type = 'batch'
-                this.processForm.title = this.$t('批量编辑')
-                this.processForm.instance = {}
-                this.processForm.show = true
-                this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
-                    const { processForm } = this.$refs
-                    this.processForm.unwatch = processForm.$watch(() => {
-                        return processForm.values.bk_func_name
-                    }, (newVal, oldValue) => {
-                        if (processForm.values.bk_process_name === oldValue) {
-                            processForm.values.bk_process_name = newVal
-                        }
-                    })
+                this.processFormType = 'batch'
+                ProcessForm.show({
+                    type: 'update',
+                    title: this.$t('批量编辑'),
+                    instance: {},
+                    hostId: this.hostId,
+                    submitHandler: this.handleSubmit,
+                    invisibleProperties: ['bind_info']
                 })
             },
             handleEditProcess (item) {
-                this.getInstanceIpByHost(this.hostId)
-                this.processForm.type = 'single'
-                this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
-                this.processForm.instance = item
-                this.processForm.show = true
-                this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
-                    const { processForm } = this.$refs
-                    this.processForm.unwatch = processForm.$watch(() => {
-                        return processForm.values.bk_func_name
-                    }, (newVal, oldValue) => {
-                        if (processForm.values.bk_process_name === oldValue) {
-                            processForm.values.bk_process_name = newVal
-                        }
-                    })
+                this.processFormType = 'single'
+                ProcessForm.show({
+                    type: 'update',
+                    title: `${this.$t('编辑进程')}${item.bk_process_name}`,
+                    instance: item,
+                    hostId: this.hostId,
+                    submitHandler: this.handleSubmit
                 })
             },
-            async getInstanceIpByHost (hostId) {
-                try {
-                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
-                    let res = null
-                    if (instanceIpMap.hasOwnProperty(hostId)) {
-                        res = instanceIpMap[hostId]
-                    } else {
-                        res = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
-                            hostId,
-                            config: {
-                                requestId: 'getInstanceIpByHost'
-                            }
-                        })
-                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
-                    }
-                    this.processBindIp = res.options.map(ip => {
-                        return {
-                            id: ip,
-                            name: ip
-                        }
-                    })
-                } catch (e) {
-                    this.processBindIp = []
-                    console.error(e)
-                }
+            async validateCustomComponent () {
+                const { bindInfo } = this.$refs
+                const customComponents = [bindInfo]
+                const validatePromise = []
+                customComponents.forEach(component => {
+                    validatePromise.push(component.$validator.validateAll())
+                    validatePromise.push(component.$validator.validateScopes())
+                })
+                const results = await Promise.all(validatePromise)
+                return results.every(result => result)
             },
-            handleSubmit (values, changedValues) {
-                if (this.processForm.type === 'single') {
-                    Object.assign(this.processForm.instance, changedValues)
+            handleSubmit (values, changedValues, instance) {
+                if (this.processFormType === 'single') {
+                    Object.assign(instance, changedValues)
                 } else {
                     this.cloneProcesses.forEach(instance => {
                         Object.assign(instance, changedValues)
                     })
                 }
-                this.processForm.show = false
-            },
-            handleCloseProcessForm () {
-                this.processForm.show = false
-                this.processForm.instance = {}
-            },
-            handleBeforeClose () {
-                const changedValues = this.$refs.processForm.changedValues
-                if (Object.keys(changedValues).length) {
-                    return new Promise((resolve, reject) => {
-                        this.$bkInfo({
-                            title: this.$t('确认退出'),
-                            subTitle: this.$t('退出会导致未保存信息丢失'),
-                            extCls: 'bk-dialog-sub-header-center',
-                            confirmFn: () => {
-                                this.handleCloseProcessForm()
-                            },
-                            cancelFn: () => {
-                                resolve(false)
-                            }
-                        })
-                    })
-                }
-                this.handleCloseProcessForm()
             },
             async doClone () {
                 try {
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
-                        params: this.$injectMetadata({
+                        params: {
                             name: this.$parent.module.bk_module_name,
+                            bk_biz_id: this.bizId,
                             bk_module_id: this.$route.params.moduleId,
                             instances: [
                                 {
-                                    bk_host_id: this.$route.params.hostId,
+                                    bk_host_id: this.hostId,
                                     processes: this.getCloneProcessValues()
                                 }
                             ]
-                        }, { injectBizId: true })
+                        }
                     })
                     this.$success(this.$t('克隆成功'))
                     this.backToModule()

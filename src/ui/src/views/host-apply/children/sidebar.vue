@@ -16,7 +16,7 @@
                         </div>
                         <ul class="bk-dropdown-list" slot="dropdown-content">
                             <li>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                     <a
                                         href="javascript:;"
                                         slot-scope="{ disabled }"
@@ -28,7 +28,7 @@
                                 </cmdb-auth>
                             </li>
                             <li>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
                                     <a
                                         href="javascript:;"
                                         slot-scope="{ disabled }"
@@ -89,6 +89,7 @@
     import searchSelectMix from './search-select-mix'
     import topologyTree from './topology-tree'
     import { MENU_BUSINESS_HOST_APPLY_EDIT } from '@/dictionary/menu-symbol'
+    import { mapGetters } from 'vuex'
     export default {
         components: {
             searchSelectMix,
@@ -110,6 +111,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             topologyTree () {
                 return this.$refs.topologyTree
             },

@@ -71,10 +71,14 @@
             hasRelation () {
                 return this.$parent.hasRelation
             },
+            uniqueAssociationObject () {
+                const ids = this.associationObject.map(association => association.id)
+                return [...new Set(ids)].map(id => this.associationObject.find(association => association.id === id))
+            },
             list () {
                 try {
                     const list = []
-                    this.associationObject.forEach((association, index) => {
+                    this.uniqueAssociationObject.forEach((association, index) => {
                         const isSource = association['bk_obj_id'] === this.objId
                         const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
                         list.push({

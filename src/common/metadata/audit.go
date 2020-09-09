@@ -120,7 +120,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -134,6 +134,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAssociationRes:
 		operationDetail := new(ModelAssociationOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case CloudSyncTaskRes:
+		operationDetail := new(CloudSyncTaskOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -176,7 +182,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -190,6 +196,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAssociationRes:
 		operationDetail := new(ModelAssociationOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case CloudSyncTaskRes:
+		operationDetail := new(CloudSyncTaskOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -412,6 +424,8 @@ const (
 
 	// host related operation type
 	HostRes ResourceType = "host"
+
+	ResourceDirRes ResourceType = "resource_directory"
 )
 
 type OperateFromType string
@@ -425,6 +439,8 @@ const (
 	FromDataCollection OperateFromType = "data_collection"
 	// FromSynchronizer means this audit is created by the data synchronizer.
 	FromSynchronizer OperateFromType = "synchronizer"
+	// FromCloudSync means this audit is created by cloud sync.
+	FromCloudSync OperateFromType = "cloud_sync"
 )
 
 // ActionType defines all the user's operation type
@@ -514,4 +530,20 @@ func GetAuditTypesByCategory(category string) []AuditType {
 		return []AuditType{ModelType, AssociationKindType, EventPushType}
 	}
 	return []AuditType{}
+}
+
+type CloudSyncTaskOpDetail struct {
+	TaskName string                  `json:"bk_task_name" bson:"bk_task_name"`
+	TaskID   int64                   `json:"bk_task_id" bson:"bk_task_id"`
+	Details  *CloudSyncTaskOpContent `json:"details" bson:"details"`
+}
+
+type CloudSyncTaskOpContent struct {
+	PreData    *CloudSyncTask `json:"pre_data" bson:"pre_data"`
+	CurData    *CloudSyncTask `json:"cur_data" bson:"cur_data"`
+	Properties []Property     `json:"properties" bson:"properties"`
+}
+
+func (c *CloudSyncTaskOpDetail) WithName() string {
+	return "CloudSyncTaskOpDetail"
 }

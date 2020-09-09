@@ -9,19 +9,25 @@
             :key="property.bk_property_id"
             :label="property.bk_property_name"
             :prop="property.bk_property_id"
-            show-overflow-tooltip>
-            <cmdb-property-value slot-scope="{ row }"
-                :theme="property.bk_property_id === 'bk_func_name' ? 'primary' : 'default'"
-                :value="row.property[property.bk_property_id]"
-                :show-unit="false"
-                :show-title="true"
-                :property="property"
-                @click.native="handleView(row)">
-            </cmdb-property-value>
+            :show-overflow-tooltip="property.bk_property_id !== 'bind_info'">
+            <template slot-scope="{ row }">
+                <cmdb-property-value v-if="property.bk_property_id !== 'bind_info'"
+                    :theme="property.bk_property_id === 'bk_func_name' ? 'primary' : 'default'"
+                    :value="row.property[property.bk_property_id]"
+                    :show-unit="false"
+                    :show-title="true"
+                    :property="property"
+                    @click.native="handleView(row)">
+                </cmdb-property-value>
+                <process-bind-info-value v-else
+                    :value="row.property[property.bk_property_id]"
+                    :property="property">
+                </process-bind-info-value>
+            </template>
         </bk-table-column>
         <bk-table-column width="150" :resizable="false">
             <div class="options-wrapper" slot-scope="{ row }">
-                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }">
+                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"
@@ -29,7 +35,7 @@
                         {{$t('编辑')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!row.relation.process_template_id">
+                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }" v-if="!row.relation.process_template_id">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"
@@ -47,8 +53,12 @@
     import { processTableHeader } from '@/dictionary/table-header'
     import { mapGetters } from 'vuex'
     import Form from '@/components/service/form/form.js'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     import Bus from '../common/bus'
     export default {
+        components: {
+            ProcessBindInfoValue
+        },
         props: {
             serviceInstance: Object
         },

@@ -16,23 +16,20 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal"
 )
 
 type model struct {
 	base         *synchronizeAdapter
 	dataType     metadata.SynchronizeOperateDataType
-	dbProxy      dal.RDB
 	DataClassify string
 }
 
-func NewSynchronizeModelAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
+func NewSynchronizeModelAdapter(s *metadata.SynchronizeParameter) dataTypeInterface {
 
 	return &model{
-		base:         newSynchronizeAdapter(s, dbProxy),
+		base:         newSynchronizeAdapter(s),
 		dataType:     s.OperateDataType,
 		DataClassify: s.DataClassify,
-		dbProxy:      dbProxy,
 	}
 }
 

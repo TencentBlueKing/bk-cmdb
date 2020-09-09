@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (s *coreService) CreateManyModelClassification(ctx *rest.Contexts) {
@@ -193,21 +194,21 @@ func (s *coreService) SearchModel(ctx *rest.Contexts) {
 // GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
 func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 	filter := map[string]interface{}{}
-	setCount, err := s.db.Table(common.BKTableNameBaseSet).Find(filter).Count(ctx.Kit.Ctx)
+	setCount, err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count set model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	moduleCount, err := s.db.Table(common.BKTableNameBaseModule).Find(filter).Count(ctx.Kit.Ctx)
+	moduleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count module model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	hostCount, err := s.db.Table(common.BKTableNameBaseHost).Find(filter).Count(ctx.Kit.Ctx)
+	hostCount, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count host model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -222,7 +223,7 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 			common.BKDBNE: common.DataStatusDisabled,
 		},
 	}
-	bizCount, err := s.db.Table(common.BKTableNameBaseApp).Find(appFilter).Count(ctx.Kit.Ctx)
+	bizCount, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(appFilter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count application model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -244,7 +245,7 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 		Count int64  `bson:"count" json:"instance_count"`
 	}
 	aggregationItems := make([]AggregationItem, 0)
-	if err := s.db.Table(common.BKTableNameBaseInst).AggregateAll(ctx.Kit.Ctx, pipeline, &aggregationItems); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(ctx.Kit.Ctx, pipeline, &aggregationItems); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -523,17 +524,11 @@ func (s *coreService) UpdateModelAttrUnique(ctx *rest.Contexts) {
 }
 
 func (s *coreService) DeleteModelAttrUnique(ctx *rest.Contexts) {
-	inputDatas := metadata.DeleteModelAttrUnique{}
-	if err := ctx.DecodeInto(&inputDatas); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
 	id, err := strconv.ParseUint(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "id"))
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id, metadata.DeleteModelAttrUnique{Metadata: inputDatas.Metadata}))
+	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id))
 }

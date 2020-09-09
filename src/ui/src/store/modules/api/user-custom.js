@@ -17,23 +17,14 @@ const state = {
 }
 
 const getters = {
-    classifyNavigationKey: (state, getters, rootState, rootGetters) => {
-        const bizId = rootGetters['objectBiz/bizId']
-        const isAdminView = rootGetters['isAdminView']
-        const userName = rootGetters['userName']
-        return `${userName}_${isAdminView ? 'adminView' : bizId}_classify_navigation`
+    classifyNavigationKey: () => {
+        return 'custom_classify_navigation'
     },
-    firstEntryKey: (state, getters, rootState, rootGetters) => {
-        const bizId = rootGetters['objectBiz/bizId']
-        const isAdminView = rootGetters['isAdminView']
-        const userName = rootGetters['userName']
-        return `${userName}_${isAdminView ? 'adminView' : bizId}_first_entry`
+    firstEntryKey: () => {
+        return 'custom_first_entry'
     },
-    recentlyKey: (state, getters, rootState, rootGetters) => {
-        const bizId = rootGetters['objectBiz/bizId']
-        const isAdminView = rootGetters['isAdminView']
-        const userName = rootGetters['userName']
-        return `${userName}_${isAdminView ? 'adminView' : bizId}_recently`
+    recentlyKey: () => {
+        return 'custom_recently'
     },
     usercustom: state => state.usercustom,
     getCustomData: (state) => (key, defaultData = null) => {

@@ -11,7 +11,9 @@
                 :property-groups="propertyGroups"
                 :inst="instance"
                 :show-delete="false"
-                :edit-auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                :edit-auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+                :invisible-name-properties="invisibleNameProperties"
+                :flex-properties="flexProperties"
                 @on-edit="handleChangeInternalType">
             </cmdb-details>
             <cmdb-form v-else
@@ -19,21 +21,21 @@
                 v-bkloading="{ isLoading: pending }"
                 :type="internalType"
                 :inst="instance"
-                :properties="properties"
+                :properties="visibleProperties"
                 :property-groups="propertyGroups"
                 :disabled-properties="bindedProperties"
+                :invisible-name-properties="invisibleNameProperties"
+                :flex-properties="flexProperties"
                 :render-tips="renderTips"
+                :custom-validator="validateCustomComponent"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleCancel">
-                <template slot="bind_ip">
-                    <cmdb-input-select
-                        name="bindIP"
-                        :disabled="isBindIPDisabled"
-                        :placeholder="$t('请选择或输入IP')"
-                        :options="bindIPList"
-                        :validate="bindIPRules"
-                        v-model="bindIP">
-                    </cmdb-input-select>
+                <template slot="bind_info">
+                    <process-form-property-table
+                        ref="bindInfo"
+                        v-model="bindInfo"
+                        :options="bindInfoProperty.option || []">
+                    </process-form-property-table>
                 </template>
             </cmdb-form>
         </template>
@@ -47,15 +49,31 @@
         processPropertyGroupsRequestId
     } from './symbol'
     import RenderTips from './process-form-tips-render'
+    import ProcessFormPropertyTable from './process-form-property-table'
     export default {
+        components: {
+            ProcessFormPropertyTable
+        },
         props: {
             type: String,
             serviceTemplateId: Number,
             processTemplateId: Number,
-            instance: Object,
+            instance: {
+                type: Object,
+                default: () => ({})
+            },
             title: String,
             hostId: Number,
-            submitHandler: Function
+            submitHandler: Function,
+            invisibleProperties: {
+                type: Array,
+                default: () => ([])
+            }
+        },
+        provide () {
+            return {
+                form: this
+            }
         },
         data () {
             return {
@@ -65,36 +83,32 @@
                 properties: [],
                 propertyGroups: [],
                 bindedProperties: [],
-                bindIP: this.instance ? this.instance.bind_ip : '',
-                bindIPList: [],
-                pending: true
+                processTemplate: {},
+                pending: true,
+                invisibleNameProperties: ['bind_info'],
+                flexProperties: ['bind_info'],
+                formValuesReflect: {}
             }
         },
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('objectBiz', ['bizId']),
-            bindIPProperty () {
-                return this.properties.find(property => property.bk_property_id === 'bind_ip')
+            bindInfoProperty () {
+                return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
             },
-            isBindIPDisabled () {
-                return this.bindedProperties.includes('bind_ip')
+            bindInfo: {
+                get () {
+                    return this.formValuesReflect.bind_info || []
+                },
+                set (values) {
+                    this.formValuesReflect.bind_info = values
+                }
             },
-            bindIPRules () {
-                if (!this.bindIPProperty) {
-                    return {}
-                }
-                const rules = {}
-                if (this.bindIPProperty.isrequired) {
-                    rules.required = true
-                }
-                rules.regex = this.bindIPProperty.option
-                return rules
+            visibleProperties () {
+                return this.properties.filter(property => !this.invisibleProperties.includes(property.bk_property_id))
             }
         },
         watch: {
-            bindIP (ip) {
-                this.$refs.form.values.bind_ip = ip
-            },
             internalType (type) {
                 this.updateFormWatcher()
             }
@@ -105,9 +119,6 @@
                     this.getProperties(),
                     this.getPropertyGroups()
                 ]
-                if (this.hostId) {
-                    request.push(this.getBindIPList())
-                }
                 if (this.processTemplateId) {
                     request.push(this.getProcessTemplate())
                 }
@@ -121,17 +132,34 @@
         mounted () {
             this.updateFormWatcher()
         },
+        beforeDestroy () {
+            this.teardownWatcher()
+        },
         methods: {
             show () {
                 this.isShow = true
             },
+            teardownWatcher () {
+                this.unwatchName && this.unwatchName()
+                this.unwatchFormValues && this.unwatchFormValues()
+            },
             updateFormWatcher () {
                 if (this.internalType === 'view') {
-                    this.unwatchForm && this.unwatchForm()
+                    this.teardownWatcher()
                 } else {
                     this.$nextTick(() => {
                         const form = this.$refs.form
-                        this.unwatchForm = this.$watch(() => {
+                        if (!form) {
+                            return this.updateFormWatcher() // 递归nextTick等待form创建完成
+                        }
+                        // watch form组件表单值，用于获取bind_info字段给进程表格字段组件使用
+                        this.unwatchFormValues = this.$watch(() => {
+                            return form.values
+                        }, values => {
+                            this.formValuesReflect = values
+                        }, { immediate: true })
+                        // watch 名称，在用户未修改进程别名时，自动同步进程名称到进程别名
+                        this.unwatchName = this.$watch(() => {
                             return form.values.bk_func_name
                         }, (newVal, oldValue) => {
                             if (form.values.bk_process_name === oldValue) {
@@ -173,23 +201,9 @@
                     this.propertyGroups = []
                 }
             },
-            async getBindIPList () {
-                try {
-                    const { options } = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
-                        hostId: this.hostId,
-                        config: {
-                            requestId: 'getInstanceIpByHost'
-                        }
-                    })
-                    this.bindIPList = options.map(ip => ({ id: ip, name: ip }))
-                } catch (error) {
-                    this.bindIPList = []
-                    console.error(error)
-                }
-            },
             async getProcessTemplate () {
                 try {
-                    const { property } = await this.$store.dispatch('processTemplate/getProcessTemplate', {
+                    this.processTemplate = await this.$store.dispatch('processTemplate/getProcessTemplate', {
                         params: {
                             processTemplateId: this.processTemplateId
                         },
@@ -197,6 +211,7 @@
                             cancelPrevious: true
                         }
                     })
+                    const { property } = this.processTemplate
                     const bindedProperties = []
                     Object.keys(property).forEach(key => {
                         if (property[key].as_default_value) {
@@ -210,6 +225,20 @@
             },
             handleHidden () {
                 this.$emit('close')
+            },
+            async validateCustomComponent () {
+                const customComponents = []
+                const { bindInfo } = this.$refs
+                if (bindInfo) {
+                    customComponents.push(bindInfo)
+                }
+                const validatePromise = []
+                customComponents.forEach(component => {
+                    validatePromise.push(component.$validator.validateAll())
+                    validatePromise.push(component.$validator.validateScopes())
+                })
+                const results = await Promise.all(validatePromise)
+                return results.every(result => result)
             },
             async handleSaveProcess (values, changedValues, instance) {
                 try {

@@ -31,7 +31,7 @@ import (
 )
 
 // BuildExcelFromData product excel from data
-func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, meta *metadata.Metadata) error {
+func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
 	rid := util.GetHTTPCCRequestID(header)
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -72,7 +72,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 
 	}
 
-	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, meta)
+	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, modelBizID)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 }
 
 // BuildHostExcelFromData product excel from data
-func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, meta *metadata.Metadata) error {
+func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -127,24 +127,24 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		rowIndex++
 	}
 
-	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, meta)
+	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, modelBizID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, meta *metadata.Metadata) error {
+func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	var instIDArr []int64
 	for instID := range instPrimaryInfo {
 		instIDArr = append(instIDArr, instID)
 	}
-	instAsst, err := lgc.fetchAssocationData(ctx, header, objID, instIDArr, meta)
+	instAsst, err := lgc.fetchAssocationData(ctx, header, objID, instIDArr, modelBizID)
 	if err != nil {
 		return err
 	}
-	asstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, meta)
+	asstData, err := lgc.getAssociationData(ctx, header, objID, instAsst, modelBizID)
 	if err != nil {
 		return err
 	}
@@ -197,10 +197,10 @@ func buildExcelPrimaryStr(property PropertyPrimaryVal) string {
 }
 
 // BuildExcelTemplate  return httpcode, error
-func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) error {
+func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf, modelBizID int64) error {
 	rid := util.GetHTTPCCRequestID(header)
 	filterFields := getFilterFields(objID)
-	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, meta)
+	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID)
 	if err != nil {
 		blog.Errorf("get %s fields error:%s, rid: %s", objID, err.Error(), rid)
 		return err

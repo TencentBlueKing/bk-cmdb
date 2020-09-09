@@ -15,7 +15,9 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -27,17 +29,16 @@ import (
 
 // CreateObjectBatch batch to create some objects
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := new(mapstr.MapStr)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	dataWithMetadata.Data.Remove(common.MetadataField)
 
 	var ret mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		ret, err = s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, *data)
 		if err != nil {
 			return err
 		}
@@ -55,13 +56,12 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 func (s *Service) SearchObjectBatch(ctx *rest.Contexts) {
 	data := struct {
 		operation.ExportObjectCondition `json:",inline"`
-		Metadata                        *metadata.Metadata `json:"metadata"`
 	}{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Core.ObjectOperation().FindObjectBatch(ctx.Kit, data.ObjIDS, data.Metadata)
+	resp, err := s.Core.ObjectOperation().FindObjectBatch(ctx.Kit, data.ObjIDS)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -71,8 +71,8 @@ func (s *Service) SearchObjectBatch(ctx *rest.Contexts) {
 
 // CreateObject create a new object
 func (s *Service) CreateObject(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := new(mapstr.MapStr)
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -80,9 +80,24 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 	var rsp model.Object
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, *data)
 		if nil != err {
 			return err
+		}
+
+		// register object resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.SysModel),
+				ID:      strconv.FormatInt(rsp.Object().ID, 10),
+				Name:    rsp.Object().ObjectName,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created object to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})
@@ -96,18 +111,18 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 
 // SearchObject search some objects by condition
 func (s *Service) SearchObject(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := new(mapstr.MapStr)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	cond := condition.CreateCondition()
-	if err := cond.Parse(dataWithMetadata.Data); nil != err {
+	if err := cond.Parse(*data); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	resp, err := s.Core.ObjectOperation().FindObject(ctx.Kit, cond, dataWithMetadata.Metadata)
+	resp, err := s.Core.ObjectOperation().FindObject(ctx.Kit, cond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -117,19 +132,19 @@ func (s *Service) SearchObject(ctx *rest.Contexts) {
 
 // SearchObjectTopo search the object topo
 func (s *Service) SearchObjectTopo(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
-	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+	data := new(mapstr.MapStr)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	cond := condition.CreateCondition()
-	err := cond.Parse(dataWithMetadata.Data)
+	err := cond.Parse(*data)
 	if nil != err {
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoObjectSelectFailed, err.Error()))
 		return
 	}
 
-	resp, err := s.Core.ObjectOperation().FindObjectTopo(ctx.Kit, cond, dataWithMetadata.Metadata)
+	resp, err := s.Core.ObjectOperation().FindObjectTopo(ctx.Kit, cond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -177,15 +192,10 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
 		return
 	}
-	//delete model
-	md := new(MetaShell)
-	if err := ctx.DecodeInto(md); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 
+	//delete model
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true, md.Metadata)
+		err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true)
 		if err != nil {
 			return err
 		}

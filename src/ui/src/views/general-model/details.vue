@@ -48,7 +48,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             instId () {
                 return parseInt(this.$route.params.instId)
@@ -58,10 +58,6 @@
             },
             model () {
                 return this.getModelById(this.objId) || {}
-            },
-            isPublicModel () {
-                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
-                return !this.$tools.getMetadataBiz(model)
             }
         },
         watch: {
@@ -117,10 +113,10 @@
             async getProperties () {
                 try {
                     const properties = await this.searchObjectAttribute({
-                        params: this.$injectMetadata({
+                        params: {
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
-                        }, { inject: !this.isPublicModel }),
+                        },
                         config: {
                             requestId: `post_searchObjectAttribute_${this.objId}`,
                             fromCache: false
@@ -136,7 +132,7 @@
                 try {
                     const propertyGroups = this.searchGroup({
                         objId: this.objId,
-                        params: this.$injectMetadata({}, { inject: !this.isPublicModel }),
+                        params: {},
                         config: {
                             fromCache: false,
                             requestId: `post_searchGroup_${this.objId}`

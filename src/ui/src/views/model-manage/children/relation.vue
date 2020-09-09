@@ -1,7 +1,7 @@
 <template>
     <div class="model-relation-wrapper">
         <div class="options">
-            <cmdb-auth :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })" @update-auth="handleReceiveAuth">
+            <cmdb-auth :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }" @update-auth="handleReceiveAuth">
                 <bk-button slot-scope="{ disabled }"
                     class="create-btn"
                     theme="primary"
@@ -54,11 +54,13 @@
                 <template slot-scope="{ row }">
                     <button class="text-primary mr10 operation-btn"
                         :disabled="!isEditable(row)"
+                        @keydown.enter.prevent
                         @click.stop="editRelation(row)">
                         {{$t('编辑')}}
                     </button>
                     <button class="text-primary operation-btn"
                         :disabled="!isEditable(row)"
+                        @keydown.enter.prevent
                         @click.stop="deleteRelation(row)">
                         {{$t('删除')}}
                     </button>
@@ -129,10 +131,8 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
-                'activeModel',
-                'isInjectable'
+                'activeModel'
             ]),
             ...mapGetters('objectModelClassify', ['models']),
             isReadOnly () {
@@ -155,9 +155,6 @@
             isEditable (item) {
                 if (item.ispre || item['bk_asst_id'] === 'bk_mainline' || this.isReadOnly) {
                     return false
-                }
-                if (!this.isAdminView) {
-                    return !!this.$tools.getMetadataBiz(item)
                 }
                 return true
             },
@@ -216,7 +213,6 @@
                         await this.deleteObjectAssociation({
                             id: relation.id,
                             config: {
-                                data: this.$injectMetadata({}, { inject: this.isInjectable }),
                                 requestId: 'deleteObjectAssociation'
                             }
                         }).then(() => {
@@ -232,24 +228,20 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_obj_id': this.activeModel['bk_obj_id']
                         }
-                    }, {
-                        inject: this.isInjectable
-                    })
+                    }
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: this.$injectMetadata({
+                    params: {
                         condition: {
                             'bk_asst_obj_id': this.activeModel['bk_obj_id']
                         }
-                    }, {
-                        inject: this.isInjectable
-                    })
+                    }
                 })
             },
             saveRelation () {

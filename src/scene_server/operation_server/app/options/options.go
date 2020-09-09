@@ -13,7 +13,6 @@
 package options
 
 import (
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -28,7 +27,6 @@ type ServerOption struct {
 type Config struct {
 	ConfigMap map[string]string
 	Mongo     mongo.Config
-	Auth      authcenter.AuthConfig
 	Timer     string
 }
 
