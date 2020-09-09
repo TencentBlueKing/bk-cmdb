@@ -13,6 +13,8 @@
 package auditlog
 
 import (
+	"fmt"
+
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -97,12 +99,12 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, err
 		return 0, kit.CCError.New(moduleHost.Code, moduleHost.ErrMsg)
 	}
 
-	var bizID int64
-	if len(moduleHost.Data.Info) > 0 {
-		bizID = moduleHost.Data.Info[0].AppID
+	if len(moduleHost.Data.Info) <= 0 {
+		blog.Errorf("failed to get host module relation, business not find with hostID is %d, rid: %s", hostID, kit.Rid)
+		return 0, fmt.Errorf("failed to get host module relation, business not find with hostID is %d", hostID)
 	}
 
-	return bizID, nil
+	return moduleHost.Data.Info[0].AppID, nil
 }
 
 // getHostInstanceDetailByHostID get host data and hostIP by hostID.

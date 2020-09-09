@@ -13,7 +13,6 @@
 package auditlog
 
 import (
-	hutil "configcenter/src/scene_server/host_server/util"
 	"fmt"
 	"strings"
 
@@ -24,6 +23,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 // audit provides common methods for all audit log utilities
@@ -105,7 +105,7 @@ func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (stri
 	return instName, nil
 }
 
-// getObjNameByObjID get the object name corresponding to object id.
+// getObjNameByObjID get the object name by object id.
 func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 	query := mapstr.MapStr{common.BKObjIDField: objID}
 
