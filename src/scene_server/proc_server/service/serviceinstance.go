@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -1269,11 +1268,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
 			newProcess := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount)
-			processData, e := mapstruct.Struct2Map(newProcess)
-			if e != nil {
-				blog.ErrorJSON("SyncServiceInstanceByTemplate failed, Struct2Map failed, process: %s, err: %s, rid: %s", newProcess, e.Error(), rid)
-				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-			}
+			processData := newProcess.Map()
 			newProcessID, err := ps.Logic.CreateProcessInstance(ctx.Kit, processData)
 			if err != nil {
 				blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstance failed, option: %s, err: %s, rid: %s", processData, err.Error(), rid)
