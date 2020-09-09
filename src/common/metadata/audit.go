@@ -158,16 +158,17 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	auditLog.BusinessID = audit.BusinessID
 	auditLog.ResourceID = audit.ResourceID
 	auditLog.ResourceName = audit.ResourceName
+
+	if audit.OperationDetail == nil {
+		return nil
+	}
+
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-		return nil
-	}
-
-	if audit.OperationDetail == nil {
 		return nil
 	}
 
@@ -184,13 +185,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-	case ModelAssociationRes:
-		operationDetail := new(ModelAssociationOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelAttributeRes, ModelGroupRes:
+	case ModelAttributeRes, ModelAttributeGroupRes:
 		operationDetail := new(ModelAttrOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -222,16 +217,17 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	auditLog.BusinessID = audit.BusinessID
 	auditLog.ResourceID = audit.ResourceID
 	auditLog.ResourceName = audit.ResourceName
+
+	if audit.OperationDetail == nil {
+		return nil
+	}
+
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-		return nil
-	}
-
-	if audit.OperationDetail == nil {
 		return nil
 	}
 
@@ -248,13 +244,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-	case ModelAssociationRes:
-		operationDetail := new(ModelAssociationOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelAttributeRes, ModelGroupRes:
+	case ModelAttributeRes, ModelAttributeGroupRes:
 		operationDetail := new(ModelAttrOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -590,42 +580,6 @@ func GetAuditDict() []resourceTypeInfo {
 
 var auditDict = []resourceTypeInfo{
 	{
-		ID:   DynamicGroupRes,
-		Name: "动态分组",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   SetTemplateRes,
-		Name: "集群模板",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   ServiceTemplateRes,
-		Name: "服务模板",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   ServiceCategoryRes,
-		Name: "服务分类",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
 		ID:   ModuleRes,
 		Name: "模块",
 		Operations: []actionTypeInfo{
@@ -653,28 +607,12 @@ var auditDict = []resourceTypeInfo{
 		},
 	},
 	{
-		ID:   ServiceInstanceRes,
-		Name: "服务实例",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
 		ID:   ProcessRes,
 		Name: "进程",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   ServiceInstanceLabelRes,
-		Name: "服务实例标签",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditUpdate],
 		},
 	},
 	{
@@ -687,24 +625,6 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditAssignHost],
 			actionInfoMap[AuditUnassignHost],
 			actionInfoMap[AuditTransferHostModule],
-		},
-	},
-	{
-		ID:   HostApplyRes,
-		Name: "主机自动应用",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   CustomFieldRes,
-		Name: "自定义字段",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
 		},
 	},
 	{
@@ -782,44 +702,8 @@ var auditDict = []resourceTypeInfo{
 		},
 	},
 	{
-		ID:   ModelUniqueRes,
-		Name: "模型唯一校验",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   ModelAssociationRes,
-		Name: "模型关联",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
 		ID:   ModelAttributeGroupRes,
 		Name: "模型字段分组",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   EventPushRes,
-		Name: "事件订阅",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   AssociationKindRes,
-		Name: "关联类型",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],

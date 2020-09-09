@@ -53,7 +53,7 @@ func (h *objectClsAuditLog) GenerateAuditLog(parameter *generateAuditCommonParam
 
 	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
-		ResourceType: metadata.ModelClassificationRes,
+		ResourceType: metadata.ModelGroupRes,
 		Action:       parameter.action,
 		ResourceID:   id,
 		ResourceName: data.ClassificationName,

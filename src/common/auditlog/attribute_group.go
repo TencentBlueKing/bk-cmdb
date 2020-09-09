@@ -59,7 +59,7 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(parameter *generateAuditCommon
 
 	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
-		ResourceType: metadata.ModelGroupRes,
+		ResourceType: metadata.ModelAttributeGroupRes,
 		Action:       parameter.action,
 		BusinessID:   data.BizID,
 		ResourceID:   id,

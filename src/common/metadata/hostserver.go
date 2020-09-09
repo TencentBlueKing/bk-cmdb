@@ -462,9 +462,9 @@ type HostTopo struct {
 }
 
 type Topo struct {
-	SetID   int64    `json:"bk_set_id"`
-	SetName string   `json:"bk_set_name"`
-	Module  []Module `json:"module"`
+	SetID   int64    `json:"bk_set_id" bson:"bk_set_id"`
+	SetName string   `json:"bk_set_name" bson:"bk_set_name"`
+	Module  []Module `json:"module" bson:"module"`
 }
 
 type Module struct {
