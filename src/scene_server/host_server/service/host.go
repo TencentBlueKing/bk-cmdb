@@ -22,13 +22,13 @@ import (
 	"configcenter/src/ac/extensions"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
@@ -167,7 +167,8 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		for _, delConds := range delCondsArr {
-			delRsp, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, &meta.DeleteOption{Condition: map[string]interface{}{common.BKDBOR: delConds}})
+			delRsp, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header,
+				&meta.DeleteOption{Condition: map[string]interface{}{common.BKDBOR: delConds}})
 			if err != nil {
 				blog.ErrorJSON("DeleteHostBatch delete host redundant association do request failed , err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -183,19 +184,19 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 		}
 
-		logContentMap := make(map[int64]meta.AuditLog, 0)
 		hosts := make([]extensions.HostSimplify, 0)
-		for _, hostID := range iHostIDArr {
-			logger := s.Logic.NewHostLog(ctx.Kit)
-			if err := logger.WithPrevious(hostID); err != nil {
-				blog.Errorf("delete host batch, but get pre host data failed, err: %v,input:%+v,rid:%s", err, opt, 
-					ctx.Kit.Rid)
-				return err
-			}
 
-			logContentMap[hostID], err = logger.AuditLog(hostID, appID, meta.AuditDelete)
+		// for audit log.
+		logContentMap := make(map[int64]*meta.AuditLog, 0)
+		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditDelete)
+
+		// to generate audit log about deleting host, and host information.
+		for _, hostID := range iHostIDArr {
+			logContentMap[hostID], err = audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
 			if err != nil {
-				blog.Errorf("delete host batch, but get host[%d] biz[%d] data failed, err: %v, rid:%s", hostID, appID, err, ctx.Kit.Rid)
+				blog.Errorf("generate host audit log failed before delete host, hostID, %d, bizID: %d, err: %v, rid: %s",
+					hostID, appID, err, ctx.Kit.Rid)
 				return err
 			}
 
@@ -220,14 +221,15 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
 		}
 
+		// to save audit.
 		var logContents []meta.AuditLog
 		for _, item := range logContentMap {
-			logContents = append(logContents, item)
+			logContents = append(logContents, *item)
 		}
+
 		if len(logContents) > 0 {
-			auditResult, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, logContents...)
-			if err != nil || !auditResult.Result {
-				blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
+			if err := audit.SaveAuditLog(ctx.Kit, logContents...); err != nil {
+				blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCError(common.CCErrAuditSaveLogFailed)
 			}
 		}
@@ -720,7 +722,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)
@@ -739,21 +741,12 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	logPreContents := make(map[int64]*logics.HostLog, 0)
-	for _, hostID := range hostIDArr {
-		audit := s.Logic.NewHostLog(ctx.Kit)
-		if err := audit.WithPrevious(hostID); err != nil {
-			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v, rid: %s", 
-				id, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrHostDetailFail))
-			return
-		}
-
-		logPreContents[hostID] = audit
-	}
+	// for audit log.
+	var audit = auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false
+
 		// 功能开关：更新主机属性时是否剔除自动应用字段
 		if meta.HostUpdateWithoutHostApplyFiled == true {
 			hostProperties, hasRules, err := s.getHostApplyRelatedFields(ctx, hostIDArr)
@@ -773,6 +766,17 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 						}
 						updateData[key] = value
 					}
+
+					// generator audit log.
+					generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updateData)
+					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, "", nil)
+					if err != nil {
+						blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s",
+							hostID, err, ctx.Kit.Rid)
+						return err
+					}
+
+					// to update data.
 					opt := &meta.UpdateOption{
 						Condition: mapstr.MapStr{common.BKHostIDField: hostID},
 						Data:      mapstr.NewFromMap(updateData),
@@ -786,67 +790,54 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 						blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
 						return result.CCError()
 					}
+
+					// save audit log.
+					if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
+						blog.Errorf("save host audit log failed after update host, hostID: %d, err: %v, rid: %s",
+							hostID, err, ctx.Kit.Rid)
+						return err
+					}
 				}
 			}
 		}
 
 		if hasHostUpdateWithoutHostApplyFiled == false {
 			// 退化到批量编辑
+			// generator audit log.
+			auditLogs := make([]meta.AuditLog, len(hostIDArr))
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(data)
+			for i, hostID := range hostIDArr {
+				tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, "", nil)
+				if err != nil {
+					blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
+					return err
+				}
+				auditLogs[i] = *tmpAuditLog
+			}
+
+			// to update host.
 			opt := &meta.UpdateOption{
 				Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDArr}},
 				Data:      mapstr.NewFromMap(data),
 			}
 			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
 			if err != nil {
-				blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, ctx.Kit.Rid)
+				blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v, input: %+v, param: %+v, rid: %s",
+					err, data, opt, ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if !result.Result {
 				blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
 				return result.CCError()
 			}
-		}
 
-		hostModuleConfig, err := s.Logic.GetConfigByCond(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: hostIDArr, Fields: []string{common.BKAppIDField, common.BKHostIDField}})
-		if err != nil {
-			blog.Errorf("update host batch GetConfigByCond failed, hostIDArr[%v], err: %v,input:%+v,rid:%s", hostIDArr, err, data, ctx.Kit.Rid)
-			return err
-		}
-		appIDMap := make(map[int64]int64)
-		for _, hostModule := range hostModuleConfig {
-			appIDMap[hostModule.HostID] = hostModule.AppID
-		}
-
-		logLastContents := make([]meta.AuditLog, 0)
-		for _, hostID := range hostIDArr {
-			audit, ok := logPreContents[hostID]
-			if !ok {
-				audit = s.Logic.NewHostLog(ctx.Kit)
-			}
-			
-			if err := audit.WithCurrent(hostID); err != nil {
-				blog.Errorf("update host batch, but get host[%v] pre data for audit failed, err: %v, rid: %s", 
-					hostID, err, ctx.Kit.Rid)
-				return ctx.Kit.CCError.Error(common.CCErrHostDetailFail)
-			}
-			
-			auditLog, err := audit.AuditLog(hostID, appIDMap[hostID], meta.AuditUpdate)
-			if err != nil {
-				blog.Errorf("update host batch, but get host[%v] biz[%v] data for audit failed, err: %v, rid: %s", hostID, appIDMap[hostID], err, ctx.Kit.Rid)
+			// save audit log.
+			if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+				blog.Errorf("save host audit log failed after update host, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
-			
-			logLastContents = append(logLastContents, auditLog)
 		}
-		auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, logLastContents...)
-		if err != nil {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, err, ctx.Kit.Rid)
-			return err
-		}
-		if !auditResp.Result {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, auditResp.ErrMsg, ctx.Kit.Rid)
-			return auditResp.CCError()
-		}
+
 		return nil
 	})
 
@@ -896,7 +887,9 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		auditLogs := make([]meta.AuditLog, 0)
+		var auditContexts = make([]meta.AuditLog, 0)
+		var audit = auditlog.NewHostAudit(s.CoreAPI.CoreService())
+
 		for _, update := range parameter.Update {
 			cond := mapstr.New()
 			cond.Set(common.BKHostIDField, update.HostID)
@@ -905,6 +898,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 				blog.Errorf("update host property batch, but convert properties[%v] to mapstr failed, err: %v, rid: %s", update.Properties, err, ctx.Kit.Rid)
 				return err
 			}
+
 			// can't update host's cloud area using this api
 			data.Remove(common.BKCloudIDField)
 			data.Remove(common.BKHostIDField)
@@ -912,12 +906,16 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 				Condition: cond,
 				Data:      data,
 			}
-			hostLog := s.Logic.NewHostLog(ctx.Kit)
-			if err := hostLog.WithPrevious(update.HostID); err != nil {
-				blog.Errorf("update host property batch, but get host[%d] pre data for audit failed, err: %v, " +
-					"rid: %s", update.HostID, err, ctx.Kit.Rid)
+
+			// generate audit log.
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(data)
+			auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, update.HostID, "", nil)
+			if err != nil {
+				blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", update.HostID, err, ctx.Kit.Rid)
 				return err
 			}
+
+			// to update data.
 			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
 			if err != nil {
 				blog.Errorf("UpdateHostPropertyBatch UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, ctx.Kit.Rid)
@@ -928,38 +926,16 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 				return result.CCError()
 			}
 
-			if err := hostLog.WithCurrent(update.HostID); err != nil {
-				blog.Errorf("update host property batch, but get host[%d] pre data for audit failed, err: %v, " +
-					"rid: %s", update.HostID, err, ctx.Kit.Rid)
-				return err
-			}
-
-			hostModuleConfig, err := s.Logic.GetConfigByCond(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: []int64{update.HostID}, Fields: []string{common.BKAppIDField}})
-			if err != nil {
-				blog.Errorf("update host property batch GetConfigByCond failed, hostID[%v], err: %v,rid:%s", update.HostID, err, ctx.Kit.Rid)
-				return err
-			}
-			var appID int64
-			if len(hostModuleConfig) > 0 {
-				appID = hostModuleConfig[0].AppID
-			}
-			auditLog, err := hostLog.AuditLog(update.HostID, appID, meta.AuditUpdate)
-			if err != nil {
-				blog.Errorf("update host property batch, but get host[%d] biz[%d] data for audit failed, err: %v, rid: %s", update.HostID, appID, err, ctx.Kit.Rid)
-				return err
-			}
-			auditLogs = append(auditLogs, auditLog)
+			// add audit log.
+			auditContexts = append(auditContexts, *auditLog)
 		}
 
-		auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLogs...)
-		if err != nil {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
+			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
 		}
-		if !auditResp.Result {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, auditResp.ErrMsg, ctx.Kit.Rid)
-			return auditResp.CCError()
-		}
+
 		return nil
 	})
 
@@ -1156,7 +1132,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	idleModuleID := moduleIDArr[0]
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
-	audit := s.Logic.NewHostModuleLog(ctx.Kit, hostIDArr)
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, hostIDArr)
 
 	var exceptionArr []meta.ExceptionResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
@@ -1416,11 +1392,9 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	logPreContents := make(map[int64]*logics.HostLog, 0)
-	for _, hostID := range hostIDArr {
-		audit := s.Logic.NewHostLog(ctx.Kit)
-		logPreContents[hostID] = audit
-	}
+	// audit interface of host audit log.
+	var audit = auditlog.NewHostAudit(s.CoreAPI.CoreService())
+	var auditContexts = make([]meta.AuditLog, 0)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false
@@ -1446,6 +1420,17 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 						}
 						updateData[key] = value
 					}
+
+					// generate audit log.
+					generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updateData)
+					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, intHostID, "", nil)
+					if err != nil {
+						blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
+						errMsg = append(errMsg, err.Error())
+						continue
+					}
+
+					// to update data.
 					opt := &meta.UpdateOption{
 						Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
 						Data:      mapstr.NewFromMap(updateData),
@@ -1461,7 +1446,9 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 						errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
 						continue
 					}
+
 					successMsg = append(successMsg, strconv.FormatInt(index, 10))
+					auditContexts = append(auditContexts, *auditLog)
 				}
 			}
 		}
@@ -1470,6 +1457,17 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 			for index, hostInfo := range hosts {
 				delete(hostInfo, common.BKHostIDField)
 				intHostID := indexHostIDMap[index]
+
+				// generate audit log.
+				generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(hostInfo)
+				auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, intHostID, "", nil)
+				if err != nil {
+					blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
+					errMsg = append(errMsg, err.Error())
+					continue
+				}
+
+				// to update data.
 				opt := &meta.UpdateOption{
 					Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
 					Data:      mapstr.NewFromMap(hostInfo),
@@ -1485,43 +1483,16 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 					errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
 					continue
 				}
+
 				successMsg = append(successMsg, strconv.FormatInt(index, 10))
+				auditContexts = append(auditContexts, *auditLog)
 			}
 		}
 
-		logLastContents := make([]meta.AuditLog, 0)
-		for _, hostID := range hostIDArr {
-			audit := logPreContents[hostID]
-			if err := audit.WithCurrent(hostID); err != nil {
-				blog.Errorf("UpdateImportHosts, but get host[%d] pre data for audit failed, err: %v, rid: %s", 
-					hostID, err, ctx.Kit.Rid)
-				return ctx.Kit.CCError.Error(common.CCErrHostDetailFail)
-			}
-			hostModuleConfig, err := s.Logic.GetConfigByCond(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}})
-			if err != nil {
-				blog.Errorf("UpdateImportHosts GetConfigByCond failed, id[%v], err: %v,input:%+v,rid:%s", hostID, err, hostList.HostInfo, ctx.Kit.Rid)
-				return err
-			}
-			var appID int64
-			if len(hostModuleConfig) > 0 {
-				appID = hostModuleConfig[0].AppID
-			}
-			auditLog, err := audit.AuditLog(hostID, appID, meta.AuditUpdate)
-			if err != nil {
-				blog.Errorf("UpdateImportHosts create audit log failed, id[%v], err: %v,rid:%s", hostID, err, ctx.Kit.Rid)
-				return err
-			}
-			logLastContents = append(logLastContents, auditLog)
-		}
-
-		auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, logLastContents...)
-		if err != nil {
-			blog.Errorf("UpdateImportHosts, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, err, ctx.Kit.Rid)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
+			blog.Errorf("success update host, but add host[%v] audit failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
-		}
-		if !auditResp.Result {
-			blog.Errorf("UpdateImportHosts, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, auditResp.ErrMsg, ctx.Kit.Rid)
-			return auditResp.CCError()
 		}
 		return nil
 	})

@@ -827,13 +827,16 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	curData := mapstr.NewFromStruct(input.Data, "json")
 	curData.Set("name", objectAsst.AssociationAliasName)
 
+	// generate audit log.
 	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, nil, instanceAssociationID, metadata.AuditCreate)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, instanceAssociationID, nil)
 	if err != nil {
 		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
+	// save audit log.
 	err = audit.SaveAuditLog(kit, *auditLog)
 	if err != nil {
 		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
@@ -888,13 +891,16 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64) (resp *metadat
 		BaseResp: rsp.BaseResp,
 	}
 
+	// generate audit log.
 	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, &instanceAssociation, assoID, metadata.AuditDelete)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, assoID, &instanceAssociation)
 	if err != nil {
 		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
+	// save audit log.
 	err = audit.SaveAuditLog(kit, *auditLog)
 	if err != nil {
 		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)

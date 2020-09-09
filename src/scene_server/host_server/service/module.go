@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -43,7 +44,7 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 		}
 	}
 
-	audit := s.Logic.NewHostModuleLog(ctx.Kit, config.HostID)
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, config.HostID)
 	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 		blog.Errorf("host module relation, get prev module host config failed, err: %v,param:%+v,rid:%s", err, config, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
@@ -160,7 +161,7 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 	if data.AppID != 0 {
 		cond.ApplicationID = data.AppID
 	}
-	
+
 	if len(data.HostID) > 0 {
 		if len(data.HostID) > 500 {
 			blog.Errorf("GetHostModuleRelation host id length %d exceeds 500, rid: %s", len(data.HostID), ctx.Kit.Rid)
@@ -169,7 +170,7 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 		}
 		cond.HostIDArr = data.HostID
 	}
-	
+
 	cond.Page = metadata.BasePage{Limit: common.BKNoLimit}
 	moduleHostConfig, err := s.Logic.GetHostModuleRelation(ctx.Kit, cond)
 
@@ -204,7 +205,7 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	
+
 	ctx.RespEntity(nil)
 	return
 }
@@ -234,7 +235,7 @@ func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(exceptionArr, txnErr)
 		return
 	}
-	
+
 	ctx.RespEntity(nil)
 	return
 }
@@ -279,7 +280,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 		return
 	}
 
-	audit := s.Logic.NewHostModuleLog(ctx.Kit, conf.HostIDs)
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, conf.HostIDs)
 	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 		blog.Errorf("move host to default module s failed, get prev module host config failed, hostIDs: %v, err: %s, rid: %s", conf.HostIDs, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
@@ -345,7 +346,7 @@ func (s *Service) TransferHostResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	audit := s.Logic.NewHostModuleLog(ctx.Kit, input.HostID)
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, input.HostID)
 	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
 		blog.Errorf("TransferHostResourceDirectory, but get prev module host config failed, err: %v, hostIDs:%#v,rid:%s", err, input.HostID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server"))

@@ -24,9 +24,11 @@ import (
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -138,15 +140,23 @@ func (h *HostSnap) Analyze(msg *string) error {
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
 
-	// add auditLog
-	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, header, hostID)
-	if err != nil {
-		blog.Errorf("snapshot get host previous data failed, err: %s, hostID: %d, rid: %s", err, hostID, rid)
-		return err
+	// get audit interface of host.
+	audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
+	kit := &rest.Kit{
+		Rid:             rid,
+		Header:          header,
+		Ctx:             h.ctx,
+		CCError:         h.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)),
+		User:            common.CCSystemCollectorUserName,
+		SupplierAccount: common.BKDefaultOwnerID,
 	}
-	if !preData.Result {
-		blog.Errorf("snapshot get host previous data failed, code: %d, err: %s, hostID: %d, rid: %s",
-			preData.Code, preData.ErrMsg, hostID, rid)
+
+	// generate audit log for update host.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(setter)
+	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, nil)
+	if err != nil {
+		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
 
@@ -168,58 +178,10 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
 	}
 
-	curData := make(map[string]interface{}, 0)
-	for k, v := range preData.Data {
-		if value, exist := setter[k]; exist {
-			// set with the new value
-			curData[k] = value
-			continue
-		}
-		curData[k] = v
-	}
-
-	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
-	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, header, input)
-	if err != nil {
-		blog.Errorf("snapshot get host: %d/%s module relation failed, err:%v, rid: %s", hostID, innerIP, err, rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
-	}
-	if !moduleHost.Result {
-		blog.Errorf("snapshot get host: %d%s module relation failed, err: %v, rid: %s", hostID, innerIP, moduleHost.ErrMsg, rid)
-		return fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
-	}
-
-	var bizID int64
-	if len(moduleHost.Data.Info) > 0 {
-		bizID = moduleHost.Data.Info[0].AppID
-	}
-
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.HostType,
-		ResourceType: metadata.HostRes,
-		Action:       metadata.AuditUpdate,
-		OperateFrom:  metadata.FromDataCollection,
-		BusinessID:   bizID,
-		ResourceID:   hostID,
-		ResourceName: innerIP,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: &metadata.BasicContent{
-					PreData: preData.Data,
-					CurData: curData,
-				},
-			},
-			ModelID: common.BKInnerObjIDHost,
-		},
-	}
-	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, header, auditLog)
-	if err != nil {
-		blog.Errorf("snapshot create host %d/%s audit log failed, err: %v, rid: %s", hostID, innerIP, err.Error())
-		return err
-	}
-	if !result.Result {
-		blog.Errorf("snapshot create host %d/%s audit log failed, err: %s, rid: %s", hostID, innerIP, result.ErrMsg, rid)
-		return fmt.Errorf("create host audit log failed, err: %s", result.ErrMsg)
 	}
 
 	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %d, rid: %s",

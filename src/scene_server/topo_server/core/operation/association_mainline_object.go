@@ -224,14 +224,18 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		return nil, err
 	}
 
-	// create audit log for the created instances
+	// create audit log for the created instances.
+	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
+
 	cond := map[string]interface{}{
 		currentObj.GetInstIDFieldName(): map[string]interface{}{
 			common.BKDBIN: createdInstIDs,
 		},
 	}
-	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, currentObj.GetObjectID(), nil, cond, nil)
+
+	// generate audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, currentObj.GetObjectID(), cond)
 	if err != nil {
 		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
