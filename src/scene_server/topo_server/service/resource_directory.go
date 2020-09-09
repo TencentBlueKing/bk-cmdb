@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -44,7 +45,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	data[common.BKAppIDField] = bizID
 	data[common.BKSetIDField] = setID
 	data[common.BKServiceCategoryIDField] = 0
@@ -70,14 +71,6 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	// audit log
-	moduleName, err := data.String(common.BKModuleNameField)
-	if err != nil {
-		blog.ErrorJSON("CreateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: rsp.Data.Created.ID}}
 	readInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
@@ -90,33 +83,28 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
 		return
 	}
-
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.ModelInstanceType,
-		ResourceType: metadata.ResourceDirRes,
-		Action:       metadata.AuditCreate,
-		BusinessID:   bizID,
-		ResourceID:   int64(rsp.Data.Created.ID),
-		ResourceName: moduleName,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: &metadata.BasicContent{
-					PreData:    nil,
-					CurData:    readInstanceResult.Data.Info[0],
-				},
-			},
-			ModelID: common.BKInnerObjIDModule,
-		},
-	}
-	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
-	if err != nil {
-		blog.ErrorJSON("CreateResourceDirectory success, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrAuditSaveLogFailed, "CreateResourceDirectory success, but add host audit log failed")
+	if len(readInstanceResult.Data.Info) <= 0 {
+		err := fmt.Errorf("not find resource directory")
+		blog.Errorf("create resource directory success, but add host audit log failed, err: %v, rid: %s",
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
-	if auditResult.Result != true {
-		blog.ErrorJSON("CreateResourceDirectory success, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
-		ctx.RespWithError(ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed), auditResult.Code, "CreateResourceDirectory success, but add host audit log failed")
+
+	// generate audit log.
+	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(rsp.Data.Created.ID), bizID, readInstanceResult.Data.Info[0])
+	if err != nil {
+		blog.Errorf("generate audit log failed after create resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed after create resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -214,25 +202,25 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	language := util.GetLanguage(ctx.Kit.Header)
-	query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: intModuleID}}
-	preData, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
+	_, bizID, _, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
-		blog.Errorf("UpdateResourceDirectory failed, coreservice http ReadInstance fail, input: %v, err: %v, %s", input, err, ctx.Kit.Rid)
+		blog.ErrorJSON("failed to get resource pollID and setID in before update resource directory, err: %s, rid: %s",
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	if !preData.Result {
-		blog.ErrorJSON("UpdateResourceDirectory, failed to SearchResourceDirectory, errMsg: %s, rid: %s", preData.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(preData.Code, preData.ErrMsg))
-		return
-	}
-	if len(preData.Data.Info) <= 0 {
-		blog.ErrorJSON("UpdateResourceDirectory fail, bk_module_id: %d not exist, rid: %s", intModuleID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopoOperateReourceDirFailNotExist, s.Language.Language(language, "update")))
+
+	// generate audit log.
+	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).WithUpdateFields(input)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, intModuleID, bizID, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
+	// to update.
 	option := &metadata.UpdateOption{
 		Data:      input,
 		Condition: mapstr.MapStr{common.BKModuleIDField: intModuleID},
@@ -249,57 +237,10 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	_, bizID, _, err := s.getResourcePoolIDAndSetID(ctx)
-	if err != nil {
-		blog.ErrorJSON("UpdateResourceDirectory success, but create auditLog fail, getResourcePoolIDAndSetID failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed after update resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
-		return
-	}
-	moduleName, err := input.String(common.BKModuleNameField)
-	if err != nil {
-		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	cond := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: intModuleID}}
-	curData, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, cond)
-	if err != nil {
-		blog.Errorf("UpdateResourceDirectory success but fail to create audiLog, coreservice http ReadInstance fail, input: %v, err: %v, %s", input, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if !curData.Result {
-		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, errMsg: %s, rid: %s", curData.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New(curData.Code, curData.ErrMsg))
-		return
-	}
-	
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.ModelInstanceType,
-		ResourceType: metadata.ResourceDirRes,
-		Action:       metadata.AuditUpdate,
-		BusinessID:   bizID,
-		ResourceID:   intModuleID,
-		ResourceName: moduleName,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: &metadata.BasicContent{
-					PreData:    preData.Data.Info[0],
-					CurData:    curData.Data.Info[0],
-				},
-			},
-			ModelID: common.BKInnerObjIDModule,
-		},
-	}
-	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
-	if err != nil {
-		blog.ErrorJSON("UpdateResourceDirectory success, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrAuditSaveLogFailed, "UpdateResourceDirectory success, but add host audit log failed")
-		return
-	}
-	if auditResult.Result != true {
-		blog.ErrorJSON("UpdateResourceDirectory success, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
-		ctx.RespWithError(ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed), auditResult.Code, "UpdateResourceDirectory success, but add host audit log failed")
 		return
 	}
 
@@ -439,7 +380,7 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	_, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
 		blog.ErrorJSON("DeleteResourceDirectory fail with getResourcePoolIDAndSetID fail, err: %s, rid: %s", err, ctx.Kit.Rid)
@@ -505,6 +446,17 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
+	// generate audit log.
+	audit := auditlog.NewResourceDirAuditLog(s.Engine.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, intModuleID, bizID, curData.Data.Info[0])
+	if err != nil {
+		blog.Errorf("generate audit log failed before delete resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// to delete.
 	cond := &metadata.DeleteOption{Condition: mapstr.MapStr{common.BKModuleIDField: intModuleID}}
 	rsp, err := s.Engine.CoreAPI.CoreService().Instance().DeleteInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, cond)
 	if err != nil {
@@ -518,39 +470,10 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	moduleName, err := curData.Data.Info[0].String(common.BKModuleNameField)
-	if err != nil {
-		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed after delete resource directory, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
-		return
-	}
-
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.ModelInstanceType,
-		ResourceType: metadata.ResourceDirRes,
-		Action:       metadata.AuditDelete,
-		BusinessID:   bizID,
-		ResourceID:   intModuleID,
-		ResourceName: moduleName,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{
-				Details: &metadata.BasicContent{
-					PreData:    curData.Data.Info[0],
-					CurData:    nil,
-				},
-			},
-			ModelID: common.BKInnerObjIDModule,
-		},
-	}
-	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
-	if err != nil {
-		blog.ErrorJSON("DeleteResourceDirectory success, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrAuditSaveLogFailed, "UpdateResourceDirectory success, but add host audit log failed")
-		return
-	}
-	if auditResult.Result != true {
-		blog.ErrorJSON("DeleteResourceDirectory success, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, ctx.Kit.Rid)
-		ctx.RespWithError(ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed), auditResult.Code, "UpdateResourceDirectory success, but add host audit log failed")
 		return
 	}
 

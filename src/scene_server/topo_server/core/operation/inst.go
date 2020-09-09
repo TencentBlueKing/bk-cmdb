@@ -167,17 +167,24 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			existInstID = false
 		}
 		if existInstID {
-			delete(colInput, idFieldname)
 			filter := condition.CreateCondition()
 			filter = filter.Field(idFieldname).Eq(instID)
 
-			auditLog, ccErr := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.GetObjectID(), nil, filter.ToMapStr(), colInput)
+			// remove unchangeable fields.
+			delete(colInput, idFieldname)
+			delete(colInput, common.BKParentIDField)
+			delete(colInput, common.BKAppIDField)
+
+			// generate audit log of instance.
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(colInput)
+			auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), filter.ToMapStr())
 			if ccErr != nil {
 				blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, ccErr
 			}
 			updateAuditLogs = append(updateAuditLogs, auditLog...)
 
+			// to update.
 			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
@@ -219,17 +226,20 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 		createdInstanceIDs = append(createdInstanceIDs, instanceID)
 	}
 
+	// generate audit log of instance.
 	cond := map[string]interface{}{
 		obj.GetInstIDFieldName(): map[string]interface{}{
 			common.BKDBIN: createdInstanceIDs,
 		},
 	}
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, obj.GetObjectID(), nil, cond, nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), cond)
 	if err != nil {
 		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
+	// save audit log.
 	err = audit.SaveAuditLog(kit, append(updateAuditLogs, auditLog...)...)
 	if err != nil {
 		blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
@@ -360,9 +370,11 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 		return nil, err
 	}
 
+	// for audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
 	for _, inst := range insts {
-		audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
-		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditCreate, obj.GetObjectID(), []mapstr.MapStr{inst.GetValues()}, nil, nil)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.GetObjectID(), []mapstr.MapStr{inst.GetValues()})
 		if err != nil {
 			blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
@@ -491,7 +503,9 @@ func (c *commonInst) DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID 
 			delCond.Field(common.BKObjIDField).Eq(objectID)
 		}
 
-		auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, obj.GetObjectID(), nil, delCond.ToMapStr(), nil)
+		// generate audit log.
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+		auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), delCond.ToMapStr())
 		if err != nil {
 			blog.Errorf(" delete inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 			return err
@@ -554,13 +568,16 @@ func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, i
 		delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
 	}
 
+	// generate audit log.
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
-	auditLog, err := audit.GenerateAuditLog(kit, metadata.AuditDelete, obj.GetObjectID(), nil, delCond.ToMapStr(), nil)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), delCond.ToMapStr())
 	if err != nil {
 		blog.Errorf(" delete inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
+	// to delete.
 	ops := metadata.DeleteOption{
 		Condition: delCond.ToMapStr(),
 	}
@@ -575,8 +592,8 @@ func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, i
 		return kit.CCError.Error(rsp.Code)
 	}
 
-	err = audit.SaveAuditLog(kit, auditLog...)
-	if err != nil {
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 		blog.Errorf("delete inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
@@ -1092,7 +1109,7 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Obj
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
-	data.Remove(metadata.BKMetadata)
+
 	// update association
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
@@ -1103,31 +1120,33 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, data mapstr.MapStr, obj model.Obj
 		query.Condition = innerCond.ToMapStr()
 	}
 
-	// update insts
 	fCond := cond.ToMapStr()
 	inputParams := metadata.UpdateOption{
 		Data:      data,
 		Condition: fCond,
 	}
 
+	// generate audit log of instance.
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
-	auditLog, ccErr := audit.GenerateAuditLog(kit, metadata.AuditUpdate, obj.GetObjectID(), nil, fCond, data)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, obj.GetObjectID(), fCond)
 	if ccErr != nil {
 		blog.Errorf(" update inst, generate audit log failed, err: %v, rid: %s", ccErr, kit.Rid)
 		return ccErr
 	}
 
+	// to update.
 	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, obj.GetObjectID(), &inputParams)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-
 	if !rsp.Result {
 		blog.Errorf("[operation-inst] failed to set the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
+	// save audit log.
 	err = audit.SaveAuditLog(kit, auditLog...)
 	if err != nil {
 		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)

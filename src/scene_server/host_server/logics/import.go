@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -64,9 +65,12 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	}
 
 	var errMsg, updateErrMsg, successMsg []string
+
+	// for audit log.
 	logContents := make([]metadata.AuditLog, 0)
-	
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+
 	for index, host := range hostInfos {
 		if nil == host {
 			continue
@@ -111,24 +115,33 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 			key := generateHostCloudKey(innerIP, iSubAreaVal)
 			intHostID, existInDB = hostIDMap[key]
 		}
-		var preData mapstr.MapStr
-		var action metadata.ActionType
+
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
+
+		var auditLog *metadata.AuditLog
 		if existInDB {
 			// remove unchangeable fields
-			delete(host, common.BKHostInnerIPField)
-			delete(host, common.BKCloudIDField)
+			delete(host, common.BKImportFrom)
+			delete(host, common.CreateTimeField)
 
-			// get host info before really change it
-			preData, _, _ = lgc.GetHostInstanceDetails(kit, intHostID)
+			var err error
+
+			// generate audit log before really change it.
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(host)
+			auditLog, err = audit.GenerateAuditLog(generateAuditParameter, intHostID, appID, innerIP, nil)
+			if err != nil {
+				blog.Errorf("generate host audit log failed before update host, hostID: %d, bizID: %d, err: %v, rid: %s",
+					intHostID, innerIP, err, kit.Rid)
+				errMsg = append(errMsg, err.Error())
+				continue
+			}
 
 			// update host instance.
 			if err := instance.updateHostInstance(index, host, intHostID); err != nil {
 				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
-			action = metadata.AuditUpdate
 		} else {
 			intHostID, err = instance.addHostInstance(iSubAreaVal, index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
@@ -137,42 +150,30 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 			}
 			host[common.BKHostIDField] = intHostID
 			hostIDMap[generateHostCloudKey(innerIP, iSubAreaVal)] = intHostID
-			action = metadata.AuditCreate
+
+			// to generate audit log.
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+			auditLog, err = audit.GenerateAuditLog(generateAuditParameter, intHostID, appID, innerIP, nil)
+			if err != nil {
+				blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
+					intHostID, appID, err, kit.Rid)
+				errMsg = append(errMsg, err.Error())
+				continue
+			}
 		}
-		// add current host operate result to  batch add result
+
+		// add current host operate result to batch add result.
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
-		// host info after it changed
-		curData, _, err := lgc.GetHostInstanceDetails(kit, intHostID)
-		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
-		}
-
-		// add audit log
-		logContents = append(logContents, metadata.AuditLog{
-			AuditType:    metadata.HostType,
-			ResourceType: metadata.HostRes,
-			Action:       action,
-			BusinessID:   appID,
-			ResourceID:   intHostID,
-			ResourceName: innerIP,
-			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: metadata.BasicOpDetail{
-					Details: &metadata.BasicContent{
-						PreData: preData,
-						CurData: curData,
-					},
-				},
-				ModelID: common.BKInnerObjIDHost,
-			},
-		})
+		// add audit log.
+		logContents = append(logContents, *auditLog)
 		hostIDs = append(hostIDs, intHostID)
 	}
 
+	// to save audit log.
 	if len(logContents) > 0 {
-		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), kit.Header, logContents...)
-		if err != nil {
-			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
+			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("save audit log failed, but add host success, err: %v", err)
 		}
 	}
 
@@ -200,6 +201,7 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 	res := new(metadata.AddHostToResourcePoolResult)
 	instance := NewImportInstance(kit, kit.SupplierAccount, lgc)
 	logContents := make([]metadata.AuditLog, 0)
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 
 	for index, host := range hostList.HostInfo {
 		if nil == host {
@@ -252,34 +254,28 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 			HostID: hostID,
 		})
 
-		curData, _, err := lgc.GetHostInstanceDetails(kit, hostID)
+		// generate audit log for create host.
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, bizID, innerIP, nil)
 		if err != nil {
-			return hostIDs, res, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
+				hostID, bizID, err, kit.Rid)
+			res.Error = append(res.Error, metadata.AddOneHostToResourcePoolResult{
+				Index:    index,
+				HostID:   hostID,
+				ErrorMsg: err.Error(),
+			})
+			continue
 		}
 
-		logContents = append(logContents, metadata.AuditLog{
-			AuditType:    metadata.HostType,
-			ResourceType: metadata.HostRes,
-			Action:       metadata.AuditCreate,	
-			BusinessID:   bizID,
-			ResourceID:   hostID,
-			ResourceName: host[common.BKHostInnerIPField].(string),
-			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: metadata.BasicOpDetail{
-					Details: &metadata.BasicContent{
-						PreData:    nil,
-						CurData:    curData,
-					},
-				},
-				ModelID: common.BKInnerObjIDHost,
-			},
-		})
+		logContents = append(logContents, *auditLog)
 	}
 
+	// save audit log.
 	if len(logContents) > 0 {
-		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), kit.Header, logContents...)
-		if err != nil {
-			return hostIDs, res, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
+			blog.Errorf("save host audit log failed after create host, err: %v, rid: %s", err, kit.Rid)
+			return hostIDs, res, err
 		}
 	}
 

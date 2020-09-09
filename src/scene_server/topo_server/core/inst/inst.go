@@ -169,7 +169,6 @@ func (cli *inst) UpdateInstance(filter condition.Condition, data mapstr.MapStr, 
 	// not allowed to update these fields, need to use specialized function
 	data.Remove(common.BKParentIDField)
 	data.Remove(common.BKAppIDField)
-	data.Remove(metadata.BKMetadata)
 	rid := cli.kit.Rid
 	tObj := cli.target.Object()
 	objID := tObj.ObjectID

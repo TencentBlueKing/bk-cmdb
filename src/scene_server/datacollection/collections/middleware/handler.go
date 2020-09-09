@@ -18,9 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -219,19 +221,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 
 	instIDField := common.GetInstIDField(objID)
 
-	asst, err := d.CoreAPI.CoreService().Association().ReadModelAssociation(d.ctx, d.httpHeader, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
-	if err != nil || !asst.Result {
-		blog.Errorf("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, rid)
-		return err
-	}
-	isMainline := false
-	for _, mainline := range asst.Data.Info {
-		if mainline.ObjectID == objID || mainline.AsstObjID == objID {
-			isMainline = true
-			break
-		}
-	}
-
 	if len(inst) <= 0 {
 		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.httpHeader, objID, &metadata.CreateModelInstance{Data: bodyData})
 		if err != nil {
@@ -243,60 +232,42 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 			return fmt.Errorf("search model failed: %s", resp.ErrMsg)
 		}
 		blog.Infof("create inst result: %v", resp)
-		instID := int64(resp.Data.Created.ID)
 
+		// add audit log.
 		if err := func() error {
-			bizID, err := extensions.ParseBizID(bodyData)
+			// ready audit interface of instance.
+			audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
+			kit := &rest.Kit{
+				Rid:             rid,
+				Header:          d.httpHeader,
+				Ctx:             d.ctx,
+				CCError:         d.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(d.httpHeader)),
+				User:            common.CCSystemCollectorUserName,
+				SupplierAccount: common.BKDefaultOwnerID,
+			}
+
+			// generate audit log for create instance.
+			data := []mapstr.MapStr{mapstr.NewFromMap(bodyData)}
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate).WithOperateFrom(metadata.FromDataCollection)
+			auditLog, err := audit.GenerateAuditLog(generateAuditParameter, objID, data)
 			if err != nil {
-				if blog.V(5) {
-					blog.InfoJSON("ParseBizID from input data: %+v failed, err: %+v", bodyData)
-				}
+				blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+					objID, err, rid)
 				return err
 			}
 
-			bodyData[instIDField] = instID
-			instName, ok := bodyData[common.GetInstNameField(objID)].(string)
-			if !ok {
-				instName = ""
-			}
-			auditLog := metadata.AuditLog{
-				AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
-				ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
-				Action:       metadata.AuditCreate,
-				OperateFrom:  metadata.FromDataCollection,
-				BusinessID:   bizID,
-				ResourceID:   instID,
-				ResourceName: instName,
-				OperationDetail: &metadata.InstanceOpDetail{
-					BasicOpDetail: metadata.BasicOpDetail{
-						Details: &metadata.BasicContent{
-							PreData: nil,
-							CurData: bodyData,
-						},
-					},
-					ModelID: objID,
-				},
+			// save audit log.
+			if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+				blog.Errorf("save instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+					objID, err, rid)
+				return err
 			}
 
-			result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
-			if err != nil {
-				blog.Errorf("create inst audit log failed, http failed, err:%s, rid:%s", err.Error(), rid)
-				return err
-			}
-			if !result.Result {
-				blog.Errorf("create inst audit log failed, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, rid)
-				return err
-			}
 			return nil
 		}(); err != nil && blog.V(3) {
 			blog.Errorf("save inst create audit log failed, err: %+v, rid: %s", err.Error(), rid)
 		}
 		return nil
-	}
-
-	preUpdatedData := make(map[string]interface{})
-	for key, value := range inst {
-		preUpdatedData[key] = value
 	}
 
 	instID, err := util.GetInt64ByInterface(inst[instIDField])
@@ -340,6 +311,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		return nil
 	}
 
+	// remove unchangeable fields.
 	delete(inst, common.BKObjIDField)
 	delete(inst, common.BKOwnerIDField)
 	delete(inst, common.BKDefaultField)
@@ -347,6 +319,29 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	delete(inst, common.LastTimeField)
 	delete(inst, common.CreateTimeField)
 
+	// ready audit interface of instance.
+	audit := auditlog.NewInstanceAudit(d.CoreAPI.CoreService())
+	kit := &rest.Kit{
+		Rid:             rid,
+		Header:          d.httpHeader,
+		Ctx:             d.ctx,
+		CCError:         d.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(d.httpHeader)),
+		User:            common.CCSystemCollectorUserName,
+		SupplierAccount: common.BKDefaultOwnerID,
+	}
+
+	// generate audit log before update instance.
+	auditCond := map[string]interface{}{instIDField: instID}
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(inst)
+	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, objID, auditCond)
+	if err != nil {
+		blog.Errorf("generate instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+			objID, err, rid)
+		return err
+	}
+
+	// to update.
 	input := metadata.UpdateOption{
 		Data: inst,
 		Condition: map[string]interface{}{
@@ -366,64 +361,11 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 	blog.Infof("update inst result: %v", resp)
 	d.TryUnsetRedis(instKeyStr)
 
-	if err := func() error {
-		bizID, err := extensions.ParseBizID(inst)
-		if err != nil {
-			if blog.V(5) {
-				blog.InfoJSON("ParseBizID from input data: %+v failed, err: %+v", inst)
-			}
-			return err
-		}
-
-		qc := metadata.QueryCondition{
-			Condition: map[string]interface{}{
-				common.BKInstIDField: instID,
-			},
-		}
-		readResult, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.httpHeader, objID, &qc)
-		if err != nil {
-			blog.Errorf("read updated inst failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err.Error(), rid)
-			return err
-		}
-		if len(readResult.Data.Info) == 0 {
-			blog.Errorf("read updated inst failed, not found, objID: %s, instID: %d, rid: %s", objID, instID, rid)
-			return fmt.Errorf("get updated instance failed, not found, objID: %s, instID: %d", objID, instID)
-		}
-		updatedInst := readResult.Data.Info[0]
-		instName, ok := updatedInst[common.GetInstNameField(objID)].(string)
-		if !ok {
-			instName = ""
-		}
-		auditLog := metadata.AuditLog{
-			AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
-			ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
-			Action:       metadata.AuditUpdate,
-			OperateFrom:  metadata.FromDataCollection,
-			BusinessID:   bizID,
-			ResourceID:   instID,
-			ResourceName: instName,
-			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: metadata.BasicOpDetail{
-					Details: &metadata.BasicContent{
-						PreData: preUpdatedData,
-						CurData: updatedInst,
-					},
-				},
-				ModelID: objID,
-			},
-		}
-		result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
-		if err != nil {
-			blog.Errorf("save inst update audit log failed, http failed, err:%s, rid:%s", err.Error(), rid)
-			return err
-		}
-		if !result.Result {
-			blog.Errorf("save inst update audit log failed, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, rid)
-			return fmt.Errorf("coreservice save audit log result faield, result: %+v", result)
-		}
-		return nil
-	}(); err != nil && blog.V(3) {
-		blog.Errorf("save inst update audit log failed, err: %s, rid: %s", err.Error(), rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save instance audit log failed after create instance, objID: %s, err: %v, rid: %s",
+			objID, err, rid)
+		return err
 	}
 
 	return nil

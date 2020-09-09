@@ -13,6 +13,7 @@
 package auditlog
 
 import (
+	"fmt"
 	"strings"
 
 	"configcenter/src/apimachinery/coreservice"
@@ -83,20 +84,77 @@ func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (stri
 
 	insts, err := a.getInstByCond(kit, objID, map[string]interface{}{instIDField: instID}, []string{instNameField})
 	if err != nil {
-		blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts failed, err: %v, rid: %s", instID, err, kit.Rid)
+		blog.Errorf("failed to getting instance name, instID: %d, objID: %d, err: %v, rid: %s",
+			instID, objID, err, kit.Rid)
 		return "", err
 	}
 
 	if len(insts) != 1 {
-		blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts find %d insts, rid: %s", instID, len(insts), kit.Rid)
+		blog.Errorf("failed to getting instance name, instance not one, instID: %d, objID: %d, rid: %s", instID, objID, kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
 	instName, convErr := insts[0].String(instNameField)
 	if convErr != nil {
-		blog.ErrorfDepthf(1, "GetInstNameByID %d ReadInstance parse inst name failed, data: %+v, rid: %s", instID, insts[0], kit.Rid)
+		blog.Errorf("getting instance name failed, failed to %s fields convert to string, instID: %d, data: %+v, rid: %s",
+			instNameField, instID, insts[0], kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, instNameField, "string", convErr.Error())
 	}
 
 	return instName, nil
+}
+
+// getObjNameByObjID get the object name by object id.
+func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
+	query := mapstr.MapStr{common.BKObjIDField: objID}
+
+	// get objectName.
+	resp, err := a.clientSet.Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+	if err != nil {
+		return "", err
+	}
+	if resp.Result != true {
+		return "", kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+	if len(resp.Data.Info) <= 0 {
+		return "", kit.CCError.CCError(common.CCErrorModelNotFound)
+	}
+
+	return resp.Data.Info[0].Spec.ObjectName, nil
+}
+
+// getDefaultAppID get default businessID under designated supplier account.
+func (a *audit) getDefaultAppID(kit *rest.Kit) (int64, error) {
+	cond := mapstr.MapStr{
+		common.BKDefaultField: common.DefaultAppFlag,
+	}
+	fields := []string{common.BKAppIDField, common.BkSupplierAccount}
+
+	results, err := a.getInstByCond(kit, common.BKInnerObjIDApp, cond, fields)
+	if err != nil {
+		blog.Errorf("get default appID failed, err: %v, rid :%s", err, kit.Rid)
+		return 0, err
+	}
+
+	for _, data := range results {
+		ownID, err := data.String(common.BkSupplierAccount)
+		if err != nil {
+			return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+				common.BkSupplierAccount, "string", err.Error())
+		}
+
+		if kit.SupplierAccount == ownID {
+			bizID, err := data.Int64(common.BKAppIDField)
+			if err != nil {
+				return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+					common.BKAppIDField, "int64", err.Error())
+			}
+
+			return bizID, nil
+		}
+
+	}
+
+	blog.Errorf("no such default business when supplier account is %s, rid: %s", kit.SupplierAccount, kit.Rid)
+	return 0, fmt.Errorf("no such default business when supplier account is %s", kit.SupplierAccount)
 }

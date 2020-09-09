@@ -16,20 +16,21 @@ import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
 
-// instanceAuditLog provides methods to generate and save instance association audit log
+// instanceAssociationAuditLog provides methods to generate and save instance association audit log.
 type instanceAssociationAuditLog struct {
 	audit
 }
 
-func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *metadata.InstAsst, id int64, action metadata.ActionType) (
+// GenerateAuditLog generate audit log of instance association, if data is nil, will auto get data by id and instance association.
+func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.InstAsst) (
 	*metadata.AuditLog, error) {
+	kit := parameter.kit
 
 	if data == nil {
-		cond := metadata.QueryCondition{Condition: map[string]interface{}{common.BKFieldID: id}}
+		cond := metadata.QueryCondition{Condition: map[string]interface{}{metadata.AssociationFieldAssociationId: id}}
 		result, err := a.clientSet.Association().ReadInstAssociation(kit.Ctx, kit.Header, &cond)
 		if err != nil {
 			blog.Errorf("generate inst asst audit log failed, get instance association failed, err: %v, rid: %s", err, kit.Rid)
@@ -57,9 +58,10 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(kit *rest.Kit, data *meta
 	return &metadata.AuditLog{
 		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.InstanceAssociationRes,
-		Action:       action,
+		Action:       parameter.action,
 		ResourceID:   data.InstID,
 		ResourceName: srcInstName,
+		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.InstanceAssociationOpDetail{
 			AssociationOpDetail: metadata.AssociationOpDetail{
 				AssociationID:   data.ObjectAsstID,
