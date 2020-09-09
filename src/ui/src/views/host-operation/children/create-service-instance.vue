@@ -95,14 +95,30 @@
             },
             getSourceProcesses (instance) {
                 const templates = this.getServiceTemplates(instance)
+                const ipMap = {
+                    '1': '127.0.0.1',
+                    '2': '0.0.0.0',
+                    '3': this.$t('第一内网IP'),
+                    '4': this.$t('第一外网IP')
+                }
                 return templates.map(template => {
                     const value = {}
-                    const ip = ['127.0.0.1', '0.0.0.0']
                     Object.keys(template.property).forEach(key => {
-                        if (key === 'bind_ip') {
-                            value[key] = ip[template.property[key].value - 1]
+                        const templateValue = template.property[key]
+                        if (key === 'bind_info') {
+                            value[key] = templateValue.value.map(info => {
+                                const infoValue = {}
+                                Object.keys(info).forEach(infoKey => {
+                                    if (infoKey === 'ip') {
+                                        infoValue[infoKey] = ipMap[info[infoKey].value]
+                                    } else {
+                                        infoValue[infoKey] = info[infoKey].value
+                                    }
+                                })
+                                return infoValue
+                            })
                         } else {
-                            value[key] = template.property[key].value
+                            value[key] = templateValue.value
                         }
                     })
                     return value
