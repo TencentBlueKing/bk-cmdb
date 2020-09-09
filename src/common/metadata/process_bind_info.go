@@ -105,6 +105,9 @@ type propertyBindInfoValueInterface interface {
 
 	// toMap  获取要保持格式的数据
 	toMap() map[string]interface{}
+
+	// NewProcBindInfo 通过模板生成进程的时候使用
+	NewProcBindInfo() map[string]interface{}
 }
 
 // ProcBindInfo 给服务模板使用的，来存储，校验服务实例中进程绑定的信息
@@ -378,6 +381,7 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 			change = true
 			return
 		}
+
 		if row.Std == nil && tmpBindInfo.Std != nil ||
 			row.Std != nil && tmpBindInfo.Std == nil {
 			change = true
@@ -392,6 +396,7 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 		if (row.Std.Port == nil && tmpBindInfo.Std.Port != nil) ||
 			(row.Std.Port != nil && tmpBindInfo.Std.Port == nil) ||
 			(row.Std.Port != nil && tmpBindInfo.Std.Port != nil && *row.Std.Port != *tmpBindInfo.Std.Port) {
+
 			change = true
 			return
 		}
@@ -443,6 +448,61 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 	}
 
 	return
+}
+
+// NewProcBindInfo 通过模板生成进程的时候使用
+func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) []ProcBindInfo {
+	var procBindInfoArr []ProcBindInfo
+
+	for _, row := range pbi.Value {
+		if row.Std == nil {
+			continue
+		}
+		procBindInfo := ProcBindInfo{
+			Std: &stdProcBindInfo{},
+		}
+
+		procBindInfo.Std.TemplateRowID = row.Std.RowID
+
+		/*** 处理标准字段 ***/
+
+		if IsAsDefaultValue(row.Std.IP.AsDefaultValue) == true {
+			if row.Std.IP.Value == nil {
+				procBindInfo.Std.IP = nil
+			} else {
+				ip := row.Std.IP.Value.IP(host)
+				procBindInfo.Std.IP = &ip
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Port.AsDefaultValue) == true {
+			procBindInfo.Std.Port = row.Std.Port.Value
+		}
+
+		if IsAsDefaultValue(row.Std.Protocol.AsDefaultValue) == true {
+			if row.Std.Protocol.Value == nil {
+				procBindInfo.Std.Protocol = nil
+			} else {
+				protocol := string(*row.Std.Protocol.Value)
+				procBindInfo.Std.Protocol = &protocol
+			}
+		}
+
+		if IsAsDefaultValue(row.Std.Enable.AsDefaultValue) == true {
+			if row.Std.Enable.Value == nil {
+				procBindInfo.Std.Enable = nil
+			} else {
+				procBindInfo.Std.Enable = row.Std.Enable.Value
+			}
+		}
+
+		if row.extra != nil {
+			procBindInfo.extra = row.extra.NewProcBindInfo()
+		}
+
+		procBindInfoArr = append(procBindInfoArr, procBindInfo)
+	}
+	return procBindInfoArr
 }
 
 // allFieldValIsNil 判断所有的字段是否为nil

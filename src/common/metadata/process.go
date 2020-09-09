@@ -559,6 +559,41 @@ type Process struct {
 	BindInfo []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 
+func (p *Process) Map() map[string]interface{} {
+	var bindInfoArr []map[string]interface{}
+	for _, row := range p.BindInfo {
+		bindInfoArr = append(bindInfoArr, row.toKV())
+	}
+	procMap := map[string]interface{}{
+		common.BKProcInstNum:      p.ProcNum,
+		common.BKProcStopCmd:      p.StopCmd,
+		common.BKProcRestartCmd:   p.RestartCmd,
+		"face_stop_cmd":           p.ForceStopCmd,
+		common.BKProcessIDField:   p.ProcessID,
+		common.BKFuncName:         p.FuncName,
+		common.BKWorkPath:         p.WorkPath,
+		"priority":                p.Priority,
+		common.BKProcReloadCmd:    p.ReloadCmd,
+		common.BKProcessNameField: p.ProcessName,
+		common.BKProcPidFile:      p.PidFile,
+		"auto_start":              p.AutoStart,
+		"AutoTimeGap":             p.AutoTimeGap,
+		common.BKAppIDField:       p.BusinessID,
+		common.BKProcStartCmd:     p.StartCmd,
+		common.BKFuncIDField:      p.FuncID,
+		common.BKUser:             p.User,
+		common.BKProcTimeOut:      p.TimeoutSeconds,
+		common.BKDescriptionField: p.Description,
+		common.BKOwnerIDField:     p.SupplierAccount,
+		common.BKStartParamRegex:  p.StartParamRegex,
+		common.BKProcBindInfo:     bindInfoArr,
+		common.CreateTimeField:    p.CreateTime,
+		common.LastTimeField:      p.LastTime,
+	}
+
+	return procMap
+}
+
 type ServiceCategory struct {
 	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
@@ -773,6 +808,8 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host 
 	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) {
 		processInstance.StartParamRegex = property.StartParamRegex.Value
 	}
+
+	processInstance.BindInfo = property.BindInfo.NewProcBindInfo(host)
 
 	return processInstance
 }
