@@ -99,14 +99,9 @@ type DeleteAssociationObjectResult struct {
 	Data     string `json:"data"`
 }
 
-type SearchAssociationInstRequestCond struct {
-	ID           int64  `field:"id" json:"id,omitempty" bson:"id,omitempty"`
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
-	AsstID       string `field:"bk_asst_id" json:"bk_asst_id,omitempty" bson:"bk_asst_id,omitempty"`
-	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
-	AsstObjID    string `field:"bk_asst_obj_id" json:"bk_asst_obj_id,omitempty" bson:"bk_asst_obj_id,omitempty"`
-	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
-	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
+type SearchAssociationRelatedInstRequestCond struct {
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	InstID   int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
 }
 
 type SearchAssociationInstRequest struct {
@@ -114,9 +109,9 @@ type SearchAssociationInstRequest struct {
 }
 
 type SearchAssociationRelatedInstRequest struct {
-	Fields    []string                         `json:"fields"`
-	Page      BasePage                         `json:"page"`
-	Condition SearchAssociationInstRequestCond `json:"condition"`
+	Fields    []string                                `json:"fields"`
+	Page      BasePage                                `json:"page"`
+	Condition SearchAssociationRelatedInstRequestCond `json:"condition"`
 }
 
 type SearchAssociationInstResult struct {
