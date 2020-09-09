@@ -232,28 +232,21 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 	// get all processes whose templates has corresponding bind ip
 	processTemplates := make([]metadata.ProcessTemplate, 0)
 	processTemplateFilter := map[string]interface{}{
-		common.BKFieldID:                    map[string]interface{}{common.BKDBIN: processTemplateIDs},
-		"property.bind_ip.as_default_value": true,
-		"property.bind_ip.value": map[string]interface{}{common.BKDBIN: []string{
-			string(metadata.BindInnerIP), string(metadata.BindOuterIP)}},
+		common.BKFieldID:                      map[string]interface{}{common.BKDBIN: processTemplateIDs},
+		"property.bind_info.as_default_value": true,
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
-		common.BKFieldID, "property.bind_ip.value").All(kit.Ctx, &processTemplates)
+		common.BKFieldID, "property.bind_info").All(kit.Ctx, &processTemplates)
 	if err != nil {
 		blog.Errorf("get process template failed, err: %v, processTemplateIDs: %+v, rid: %s", err, processTemplateIDs, kit.Rid)
 		return err
 	}
 
 	for _, processTemplate := range processTemplates {
-		bindInfo := processTemplate.Property.BindInfo
-		if !metadata.IsAsDefaultValue(bindInfo.AsDefaultValue) {
-			continue
-		}
-
 		data := make(map[string]interface{})
 
-		for index, value := range bindInfo.Value {
+		for index, value := range processTemplate.Property.BindInfo.Value {
 			if value.Std == nil {
 				continue
 			}
@@ -264,8 +257,12 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 			}
 
 			if ip.Value != nil {
-				if *ip.Value == metadata.BindInnerIP {
-					data[common.BKProcBindInfo+strconv.Itoa(index)+common.BKIP] = firstInnerIP
+				if innerIPExist && *ip.Value == metadata.BindInnerIP {
+					data[common.BKProcBindInfo+"."+strconv.Itoa(index)+"."+common.BKIP] = firstInnerIP
+				}
+
+				if outerIPExist && *ip.Value == metadata.BindOuterIP {
+					data[common.BKProcBindInfo+"."+strconv.Itoa(index)+"."+common.BKIP] = firstOuterIP
 				}
 			}
 		}
@@ -275,7 +272,6 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 				blog.Errorf("update process bind ip failed, err: %v, rid: %s", err, kit.Rid)
 				return err
 			}
-
 		}
 	}
 
