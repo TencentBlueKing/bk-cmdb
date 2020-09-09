@@ -31,8 +31,6 @@ import (
 	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"configcenter/src/scene_server/cloud_server/logics"
 	svc "configcenter/src/scene_server/cloud_server/service"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/secrets"
 )
 
@@ -80,25 +78,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	mongoConf := mongoConfig.GetMongoConf()
-	db, err := local.NewMgo(mongoConf, time.Minute)
-	if err != nil {
-		return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
-	}
-	process.Service.SetDB(db)
-
-	redisConf, err := engine.WithRedis()
-	if nil != err {
-		blog.Errorf("get redis conf failed, err: %s", err.Error())
-		return err
-	}
-
-	cache, err := redis.NewFromConfig(redisConf)
-	if err != nil {
-		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
-	}
-	process.Service.SetCache(cache)
-
 	blog.Infof("enable auth center: %v", auth.EnableAuthorize())
 
 	var accountCryptor cryptor.Cryptor
@@ -118,7 +97,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	authorizer := iam.NewAuthorizer(engine.CoreAPI)
 	service.SetAuthorizer(authorizer)
 
-	process.Service.Logics = logics.NewLogics(service.Engine, db, cache, accountCryptor, authorizer)
+	mongoConf := mongoConfig.GetMongoConf()
+
+	process.Service.Logics = logics.NewLogics(service.Engine, accountCryptor, authorizer)
 
 	syncConf := cloudsync.SyncConf{
 		ZKClient:  service.Engine.ServiceManageClient().Client(),
