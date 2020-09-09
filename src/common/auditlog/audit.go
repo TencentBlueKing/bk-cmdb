@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 // audit provides common methods for all audit log utilities
@@ -126,7 +125,9 @@ func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 
 // getDefaultAppID get default businessID under designated supplier account.
 func (a *audit) getDefaultAppID(kit *rest.Kit) (int64, error) {
-	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
+	cond := mapstr.MapStr{
+		common.BKDefaultField: common.DefaultAppFlag,
+	}
 	fields := []string{common.BKAppIDField, common.BkSupplierAccount}
 
 	results, err := a.getInstByCond(kit, common.BKInnerObjIDApp, cond, fields)
