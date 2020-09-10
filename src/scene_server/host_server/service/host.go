@@ -222,9 +222,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		}
 
 		// to save audit.
-		var logContents []meta.AuditLog
+		logContents := make([]meta.AuditLog, len(logContentMap))
+		index := 0
 		for _, item := range logContentMap {
-			logContents = append(logContents, *item)
+			logContents[index] = *item
+			index++
 		}
 
 		if len(logContents) > 0 {
@@ -742,7 +744,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 	}
 
 	// for audit log.
-	var audit = auditlog.NewHostAudit(s.CoreAPI.CoreService())
+	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false
@@ -887,8 +889,8 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		var auditContexts = make([]meta.AuditLog, 0)
-		var audit = auditlog.NewHostAudit(s.CoreAPI.CoreService())
+		auditContexts := make([]meta.AuditLog, 0)
+		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
 		for _, update := range parameter.Update {
 			cond := mapstr.New()
@@ -1393,8 +1395,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	}
 
 	// audit interface of host audit log.
-	var audit = auditlog.NewHostAudit(s.CoreAPI.CoreService())
-	var auditContexts = make([]meta.AuditLog, 0)
+	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
+	auditContexts := make([]meta.AuditLog, 0)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false

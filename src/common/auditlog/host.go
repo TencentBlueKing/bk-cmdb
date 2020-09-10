@@ -106,9 +106,9 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostID int64) (int64, err
 }
 
 // getHostInstanceDetailByHostID get host data and hostIP by hostID.
-func (a *audit) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string, error) {
+func (h *hostAuditLog) getHostInstanceDetailByHostID(kit *rest.Kit, hostID int64) (map[string]interface{}, string, error) {
 	// get host details.
-	result, err := a.clientSet.Host().GetHostByID(kit.Ctx, kit.Header, hostID)
+	result, err := h.clientSet.Host().GetHostByID(kit.Ctx, kit.Header, hostID)
 	if err != nil {
 		blog.Errorf("get host instance detail failed, err: %v, hostID: %d, rid: %s", err, hostID, kit.Rid)
 		return nil, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
