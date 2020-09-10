@@ -70,13 +70,11 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 	}
 	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, common.BKInnerObjIDHost, hostQuery)
 	if nil != err {
-		blog.Errorf("[identifier] ReadInstance query host failed. error: %v, input: %+v,  rid:%s",
-			err, hostQuery, kit.Rid)
+		blog.Errorf("query host failed. error: %v, input: %+v,  rid:%s", err, hostQuery, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostRet.Result {
-		blog.ErrorJSON("[identifier] ReadInstance query host failed, input:%s, condition:%s, rid:%s", hostRet, kit,
-			hostQuery, kit.Rid)
+		blog.ErrorJSON("query host failed, input:%s, condition:%s, rid:%s", hostRet, kit, hostQuery, kit.Rid)
 		return nil, kit.CCError.New(hostRet.Code, hostRet.ErrMsg)
 	}
 
@@ -95,15 +93,19 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		hostIDs = append(hostIDs, hostID)
 	}
 
+	if len(hostIDs) == 0 {
+		return new(metadata.SearchHostIdentifierData), nil
+	}
+
 	queryHostIdentifier := &metadata.SearchHostIdentifierParam{HostIDs: hostIDs}
 	rsp, err := g.clientSet.CoreService().Host().FindIdentifier(context.Background(), kit.Header, queryHostIdentifier)
 	if nil != err {
-		blog.ErrorJSON("search identifier failed. error:%s, input:%s,  rid:%s", err.Error(), kit, kit.Rid)
+		blog.Errorf("search identifier failed. err: %v, ids: %v,  rid:%s", err, hostIDs, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.ErrorJSON("search identifier failed, reply: %s, input: %s, condition: %s, rid:%s", rsp, param,
+		blog.ErrorJSON("search identifier failed, reply: %s, ids: %s, condition: %s, rid: %s", rsp, hostIDs,
 			queryHostIdentifier, kit.Rid)
 		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
