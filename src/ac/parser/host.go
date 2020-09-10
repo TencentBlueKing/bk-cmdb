@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -13,7 +14,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/errors"
 
 	"github.com/tidwall/gjson"
 )
@@ -232,7 +232,7 @@ func (ps *parseStream) dynamicGrouping() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGroup,
+					Type:   meta.DynamicGrouping,
 					Action: meta.Create,
 				},
 			},
@@ -254,7 +254,7 @@ func (ps *parseStream) dynamicGrouping() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:         meta.DynamicGroup,
+					Type:         meta.DynamicGrouping,
 					Action:       meta.Update,
 					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
@@ -278,7 +278,7 @@ func (ps *parseStream) dynamicGrouping() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:         meta.DynamicGroup,
+					Type:         meta.DynamicGrouping,
 					Action:       meta.Delete,
 					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
@@ -304,7 +304,7 @@ func (ps *parseStream) dynamicGrouping() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGroup,
+					Type:   meta.DynamicGrouping,
 					Action: meta.FindMany,
 				},
 			},
@@ -352,7 +352,7 @@ func (ps *parseStream) dynamicGrouping() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGroup,
+					Type:   meta.DynamicGrouping,
 					Action: meta.Execute,
 					Name:   ps.RequestCtx.Elements[5],
 				},
