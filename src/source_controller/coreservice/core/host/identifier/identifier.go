@@ -44,7 +44,9 @@ type Identifier struct {
 }
 
 func NewIdentifier() *Identifier {
+	dbQuery := hostutil.NewDBExecQuery()
 	return &Identifier{
+		dbQuery:          dbQuery,
 		sets:             make(map[int64]metadata.SetInst),
 		modules:          make(map[int64]*metadata.ModuleInst),
 		bizs:             make(map[int64]metadata.BizInst),
