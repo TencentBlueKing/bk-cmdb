@@ -26,6 +26,7 @@ func (ps *parseStream) hostRelated() *parseStream {
 	ps.host().
 		hostTransfer().
 		userAPI().
+		dynamicGrouping().
 		userCustom().
 		hostFavorite().
 		hostSnapshot().
@@ -196,6 +197,162 @@ func (ps *parseStream) userAPI() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
+					Action: meta.Execute,
+					Name:   ps.RequestCtx.Elements[5],
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+var (
+	createDynamicGroupPattern = "/api/v3/dynamicgroup"
+	updateDynamicGroupRegexp  = regexp.MustCompile(`^/api/v3/dynamicgroup/[0-9]+/[^\s/]+/?$`)
+	deleteDynamicGroupRegexp  = regexp.MustCompile(`^/api/v3/dynamicgroup/[0-9]+/[^\s/]+/?$`)
+	getDynamicGroupRegexp     = regexp.MustCompile(`^/api/v3/dynamicgroup/[0-9]+/[^\s/]+/?$`)
+	searchDynamicGroupRegexp  = regexp.MustCompile(`^/api/v3/dynamicgroup/search/[0-9]+/?$`)
+	executeDynamicGroupRegexp = regexp.MustCompile(`^/api/v3/dynamicgroup/data/[0-9]+/[^\s/]+/?$`)
+)
+
+func (ps *parseStream) dynamicGrouping() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(createDynamicGroupPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.DynamicGroup,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateDynamicGroupRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("update dynamic group, but got invalid uri")
+			return ps
+		}
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("update dynamic group failed, err: %v", err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:         meta.DynamicGroup,
+					Action:       meta.Update,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
+				},
+			},
+		}
+		return ps
+
+	}
+
+	if ps.hitRegexp(deleteDynamicGroupRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("delete dynamic group, but got invalid uri")
+			return ps
+		}
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("update dynamic group failed, err: %v", err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:         meta.DynamicGroup,
+					Action:       meta.Delete,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
+				},
+			},
+		}
+		return ps
+
+	}
+
+	if ps.hitRegexp(searchDynamicGroupRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("search dynamic groups, but got invalid uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("search dynamic groups failed, err: %v", err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.DynamicGroup,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(getDynamicGroupRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("find dynamic group detail, but got invalid uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find dynamic group failed, err: %v", err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Find,
+					InstanceIDEx: ps.RequestCtx.Elements[5],
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(executeDynamicGroupRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("execute dynamic group, but got invalid uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("execute dynamic group failed, err: %v", err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.DynamicGroup,
 					Action: meta.Execute,
 					Name:   ps.RequestCtx.Elements[5],
 				},

@@ -108,11 +108,12 @@ type ResponseDataMapStr struct {
 }
 
 type QueryInput struct {
-	Condition map[string]interface{} `json:"condition"`
-	Fields    string                 `json:"fields,omitempty"`
-	Start     int                    `json:"start,omitempty"`
-	Limit     int                    `json:"limit,omitempty"`
-	Sort      string                 `json:"sort,omitempty"`
+	Condition      map[string]interface{} `json:"condition"`
+	Fields         string                 `json:"fields,omitempty"`
+	Start          int                    `json:"start,omitempty"`
+	Limit          int                    `json:"limit,omitempty"`
+	Sort           string                 `json:"sort,omitempty"`
+	DisableCounter bool                   `json:"disable_counter,omitempty"`
 }
 
 // Validate validates the input param

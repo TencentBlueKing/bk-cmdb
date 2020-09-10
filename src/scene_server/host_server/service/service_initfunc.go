@@ -20,6 +20,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initSpecial(web)
 	s.initTransfer(web)
 	s.initUserapi(web)
+	s.initDynamicGroup(web)
 	s.initUsercustom(web)
 
 }
@@ -76,7 +77,6 @@ func (s *Service) initFindhost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/app/{bk_biz_id}/list_hosts_topo", Handler: s.ListBizHostsTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/count_by_topo_node/bk_biz_id/{bk_biz_id}", Handler: s.CountTopoNodeHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_topo/biz/{bk_biz_id}", Handler: s.FindHostsByTopo})
-	
 
 	utility.AddToRestfulWebService(web)
 
@@ -215,6 +215,58 @@ func (s *Service) initUserapi(web *restful.WebService) {
 
 	utility.AddToRestfulWebService(web)
 
+}
+
+// initDynamicGroup initializes dynamic grouping HTTP handlers.
+func (s *Service) initDynamicGroup(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	// create new dynamic group.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/dynamicgroup",
+		Handler: s.CreateDynamicGroup,
+	})
+
+	// update dynamic group.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPut,
+		Path:    "/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.UpdateDynamicGroup,
+	})
+
+	// query target dynamic group.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodGet,
+		Path:    "/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.GetDynamicGroup,
+	})
+
+	// delete target dynamic group.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodDelete,
+		Path:    "/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.DeleteDynamicGroup,
+	})
+
+	// search(list) dynamic groups.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/dynamicgroup/search/{bk_biz_id}",
+		Handler: s.SearchDynamicGroup,
+	})
+
+	// execute dynamic group and get target resources.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodGet,
+		Path:    "/dynamicgroup/data/{bk_biz_id}/{id}/{start}/{limit}",
+		Handler: s.ExecuteDynamicGroup,
+	})
+
+	utility.AddToRestfulWebService(web)
 }
 
 func (s *Service) initUsercustom(web *restful.WebService) {

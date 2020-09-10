@@ -166,6 +166,7 @@ const (
 	// Set                       ResourceTypeID = "set"
 	// Module                    ResourceTypeID = "module"
 	BizCustomQuery            TypeID = "biz_custom_query"
+	BizDynamicGroup           TypeID = "biz_dynamic_group"
 	BizTopology               TypeID = "biz_topology"
 	BizCustomField            TypeID = "biz_custom_field"
 	BizProcessServiceTemplate TypeID = "biz_process_service_template"

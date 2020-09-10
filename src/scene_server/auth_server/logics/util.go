@@ -48,6 +48,8 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameBaseApp
 	case iam.BizCustomQuery:
 		return common.BKTableNameUserAPI
+	case iam.BizDynamicGroup:
+		return common.BKTableNameDynamicGroup
 	case iam.BizProcessServiceTemplate:
 		return common.BKTableNameServiceTemplate
 	case iam.BizProcessServiceCategory:

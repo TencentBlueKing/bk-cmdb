@@ -49,6 +49,7 @@ const (
 	HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping" // 动态分组
+	DynamicGroup             ResourceType = "dynamicGroup"    // 新动态分组
 	EventPushing             ResourceType = "eventPushing"
 	EventWatch               ResourceType = "eventWatch"
 	CloudAreaInstance        ResourceType = "plat"

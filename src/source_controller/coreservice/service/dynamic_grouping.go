@@ -1,0 +1,264 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package service
+
+import (
+	"strconv"
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+)
+
+// CreateDynamicGroup creates a new dynamic group object.
+func (s *coreService) CreateDynamicGroup(ctx *rest.Contexts) {
+	newDynamicGroup := meta.DynamicGroup{}
+	if err := ctx.DecodeInto(&newDynamicGroup); err != nil {
+		blog.Errorf("create dynamic group failed, decode request body err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+		return
+	}
+
+	filter := common.KvMap{common.BKFieldName: newDynamicGroup.Name, common.BKAppIDField: newDynamicGroup.AppID}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+
+	rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(filter).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("create dynamic group failed, query count err: %+v, filter: %v, rid: %s", err, filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if rowCount != 0 {
+		blog.Errorf("create dynamic group failed, dynamic group[%s] already exist, rid: %s", newDynamicGroup.Name, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, "name"))
+		return
+	}
+
+	// gen new dynamic group ID.
+	newDynamicGroupID, err := meta.NewDynamicGroupID()
+	if err != nil {
+		blog.Errorf("create dynamic group failed, gen new ID, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCSystemUnknownError))
+		return
+	}
+
+	newDynamicGroup.ID = newDynamicGroupID
+	newDynamicGroup.ModifyUser = util.GetUser(ctx.Kit.Header)
+	newDynamicGroup.CreateTime = time.Now().UTC()
+	newDynamicGroup.UpdateTime = newDynamicGroup.CreateTime
+
+	err = s.db.Table(common.BKTableNameDynamicGroup).Insert(ctx.Kit.Ctx, newDynamicGroup)
+	if err != nil {
+		blog.Errorf("create dynamic group failed, group: %+v err: %+v, rid: %s", newDynamicGroup, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		return
+	}
+	ctx.RespEntity(meta.ID{ID: newDynamicGroupID})
+}
+
+// UpdateDynamicGroup updates target dynamic group.
+func (s *coreService) UpdateDynamicGroup(ctx *rest.Contexts) {
+	req := ctx.Request
+
+	// application ID.
+	bizID := req.PathParameter("bk_biz_id")
+
+	// target dynamic group ID.
+	targetID := req.PathParameter("id")
+
+	bizIDUint64, err := strconv.ParseInt(bizID, 10, 64)
+	if err != nil {
+		blog.Error("update dynamic group failed, invalid bizID from path, bizID: %s, rid: %s", bizID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	data := new(meta.DynamicGroup)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	filter := common.KvMap{common.BKAppIDField: bizIDUint64, common.BKFieldID: targetID}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+
+	rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(filter).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("update dynamic group failed, query count er: %+v, ctx: %v, rid: %s", err, ctx, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if rowCount != 1 {
+		blog.Errorf("update dynamic group failed, not permissions or not exist, ctx: %v, rid: %s", ctx, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
+	if len(data.Name) != 0 {
+		dupParams := common.KvMap{
+			common.BKAppIDField: bizIDUint64,
+			common.BKFieldName:  data.Name,
+			common.BKFieldID:    common.KvMap{common.BKDBNE: targetID},
+		}
+		dupParams = util.SetModOwner(dupParams, ctx.Kit.SupplierAccount)
+
+		rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(dupParams).Count(ctx.Kit.Ctx)
+		if err != nil {
+			blog.Errorf("update dynamic group failed, validate name duplication, err: %+v, ctx: %v, rid: %s", err, dupParams, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+			return
+		}
+
+		if 0 < rowCount {
+			blog.Infof("update dynamic group failed, name duplicated , ctx: %v, rid: %s", dupParams, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, ""))
+			return
+		}
+	}
+
+	data.AppID = bizIDUint64
+	data.ModifyUser = util.GetUser(ctx.Kit.Header)
+	data.UpdateTime = time.Now().UTC()
+
+	err = s.db.Table(common.BKTableNameDynamicGroup).Update(ctx.Kit.Ctx, filter, data)
+	if err != nil {
+		blog.Errorf("update dynamic group failed, err: %+v, ctx: %v, rid: %s", err, ctx, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// DeleteDynamicGroup deletes target dynamic group.
+func (s *coreService) DeleteDynamicGroup(ctx *rest.Contexts) {
+	req := ctx.Request
+
+	// application ID.
+	bizID := req.PathParameter("bk_biz_id")
+
+	// target dynamic group ID.
+	targetID := req.PathParameter("id")
+
+	bizIDUint64, err := strconv.ParseInt(bizID, 10, 64)
+	if err != nil {
+		blog.Error("delete dynamic group failed, invalid bizID from path, bizID: %s, rid: %s", bizID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	filter := common.KvMap{common.BKFieldID: targetID, common.BKAppIDField: bizIDUint64}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+
+	rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(filter).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("delete dynamic group failed, err: %+v, ctx: %v, rid: %s", err, filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if rowCount != 1 {
+		blog.Errorf("delete dynamic group failed, not permissions or not exists, ctx: %v, rid: %s", filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
+	err = s.db.Table(common.BKTableNameDynamicGroup).Delete(ctx.Kit.Ctx, filter)
+	if err != nil {
+		blog.Errorf("delete dynamic group failed, err: %+v, ctx: %v, rid: %s", err, filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// GetDynamicGroup returns target dynamic group detail.
+func (s *coreService) GetDynamicGroup(ctx *rest.Contexts) {
+	req := ctx.Request
+
+	// application ID.
+	bizID := req.PathParameter("bk_biz_id")
+
+	//  target dynamic group ID.
+	targetID := req.PathParameter("id")
+
+	bizIDUint64, err := strconv.ParseInt(bizID, 10, 64)
+	if err != nil {
+		blog.Errorf("get dynamic group failed, invalid bizID from path, bizID: %s, rid: %s", bizID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	filter := common.KvMap{common.BKFieldID: targetID, common.BKAppIDField: bizIDUint64}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+
+	result := meta.DynamicGroup{}
+	err = s.db.Table(common.BKTableNameDynamicGroup).Find(filter).One(ctx.Kit.Ctx, result)
+	if err != nil && !s.db.IsNotFoundError(err) {
+		blog.Errorf("get dynamic group failed, ID: %s, err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	ctx.RespEntity(result)
+}
+
+// SearchDynamicGroup returns dynamic group list with target conditions.
+func (s *coreService) SearchDynamicGroup(ctx *rest.Contexts) {
+	input := new(meta.QueryCondition)
+	if err := ctx.DecodeInto(input); err != nil {
+		blog.Errorf("search dynamic groups failed, decode request body err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+		return
+	}
+
+	var condition map[string]interface{}
+	if input.Condition != nil {
+		condition = input.Condition
+	} else {
+		condition = make(map[string]interface{})
+	}
+	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
+
+	start, limit, sort := input.Page.Start, input.Page.Limit, input.Page.Sort
+	if len(sort) == 0 {
+		sort = common.CreateTimeField
+	}
+
+	var finalCount uint64
+
+	if !input.DisableCounter {
+		count, err := s.db.Table(common.BKTableNameDynamicGroup).Find(condition).Count(ctx.Kit.Ctx)
+		if err != nil {
+			blog.Errorf("search dynamic groups failed, can't open counter, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+			return
+		}
+		finalCount = count
+	}
+
+	result := []meta.DynamicGroup{}
+
+	if err := s.db.Table(common.BKTableNameDynamicGroup).Find(condition).Fields(input.Fields...).Sort(sort).
+		Start(uint64(start)).Limit(uint64(limit)).All(ctx.Kit.Ctx, &result); err != nil {
+
+		blog.Errorf("search dynamic groups failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	ctx.RespEntity(meta.DynamicGroupBatch{
+		Count: finalCount,
+		Info:  result,
+	})
+}

@@ -134,6 +134,12 @@ type HostCommonSearch struct {
 	Pattern   string            `json:"pattern,omitempty"`
 }
 
+type SetCommonSearch struct {
+	AppID     int64             `json:"bk_biz_id,omitempty"`
+	Condition []SearchCondition `json:"condition"`
+	Page      BasePage          `json:"page"`
+}
+
 type HostModuleFind struct {
 	ModuleIDS []int64  `json:"bk_module_ids"`
 	AppID     int64    `json:"bk_biz_id"`

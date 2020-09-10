@@ -25,22 +25,23 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-// get the object attributes
-func (lgc *Logics) GetObjectAttributes(ctx context.Context, ownerID, objID string, page meta.BasePage) ([]meta.Attribute, errors.CCError) {
-	opt := hutil.NewOperation().WithObjID(objID).MapStr()
+// SearchObjectAttributes returns attributes of target object.
+func (lgc *Logics) SearchObjectAttributes(ctx context.Context, bizID int64, objectID string) ([]meta.Attribute, error) {
+	opt := hutil.NewOperation().WithAppID(bizID).WithObjID(objectID).MapStr()
 	query := &meta.QueryCondition{
 		Condition: opt,
 	}
-	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(ctx, lgc.header, objID, query)
+
+	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(ctx, lgc.header, objectID, query)
 	if err != nil {
-		blog.Errorf("GetObjectAttributes http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
+		blog.Errorf("search object attributes failed, err: %+v, objID: %s, input: %+v, rid: %s", err, objectID, query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetObjectAttributes http response error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, objID, query, lgc.rid)
+		blog.Errorf("search object attributes failed, errcode: %d, errmsg: %s, objID: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, objectID, query, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
-
 	return result.Data.Info, nil
 }
 

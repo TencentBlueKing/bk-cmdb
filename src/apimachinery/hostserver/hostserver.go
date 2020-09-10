@@ -59,12 +59,22 @@ type HostServerClientInterface interface {
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+
 	AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error)
 	GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.QueryInput) (resp *metadata.Response, err error)
 	GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.UserCustomQueryDetailResult, err error)
 	GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error)
+
+	// dynamic group interfaces.
+	CreateDynamicGroup(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.IDResult, err error)
+	UpdateDynamicGroup(ctx context.Context, bizID, id string, header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error)
+	DeleteDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (resp *metadata.BaseResp, err error)
+	GetDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (resp *metadata.GetDynamicGroupResult, err error)
+	SearchDynamicGroup(ctx context.Context, bizID string, header http.Header, data *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error)
+	ExecuteDynamicGroup(ctx context.Context, bizID, id, start, limit string, header http.Header) (resp *metadata.Response, err error)
+
 	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error)
 	ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error)
 

@@ -57,7 +57,43 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 	return setIDArr, nil
 }
 
+// ExecuteSetDynamicGroup searches sets base on conditions without filling topology informations.
+func (lgc *Logics) ExecuteSetDynamicGroup(ctx context.Context, setCommonSearch *metadata.SetCommonSearch, disableCounter bool) (*metadata.InstDataInfo, errors.CCError) {
+	// search parameters with condition.
+	queryParams := &metadata.QueryCondition{Page: setCommonSearch.Page, Condition: mapstr.New(), DisableCounter: disableCounter}
+
+	// parse set search conditions.
+	for _, searchCondition := range setCommonSearch.Condition {
+		// add query fields of sets.
+		queryParams.Fields = append(queryParams.Fields, searchCondition.Fields...)
+
+		condc := make(map[string]interface{})
+		if err := parse.ParseCommonParams(searchCondition.Condition, condc); err != nil {
+			blog.Errorf("search set failed, can't parse condition, err: %+v, cond: %+v, rid: %s", err, searchCondition.Condition, lgc.rid)
+			return nil, lgc.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		// add field conditions to query params.
+		for field, value := range condc {
+			queryParams.Condition.Set(field, value)
+		}
+	}
+
+	// search set with conditions.
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, queryParams)
+	if err != nil {
+		blog.Errorf("search set failed, err: %+v, input: %+v, rid: %s", err, queryParams, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("search set failed, errcode: %d, errmsg: %s, input: %+v, rid: %s", result.Code, result.ErrMsg, queryParams, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+	}
+	return &result.Data, nil
+}
+
 func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, errors.CCError) {
+
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
