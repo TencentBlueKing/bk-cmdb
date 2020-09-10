@@ -127,7 +127,8 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 	hostIdentifierArr, err := s.core.HostOperation().Identifier(ctx.Kit, inputData)
 
 	if err != nil {
-		blog.InfoJSON("Identifier host identifier handle error. err:%s, input:%s, rid:%s", err.Error(), inputData, ctx.Kit.Rid)
+		blog.InfoJSON("Identifier host identifier handle error. err: %s, input: %s, rid:%s", err.Error(), inputData,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
