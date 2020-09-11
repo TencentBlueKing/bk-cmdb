@@ -103,7 +103,7 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
         } else if (['organization'].includes(propertyType)) {
             values[propertyId] = inst[propertyId] || null
         } else if (['table'].includes(propertyType)) {
-            values[propertyId] = inst[propertyId] || []
+            values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, autoSelect))
         } else {
             values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
         }
@@ -113,11 +113,18 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
 
 export function formatValues (values, properties) {
     const formatted = { ...values }
-    const convertProperties = properties.filter(property => ['enum', 'int', 'float', 'list'].includes(property.bk_property_type))
+    const defaultValueMap = {
+        enum: null,
+        int: null,
+        float: null,
+        list: null,
+        bool: false
+    }
+    const convertProperties = properties.filter(property => Object.keys(defaultValueMap).includes(property.bk_property_type))
     convertProperties.forEach(property => {
         const key = property.bk_property_id
-        if (formatted.hasOwnProperty(key) && ['', undefined].includes(formatted[key])) {
-            formatted[key] = null
+        if (formatted.hasOwnProperty(key) && ['', undefined, null].includes(formatted[key])) {
+            formatted[key] = defaultValueMap[property.bk_property_type]
         }
     })
     return formatted

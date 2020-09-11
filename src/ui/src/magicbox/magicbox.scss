@@ -107,6 +107,7 @@
 }
 
 .bk-big-tree {
+    position: relative;
     .bk-big-tree-node:not(.has-link-line) {
         height: 36px;
         line-height: 36px;
