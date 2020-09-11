@@ -27,9 +27,19 @@ import (
 
 // SearchObjectAttributes returns attributes of target object.
 func (lgc *Logics) SearchObjectAttributes(ctx context.Context, bizID int64, objectID string) ([]meta.Attribute, error) {
-	opt := hutil.NewOperation().WithAppID(bizID).WithObjID(objectID).MapStr()
 	query := &meta.QueryCondition{
-		Condition: opt,
+		Condition: map[string]interface{}{
+			common.BKDBOR: []map[string]interface{}{
+				{
+					common.BKObjIDField: objectID,
+					common.BKAppIDField: 0,
+				},
+				{
+					common.BKObjIDField: objectID,
+					common.BKAppIDField: bizID,
+				},
+			},
+		},
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(ctx, lgc.header, objectID, query)

@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/json"
 	meta "configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/host_server/logics"
@@ -125,10 +126,20 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	// check dynamic group conditions.
+	// final updates.
+	updates := make(map[string]interface{})
+
 	if info, isExist := params["info"]; isExist {
-		dynamicGroupInfo, ok := info.(meta.DynamicGroupInfo)
-		if !ok {
+		// update dynamic group info.
+		row, err := json.Marshal(info)
+		if err != nil {
+			blog.Errorf("update dynamic group failed, invalid info, info: %+v, rid: %s", info, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "info"))
+			return
+		}
+
+		dynamicGroupInfo := &meta.DynamicGroupInfo{}
+		if err = json.Unmarshal(row, dynamicGroupInfo); err != nil {
 			blog.Errorf("update dynamic group failed, invalid info, info: %+v, rid: %s", info, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "info"))
 			return
@@ -136,14 +147,14 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 
 		objectIDParam, isObjIDExist := params["bk_obj_id"]
 		if !isObjIDExist {
-			blog.Errorf("update dynamic group failed, bk_biz_id is required in update info condition action, input: %+v, rid: %s",
+			blog.Errorf("update dynamic group failed, bk_obj_id is required in update info condition action, input: %+v, rid: %s",
 				params, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id"))
 			return
 		}
 		objectID, ok := objectIDParam.(string)
 		if !ok {
-			blog.Errorf("update dynamic group failed, invalid bk_biz_id type, objectID: %+v, rid: %s", objectIDParam, ctx.Kit.Rid)
+			blog.Errorf("update dynamic group failed, invalid bk_obj_id type, objectID: %+v, rid: %s", objectIDParam, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id"))
 			return
 		}
@@ -159,8 +170,11 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error()))
 			return
 		}
+		updates[common.BKObjIDField] = objectID
+		updates["info"] = dynamicGroupInfo
+
 	} else {
-		_, isExist := params["bk_obj_id"]
+		_, isExist := params[common.BKObjIDField]
 		if isExist {
 			blog.Errorf("update dynamic group failed, info.condition is required in update bk_obj_id action, input: %+v, rid: %s",
 				params, ctx.Kit.Rid)
@@ -168,7 +182,7 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 			return
 		}
 
-		_, isExist = params["name"]
+		_, isExist = params[common.BKFieldName]
 		if !isExist {
 			blog.Errorf("update dynamic group failed, empty update content, bk_biz_id/info/name, input: %+v, rid: %s",
 				params, ctx.Kit.Rid)
@@ -177,9 +191,14 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 		}
 	}
 
+	// update name.
+	if name, isExist := params[common.BKFieldName]; isExist {
+		updates[common.BKFieldName] = name
+	}
+
 	// update base on auto run txn with func.
 	autoRunTxnFunc := func() error {
-		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header, params)
+		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header, updates)
 		if err != nil {
 			blog.Errorf("update dynamic group failed, err: %+v, biz: %s, input: %+v, rid: %s",
 				err, bizID, params, ctx.Kit.Rid)
@@ -294,12 +313,12 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 	}
 	if input.Page.Start < 0 {
 		blog.Errorf("search dynamic groups failed, invalid page start param, input: %+v, rid: %s", input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "start"))
 		return
 	}
 	if input.Page.IsIllegal() {
 		blog.Errorf("search dynamic groups failed, invalid page limit param, input: %+v, rid: %s", input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "limit"))
 		return
 	}
 

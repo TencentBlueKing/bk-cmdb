@@ -33,8 +33,6 @@ func (s *coreService) CreateDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	filter := common.KvMap{common.BKFieldName: newDynamicGroup.Name, common.BKAppIDField: newDynamicGroup.AppID}
-	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
-
 	rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("create dynamic group failed, query count err: %+v, filter: %v, rid: %s", err, filter, ctx.Kit.Rid)
@@ -86,53 +84,16 @@ func (s *coreService) UpdateDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	data := new(meta.DynamicGroup)
-	if err := ctx.DecodeInto(data); err != nil {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
+	data["modify_user"] = util.GetUser(ctx.Kit.Header)
+	data[common.LastTimeField] = time.Now().UTC()
+
 	filter := common.KvMap{common.BKAppIDField: bizIDUint64, common.BKFieldID: targetID}
-	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
-
-	rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(filter).Count(ctx.Kit.Ctx)
-	if err != nil {
-		blog.Errorf("update dynamic group failed, query count er: %+v, ctx: %v, rid: %s", err, ctx, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
-		return
-	}
-	if rowCount != 1 {
-		blog.Errorf("update dynamic group failed, not permissions or not exist, ctx: %v, rid: %s", ctx, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-		return
-	}
-
-	if len(data.Name) != 0 {
-		dupParams := common.KvMap{
-			common.BKAppIDField: bizIDUint64,
-			common.BKFieldName:  data.Name,
-			common.BKFieldID:    common.KvMap{common.BKDBNE: targetID},
-		}
-		dupParams = util.SetModOwner(dupParams, ctx.Kit.SupplierAccount)
-
-		rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(dupParams).Count(ctx.Kit.Ctx)
-		if err != nil {
-			blog.Errorf("update dynamic group failed, validate name duplication, err: %+v, ctx: %v, rid: %s", err, dupParams, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
-			return
-		}
-
-		if 0 < rowCount {
-			blog.Infof("update dynamic group failed, name duplicated , ctx: %v, rid: %s", dupParams, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, ""))
-			return
-		}
-	}
-
-	data.AppID = bizIDUint64
-	data.ModifyUser = util.GetUser(ctx.Kit.Header)
-	data.UpdateTime = time.Now().UTC()
-
 	err = s.db.Table(common.BKTableNameDynamicGroup).Update(ctx.Kit.Ctx, filter, data)
 	if err != nil {
 		blog.Errorf("update dynamic group failed, err: %+v, ctx: %v, rid: %s", err, ctx, ctx.Kit.Rid)
@@ -160,8 +121,6 @@ func (s *coreService) DeleteDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	filter := common.KvMap{common.BKFieldID: targetID, common.BKAppIDField: bizIDUint64}
-	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
-
 	rowCount, err := s.db.Table(common.BKTableNameDynamicGroup).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("delete dynamic group failed, err: %+v, ctx: %v, rid: %s", err, filter, ctx.Kit.Rid)
@@ -201,13 +160,16 @@ func (s *coreService) GetDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	filter := common.KvMap{common.BKFieldID: targetID, common.BKAppIDField: bizIDUint64}
-	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 
-	result := meta.DynamicGroup{}
+	result := &meta.DynamicGroup{}
 	err = s.db.Table(common.BKTableNameDynamicGroup).Find(filter).One(ctx.Kit.Ctx, result)
 	if err != nil && !s.db.IsNotFoundError(err) {
 		blog.Errorf("get dynamic group failed, ID: %s, err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if len(result.Name) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommNotFound))
 		return
 	}
 	ctx.RespEntity(result)
@@ -228,7 +190,6 @@ func (s *coreService) SearchDynamicGroup(ctx *rest.Contexts) {
 	} else {
 		condition = make(map[string]interface{})
 	}
-	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 
 	start, limit, sort := input.Page.Start, input.Page.Limit, input.Page.Sort
 	if len(sort) == 0 {

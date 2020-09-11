@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 
 	"github.com/google/uuid"
 )
@@ -84,7 +85,6 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 		return fmt.Errorf("not support operator, %s", c.Operator)
 	}
 
-	// propertyType, isSupport := attributeMap[c.Field]
 	_, isSupport = attributeMap[c.Field]
 	if !isSupport {
 		return fmt.Errorf("not support condition filed, %+v", c.Field)
@@ -115,6 +115,7 @@ func (c *DynamicGroupInfoCondition) Validate(validatefunc Validatefunc) error {
 	for _, attribute := range attributes {
 		attributeMap[attribute.PropertyID] = attribute.PropertyType
 	}
+	blog.Infof("validate info conditions, object[%s] attributes[%+v]", c.ObjID, attributeMap)
 
 	for _, cond := range c.Condition {
 		if err := cond.Validate(attributeMap); err != nil {
@@ -192,9 +193,6 @@ func (g *DynamicGroup) Validate(validatefunc Validatefunc) error {
 	// check object id.
 	if len(g.ObjID) == 0 {
 		return errors.New("empty bk_obj_id")
-	}
-	if g.ObjID != common.BKInnerObjIDHost && g.ObjID != common.BKInnerObjIDSet {
-		return fmt.Errorf("not support bk_obj_id, only host/set")
 	}
 
 	// check conditions format.
