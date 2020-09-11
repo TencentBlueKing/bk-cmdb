@@ -348,10 +348,11 @@ func cloneProcBindInfoArr(procBindInfoArr []ProcBindInfo) (newData []ProcBindInf
 
 		newData[idx] = ProcBindInfo{
 			Std: &stdProcBindInfo{
-				IP:       bindInfo.Std.IP,
-				Port:     bindInfo.Std.Port,
-				Protocol: bindInfo.Std.Protocol,
-				Enable:   bindInfo.Std.Enable,
+				IP:            bindInfo.Std.IP,
+				Port:          bindInfo.Std.Port,
+				Protocol:      bindInfo.Std.Protocol,
+				Enable:        bindInfo.Std.Enable,
+				TemplateRowID: bindInfo.Std.TemplateRowID,
 			},
 			extra: extra,
 		}
