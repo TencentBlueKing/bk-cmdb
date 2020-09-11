@@ -39,7 +39,13 @@ func New() core.AuditOperation {
 func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
 	logRows := make([]metadata.AuditLog, 0)
 
-	for _, log := range logs {
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, common.BKTableNameAuditLog, len(logs))
+	if err != nil {
+		blog.Errorf("get next audit log id failed, err: %s", err.Error())
+		return err
+	}
+
+	for index, log := range logs {
 		if log.OperationDetail == nil {
 			continue
 		}
@@ -50,13 +56,7 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 		log.SupplierAccount = kit.SupplierAccount
 		log.User = kit.User
 		log.OperationTime = metadata.Now()
-
-		id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameAuditLog)
-		if err != nil {
-			blog.Errorf("get next audit log id failed, err: %s", err.Error())
-			return err
-		}
-		log.ID = int64(id)
+		log.ID = int64(ids[index])
 
 		logRows = append(logRows, log)
 	}
@@ -101,7 +101,7 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryConditi
 	err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(condition).Sort(param.Page.Sort).Fields(param.
 		Fields...).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(kit.Ctx, &rows)
 	if nil != err {
-			
+
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, err
 	}
