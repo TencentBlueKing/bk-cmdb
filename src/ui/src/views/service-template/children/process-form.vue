@@ -211,31 +211,17 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                const inst = {}
-                if (this.type === 'update') {
-                    Object.keys(this.inst).forEach(key => {
-                        const type = typeof this.inst[key]
-                        if (type === 'object') {
-                            inst[key] = this.inst[key] ? this.inst[key]['value'] : this.inst[key]
-                        } else {
-                            inst[key] = this.inst[key]
-                        }
-                    })
-                }
-                const formValues = this.$tools.getInstFormValues(this.properties, inst, this.type === 'create')
+                const restValues = {}
+                const formValues = this.$tools.getInstFormValues(this.properties, {}, this.type === 'create')
                 Object.keys(formValues).forEach(key => {
-                    this.$set(this.values, key, {
-                        value: formValues[key],
-                        as_default_value: this.type === 'update'
-                            ? this.inst[key] ? this.inst[key]['as_default_value'] : false
-                            : ['bk_func_name', 'bk_process_name', 'bind_info'].includes(key)
-                    })
+                    if (!this.inst.hasOwnProperty(key)) {
+                        restValues[key] = {
+                            as_default_value: ['bk_func_name', 'bk_process_name', 'bind_info'].includes(key),
+                            value: formValues[key]
+                        }
+                    }
                 })
-                if (this.isCreatedService && this.type === 'update') {
-                    this.values['sign_id'] = inst['sign_id']
-                } else if (this.type === 'update') {
-                    this.values['process_id'] = inst['process_id']
-                }
+                this.values = Object.assign({}, this.values, restValues, this.inst)
                 const timer = setTimeout(() => {
                     this.refrenceValues = this.$tools.clone(this.values)
                     clearTimeout(timer)
