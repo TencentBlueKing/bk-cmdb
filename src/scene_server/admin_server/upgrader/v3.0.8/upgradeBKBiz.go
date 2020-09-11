@@ -240,6 +240,13 @@ func addBKProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID 
 
 //addSetInBKApp add set in bk app
 func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID uint64) error {
+	auditIDs, err := db.NextSequences(ctx, common.BKTableNameAuditLog, len(setModuleKv))
+	if err != nil {
+		blog.Errorf("get next audit log ids failed, err: %s", err.Error())
+		return err
+	}
+	auditIndex := 0
+
 	for setName, moduleArr := range setModuleKv {
 		setModelData := map[string]interface{}{}
 		setModelData[common.BKSetNameField] = setName
@@ -258,11 +265,8 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 		}
 
 		// add audit log
-		id, err := db.NextSequence(ctx, common.BKTableNameAuditLog)
-		if err != nil {
-			blog.Errorf("get next audit log id failed, err: %s", err.Error())
-			return err
-		}
+		id := auditIDs[auditIndex]
+		auditIndex++
 
 		action := metadata.AuditCreate
 		logDetail := &metadata.BasicContent{
@@ -311,6 +315,13 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 
 // addModuleInSet add module in set
 func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, moduleArr map[string]string, setID, bizID uint64) error {
+	auditIDs, err := db.NextSequences(ctx, common.BKTableNameAuditLog, len(moduleArr))
+	if err != nil {
+		blog.Errorf("get next audit log ids failed, err: %s", err.Error())
+		return err
+	}
+	auditIndex := 0
+
 	for moduleName, processNameStr := range moduleArr {
 		moduleModelData := map[string]interface{}{}
 		moduleModelData[common.BKModuleNameField] = moduleName
@@ -329,11 +340,8 @@ func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, modu
 		}
 
 		// add audit log
-		id, err := db.NextSequence(ctx, common.BKTableNameAuditLog)
-		if err != nil {
-			blog.Errorf("get next audit log id failed, err: %s", err.Error())
-			return err
-		}
+		id := auditIDs[auditIndex]
+		auditIndex++
 
 		action := metadata.AuditCreate
 		logDetail := &metadata.BasicContent{

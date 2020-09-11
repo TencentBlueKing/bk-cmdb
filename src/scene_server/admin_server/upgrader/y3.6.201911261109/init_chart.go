@@ -25,15 +25,14 @@ import (
 
 func initInnerChart(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	idArr := make([]uint64, 0)
-	for _, chart := range metadata.InnerChartsArr {
-		configID, err := db.NextSequence(ctx, common.BKTableNameChartConfig)
-		if err != nil {
-			return fmt.Errorf("NextSequence failed, tableName: %s, err: %+v", common.BKTableNameChartConfig, err)
-		}
+	idArr, err := db.NextSequences(ctx, common.BKTableNameChartConfig, len(metadata.InnerChartsArr))
+	if err != nil {
+		return fmt.Errorf("get next sequences failed, tableName: %s, err: %+v", common.BKTableNameChartConfig, err)
+	}
 
-		idArr = append(idArr, configID)
+	for index, chart := range metadata.InnerChartsArr {
 		innerChart := metadata.InnerChartsMap[chart]
-		innerChart.ConfigID = configID
+		innerChart.ConfigID = idArr[index]
 		innerChart.CreateTime.Time = time.Now()
 		innerChart.OwnerID = conf.OwnerID
 		if err := db.Table(common.BKTableNameChartConfig).Insert(ctx, innerChart); err != nil {
