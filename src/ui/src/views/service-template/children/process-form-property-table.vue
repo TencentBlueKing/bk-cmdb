@@ -54,7 +54,7 @@
                     return (this.value || []).map(row => {
                         const rowValue = {}
                         Object.keys(row).forEach(key => {
-                            if (key === 'row_id') {
+                            if (['process_id', 'row_id'].includes(key)) {
                                 rowValue[key] = row[key]
                             } else {
                                 rowValue[key] = row[key].value
@@ -74,7 +74,11 @@
                     return (this.value || []).map(row => {
                         const rowState = {}
                         Object.keys(row).forEach(key => {
-                            rowState[key] = row[key].as_default_value
+                            if (['process_id', 'row_id'].includes(key)) {
+                                rowState[key] = row[key]
+                            } else {
+                                rowState[key] = row[key].as_default_value
+                            }
                         })
                         return rowState
                     })
@@ -115,14 +119,15 @@
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             getRules (rowProps, property) {
+                const isLocked = this.getLockState(rowProps)
+                if (!isLocked) {
+                    return {}
+                }
                 const rules = this.$tools.getValidateRules(property)
+                rules.required = true
                 // IP字段在模板上被构造为枚举，无法通过ip的正则，此处忽略IP正则
                 if (property.bk_property_id === 'ip') {
                     delete rules.regex
-                }
-                const isLocked = this.getLockState(rowProps)
-                if (isLocked) {
-                    rules.required = true
                 }
                 return rules
             },
@@ -141,7 +146,7 @@
                     // 获取新value中每行对应的老数据的index，用于正确的获取checkbox勾选状态
                     const index = isAddOrDelete ? this.localValue.indexOf(row) : rowIndex
                     Object.keys(row).forEach(key => {
-                        if (key === 'row_id') {
+                        if (['process_id', 'row_id'].includes(key)) {
                             templateRowValue[key] = row[key]
                         } else {
                             templateRowValue[key] = {
@@ -158,14 +163,18 @@
                 return states.map((row, rowIndex) => {
                     const templateRowValue = {}
                     Object.keys(row).forEach(key => {
-                        const stateChanged = row[key] !== this.lockStates[rowIndex][key]
-                        let value = this.localValue[rowIndex][key]
-                        if (stateChanged) {
-                            value = row[key] ? this.defaultRowValue.locked[key] : this.defaultRowValue.unlocked[key]
-                        }
-                        templateRowValue[key] = {
-                            value: value,
-                            as_default_value: row[key]
+                        if (['process_id', 'row_id'].includes(key)) {
+                            templateRowValue[key] = row[key]
+                        } else {
+                            const stateChanged = row[key] !== this.lockStates[rowIndex][key]
+                            let value = this.localValue[rowIndex][key]
+                            if (stateChanged) {
+                                value = row[key] ? this.defaultRowValue.locked[key] : this.defaultRowValue.unlocked[key]
+                            }
+                            templateRowValue[key] = {
+                                value: value,
+                                as_default_value: row[key]
+                            }
                         }
                     })
                     return templateRowValue

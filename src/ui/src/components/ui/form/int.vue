@@ -1,9 +1,9 @@
 <template>
     <bk-input type="text" ref="input"
         :placeholder="placeholder || $t('请输入数字')"
-        :value="value"
         :maxlength="maxlength"
         :disabled="disabled"
+        v-model="localValue"
         @blur="handleInput"
         @change="handleChange">
         <template slot="append" v-if="unit">
@@ -43,23 +43,18 @@
                 default: true
             }
         },
-        data () {
-            return {
-                localValue: null
-            }
-        },
-        watch: {
-            value (value) {
-                this.localValue = this.value === '' ? null : this.value
-            },
-            localValue (localValue) {
-                if (localValue !== this.value) {
-                    this.$emit('input', localValue)
+        computed: {
+            localValue: {
+                get () {
+                    return this.value === null ? '' : this.value
+                },
+                set (value) {
+                    const emitValue = value === '' ? null : value
+                    this.$emit('input', emitValue)
+                    this.$emit('change', emitValue)
+                    this.$emit('on-change', emitValue)
                 }
             }
-        },
-        created () {
-            this.localValue = this.value === '' ? null : this.value
         },
         methods: {
             handleInput (value, event) {
