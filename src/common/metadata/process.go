@@ -440,6 +440,10 @@ func (p *SocketBindType) IP(host map[string]interface{}) string {
 		return ""
 	}
 
+	if ip == "" {
+		return "127.0.0.1"
+	}
+
 	index := strings.Index(strings.Trim(ip, ","), ",")
 	if index == -1 {
 		return ip
