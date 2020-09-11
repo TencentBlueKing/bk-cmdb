@@ -30,9 +30,11 @@ import (
 /* reuse old part codes of hostsearch.go */
 
 // ExecuteHostDynamicGroup searches hosts base on conditions without filling topology informations.
-func (lgc *Logics) ExecuteHostDynamicGroup(ctx context.Context, data *metadata.HostCommonSearch, disableCounter bool) (*metadata.SearchHost, error) {
+func (lgc *Logics) ExecuteHostDynamicGroup(ctx context.Context, data *metadata.HostCommonSearch,
+	fields []string, disableCounter bool) (*metadata.SearchHost, error) {
+
 	// create search host action instance.
-	executor := NewHostDynamicGroupExecutor(ctx, lgc, data, disableCounter)
+	executor := NewHostDynamicGroupExecutor(ctx, lgc, data, fields, disableCounter)
 
 	hostInfos, count, err := executor.Execute()
 	if err != nil {
@@ -64,6 +66,7 @@ type HostDynamicGroupExecutor struct {
 	// final search results.
 	total          int
 	hosts          []hostInfoStruct
+	fields         []string
 	disableCounter bool
 
 	isNotFound bool
@@ -71,8 +74,8 @@ type HostDynamicGroupExecutor struct {
 }
 
 // NewHostDynamicGroupExecutor creates a new HostDynamicGroupExecutor object.
-func NewHostDynamicGroupExecutor(ctx context.Context, lgc *Logics,
-	params *metadata.HostCommonSearch, disableCounter bool) *HostDynamicGroupExecutor {
+func NewHostDynamicGroupExecutor(ctx context.Context, lgc *Logics, params *metadata.HostCommonSearch,
+	fileds []string, disableCounter bool) *HostDynamicGroupExecutor {
 
 	executor := &HostDynamicGroupExecutor{
 		ctx:            ctx,
@@ -82,6 +85,7 @@ func NewHostDynamicGroupExecutor(ctx context.Context, lgc *Logics,
 		header:         lgc.header,
 		params:         params,
 		idArr:          searchHostIDArr{},
+		fields:         fileds,
 		disableCounter: disableCounter,
 	}
 	executor.conds.objectCondMap = make(map[string][]metadata.ConditionItem)
@@ -346,6 +350,7 @@ func (e *HostDynamicGroupExecutor) searchByHostConds() error {
 	if err != nil {
 		return err
 	}
+	e.conds.hostCond.Fields = append(e.conds.hostCond.Fields, e.fields...)
 
 	// empty means all fileds.
 	if len(e.conds.hostCond.Fields) != 0 {

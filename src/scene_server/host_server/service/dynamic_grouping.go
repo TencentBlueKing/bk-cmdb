@@ -407,16 +407,6 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	for _, cond := range targetDynamicGroup.Info.Condition {
 		searchCondition := meta.SearchCondition{ObjectID: cond.ObjID, Condition: []meta.ConditionItem{}}
 
-		// execute host dynamic group with target host fields.
-		if targetDynamicGroup.ObjID == common.BKInnerObjIDHost && cond.ObjID == common.BKInnerObjIDHost {
-			searchCondition.Fields = input.Fields
-		}
-
-		// execute set dynamic group with target set fields.
-		if targetDynamicGroup.ObjID == common.BKInnerObjIDSet && cond.ObjID == common.BKInnerObjIDSet {
-			searchCondition.Fields = input.Fields
-		}
-
 		// build condition items.
 		for _, item := range cond.Condition {
 			condItem := meta.ConditionItem{Field: item.Field, Operator: item.Operator, Value: item.Value}
@@ -432,7 +422,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 
 		// execute host object dynamic group.
 		data, err := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager).
-			ExecuteHostDynamicGroup(ctx.Kit.Ctx, &searchHostCondition, input.DisableCounter)
+			ExecuteHostDynamicGroup(ctx.Kit.Ctx, &searchHostCondition, input.Fields, input.DisableCounter)
 		if err != nil {
 			blog.Errorf("execute dynamic group failed, search hosts, err: %+v, bizID: %s, ID: %s, rid: %s",
 				err, bizID, targetID, ctx.Kit.Rid)
@@ -452,7 +442,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 
 		// execute set object dynamic group.
 		data, err := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager).
-			ExecuteSetDynamicGroup(ctx.Kit.Ctx, &searchSetCondition, input.DisableCounter)
+			ExecuteSetDynamicGroup(ctx.Kit.Ctx, &searchSetCondition, input.Fields, input.DisableCounter)
 		if err != nil {
 			blog.Errorf("execute dynamic group failed, search sets, err: %+v, bizID: %s, ID: %s, rid: %s",
 				err, bizID, targetID, ctx.Kit.Rid)

@@ -50,16 +50,13 @@ var (
 	DynamicGroupConditionTypes = map[string]map[string]string{
 		// host dynamic group.
 		common.BKInnerObjIDHost: map[string]string{
-			common.BKInnerObjIDApp:    common.BKInnerObjIDApp,
 			common.BKInnerObjIDSet:    common.BKInnerObjIDSet,
 			common.BKInnerObjIDModule: common.BKInnerObjIDModule,
 			common.BKInnerObjIDHost:   common.BKInnerObjIDHost,
-			common.BKInnerObjIDObject: common.BKInnerObjIDObject,
 		},
 
 		// set dynamic group.
 		common.BKInnerObjIDSet: map[string]string{
-			common.BKInnerObjIDApp: common.BKInnerObjIDApp,
 			common.BKInnerObjIDSet: common.BKInnerObjIDSet,
 		},
 	}
@@ -82,17 +79,16 @@ type DynamicGroupCondition struct {
 
 // Validate validates dynamic group conditions format.
 func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
-	if _, isSupport := DynamicGroupOperators[c.Operator]; !isSupport {
+	_, isSupport := DynamicGroupOperators[c.Operator]
+	if !isSupport {
 		return fmt.Errorf("not support operator, %s", c.Operator)
 	}
 
 	// propertyType, isSupport := attributeMap[c.Field]
-	_, isSupport := attributeMap[c.Field]
+	_, isSupport = attributeMap[c.Field]
 	if !isSupport {
 		return fmt.Errorf("not support condition filed, %+v", c.Field)
 	}
-
-	// TODO type check.
 
 	return nil
 }

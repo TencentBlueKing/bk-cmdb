@@ -58,15 +58,14 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 }
 
 // ExecuteSetDynamicGroup searches sets base on conditions without filling topology informations.
-func (lgc *Logics) ExecuteSetDynamicGroup(ctx context.Context, setCommonSearch *metadata.SetCommonSearch, disableCounter bool) (*metadata.InstDataInfo, errors.CCError) {
+func (lgc *Logics) ExecuteSetDynamicGroup(ctx context.Context, setCommonSearch *metadata.SetCommonSearch,
+	fields []string, disableCounter bool) (*metadata.InstDataInfo, errors.CCError) {
+
 	// search parameters with condition.
-	queryParams := &metadata.QueryCondition{Page: setCommonSearch.Page, Condition: mapstr.New(), DisableCounter: disableCounter}
+	queryParams := &metadata.QueryCondition{Fields: fields, Page: setCommonSearch.Page, Condition: mapstr.New(), DisableCounter: disableCounter}
 
 	// parse set search conditions.
 	for _, searchCondition := range setCommonSearch.Condition {
-		// add query fields of sets.
-		queryParams.Fields = append(queryParams.Fields, searchCondition.Fields...)
-
 		condc := make(map[string]interface{})
 		if err := parse.ParseCommonParams(searchCondition.Condition, condc); err != nil {
 			blog.Errorf("search set failed, can't parse condition, err: %+v, cond: %+v, rid: %s", err, searchCondition.Condition, lgc.rid)
@@ -78,6 +77,7 @@ func (lgc *Logics) ExecuteSetDynamicGroup(ctx context.Context, setCommonSearch *
 			queryParams.Condition.Set(field, value)
 		}
 	}
+	queryParams.Condition.Set(common.BKAppIDField, setCommonSearch.AppID)
 
 	// search set with conditions.
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, queryParams)
