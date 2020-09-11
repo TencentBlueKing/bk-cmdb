@@ -204,7 +204,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 
 	// attributes exist check
 	cond := inputParam.Condition
-	cond = util.SetModOwner(cond, kit.SupplierAccount)
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	exists, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, condition: %v, err: %s", kit.Rid, inputParam.Condition, err.Error())
@@ -222,7 +222,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 	}
 	// check if bk_property_index has been used, if not, use it directly
 	condition := mapstr.MapStr{}
-	condition = util.SetModOwner(condition, kit.SupplierAccount)
+	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 	condition[common.BKObjIDField] = objID
 	condition[common.BKPropertyGroupField] = inputParam.Data[common.BKPropertyGroupField]
 	condition[common.BKPropertyIndexField] = inputParam.Data[common.BKPropertyIndexField]
