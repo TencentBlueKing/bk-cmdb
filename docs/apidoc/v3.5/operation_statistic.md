@@ -29,15 +29,15 @@
   
 - input字段说明：
 
-| 名称        | 类型   | 必填 | 默认值 | 说明                                         | Description                                                  |
-| ----------- | ------ | ---- | ------ | -------------------------------------------- | ------------------------------------------------------------ |
-| report_type | string | 是   | 无     | 报表类型，自定义为custom，内置图表有特定名称 | Report type, customized to custom, built in chart with a specific name |
-| name        | string | 是   | 无     | 统计图表的名称                               | The name of the chart                                        |
-| bk_obj_id  | string | 是   | 无     | 对象模型id | the object identifier |
-| chart_type | string | 是   | 无     | 图表类型   | chart type            |
-| field      | string | 是   | 无     | 统计字段   | statistical field     |
-| width | string | 是   | 无     | 表格宽度     | chart width          |
-| x_axis_count | int | 是 | 10 | x轴显示数量 | X-axis display quantity |
+| 名称         | 类型   | 必填 | 默认值 | 说明                                         | Description                                                            |
+| ------------ | ------ | ---- | ------ | -------------------------------------------- | ---------------------------------------------------------------------- |
+| report_type  | string | 是   | 无     | 报表类型，自定义为custom，内置图表有特定名称 | Report type, customized to custom, built in chart with a specific name |
+| name         | string | 是   | 无     | 统计图表的名称                               | The name of the chart                                                  |
+| bk_obj_id    | string | 是   | 无     | 对象模型id                                   | the object identifier                                                  |
+| chart_type   | string | 是   | 无     | 图表类型                                     | chart type                                                             |
+| field        | string | 是   | 无     | 统计字段                                     | statistical field                                                      |
+| width        | string | 是   | 无     | 表格宽度                                     | chart width                                                            |
+| x_axis_count | int    | 是   | 10     | x轴显示数量                                  | X-axis display quantity                                                |
 
 
 
@@ -70,9 +70,9 @@
 
 - output字段说明：
 
-  | 字段 | 类型 |  说明                 | Description                      |
-  | ---- | ---- |  -------------------- | -------------------------------- |
-  | data   | int  创建时记录的ID | the id of the target data record |
+  | 字段 | 类型                | 说明                             | Description |
+  | ---- | ------------------- | -------------------------------- | ----------- |
+  | data | int  创建时记录的ID | the id of the target data record |
 
 
 ##### 删除统计报表
@@ -138,15 +138,15 @@
   
 - input字段说明：
 
-| 名称        | 类型   | 必填 | 默认值 | 说明                                         | Description                                                  |
-| ----------- | ------ | ---- | ------ | -------------------------------------------- | ------------------------------------------------------------ |
-| report_type | string | 是   | 无     | 报表类型，自定义为custom，内置图表有特定名称 | Report type, customized to custom, built in chart with a specific name |
-| name        | string | 是   | 无     | 统计图表的名称                               | The name of the chart                                        |
-| bk_obj_id  | string | 是   | 无     | 对象模型id | the object identifier |
-| chart_type | string | 是   | 无     | 图表类型   | chart type            |
-| field      | string | 是   | 无     | 统计字段   | statistical field     |
-| width | string | 是   | 无     | 表格宽度     | chart width          |
-| x_axis_count | int | 是 | 无 | x轴显示数量 | X-axis display quantity |
+| 名称         | 类型   | 必填 | 默认值 | 说明                                         | Description                                                            |
+| ------------ | ------ | ---- | ------ | -------------------------------------------- | ---------------------------------------------------------------------- |
+| report_type  | string | 是   | 无     | 报表类型，自定义为custom，内置图表有特定名称 | Report type, customized to custom, built in chart with a specific name |
+| name         | string | 是   | 无     | 统计图表的名称                               | The name of the chart                                                  |
+| bk_obj_id    | string | 是   | 无     | 对象模型id                                   | the object identifier                                                  |
+| chart_type   | string | 是   | 无     | 图表类型                                     | chart type                                                             |
+| field        | string | 是   | 无     | 统计字段                                     | statistical field                                                      |
+| width        | string | 是   | 无     | 表格宽度                                     | chart width                                                            |
+| x_axis_count | int    | 是   | 无     | x轴显示数量                                  | X-axis display quantity                                                |
 
 
 - output:
@@ -234,11 +234,11 @@ result: true
 
 - output字段说明：
 
-| 名称 | 类型         | 说明                                              | Description                                                  |
-| ---- | ------------ | ------------------------------------------------- | ------------------------------------------------------------ |
-| host | object array | 主机统计图表的列表，列表中的index代表前端展示顺序 | List of host statistics charts, the index in the list represents the front-end display order |
+| 名称 | 类型         | 说明                                              | Description                                                                                      |
+| ---- | ------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| host | object array | 主机统计图表的列表，列表中的index代表前端展示顺序 | List of host statistics charts, the index in the list represents the front-end display order     |
 | inst | object array | 实例统计图表的列表，列表中的index代表前端展示顺序 | List of instance statistics charts, the index in the list represents the front-end display order |
-| nav  | object array | 统计报表上方的导航栏                              | Navigation bar above the statistics report                   |
+| nav  | object array | 统计报表上方的导航栏                              | Navigation bar above the statistics report                                                       |
 
 
 **获取统计图表数据**
@@ -285,10 +285,10 @@ result: true
 
 - output字段说明
 
-| 名称  | 类型   | 说明                                             | Description                                                  |
-| ----- | ------ | ------------------------------------------------ | ------------------------------------------------------------ |
+| 名称  | 类型   | 说明                                             | Description                                                                                                           |
+| ----- | ------ | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | id    | string | 统计维度的具体值，例如：按省份统计中，id为各省名 | The specific value of the statistical dimension, for example: by province statistics, id is the name of each province |
-| count | int    | 统计的数值                                       | Statistical value                                            |
+| count | int    | 统计的数值                                       | Statistical value                                                                                                     |
 
 **更新图表位置信息**
 
