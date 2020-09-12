@@ -320,7 +320,7 @@ bk_objects 字段说明
 | bk_classification_id | string | 分类ID               | the classification indentifier            |
 | create_time          | string | 创建时间             | the creation time                         |
 | creator              | string | 创建者               | the creator                               |
-| description          | string | 模型描述             | the object describtion                    |
+| description          | string | 模型描述             | the object description                    |
 | id                   | int    | 模型数据记录的ID     | the object data record id                 |
 | bk_ispaused          | bool   | 是否停用             | if it is paused                           |
 | ispre                | bool   | 是否内置             | if it is the system inner                 |

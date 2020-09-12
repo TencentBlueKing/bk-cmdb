@@ -121,7 +121,7 @@ data 说明
 | bk_group_id         | string | 分组标识                                | the group identifier                               |
 | bk_group_index      | int    | 分组排序                                | the group sort index                               |
 | bk_group_name       | string | 分组名                                  | the group name                                     |
-| bk_isdefault        | bool   | true-默认分组,false-普通分组            | true - the defualt group, false - the common group |
+| bk_isdefault        | bool   | true-默认分组,false-普通分组            | true - the default group, false - the common group |
 | bk_obj_id           | string | 模型标识                                | the object identifier                              |
 | bk_supplier_account | string | 开发商账号                              | supplier account code                              |
 | id                  | int    | 数据记录ID                              | the data record id                                 |
