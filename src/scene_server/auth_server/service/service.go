@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -88,6 +89,9 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 		// use iam language as cc language
 		req.Request.Header.Set(common.BKHTTPLanguage, req.Request.Header.Get("Blueking-Language"))
 
+		// set supplierID
+		setSupplierID(req.Request)
+
 		chain.ProcessFilter(req, resp)
 		return
 	}
@@ -121,6 +125,19 @@ func checkRequestAuthorization(iamClient client.Interface, req *http.Request) (b
 	}
 	blog.Errorf("request password not match system token, rid: %s", rid)
 	return false, nil
+}
+
+// setSupplierID set suitable supplier account for the different version type, like ee, oa version
+func setSupplierID(req *http.Request) {
+	supplierID := req.Header.Get(common.BKHTTPOwnerID)
+	if len(supplierID) == 0 {
+		sID, _ := cc.String("authServer.supplierID")
+		if len(sID) == 0 {
+			supplierID = common.BKDefaultOwnerID
+		}
+		req.Header.Set(common.BKHTTPOwnerID, sID)
+	}
+	blog.V(4).Infof("final supplierID:%s", req.Header.Get(common.BKHTTPOwnerID))
 }
 
 func (s *AuthService) WebService() *restful.Container {
