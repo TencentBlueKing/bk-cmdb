@@ -1093,3 +1093,7 @@ const (
 	CloudSyncConfirmTime       = "confirm_time"
 	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )
+
+// read data from mongodb secondary or not flay key.
+const ReadPreferencePolicyKey = "read_preference_policy_key"
+const SecondaryPreference = "secondary_preference"

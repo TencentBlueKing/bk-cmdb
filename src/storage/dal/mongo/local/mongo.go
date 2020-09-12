@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -30,9 +31,12 @@ import (
 
 // Mongo implement client.DALRDB interface
 type Mongo struct {
-	dbc    *mgo.Session
-	dbname string
+	dbc       *mgo.Session
+	secondary []*mgo.Session
+	dbname    string
 }
+
+const secondaryCnt = 6
 
 var _ dal.DB = new(Mongo)
 
@@ -42,20 +46,71 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	primary, err := newClient(uri, mgo.PrimaryPreferred, 1500, time.Second*10)
+	if err != nil {
+		return nil, err
+	}
+
+	secondary := make([]*mgo.Session, secondaryCnt)
+	for i := 0; i < secondaryCnt; i++ {
+		sec, err := newClient(uri, mgo.Eventual, 300, time.Second*10)
+		if err != nil {
+			return nil, err
+		}
+		secondary[i] = sec
+	}
+
+	return &Mongo{
+		dbc:       primary,
+		secondary: secondary,
+		dbname:    cs.Database,
+	}, nil
+}
+
+func newClient(uri string, mode mgo.Mode, pool int, timeout time.Duration) (*mgo.Session, error) {
 	client, err := mgo.DialWithTimeout(uri, time.Second*10)
 	if err != nil {
 		return nil, err
 	}
 	client.SetSyncTimeout(timeout)
 	client.SetSocketTimeout(timeout)
-	client.SetPoolLimit(1000)
+	client.SetPoolLimit(pool)
+	client.SetMode(mode, false)
 	if err := client.Ping(); err != nil {
 		return nil, err
 	}
-	return &Mongo{
-		dbc:    client,
-		dbname: cs.Database,
-	}, nil
+	return client, nil
+}
+
+func (c *Mongo) getSession(ctx context.Context) *mgo.Session {
+	var sess *mgo.Session
+	if isSecondary(ctx) {
+		rand.Seed(time.Now().UnixNano())
+		sess = c.secondary[rand.Intn(secondaryCnt)].Clone()
+	} else {
+		sess = c.dbc.Clone()
+	}
+
+	return sess
+}
+
+func isSecondary(ctx context.Context) bool {
+	prefer := ctx.Value(common.ReadPreferencePolicyKey)
+	if prefer != nil {
+		val, ok := prefer.(string)
+		if !ok {
+			return false
+		}
+
+		if val == common.SecondaryPreference {
+			return true
+		}
+
+		return false
+	}
+
+	return false
 }
 
 // Close replica client
@@ -159,7 +214,7 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
-	sess := f.dbc.Clone()
+	sess := f.getSession(ctx)
 
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
@@ -176,7 +231,8 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
-	sess := f.dbc.Clone()
+	sess := f.getSession(ctx)
+
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	err := sess.DB(f.dbname).C(f.collName).Find(f.filter).One(result)
@@ -191,7 +247,8 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
-	sess := f.dbc.Clone()
+	sess := f.getSession(ctx)
+
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	count, err := sess.DB(f.dbname).C(f.collName).Find(f.filter).Count()

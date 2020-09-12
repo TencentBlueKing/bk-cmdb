@@ -30,6 +30,8 @@ import (
 // HandleInstanceSync do sync instance of one business
 func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	object := task.Data.(metadata.Object)
+	blog.Infof("start sync object: %s instance task", object.ObjectID)
+
 	header := task.Header.(http.Header)
 	rid := util.GetHTTPCCRequestID(header)
 	ctx := util.NewContextFromHTTPHeader(header)

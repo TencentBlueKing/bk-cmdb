@@ -134,6 +134,7 @@ func GetDBContext(parent context.Context, header http.Header) context.Context {
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
+	ctx = context.WithValue(ctx, common.ReadPreferencePolicyKey, header.Get(common.ReadPreferencePolicyKey))
 	return ctx
 }
 
