@@ -373,13 +373,21 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 		return id, nil
 	}
 
+	bizID, err := ps.getResourcePoolBusinessID()
+	if err != nil {
+		return 0, err
+	}
+
+	cond := mapstr.MapStr{
+		common.BKDefaultField: common.DefaultResModuleFlag,
+		common.BKAppIDField:   bizID,
+	}
+	cond = util.SetQueryOwner(cond, ps.RequestCtx.Header.Get(common.BKHTTPOwnerID))
+
 	opt := &metadata.QueryCondition{
-		Fields: []string{common.BKModuleIDField},
-		Page:   metadata.BasePage{},
-		Condition: mapstr.MapStr{
-			common.BkSupplierAccount: ps.RequestCtx.Header.Get(common.BKHTTPOwnerID),
-			common.BKDefaultField:    common.DefaultResModuleFlag,
-		},
+		Fields:    []string{common.BKModuleIDField},
+		Page:      metadata.BasePage{},
+		Condition: cond,
 	}
 
 	result, err := ps.engine.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), ps.RequestCtx.Header,
