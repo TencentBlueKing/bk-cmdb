@@ -53,8 +53,8 @@
                     <bk-select class="option-type" slot="prepend"
                         :clearable="false"
                         v-model="instanceType">
-                        <bk-option id="resource_id" name="ID"></bk-option>
                         <bk-option id="resource_name" :name="$t('IP')"></bk-option>
+                        <bk-option id="resource_id" name="ID"></bk-option>
                     </bk-select>
                 </bk-input>
             </td>
@@ -81,7 +81,7 @@
         },
         data () {
             return {
-                instanceType: 'resource_id',
+                instanceType: 'resource_name',
                 condition: {
                     bk_biz_id: '',
                     resource_type: 'host',

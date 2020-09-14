@@ -115,7 +115,6 @@
         watch: {
             customColumns () {
                 this.setTableHeader()
-                this.getHostList()
             },
             columnsConfigProperties () {
                 this.setTableHeader()
@@ -187,7 +186,8 @@
                     const result = await this.$store.dispatch('hostSearch/searchHost', {
                         params: this.getParams(),
                         config: {
-                            requestId: this.request.table
+                            requestId: this.request.table,
+                            cancelPrevious: true
                         }
                     })
                     this.table.data = result.info
