@@ -85,6 +85,10 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 		return fmt.Errorf("not support operator, %s", c.Operator)
 	}
 
+	if c.Field == common.BKDefaultField {
+		return nil
+	}
+
 	_, isSupport = attributeMap[c.Field]
 	if !isSupport {
 		return fmt.Errorf("not support condition filed, %+v", c.Field)
