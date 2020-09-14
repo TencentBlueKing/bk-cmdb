@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
+	"configcenter/src/common/util"
 )
 
 var (
@@ -30,6 +31,8 @@ func NewListBusinessAPIHeader() *http.Header {
 	header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)
 	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 	header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)
+	header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
+	header.Add(common.BKHTTPCCRequestID, util.GenerateRID())
 	return &header
 }
 
@@ -38,5 +41,7 @@ func NewAPIHeaderByBusiness(businessSimplify *extensions.BusinessSimplify) *http
 	header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)
 	header.Add(common.BKHTTPOwnerID, fmt.Sprintf("%s", businessSimplify.BKOwnerIDField))
 	header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)
+	header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
+	header.Add(common.BKHTTPCCRequestID, util.GenerateRID())
 	return &header
 }
