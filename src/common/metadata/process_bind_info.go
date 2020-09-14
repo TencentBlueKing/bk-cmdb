@@ -341,9 +341,12 @@ func (pbi *ProcPropertyBindInfo) Update(input ProcessProperty, rawProperty map[s
 func cloneProcBindInfoArr(procBindInfoArr []ProcBindInfo) (newData []ProcBindInfo) {
 	newData = make([]ProcBindInfo, len(procBindInfoArr))
 	for idx, bindInfo := range procBindInfoArr {
-		extra := make(map[string]interface{}, 0)
-		for key, val := range bindInfo.extra {
-			extra[key] = val
+		var extra map[string]interface{}
+		if bindInfo.extra != nil {
+			extra = make(map[string]interface{}, 0)
+			for key, val := range bindInfo.extra {
+				extra[key] = val
+			}
 		}
 
 		newData[idx] = ProcBindInfo{
