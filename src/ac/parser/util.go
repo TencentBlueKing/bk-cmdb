@@ -386,7 +386,7 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 
 	opt := &metadata.QueryCondition{
 		Fields:    []string{common.BKModuleIDField},
-		Page:      metadata.BasePage{},
+		Page:      metadata.BasePage{Limit: 1},
 		Condition: cond,
 	}
 
