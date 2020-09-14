@@ -289,9 +289,11 @@
                             value: condition.value
                         }
                     })
-                    const info = JSON.parse(collection.info)
+                    const condition = this.getCollectionCondition(filterList)
                     this.$store.commit('hosts/setFilterList', filterList)
                     this.$store.commit('hosts/setCollection', collection)
+                    this.$store.commit('hosts/setCondition', condition)
+                    const info = JSON.parse(collection.info)
                     RouterQuery.set({
                         ip: info.ip_list.join(','),
                         exact: info.exact_search ? 1 : 0,
@@ -304,6 +306,25 @@
                     this.$error(this.$t('应用收藏条件失败，转换数据错误'))
                     console.error(e.message)
                 }
+            },
+            getCollectionCondition (filterList = []) {
+                const conditionMap = {}
+                filterList.forEach(filter => {
+                    const objectConditon = conditionMap[filter.bk_obj_id] || []
+                    objectConditon.push({
+                        field: filter.bk_property_id,
+                        operator: filter.operator,
+                        value: filter.value
+                    })
+                    conditionMap[filter.bk_obj_id] = objectConditon
+                })
+                return ['biz', 'object', 'set', 'module', 'host'].map(objId => {
+                    return {
+                        bk_obj_id: objId,
+                        condition: conditionMap[objId] || [],
+                        fields: []
+                    }
+                })
             },
             handleCollectionClear () {
                 this.$store.commit('hosts/clearFilter')
@@ -465,11 +486,12 @@
             handleDialogCancel () {
                 this.dialog.show = false
             },
-            handleApplyColumnsConfig (properties) {
-                this.$store.dispatch('userCustom/saveUsercustom', {
+            async handleApplyColumnsConfig (properties) {
+                this.sideslider.show = false
+                await this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.$route.meta.customInstanceColumn]: properties.map(property => property['bk_property_id'])
                 })
-                this.sideslider.show = false
+                RouterQuery.set({ _t: Date.now() }) // 触发刷新表格
             },
             handleResetColumnsConfig () {
                 this.$store.dispatch('userCustom/saveUsercustom', {
