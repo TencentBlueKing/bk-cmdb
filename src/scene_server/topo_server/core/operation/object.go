@@ -38,7 +38,7 @@ type rowInfo struct {
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
-	CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
+	CreateObjectBatch(kit *rest.Kit, data map[string]ImportObjectData) (mapstr.MapStr, error)
 	FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
 	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (model.Object, error)
 	CanDelete(kit *rest.Kit, targetObj model.Object) error
@@ -106,12 +106,7 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 // CreateObjectBatch manipulate model in cc_ObjDes
 // this method does'nt act as it's name, it create or update model's attributes indeed.
 // it only operate on model already exist, that it to say no new model will be created.
-func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
-	inputDataMap := map[string]ImportObjectData{}
-	if err := data.MarshalJSONInto(&inputDataMap); nil != err {
-		return nil, err
-	}
-
+func (o *object) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]ImportObjectData) (mapstr.MapStr, error) {
 	result := mapstr.New()
 	hasError := false
 	for objID, inputData := range inputDataMap {
