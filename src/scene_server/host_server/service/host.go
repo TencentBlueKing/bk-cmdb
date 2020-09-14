@@ -335,7 +335,7 @@ func (s *Service) HostSnapInfo(ctx *rest.Contexts) {
 	}
 
 	if result.Data.Data == "" {
-		ctx.RespEntity(map[string]interface{}{})
+		ctx.RespEntity(nil)
 		return
 	}
 
