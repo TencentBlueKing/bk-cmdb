@@ -608,15 +608,15 @@ func (hs *hostServer) SearchDynamicGroup(ctx context.Context, bizID string, head
 }
 
 // ExecuteDynamicGroup is dynamic group execute action base on conditions api machinery.
-func (hs *hostServer) ExecuteDynamicGroup(ctx context.Context, bizID, id string,
-	header http.Header) (resp *metadata.Response, err error) {
+func (hs *hostServer) ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 
 	resp = new(metadata.Response)
 	subPath := "/dynamicgroup/data/%s/%s"
 
-	err = hs.client.Get().
+	err = hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(data).
 		SubResourcef(subPath, bizID, id).
 		WithHeaders(header).
 		Do().

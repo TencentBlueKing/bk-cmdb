@@ -261,7 +261,7 @@ func (s *Service) initDynamicGroup(web *restful.WebService) {
 
 	// execute dynamic group and get target resources.
 	utility.AddHandler(rest.Action{
-		Verb:    http.MethodGet,
+		Verb:    http.MethodPost,
 		Path:    "/dynamicgroup/data/{bk_biz_id}/{id}",
 		Handler: s.ExecuteDynamicGroup,
 	})
