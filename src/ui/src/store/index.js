@@ -63,6 +63,7 @@ import businessHost from './modules/view/business-host.js'
 import resourceHost from './modules/view/resource-host.js'
 import cloudarea from './modules/api/cloudarea'
 import audit from './modules/api/audit.js'
+import dynamicGroup from './modules/api/dynamic-group'
 
 Vue.use(Vuex)
 
@@ -127,6 +128,7 @@ export default new Vuex.Store({
         resource,
         cloudarea,
         organization,
-        audit
+        audit,
+        dynamicGroup
     }
 })
