@@ -24,29 +24,25 @@ import (
 )
 
 func (s *Service) WatchEvent(ctx *rest.Contexts) {
-	rid := ctx.Kit.Rid
-	defErr := ctx.Kit.CCError
-	req := ctx.Request
-
-	resource := req.PathParameter("resource")
+	resource := ctx.Request.PathParameter("resource")
 	options := new(watch.WatchEventOptions)
 	if err := ctx.DecodeInto(&options); err != nil {
-		blog.Errorf("watch event, but decode request body failed, err: %v, rid: %s", err, rid)
-		ctx.RespAutoError(defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+		blog.Errorf("watch event, but decode request body failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 	options.Resource = watch.CursorType(resource)
 
 	if err := options.Validate(); err != nil {
-		blog.Errorf("watch event, but got invalid request options, err: %v, rid: %s", err, rid)
-		ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
+		blog.Errorf("watch event, but got invalid request options, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPInputInvalid))
 		return
 	}
 
 	key, err := event.GetResourceKeyWithCursorType(options.Resource)
 	if err != nil {
-		blog.Errorf("watch event, but get resource key with cursor type failed, err: %v, rid: %s", err, rid)
-		ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
+		blog.Errorf("watch event, but get resource key with cursor type failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPInputInvalid))
 		return
 	}
 
@@ -55,9 +51,9 @@ func (s *Service) WatchEvent(ctx *rest.Contexts) {
 
 	// watch with cursor
 	if len(options.Cursor) != 0 {
-		events, err := watcher.WatchWithCursor(key, options, rid)
+		events, err := watcher.WatchWithCursor(key, options, ctx.Kit.Rid)
 		if err != nil {
-			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, rid)
+			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -69,10 +65,10 @@ func (s *Service) WatchEvent(ctx *rest.Contexts) {
 
 	// watch with start from
 	if options.StartFrom != 0 {
-		events, err := watcher.WatchWithStartFrom(key, options, rid)
+		events, err := watcher.WatchWithStartFrom(key, options, ctx.Kit.Rid)
 		if err != nil {
-			blog.Errorf("watch event with start from: %s, err: %v, rid: %s", time.Unix(options.StartFrom, 0).Format(time.RFC3339), err, rid)
-			ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
+			blog.Errorf("watch event with start from: %s, err: %v, rid: %s", time.Unix(options.StartFrom, 0).Format(time.RFC3339), err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPInputInvalid))
 			return
 		}
 
@@ -81,10 +77,10 @@ func (s *Service) WatchEvent(ctx *rest.Contexts) {
 	}
 
 	// watch from now
-	events, err := watcher.WatchFromNow(key, options, rid)
+	events, err := watcher.WatchFromNow(key, options, ctx.Kit.Rid)
 	if err != nil {
-		blog.Errorf("watch event from now, err: %v, rid: %s", err, rid)
-		ctx.RespAutoError(defErr.Error(common.CCErrCommHTTPInputInvalid))
+		blog.Errorf("watch event from now, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPInputInvalid))
 		return
 	}
 

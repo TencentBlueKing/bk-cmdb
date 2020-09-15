@@ -589,3 +589,13 @@ type MultipleSyncRegionResult struct {
 	BaseResp `json:",inline"`
 	Data     []*Region `json:"data"`
 }
+
+type SubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     Subscription `json:"data"`
+}
+
+type MultipleSubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     RspSubscriptionSearch `json:"data"`
+}

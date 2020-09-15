@@ -31,6 +31,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/auth"
 	"configcenter/src/source_controller/coreservice/core/cloud"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
+	e "configcenter/src/source_controller/coreservice/core/event"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -144,6 +145,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		dbSystem.New(db),
 		cloud.New(db),
 		auth.New(db),
+		e.New(db, cache),
 	)
 
 	watcher, watchErr := stream.NewStream(s.cfg.Mongo.GetMongoConf())
