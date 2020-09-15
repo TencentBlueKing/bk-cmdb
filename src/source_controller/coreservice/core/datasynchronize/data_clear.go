@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type clearDataInterface interface {
@@ -26,14 +26,12 @@ type clearDataInterface interface {
 }
 
 type clearData struct {
-	dbProxy dal.RDB
-	input   *metadata.SynchronizeClearDataParameter
+	input *metadata.SynchronizeClearDataParameter
 }
 
-func NewClearData(dbProxy dal.RDB, input *metadata.SynchronizeClearDataParameter) clearDataInterface {
+func NewClearData(input *metadata.SynchronizeClearDataParameter) clearDataInterface {
 	return &clearData{
-		dbProxy: dbProxy,
-		input:   input,
+		input: input,
 	}
 }
 
@@ -50,7 +48,7 @@ func (c *clearData) clearData(kit *rest.Kit) {
 	blog.V(5).Infof(" clearData condition:%#v, rid:%s", deleteConditon, kit.Rid)
 	tableNameArr := common.AllTables
 	for _, tableName := range tableNameArr {
-		cnt, err := c.dbProxy.Table(tableName).Find(deleteConditon).Count(kit.Ctx)
+		cnt, err := mongodb.Client().Table(tableName).Find(deleteConditon).Count(kit.Ctx)
 		if err != nil {
 			blog.Warnf("clearData  find %s table row error, err:%s, condition:%#v, rid:%s", tableName, err.Error(), deleteConditon, kit.Rid)
 			continue
@@ -60,7 +58,7 @@ func (c *clearData) clearData(kit *rest.Kit) {
 			continue
 		}
 
-		err = c.dbProxy.Table(tableName).Delete(kit.Ctx, deleteConditon)
+		err = mongodb.Client().Table(tableName).Delete(kit.Ctx, deleteConditon)
 		if err != nil {
 			blog.Errorf("clearData  delete %s table row error, err:%s, condition:%#v, rid:%s", tableName, err.Error(), deleteConditon, kit.Rid)
 		}

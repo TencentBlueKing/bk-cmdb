@@ -201,9 +201,6 @@
             type: {
                 type: String
             },
-            bizId: {
-                type: Number
-            },
             id: {
                 type: [String, Number],
                 default: ''

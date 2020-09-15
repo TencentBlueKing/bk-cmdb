@@ -32,13 +32,13 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, zkItem)
 
-	// mongodb
-	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
-	meta.Items = append(meta.Items, healthItem)
-
-	// redis
-	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
-	meta.Items = append(meta.Items, redisItem)
+	// coreservice
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+		coreSrv.IsHealthy = false
+		coreSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, coreSrv)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

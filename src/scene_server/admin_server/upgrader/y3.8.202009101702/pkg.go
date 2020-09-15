@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_8_202007211455
+package y3_8_202009101702
 
 import (
 	"context"
@@ -21,30 +21,30 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202007211455", upgrade)
+	upgrader.RegistUpgrader("y3.8.202009101702", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.8.202007211455")
+	blog.Infof("start execute y3.8.202009101702")
 
 	if err = addProcBindInfo(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202007211455] change process bind attr, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.8.202009101702] change process bind attr, error  %s", err.Error())
 		return err
 	}
 
 	if err = migrateProcTempBindInfo(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202007211455] migrate process template bind info, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.8.202009101702] migrate process template bind info, error  %s", err.Error())
 		return err
 	}
 
 	if err = migrateProcBindInfo(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202007211455] migrate process bind info, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.8.202009101702] migrate process bind info, error  %s", err.Error())
 		return err
 	}
 
 	// upgrate data 之后才可以删除
 	if err = clearProcAttrAndGroup(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202007211455] clean process bind attr, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.8.202009101702] clean process bind attr, error  %s", err.Error())
 		return err
 	}
 

@@ -224,7 +224,7 @@
                 demList: [],
                 staList: [],
                 chartType: true,
-                showDia: true,
+                showDia: false,
                 hostFilter: ['host', 'module', 'biz', 'set'],
                 editTitle: '',
                 maxNum: 0
@@ -245,8 +245,7 @@
             },
             staticFilter () {
                 return this.staList.filter(item => {
-                    const model = this.getModelById(item.bk_obj_id)
-                    return !model.bk_ishidden && !this.hostFilter.includes(item.bk_obj_id)
+                    return !item.bk_ishidden && !this.hostFilter.includes(item.bk_obj_id)
                 })
             },
             typeFilter () {

@@ -13,10 +13,10 @@
 package logics
 
 import (
-	"context"
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([]metadata.Property, error) {
+func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([]metadata.Attribute, error) {
 	searchOp := mapstr.MapStr{
 		common.BKObjIDField: common.BKInnerObjIDHost,
 	}
@@ -45,18 +45,7 @@ func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
-	headers := make([]metadata.Property, 0)
-	for _, p := range result.Data.Info {
-		if p.PropertyID == common.BKChildStr {
-			continue
-		}
-		headers = append(headers, metadata.Property{
-			PropertyID:   p.PropertyID,
-			PropertyName: p.PropertyName,
-		})
-	}
-
-	return headers, nil
+	return result.Data.Info, nil
 }
 
 func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, string, errors.CCError) {
@@ -145,7 +134,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 			}
 		}
 
-		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{Data: host}) //HostController().Host().AddHost(ctx, kit.Header, host)
+		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{Data: host})
 		if err != nil {
 			blog.Errorf("EnterIP http do error, err:%s, input:%+v, rid:%s", err.Error(), host, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -154,23 +143,22 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 			blog.Errorf("EnterIP http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, host, kit.Rid)
 			return kit.CCError.New(result.Code, result.ErrMsg)
 		}
-		// add create host log
-		audit := lgc.NewHostLog(kit, kit.SupplierAccount)
-		if err := audit.WithCurrent(kit.Ctx, hostID, nil); err != nil {
+
+		// add audit log for create host.
+		audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
+		if err != nil {
+			blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
+				hostID, appID, err, kit.Rid)
 			return err
 		}
-		auditLog, err := audit.AuditLog(kit.Ctx, hostID, appID, metadata.AuditCreate)
-		if err != nil {
+
+		// save audit log.
+		if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+			blog.Errorf("save audit log failed after create host, hostID: %d, appID: %d,err: %v, rid: %s", hostID,
+				appID, err, kit.Rid)
 			return err
-		}
-		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), kit.Header, auditLog)
-		if err != nil {
-			blog.Errorf("EnterIP AddHostLog http do error, err:%s, rid:%s", err.Error(), kit.Rid)
-			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !aResult.Result {
-			blog.Errorf("EnterIP AddHostLog http response error, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, kit.Rid)
-			return kit.CCError.New(aResult.Code, aResult.ErrMsg)
 		}
 
 		hostID = int64(result.Data.Created.ID)
@@ -197,10 +185,11 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 
 	}
 
-	hmAudit := lgc.NewHostModuleLog(kit,[]int64{hostID})
+	hmAudit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, []int64{hostID})
 	if err := hmAudit.WithPrevious(kit.Ctx); err != nil {
 		return err
 	}
+
 	params := &metadata.HostsModuleRelation{
 		ApplicationID: appID,
 		HostID:        []int64{hostID},
@@ -391,14 +380,15 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		blog.Errorf("TransferHostAcrossBusiness Host does not belong to the current application; error, params:{appID:%d, hostID:%+v}, rid:%s", srcBizID, notExistHostIDs, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrHostNotINAPP, notExistHostIDs)
 	}
-	audit := lgc.NewHostModuleLog(kit, hostID)
+
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, hostID)
 	if err := audit.WithPrevious(kit.Ctx); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
 	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID, DstApplicationID: dstAppID, DstModuleIDArr: moduleID}
 	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, conf)
-	if err != nil {
+	if doErr != nil {
 		blog.Errorf("TransferHostAcrossBusiness http do error, err:%s, input:%+v, rid:%s", doErr.Error(), conf, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
@@ -418,27 +408,20 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 
 // DeleteHostFromBusiness  delete host from business,
 func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult, errors.CCError) {
-	hostFields, err := lgc.GetHostAttributes(kit, metadata.BizLabelNotExist)
-	if err != nil {
-		blog.ErrorJSON("DeleteHostFromBusiness get host attribute failed, err: %s, rid:%s", err, kit.Rid)
-		return nil, err
-	}
-
-	logContentMap := make(map[int64]metadata.AuditLog, 0)
+	// ready audit log of delete host.
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	logContentMap := make(map[int64]*metadata.AuditLog, 0)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 	for _, hostID := range hostIDArr {
-		logger := lgc.NewHostLog(kit, kit.SupplierAccount)
-		if err := logger.WithPrevious(kit.Ctx, hostID, hostFields); err != nil {
-			blog.ErrorJSON("DeleteHostFromBusiness get pre host data failed, err: %s, host id: %s, rid: %s", err, hostID, kit.Rid)
-			return nil, err
-		}
-
-		logContentMap[hostID], err = logger.AuditLog(kit.Ctx, hostID, bizID, metadata.AuditDelete)
+		var err error
+		logContentMap[hostID], err = audit.GenerateAuditLog(generateAuditParameter, hostID, bizID, "", nil)
 		if err != nil {
-			blog.ErrorJSON("DeleteHostFromBusiness get host[%d] biz[%d] data failed, err: %v, rid:%s", hostID, bizID, err, kit.Rid)
+			blog.Errorf("generate host audit log failed before delete host, hostID: %d, bizID: %d, err: %v, rid: %s", hostID, bizID, err, kit.Rid)
 			return nil, err
 		}
 	}
 
+	// to delete host.
 	input := &metadata.DeleteHostRequest{
 		ApplicationID: bizID,
 		HostIDArr:     hostIDArr,
@@ -453,16 +436,21 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
-	var logContents []metadata.AuditLog
+	// to save audit log.
+	logContents := make([]metadata.AuditLog, len(logContentMap))
+	index := 0
 	for _, item := range logContentMap {
-		logContents = append(logContents, item)
+		logContents[index] = *item
+		index++
 	}
+
 	if len(logContents) > 0 {
-		auditResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, logContents...)
-		if err != nil || !auditResult.Result {
-			blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, kit.Rid)
+		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
+			blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, rid: %s",
+				err, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 		}
+
 	}
 	return nil, nil
 }

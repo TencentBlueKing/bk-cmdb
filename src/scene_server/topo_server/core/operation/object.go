@@ -19,6 +19,7 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -37,7 +38,7 @@ type rowInfo struct {
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
-	CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error)
+	CreateObjectBatch(kit *rest.Kit, data map[string]ImportObjectData) (mapstr.MapStr, error)
 	FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
 	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (model.Object, error)
 	CanDelete(kit *rest.Kit, targetObj model.Object) error
@@ -105,12 +106,7 @@ func (o *object) IsValidObject(kit *rest.Kit, objID string) error {
 // CreateObjectBatch manipulate model in cc_ObjDes
 // this method does'nt act as it's name, it create or update model's attributes indeed.
 // it only operate on model already exist, that it to say no new model will be created.
-func (o *object) CreateObjectBatch(kit *rest.Kit, data mapstr.MapStr) (mapstr.MapStr, error) {
-	inputDataMap := map[string]ImportObjectData{}
-	if err := data.MarshalJSONInto(&inputDataMap); nil != err {
-		return nil, err
-	}
-
+func (o *object) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]ImportObjectData) (mapstr.MapStr, error) {
 	result := mapstr.New()
 	hasError := false
 	for objID, inputData := range inputDataMap {
@@ -470,10 +466,20 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		return nil, err
 	}
 
-	//package audit response
-	err = NewObjectAudit(kit, o.clientSet, obj.Object().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
+	// generate audit log of object attribute group.
+	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.Object().ID, nil)
 	if err != nil {
-		blog.Errorf("update object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+		blog.Errorf("create object %s success, but generate audit log failed, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
+		return nil, err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("create object %s success, but save audit log failed, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
 		return nil, err
 	}
 
@@ -568,8 +574,15 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 		}
 	}
 
-	//get PreData
-	objAudit := NewObjectAudit(kit, o.clientSet, id).buildSnapshotForPre()
+	// generate audit log of object.
+	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.Object().ID, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before delete object, objName: %s, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
+		return err
+	}
 
 	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
 	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
@@ -582,12 +595,12 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool) error
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	//saveAuditLog
-	err = objAudit.SaveAuditLog(metadata.AuditDelete)
-	if err != nil {
-		blog.Errorf("Delete object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
 		return err
 	}
+
 	return nil
 }
 
@@ -732,18 +745,22 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 
 	object := obj.Object()
 
-	/*
-		// auth: check authorization
-		if err := o.authManager.AuthorizeObjectByRawID(kit.Ctx, kit.Header, meta.Update, object.ObjectID); err != nil {
-			blog.V(2).Infof("update model %s failed, authorization failed, err: %+v, rid: %s", object.ObjectID, err, kit.Rid)
-			return err
-		}
-	*/
+	// remove unchangeable fields.
+	data.Remove(metadata.ModelFieldObjectID)
+	data.Remove(metadata.ModelFieldID)
+	data.Remove(metadata.ModelFieldObjCls)
 
-	//get PreData
-	objAudit := NewObjectAudit(kit, o.clientSet, id).buildSnapshotForPre()
+	// generate audit log of object attribute group.
+	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.Object().ID, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
+		return err
+	}
 
-	// check repeated
+	// check repeated.
 	exists, err := obj.IsExists()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%#v), err: %s, rid: %s", data, err.Error(), kit.Rid)
@@ -759,11 +776,12 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 		return kit.CCError.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
-	//get CurData and saveAuditLog
-	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
-	if err != nil {
-		blog.Errorf("update object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("update object %s success, but save audit log failed, err: %v, rid: %s",
+			object.ObjectName, err, kit.Rid)
 		return err
 	}
+
 	return nil
 }

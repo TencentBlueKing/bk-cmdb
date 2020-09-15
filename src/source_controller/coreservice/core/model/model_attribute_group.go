@@ -21,14 +21,12 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
 )
 
 var _ core.ModelAttributeGroup = nil
 
 type modelAttributeGroup struct {
-	model   *modelManager
-	dbProxy dal.RDB
+	model *modelManager
 }
 
 func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {

@@ -296,17 +296,22 @@
                 return []
             },
             getSourceProcesses (instance) {
+                const ipMap = {
+                    '1': '127.0.0.1',
+                    '2': '0.0.0.0',
+                    '3': this.$t('第一内网IP'),
+                    '4': this.$t('第一外网IP')
+                }
                 const templates = this.getServiceTemplates(instance)
                 return templates.map(template => {
                     const value = {}
-                    const ip = ['127.0.0.1', '0.0.0.0']
                     Object.keys(template.property).forEach(key => {
                         if (key === 'bind_info') {
                             value[key] = this.$tools.clone(template.property[key].value) || []
                             value[key].forEach(row => {
                                 Object.keys(row).forEach(field => {
                                     if (field === 'ip') {
-                                        row[field] = ip[row[field].value - 1]
+                                        row[field] = ipMap[row[field].value]
                                     } else if (field === 'row_id') {
                                         // 实例数据中使用 template_row_id
                                         row['template_row_id'] = row[field]

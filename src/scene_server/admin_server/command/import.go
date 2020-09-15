@@ -130,7 +130,6 @@ func recordInitLog(ctx context.Context, db dal.DB) error {
 }
 
 type importerBizTopo struct {
-
 	// file json content
 	importJSON BKTopo
 	db         dal.DB
@@ -367,13 +366,19 @@ func (ibt *importerBizTopo) initBKServiceCategory(ctx context.Context, bizID int
 	if len(ibt.serviceTemplateMap) == 0 {
 		return nil
 	}
+
 	var srvTempArr []interface{}
 	var procTempArr []interface{}
+
+	nextSrvTempIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameServiceTemplate, len(ibt.serviceTemplateMap))
+	if err != nil {
+		return fmt.Errorf("init service template, get next service template ids error. err: %s", err.Error())
+	}
+	srvTempIndex := 0
+
 	for _, srvTemp := range ibt.serviceTemplateMap {
-		nextSrvTempID, err := ibt.db.NextSequence(ctx, common.BKTableNameServiceTemplate)
-		if err != nil {
-			return fmt.Errorf("init service template, get next id error. err:%s", err.Error())
-		}
+		nextSrvTempID := nextSrvTempIDs[srvTempIndex]
+		srvTempIndex++
 
 		ibt.newServiceTemplateMap[srvTemp.Name] = int64(nextSrvTempID)
 		srvTempArr = append(srvTempArr, metadata.ServiceTemplate{
@@ -388,30 +393,30 @@ func (ibt *importerBizTopo) initBKServiceCategory(ctx context.Context, bizID int
 			SupplierAccount:   ibt.opt.OwnerID,
 		})
 
-		for _, procName := range srvTemp.BindProcess {
-			nextProcTempID, err := ibt.db.NextSequence(ctx, common.BKTableNameProcessTemplate)
-			if err != nil {
-				return fmt.Errorf("init service template, get next id error. err:%s", err.Error())
-			}
+		bindProcessLen := len(srvTemp.BindProcess)
+		nextProcTempIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameProcessTemplate, bindProcessLen+len(srvTemp.BindProcessUUID))
+		if err != nil {
+			return fmt.Errorf("init service template, get next process template ids error. err: %s", err.Error())
+		}
+
+		for procIndex, procName := range srvTemp.BindProcess {
+			nextProcTempID := nextProcTempIDs[procIndex]
 			procTemp := ibt.procProcNameInfoMap[procName]
-			procTemp.ServiceTemplateID = int64(nextSrvTempID)
+			procTemp.ServiceTemplateID = int64(nextProcTempID)
 			procTemp.ID = int64(nextProcTempID)
 			procTempArr = append(procTempArr, procTemp)
 		}
 
-		for _, uuid := range srvTemp.BindProcessUUID {
-			nextProcTempID, err := ibt.db.NextSequence(ctx, common.BKTableNameProcessTemplate)
-			if err != nil {
-				return fmt.Errorf("init service template, get next id error. err:%s", err.Error())
-			}
+		for uuidIndex, uuid := range srvTemp.BindProcessUUID {
+			nextProcTempID := nextProcTempIDs[uuidIndex+bindProcessLen]
 			procTemp := ibt.procUUIDInfoMap[uuid]
-			procTemp.ServiceTemplateID = int64(nextSrvTempID)
+			procTemp.ServiceTemplateID = int64(nextProcTempID)
 			procTemp.ID = int64(nextProcTempID)
 			procTempArr = append(procTempArr, procTemp)
 		}
 	}
 
-	err := ibt.db.Table(common.BKTableNameServiceTemplate).Insert(ctx, srvTempArr)
+	err = ibt.db.Table(common.BKTableNameServiceTemplate).Insert(ctx, srvTempArr)
 	if err != nil {
 		return fmt.Errorf("init service template error. err:%s", err.Error())
 	}
@@ -424,11 +429,17 @@ func (ibt *importerBizTopo) initBKServiceCategory(ctx context.Context, bizID int
 
 func (ibt *importerBizTopo) initBKTopoSet(ctx context.Context, bizID, setParentID int64) error {
 	var setArr []interface{}
+
+	nextSetIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameBaseSet, len(ibt.setNameInfoMap))
+	if err != nil {
+		return fmt.Errorf("init service template, get next set ids error. err: %s", err.Error())
+	}
+	setIndex := 0
+
 	for name, setInfo := range ibt.setNameInfoMap {
-		nextSetID, err := ibt.db.NextSequence(ctx, common.BKTableNameBaseSet)
-		if err != nil {
-			return fmt.Errorf("init service template, get next id error. err:%s", err.Error())
-		}
+		nextSetID := nextSetIDs[setIndex]
+		setIndex++
+
 		ibt.newSetTemplate[name] = int64(nextSetID)
 		setInfo[common.BKSetNameField] = name
 		setInfo[common.BKSetIDField] = int64(nextSetID)
@@ -441,7 +452,7 @@ func (ibt *importerBizTopo) initBKTopoSet(ctx context.Context, bizID, setParentI
 		setArr = append(setArr, setInfo)
 	}
 
-	err := ibt.db.Table(common.BKTableNameBaseSet).Insert(ctx, setArr)
+	err = ibt.db.Table(common.BKTableNameBaseSet).Insert(ctx, setArr)
 	if err != nil {
 		return fmt.Errorf("init set  error. err:%s", err.Error())
 	}
@@ -452,13 +463,18 @@ func (ibt *importerBizTopo) initBKTopoModule(ctx context.Context, bizID int64) e
 
 	var moduleArr []interface{}
 	for setName, moduleNameMap := range ibt.moduleSetNameInfoMap {
-
 		setID := ibt.newSetTemplate[setName]
+
+		nextModuleIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameBaseModule, len(moduleNameMap))
+		if err != nil {
+			return fmt.Errorf("init service template, get next module ids error. err: %s", err.Error())
+		}
+		moduleIndex := 0
+
 		for _, moduleTemp := range moduleNameMap {
-			nextModuleID, err := ibt.db.NextSequence(ctx, common.BKTableNameBaseModule)
-			if err != nil {
-				return fmt.Errorf("init service template, get next id error. err:%s", err.Error())
-			}
+			nextModuleID := nextModuleIDs[moduleIndex]
+			moduleIndex++
+
 			srvTempID := ibt.newServiceTemplateMap[moduleTemp.ServiceTemplate]
 			srvTempInfo := ibt.serviceTemplateMap[moduleTemp.ServiceTemplate]
 

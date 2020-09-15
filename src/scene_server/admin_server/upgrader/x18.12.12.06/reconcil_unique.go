@@ -78,7 +78,12 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		return fmt.Errorf("expected field not exists: %v", notExistFields)
 	}
 
-	for _, unique := range uniques {
+	uniqueIDs, err := db.NextSequences(ctx, common.BKTableNameObjUnique, len(uniques))
+	if err != nil {
+		return err
+	}
+
+	for index, unique := range uniques {
 		exists, err := isUniqueExists(ctx, db, conf, unique)
 		if err != nil {
 			return err
@@ -87,11 +92,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			continue
 		}
 
-		uid, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
-		if err != nil {
-			return err
-		}
-		unique.ID = uid
+		unique.ID = uniqueIDs[index]
 		if err := db.Table(common.BKTableNameObjUnique).Insert(ctx, unique); err != nil {
 			return err
 		}

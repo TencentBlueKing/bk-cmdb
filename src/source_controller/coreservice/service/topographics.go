@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // CreateClassification create object's classification
@@ -38,7 +39,7 @@ func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 
 	results := make([]meta.TopoGraphics, 0)
-	if selErr := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx, &results); nil != selErr {
+	if selErr := mongodb.Client().Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx, &results); nil != selErr {
 		blog.Errorf("search topo graphics, but select data failed, error information is %s, rid: %s", selErr.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
@@ -66,21 +67,21 @@ func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 		}
 		cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 
-		cnt, err := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx.Kit.Ctx)
+		cnt, err := mongodb.Client().Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx.Kit.Ctx)
 		if nil != err {
 			blog.Errorf("update topo graphics, search data failed, data: %+v, err: %s, rid: %s", inputBody, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 			return
 		}
 		if 0 == cnt {
-			err = s.db.Table(common.BKTableNameTopoGraphics).Insert(ctx.Kit.Ctx, inputBody.Data[index])
+			err = mongodb.Client().Table(common.BKTableNameTopoGraphics).Insert(ctx.Kit.Ctx, inputBody.Data[index])
 			if nil != err {
 				blog.Errorf("update topo graphics, but insert data failed, err:%s, rid: %s", err.Error(), ctx.Kit.Rid)
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
 				return
 			}
 		} else {
-			if err = s.db.Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond, inputBody.Data[index]); err != nil {
+			if err = mongodb.Client().Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond, inputBody.Data[index]); err != nil {
 				blog.Errorf("update topo graphics, but update failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 				return

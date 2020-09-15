@@ -147,7 +147,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		return err
 	}
 
-	// bizID:modulename:modules
+	// bizID:moduleName:modules
 	biz2Module := map[int64]map[string][]metadata.ModuleInst{}
 	for _, module := range allmodules {
 		_, ok := biz2Module[module.BizID]
@@ -157,9 +157,18 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		biz2Module[module.BizID][module.ModuleName] = append(biz2Module[module.BizID][module.ModuleName], module)
 	}
 
+	hostMap := make(map[int64]map[string]interface{}, 0)
+
 	for bizID, bizModules := range biz2Module {
 		ownerID := common.BKDefaultOwnerID
-		for modulename, modules := range bizModules {
+
+		svcTemplateIDs, err := db.NextSequences(ctx, common.BKTableNameServiceTemplate, len(bizModules))
+		if err != nil {
+			return err
+		}
+		svcTemplateIndex := 0
+
+		for moduleName, modules := range bizModules {
 			if len(modules) == 0 {
 				continue
 			}
@@ -168,7 +177,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				ownerID = modules[0].SupplierAccount
 			}
 
-			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
+			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: moduleName}
 			processMappingInModule := make([]metadata.ProcessModule, 0)
 			if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
 				return err
@@ -178,15 +187,14 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				continue
 			}
 
+			svcTemplateID := svcTemplateIDs[svcTemplateIndex]
+			svcTemplateIndex++
+
 			// build service template
-			svcTemplateID, err := db.NextSequence(ctx, common.BKTableNameServiceTemplate)
-			if err != nil {
-				return err
-			}
 			serviceTemplate := ServiceTemplate{
 				Metadata:          metadata.NewMetadata(bizID),
 				ID:                int64(svcTemplateID),
-				Name:              modulename,
+				Name:              moduleName,
 				ServiceCategoryID: categoryID,
 				Creator:           conf.User,
 				Modifier:          conf.User,
@@ -228,11 +236,12 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 			}
 
 			inst2ProcessInstTemplate := map[int64]ProcessTemplate{}
-			for _, oldInst := range oldProcess {
-				procTemplateID, err := db.NextSequence(ctx, common.BKTableNameProcessTemplate)
-				if err != nil {
-					return err
-				}
+			procTemplateIDs, err := db.NextSequences(ctx, common.BKTableNameProcessTemplate, len(oldProcess))
+			if err != nil {
+				return err
+			}
+
+			for index, oldInst := range oldProcess {
 
 				procName := ""
 				if oldInst.ProcessName != nil {
@@ -244,7 +253,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 				procTemplate := ProcessTemplate{
 					Metadata:          metadata.NewMetadata(bizID),
-					ID:                int64(procTemplateID),
+					ID:                int64(procTemplateIDs[index]),
 					ProcessName:       procName,
 					ServiceTemplateID: serviceTemplate.ID,
 					Property:          procInstToProcTemplate(oldInst),
@@ -269,15 +278,16 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					return err
 				}
 
-				for _, moduleHost := range moduleHosts {
-					srvInstID, err := db.NextSequence(ctx, common.BKTableNameServiceInstance)
-					if err != nil {
-						return err
-					}
+				srvInstIDs, err := db.NextSequences(ctx, common.BKTableNameServiceInstance, len(moduleHosts))
+				if err != nil {
+					return err
+				}
+
+				for index, moduleHost := range moduleHosts {
 					srvInst := ServiceInstance{
 						Metadata:          metadata.NewMetadata(bizID),
-						ID:                int64(srvInstID),
-						Name:              modulename,
+						ID:                int64(srvInstIDs[index]),
+						Name:              moduleName,
 						ServiceTemplateID: serviceTemplate.ID,
 						HostID:            moduleHost.HostID,
 						ModuleID:          module.ModuleID,
@@ -293,20 +303,36 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					}
 
 					// build process instance
-					for _, inst := range oldProcess {
+					procInstIDs, err := db.NextSequences(ctx, common.BKTableNameBaseProcess, len(oldProcess))
+					if err != nil {
+						return err
+					}
+
+					for index, inst := range oldProcess {
 						processTemplateID := inst2ProcessInstTemplate[inst.ProcessID].ID
-						procInstID, err := db.NextSequence(ctx, common.BKTableNameBaseProcess)
-						if err != nil {
-							return err
-						}
-						inst.ProcessID = int64(procInstID)
+						inst.ProcessID = int64(procInstIDs[index])
 						inst.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 						inst.BusinessID = bizID
 						inst.CreateTime = time.Now()
 						inst.LastTime = time.Now()
 						if inst.BindIP != nil {
 							tplBindIP := metadata.SocketBindType(*inst.BindIP)
-							*inst.BindIP = tplBindIP.IP()
+
+							if tplBindIP == metadata.BindInnerIP || tplBindIP == metadata.BindOuterIP {
+								if hostMap[moduleHost.HostID] == nil {
+									host := metadata.HostMapStr{}
+									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}
+									if err = db.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
+										common.BKHostOuterIPField).One(ctx, &host); err != nil {
+										return err
+									}
+									hostMap[moduleHost.HostID] = host
+								}
+							}
+
+							bindIP := tplBindIP.IP(hostMap[moduleHost.HostID])
+
+							*inst.BindIP = bindIP
 						} else {
 							inst.BindIP = new(string)
 						}

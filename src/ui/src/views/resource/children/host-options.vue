@@ -30,6 +30,9 @@
                     <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
                 </bk-select>
             </template>
+            <cmdb-transfer-menu class="mr10"
+                v-else>
+            </cmdb-transfer-menu>
             <cmdb-clipboard-selector class="options-clipboard mr10"
                 :list="clipboardList"
                 :disabled="!table.checked.length"
@@ -190,12 +193,15 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
+    import HostStore from '../transfer/host-store'
+    import cmdbTransferMenu from '../transfer/transfer-menu'
     export default {
         components: {
             cmdbImport,
             cmdbButtonGroup,
             cmdbHostFilter,
-            cmdbColumnsConfig
+            cmdbColumnsConfig,
+            cmdbTransferMenu
         },
         data () {
             return {
@@ -216,7 +222,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
                 },
                 assign: {
                     show: false,
@@ -336,6 +342,8 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
+                } finally {
+                    HostStore.setBusinessList(this.businessList)
                 }
             },
             openAgentApp () {

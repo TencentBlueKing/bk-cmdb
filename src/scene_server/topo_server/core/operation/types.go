@@ -82,6 +82,5 @@ type ExportObjectCondition struct {
 }
 
 type ImportObjectData struct {
-	Meta mapstr.MapStr           `json:"meta"`
 	Attr map[int64]mapstr.MapStr `json:"attr"`
 }

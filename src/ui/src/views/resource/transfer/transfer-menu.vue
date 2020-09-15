@@ -75,6 +75,10 @@
                 if (!valid) {
                     return false
                 }
+                if (HostStore.isAllResourceHost) {
+                    this.$error(this.$t('该功能仅支持对业务下的主机进行操作'))
+                    return false
+                }
                 const props = {
                     moduleType: 'idle',
                     business: HostStore.uniqueBusiness,
@@ -89,6 +93,10 @@
             transferToBizModule () {
                 const valid = this.validateSameBiz()
                 if (!valid) {
+                    return false
+                }
+                if (HostStore.isAllResourceHost) {
+                    this.$error(this.$t('该功能仅支持对业务下的主机进行操作'))
                     return false
                 }
                 const props = {
@@ -113,13 +121,17 @@
                 this.dialog.show = true
             },
             transferToResourcePool () {
-                const valid = this.validateSameBiz()
-                if (!valid) {
+                const isSameBiz = this.validateSameBiz()
+                if (!isSameBiz) {
+                    return false
+                }
+                if (HostStore.isAllResourceHost) {
+                    this.$error('所选主机已在资源池中')
                     return false
                 }
                 const isAllIdleModule = HostStore.isAllIdleModule
                 if (!isAllIdleModule) {
-                    this.$error(this.$t('改功能仅支持对空闲机模块下的主机进行操作'))
+                    this.$error(this.$t('该功能仅支持对空闲机模块下的主机进行操作'))
                     return false
                 }
                 this.dialog.props = {

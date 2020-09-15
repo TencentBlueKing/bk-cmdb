@@ -81,9 +81,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
 	if nil != err {
-		if err != nil {
-			blog.Warnf("os.Stat failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
-		}
+		blog.Warnf("os.Stat failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
 		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
 			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
 		}
@@ -128,10 +126,8 @@ func (s *Service) ImportObject(c *gin.Context) {
 
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
-			"meta": nil,
 			"attr": attrItems,
 		},
-		common.BKAppIDField: modelBizID,
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, common.BKDefaultOwnerID, objID, params)

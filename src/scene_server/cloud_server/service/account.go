@@ -20,6 +20,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -126,14 +127,21 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 			return err
 		}
 
-		// add auditLog
-		auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-		if err := auditLog.WithCurrent(ctx.Kit, res.AccountID); err != nil {
-			blog.Errorf("CreateAccount failed, NewAccountAuditLog err:%s, rid:%s", err, ctx.Kit.Rid)
-			return err
+		// generate audit log.
+		audit := auditlog.NewCloudAccountAuditLog(s.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+
+		auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, res.AccountID, res)
+		if auditErr != nil {
+			blog.Errorf("generate audit log failed after create cloud account, accountID: %d, err: %v, rid: %s",
+				res.AccountID, auditErr, ctx.Kit.Rid)
+			return auditErr
 		}
-		if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
-			blog.Errorf("CreateAccount failed, SaveAuditLog err:%s, rid:%s", err, ctx.Kit.Rid)
+
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
+			blog.Errorf("save audit log failed after create cloud account, accountID: %d, err: %v, rid: %s",
+				res.AccountID, auditErr, ctx.Kit.Rid)
 			return err
 		}
 
@@ -244,31 +252,33 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		// auditLog preData
-		auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-		if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
-			blog.Errorf("UpdateAccount failed, NewAccountAuditLog err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
-			return err
+		// generate audit log.
+		audit := auditlog.NewCloudAccountAuditLog(s.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).WithUpdateFields(option)
+		auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, accountID, nil)
+		if auditErr != nil {
+			blog.Errorf("generate audit log failed before update cloud account, accountID: %d, err: %v, rid: %s",
+				accountID, auditErr, ctx.Kit.Rid)
+			return auditErr
 		}
 
+		// to update.
 		err = s.CoreAPI.CoreService().Cloud().UpdateAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID, option)
 		if err != nil {
 			blog.Errorf("UpdateAccount failed, UpdateAccount err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
 			return err
 		}
 
-		// add auditLog
-		if err := auditLog.WithCurrent(ctx.Kit, accountID); err != nil {
-			blog.Errorf("UpdateAccount failed, WithCurrent err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
-			return err
-		}
-		if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate); err != nil {
-			blog.Errorf("UpdateAccount failed, SaveAuditLog err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
+			blog.Errorf("save audit log failed before update cloud account, accountID: %d, err: %v, rid: %s",
+				accountID, err, ctx.Kit.Rid)
 			return err
 		}
 
 		return nil
 	})
+
 	if txnErr != nil {
 		ctx.RespAutoError(txnErr)
 		return
@@ -288,23 +298,29 @@ func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		// add auditLog
-		auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-		if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
-			blog.Errorf("DeleteAccount failed, WithPrevious err:%s, accountID:%d, rid:%s", err, accountID, ctx.Kit.Rid)
-			return err
+		// generate audit log.
+		audit := auditlog.NewCloudAccountAuditLog(s.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
+		auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, accountID, nil)
+		if auditErr != nil {
+			blog.Errorf("generate audit log failed before delete cloud account, accountID: %d, err: %v, rid: %s",
+				accountID, auditErr, ctx.Kit.Rid)
+			return auditErr
 		}
+
+		// to delete.
 		err = s.CoreAPI.CoreService().Cloud().DeleteAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID)
 		if err != nil {
 			blog.Errorf("DeleteAccount failed, DeleteAccount err:%s, accountID:%d, rid:%s", err, accountID, ctx.Kit.Rid)
 			return err
 		}
 
-		if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete); err != nil {
-			blog.Errorf("DeleteAccount failed, SaveAuditLog err:%s, accountID:%d, rid:%s", err, accountID, ctx.Kit.Rid)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
+			blog.Errorf("save audit log failed after delete cloud account, accountID: %d, err: %v, rid: %s",
+				accountID, auditErr, ctx.Kit.Rid)
 			return err
 		}
-
 		return nil
 	})
 	if txnErr != nil {

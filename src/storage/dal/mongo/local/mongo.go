@@ -134,7 +134,7 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 	return nil
 }
 
-// NewMgo returns new RDB
+// InitTxnManager TxnID management of initial transaction
 func (c *Mongo) InitTxnManager(r *redis.Client) error {
 	return c.tm.InitTxnManager(r)
 }
@@ -570,6 +570,50 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 		return 0, err
 	}
 	return doc.SequenceID, err
+}
+
+// NextSequences 批量获取新序列号(非事务)
+func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int) ([]uint64, error) {
+	if num == 0 {
+		return make([]uint64, 0), nil
+	}
+
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo next-sequences cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
+	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
+	ctx = context.Background()
+
+	coll := c.dbc.Database(c.dbname).Collection("cc_idgenerator")
+
+	Update := bson.M{
+		"$inc":         bson.M{"SequenceID": num},
+		"$setOnInsert": bson.M{"create_time": time.Now()},
+		"$set":         bson.M{"last_time": time.Now()},
+	}
+	filter := bson.M{"_id": sequenceName}
+	upsert := true
+	returnChange := options.After
+	opt := &options.FindOneAndUpdateOptions{
+		Upsert:         &upsert,
+		ReturnDocument: &returnChange,
+	}
+
+	doc := Idgen{}
+	err := coll.FindOneAndUpdate(ctx, filter, Update, opt).Decode(&doc)
+	if err != nil {
+		return nil, err
+	}
+
+	sequences := make([]uint64, num)
+	for i := 0; i < num; i++ {
+		sequences[i] = uint64(i-num) + doc.SequenceID + 1
+	}
+
+	return sequences, err
 }
 
 type Idgen struct {

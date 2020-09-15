@@ -148,7 +148,7 @@
                 </div>
                 <div class="child-category"></div>
                 <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }"
-                    v-if="!showAddMianCategory">
+                    v-show="!showAddMianCategory">
                     <bk-button slot-scope="{ disabled }"
                         class="add-btn"
                         :disabled="disabled"

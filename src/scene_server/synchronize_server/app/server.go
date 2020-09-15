@@ -28,8 +28,6 @@ import (
 	//"configcenter/src/storage/dal/redis"
 	synchronizeClient "configcenter/src/apimachinery/synchronize"
 	synchronizeUtil "configcenter/src/apimachinery/synchronize/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -73,8 +71,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	service.SetSynchronizeServer(synchronizeClientInst)
 	go synchronSrv.Service.InitBackground()
-	handler := restful.NewContainer().Add(service.WebService())
-	err = backbone.StartServer(ctx, cancel, engine, handler, true)
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
 		return err
 	}
@@ -108,16 +105,16 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 			continue
 		}
 		configItem := &options.ConfigItem{}
-		appNames, _ := cc.String("synchronizeServer."+name+".AppNames")
-		syncResource, _ := cc.String("synchronizeServer."+name+".SynchronizeResource")
-		targetHost, _ := cc.String("synchronizeServer."+name+".Host")
-		fieldSign, _ := cc.String("synchronizeServer."+name+".FieldSign")
-		dataSign, _ := cc.String("synchronizeServer."+name+".Flag")
-		supplerAccount, _ := cc.String("synchronizeServer."+name+".SupplerAccount")
-		whiteList, _ := cc.String("synchronizeServer."+name+".WhiteList")
-		objectIDs, _ := cc.String("synchronizeServer."+name+".ObjectID")
-		ignoreModelAttr, _ := cc.String("synchronizeServer."+name+".IgnoreModelAttribute")
-		strEnableInstFilter, _ := cc.String("synchronizeServer."+name+".EnableInstFilter")
+		appNames, _ := cc.String("synchronizeServer." + name + ".AppNames")
+		syncResource, _ := cc.String("synchronizeServer." + name + ".SynchronizeResource")
+		targetHost, _ := cc.String("synchronizeServer." + name + ".Host")
+		fieldSign, _ := cc.String("synchronizeServer." + name + ".FieldSign")
+		dataSign, _ := cc.String("synchronizeServer." + name + ".Flag")
+		supplerAccount, _ := cc.String("synchronizeServer." + name + ".SupplerAccount")
+		whiteList, _ := cc.String("synchronizeServer." + name + ".WhiteList")
+		objectIDs, _ := cc.String("synchronizeServer." + name + ".ObjectID")
+		ignoreModelAttr, _ := cc.String("synchronizeServer." + name + ".IgnoreModelAttribute")
+		strEnableInstFilter, _ := cc.String("synchronizeServer." + name + ".EnableInstFilter")
 
 		configItem.AppNames = SplitFilter(appNames, ",")
 		if syncResource == "1" {

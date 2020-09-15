@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -223,7 +224,7 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 		DstModuleIDArr:   []int64{ownerModuleID},
 	}
 
-	audit := lgc.NewHostModuleLog(kit, conf.HostIDs)
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, conf.HostIDs)
 	if err := audit.WithPrevious(kit.Ctx); err != nil {
 		blog.Errorf("move host to resource pool, but get prev module host config failed, err: %v, input:%+v,rid:%s", err, conf, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
@@ -356,7 +357,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 		DstModuleIDArr:   []int64{moduleID},
 	}
 
-	audit := lgc.NewHostModuleLog(kit, conf.HostIDs)
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, conf.HostIDs)
 	if err := audit.WithPrevious(kit.Ctx); err != nil {
 		blog.Warnf("WithPrevious failed, err: %+v, rid: %s", err, kit.Rid)
 	}

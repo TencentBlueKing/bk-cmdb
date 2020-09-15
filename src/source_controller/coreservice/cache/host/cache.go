@@ -17,8 +17,8 @@ import (
 	"sync"
 
 	"configcenter/src/source_controller/coreservice/cache/tools"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
+
 	"gopkg.in/redis.v5"
 )
 
@@ -26,7 +26,7 @@ var client *Client
 var clientOnce sync.Once
 var cache *hostCache
 
-func NewClient(rds *redis.Client, db dal.DB) *Client {
+func NewClient(rds *redis.Client) *Client {
 
 	if client != nil {
 		return client
@@ -34,9 +34,8 @@ func NewClient(rds *redis.Client, db dal.DB) *Client {
 
 	clientOnce.Do(func() {
 		client = &Client{
-			rds:  rds,
-			db:   db,
 			lock: tools.NewRefreshingLock(),
+			rds:  rds,
 		}
 	})
 
@@ -44,7 +43,7 @@ func NewClient(rds *redis.Client, db dal.DB) *Client {
 }
 
 // Attention, it can only be called for once.
-func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
+func NewCache(event reflector.Interface, rds *redis.Client) error {
 
 	if cache != nil {
 		return nil
@@ -53,9 +52,8 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 	// cache has not been initialized.
 	host := &hostCache{
 		key:   hostKey,
-		rds:   rds,
 		event: event,
-		db:    db,
+		rds:   rds,
 	}
 
 	if err := host.Run(); err != nil {

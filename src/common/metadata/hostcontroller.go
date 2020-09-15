@@ -15,6 +15,8 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -91,6 +93,30 @@ type HostSnap struct {
 type GetHostSnapResult struct {
 	BaseResp `json:",inline"`
 	Data     HostSnap `json:"data"`
+}
+
+type HostSnapBatchOption struct {
+	IDs    []int64  `json:"bk_ids"`
+	Fields []string `json:"fields"`
+}
+
+func (h *HostSnapBatchOption) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 200
+	if len(h.IDs) == 0 || len(h.IDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_ids", maxLimit},
+		}
+	}
+
+	if len(h.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 type HostSnapBatchInput struct {

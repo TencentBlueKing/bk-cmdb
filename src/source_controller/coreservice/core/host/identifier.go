@@ -20,7 +20,7 @@ import (
 )
 
 func (hm *hostManager) Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
-	identifier := identifier.NewIdentifier(hm.DbProxy)
+	identifier := identifier.NewIdentifier()
 	host, err := identifier.Identifier(kit, input.HostIDs)
 	if err != nil {
 		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)

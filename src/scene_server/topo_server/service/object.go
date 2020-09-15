@@ -29,7 +29,7 @@ import (
 
 // CreateObjectBatch batch to create some objects
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
-	data := new(mapstr.MapStr)
+	data := new(map[string]operation.ImportObjectData)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return

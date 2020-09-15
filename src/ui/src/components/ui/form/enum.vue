@@ -60,48 +60,52 @@
                 default: 'medium'
             }
         },
-        data () {
-            return {
-                selected: this.multiple ? [] : ''
-            }
-        },
         computed: {
             searchable () {
                 return this.options.length > 7
+            },
+            selected: {
+                get () {
+                    if (this.isEmpty(this.value)) {
+                        return this.getDefaultValue()
+                    }
+                    return this.value
+                },
+                set (value) {
+                    let emitValue = value
+                    if (value === '') {
+                        emitValue = this.multiple ? [] : null
+                    }
+                    this.$emit('input', emitValue)
+                    this.$emit('on-selected', emitValue)
+                }
             }
         },
         watch: {
-            value (value) {
-                if (value !== null) {
-                    this.selected = value
+            value: {
+                immediate: true,
+                handler (value) {
+                    this.checkSelected()
                 }
-            },
-            selected (selected) {
-                this.$emit('input', selected)
-                this.$emit('on-selected', selected)
-            },
-            disabled (disabled) {
-                this.setInitData()
             }
         },
-        created () {
-            this.setInitData()
-        },
         methods: {
-            setInitData () {
+            isEmpty (value) {
+                return ['', undefined, null].includes(value)
+            },
+            getDefaultValue () {
                 if (this.autoSelect) {
-                    if (this.value === '') {
-                        const defaultOption = this.options.find(option => option['is_default'])
-                        if (defaultOption) {
-                            this.selected = this.multiple ? [defaultOption.id] : defaultOption.id
-                        } else {
-                            this.$emit('input', null)
-                        }
-                    } else {
-                        this.selected = this.value
-                    }
-                } else {
-                    this.selected = this.value
+                    const defaultOption = this.options.find(option => option['is_default'])
+                    return defaultOption
+                        ? this.multiple ? [defaultOption.id] : defaultOption.id
+                        : ''
+                }
+                return this.multiple ? [] : ''
+            },
+            checkSelected () {
+                const selected = this.selected
+                if (this.value !== selected) {
+                    this.selected = selected
                 }
             },
             focus () {

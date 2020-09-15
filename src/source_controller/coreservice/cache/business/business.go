@@ -19,9 +19,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
+
 	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
@@ -30,7 +31,6 @@ type business struct {
 	key   keyGenerator
 	rds   *redis.Client
 	event reflector.Interface
-	db    dal.DB
 }
 
 func (b *business) Run() error {
@@ -133,7 +133,7 @@ func (b *business) getBusinessName(bizID int64) (string, error) {
 	filter := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	if err := b.db.Table(common.BKTableNameBaseApp).Find(filter).One(context.Background(), bizInfo); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).One(context.Background(), bizInfo); err != nil {
 		blog.Errorf("get biz %d name from mongo failed, err: %v", bizID, err)
 		return "", err
 	}

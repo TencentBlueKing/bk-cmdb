@@ -5,6 +5,8 @@
         :clearable="false">
         <bk-option id="1" name="127.0.0.1"></bk-option>
         <bk-option id="2" name="0.0.0.0"></bk-option>
+        <bk-option id="3" :name="$t('第一内网IP')"></bk-option>
+        <bk-option id="4" :name="$t('第一外网IP')"></bk-option>
     </bk-select>
 </template>
 

@@ -99,40 +99,44 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	}
 
 	// add audit log
-	properties := make([]metadata.Property, 0)
-	for _, item := range AppRow() {
-		properties = append(properties, metadata.Property{
-			PropertyID:   item.PropertyID,
-			PropertyName: item.PropertyName,
-		})
+	id, err := db.NextSequence(ctx, common.BKTableNameAuditLog)
+	if err != nil {
+		blog.Errorf("get next audit log id failed, err: %s", err.Error())
+		return err
 	}
+
+	action := metadata.AuditCreate
+	logDetail := &metadata.BasicContent{
+		CurData: appModelData,
+	}
+	if preData != nil {
+		action = metadata.AuditUpdate
+		logDetail = &metadata.BasicContent{
+			PreData:      preData,
+			UpdateFields: appModelData,
+		}
+	}
+
 	log := metadata.AuditLog{
+		ID:              int64(id),
 		AuditType:       metadata.BusinessType,
 		SupplierAccount: conf.OwnerID,
 		User:            conf.User,
 		ResourceType:    metadata.BusinessRes,
-		Action:          metadata.AuditCreate,
+		Action:          action,
 		OperateFrom:     metadata.FromCCSystem,
+		BusinessID:      int64(bizID),
+		ResourceID:      int64(bizID),
+		ResourceName:    common.BKAppName,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
-				BusinessID:   int64(bizID),
-				BusinessName: common.BKAppName,
-				ResourceID:   int64(bizID),
-				ResourceName: common.BKAppName,
-				Details: &metadata.BasicContent{
-					PreData:    preData,
-					CurData:    appModelData,
-					Properties: properties,
-				},
+				Details: logDetail,
 			},
 			ModelID: common.BKInnerObjIDApp,
 		},
 		OperationTime: metadata.Now(),
-		Label:         nil,
 	}
-	if preData != nil {
-		log.Action = metadata.AuditUpdate
-	}
+
 	if err = db.Table(common.BKTableNameAuditLog).Insert(ctx, log); err != nil {
 		blog.ErrorJSON("add audit log %s error %s", log, err.Error())
 		return err
@@ -236,6 +240,13 @@ func addBKProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID 
 
 //addSetInBKApp add set in bk app
 func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID uint64) error {
+	auditIDs, err := db.NextSequences(ctx, common.BKTableNameAuditLog, len(setModuleKv))
+	if err != nil {
+		blog.Errorf("get next audit log ids failed, err: %s", err.Error())
+		return err
+	}
+	auditIndex := 0
+
 	for setName, moduleArr := range setModuleKv {
 		setModelData := map[string]interface{}{}
 		setModelData[common.BKSetNameField] = setName
@@ -254,40 +265,41 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 		}
 
 		// add audit log
-		properties := make([]metadata.Property, 0)
-		for _, item := range SetRow() {
-			properties = append(properties, metadata.Property{
-				PropertyID:   item.PropertyID,
-				PropertyName: item.PropertyName,
-			})
+		id := auditIDs[auditIndex]
+		auditIndex++
+
+		action := metadata.AuditCreate
+		logDetail := &metadata.BasicContent{
+			CurData: setModelData,
 		}
+		if preData != nil {
+			action = metadata.AuditUpdate
+			logDetail = &metadata.BasicContent{
+				PreData:      preData,
+				UpdateFields: setModelData,
+			}
+		}
+
 		log := metadata.AuditLog{
+			ID:              int64(id),
 			AuditType:       metadata.BusinessResourceType,
 			SupplierAccount: conf.OwnerID,
 			User:            conf.User,
 			ResourceType:    metadata.SetRes,
-			Action:          metadata.AuditCreate,
+			Action:          action,
 			OperateFrom:     metadata.FromCCSystem,
+			BusinessID:      int64(bizID),
+			ResourceID:      int64(setID),
+			ResourceName:    setName,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					BusinessID:   int64(bizID),
-					BusinessName: common.BKAppName,
-					ResourceID:   int64(setID),
-					ResourceName: setName,
-					Details: &metadata.BasicContent{
-						PreData:    preData,
-						CurData:    setModelData,
-						Properties: properties,
-					},
+					Details: logDetail,
 				},
 				ModelID: common.BKInnerObjIDSet,
 			},
 			OperationTime: metadata.Now(),
-			Label:         map[string]string{metadata.LabelBizTopology: ""},
 		}
-		if preData != nil {
-			log.Action = metadata.AuditUpdate
-		}
+
 		if err = db.Table(common.BKTableNameAuditLog).Insert(ctx, log); err != nil {
 			blog.ErrorJSON("add audit log %s error %s", log, err.Error())
 			return err
@@ -303,6 +315,13 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 
 // addModuleInSet add module in set
 func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, moduleArr map[string]string, setID, bizID uint64) error {
+	auditIDs, err := db.NextSequences(ctx, common.BKTableNameAuditLog, len(moduleArr))
+	if err != nil {
+		blog.Errorf("get next audit log ids failed, err: %s", err.Error())
+		return err
+	}
+	auditIndex := 0
+
 	for moduleName, processNameStr := range moduleArr {
 		moduleModelData := map[string]interface{}{}
 		moduleModelData[common.BKModuleNameField] = moduleName
@@ -321,40 +340,41 @@ func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, modu
 		}
 
 		// add audit log
-		properties := make([]metadata.Property, 0)
-		for _, item := range ModuleRow() {
-			properties = append(properties, metadata.Property{
-				PropertyID:   item.PropertyID,
-				PropertyName: item.PropertyName,
-			})
+		id := auditIDs[auditIndex]
+		auditIndex++
+
+		action := metadata.AuditCreate
+		logDetail := &metadata.BasicContent{
+			CurData: moduleModelData,
 		}
+		if preData != nil {
+			action = metadata.AuditUpdate
+			logDetail = &metadata.BasicContent{
+				PreData:      preData,
+				UpdateFields: moduleModelData,
+			}
+		}
+
 		log := metadata.AuditLog{
+			ID:              int64(id),
 			AuditType:       metadata.BusinessResourceType,
 			SupplierAccount: conf.OwnerID,
 			User:            conf.User,
 			ResourceType:    metadata.ModuleRes,
-			Action:          metadata.AuditCreate,
+			Action:          action,
 			OperateFrom:     metadata.FromCCSystem,
+			BusinessID:      int64(bizID),
+			ResourceID:      int64(moduleID),
+			ResourceName:    moduleName,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
-					BusinessID:   int64(bizID),
-					BusinessName: common.BKAppName,
-					ResourceID:   int64(moduleID),
-					ResourceName: moduleName,
-					Details: &metadata.BasicContent{
-						PreData:    preData,
-						CurData:    moduleModelData,
-						Properties: properties,
-					},
+					Details: logDetail,
 				},
 				ModelID: common.BKInnerObjIDModule,
 			},
 			OperationTime: metadata.Now(),
-			Label:         map[string]string{metadata.LabelBizTopology: ""},
 		}
-		if preData != nil {
-			log.Action = metadata.AuditUpdate
-		}
+
 		if err = db.Table(common.BKTableNameAuditLog).Insert(ctx, log); err != nil {
 			blog.ErrorJSON("add audit log %s error %s", log, err.Error())
 			return err

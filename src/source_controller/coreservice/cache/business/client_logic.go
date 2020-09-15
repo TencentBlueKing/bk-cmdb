@@ -24,6 +24,8 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
+
 	"gopkg.in/redis.v5"
 )
 
@@ -32,7 +34,7 @@ func (c *Client) getBusinessFromMongo(bizID int64) (string, error) {
 	filter := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	err := c.db.Table(common.BKTableNameBaseApp).Find(filter).One(context.Background(), &biz)
+	err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).One(context.Background(), &biz)
 	if err != nil {
 		blog.Errorf("get business %d info from db, but failed, err: %v", bizID, err)
 		return "", ccError.New(common.CCErrCommDBSelectFailed, err.Error())
@@ -51,7 +53,7 @@ func (c *Client) listBusinessFromMongo(ctx context.Context, ids []int64, fields 
 		},
 	}
 
-	err := c.db.Table(common.BKTableNameBaseApp).Find(filter).Fields(fields...).All(context.Background(), &list)
+	err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).Fields(fields...).All(context.Background(), &list)
 	if err != nil {
 		blog.Errorf("list business info from db failed, err: %v, rid: %v", err, rid)
 		return nil, ccError.New(common.CCErrCommDBSelectFailed, err.Error())
@@ -76,7 +78,7 @@ func (c *Client) listModuleFromMongo(ctx context.Context, ids []int64, fields []
 		},
 	}
 
-	err := c.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(fields...).All(context.Background(), &list)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Fields(fields...).All(context.Background(), &list)
 	if err != nil {
 		blog.Errorf("list module info from db failed, err: %v, rid: %v", err, rid)
 		return nil, ccError.New(common.CCErrCommDBSelectFailed, err.Error())
@@ -101,7 +103,7 @@ func (c *Client) listSetFromMongo(ctx context.Context, ids []int64, fields []str
 		},
 	}
 
-	err := c.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(fields...).All(context.Background(), &list)
+	err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).Fields(fields...).All(context.Background(), &list)
 	if err != nil {
 		blog.Errorf("list set info from db failed, err: %v, rid: %v", err, rid)
 		return nil, ccError.New(common.CCErrCommDBSelectFailed, err.Error())
@@ -144,7 +146,7 @@ func (c *Client) getBusinessBaseInfo() (list []BizBaseInfo, err error) {
 
 func (c *Client) genBusinessListKeys(_ int64) ([]string, error) {
 	bizList := make([]BizBaseInfo, 0)
-	err := c.db.Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField, common.BKAppNameField).All(context.Background(), &bizList)
+	err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField, common.BKAppNameField).All(context.Background(), &bizList)
 	if err != nil {
 		blog.Errorf("get all biz list from mongodb failed, err: %v", err)
 		return nil, err
@@ -396,7 +398,7 @@ func (c *Client) getAllModuleBase(bizID int64) ([]ModuleBaseInfo, error) {
 	filter := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	cnt, err := c.db.Table(common.BKTableNameBaseModule).Find(filter).Count(context.Background())
+	cnt, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Count(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +406,7 @@ func (c *Client) getAllModuleBase(bizID int64) ([]ModuleBaseInfo, error) {
 	list := make([]ModuleBaseInfo, 0)
 	for start := 0; start < int(cnt); start += step {
 		modules := make([]ModuleBaseInfo, 0)
-		err = c.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(common.BKModuleIDField, common.BKModuleNameField).
+		err = mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Fields(common.BKModuleIDField, common.BKModuleNameField).
 			Start(uint64(start)).Limit(uint64(step)).All(context.Background(), &modules)
 		if err != nil {
 			blog.Errorf("get biz %d module list from mongodb failed, err: %v", bizID, err)
@@ -435,7 +437,7 @@ func (c *Client) getAllSetBase(bizID int64) ([]SetBaseInfo, error) {
 		common.BKAppIDField: bizID,
 	}
 
-	cnt, err := c.db.Table(common.BKTableNameBaseSet).Find(nil).Count(context.Background())
+	cnt, err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(nil).Count(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +445,7 @@ func (c *Client) getAllSetBase(bizID int64) ([]SetBaseInfo, error) {
 	list := make([]SetBaseInfo, 0)
 	for start := 0; start < int(cnt); start += step {
 		modules := make([]SetBaseInfo, 0)
-		err = c.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(common.BKSetIDField, common.BKSetNameField).
+		err = mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).Fields(common.BKSetIDField, common.BKSetNameField).
 			Start(uint64(start)).Limit(uint64(step)).All(context.Background(), &modules)
 		if err != nil {
 			blog.Errorf("get biz %d set list from mongodb failed, err: %v", bizID, err)
@@ -477,7 +479,7 @@ func (c *Client) listModuleDetailFromMongo(ids []int64) ([]string, error) {
 	}
 
 	all := make([]mapstr.MapStr, 0)
-	if err := c.db.Table(common.BKTableNameBaseModule).Find(filter).All(context.Background(), &all); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).All(context.Background(), &all); err != nil {
 		blog.Errorf("list module %d update from mongo failed, err: %v", ids, err)
 		return nil, err
 	}
@@ -499,7 +501,7 @@ func (c *Client) getModuleDetailFromMongo(id int64) (string, error) {
 		common.BKModuleIDField: id,
 	}
 
-	if err := c.db.Table(common.BKTableNameBaseModule).Find(filter).One(context.Background(), &mod); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).One(context.Background(), &mod); err != nil {
 		blog.Errorf("get module %d update from mongo failed, err: %v", id, err)
 		return "", err
 	}
@@ -513,7 +515,7 @@ func (c *Client) getSetDetailFromMongo(id int64) (string, error) {
 		common.BKSetIDField: id,
 	}
 
-	if err := c.db.Table(common.BKTableNameBaseSet).Find(filter).One(context.Background(), &set); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).One(context.Background(), &set); err != nil {
 		blog.Errorf("get module %d update from mongo failed, err: %v", id, err)
 		return "", err
 	}
@@ -529,7 +531,7 @@ func (c *Client) listSetDetailFromMongo(ids []int64) ([]string, error) {
 	}
 
 	sets := make([]map[string]interface{}, 0)
-	if err := c.db.Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &sets); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).All(context.Background(), &sets); err != nil {
 		blog.Errorf("get set %v update from mongo failed, err: %v", ids, err)
 		return nil, err
 	}
@@ -565,7 +567,7 @@ func (c *Client) getCustomLevelBaseFromMongodb(objID string, bizID int64) ([]Cus
 		common.MetadataField: meta.NewMetadata(bizID),
 	}
 	// count for paging use.
-	cnt, err := c.db.Table(common.BKTableNameBaseInst).Find(filter).Count(context.Background())
+	cnt, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).Count(context.Background())
 	if err != nil {
 		blog.Errorf("get custom level object: %s, biz: %d, list keys, but count from mongodb failed, err: %v", objID, bizID, err)
 		return nil, err
@@ -573,7 +575,7 @@ func (c *Client) getCustomLevelBaseFromMongodb(objID string, bizID int64) ([]Cus
 	list := make([]CustomInstanceBase, 0)
 	for start := 0; start < int(cnt); start += step {
 		instances := make([]CustomInstanceBase, 0)
-		err = c.db.Table(common.BKTableNameBaseInst).Find(filter).
+		err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).
 			Start(uint64(start)).Limit(uint64(step)).All(context.Background(), &instances)
 		if err != nil {
 			blog.Errorf("get custom level object: %s, biz: %d, list keys, but get from mongodb failed, err: %v", objID, bizID, err)
@@ -617,7 +619,7 @@ func (c *Client) getCustomLevelDetail(objID string, instID int64) (string, error
 		common.BKInstIDField: instID,
 	}
 	instance := make(map[string]interface{})
-	err := c.db.Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
+	err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
 	if err != nil {
 		blog.Errorf("get custom level object: %s, inst: %d from mongodb failed, err: %v", objID, instID, err)
 		return "", err
@@ -638,7 +640,7 @@ func (c *Client) listCustomLevelDetail(objID string, instIDs []int64) ([]string,
 	}
 
 	instance := make([]map[string]interface{}, 0)
-	err := c.db.Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
+	err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
 	if err != nil {
 		blog.Errorf("get custom level object: %s, inst: %v from mongodb failed, err: %v", objID, instIDs, err)
 		return nil, err

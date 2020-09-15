@@ -40,3 +40,7 @@ window.CMDB_APP = new Vue({
     components: { App },
     template: '<App/>'
 })
+
+if (process.env.COMMIT_ID) {
+    window.CMDB_COMMIT_ID = process.env.COMMIT_ID
+}
