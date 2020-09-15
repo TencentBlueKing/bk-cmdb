@@ -78,7 +78,7 @@ func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	var result *metadata.OperaterException
+	result := new(metadata.OperaterException)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
 		// auth: deregister hosts
 		if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, config.HostID...); err != nil {
@@ -542,7 +542,7 @@ func (s *Service) moveHostToDefaultModule(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	var result *metadata.OperaterException
+	result := new(metadata.OperaterException)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
 		// auth: deregister hosts
 		if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostIDs...); err != nil {
