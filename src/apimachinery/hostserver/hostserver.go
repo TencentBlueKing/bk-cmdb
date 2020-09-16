@@ -73,7 +73,7 @@ type HostServerClientInterface interface {
 	DeleteDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (resp *metadata.BaseResp, err error)
 	GetDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (resp *metadata.GetDynamicGroupResult, err error)
 	SearchDynamicGroup(ctx context.Context, bizID string, header http.Header, data *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error)
-	ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (resp *metadata.Response, err error)
+	ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
 	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error)
 	ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error)

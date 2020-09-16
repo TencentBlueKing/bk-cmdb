@@ -36,15 +36,27 @@ const (
 
 	// DynamicGroupOperatorNIN nin operator.
 	DynamicGroupOperatorNIN = "$nin"
+
+	// DynamicGroupOperatorLTE lte operator.
+	DynamicGroupOperatorLTE = "$lte"
+
+	// DynamicGroupOperatorGTE gte operator.
+	DynamicGroupOperatorGTE = "$gte"
+
+	// DynamicGroupOperatorLIKE like operator.
+	DynamicGroupOperatorLIKE = "$regex"
 )
 
 var (
 	// DynamicGroupOperators all operators -> current newest operators.
 	DynamicGroupOperators = map[string]string{
-		DynamicGroupOperatorEQ:  DynamicGroupOperatorEQ,
-		DynamicGroupOperatorNE:  DynamicGroupOperatorNIN,
-		DynamicGroupOperatorIN:  DynamicGroupOperatorIN,
-		DynamicGroupOperatorNIN: DynamicGroupOperatorNIN,
+		DynamicGroupOperatorEQ:   DynamicGroupOperatorEQ,
+		DynamicGroupOperatorNE:   DynamicGroupOperatorNIN,
+		DynamicGroupOperatorIN:   DynamicGroupOperatorIN,
+		DynamicGroupOperatorNIN:  DynamicGroupOperatorNIN,
+		DynamicGroupOperatorLTE:  DynamicGroupOperatorLTE,
+		DynamicGroupOperatorGTE:  DynamicGroupOperatorGTE,
+		DynamicGroupOperatorLIKE: DynamicGroupOperatorLIKE,
 	}
 
 	// DynamicGroupConditionTypes all condition object types of dynamic group.
