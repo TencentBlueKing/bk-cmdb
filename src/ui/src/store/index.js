@@ -11,7 +11,6 @@ import setFeatures from './modules/view/set-features.js'
 import auth from './modules/api/auth.js'
 import eventSub from './modules/api/event-sub.js'
 import hostBatch from './modules/api/host-batch.js'
-import hostCustomApi from './modules/api/host-custom-api.js'
 import hostDelete from './modules/api/host-delete.js'
 import hostFavorites from './modules/api/host-favorites.js'
 import hostRelation from './modules/api/host-relation.js'
@@ -80,7 +79,6 @@ export default new Vuex.Store({
         request,
         eventSub,
         hostBatch,
-        hostCustomApi,
         hostDelete,
         hostFavorites,
         hostRelation,
