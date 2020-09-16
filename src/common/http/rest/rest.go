@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -111,6 +112,11 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 			ctx = context.WithValue(ctx, common.TransactionIdHeader, txnID)
 			ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, header.Get(common.TransactionTimeoutHeader))
 		}
+		if mode := util.GetHTTPReadPreference(header); mode != common.NilMode {
+			ctx = util.SetDBReadPreference(ctx, mode)
+			header = util.SetHTTPReadPreference(header, mode)
+		}
+
 		restContexts.Kit = &Kit{
 			Header:          header,
 			Rid:             rid,

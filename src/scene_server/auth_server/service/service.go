@@ -89,6 +89,8 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 		// use iam language as cc language
 		req.Request.Header.Set(common.BKHTTPLanguage, req.Request.Header.Get("Blueking-Language"))
 
+		req.Request.Header = util.SetHTTPReadPreference(req.Request.Header, common.SecondaryPreferredMode)
+
 		// set supplierID
 		setSupplierID(req.Request)
 

@@ -929,6 +929,40 @@ const (
 	BKHTTPSecretsToken   = "BK-Secrets-Token"
 	BKHTTPSecretsProject = "BK-Secrets-Project"
 	BKHTTPSecretsEnv     = "BK-Secrets-Env"
+	// BKHTTPReadRefernce  query db use secondary node
+	BKHTTPReadPrefernce = "Cc_Read_Preference"
+)
+
+type ReadPrefernceMode string
+
+func (r ReadPrefernceMode) String() string {
+	return string(r)
+}
+
+// BKHTTPReadRefernceMode constants  这个位置对应的是mongodb 的read preference 的mode，如果driver 没有变化这里是不需要变更的，
+// 新增mode 需要修改src/storage/dal/mongo/local/mongo.go 中的getCollectionOption 方法来支持
+const (
+
+	// NilMode not set
+	NilMode ReadPrefernceMode = ""
+	// PrimaryMode indicates that only a primary is
+	// considered for reading. This is the default
+	// mode.
+	PrimaryMode ReadPrefernceMode = "1"
+	// PrimaryPreferredMode indicates that if a primary
+	// is available, use it; otherwise, eligible
+	// secondaries will be considered.
+	PrimaryPreferredMode ReadPrefernceMode = "2"
+	// SecondaryMode indicates that only secondaries
+	// should be considered.
+	SecondaryMode ReadPrefernceMode = "3"
+	// SecondaryPreferredMode indicates that only secondaries
+	// should be considered when one is available. If none
+	// are available, then a primary will be considered.
+	SecondaryPreferredMode ReadPrefernceMode = "4"
+	// NearestMode indicates that all primaries and secondaries
+	// will be considered.
+	NearestMode ReadPrefernceMode = "5"
 )
 
 // transaction related
