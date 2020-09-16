@@ -32,6 +32,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 	"gopkg.in/redis.v5"
@@ -311,8 +312,10 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		f.filter = bson.M{}
 	}
 
+	opt := getCollectionOption(ctx)
+
 	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
-		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
+		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
 			return err
 		}
@@ -351,8 +354,9 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 		f.filter = bson.M{}
 	}
 
+	opt := getCollectionOption(ctx)
 	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
-		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
+		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
 			return err
 		}
@@ -378,17 +382,19 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 		f.filter = bson.M{}
 	}
 
+	opt := getCollectionOption(ctx)
+
 	sessCtx, _, useTxn, err := f.tm.GetTxnContext(ctx, f.dbc)
 	if err != nil {
 		return 0, err
 	}
 	if !useTxn {
 		// not use transaction.
-		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(ctx, f.filter)
+		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(ctx, f.filter)
 		return uint64(cnt), err
 	} else {
 		// use transaction
-		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(sessCtx, f.filter)
+		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(sessCtx, f.filter)
 		// do not release th session, otherwise, the session will be returned to the
 		// session pool and will be reused. then mongodb driver will increase the transaction number
 		// automatically and do read/write retry if policy is set.
@@ -777,8 +783,10 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 		blog.V(4).InfoDepthf(2, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
+	opt := getCollectionOption(ctx)
+
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
+		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
 		if err != nil {
 			return err
 		}
@@ -796,8 +804,10 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 		blog.V(4).InfoDepthf(2, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
+	opt := getCollectionOption(ctx)
+
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
+		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
 		if err != nil {
 			return err
 		}
@@ -823,11 +833,13 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 	if filter == nil {
 		filter = bson.M{}
 	}
+	opt := getCollectionOption(ctx)
+
 	var results []interface{} = nil
 
 	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		var err error
-		results, err = c.dbc.Database(c.dbname).Collection(c.collName).Distinct(ctx, field, filter)
+		results, err = c.dbc.Database(c.dbname).Collection(c.collName, opt).Distinct(ctx, field, filter)
 		return err
 	})
 	return results, err
@@ -941,4 +953,35 @@ func validHostType(collection string, projection map[string]int, result interfac
 		return fmt.Errorf("host query result type invalid")
 	}
 	return nil
+}
+
+func getCollectionOption(ctx context.Context) *options.CollectionOptions {
+	var opt *options.CollectionOptions
+	switch util.GetDBReadPreference(ctx) {
+
+	case common.NilMode:
+
+	case common.PrimaryMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.Primary(),
+		}
+	case common.PrimaryPreferredMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.PrimaryPreferred(),
+		}
+	case common.SecondaryMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.Secondary(),
+		}
+	case common.SecondaryPreferredMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.SecondaryPreferred(),
+		}
+	case common.NearestMode:
+		opt = &options.CollectionOptions{
+			ReadPreference: readpref.Nearest(),
+		}
+	}
+
+	return opt
 }
