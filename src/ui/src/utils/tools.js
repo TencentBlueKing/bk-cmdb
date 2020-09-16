@@ -108,7 +108,7 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
             values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
         }
     })
-    return values
+    return { ...inst, ...values }
 }
 
 export function formatValues (values, properties) {
