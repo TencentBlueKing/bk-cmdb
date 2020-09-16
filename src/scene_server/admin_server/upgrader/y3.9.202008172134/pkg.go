@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_8_202008172134
+package y3_9_202008172134
 
 import (
 	"context"
@@ -21,12 +21,12 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202008172134", upgrade)
+	upgrader.RegistUpgrader("y3.9.202008172134", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	if err := reconcileAuditTableIndexes(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade to version y3.8.202008172134 failed, reconcileAuditTableIndexes failed, err: %+v", err)
+		blog.Errorf("upgrade to version y3.9.202008172134 failed, reconcileAuditTableIndexes failed, err: %+v", err)
 		return err
 	}
 
