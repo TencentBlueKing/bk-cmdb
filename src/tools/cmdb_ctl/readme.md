@@ -249,10 +249,11 @@ denyall配置为false的情况下，limit和ttl配置才能生效
     ```
 - 命令行参数
     ```
-      --path="": the directory to store configuration
+      --dir="": the directory path where the configuration file is located
+      --file="": the path of the configuration file
     ```
 - 示例
     ```
-      ./tool_ctl checkconf
-      ./tool_ctl checkconf --path="/data/cmdb/cmdb_adminserver/configures"
+      ./tool_ctl checkconf --dir="/data/cmdb/cmdb_adminserver/configures"
+      ./tool_ctl checkconf --file="/data/cmdb/cmdb_adminserver/configures/common.yaml"
     ```
