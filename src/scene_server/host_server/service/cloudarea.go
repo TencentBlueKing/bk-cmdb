@@ -86,16 +86,6 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		return
 	}
 
-	// 查询云区域时附带主机数量信息
-	if input.HostCount {
-		err = s.addPlatHostCount(ctx, &res.Data.Info)
-		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea failed, addPlatHostCount err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail))
-			return
-		}
-	}
-
 	// 查询云区域时附带云同步任务ID信息
 	if input.SyncTaskIDs {
 		err = s.addPlatSyncTaskIDs(ctx, &res.Data.Info)
@@ -520,67 +510,6 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 
 	// response success
 	ctx.RespEntity(nil)
-}
-
-// addPlatHostCount add host count to plat info
-func (s *Service) addPlatHostCount(ctx *rest.Contexts, data *[]mapstr.MapStr) error {
-	// add host_count
-	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
-	intCloudIDArray := make([]int64, 0)
-	for _, area := range *data {
-		intCloudID, err := area.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea failed, Int64 err: %v, area:%#v, rid: %s", err, area, ctx.Kit.Rid)
-			return err
-		}
-		intCloudIDArray = append(intCloudIDArray, intCloudID)
-		mapCloudIDInfo[intCloudID] = area
-	}
-
-	condition := mapstr.MapStr{
-		common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: intCloudIDArray},
-	}
-	cond := &metadata.QueryCondition{
-		Fields:    []string{common.BKCloudIDField},
-		Condition: condition,
-	}
-	rsp, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, cond)
-	if nil != err {
-		blog.Errorf("addPlatHostCount failed, http do error: %v cond:%#v,rid:%s", err, cond, ctx.Kit.Rid)
-		return err
-	}
-	if false == rsp.Result {
-		blog.Errorf("addPlatHostCount failed,  http reply error, cond:%#v, err code:%d, err msg:%s, rid:%s", cond, rsp.Code, rsp.ErrMsg, ctx.Kit.Rid)
-		return ctx.Kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	cloudHost := make(map[int64]int64, 0)
-	for _, info := range rsp.Data.Info {
-		intID, err := info.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.ErrorJSON("addPlatHostCount failed, Int64 failed, err: %v, info:%#v, rid: %s", err, info, ctx.Kit.Rid)
-			return err
-		}
-		if _, ok := cloudHost[intID]; !ok {
-			cloudHost[intID] = 0
-		}
-		cloudHost[intID] += 1
-	}
-
-	result := make([]mapstr.MapStr, 0)
-	for _, cloudID := range intCloudIDArray {
-		if cloudInfo, ok := mapCloudIDInfo[cloudID]; ok {
-			cloudInfo["host_count"] = 0
-			if count, ok := cloudHost[cloudID]; ok {
-				cloudInfo["host_count"] = count
-			}
-			result = append(result, cloudInfo)
-		}
-	}
-
-	*data = result
-
-	return nil
 }
 
 // addPlatSyncTaskIDs add sync task ids to plat info

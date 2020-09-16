@@ -553,7 +553,6 @@ type DeleteHostFromBizParameter struct {
 // CloudAreaParameter search cloud area parameter
 type CloudAreaSearchParam struct {
 	SearchCloudOption `json:",inline"`
-	HostCount         bool `json:"host_count"`
 	SyncTaskIDs       bool `json:"sync_task_ids"`
 }
 
