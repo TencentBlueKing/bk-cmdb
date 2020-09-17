@@ -811,7 +811,7 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
 		dirID, err := ps.getResourcePoolDefaultDirID()
 		if err != nil {
-			ps.err = errors.New("invalid directory id value")
+			ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -839,7 +839,7 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			var err error
 			dirID, err = ps.getResourcePoolDefaultDirID()
 			if err != nil {
-				ps.err = errors.New("invalid directory id value")
+				ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
 				return ps
 			}
 		}
@@ -871,7 +871,7 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 		dirID, err := ps.getResourcePoolDefaultDirID()
 		if err != nil {
-			ps.err = errors.New("invalid directory id value")
+			ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
 			return ps
 		}
 
