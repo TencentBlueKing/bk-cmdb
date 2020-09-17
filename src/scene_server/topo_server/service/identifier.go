@@ -28,6 +28,9 @@ func (s *Service) SearchIdentifier(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "param not set"))
 		return
 	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
 	retVal, err := s.Core.IdentifierOperation().SearchIdentifier(ctx.Kit, ctx.Request.PathParameter("obj_type"), param)
 	if err != nil {
 		ctx.RespAutoError(err)
