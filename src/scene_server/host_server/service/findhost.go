@@ -704,6 +704,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		return
 	}
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	// search all hosts
 	option := &meta.ListHosts{
 		BizID:              bizID,
