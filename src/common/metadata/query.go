@@ -33,9 +33,10 @@ type SearchSort struct {
 
 // QueryCondition the common query condition definition
 type QueryCondition struct {
-	Fields    []string      `json:"fields"`
-	Page      BasePage      `json:"page"`
-	Condition mapstr.MapStr `json:"condition"`
+	Fields         []string      `json:"fields"`
+	Page           BasePage      `json:"page"`
+	Condition      mapstr.MapStr `json:"condition"`
+	DisableCounter bool          `json:"disable_counter"`
 }
 
 // IsIllegal  limit is illegal, if limit = 0; change to default page size

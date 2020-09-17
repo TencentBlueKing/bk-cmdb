@@ -335,14 +335,19 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 		return nil, instErr
 	}
 
-	count, countErr := mongodb.Client().Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
-	if countErr != nil {
-		blog.Errorf("count instance error [%v], rid: %s", countErr, kit.Rid)
-		return nil, countErr
+	var finalCount uint64
+
+	if !inputParam.DisableCounter {
+		count, countErr := mongodb.Client().Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
+		if countErr != nil {
+			blog.Errorf("count instance error [%v], rid: %s", countErr, kit.Rid)
+			return nil, countErr
+		}
+		finalCount = count
 	}
 
 	dataResult := &metadata.QueryResult{
-		Count: count,
+		Count: finalCount,
 		Info:  instItems,
 	}
 

@@ -214,6 +214,13 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/userapi/"):
 		from, to, isHit = rootPath, hostRoot, true
 
+	// dynamic grouping URL matching, and proxy to host server.
+	case string(*u) == (rootPath + "/dynamicgroup"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/dynamicgroup/"):
+		from, to, isHit = rootPath, hostRoot, true
+
 	case string(*u) == (rootPath + "/usercustom"):
 		from, to, isHit = rootPath, hostRoot, true
 
