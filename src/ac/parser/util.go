@@ -15,7 +15,7 @@ package parser
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
+	"sync"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -321,19 +321,20 @@ func (ps *parseStream) getRscPoolHostModuleRelation(hostIDs []int64) (map[int64]
 	return relation, nil
 }
 
-// TODO: support multiple supplier account.
-var resourcePoolBizID int64
+var resourcePoolBizIDMap = sync.Map{}
 
-func (ps *parseStream) getResourcePoolBusinessID() (biz int64, err error) {
-	if id := atomic.LoadInt64(&resourcePoolBizID); id != 0 {
-		return id, nil
+func (ps *parseStream) getResourcePoolBusinessID() (int64, error) {
+	supplierAccount := ps.RequestCtx.Header.Get(common.BKHTTPOwnerID)
+
+	if bizID, ok := resourcePoolBizIDMap.Load(supplierAccount); ok {
+		return util.GetInt64ByInterface(bizID)
 	}
 
 	opt := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField},
 		Page:   metadata.BasePage{},
 		Condition: mapstr.MapStr{
-			common.BkSupplierAccount: ps.RequestCtx.Header.Get(common.BKHTTPOwnerID),
+			common.BkSupplierAccount: supplierAccount,
 			"default":                1,
 		},
 	}
@@ -357,7 +358,7 @@ func (ps *parseStream) getResourcePoolBusinessID() (biz int64, err error) {
 		return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource biz id")
 	}
 
-	atomic.StoreInt64(&resourcePoolBizID, id)
+	resourcePoolBizIDMap.Store(supplierAccount, id)
 	return id, nil
 }
 
@@ -366,11 +367,13 @@ type hostPool struct {
 	HostID   []int64 `json:"bk_host_id"`
 }
 
-var resourcePoolDefaultDirID int64
+var resourcePoolDefaultDirIDMap = sync.Map{}
 
 func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
-	if id := atomic.LoadInt64(&resourcePoolDefaultDirID); id != 0 {
-		return id, nil
+	supplierAccount := ps.RequestCtx.Header.Get(common.BKHTTPOwnerID)
+
+	if dirID, ok := resourcePoolDefaultDirIDMap.Load(supplierAccount); ok {
+		return util.GetInt64ByInterface(dirID)
 	}
 
 	bizID, err := ps.getResourcePoolBusinessID()
@@ -378,16 +381,14 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 		return 0, err
 	}
 
-	cond := mapstr.MapStr{
-		common.BKDefaultField: common.DefaultResModuleFlag,
-		common.BKAppIDField:   bizID,
-	}
-	cond = util.SetQueryOwner(cond, ps.RequestCtx.Header.Get(common.BKHTTPOwnerID))
-
 	opt := &metadata.QueryCondition{
-		Fields:    []string{common.BKModuleIDField},
-		Page:      metadata.BasePage{Limit: 1},
-		Condition: cond,
+		Fields: []string{common.BKModuleIDField},
+		Page:   metadata.BasePage{Limit: 1},
+		Condition: mapstr.MapStr{
+			common.BKDefaultField:    common.DefaultResModuleFlag,
+			common.BKAppIDField:      bizID,
+			common.BkSupplierAccount: supplierAccount,
+		},
 	}
 
 	result, err := ps.engine.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), ps.RequestCtx.Header,
@@ -409,6 +410,6 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 		return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource pool default directory id")
 	}
 
-	atomic.StoreInt64(&resourcePoolDefaultDirID, id)
+	resourcePoolDefaultDirIDMap.Store(supplierAccount, id)
 	return id, nil
 }
