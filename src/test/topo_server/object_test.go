@@ -21,6 +21,7 @@ var _ = Describe("object test", func() {
 	var bizId string
 	var childInstId string
 	var setId string
+	var serviceTemplateId string
 	var childInstIdInt, bizIdInt int64
 	objectClient := topoServerClient.Object()
 	instClient := topoServerClient.Instance()
@@ -1547,7 +1548,7 @@ var _ = Describe("object test", func() {
 			mid2, _ := strconv.ParseInt(moduleId1, 10, 64)
 			input := &metadata.SearchInstBatchOption{
 				IDs:    []int64{mid, mid2},
-				Fields: []string{"bk_module_id", "bk_module_name"},
+				Fields: []string{"bk_module_id", "bk_module_name", "bk_set_id", "service_template_id"},
 			}
 			rsp, err := instClient.SearchModuleBatch(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
@@ -1556,6 +1557,30 @@ var _ = Describe("object test", func() {
 			Expect(len(rsp.Data)).To(Equal(1))
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_id"])).To(Equal(moduleId))
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_name"])).To(Equal("new_module"))
+
+			setId = commonutil.GetStrByInterface(rsp.Data[0]["bk_set_id"])
+			serviceTemplateId = commonutil.GetStrByInterface(rsp.Data[0]["service_template_id"])
+		})
+
+		It("search module with relation", func() {
+			setid, _ := strconv.ParseInt(setId, 10, 64)
+			serviceTemplateid, _ := strconv.ParseInt(serviceTemplateId, 10, 64)
+			input := map[string]interface{}{
+				"bk_set_ids":              []int64{setid},
+				"bk_service_template_ids": []int64{serviceTemplateid},
+				"fields":                  []string{"bk_module_id", "bk_module_name"},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 500,
+				},
+			}
+			rsp, err := topoServerClient.Instance().SearchModuleWithRelation(context.Background(), bizId, header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_id"])).To(Equal(moduleId))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_name"])).To(Equal("new_module"))
 		})
 	})
 })

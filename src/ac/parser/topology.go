@@ -1708,6 +1708,7 @@ var (
 	updateModuleHostApplyStatusRegexp = regexp.MustCompile(`^/api/v3/module/host_apply_enable_status/bk_biz_id/([0-9]+)/bk_module_id/([0-9]+)/?$`)
 	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findMouduleBatchRegexp            = regexp.MustCompile(`^/api/v3/findmany/module/bk_biz_id/[0-9]+/?$`)
+	findMouduleWithRelationRegexp     = regexp.MustCompile(`^/api/v3/findmany/module/with_relation/biz/[0-9]+/?$`)
 	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
 
@@ -1944,7 +1945,32 @@ func (ps *parseStream) objectModule() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update module batch, but got invalid biz id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find module batch, but got invalid biz id %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelModule,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{},
+			},
+		}
+		return ps
+	}
+
+	// find module with relation in one biz
+	if ps.hitRegexp(findMouduleWithRelationRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find module with relation, but got invalid url")
+			return ps
+		}
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find module with relation, but got invalid biz id %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
 
