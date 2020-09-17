@@ -79,7 +79,7 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 			}
 
 			iamInstance := meta.IamInstanceWithCreator{
-				Type:    string(iam.BizDynamicGroup),
+				Type:    string(iam.BizCustomQuery),
 				ID:      resp.Data.ID,
 				Name:    resp.Data.Name,
 				Creator: ctx.Kit.User,

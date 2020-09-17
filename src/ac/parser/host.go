@@ -329,7 +329,7 @@ func (ps *parseStream) dynamicGrouping() *parseStream {
 				Basic: meta.Basic{
 					Type:         meta.DynamicGrouping,
 					Action:       meta.Find,
-					InstanceIDEx: ps.RequestCtx.Elements[5],
+					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
 			},
 		}
