@@ -116,24 +116,6 @@ type QueryInput struct {
 	DisableCounter bool                   `json:"disable_counter,omitempty"`
 }
 
-// Validate validates the input param
-func (o *QueryInput) Validate() (rawError errors.RawErrorInfo) {
-	if o.Limit <= 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"limit"},
-		}
-	}
-
-	if o.Limit > common.BKAuditLogPageLimit {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommPageLimitIsExceeded,
-		}
-	}
-
-	return errors.RawErrorInfo{}
-}
-
 // ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
 	for key, item := range o.Condition {

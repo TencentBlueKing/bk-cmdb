@@ -19,24 +19,21 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
 )
 
 type SynchronizeManager struct {
-	dbProxy   dal.RDB
 	dependent OperationDependencies
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, dependent OperationDependencies) core.DataSynchronizeOperation {
+func New(dependent OperationDependencies) core.DataSynchronizeOperation {
 	return &SynchronizeManager{
-		dbProxy:   dbProxy,
 		dependent: dependent,
 	}
 }
 
 func (s *SynchronizeManager) SynchronizeInstanceAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
-	syncDataAdpater := NewSynchronizeInstanceAdapter(syncData, s.dbProxy)
+	syncDataAdpater := NewSynchronizeInstanceAdapter(syncData)
 	err := syncDataAdpater.PreSynchronizeFilter(kit)
 	if err != nil {
 		blog.Errorf("SynchronizeInstanceAdapter error, err:%s,rid:%s", err.Error(), kit.Rid)
@@ -48,7 +45,7 @@ func (s *SynchronizeManager) SynchronizeInstanceAdapter(kit *rest.Kit, syncData 
 }
 
 func (s *SynchronizeManager) SynchronizeModelAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
-	syncDataAdpater := NewSynchronizeModelAdapter(syncData, s.dbProxy)
+	syncDataAdpater := NewSynchronizeModelAdapter(syncData)
 	err := syncDataAdpater.PreSynchronizeFilter(kit)
 	if err != nil {
 		return nil, err
@@ -59,7 +56,7 @@ func (s *SynchronizeManager) SynchronizeModelAdapter(kit *rest.Kit, syncData *me
 }
 
 func (s *SynchronizeManager) SynchronizeAssociationAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
-	syncDataAdpater := NewSynchronizeAssociationAdapter(syncData, s.dbProxy)
+	syncDataAdpater := NewSynchronizeAssociationAdapter(syncData)
 	err := syncDataAdpater.PreSynchronizeFilter(kit)
 	if err != nil {
 		return nil, err
@@ -70,13 +67,13 @@ func (s *SynchronizeManager) SynchronizeAssociationAdapter(kit *rest.Kit, syncDa
 }
 
 func (s *SynchronizeManager) Find(kit *rest.Kit, input *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error) {
-	adapter := NewSynchronizeFindAdapter(input, s.dbProxy)
+	adapter := NewSynchronizeFindAdapter(input)
 	return adapter.Find(kit)
 }
 
 func (s *SynchronizeManager) ClearData(kit *rest.Kit, input *metadata.SynchronizeClearDataParameter) error {
 
-	adapter := NewClearData(s.dbProxy, input)
+	adapter := NewClearData(input)
 	if input.Sign == "" {
 		blog.Errorf("clearData parameter synchronize_flag illegal, input:%#v,rid:%s", input, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "synchronize_flag")
@@ -93,7 +90,7 @@ func (s *SynchronizeManager) ClearData(kit *rest.Kit, input *metadata.Synchroniz
 // SetIdentifierFlag set cmdb synchronize identifier flag
 func (s *SynchronizeManager) SetIdentifierFlag(kit *rest.Kit, input *metadata.SetIdenifierFlag) ([]metadata.ExceptionResult, error) {
 
-	adapter := NewSetIdentifierFlag(s.dbProxy, input)
+	adapter := NewSetIdentifierFlag(input)
 	if input.Flag == "" {
 		blog.Errorf("SetIdentifierFlag parameter flag illegal, input:%#v,r id:%s", input, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "flag")

@@ -106,7 +106,7 @@ type Page struct {
 
 func (page *Page) IsIllegal() bool {
 	if page.Limit == 0 {
-		page.Limit = common.BKDefaultLimit
+		return false
 	}
 	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit {
 		return true
@@ -188,7 +188,7 @@ type ResourcePullMethod struct {
 	ListInstance func(kit *rest.Kit, resourceType iam.TypeID, filter *ListInstanceFilter, page Page) (
 		*ListInstanceResult, error)
 
-	FetchInstanceInfo func(kit *rest.Kit, resourceType iam.TypeID, filter *FetchInstanceInfoFilter, page Page) (
+	FetchInstanceInfo func(kit *rest.Kit, resourceType iam.TypeID, filter *FetchInstanceInfoFilter) (
 		[]map[string]interface{}, error)
 
 	ListInstanceByPolicy func(kit *rest.Kit, resourceType iam.TypeID, filter *ListInstanceByPolicyFilter, page Page) (

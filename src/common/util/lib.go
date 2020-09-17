@@ -198,6 +198,47 @@ func CCHeader(header http.Header) http.Header {
 	newHeader.Add(common.BKHTTPOwnerID, header.Get(common.BKHTTPOwnerID))
 	newHeader.Add(common.BKHTTPRequestAppCode, header.Get(common.BKHTTPRequestAppCode))
 	newHeader.Add(common.BKHTTPRequestRealIP, header.Get(common.BKHTTPRequestRealIP))
+	newHeader.Add(common.BKHTTPReadPrefernce, header.Get(common.BKHTTPReadPrefernce))
 
 	return newHeader
+}
+
+// SetHTTPReadPreference  再header 头中设置mongodb read preference， 这个是给调用子流程使用
+func SetHTTPReadPreference(header http.Header, mode common.ReadPrefernceMode) http.Header {
+	header.Set(common.BKHTTPReadPrefernce, mode.String())
+	return header
+}
+
+// SetDBReadPreference  再context 设置设置mongodb read preference，给dal 使用
+func SetDBReadPreference(ctx context.Context, mode common.ReadPrefernceMode) context.Context {
+	ctx = context.WithValue(ctx, common.BKHTTPReadPrefernce, mode.String())
+	return ctx
+}
+
+// SetReadPreference  再context， header 设置设置mongodb read preference，给dal 使用
+func SetReadPreference(ctx context.Context, header http.Header, mode common.ReadPrefernceMode) (context.Context, http.Header) {
+	ctx = SetDBReadPreference(ctx, mode)
+	header = SetHTTPReadPreference(header, mode)
+	return ctx, header
+}
+
+// GetDBReadPreference
+func GetDBReadPreference(ctx context.Context) common.ReadPrefernceMode {
+	val := ctx.Value(common.BKHTTPReadPrefernce)
+	if val != nil {
+		mode, ok := val.(string)
+		if ok {
+			return common.ReadPrefernceMode(mode)
+		}
+	}
+	return common.NilMode
+}
+
+// GetHTTPReadPreference
+func GetHTTPReadPreference(header http.Header) common.ReadPrefernceMode {
+	mode := header.Get(common.BKHTTPReadPrefernce)
+	if mode == "" {
+		return common.NilMode
+	}
+	return common.ReadPrefernceMode(mode)
 }

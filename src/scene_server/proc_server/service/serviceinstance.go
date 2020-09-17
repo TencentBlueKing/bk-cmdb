@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -740,8 +739,10 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 	// step 5:
 	// construct map {ServiceInstanceID ==> []ProcessInstanceRelation}
 	serviceInstanceIDs := make([]int64, 0)
+	hostIDs := make([]int64, 0)
 	for _, serviceInstance := range serviceInstances.Info {
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+		hostIDs = append(hostIDs, serviceInstance.HostID)
 	}
 	option := metadata.ListProcessInstanceRelationOption{
 		BusinessID:         module.BizID,
@@ -758,7 +759,14 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
 	}
 
-	// step 5: compare the process instance with it's process template one by one in a service instance.
+	// step 6:
+	// construct map {hostID ==> host}
+	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// step 7: compare the process instance with it's process template one by one in a service instance.
 	type recorder struct {
 		ProcessID        int64
 		ProcessName      string
@@ -803,7 +811,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 				continue
 			}
 
-			changedAttributes := ps.Logic.DiffWithProcessTemplate(property.Property, process, attributeMap)
+			changedAttributes := ps.Logic.DiffWithProcessTemplate(property.Property, process, hostMap[serviceInstance.HostID], attributeMap)
 			if len(changedAttributes) == 0 {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
@@ -1047,8 +1055,10 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		return nil
 	}
 	serviceInstanceIDs := make([]int64, 0)
+	hostIDs := make([]int64, 0)
 	for _, serviceInstance := range serviceInstanceResult.Info {
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+		hostIDs = append(hostIDs, serviceInstance.HostID)
 	}
 
 	// step 1:
@@ -1134,6 +1144,13 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 	}
 
 	// step 5:
+	// construct map {hostID ==> host}
+	hostMap, err := ps.getHostIPMapByID(ctx.Kit, hostIDs)
+	if err != nil {
+		return err
+	}
+
+	// step 6:
 	// compare the difference between process instance and process template from one service instance to another.
 	removedProcessIDs := make([]int64, 0)
 	for serviceInstanceID, processes := range serviceInstance2ProcessMap {
@@ -1150,7 +1167,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 			// this process's bounded is still exist, need to check whether this process instance
 			// need to be updated or not.
-			proc, changed, isNamePortChanged := template.ExtractChangeInfo(process)
+			proc, changed, isNamePortChanged := template.ExtractChangeInfo(process, hostMap[serviceInstance2HostMap[serviceInstanceID]])
 			if !changed {
 				continue
 			}
@@ -1178,7 +1195,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		}
 	}
 
-	// step 6:
+	// step 7:
 	// check if a new process is added to the service template.
 	// if true, then create a new process instance for every service instance with process template's default value.
 	for processTemplateID, processTemplate := range processTemplateMap {
@@ -1192,12 +1209,8 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
-			newProcess := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount)
-			processData, e := mapstruct.Struct2Map(newProcess)
-			if e != nil {
-				blog.ErrorJSON("SyncServiceInstanceByTemplate failed, Struct2Map failed, process: %s, err: %s, rid: %s", newProcess, e.Error(), rid)
-				return ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-			}
+			newProcess := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount, hostMap[serviceInstance2HostMap[svcID]])
+			processData := newProcess.Map()
 			newProcessID, err := ps.Logic.CreateProcessInstance(ctx.Kit, processData)
 			if err != nil {
 				blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstance failed, option: %s, err: %s, rid: %s", processData, err.Error(), rid)
@@ -1245,7 +1258,7 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		return err
 	}
 
-	// step 7:
+	// step 8:
 	// update module service category and name field
 	for _, serviceTemplate := range serviceTemplates.Info {
 		updateModules := make([]int64, 0)
@@ -1601,4 +1614,36 @@ func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
 	}
 	preview.HostApplyPlan = applyPlan
 	ctx.RespEntity(preview)
+}
+
+// getHostIPMapByID get host ID to ip data map by host IDs, used for bind ip with first inner or outer IP
+func (ps *ProcServer) getHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]map[string]interface{}, errors.CCErrorCoder) {
+	hostReq := metadata.QueryInput{
+		Condition: map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}},
+		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostOuterIPField,
+		Limit:     common.BKNoLimit,
+	}
+
+	hostRes, err := ps.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, &hostReq)
+	if err != nil {
+		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !hostRes.Result {
+		blog.Errorf("get hosts failed, err: %s, hostIDs: %+v, rid: %s", hostRes.ErrMsg, hostIDs, kit.Rid)
+		return nil, hostRes.CCError()
+	}
+
+	hostMap := make(map[int64]map[string]interface{})
+	for _, host := range hostRes.Data.Info {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("host id invalid, err: %s, host: %+v, rid: %s", err.Error(), host, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+		}
+		hostMap[hostID] = host
+	}
+
+	return hostMap, nil
 }

@@ -37,8 +37,8 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 
 	//  validate dynamic group func.
 	validatefunc := func(objectID string) ([]meta.Attribute, error) {
-		return logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager).
-			SearchObjectAttributes(ctx.Kit.Ctx, newDynamicGroup.AppID, objectID)
+		return logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).
+			SearchObjectAttributes(ctx.Kit, newDynamicGroup.AppID, objectID)
 	}
 
 	if err := newDynamicGroup.Validate(validatefunc); err != nil {
@@ -161,8 +161,8 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 
 		//  validate dynamic group func.
 		validatefunc := func(objectID string) ([]meta.Attribute, error) {
-			return logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager).
-				SearchObjectAttributes(ctx.Kit.Ctx, bizIDInt64, objectID)
+			return logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).
+				SearchObjectAttributes(ctx.Kit, bizIDInt64, objectID)
 		}
 
 		if err := dynamicGroupInfo.Validate(objectID, validatefunc); err != nil {
@@ -440,8 +440,8 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 		searchHostCondition := meta.HostCommonSearch{AppID: bizIDInt64, Condition: searchConditions, Page: searchPage}
 
 		// execute host object dynamic group.
-		data, err := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager).
-			ExecuteHostDynamicGroup(ctx.Kit.Ctx, &searchHostCondition, input.Fields, input.DisableCounter)
+		data, err := logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).
+			ExecuteHostDynamicGroup(ctx.Kit, &searchHostCondition, input.Fields, input.DisableCounter)
 		if err != nil {
 			blog.Errorf("execute dynamic group failed, search hosts, err: %+v, bizID: %s, ID: %s, rid: %s",
 				err, bizID, targetID, ctx.Kit.Rid)
@@ -460,8 +460,8 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 		searchSetCondition := meta.SetCommonSearch{AppID: bizIDInt64, Condition: searchConditions, Page: searchPage}
 
 		// execute set object dynamic group.
-		data, err := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager).
-			ExecuteSetDynamicGroup(ctx.Kit.Ctx, &searchSetCondition, input.Fields, input.DisableCounter)
+		data, err := logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).
+			ExecuteSetDynamicGroup(ctx.Kit, &searchSetCondition, input.Fields, input.DisableCounter)
 		if err != nil {
 			blog.Errorf("execute dynamic group failed, search sets, err: %+v, bizID: %s, ID: %s, rid: %s",
 				err, bizID, targetID, ctx.Kit.Rid)

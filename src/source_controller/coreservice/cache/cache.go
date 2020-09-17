@@ -18,22 +18,21 @@ import (
 	"configcenter/src/source_controller/coreservice/cache/business"
 	"configcenter/src/source_controller/coreservice/cache/host"
 	"configcenter/src/source_controller/coreservice/cache/topo_tree"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/reflector"
-	"gopkg.in/redis.v5"
 )
 
-func NewCache(rds *redis.Client, db dal.DB, event reflector.Interface) (*ClientSet, error) {
-	if err := business.NewCache(event, rds, db); err != nil {
+func NewCache(event reflector.Interface) (*ClientSet, error) {
+	if err := business.NewCache(event, redis.Client()); err != nil {
 		return nil, fmt.Errorf("new business cache failed, err: %v", err)
 	}
 
-	if err := host.NewCache(event, rds, db); err != nil {
+	if err := host.NewCache(event, redis.Client()); err != nil {
 		return nil, fmt.Errorf("new host cache failed, err: %v", err)
 	}
 
-	bizClient := business.NewClient(rds, db)
-	hostClient := host.NewClient(rds, db)
+	bizClient := business.NewClient(redis.Client())
+	hostClient := host.NewClient(redis.Client())
 
 	cache := &ClientSet{
 		Topology: topo_tree.NewTopologyTree(bizClient),

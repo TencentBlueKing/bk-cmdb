@@ -10,28 +10,25 @@
  * limitations under the License.
  */
 
-package y3_9_202009101936
+package y3_9_202008172134
 
 import (
 	"context"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202009101936", upgrade)
+	upgrader.RegistUpgrader("y3.9.202008172134", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = createTable(ctx, db, conf)
-	if err != nil {
+	if err := reconcileAuditTableIndexes(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version y3.9.202008172134 failed, reconcileAuditTableIndexes failed, err: %+v", err)
 		return err
 	}
 
-	err = migrateHistory(ctx, db, conf)
-	if err != nil {
-		return err
-	}
-	return
+	return nil
 }

@@ -25,7 +25,7 @@ import (
 // SearchMainlineModelTopo get topo tree of model on mainline
 func (m *topoManager) SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	obj, err := NewModelMainline(m.DbProxy)
+	obj, err := NewModelMainline()
 	if err != nil {
 		blog.Errorf("new model mainline failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("new model mainline failed, err: %+v", err)

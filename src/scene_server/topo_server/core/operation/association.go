@@ -650,23 +650,29 @@ func (assoc *association) DeleteType(kit *rest.Kit, asstTypeID int64) (resp *met
 
 func (assoc *association) SearchObject(kit *rest.Kit, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
 	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: request.Condition})
+	if err != nil {
+		return nil, err
+	}
 
 	resp = &metadata.SearchAssociationObjectResult{BaseResp: rsp.BaseResp, Data: []*metadata.Association{}}
 	for index := range rsp.Data.Info {
 		resp.Data = append(resp.Data, &rsp.Data.Info[index])
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func (assoc *association) CreateObject(kit *rest.Kit, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
 	rsp, err := assoc.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), kit.Header, &metadata.CreateModelAssociation{Spec: *request})
+	if err != nil {
+		return nil, err
+	}
 
 	resp = &metadata.CreateAssociationObjectResult{
 		BaseResp: rsp.BaseResp,
 	}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
-	return resp, err
+	return resp, nil
 }
 
 func (assoc *association) UpdateObject(kit *rest.Kit, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
@@ -676,31 +682,42 @@ func (assoc *association) UpdateObject(kit *rest.Kit, asstID int, request *metad
 	}
 
 	rsp, err := assoc.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), kit.Header, &input)
+	if err != nil {
+		return nil, err
+	}
+
 	resp = &metadata.UpdateAssociationObjectResult{
 		BaseResp: rsp.BaseResp,
 	}
-	return resp, err
+	return resp, nil
 }
 
 func (assoc *association) DeleteObject(kit *rest.Kit, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
-
 	input := metadata.DeleteOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstID).ToMapStr(),
 	}
+
 	rsp, err := assoc.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), kit.Header, &input)
-	return &metadata.DeleteAssociationObjectResult{BaseResp: rsp.BaseResp}, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &metadata.DeleteAssociationObjectResult{BaseResp: rsp.BaseResp}, nil
 
 }
 
 func (assoc *association) SearchInst(kit *rest.Kit, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	rsp, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: request.Condition})
+	if err != nil {
+		return nil, err
+	}
 
 	resp = &metadata.SearchAssociationInstResult{BaseResp: rsp.BaseResp, Data: []*metadata.InstAsst{}}
 	for index := range rsp.Data.Info {
 		resp.Data = append(resp.Data, &rsp.Data.Info[index])
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
@@ -713,8 +730,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	}
 
 	if !result.Result {
-		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, result.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	if len(result.Data) == 0 {
@@ -740,8 +757,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		}
 
 		if !instance.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-			return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, instance.ErrMsg, kit.Rid)
+			return nil, kit.CCError.New(instance.Code, instance.ErrMsg)
 		}
 		if len(instance.Data) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
@@ -758,8 +775,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		}
 
 		if !instance.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-			return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, instance.ErrMsg, kit.Rid)
+			return nil, kit.CCError.New(instance.Code, instance.ErrMsg)
 		}
 		if len(instance.Data) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
@@ -776,8 +793,8 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		}
 
 		if !instance.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-			return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, instance.ErrMsg, kit.Rid)
+			return nil, kit.CCError.New(instance.Code, instance.ErrMsg)
 		}
 		if len(instance.Data) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToManyAssociation)
@@ -810,41 +827,20 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	curData := mapstr.NewFromStruct(input.Data, "json")
 	curData.Set("name", objectAsst.AssociationAliasName)
 
-	audit := auditlog.NewAudit(assoc.clientSet, kit.Header)
-	srcInstName, err := audit.GetInstNameByID(kit.Ctx, objID, request.InstID)
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, instanceAssociationID, nil)
 	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
-	targetInstName, err := audit.GetInstNameByID(kit.Ctx, asstObjID, request.AsstInstID)
+
+	// save audit log.
+	err = audit.SaveAuditLog(kit, *auditLog)
 	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
-	}
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.ModelInstanceType,
-		ResourceType: metadata.InstanceAssociationRes,
-		Action:       metadata.AuditCreate,
-		OperationDetail: &metadata.InstanceAssociationOpDetail{
-			AssociationOpDetail: metadata.AssociationOpDetail{
-				AssociationID:   objectAsst.AssociationName,
-				AssociationKind: objectAsst.AsstKindID,
-				SourceModelID:   objID,
-				TargetModelID:   asstObjID,
-			},
-			SourceInstanceID:   request.InstID,
-			SourceInstanceName: srcInstName,
-			TargetInstanceID:   request.AsstInstID,
-			TargetInstanceName: targetInstName,
-		},
-		OperationTime: metadata.Now(),
-	}
-	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditLog)
-	if err != nil {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-	}
-	if !auditResp.Result {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, err
@@ -895,41 +891,20 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64) (resp *metadat
 		BaseResp: rsp.BaseResp,
 	}
 
-	audit := auditlog.NewAudit(assoc.clientSet, kit.Header)
-	srcInstName, err := audit.GetInstNameByID(kit.Ctx, instanceAssociation.ObjectID, instanceAssociation.InstID)
+	// generate audit log.
+	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, assoID, &instanceAssociation)
 	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+		blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
-	targetInstName, err := audit.GetInstNameByID(kit.Ctx, instanceAssociation.AsstObjectID, instanceAssociation.AsstInstID)
+
+	// save audit log.
+	err = audit.SaveAuditLog(kit, *auditLog)
 	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
-	}
-	auditLog := metadata.AuditLog{
-		AuditType:    metadata.ModelInstanceType,
-		ResourceType: metadata.InstanceAssociationRes,
-		Action:       metadata.AuditDelete,
-		OperationDetail: &metadata.InstanceAssociationOpDetail{
-			AssociationOpDetail: metadata.AssociationOpDetail{
-				AssociationID:   instanceAssociation.ObjectAsstID,
-				AssociationKind: instanceAssociation.AssociationKindID,
-				SourceModelID:   instanceAssociation.ObjectID,
-				TargetModelID:   instanceAssociation.AsstObjectID,
-			},
-			SourceInstanceID:   instanceAssociation.InstID,
-			SourceInstanceName: srcInstName,
-			TargetInstanceID:   instanceAssociation.AsstInstID,
-			TargetInstanceName: targetInstName,
-		},
-		OperationTime: metadata.Now(),
-	}
-	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditLog)
-	if err != nil {
-		blog.Errorf("DeleteInst finished, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-	}
-	if !auditResp.Result {
-		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, nil

@@ -33,8 +33,8 @@
                     return false
                 },
                 set (value) {
-                    this.$emit('input', value, this)
-                    this.$emit('change', value, this)
+                    this.$emit('input', value)
+                    this.$emit('change', value)
                 }
             }
         }

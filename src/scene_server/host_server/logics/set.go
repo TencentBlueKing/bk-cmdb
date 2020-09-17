@@ -13,20 +13,20 @@
 package logics
 
 import (
-	"context"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
 )
 
-func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
+func (lgc *Logics) GetSetIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	if err := parse.ParseCommonParams(cond, condc); err != nil {
-		blog.Warnf("ParseCommonParams failed, err: %+v, rid: %s", err, lgc.rid)
+		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
 	query := &metadata.QueryCondition{
@@ -35,22 +35,22 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKSetIDField},
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.Errorf("GetSetIDByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, lgc.rid)
-		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("GetSetIDByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetSetIDByCond http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKInnerObjIDSet, query, lgc.rid)
-		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("GetSetIDByCond http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKInnerObjIDSet, query, kit.Rid)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	setIDArr := make([]int64, 0)
 	for _, i := range result.Data.Info {
 		setID, err := i.Int64(common.BKSetIDField)
 		if err != nil {
-			blog.Errorf("GetSetIDByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
+			blog.Errorf("GetSetIDByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 		setIDArr = append(setIDArr, setID)
 	}
@@ -58,7 +58,7 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 }
 
 // ExecuteSetDynamicGroup searches sets base on conditions without filling topology informations.
-func (lgc *Logics) ExecuteSetDynamicGroup(ctx context.Context, setCommonSearch *metadata.SetCommonSearch,
+func (lgc *Logics) ExecuteSetDynamicGroup(kit *rest.Kit, setCommonSearch *metadata.SetCommonSearch,
 	fields []string, disableCounter bool) (*metadata.InstDataInfo, errors.CCError) {
 
 	// search parameters with condition.
@@ -68,8 +68,8 @@ func (lgc *Logics) ExecuteSetDynamicGroup(ctx context.Context, setCommonSearch *
 	for _, searchCondition := range setCommonSearch.Condition {
 		condc := make(map[string]interface{})
 		if err := parse.ParseCommonParams(searchCondition.Condition, condc); err != nil {
-			blog.Errorf("search set failed, can't parse condition, err: %+v, cond: %+v, rid: %s", err, searchCondition.Condition, lgc.rid)
-			return nil, lgc.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			blog.Errorf("search set failed, can't parse condition, err: %+v, cond: %+v, rid: %s", err, searchCondition.Condition, kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
 		// add field conditions to query params.
@@ -80,42 +80,41 @@ func (lgc *Logics) ExecuteSetDynamicGroup(ctx context.Context, setCommonSearch *
 	queryParams.Condition.Set(common.BKAppIDField, setCommonSearch.AppID)
 
 	// search set with conditions.
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, queryParams)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, queryParams)
 	if err != nil {
-		blog.Errorf("search set failed, err: %+v, input: %+v, rid: %s", err, queryParams, lgc.rid)
-		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("search set failed, err: %+v, input: %+v, rid: %s", err, queryParams, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("search set failed, errcode: %d, errmsg: %s, input: %+v, rid: %s", result.Code, result.ErrMsg, queryParams, lgc.rid)
-		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("search set failed, errcode: %d, errmsg: %s, input: %+v, rid: %s", result.Code, result.ErrMsg, queryParams, kit.Rid)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return &result.Data, nil
 }
 
-func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, errors.CCError) {
-
+func (lgc *Logics) GetSetMapByCond(kit *rest.Kit, fields []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
 		Page:      metadata.BasePage{Sort: common.BKSetIDField},
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.Errorf("GetSetMapByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, lgc.rid)
-		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("GetSetMapByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetSetMapByCond http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKInnerObjIDSet, query, lgc.rid)
-		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("GetSetMapByCond http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKInnerObjIDSet, query, kit.Rid)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	setMap := make(map[int64]mapstr.MapStr)
 	for _, i := range result.Data.Info {
 		setID, err := i.Int64(common.BKSetIDField)
 		if err != nil {
-			blog.Errorf("GetSetMapByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
+			blog.Errorf("GetSetMapByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 
 		setMap[setID] = i
@@ -124,22 +123,22 @@ func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond ma
 }
 
 // GetSetIDsByTopo get set IDs by custom layer node
-func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int64) ([]int64, error) {
+func (lgc *Logics) GetSetIDsByTopo(kit *rest.Kit, objID string, instID int64) ([]int64, error) {
 	if objID == common.BKInnerObjIDApp || objID == common.BKInnerObjIDSet || objID == common.BKInnerObjIDModule {
-		blog.Errorf("get set IDs by topo failed, obj(%s) is a inner object, rid: %s", objID, lgc.rid)
-		return nil, lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+		blog.Errorf("get set IDs by topo failed, obj(%s) is a inner object, rid: %s", objID, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
 	}
 
 	// get mainline association, generate map of object and its child
-	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, lgc.header, &metadata.QueryCondition{
+	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
 	if err != nil {
-		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", err.Error(), lgc.rid)
+		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	if !asstRes.Result {
-		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", asstRes.ErrMsg, lgc.rid)
+		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", asstRes.ErrMsg, kit.Rid)
 		return nil, asstRes.CCError()
 	}
 
@@ -150,8 +149,8 @@ func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int
 
 	childObj := childObjMap[objID]
 	if childObj == "" {
-		blog.Errorf("get set IDs by topo failed, obj(%s) is not a mainline object, rid: %s", objID, lgc.rid)
-		return nil, lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+		blog.Errorf("get set IDs by topo failed, obj(%s) is not a mainline object, rid: %s", objID, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
 	}
 
 	// traverse down topo till set, get set ids
@@ -164,15 +163,15 @@ func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int
 			Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		}
 
-		instRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, childObj, query)
+		instRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, childObj, query)
 		if err != nil {
-			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), childObj, instIDs, lgc.rid)
-			return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), childObj, instIDs, kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !instRes.Result {
-			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", instRes.ErrMsg, childObj, instIDs, lgc.rid)
-			return nil, lgc.ccErr.New(instRes.Code, instRes.ErrMsg)
+			blog.Errorf("get set IDs by topo failed, read instance err: %s, objID: %s, instIDs: %+v, rid: %s", instRes.ErrMsg, childObj, instIDs, kit.Rid)
+			return nil, kit.CCError.New(instRes.Code, instRes.ErrMsg)
 		}
 
 		if len(instRes.Data.Info) == 0 {
@@ -183,7 +182,7 @@ func (lgc *Logics) GetSetIDsByTopo(ctx context.Context, objID string, instID int
 		for index, inst := range instRes.Data.Info {
 			id, err := inst.Int64(idField)
 			if err != nil {
-				blog.Errorf("get set IDs by topo failed, parse inst id err: %s, inst: %#v, rid: %s", err.Error(), inst, lgc.rid)
+				blog.Errorf("get set IDs by topo failed, parse inst id err: %s, inst: %#v, rid: %s", err.Error(), inst, kit.Rid)
 				return nil, err
 			}
 			instIDs[index] = id

@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 func (s *Service) LockHost(ctx *rest.Contexts) {
@@ -53,9 +52,8 @@ func (s *Service) LockHost(ctx *rest.Contexts) {
 		return
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := lgc.LockHost(ctx.Kit.Ctx, input)
+		err := s.Logic.LockHost(ctx.Kit, input)
 		if nil != err {
 			blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
 			return err
@@ -99,9 +97,9 @@ func (s *Service) UnlockHost(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := lgc.UnlockHost(ctx.Kit.Ctx, input)
+		err := s.Logic.UnlockHost(ctx.Kit, input)
 		if nil != err {
 			blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
 			return err
@@ -147,8 +145,7 @@ func (s *Service) QueryHostLock(ctx *rest.Contexts) {
 		return
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	hostLockInfos, err := lgc.QueryHostLock(ctx.Kit.Ctx, input)
+	hostLockInfos, err := s.Logic.QueryHostLock(ctx.Kit, input)
 	if nil != err {
 		blog.Errorf("query lock host, handle query host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

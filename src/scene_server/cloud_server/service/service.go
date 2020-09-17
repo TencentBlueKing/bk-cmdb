@@ -23,16 +23,11 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/scene_server/cloud_server/logics"
-	"configcenter/src/storage/dal"
-
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
-	db      dal.RDB
-	cache   *redis.Client
 	ctx     context.Context
 	cryptor cryptor.Cryptor
 	*logics.Logics
@@ -44,14 +39,6 @@ func NewService(ctx context.Context) *Service {
 	return &Service{
 		ctx: ctx,
 	}
-}
-
-func (s *Service) SetDB(db dal.RDB) {
-	s.db = db
-}
-
-func (s *Service) SetCache(db *redis.Client) {
-	s.cache = db
 }
 
 func (s *Service) SetEncryptor(cryptor cryptor.Cryptor) {

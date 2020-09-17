@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/host_server/app/options"
+	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
 
@@ -84,6 +85,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Config = hostSrv.Config
 	service.CacheDB = cacheDB
 	service.EnableTxn = op.EnableTxn
+	service.Logic = logics.NewLogics(engine, cacheDB, authManager)
 	hostSrv.Core = engine
 	hostSrv.Service = service
 

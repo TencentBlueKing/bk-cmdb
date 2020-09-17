@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hostutil "configcenter/src/source_controller/coreservice/core/host/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type Identifier struct {
@@ -43,8 +43,8 @@ type Identifier struct {
 	layers           map[string]map[int64]metadata.MainlineInstInfo
 }
 
-func NewIdentifier(db dal.DB) *Identifier {
-	dbQuery := hostutil.NewDBExecQuery(db)
+func NewIdentifier() *Identifier {
+	dbQuery := hostutil.NewDBExecQuery()
 	return &Identifier{
 		dbQuery:          dbQuery,
 		sets:             make(map[int64]metadata.SetInst),
@@ -98,7 +98,7 @@ func (i *Identifier) findHost(kit *rest.Kit, hostIDs []int64) error {
 	condHostMap := util.SetQueryOwner(hostCond.ToMapStr(), kit.SupplierAccount)
 	// fetch all hosts
 	i.hosts = make([]metadata.HostIdentifier, 0) // New func init
-	err := i.dbQuery.DbProxy.Table(common.BKTableNameBaseHost).Find(condHostMap).All(kit.Ctx, &i.hosts)
+	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condHostMap).All(kit.Ctx, &i.hosts)
 	if err != nil {
 		blog.ErrorJSON("findHost query host error. err:%s, conidtion:%s, rid:%s", err.Error(), condHostMap, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -115,7 +115,7 @@ func (i *Identifier) findModuleHostRelation(kit *rest.Kit, hostIDs []int64) erro
 	condModuleHostMap := util.SetQueryOwner(hostModuleCond.ToMapStr(), kit.SupplierAccount)
 	// fetch  host and module relation
 	moduleHostRelation := make([]metadata.ModuleHost, 0)
-	err := i.dbQuery.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(condModuleHostMap).All(kit.Ctx, &moduleHostRelation)
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condModuleHostMap).All(kit.Ctx, &moduleHostRelation)
 	if err != nil {
 		blog.ErrorJSON("findModuleHostRelation query host and module relation error. err:%s, conidtion:%s, rid:%s", err.Error(), condModuleHostMap, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -272,6 +272,25 @@ func (i *Identifier) findHostServiceInst(kit *rest.Kit, hostIDs []int64) error {
 
 	procs := make(map[int64]metadata.HostIdentProcess, 0)
 	for _, procInfo := range procInfos {
+		// deprecated 为了保持兼容格式
+		for _, item := range procInfo.BindInfo {
+			if item.Std == nil {
+				continue
+			}
+			if procInfo.BindIP == "" && item.Std.IP != nil {
+				procInfo.BindIP = *item.Std.IP
+			}
+			if procInfo.Port == "" && item.Std.Port != nil {
+				procInfo.Port = *item.Std.Port
+			}
+			if procInfo.Protocol == "" && item.Std.Protocol != nil {
+				procInfo.Protocol = *item.Std.Protocol
+			}
+			if item.Std.Enable != nil && *item.Std.Enable {
+				procInfo.PortEnable = *item.Std.Enable
+			}
+		}
+
 		if moduleIDs, ok := procModuleRelation[procInfo.ProcessID]; ok {
 			procInfo.BindModules = moduleIDs
 		}

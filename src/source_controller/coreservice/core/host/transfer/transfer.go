@@ -21,11 +21,10 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 type genericTransfer struct {
-	dbProxy   dal.DB
 	dependent OperationDependence
 
 	// depend parameter
@@ -132,7 +131,7 @@ func (t *genericTransfer) DeleteHosts(kit *rest.Kit, hostIDs []int64) error {
 
 	// remove hosts
 	hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-	if err := t.dbProxy.Table(common.BKTableNameBaseHost).Delete(kit.Ctx, hostCond); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Delete(kit.Ctx, hostCond); err != nil {
 		blog.Errorf("delete host failed, err: %s, host ID: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
@@ -238,7 +237,7 @@ func (t *genericTransfer) validHosts(kit *rest.Kit, hostIDs []int64) errors.CCEr
 	hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
 	hostCond = util.SetQueryOwner(hostCond, kit.SupplierAccount)
 
-	cnt, err := t.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCond).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(&hostCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("valid hosts, but count host failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -269,7 +268,7 @@ func (t *genericTransfer) validHostsBelongBiz(kit *rest.Kit, hostIDs []int64) er
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
 	relationCond = util.SetQueryOwner(relationCond, kit.SupplierAccount)
 
-	cnt, err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(relationCond).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("valid host, but get host relation failed, err: %s, biz ID: %d, host ID: %+v, rid: %s", err.Error(), bizID, hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -314,7 +313,7 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizID int64, 
 		relationCond[common.BKModuleIDField] = map[string]interface{}{common.BKDBIN: t.innerModuleID}
 	}
 
-	err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, relationCond)
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, relationCond)
 	if err != nil {
 		blog.Errorf("delete host, but remove host relations failed, biz ID: %d, host ID: %+v, rid: %s", bizID, hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
@@ -336,7 +335,7 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostID int64) ([]
 		cond.Field(common.BKModuleIDField).In(t.moduleIDArr)
 		condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
 		relationArr := make([]metadata.ModuleHost, 0)
-		err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).All(kit.Ctx, &relationArr)
+		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condMap).All(kit.Ctx, &relationArr)
 		if err != nil {
 			blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -370,7 +369,7 @@ func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostID int64) ([]
 		insertDataArr = append(insertDataArr, insertData)
 	}
 
-	err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr)
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr)
 	if err != nil {
 		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
@@ -408,7 +407,7 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		}
 	}
 	instances := make([]metadata.ServiceInstance, 0)
-	err := t.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
+	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
 	if err != nil {
 		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s", err, serviceInstanceFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -428,7 +427,7 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		},
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
-	if err := t.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx, &relations); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx, &relations); nil != err {
 		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
@@ -439,7 +438,7 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 
 	// delete all process relations and instances
 	if len(processIDs) > 0 {
-		if err := t.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, processRelationFilter); nil != err {
+		if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, processRelationFilter); nil != err {
 			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
@@ -449,7 +448,7 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 				common.BKDBIN: processIDs,
 			},
 		}
-		if err := t.dbProxy.Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
+		if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
 			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s", err, processFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
@@ -461,7 +460,7 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 			common.BKDBIN: serviceInstanceIDs,
 		},
 	}
-	if err := t.dbProxy.Table(common.BKTableNameServiceInstance).Delete(kit.Ctx, serviceInstanceIDFilter); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Delete(kit.Ctx, serviceInstanceIDFilter); nil != err {
 		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
@@ -482,7 +481,7 @@ func (t *genericTransfer) getInnerModuleIDArr(kit *rest.Kit) errors.CCErrorCoder
 	cond := util.SetQueryOwner(moduleConds.ToMapStr(), kit.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := t.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).All(kit.Ctx, &moduleInfoArr)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).All(kit.Ctx, &moduleInfoArr)
 
 	if err != nil {
 		blog.ErrorJSON("getInnerModuleIDArr find data error. err:%s,cond:%s, rid:%s", err.Error(), cond, kit.Rid)
@@ -538,7 +537,7 @@ func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, mo
 	cond := util.SetQueryOwner(moduleConds.ToMapStr(), kit.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := t.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(kit.Ctx, &moduleInfoArr)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(kit.Ctx, &moduleInfoArr)
 	if err != nil {
 		blog.ErrorJSON("getModuleInfoByModuleID find data CCErrorCoder. err:%s,cond:%s, rid:%s", err.Error(), cond, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -549,7 +548,7 @@ func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, mo
 
 func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
 	conds = util.SetQueryOwner(conds, kit.SupplierAccount)
-	cnt, err := t.dbProxy.Table(tableName).Find(conds).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(tableName).Find(conds).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)

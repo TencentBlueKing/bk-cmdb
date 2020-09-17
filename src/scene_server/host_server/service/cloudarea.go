@@ -19,6 +19,7 @@ import (
 	"configcenter/src/ac/iam"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -28,7 +29,6 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 // FindManyCloudArea  find cloud area list
@@ -84,16 +84,6 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		blog.Errorf("FindManyCloudArea http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code, res.ErrMsg, rid)
 		ctx.RespAutoError(res.CCError())
 		return
-	}
-
-	// 查询云区域时附带主机数量信息
-	if input.HostCount {
-		err = s.addPlatHostCount(ctx, &res.Data.Info)
-		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea failed, addPlatHostCount err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail))
-			return
-		}
 	}
 
 	// 查询云区域时附带云同步任务ID信息
@@ -172,16 +162,18 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 			}
 		}
 
-		// add auditLog
-		lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-		auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
-		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platIDs...); err != nil {
-			blog.ErrorJSON("CreatePlatBatch failed,  WithCurrent err: %v, rid: %s", err, ctx.Kit.Rid)
+		// generate audit log.
+		audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+		logs, err := audit.GenerateAuditLog(generateAuditParameter, platIDs)
+		if err != nil {
+			blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditCreate); err != nil {
-			blog.ErrorJSON("CreatePlatBatch failed,  SaveAuditLog err: %v, rid: %s", err, ctx.Kit.Rid)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -259,16 +251,18 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 
 		platID := int64(res.Data.Created.ID)
 
-		// add auditLog
-		lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-		auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
-		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platID); err != nil {
-			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
+		// generate audit log.
+		audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+		logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{platID})
+		if err != nil {
+			blog.Errorf("generate audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditCreate); err != nil {
-			blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after create cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -348,11 +342,12 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 		return
 	}
 
-	// add auditLog preData
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
-		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
+	// generate audit log.
+	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
+	logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{platID})
+	if err != nil {
+		blog.Errorf("generate audit log failed before delete cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -373,10 +368,12 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 			return res.CCError()
 		}
 
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditDelete); err != nil {
-			blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return res.CCError()
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after delete cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
 		}
+
 		return nil
 	})
 
@@ -417,15 +414,6 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 		return
 	}
 
-	// auditLog preData
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	auditLog := lgc.NewCloudAreaLog(ctx.Kit.Ctx, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithPrevious(ctx.Kit.Ctx, platID); err != nil {
-		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	// update plat
 	user := ctx.Kit.User
 
@@ -452,6 +440,17 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 		},
 	}
 
+	// generate audit log.
+	audit := auditlog.NewCloudAreaAuditLog(s.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).WithUpdateFields(toUpdate)
+	logs, err := audit.GenerateAuditLog(generateAuditParameter, []int64{platID})
+	if err != nil {
+		blog.Errorf("generate audit log failed before update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// to update.
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		res, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, updateOption)
 		if nil != err {
@@ -463,14 +462,10 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 			return errors.New(res.Code, res.ErrMsg)
 		}
 
-		// update auditLog
-		if err := auditLog.WithCurrent(ctx.Kit.Ctx, platID); err != nil {
-			blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := auditLog.SaveAuditLog(ctx.Kit.Ctx, metadata.AuditUpdate); err != nil {
-			blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, logs...); err != nil {
+			blog.Errorf("save audit log failed after update cloud area, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
 		}
 
 		return nil
@@ -515,67 +510,6 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 
 	// response success
 	ctx.RespEntity(nil)
-}
-
-// addPlatHostCount add host count to plat info
-func (s *Service) addPlatHostCount(ctx *rest.Contexts, data *[]mapstr.MapStr) error {
-	// add host_count
-	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
-	intCloudIDArray := make([]int64, 0)
-	for _, area := range *data {
-		intCloudID, err := area.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea failed, Int64 err: %v, area:%#v, rid: %s", err, area, ctx.Kit.Rid)
-			return err
-		}
-		intCloudIDArray = append(intCloudIDArray, intCloudID)
-		mapCloudIDInfo[intCloudID] = area
-	}
-
-	condition := mapstr.MapStr{
-		common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: intCloudIDArray},
-	}
-	cond := &metadata.QueryCondition{
-		Fields:    []string{common.BKCloudIDField},
-		Condition: condition,
-	}
-	rsp, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, cond)
-	if nil != err {
-		blog.Errorf("addPlatHostCount failed, http do error: %v cond:%#v,rid:%s", err, cond, ctx.Kit.Rid)
-		return err
-	}
-	if false == rsp.Result {
-		blog.Errorf("addPlatHostCount failed,  http reply error, cond:%#v, err code:%d, err msg:%s, rid:%s", cond, rsp.Code, rsp.ErrMsg, ctx.Kit.Rid)
-		return ctx.Kit.CCError.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	cloudHost := make(map[int64]int64, 0)
-	for _, info := range rsp.Data.Info {
-		intID, err := info.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.ErrorJSON("addPlatHostCount failed, Int64 failed, err: %v, info:%#v, rid: %s", err, info, ctx.Kit.Rid)
-			return err
-		}
-		if _, ok := cloudHost[intID]; !ok {
-			cloudHost[intID] = 0
-		}
-		cloudHost[intID] += 1
-	}
-
-	result := make([]mapstr.MapStr, 0)
-	for _, cloudID := range intCloudIDArray {
-		if cloudInfo, ok := mapCloudIDInfo[cloudID]; ok {
-			cloudInfo["host_count"] = 0
-			if count, ok := cloudHost[cloudID]; ok {
-				cloudInfo["host_count"] = count
-			}
-			result = append(result, cloudInfo)
-		}
-	}
-
-	*data = result
-
-	return nil
 }
 
 // addPlatSyncTaskIDs add sync task ids to plat info

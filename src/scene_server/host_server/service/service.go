@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/host_server/app/options"
+	"configcenter/src/scene_server/host_server/logics"
 
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
@@ -35,6 +36,7 @@ type Service struct {
 	CacheDB     *redis.Client
 	AuthManager *extensions.AuthManager
 	EnableTxn   bool
+	Logic		*logics.Logics
 }
 func (s *Service) WebService() *restful.Container {
 

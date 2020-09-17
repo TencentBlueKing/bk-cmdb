@@ -10,41 +10,42 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
-                            <li class="property-item"
-                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                                v-if="checkEditable(property)"
-                                :key="propertyIndex">
-                                <div class="property-name clearfix">
-                                    <bk-checkbox class="form-checkbox"
-                                        v-if="property['isLocking'] !== undefined"
-                                        v-model="values[property['bk_property_id']]['as_default_value']"
-                                        @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
-                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    </bk-checkbox>
-                                    <span v-else class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    <i class="property-name-tooltips icon-cc-tips"
-                                        v-if="property['placeholder']"
-                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
-                                    </i>
-                                </div>
-                                <div class="property-value">
-                                    <component class="form-component"
-                                        :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :disabled="getPropertyEditStatus(property)"
-                                        :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :unit="property.unit"
-                                        :row="2"
-                                        :options="property.option || []"
-                                        :data-vv-name="property['bk_property_id']"
-                                        :data-vv-as="property['bk_property_name']"
-                                        :placeholder="getPlaceholder(property)"
-                                        :auto-select="false"
-                                        v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]['value']">
-                                    </component>
-                                    <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
-                                </div>
-                            </li>
+                            <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
+                                <li :class="['property-item', { flex: property.bk_property_type === 'table' }]"
+                                    v-if="checkEditable(property)"
+                                    :key="propertyIndex">
+                                    <div class="property-name clearfix" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
+                                        <bk-checkbox class="form-checkbox"
+                                            v-if="property['isLocking'] !== undefined"
+                                            v-model="values[property['bk_property_id']]['as_default_value']"
+                                            @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
+                                            <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        </bk-checkbox>
+                                        <span v-else class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <i class="property-name-tooltips icon-cc-tips"
+                                            v-if="property['placeholder']"
+                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                        </i>
+                                    </div>
+                                    <div class="property-value">
+                                        <component class="form-component" ref="formComponent"
+                                            :is="getComponentType(property)"
+                                            :disabled="getPropertyEditStatus(property)"
+                                            :class="{ error: errors.has(property['bk_property_id']) }"
+                                            :unit="property.unit"
+                                            :row="2"
+                                            :options="property.option || []"
+                                            :data-vv-name="property['bk_property_id']"
+                                            :data-vv-as="property['bk_property_name']"
+                                            :placeholder="getPlaceholder(property)"
+                                            :auto-select="false"
+                                            v-validate="getValidateRules(property)"
+                                            v-model.trim="values[property['bk_property_id']]['value']">
+                                        </component>
+                                        <span class="form-error">{{getFormError(property)}}</span>
+                                    </div>
+                                </li>
+                            </template>
                         </ul>
                     </cmdb-collapse>
                 </div>
@@ -74,7 +75,11 @@
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import { mapMutations } from 'vuex'
+    import ProcessFormPropertyTable from './process-form-property-table'
     export default {
+        components: {
+            ProcessFormPropertyTable
+        },
         mixins: [formMixins],
         props: {
             inst: {
@@ -118,37 +123,12 @@
         },
         data () {
             return {
-                ipOption: [
-                    {
-                        'name': '127.0.0.1',
-                        'type': 'text',
-                        'is_default': true,
-                        'id': '1'
-                    },
-                    {
-                        'id': '2',
-                        'name': '0.0.0.0',
-                        'type': 'text',
-                        'is_default': false
-                    }
-                    // {
-                    //     'name': '第一内网IP',
-                    //     'type': 'text',
-                    //     'is_default': false,
-                    //     'id': '3'
-                    // },
-                    // {
-                    //     'name': '第一外网IP',
-                    //     'type': 'text',
-                    //     'is_default': false,
-                    //     'id': '4'
-                    // }
-                ],
                 values: {
                     bk_func_name: ''
                 },
                 refrenceValues: {},
-                scrollbar: false
+                scrollbar: false,
+                invisibleNameProperties: ['bind_info']
             }
         },
         computed: {
@@ -159,10 +139,6 @@
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
                         }
-                        // if (['bind_ip'].includes(property['bk_property_id'])) {
-                        //     property.bk_property_type = 'enum'
-                        //     property.option = this.ipOption
-                        // }
                     })
                     return filterProperties
                 })
@@ -196,6 +172,13 @@
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
+            getComponentType (property) {
+                const type = property.bk_property_type
+                if (type === 'table') {
+                    return 'process-form-property-table'
+                }
+                return `cmdb-form-${type}`
+            },
             getPropertyEditStatus (property) {
                 const uneditable = ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']) && !this.isCreatedService
                 return (this.type === 'update' && uneditable)
@@ -204,10 +187,6 @@
             changedValues () {
                 const changedValues = {}
                 if (!Object.keys(this.refrenceValues).length) return {}
-                if (!this.values['bind_ip']['value']) {
-                    this.$set(this.values.bind_ip, 'value', '')
-                    this.$set(this.refrenceValues.bind_ip, 'value', '')
-                }
                 Object.keys(this.values).forEach(propertyId => {
                     let isChange = false
                     if (!['sign_id', 'process_id'].includes(propertyId)) {
@@ -232,38 +211,17 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                const inst = {}
-                if (this.type === 'update') {
-                    Object.keys(this.inst).forEach(key => {
-                        const type = typeof this.inst[key]
-                        if (type === 'object') {
-                            inst[key] = this.inst[key] ? this.inst[key]['value'] : this.inst[key]
-                        } else {
-                            inst[key] = this.inst[key]
-                        }
-                    })
-                }
-                const properties = this.properties.map(property => {
-                    if (['bind_ip'].includes(property['bk_property_id'])) {
-                        property.bk_property_type = 'enum'
-                        property.option = this.ipOption
-                    }
-                    return property
-                })
-                const formValues = this.$tools.getInstFormValues(properties, inst, this.type === 'create')
+                const restValues = {}
+                const formValues = this.$tools.getInstFormValues(this.properties, {}, this.type === 'create')
                 Object.keys(formValues).forEach(key => {
-                    this.$set(this.values, key, {
-                        value: formValues[key],
-                        as_default_value: this.type === 'update'
-                            ? this.inst[key] ? this.inst[key]['as_default_value'] : false
-                            : ['bk_func_name', 'bk_process_name'].includes(key)
-                    })
+                    if (!this.inst.hasOwnProperty(key)) {
+                        restValues[key] = {
+                            as_default_value: ['bk_func_name', 'bk_process_name', 'bind_info'].includes(key),
+                            value: formValues[key]
+                        }
+                    }
                 })
-                if (this.isCreatedService && this.type === 'update') {
-                    this.values['sign_id'] = inst['sign_id']
-                } else if (this.type === 'update') {
-                    this.values['process_id'] = inst['process_id']
-                }
+                this.values = Object.assign({}, this.values, restValues, this.inst)
                 const timer = setTimeout(() => {
                     this.refrenceValues = this.$tools.clone(this.values)
                     clearTimeout(timer)
@@ -301,8 +259,29 @@
             getValidateRules (property) {
                 return this.$tools.getValidateRules(property)
             },
-            handleSave () {
-                this.$validator.validateAll().then(result => {
+            getFormError (property) {
+                if (property.bk_property_type === 'table') {
+                    const hasError = this.errors.items.some(item => item.scope === property.bk_property_id)
+                    return hasError ? this.$t('有未正确定义的监听信息') : ''
+                }
+                return this.errors.first(property.bk_property_id)
+            },
+            callComponentValidator () {
+                const componentValidator = []
+                const { formComponent = [] } = this.$refs
+                formComponent.forEach(component => {
+                    componentValidator.push(component.$validator.validateAll())
+                    componentValidator.push(component.$validator.validateScopes())
+                })
+                return componentValidator
+            },
+            async handleSave () {
+                try {
+                    const results = await Promise.all([
+                        this.$validator.validateAll(),
+                        ...this.callComponentValidator()
+                    ])
+                    const result = results.every(result => result)
                     if (result && !this.hasChange()) {
                         this.$emit('on-cancel')
                     } else if (result && this.isCreatedService) {
@@ -320,11 +299,14 @@
                     } else {
                         this.uncollapseGroup()
                     }
-                })
+                } catch (error) {
+                    console.error(error)
+                }
             },
             uncollapseGroup () {
                 this.errors.items.forEach(item => {
-                    const property = this.properties.find(property => property['bk_property_id'] === item.field)
+                    const compareKey = item.scope || item.field
+                    const property = this.properties.find(property => property['bk_property_id'] === compareKey)
                     const group = property['bk_property_group']
                     this.groupState[group] = false
                 })
@@ -365,34 +347,34 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-layout{
+    .form-layout {
         height: 100%;
         @include scrollbar-y;
     }
     .process-tips {
         margin: 10px 20px 0;
     }
-    .form-groups{
+    .form-groups {
         padding: 0 20px;
     }
-    .property-group{
+    .property-group {
         padding: 20px 0 10px 0;
         &:first-child {
         padding: 15px 0 10px 0;
         }
     }
-    .group-name{
+    .group-name {
         font-size: 14px;
         font-weight: bold;
         line-height: 14px;
         color: #63656e;
         overflow: visible;
     }
-    .property-list{
+    .property-list {
         padding: 4px 0;
         display: flex;
         flex-wrap: wrap;
-        .property-item{
+        .property-item {
             width: 50%;
             margin: 12px 0 0;
             font-size: 12px;
@@ -403,14 +385,14 @@
             &:nth-child(even) {
                 padding-left: 30px;
             }
-            .property-name{
+            .property-name {
                 display: block;
                 margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
             }
-            .property-name-text{
+            .property-name-text {
                 position: relative;
                 display: inline-block;
                 vertical-align: middle;
@@ -429,7 +411,7 @@
                     }
                 }
             }
-            .property-name-tooltips{
+            .property-name-tooltips {
                 display: inline-block;
                 vertical-align: middle;
                 width: 16px;
@@ -437,7 +419,7 @@
                 font-size: 16px;
                 color: #c3cdd7;
             }
-            .property-value{
+            .property-value {
                 font-size: 0;
                 position: relative;
                 /deep/ .control-append-group {
@@ -449,9 +431,15 @@
             .form-checkbox {
                 outline: 0;
             }
+
+            &.flex {
+                flex: 1;
+                padding-right: 0;
+                width: 100%;
+            }
         }
     }
-    .form-options{
+    .form-options {
         position: sticky;
         bottom: 0;
         left: 0;
@@ -464,11 +452,11 @@
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
         }
-        .button-save{
+        .button-save {
             min-width: 76px;
             margin-right: 4px;
         }
-        .button-cancel{
+        .button-cancel {
             min-width: 76px;
             margin: 0 4px;
             background-color: #fff;

@@ -20,11 +20,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *modelClassification) count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 	filter := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(filter).Count(kit.Ctx)
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(filter).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -34,7 +35,7 @@ func (m *modelClassification) count(kit *rest.Kit, cond universalsql.Condition) 
 
 func (m *modelClassification) save(kit *rest.Kit, classification metadata.Classification) (id uint64, err error) {
 
-	id, err = m.dbProxy.NextSequence(kit.Ctx, common.BKTableNameObjClassification)
+	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjClassification)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to create a new sequence id on the table(%s) of the database, error info is %s", kit.Rid, common.BKTableNameObjClassification, err.Error())
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -43,7 +44,7 @@ func (m *modelClassification) save(kit *rest.Kit, classification metadata.Classi
 	classification.ID = int64(id)
 	classification.OwnerID = kit.SupplierAccount
 
-	err = m.dbProxy.Table(common.BKTableNameObjClassification).Insert(kit.Ctx, classification)
+	err = mongodb.Client().Table(common.BKTableNameObjClassification).Insert(kit.Ctx, classification)
 	return id, err
 }
 
@@ -59,7 +60,7 @@ func (m *modelClassification) update(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	data.Remove(metadata.ClassFieldClassificationID)
-	err = m.dbProxy.Table(common.BKTableNameObjClassification).Update(kit.Ctx, cond.ToMapStr(), data)
+	err = mongodb.Client().Table(common.BKTableNameObjClassification).Update(kit.Ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%#v) , error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -78,7 +79,7 @@ func (m *modelClassification) delete(kit *rest.Kit, cond universalsql.Condition)
 		return 0, err
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjClassification).Delete(kit.Ctx, cond.ToMapStr())
+	err = mongodb.Client().Table(common.BKTableNameObjClassification).Delete(kit.Ctx, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database deletion operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -90,13 +91,13 @@ func (m *modelClassification) delete(kit *rest.Kit, cond universalsql.Condition)
 func (m *modelClassification) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Classification, error) {
 
 	results := make([]metadata.Classification, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx, &results)
+	err := mongodb.Client().Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx, &results)
 	return results, err
 }
 
 func (m *modelClassification) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
 	results := make([]mapstr.MapStr, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx, &results)
+	err := mongodb.Client().Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx, &results)
 	return results, err
 }

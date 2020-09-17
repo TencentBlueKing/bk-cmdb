@@ -18,7 +18,18 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
-                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+                <template slot-scope="{ row }">
+                    <cmdb-property-value v-if="column.id !== 'bind_info'"
+                        :value="row[column.id]"
+                        :show-unit="false"
+                        :show-title="true"
+                        :property="column.property">
+                    </cmdb-property-value>
+                    <process-bind-info-value v-else
+                        :value="row[column.id]"
+                        :property="column.property">
+                    </process-bind-info-value>
+                </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row, $index }">
@@ -55,7 +66,11 @@
         processPropertyGroupsRequestId
     } from './form/symbol'
     import Form from './form/form.js'
+    import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
     export default {
+        components: {
+            ProcessBindInfoValue
+        },
         props: {
             deletable: Boolean,
             expanded: Boolean,

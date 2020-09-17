@@ -138,7 +138,6 @@ func (a *AuthError) Error() string {
 type TypeID string
 
 const (
-	SysSystemBase   TypeID = "sys_system_base"
 	SysEventPushing TypeID = "sys_event_pushing"
 	SysModelGroup   TypeID = "sys_model_group"
 	// special model resource for selection of instance, not including models whose instances are managed separately

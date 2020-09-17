@@ -100,6 +100,7 @@
     "process_property_bk_gateway_port": "gateway port",
     "process_property_bk_gateway_protocol": "gateway protocol",
     "process_property_bk_gateway_city": "gateway city",
+    "process_property_bind_info": "bind information",
     "bk_switch_property_bk_asset_id": "asset id",
     "bk_switch_property_bk_sn": "SN",
     "bk_switch_property_bk_inst_name": "middleware",

@@ -26,7 +26,6 @@ import (
 	meta "configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 func (s *Service) AddUserCustomQuery(ctx *rest.Contexts) {
@@ -319,8 +318,8 @@ func (s *Service) GetUserCustomQueryResult(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "limit"))
 		return
 	}
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	retData, err := lgc.SearchHost(ctx.Kit.Ctx, &input, false)
+
+	retData, err := s.Logic.SearchHost(ctx.Kit, &input, false)
 	if nil != err || (nil == err && !result.Result) {
 		if nil == err {
 			err = fmt.Errorf(result.ErrMsg)

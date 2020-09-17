@@ -25,7 +25,6 @@ import (
 	meta "configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/logics"
 )
 
 func (s *Service) FindModuleHost(ctx *rest.Contexts) {
@@ -43,8 +42,7 @@ func (s *Service) FindModuleHost(ctx *rest.Contexts) {
 		ctx.RespAutoError(defErr.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, 500))
 		return
 	}
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	host, err := lgc.FindHostByModuleIDs(ctx.Kit.Ctx, body, false)
+	host, err := s.Logic.FindHostByModuleIDs(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("find host failed, err: %#v, input:%#v, rid:%s", err, body, ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Error(common.CCErrHostGetFail))
@@ -119,8 +117,7 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 
 	// get module info
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	hostModuleConfig, err := lgc.GetConfigByCond(ctx.Kit.Ctx, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
+	hostModuleConfig, err := s.Logic.GetConfigByCond(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
 		Fields: []string{common.BKModuleIDField, common.BKHostIDField}})
 	if err != nil {
 		blog.Errorf("GetConfigByCond failed, err: %v, hostIDArr: %v, rid: %s", err, hostIDArr, ctx.Kit.Rid)
@@ -135,7 +132,7 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 
 	moduleFields := append(body.ModuleFields, common.BKModuleIDField)
-	moduleInfoMap, err := lgc.GetModuleMapByCond(ctx.Kit.Ctx, moduleFields, map[string]interface{}{
+	moduleInfoMap, err := s.Logic.GetModuleMapByCond(ctx.Kit, moduleFields, map[string]interface{}{
 		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: moduleIDArr},
 	})
 	if err != nil {
@@ -213,8 +210,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 			Value:    option.ModuleIDs,
 		})
 	}
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	moduleIDArr, err := lgc.GetModuleIDByCond(ctx.Kit.Ctx, moduleCond)
+	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, moduleCond)
 	if err != nil {
 		blog.Errorf("FindHostsByServiceTemplates failed, GetModuleIDByCond err:%s, cond:%#v, rid:%s", err.Error(), moduleCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -290,8 +286,7 @@ func (s *Service) findDistinctHostInfo(ctx *rest.Contexts, distinctHostCond *met
 			},
 		},
 	}
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	hostInfo, err := lgc.SearchHostInfo(ctx.Kit.Ctx, cond)
+	hostInfo, err := s.Logic.SearchHostInfo(ctx.Kit, cond)
 	if err != nil {
 		blog.Errorf("findDistinctHostInfo failed, SearchHostInfo error: %v, input:%#v, rid: %s", err, cond, ctx.Kit.Rid)
 		return nil, err
@@ -356,8 +351,7 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		})
 	}
 
-	lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-	setIDArr, err := lgc.GetSetIDByCond(ctx.Kit.Ctx, setCond)
+	setIDArr, err := s.Logic.GetSetIDByCond(ctx.Kit, setCond)
 	if err != nil {
 		blog.Errorf("FindHostsBySetTemplates failed, GetSetIDByCond err:%s, cond:%#v, rid:%s", err.Error(), setCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -394,7 +388,7 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
 		blog.Errorf("find hosts by topo failed, validate err: %v, option: %#v, rid: %s", rawErr, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
@@ -417,10 +411,9 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 	} else if option.ObjID == common.BKInnerObjIDModule {
 		distinctHostCond.ModuleIDArr = []int64{option.InstID}
 	} else {
-		lgc := logics.NewLogics(s.Engine, ctx.Kit.Header, s.CacheDB, s.AuthManager)
-		setIDArr, err := lgc.GetSetIDsByTopo(ctx.Kit.Ctx, option.ObjID, option.InstID)
+		setIDArr, err := s.Logic.GetSetIDsByTopo(ctx.Kit, option.ObjID, option.InstID)
 		if err != nil {
-			blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, rid: %s", 
+			blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, rid: %s",
 				err, option.ObjID, option.InstID, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
@@ -441,12 +434,12 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("find hosts by topo failed, cond: %#v, search cond: %#v, er: %v, rid: %s", err, *distinctHostCond, 
+		blog.Errorf("find hosts by topo failed, cond: %#v, search cond: %#v, er: %v, rid: %s", err, *distinctHostCond,
 			*searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	ctx.RespEntity(result.Data)
 }
 
@@ -565,7 +558,7 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 }
 
 func (s *Service) listBizHosts(ctx *rest.Contexts, bizID int64, parameter meta.ListHostsParameter) (result *meta.ListHostResult, ccErr errors.CCErrorCoder) {
-	header:=ctx.Kit.Header
+	header := ctx.Kit.Header
 	rid := ctx.Kit.Rid
 	defErr := ctx.Kit.CCError
 
@@ -659,11 +652,14 @@ func (s *Service) ListHostsWithNoBiz(ctx *rest.Contexts) {
 		return
 	}
 
+	parameter.Page.Sort = common.BKHostIDField
 	option := &meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Fields:             parameter.Fields,
 		Page:               parameter.Page,
 	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, err := s.CoreAPI.CoreService().Host().ListHosts(ctx.Kit.Ctx, header, option)
 	if err != nil {
 		blog.Errorf("find host failed, err: %s, input:%#v, rid:%s", err.Error(), parameter, rid)
@@ -743,8 +739,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		HostIDArr:     hostIDs,
 		Fields:        []string{common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
-	lgc := logics.NewLogics(s.Engine, header, s.CacheDB, s.AuthManager)
-	relations, err := lgc.GetConfigByCond(ctx.Kit.Ctx, relationCond)
+	relations, err := s.Logic.GetConfigByCond(ctx.Kit, relationCond)
 	if nil != err {
 		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

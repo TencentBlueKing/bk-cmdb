@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
@@ -70,7 +71,7 @@ func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadat
 		common.BKAppIDField: bizID,
 		common.BKFieldName:  template.Name,
 	}
-	count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(nameUniqueFilter).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(nameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("CreateServiceTemplate failed, count same name instance failed, filter: %+v, err: %+v, rid: %s", nameUniqueFilter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -81,7 +82,7 @@ func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadat
 	}
 
 	// generate id field
-	id, err := p.dbProxy.NextSequence(kit.Ctx, common.BKTableNameServiceTemplate)
+	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameServiceTemplate)
 	if nil != err {
 		blog.Errorf("CreateServiceTemplate failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
@@ -94,7 +95,7 @@ func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadat
 	template.LastTime = time.Now()
 	template.SupplierAccount = kit.SupplierAccount
 
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Insert(kit.Ctx, &template); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Insert(kit.Ctx, &template); nil != err {
 		blog.Errorf("CreateServiceTemplate failed, mongodb failed, table: %s, template: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
@@ -105,9 +106,9 @@ func (p *processOperation) GetServiceTemplate(kit *rest.Kit, templateID int64) (
 	template := metadata.ServiceTemplate{}
 
 	filter := map[string]int64{common.BKFieldID: templateID}
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).One(kit.Ctx, &template); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).One(kit.Ctx, &template); nil != err {
 		blog.Errorf("GetServiceTemplate failed, mongodb failed, table: %s, filter: %+v, template: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, template, err, kit.Rid)
-		if p.dbProxy.IsNotFoundError(err) {
+		if mongodb.Client().IsNotFoundError(err) {
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -175,7 +176,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 					common.BKDBNE: template.ID,
 				},
 			}
-			count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(nameFilter).Count(kit.Ctx)
+			count, err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(nameFilter).Count(kit.Ctx)
 			if err != nil {
 				blog.ErrorJSON("UpdateServiceTemplate failed, count service template with same name failed, filter: %s, err: %s, rid: %s", nameFilter, err, kit.Rid)
 				checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -195,7 +196,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 				common.BKServiceTemplateIDField: template.ID,
 			}
 			modules := make([]metadata.ModuleInst, 0)
-			err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
+			err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
 			if err != nil {
 				blog.ErrorJSON("UpdateServiceTemplate failed, count modules using this service template failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
 				checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -217,7 +218,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 						common.BKDBNE: template.ID,
 					},
 				}
-				count, err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleNameFilter).Count(kit.Ctx)
+				count, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleNameFilter).Count(kit.Ctx)
 				if err != nil {
 					blog.ErrorJSON("UpdateServiceTemplate failed, count modules with same name failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
 					checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -240,7 +241,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, filter, template); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, filter, template); nil != err {
 		blog.Errorf("UpdateServiceTemplate failed, mongodb failed, table: %s, filter: %+v, template: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
@@ -249,7 +250,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 	if needUpdateModuleName {
 		moduleFilter := map[string]interface{}{common.BKServiceTemplateIDField: template.ID}
 		updateData := map[string]interface{}{common.BKModuleNameField: template.Name}
-		if err := p.dbProxy.Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData); err != nil {
 			blog.ErrorJSON("UpdateServiceTemplate failed, update modules using this service template failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
@@ -291,7 +292,7 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 		}
 	}
 
-	if option.ServiceTemplateIDs != nil && len(option.ServiceTemplateIDs) != 0{
+	if option.ServiceTemplateIDs != nil && len(option.ServiceTemplateIDs) != 0 {
 		filter[common.BKFieldID] = map[string][]int64{
 			common.BKDBIN: option.ServiceTemplateIDs,
 		}
@@ -305,7 +306,7 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 
 	var total uint64
 	var err error
-	if total, err = p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Count(kit.Ctx); nil != err {
+	if total, err = mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).Count(kit.Ctx); nil != err {
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
@@ -315,7 +316,7 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 		sort = option.Page.Sort
 	}
 	templates := make([]metadata.ServiceTemplate, 0)
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(sort).All(kit.Ctx, &templates); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(sort).All(kit.Ctx, &templates); nil != err {
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
@@ -338,7 +339,7 @@ func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateI
 	usageFilter := map[string]int64{
 		common.BKServiceTemplateIDField: template.ID,
 	}
-	usageCount, e := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(usageFilter).Count(kit.Ctx)
+	usageCount, e := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(usageFilter).Count(kit.Ctx)
 	if nil != e {
 		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, process template usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, e, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -350,7 +351,7 @@ func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateI
 	}
 
 	// service template that referenced by module shouldn't be removed
-	usageCount, e = p.dbProxy.Table(common.BKTableNameBaseModule).Find(usageFilter).Count(kit.Ctx)
+	usageCount, e = mongodb.Client().Table(common.BKTableNameBaseModule).Find(usageFilter).Count(kit.Ctx)
 	if nil != e {
 		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, module usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, e, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -362,7 +363,7 @@ func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateI
 	}
 
 	deleteFilter := map[string]int64{common.BKFieldID: template.ID}
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Delete(kit.Ctx, deleteFilter); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Delete(kit.Ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, deleteFilter, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}

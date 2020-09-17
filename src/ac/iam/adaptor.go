@@ -65,7 +65,6 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.ModelModule, meta.ModelSet, meta.MainlineInstance, meta.MainlineInstanceTopology:
 		iamResourceType = BizTopology
 	case meta.MainlineModel, meta.ModelTopology:
-		iamResourceType = SysSystemBase
 	case meta.ModelClassification:
 		iamResourceType = SysModelGroup
 	case meta.AssociationType:
@@ -75,7 +74,6 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.ModelInstanceAssociation:
 		iamResourceType = SysInstance
 	case meta.MainlineModelTopology:
-		iamResourceType = SysSystemBase
 	case meta.ModelInstance:
 		iamResourceType = SysInstance
 	case meta.ModelInstanceTopology:
@@ -95,7 +93,6 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.AuditLog:
 		iamResourceType = SysAuditLog
 	case meta.SystemBase:
-		iamResourceType = SysSystemBase
 	case meta.UserCustom:
 		iamResourceType = UserCustom
 	case meta.NetDataCollector:
@@ -123,7 +120,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.EventWatch:
 		iamResourceType = SysEventWatch
 	case meta.ConfigAdmin:
-		iamResourceType = SysSystemBase
+	case meta.SystemConfig:
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -442,10 +439,11 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 	// TODO: confirm this
 	meta.SystemConfig: {
-		meta.Find:   Skip,
-		meta.Update: Skip,
-		meta.Delete: Skip,
-		meta.Create: Skip,
+		meta.FindMany: Skip,
+		meta.Find:     Skip,
+		meta.Update:   Skip,
+		meta.Delete:   Skip,
+		meta.Create:   Skip,
 	},
 	meta.ConfigAdmin: {
 		meta.Find:   Skip,

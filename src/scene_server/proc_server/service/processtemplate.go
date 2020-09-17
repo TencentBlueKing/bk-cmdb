@@ -54,7 +54,8 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 			temp, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
 			if err != nil {
 				blog.Errorf("create process template failed, template: +%v", *t)
-				return ctx.Kit.CCError.CCError(common.CCErrProcCreateProcessTemplateFailed)
+
+				return err
 			}
 
 			ids = append(ids, temp.ID)

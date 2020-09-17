@@ -49,7 +49,6 @@ func (ps *parseStream) topology() *parseStream {
 		objectSet().
 		//objectUnique().
 		audit().
-		instanceAudit().
 		fullTextSearch().
 		cloudArea()
 
@@ -1120,14 +1119,31 @@ func (ps *parseStream) object() *parseStream {
 
 	// batch create/update common object operation
 	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: ps.RequestCtx.BizID,
-				Basic: meta.Basic{
-					Type:   meta.Model,
-					Action: meta.UpdateMany,
-				},
-			},
+		data := gjson.ParseBytes(ps.RequestCtx.Body).Map()
+		objIDs := make([]string, len(data))
+		index := 0
+
+		for objID, _ := range data {
+			objIDs[index] = objID
+			index++
+		}
+
+		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: map[string]interface{}{common.BKDBIN: objIDs}})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Type:       meta.Model,
+						Action:     meta.Update,
+						InstanceID: model.ID,
+					},
+					BusinessID: ps.RequestCtx.BizID,
+				})
 		}
 		return ps
 	}
@@ -2254,8 +2270,9 @@ func (ps *parseStream) objectSet() *parseStream {
 //}
 
 var (
-	searchAuditLog               = `/api/v3/audit/search`
-	searchInstanceAuditLogRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/audit/search/?$`)
+	searchAuditDict   = `/api/v3/find/audit_dict`
+	searchAuditList   = `/api/v3/findmany/audit_list`
+	searchAuditDetail = regexp.MustCompile(`^/api/v3/find/audit/[0-9]+/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -2263,7 +2280,7 @@ func (ps *parseStream) audit() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(searchAuditLog, http.MethodPost) {
+	if ps.hitPattern(searchAuditDict, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -2275,22 +2292,24 @@ func (ps *parseStream) audit() *parseStream {
 		return ps
 	}
 
-	return ps
-}
-
-func (ps *parseStream) instanceAudit() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	// add object unique operation.
-	if ps.hitRegexp(searchInstanceAuditLogRegexp, http.MethodPost) {
+	if ps.hitPattern(searchAuditList, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type: meta.AuditLog,
-					// instance audit authorization by instance
-					Action: meta.SkipAction,
+					Type:   meta.AuditLog,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(searchAuditDetail, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.AuditLog,
+					Action: meta.Find,
 				},
 			},
 		}

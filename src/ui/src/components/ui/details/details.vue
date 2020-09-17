@@ -11,10 +11,13 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
-                            <li class="property-item clearfix fl"
+                            <li :class="['property-item clearfix fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
                                 v-for="property in $groupedProperties[groupIndex]"
                                 :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
-                                <span class="property-name fl" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
+                                <span class="property-name fl"
+                                    v-if="!invisibleNameProperties.includes(property['bk_property_id'])"
+                                    :title="property['bk_property_name']">{{property['bk_property_name']}}
+                                </span>
                                 <slot :name="property['bk_property_id']">
                                     <span class="property-value clearfix fl"
                                         v-if="property.unit"
@@ -102,8 +105,16 @@
                 default: null
             },
             deleteAuth: {
-                type: Object,
+                type: [Object, Array],
                 default: null
+            },
+            flexProperties: {
+                type: Array,
+                default: () => []
+            },
+            invisibleNameProperties: {
+                type: Array,
+                default: () => []
             }
         },
         data () {
@@ -154,18 +165,18 @@
 </script>
 
 <style lang="scss" scoped>
-    .details-layout{
+    .details-layout {
         height: 100%;
         padding: 0 0 0 32px;
         @include scrollbar-y;
     }
-    .property-group{
+    .property-group {
         padding: 7px 0 10px 0;
         &:first-child{
             padding: 28px 0 10px 0;
         }
     }
-    .group-name{
+    .group-name {
         font-size: 16px;
         line-height: 16px;
         color: #333948;
@@ -183,15 +194,15 @@
             }
         }
     }
-    .property-list{
+    .property-list {
         padding: 4px 0;
-        .property-item{
+        .property-item {
             width: 50%;
             max-width: 400px;
             margin: 12px 0 0;
             font-size: 14px;
             line-height: 26px;
-            .property-name{
+            .property-name {
                 position: relative;
                 width: 35%;
                 padding: 0 16px 0 0;
@@ -203,26 +214,33 @@
                     right: 10px;
                 }
             }
-            .property-value{
+            .property-value {
                 width: 65%;
                 padding: 0 15px 0 0;
                 color: #313238;
                 @include ellipsis;
-                &-text{
+                &-text {
                     display: block;
                     max-width: calc(100% - 60px);
                     @include ellipsis;
                 }
-                &-unit{
+                &-unit {
                     display: block;
                     width: 60px;
                     padding: 0 0 0 5px;
                     @include ellipsis;
                 }
             }
+
+            &.flex {
+                display: flex;
+                width: 100%;
+                max-width: unset;
+                padding-right: 15px;
+            }
         }
     }
-    .details-options{
+    .details-options {
         position: sticky;
         bottom: 0;
         left: 0;
@@ -235,11 +253,11 @@
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
         }
-        .button-edit{
+        .button-edit {
             min-width: 76px;
             margin-right: 4px;
         }
-        .button-delete{
+        .button-delete {
             min-width: 76px;
         }
     }

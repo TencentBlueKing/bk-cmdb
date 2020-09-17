@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	hostParse "configcenter/src/common/paraparse"
@@ -30,11 +31,11 @@ import (
 /* reuse old part codes of hostsearch.go */
 
 // ExecuteHostDynamicGroup searches hosts base on conditions without filling topology informations.
-func (lgc *Logics) ExecuteHostDynamicGroup(ctx context.Context, data *metadata.HostCommonSearch,
+func (lgc *Logics) ExecuteHostDynamicGroup(kit *rest.Kit, data *metadata.HostCommonSearch,
 	fields []string, disableCounter bool) (*metadata.SearchHost, error) {
 
 	// create search host action instance.
-	executor := NewHostDynamicGroupExecutor(ctx, lgc, data, fields, disableCounter)
+	executor := NewHostDynamicGroupExecutor(kit, lgc, data, fields, disableCounter)
 
 	hostInfos, count, err := executor.Execute()
 	if err != nil {
@@ -49,9 +50,10 @@ func (lgc *Logics) ExecuteHostDynamicGroup(ctx context.Context, data *metadata.H
 
 // HostDynamicGroupExecutor handle host dynamic group action.
 type HostDynamicGroupExecutor struct {
-	ctx context.Context
+	kit *rest.Kit
 	lgc *Logics
 
+	ctx    context.Context
 	ccErr  errors.DefaultCCErrorIf
 	ccRid  string
 	header http.Header
@@ -74,15 +76,16 @@ type HostDynamicGroupExecutor struct {
 }
 
 // NewHostDynamicGroupExecutor creates a new HostDynamicGroupExecutor object.
-func NewHostDynamicGroupExecutor(ctx context.Context, lgc *Logics, params *metadata.HostCommonSearch,
+func NewHostDynamicGroupExecutor(kit *rest.Kit, lgc *Logics, params *metadata.HostCommonSearch,
 	fileds []string, disableCounter bool) *HostDynamicGroupExecutor {
 
 	executor := &HostDynamicGroupExecutor{
-		ctx:            ctx,
+		kit:            kit,
 		lgc:            lgc,
-		ccErr:          lgc.ccErr,
-		ccRid:          lgc.rid,
-		header:         lgc.header,
+		ctx:            kit.Ctx,
+		ccErr:          kit.CCError,
+		ccRid:          kit.Rid,
+		header:         kit.Header,
 		params:         params,
 		idArr:          searchHostIDArr{},
 		fields:         fileds,
@@ -198,7 +201,7 @@ func (e *HostDynamicGroupExecutor) searchByApp() error {
 		return nil
 	}
 
-	appIDs, err := e.lgc.GetAppIDByCond(e.ctx, e.conds.appCond.Condition)
+	appIDs, err := e.lgc.GetAppIDByCond(e.kit, e.conds.appCond.Condition)
 	if err != nil {
 		return err
 	}
@@ -225,7 +228,7 @@ func (e *HostDynamicGroupExecutor) searchByMainline() error {
 
 	// search mainline object.
 	if len(e.conds.mainlineCond.Condition) > 0 {
-		objSetIDs, err = e.lgc.GetSetIDByObjectCond(e.ctx, e.params.AppID, e.conds.mainlineCond.Condition)
+		objSetIDs, err = e.lgc.GetSetIDByObjectCond(e.kit, e.params.AppID, e.conds.mainlineCond.Condition)
 		if err != nil {
 			return err
 		}
@@ -253,7 +256,7 @@ func (e *HostDynamicGroupExecutor) searchByMainline() error {
 			})
 		}
 
-		setIDs, err = e.lgc.GetSetIDByCond(e.ctx, e.conds.setCond.Condition)
+		setIDs, err = e.lgc.GetSetIDByCond(e.kit, e.conds.setCond.Condition)
 		if err != nil {
 			return err
 		}
@@ -295,7 +298,7 @@ func (e *HostDynamicGroupExecutor) searchByModule() error {
 	}
 
 	// search module.
-	moduleIDs, err := e.lgc.GetModuleIDByCond(e.ctx, e.conds.moduleCond.Condition)
+	moduleIDs, err := e.lgc.GetModuleIDByCond(e.kit, e.conds.moduleCond.Condition)
 	if err != nil {
 		return err
 	}
@@ -320,7 +323,7 @@ func (e *HostDynamicGroupExecutor) searchByPlatCondition() error {
 		return nil
 	}
 
-	instIDs, err := e.lgc.GetObjectInstByCond(e.ctx, common.BKInnerObjIDPlat, e.conds.platCond.Condition)
+	instIDs, err := e.lgc.GetObjectInstByCond(e.kit, common.BKInnerObjIDPlat, e.conds.platCond.Condition)
 	if err != nil {
 		return err
 	}
@@ -441,7 +444,7 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 
 	var hostIDs []int64
 
-	respHostIDInfo, err := e.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(e.ctx, e.lgc.header, &moduleHostConfig)
+	respHostIDInfo, err := e.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(e.ctx, e.kit.Header, &moduleHostConfig)
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v, rid: %s", err, e.ccRid)
 		return e.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)

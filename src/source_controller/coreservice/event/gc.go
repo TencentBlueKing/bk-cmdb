@@ -120,7 +120,7 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 
 				// at least one event is expired.
-				if time.Now().Unix()-int64(node.ClusterTime.Sec) > f.key.TTLSeconds() {
+				if node.Cursor != tailKey && time.Now().Unix()-int64(node.ClusterTime.Sec) > f.key.TTLSeconds() {
 					expiredNodes = append(expiredNodes, node)
 				} else {
 					// if a node which is not expired occurred, break the loop immediately. nodes after it

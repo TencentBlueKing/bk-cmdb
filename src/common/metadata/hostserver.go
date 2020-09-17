@@ -468,9 +468,9 @@ type HostTopo struct {
 }
 
 type Topo struct {
-	SetID   int64    `json:"bk_set_id"`
-	SetName string   `json:"bk_set_name"`
-	Module  []Module `json:"module"`
+	SetID   int64    `json:"bk_set_id" bson:"bk_set_id"`
+	SetName string   `json:"bk_set_name" bson:"bk_set_name"`
+	Module  []Module `json:"module" bson:"module"`
 }
 
 type Module struct {
@@ -539,6 +539,17 @@ type HostModuleRelationParameter struct {
 	HostID []int64 `json:"bk_host_id"`
 }
 
+func (h *HostModuleRelationParameter) Validate() (rawError errors.RawErrorInfo) {
+	if len(h.HostID) == 0 || len(h.HostID) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_host_id", common.BKMaxInstanceLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // DeleteHostFromBizParameter delete host from business
 type DeleteHostFromBizParameter struct {
 	AppID     int64   `json:"bk_biz_id"`
@@ -548,7 +559,6 @@ type DeleteHostFromBizParameter struct {
 // CloudAreaParameter search cloud area parameter
 type CloudAreaSearchParam struct {
 	SearchCloudOption `json:",inline"`
-	HostCount         bool `json:"host_count"`
 	SyncTaskIDs       bool `json:"sync_task_ids"`
 }
 
