@@ -61,12 +61,18 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		}
 	}
 	hostIDFilter := map[string]interface{}{}
+	needHostIDFilter := false
+	var hostIDs []interface{}
 	if len(relationFilter) > 0 {
-
-		hostIDs, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(ctx, common.BKHostIDField, relationFilter)
+		needHostIDFilter = true
+		var err error
+		hostIDs, err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(ctx, common.BKHostIDField, relationFilter)
 		if err != nil {
 			blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", relationFilter, err, rid)
 			return nil, err
+		}
+		if len(hostIDs) == 0 {
+			return new(metadata.ListHostResult), nil
 		}
 
 		hostIDFilter = map[string]interface{}{
@@ -88,40 +94,40 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	if len(propertyFilter) > 0 {
 		filters = append(filters, propertyFilter)
 	}
+
 	finalFilter := map[string]interface{}{}
 	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(ctx))
 	if len(filters) > 0 {
 		finalFilter[common.BKDBAND] = filters
 	}
 
-	if len(filters) == 0 {
+	if needHostIDFilter && len(filters) == 1 && option.BizID != 0 {
+		sort := strings.TrimLeft(option.Page.Sort, "+-")
+		if len(option.Page.Sort) == 0 || sort == common.BKHostIDField || strings.Contains(sort, ",") == false &&
+			strings.HasPrefix(sort, common.BKHostIDField+":") {
+			searchResult, err = s.listAllBizHostsPage(ctx, option.Fields, option.Page, hostIDs, rid)
+			if err != nil {
+				return nil, err
+			}
+			return searchResult, nil
+		}
 
+	}
+
+	if len(filters) == 0 {
 		// return info use cache
 		// fix: has question when multi-supplier
 		sort := strings.TrimLeft(option.Page.Sort, "+-")
-		if len(option.Page.Sort) == 0 || sort == common.BKHostIDField || strings.Contains(sort, ",") == false && strings.HasPrefix(sort, common.BKHostIDField+":") {
-			opt := &metadata.ListHostWithPage{
-				Fields: option.Fields,
-				Page:   option.Page,
-			}
-			total, infos, err := s.CacheSet.Host.ListHostsWithPage(ctx, opt)
+		if len(option.Page.Sort) == 0 || sort == common.BKHostIDField || strings.Contains(sort, ",") == false &&
+			strings.HasPrefix(sort, common.BKHostIDField+":") {
+			var skip bool
+			searchResult, skip, err = s.ListHostsWithCache(ctx, option.Fields, option.Page, rid)
 			if err != nil {
-				blog.ErrorJSON("list host from redis error, filter: %s, err: %s, rid: %s", opt, err.Error(), rid)
-				// HOOK: 缓存出现错误从db中获取数据
-			} else {
-				searchResult = &metadata.ListHostResult{}
-				searchResult.Count = int(total)
-
-				searchResult.Info = make([]map[string]interface{}, 0)
-				if err := json.UnmarshalArray(infos, &searchResult.Info); err != nil {
-					blog.ErrorJSON("list host from redis error, filter: %s, item host: %s, err: %s,rid: %s", opt, infos, err, rid)
-					// TODO： use cc error. keep the same as before code
-					return nil, err
-				}
-
+				return nil, err
+			}
+			if skip == false {
 				return searchResult, nil
 			}
-
 		}
 	}
 
@@ -146,6 +152,72 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	if err := query.All(ctx, &hosts); err != nil {
 		blog.Errorf("ListHosts failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
 		return nil, err
+	}
+	searchResult.Info = make([]map[string]interface{}, len(hosts))
+	for index, host := range hosts {
+		searchResult.Info[index] = host
+	}
+	return searchResult, nil
+}
+
+func (s *Searcher) ListHostsWithCache(ctx context.Context, fields []string, page metadata.BasePage, rid string) (
+	searchResult *metadata.ListHostResult, skip bool, err error) {
+	opt := &metadata.ListHostWithPage{
+		Fields: fields,
+		Page:   page,
+	}
+	total, infos, err := s.CacheSet.Host.ListHostsWithPage(ctx, opt)
+	if err != nil {
+		blog.ErrorJSON("list host from redis error, filter: %s, err: %s, rid: %s", opt, err.Error(), rid)
+		// HOOK: 缓存出现错误从db中获取数据
+		return nil, true, nil
+	} else {
+		searchResult = &metadata.ListHostResult{}
+		searchResult.Count = int(total)
+
+		searchResult.Info = make([]map[string]interface{}, 0)
+		if err := json.UnmarshalArray(infos, &searchResult.Info); err != nil {
+			blog.ErrorJSON("list host from redis error, filter: %s, item host: %s, err: %s,rid: %s", opt, infos, err, rid)
+			// TODO： use cc error. keep the same as before code
+			return nil, false, err
+		}
+
+		return searchResult, false, nil
+	}
+}
+
+// listAllBizHostsPage 专有流程
+func (s *Searcher) listAllBizHostsPage(ctx context.Context, fields []string, page metadata.BasePage,
+	allBizHostIDs []interface{}, rid string) (searchResult *metadata.ListHostResult, err error) {
+	cnt := len(allBizHostIDs)
+	start := page.Start
+	if start > cnt {
+		return new(metadata.ListHostResult), nil
+	}
+	if start < 0 {
+		start = 0
+	}
+	end := start + page.Limit
+	if end > cnt {
+		end = cnt
+	}
+	blog.V(10).Infof("list biz host start: %d, end: %d, rid: %s", start, end, rid)
+
+	finalFilter := make(map[string]interface{}, 0)
+	// 针对获取业务下所有的主机的场景优
+	finalFilter[common.BKHostIDField] = map[string]interface{}{
+		common.BKDBIN: allBizHostIDs[start:end],
+	}
+	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(ctx))
+
+	hosts := make([]metadata.HostMapStr, 0)
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Fields(fields...).
+		Sort(page.Sort).All(ctx, &hosts); err != nil {
+		blog.Errorf("ListHosts failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
+		return nil, err
+	}
+	searchResult = &metadata.ListHostResult{
+		Count: cnt,
 	}
 	searchResult.Info = make([]map[string]interface{}, len(hosts))
 	for index, host := range hosts {
