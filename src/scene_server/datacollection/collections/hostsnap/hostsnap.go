@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -37,6 +38,18 @@ import (
 	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
+
+const (
+	// defaultDataLimit is the value of the default percentage of data fluctuation
+	defaultDataLimit = 10
+	// minDataLimit is the value of the minimum percentage of data fluctuation
+	minDataLimit     = 5
+	// deafultTimeLimit is the default percentage value of update time
+	deafultTimeLimit = 10
+	// deafultTimeLimit is the minimum percentage value of update time
+	minTimeLimit     = 5
+)
+
 
 type HostSnap struct {
 	redisCli    *redis.Client
@@ -106,7 +119,6 @@ func (h *HostSnap) Analyze(msg *string) error {
 		blog.Errorf("get host detail with ips: %v failed, err: %v, rid: %s", ips, err, rid)
 		return err
 	}
-
 	elements := gjson.GetMany(host, common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField)
 	// check host id field
 	if !elements[0].Exists() {
@@ -135,6 +147,31 @@ func (h *HostSnap) Analyze(msg *string) error {
 	// no need to update
 	if !needToUpdate(raw, host) {
 		return nil
+	}
+
+	var timelimit int
+	if !cc.IsExist("datacollection.timelimit") {
+		timelimit = deafultTimeLimit
+	} else {
+		timelimit, err = cc.Int("datacollection.timelimit")
+		if err != nil {
+			blog.Errorf("get datacollection.timelimit value error, err: %v ", err)
+			timelimit = deafultTimeLimit
+		}
+		if timelimit < minTimeLimit {
+			timelimit = minTimeLimit
+		}
+	}
+
+	key := common.RedisttlPrefix + strconv.FormatInt(hostID, 10)
+	value := h.redisCli.Incr(key).Val()
+	if value > 1 {
+		return nil
+	} else {
+		minTime := 0.5 * float64(timelimit)
+		maxTime := 1.5 * float64(timelimit)
+		randTime := util.RandInt64(int64(minTime), int64(maxTime))
+		h.redisCli.Expire(key, time.Minute * time.Duration(randTime))
 	}
 
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
@@ -191,15 +228,30 @@ func (h *HostSnap) Analyze(msg *string) error {
 }
 
 func needToUpdate(src, toCompare string) bool {
+	var datalimit int
+	var err error
+	if !cc.IsExist("datacollection.datalimit") {
+		datalimit = defaultDataLimit
+	} else {
+		datalimit, err = cc.Int("datacollection.datalimit")
+		if err != nil {
+			blog.Errorf("get datacollection.datalimit value error, err: %v ", err)
+			datalimit = defaultDataLimit
+		}
+		if datalimit < minDataLimit {
+			datalimit = minDataLimit
+		}
+	}
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
 	for idx := range compareFields {
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
-			// tolerate bk_cpu_mhz changes less than 100
-			if compareFields[idx] == "bk_cpu_mhz" {
-				diff := srcElements[idx].Int() - compareElements[idx].Int()
-				if -100 < diff && diff < 100 {
+			// tolerate bk_cpu, bk_cpu_mhz, bk_disk, bk_mem changes less than the set value
+			if compareFields[idx] == "bk_cpu" || compareFields[idx] == "bk_cpu_mhz" || compareFields[idx] == "bk_disk" || compareFields[idx] == "bk_mem" {
+				val := compareElements[idx].Float() * (float64(datalimit)/100.0)
+				diff := srcElements[idx].Float() - compareElements[idx].Float()
+				if -val < diff && diff < val {
 					continue
 				}
 			}

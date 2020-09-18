@@ -901,6 +901,7 @@ const (
 	EventCacheEventTxnCommitQueueKey = BKCacheKeyV3Prefix + "event:inst_txn_commit_queue"
 	EventCacheEventTxnAbortQueueKey  = BKCacheKeyV3Prefix + "event:inst_txn_abort_queue"
 	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
+	RedisttlPrefix                   = BKCacheKeyV3Prefix + "ttl:"
 )
 
 // api cache keys
