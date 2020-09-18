@@ -107,16 +107,6 @@ type GetServiceInstanceInModuleInput struct {
 	Selectors selector.Selectors `json:"selectors"`
 }
 
-type ListServiceInstanceDetailRequest struct {
-	BizID              int64              `json:"bk_biz_id"`
-	SetID              int64              `json:"bk_set_id"`
-	ModuleID           int64              `json:"bk_module_id"`
-	HostID             int64              `json:"bk_host_id"`
-	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
-	Page               BasePage           `json:"page"`
-	Selectors          selector.Selectors `json:"selectors"`
-}
-
 type DiffModuleWithTemplateOption struct {
 	BizID     int64   `json:"bk_biz_id"`
 	ModuleIDs []int64 `json:"bk_module_ids"`
