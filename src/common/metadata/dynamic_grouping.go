@@ -131,6 +131,18 @@ func (c *DynamicGroupInfoCondition) Validate(validatefunc Validatefunc) error {
 	for _, attribute := range attributes {
 		attributeMap[attribute.PropertyID] = attribute.PropertyType
 	}
+
+	switch c.ObjID {
+	case common.BKInnerObjIDSet:
+		attributeMap[common.BKSetIDField] = common.FieldTypeInt
+
+	case common.BKInnerObjIDModule:
+		attributeMap[common.BKModuleIDField] = common.FieldTypeInt
+
+	case common.BKInnerObjIDHost:
+		attributeMap[common.BKHostIDField] = common.FieldTypeInt
+	}
+
 	blog.Infof("validate info conditions, object[%s] attributes[%+v]", c.ObjID, attributeMap)
 
 	for _, cond := range c.Condition {

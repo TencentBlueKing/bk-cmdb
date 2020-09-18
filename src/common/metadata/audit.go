@@ -427,6 +427,9 @@ const (
 	// - cloud synchronize job
 	// - others
 	CloudResourceType AuditType = "cloud_resource"
+
+	// DynamicGroupType is dynamic grouping audit type.
+	DynamicGroupType AuditType = "dynamic_grouping"
 )
 
 type ResourceType string
