@@ -38,6 +38,14 @@
                         @click="handleTransfer($event, 'business', false)">
                         {{$t('业务模块')}}
                     </cmdb-auth>
+                    <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+                        v-bk-tooltips="{
+                            disabled: isIdleModule,
+                            content: $t('仅空闲机模块才能转移到其他业务')
+                        }"
+                        @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
+                        {{$t('其他业务')}}
+                    </li>
                     <!-- 暂忽略鉴权，交互待调整，需要选择目录 -->
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
                         ignore

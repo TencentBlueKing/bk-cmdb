@@ -32,6 +32,8 @@
             :id="instance.bk_host_id"
             :name="getName(instance)"
             :deletable="false"
+            :addiable="!isAcrossBusiness"
+            :show-operation="!isAcrossBusiness"
             :topology="$parent.getModulePath(instance.bk_module_id)"
             :templates="getServiceTemplates(instance)"
             :source-processes="getSourceProcesses(instance)"
@@ -57,6 +59,11 @@
             return {
                 sort: 'module',
                 instances: []
+            }
+        },
+        computed: {
+            isAcrossBusiness () {
+                return this.$parent.type === 'acrossBusiness'
             }
         },
         watch: {
@@ -106,7 +113,7 @@
                     Object.keys(template.property).forEach(key => {
                         const templateValue = template.property[key]
                         if (key === 'bind_info') {
-                            value[key] = templateValue.value.map(info => {
+                            value[key] = (templateValue.value || []).map(info => {
                                 const infoValue = {}
                                 Object.keys(info).forEach(infoKey => {
                                     if (infoKey === 'ip') {

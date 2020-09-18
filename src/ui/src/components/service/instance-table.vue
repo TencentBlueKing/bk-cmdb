@@ -31,7 +31,7 @@
                     </process-bind-info-value>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" fixed="right">
+            <bk-table-column :label="$t('操作')" fixed="right" v-if="showOperation">
                 <template slot-scope="{ row, $index }">
                     <a href="javascript:void(0)" class="text-primary mr10" @click="handleEditProcess($index)">
                         {{$t('编辑')}}
@@ -105,6 +105,10 @@
             topology: {
                 type: String,
                 default: ''
+            },
+            showOperation: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
