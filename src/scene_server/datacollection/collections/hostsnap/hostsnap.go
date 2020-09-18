@@ -149,30 +149,19 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return nil
 	}
 
-	var timelimit int
-	if !cc.IsExist("datacollection.timelimit") {
-		timelimit = deafultTimeLimit
-	} else {
-		timelimit, err = cc.Int("datacollection.timelimit")
-		if err != nil {
-			blog.Errorf("get datacollection.timelimit value error, err: %v ", err)
-			timelimit = deafultTimeLimit
-		}
-		if timelimit < minTimeLimit {
-			timelimit = minTimeLimit
-		}
-	}
+	// get time on redis ttl
+	timelimit := cc.GetLimitConfig("datacollection.timelimit", deafultTimeLimit, minTimeLimit)
 
 	key := common.RedisttlPrefix + strconv.FormatInt(hostID, 10)
 	value := h.redisCli.Incr(key).Val()
+	// if it is greater than 1, it means that the data has been updated within the specified time and does not need to be updated this time
 	if value > 1 {
 		return nil
-	} else {
-		minTime := 0.5 * float64(timelimit)
-		maxTime := 1.5 * float64(timelimit)
-		randTime := util.RandInt64(int64(minTime), int64(maxTime))
-		h.redisCli.Expire(key, time.Minute * time.Duration(randTime))
 	}
+	minTime := 0.5 * float64(timelimit)
+	maxTime := 1.5 * float64(timelimit)
+	randTime := util.RandInt64(int64(minTime), int64(maxTime))
+	h.redisCli.Expire(key, time.Minute * time.Duration(randTime))
 
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
@@ -228,20 +217,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 }
 
 func needToUpdate(src, toCompare string) bool {
-	var datalimit int
-	var err error
-	if !cc.IsExist("datacollection.datalimit") {
-		datalimit = defaultDataLimit
-	} else {
-		datalimit, err = cc.Int("datacollection.datalimit")
-		if err != nil {
-			blog.Errorf("get datacollection.datalimit value error, err: %v ", err)
-			datalimit = defaultDataLimit
-		}
-		if datalimit < minDataLimit {
-			datalimit = minDataLimit
-		}
-	}
+	// get data fluctuation limit
+	datalimit := cc.GetLimitConfig("datacollection.datalimit", defaultDataLimit, minDataLimit)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
 	for idx := range compareFields {

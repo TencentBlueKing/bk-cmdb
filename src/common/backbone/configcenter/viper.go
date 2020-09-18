@@ -482,3 +482,20 @@ func (vp *viperParser) getBool(path string) bool {
 func (vp *viperParser) isSet(path string) bool {
 	return vp.parser.IsSet(path)
 }
+
+// GetLimitConfig return the configured limit value
+func GetLimitConfig(config string, defaultValue, minValue int) int {
+	var err error
+	limit := defaultValue
+	if IsExist(config) {
+		limit, err = Int(config)
+		if err != nil {
+			blog.Errorf("get %s value error, err: %v ", config, err)
+			limit = defaultValue
+		}
+		if limit < minValue {
+			limit = minValue
+		}
+	}
+	return limit
+}
