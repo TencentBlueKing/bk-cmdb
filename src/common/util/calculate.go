@@ -14,8 +14,8 @@ package util
 
 import "math/rand"
 
-// RandInt64 return a random value between the maximum and minimum
-func RandInt64(min, max int64) int64 {
+// RandInt64WithRange return a random value between the maximum and minimum
+func RandInt64WithRange(min, max int64) int64 {
 	if min >= max || min == 0 || max == 0 {
 		return max
 	}

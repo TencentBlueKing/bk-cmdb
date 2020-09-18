@@ -96,6 +96,23 @@ func (h *HostSnap) Mock() string {
 	return MockMessage
 }
 
+// getLimitConfig return the configured limit value
+func getLimitConfig(config string, defaultValue, minValue int) int {
+	var err error
+	limit := defaultValue
+	if cc.IsExist(config) {
+		limit, err = cc.Int(config)
+		if err != nil {
+			blog.Errorf("get %s value error, err: %v ", config, err)
+			limit = defaultValue
+		}
+		if limit < minValue {
+			limit = minValue
+		}
+	}
+	return limit
+}
+
 func (h *HostSnap) Analyze(msg *string) error {
 	if msg == nil {
 		return fmt.Errorf("message nil")
@@ -150,19 +167,24 @@ func (h *HostSnap) Analyze(msg *string) error {
 	}
 
 	// get time on redis ttl
-	timelimit := cc.GetLimitConfig("datacollection.timelimit", deafultTimeLimit, minTimeLimit)
+	timelimit := getLimitConfig("datacollection.timelimit", deafultTimeLimit, minTimeLimit)
 
 	key := common.RedisttlPrefix + strconv.FormatInt(hostID, 10)
-	value := h.redisCli.Incr(key).Val()
+	value, err := h.redisCli.Incr(key).Result()
+	if err != nil {
+		blog.Errorf("an error occurred while increasing the redis value, key: %s, rid: %s", key, rid)
+	}
 	// if it is greater than 1, it means that the data has been updated within the specified time and does not need to be updated this time
 	if value > 1 {
 		return nil
 	}
 	minTime := 0.5 * float64(timelimit)
 	maxTime := 1.5 * float64(timelimit)
-	randTime := util.RandInt64(int64(minTime), int64(maxTime))
-	h.redisCli.Expire(key, time.Minute * time.Duration(randTime))
-
+	randTime := util.RandInt64WithRange(int64(minTime), int64(maxTime))
+	err = h.redisCli.Expire(key, time.Minute*time.Duration(randTime)).Err()
+	if err != nil {
+		blog.Errorf("an error occurred while expire the redis key, key: %s, rid: %s", key, rid)
+	}
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
 
@@ -218,7 +240,7 @@ func (h *HostSnap) Analyze(msg *string) error {
 
 func needToUpdate(src, toCompare string) bool {
 	// get data fluctuation limit
-	datalimit := cc.GetLimitConfig("datacollection.datalimit", defaultDataLimit, minDataLimit)
+	datalimit := getLimitConfig("datacollection.datalimit", defaultDataLimit, minDataLimit)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
 	for idx := range compareFields {
