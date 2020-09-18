@@ -123,6 +123,7 @@ func (s *coreService) ListServiceInstanceDetail(ctx *rest.Contexts) {
 		return
 	}
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	result, err := s.core.ProcessOperation().ListServiceInstanceDetail(ctx.Kit, fp)
 	if err != nil {
 		blog.Errorf("ListServiceInstanceDetail failed, err: %+v, rid: %s", err, ctx.Kit.Rid)

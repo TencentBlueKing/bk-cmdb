@@ -1591,8 +1591,7 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 
 type ServiceInstanceDetail struct {
 	ServiceInstance
-	ServiceCategoryID int64               `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
-	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
+	ProcessInstances []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
 }
 
 type ServiceInstanceWithTopoPath struct {
