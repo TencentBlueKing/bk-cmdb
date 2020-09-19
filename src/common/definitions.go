@@ -125,9 +125,6 @@ const (
 	BKInnerObjIDTomcat = "bk_tomcat"
 	// BKInnerObjIDApache the inner object
 	BKInnerObjIDApache = "bk_apache"
-
-	// BKInnerObjIDDynamicGroup is inner dynamic grouping object.
-	BKInnerObjIDDynamicGroup = "bk_dynamic_group"
 )
 
 // Revision

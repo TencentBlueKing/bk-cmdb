@@ -214,18 +214,6 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 
 	// update base on auto run txn with func.
 	autoRunTxnFunc := func() error {
-		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header, updates)
-		if err != nil {
-			blog.Errorf("update dynamic group failed, err: %+v, biz: %s, input: %+v, rid: %s",
-				err, bizID, params, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !response.Result {
-			blog.Errorf("update dynamic group failed, errcode: %d, errmsg: %s, bizID: %s, input: %+v, rid: %s",
-				response.Code, response.ErrMsg, bizID, params, ctx.Kit.Rid)
-			return response.CCError()
-		}
-
 		// audit log.
 		audit := auditlog.NewDynamicGroupAuditLog(s.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updates)
@@ -237,6 +225,18 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
 			blog.Errorf("save audit log failed after update dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
 			return err
+		}
+
+		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header, updates)
+		if err != nil {
+			blog.Errorf("update dynamic group failed, err: %+v, biz: %s, input: %+v, rid: %s",
+				err, bizID, params, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !response.Result {
+			blog.Errorf("update dynamic group failed, errcode: %d, errmsg: %s, bizID: %s, input: %+v, rid: %s",
+				response.Code, response.ErrMsg, bizID, params, ctx.Kit.Rid)
+			return response.CCError()
 		}
 		return nil
 	}

@@ -63,16 +63,13 @@ func (l *DynamicGroupAuditLog) GenerateAuditLog(param *generateAuditCommonParame
 	content[common.LastTimeField] = dynamicGroup.UpdateTime
 
 	logs := []metadata.AuditLog{metadata.AuditLog{
-		AuditType:    metadata.DynamicGroupType,
-		ResourceType: metadata.DynamicGroupRes,
-		Action:       param.action,
-		ResourceID:   dynamicGroup.ID,
-		ResourceName: dynamicGroup.Name,
-		BusinessID:   dynamicGroup.AppID,
-		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: metadata.BasicOpDetail{Details: param.NewBasicContent(content)},
-			ModelID:       common.BKInnerObjIDDynamicGroup,
-		},
+		AuditType:       metadata.DynamicGroupType,
+		ResourceType:    metadata.DynamicGroupRes,
+		Action:          param.action,
+		ResourceID:      dynamicGroup.ID,
+		ResourceName:    dynamicGroup.Name,
+		BusinessID:      dynamicGroup.AppID,
+		OperationDetail: &metadata.BasicOpDetail{Details: param.NewBasicContent(content)},
 	}}
 
 	return logs, nil
