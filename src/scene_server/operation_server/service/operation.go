@@ -94,6 +94,7 @@ func (o *OperationServer) DeleteOperationChart(ctx *rest.Contexts) {
 func (o *OperationServer) SearchOperationChart(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	result, err := o.Engine.CoreAPI.CoreService().Operation().SearchOperationCharts(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationSearchChartFail, "search operation chart fail, err: %v, rid: %v", err, ctx.Kit.Rid)
@@ -125,7 +126,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	chart, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, inputParams)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, cond: %v, rid: %v", err, inputParams, ctx.Kit.Rid)
