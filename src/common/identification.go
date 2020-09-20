@@ -14,6 +14,7 @@ package common
 
 import (
 	"configcenter/src/common/types"
+	"configcenter/src/common/version"
 )
 
 var identification string = "unknown"
@@ -21,6 +22,7 @@ var server *types.ServerInfo
 
 func SetIdentification(id string) {
 	if identification == "unknown" {
+		version.ServiceName = id
 		identification = id
 	}
 }
