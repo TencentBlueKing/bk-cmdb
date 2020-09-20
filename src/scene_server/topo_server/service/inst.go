@@ -500,7 +500,7 @@ func (s *Service) SearchInstByObject(params types.ContextParams, pathParams, que
 func (s *Service) SearchInstByAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	objID := pathParams("bk_obj_id")
-
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
