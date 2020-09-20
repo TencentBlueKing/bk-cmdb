@@ -28,6 +28,7 @@ var (
 	CCRunMode       = "product" // product, test, dev
 	CCDistro        = "enterprise"
 	CCDistroVersion = "9999.9999.9999"
+	ServiceName     = "unknown"
 )
 
 // CCRunMode enumeration
@@ -49,11 +50,12 @@ func ShowVersion() {
 
 // GetVersion return the version info
 func GetVersion() string {
-	version := fmt.Sprintf(`Version  : %s
-Tag      : %s
-BuildTime: %s
-GitHash  : %s
-RunMode  : %s
-`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode)
+	version := fmt.Sprintf(`Version    : %s
+Tag        : %s
+BuildTime  : %s
+GitHash    : %s
+RunMode    : %s
+ServiceName: %s
+`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, ServiceName)
 	return version
 }
