@@ -14,10 +14,10 @@ package discovery
 
 import (
 	"fmt"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
@@ -41,6 +41,7 @@ type DiscoveryInterface interface {
 	TaskServer() Interface
 	CloudServer() Interface
 	AuthServer() Interface
+	Server(name string) Interface
 	ServiceManageInterface
 }
 
@@ -58,8 +59,14 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 	d := &discover{
 		servers: make(map[string]*server),
 	}
-	for component := range types.AllModule {
-		if component == types.CC_MODULE_WEBSERVER {
+
+	curServiceName := common.GetIdentification()
+	services := types.GetDiscoveryService()
+	// 将当前服务也放到需要发现中
+	services[curServiceName] = struct{}{}
+	for component := range services {
+		// 如果所有服务都按需发现服务。这个地方时不需要配置
+		if component == types.CC_MODULE_WEBSERVER && curServiceName != types.CC_MODULE_WEBSERVER {
 			continue
 		}
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
@@ -69,22 +76,6 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 		}
 
 		d.servers[component] = svr
-	}
-	// 如果要支持第三方服务自动发现，
-	// 需要watch  types.CC_SERV_BASEPATH 节点。发现有新的节点加入，
-	//  对改节点执行newServerDiscover 方法。 这个操作d 对象需要加锁
-
-	//  如果当前服务不是标准服务，发现自己的服务其他节点
-	component := common.GetIdentification()
-	if strings.HasPrefix(common.GetIdentification(), types.CC_DISCOVERY_PREFIX) {
-		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
-		svr, err := newServerDiscover(disc, path, component)
-		if err != nil {
-			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
-		}
-
-		d.servers[component] = svr
-
 	}
 
 	return d, nil
@@ -149,4 +140,14 @@ func (d *discover) AuthServer() Interface {
 // IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
 	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().UUID)
+}
+
+// Server 根据服务名获取服务再服务发现组件中的相关信息
+func (d *discover) Server(name string) Interface {
+	if svr, ok := d.servers[name]; ok {
+		return svr
+	}
+	blog.V(5).Infof("not found server. name: %s", name)
+
+	return emptyServerInst
 }
