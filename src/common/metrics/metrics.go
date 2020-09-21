@@ -33,6 +33,20 @@ import (
 
 const ns = "cmdb_"
 
+// labels
+const (
+	LabelHandler     = "handler"
+	LabelHTTPStatus  = "status_code"
+	LabelOrigin      = "origin"
+	LabelProcessName = "process_name"
+	LabelHost        = "host"
+)
+
+// labels
+const (
+	KeySelectedRoutePath string = "SelectedRoutePath"
+)
+
 // Config metrics config
 type Config struct {
 	ProcessName     string
@@ -61,7 +75,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode, LabelUser, LabelRealIP},
+		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin},
 	)
 	register.MustRegister(srv.requestTotal)
 
@@ -70,7 +84,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_duration_millisecond",
 			Help: "Histogram of latencies for HTTP requests.",
 		},
-		[]string{LabelHandler, LabelAppCode, LabelUser, LabelRealIP},
+		[]string{LabelHandler},
 	)
 	register.MustRegister(srv.requestDuration)
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -81,23 +95,6 @@ func NewService(conf Config) *Service {
 	)
 	return &srv
 }
-
-// labels
-const (
-	LabelHandler     = "handler"
-	LabelHTTPStatus  = "status_code"
-	LabelOrigin      = "origin"
-	LabelProcessName = "process_name"
-	LabelHost        = "host"
-	LabelAppCode     = "app_code"
-	LabelUser        = "user"
-	LabelRealIP      = "real_ip"
-)
-
-// labels
-const (
-	KeySelectedRoutePath string = "SelectedRoutePath"
-)
 
 // Registry returns the prometheus.Registerer
 func (s *Service) Registry() prometheus.Registerer {
@@ -148,20 +145,12 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		s.requestDuration.With(s.label(LabelHandler, uri,
-			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
-			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
-			LabelRealIP, getUserIP(r),
-		)).Observe(duration)
+		s.requestDuration.With(s.label(LabelHandler, uri)).Observe(duration)
 		s.requestTotal.With(s.label(
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
-			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
-			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
-			LabelRealIP, getUserIP(r),
 		)).Inc()
-
 	})
 }
 
