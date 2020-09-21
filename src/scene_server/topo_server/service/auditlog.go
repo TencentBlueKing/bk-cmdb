@@ -63,6 +63,7 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		query.Condition = cond
 	}
 
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	// switch between two different control mechanism
 	// TODO use global authorization for now, need more specific auth control
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
@@ -171,7 +172,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 			businessID = instanceID
 		}
 	}
-
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	action := meta.Find
 	switch objectID {
 	case common.BKInnerObjIDHost:
