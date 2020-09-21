@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	cacheTime = time.Minute * 5
+	cacheTime = time.Minute * 3
 )
 
 const (
