@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 	dtype "configcenter/src/storage/types"
 
@@ -35,7 +36,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
-	"gopkg.in/redis.v5"
 )
 
 type Mongo struct {
@@ -136,7 +136,7 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 }
 
 // InitTxnManager TxnID management of initial transaction
-func (c *Mongo) InitTxnManager(r *redis.Client) error {
+func (c *Mongo) InitTxnManager(r redis.Client) error {
 	return c.tm.InitTxnManager(r)
 }
 
