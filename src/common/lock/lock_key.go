@@ -26,6 +26,12 @@ const (
 
 	// CheckSetTemplateSyncFormat  检测集群模板同步的状态
 	CheckSetTemplateSyncFormat = "topo:settemplate:sync:status:check:%d"
+
+	// UniqueValidTemplateFormat 用于创建/更新模型的唯一校验
+	UniqueValidTemplateFormat = "cc:v3:unique_valid_lock:objID:%s"
+
+	// TransactionRecordLockKeyTemplateFormat 用于保存当前事务中抢到的 redis 锁列表
+	TransactionRecordLockKeyTemplateFormat = "cc:v3:transaction:%s"
 )
 
 // StrFormat  build  lock key format
@@ -35,4 +41,9 @@ type StrFormat string
 func GetLockKey(format StrFormat, params ...interface{}) StrFormat {
 	key := fmt.Sprintf(string(format), params...)
 	return StrFormat(key)
+}
+
+// GetLockKeyByRid get redis lock key by rid
+func GetTransactionKeyByRid(rid string) StrFormat {
+	return GetLockKey(TransactionRecordLockKeyTemplateFormat, fmt.Sprintf("%s", rid))
 }

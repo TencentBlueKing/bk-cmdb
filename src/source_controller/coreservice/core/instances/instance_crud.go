@@ -18,11 +18,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 )
 
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (id uint64, err error) {
@@ -114,4 +116,22 @@ func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr
 	count, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 
 	return count, err
+}
+
+// lockAndAddUseTransactionRecords lock the unique verification data, save the key to transaction redis for recording, and release it when the transaction ends
+func (m *instanceManager) lockAndAddUseTransactionRecords(rid string, lockKey lock.StrFormat) (bool, error) {
+	ok, err := lock.TryGetLock(redis.Client(), lockKey, lockLiveTime)
+	if nil != err {
+		return ok, err
+	}
+	if !ok {
+		return ok, nil
+	}
+
+	err = lock.AppendLockKeyToTransaction(redis.Client(), lock.GetTransactionKeyByRid(rid), lockKey, lockLiveTime)
+	if nil != err {
+		return ok, err
+	}
+
+	return ok, nil
 }

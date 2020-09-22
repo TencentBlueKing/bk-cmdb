@@ -13,10 +13,15 @@
 package service
 
 import (
+	"strings"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 )
 
 // CommitTransaction to commit transaction
@@ -32,6 +37,9 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		return
 	}
+
+	// 释放当前事务占用的锁
+	go releaseTransactionLockKeys(ctx)
 
 	ctx.RespEntity(nil)
 }
@@ -50,5 +58,27 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 		return
 	}
 
+	// 释放当前事务占用的锁
+	go releaseTransactionLockKeys(ctx)
+
 	ctx.RespEntity(nil)
+}
+
+// releaseTransactionLockKeys release current transaction get redis locks
+func releaseTransactionLockKeys(ctx *rest.Contexts) {
+	// the time difference between submitting to data into db
+	time.Sleep(time.Second)
+
+	tranLockKey := lock.GetTransactionKeyByRid(ctx.Kit.Rid)
+	lockKeys, _ := redis.Client().Get(string(tranLockKey)).Result()
+
+	if len(lockKeys) == 0 {
+		lock.ReleaseLock(redis.Client(), tranLockKey)
+		return
+	}
+	lockKeyArray := strings.Split(lockKeys, ",")
+	for _, key := range lockKeyArray {
+		lock.ReleaseLock(redis.Client(), lock.StrFormat(key))
+	}
+	lock.ReleaseLock(redis.Client(), tranLockKey)
 }

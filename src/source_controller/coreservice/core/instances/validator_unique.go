@@ -13,15 +13,25 @@
 package instances
 
 import (
+	"crypto/md5"
+	"fmt"
+	"sort"
 	"strings"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+)
+
+const (
+	// LockLiveTime redis lock keep time
+	lockLiveTime = 60 * time.Second
 )
 
 var hostSpecialFieldMap = map[string]bool{
@@ -89,11 +99,35 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 			continue
 		}
 
+		// use uniqueValid data as lockKey use redis to lock
+		lockKey := getLockKeyByObjIdAndCond(valid.objID, cond.ToMapStr())
+
 		// only search data not in disable status
 		cond.Element(&mongo.Neq{Key: common.BKDataStatusField, Val: common.DataStatusDisabled})
 		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
 			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
 		}
+
+		// try get lock that key is lockKey
+		ok, err := instanceManager.lockAndAddUseTransactionRecords(kit.Rid, lockKey)
+		if nil != err {
+			blog.Errorf("[validCreateUnique] tryGetLock [%s] err %v lock key [%s] unique keys: %#v, rid: %s", valid.objID, err, lockKey, uniqueKeys, kit.Rid)
+			return err
+		}
+
+		// if the same verification data already exists in redis, it has been inserted into db by default
+		if !ok {
+			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniqueKeys, valid.objID, kit.Rid)
+			propertyNames := make([]string, 0)
+			lang := util.GetLanguage(kit.Header)
+			language := valid.language.CreateDefaultCCLanguageIf(lang)
+			for _, key := range uniqueKeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key), valid.properties[key].PropertyName, key))
+			}
+
+			return valid.errIf.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
+		}
+		blog.Info("[validCreateUnique] lockAndAddUseTransactionRecords [%s] lock key [%s] unique keys: %#v, rid: %s", valid.objID, lockKey, uniqueKeys, kit.Rid)
 
 		result, err := instanceManager.countInstance(kit, valid.objID, cond.ToMapStr())
 		if nil != err {
@@ -175,12 +209,35 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 			continue
 		}
 
+		// use uniqueValid data as lockKey use redis to lock
+		lockKey := getLockKeyByObjIdAndCond(valid.objID, cond.ToMapStr())
+
 		// only search data not in disable status
 		cond.Element(&mongo.Neq{Key: common.BKDataStatusField, Val: common.DataStatusDisabled})
 		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
 			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
 		}
 		cond.Element(&mongo.Neq{Key: common.GetInstIDField(valid.objID), Val: instID})
+
+		// try get lock that key is lockKey
+		ok, err := instanceManager.lockAndAddUseTransactionRecords(kit.Rid, lockKey)
+		if nil != err {
+			blog.Errorf("[validUpdateUnique] lockAndAddUseTransactionRecords [%s] err %v lock key [%s] unique keys: %#v, rid: %s", valid.objID, err, lockKey, uniqueKeys, kit.Rid)
+			return err
+		}
+		// if the same verification data already exists in redis, it has been inserted into db by default
+		if !ok {
+			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s, rid: %s", cond.ToMapStr(), uniqueKeys, valid.objID, kit.Rid)
+			propertyNames := make([]string, 0)
+			lang := util.GetLanguage(kit.Header)
+			language := valid.language.CreateDefaultCCLanguageIf(lang)
+			for _, key := range uniqueKeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key), valid.properties[key].PropertyName, key))
+			}
+
+			return valid.errIf.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
+		}
+		blog.Info("[validUpdateUnique] lockAndAddUseTransactionRecords [%s] lock key [%s] unique keys: %#v, rid: %s", valid.objID, lockKey, uniqueKeys, kit.Rid)
 
 		result, err := instanceManager.countInstance(kit, valid.objID, cond.ToMapStr())
 		if nil != err {
@@ -201,4 +258,19 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 		}
 	}
 	return nil
+}
+
+// GetLockKeyByObjIdAndCond get redis lock key by objID and condition
+func getLockKeyByObjIdAndCond(objID string, cond mapstr.MapStr) lock.StrFormat {
+	// sort uniqueVaild keys to ensure that the content of the generated lockKey is sorted
+	keys := make([]string, 0)
+	for key, value := range cond {
+		singleCond := fmt.Sprintf("%s:%s", key, util.GetStrByInterface(value))
+		keys = append(keys, singleCond)
+	}
+	sort.Strings(keys)
+
+	keysByte := "\x00" + strings.Join(keys, "\x20\x00")
+	keysMD5 := md5.Sum([]byte(keysByte))
+	return lock.GetLockKey(lock.UniqueValidTemplateFormat, fmt.Sprintf("%s:detail:%x", objID, keysMD5))
 }
