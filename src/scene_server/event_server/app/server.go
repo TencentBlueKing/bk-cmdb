@@ -14,10 +14,10 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
-	"encoding/json"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/backbone"
@@ -31,10 +31,8 @@ import (
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
-	dalredis "configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
-
-	"gopkg.in/redis.v5"
 )
 
 const (
@@ -63,7 +61,7 @@ type EventServer struct {
 	db dal.RDB
 
 	// redisCli is cc redis client.
-	redisCli *redis.Client
+	redisCli redis.Client
 
 	// subWatcher is subscription watcher.
 	subWatcher reflector.Interface
@@ -106,7 +104,6 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 	newEventServer.engine = engine
 	newEventServer.service = svc.NewService(ctx, engine)
 
-
 	return newEventServer, nil
 }
 
@@ -126,7 +123,7 @@ func (es *EventServer) DB() dal.RDB {
 }
 
 // RedisCli returns cc redis client of the EventServer instance.
-func (es *EventServer) RedisCli() *redis.Client {
+func (es *EventServer) RedisCli() redis.Client {
 	return es.redisCli
 }
 
@@ -142,7 +139,7 @@ func (es *EventServer) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 		if es.config == nil {
 			es.config = &options.Config{}
 		}
-		
+
 		if data, err := json.MarshalIndent(curr.ConfigData, "", "  "); err == nil {
 			blog.Infof("on host config update event: \n%s", data)
 		}
@@ -151,7 +148,6 @@ func (es *EventServer) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 	}
 
 }
-
 
 // initConfigs inits configs for new EventServer server.
 func (es *EventServer) initConfigs() error {
@@ -201,7 +197,7 @@ func (es *EventServer) initModules() error {
 	blog.Info("init modules, create mongo client success[%+v]", es.config.MongoDB.GetMongoConf())
 
 	// connect to cc redis.
-	redisCli, err := dalredis.NewFromConfig(es.config.Redis)
+	redisCli, err := redis.NewFromConfig(es.config.Redis)
 	if err != nil {
 		return fmt.Errorf("connect to cc redis, %+v", err)
 	}
@@ -235,7 +231,7 @@ func (es *EventServer) initModules() error {
 	es.eventHandler = eventHandler
 	es.eventHandler.SetDistributer(distributor)
 	blog.Infof("init modules, create event handler success")
-	
+
 	return nil
 }
 
@@ -277,7 +273,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err := eventServer.Run(); err != nil {
 		return err
 	}
-	
+
 	// all modules is initialized success, start the new server now.
 	if err := backbone.StartServer(ctx, cancel, eventServer.Engine(), eventServer.Service().WebService(), true); err != nil {
 		return err

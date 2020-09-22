@@ -13,7 +13,7 @@
 package redis
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	"strconv"
 	"strings"
 

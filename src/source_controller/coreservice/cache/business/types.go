@@ -15,7 +15,7 @@ package business
 import (
 	"time"
 
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
 type cacheCollection struct {
@@ -31,7 +31,7 @@ type forUpsertCache struct {
 	name     string
 	doc      []byte
 
-	rds *redis.Client
+	rds redis.Client
 
 	// keys to be used
 	listKey         string

@@ -17,16 +17,15 @@ import (
 	"sync"
 
 	"configcenter/src/source_controller/coreservice/cache/tools"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
-
-	"gopkg.in/redis.v5"
 )
 
 var client *Client
 var clientOnce sync.Once
 var cache *hostCache
 
-func NewClient(rds *redis.Client) *Client {
+func NewClient(rds redis.Client) *Client {
 
 	if client != nil {
 		return client
@@ -43,7 +42,7 @@ func NewClient(rds *redis.Client) *Client {
 }
 
 // Attention, it can only be called for once.
-func NewCache(event reflector.Interface, rds *redis.Client) error {
+func NewCache(event reflector.Interface, rds redis.Client) error {
 
 	if cache != nil {
 		return nil

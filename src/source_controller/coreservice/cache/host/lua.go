@@ -13,6 +13,7 @@
 package host
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -48,7 +49,7 @@ const hostDetailNotExitError = "host detail not exist"
 
 func (c *Client) getHostDetailWithIP(innerIP string, cloudID int64) (*string, error) {
 	keys := hostKey.IPCloudIDKey(innerIP, cloudID)
-	result, err := c.rds.Eval(getHostWithIpScript, []string{keys}, hostCloudIdRelationNotExitError,
+	result, err := c.rds.Eval(context.Background(), getHostWithIpScript, []string{keys}, hostCloudIdRelationNotExitError,
 		hostDetailNotExitError).Result()
 
 	if err != nil {
@@ -144,7 +145,7 @@ func (c *Client) getPagedHostDetailList(page metadata.BasePage) (int64, []int64,
 	keys := []string{hostKey.HostIDListKey(), strconv.Itoa(page.Start), strconv.Itoa(page.Limit),
 		hostKey.HostDetailKeyPrefix()}
 
-	result, err := c.rds.Eval(getPagedHostIDListScript, keys, notExistError).Result()
+	result, err := c.rds.Eval(context.Background(), getPagedHostIDListScript, keys, notExistError).Result()
 	if err != nil {
 		return 0, nil, nil, err
 	}

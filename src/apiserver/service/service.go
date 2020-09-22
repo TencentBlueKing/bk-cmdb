@@ -21,16 +21,16 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 // Service service methods
 type Service interface {
 	WebServices() []*restful.WebService
 	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
-		clientSet apimachinery.ClientSetInterface, cache *redis.Client, limiter *Limiter)
+		clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *Limiter)
 }
 
 // NewService create a new service instance
@@ -44,12 +44,12 @@ type service struct {
 	discovery  discovery.DiscoveryInterface
 	clientSet  apimachinery.ClientSetInterface
 	authorizer ac.AuthorizeInterface
-	cache      *redis.Client
+	cache      redis.Client
 	limiter    *Limiter
 }
 
 func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
-	clientSet apimachinery.ClientSetInterface, cache *redis.Client, limiter *Limiter) {
+	clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *Limiter) {
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery

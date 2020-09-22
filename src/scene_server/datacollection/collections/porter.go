@@ -14,16 +14,17 @@ package collections
 
 import (
 	"fmt"
+	"golang.org/x/net/context"
 	"runtime"
 	"time"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/tidwall/gjson"
-	"gopkg.in/redis.v5"
 )
 
 const (
@@ -75,7 +76,7 @@ type SimplePorter struct {
 
 	// message channel redis, read collector data
 	// from it by subscribe target topics.
-	redisCli *redis.Client
+	redisCli redis.Client
 
 	// collectors message channels redis topics.
 	topics []string
@@ -110,7 +111,7 @@ type SimplePorter struct {
 
 // NewSimplePorter creates a new SimplePorter object.
 func NewSimplePorter(name string, engine *backbone.Engine, hash *Hash, analyzer Analyzer,
-	redisCli *redis.Client, topics []string, registry prometheus.Registerer) *SimplePorter {
+	redisCli redis.Client, topics []string, registry prometheus.Registerer) *SimplePorter {
 
 	return &SimplePorter{
 		name:      name,
@@ -257,13 +258,8 @@ func (p *SimplePorter) analyzeLoop() {
 func (p *SimplePorter) collectLoop() error {
 	for {
 		// subscribe target topics and handle message base on the redis pubsun channel.
-		subChan, err := p.redisCli.Subscribe(p.topics...)
-		if err != nil {
-			blog.Errorf("SimplePorter[%s]| subscribe topics[%+v] failed, %+v", p.name, p.topics, err)
-			time.Sleep(defaultReSubscribeWaitDuration)
-			continue
-		}
-		blog.Errorf("SimplePorter[%s]| subscribe topics[%+v] success, receiving message now!", p.name, p.topics)
+		subChan := p.redisCli.Subscribe(context.Background(), p.topics...)
+		blog.V(4).Infof("SimplePorter[%s]| subscribe topics[%+v] success, receiving message now!", p.name, p.topics)
 
 		// receiving message.
 		for {
@@ -345,7 +341,7 @@ func (p *SimplePorter) fusing() {
 		if percent < defaultFusingThresholdPercent {
 			isStackedInLastCheck = false
 
-			blog.Infof("SimplePorter[%s]| no-need fusing now, percent[%d] < threshold percent[%d]",
+			blog.V(4).Infof("SimplePorter[%s]| no-need fusing now, percent[%d] < threshold percent[%d]",
 				p.name, percent, defaultFusingThresholdPercent)
 			continue
 		}
@@ -354,7 +350,7 @@ func (p *SimplePorter) fusing() {
 		if !isStackedInLastCheck {
 			isStackedInLastCheck = true
 
-			blog.Infof("SimplePorter[%s]| no-need fusing now, percent[%d] > threshold percent[%d] first time!",
+			blog.V(4).Infof("SimplePorter[%s]| no-need fusing now, percent[%d] > threshold percent[%d] first time!",
 				p.name, percent, defaultFusingThresholdPercent)
 			continue
 		}

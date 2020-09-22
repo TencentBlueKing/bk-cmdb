@@ -309,6 +309,7 @@ func Redis(prefix string) redis.Config {
 		Password:     parser.getString(prefix+".pwd"),
 		Database:     parser.getString(prefix+".database"),
 		MasterName:   parser.getString(prefix+".masterName"),
+		SentinelPassword: parser.getString(prefix+".sentinelPwd"),
 		Enable:       parser.getString(prefix+".enable"),
 		MaxOpenConns: parser.getInt(prefix + ".maxOpenConns"),
 	}

@@ -21,17 +21,17 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	"gopkg.in/redis.v5"
 )
 
 var Engine *backbone.Engine
-var CacheCli *redis.Client
+var CacheCli redis.Client
 
 // ValidLogin valid the user login status
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {

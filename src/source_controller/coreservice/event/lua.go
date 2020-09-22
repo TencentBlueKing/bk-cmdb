@@ -15,6 +15,7 @@ package event
 import (
 	"errors"
 	"fmt"
+	"golang.org/x/net/context"
 	"reflect"
 	"strconv"
 
@@ -74,7 +75,7 @@ func (f *Flow) getNodesFromCursor(count int, cursor string, key Key) ([]*watch.C
 // runScripts run lua scripts that returns an string if an error occurs.
 // or return a result array ChainNode
 func (f *Flow) runScriptsWithArrayChainNode(script string, keys []string, args ...interface{}) ([]*watch.ChainNode, error) {
-	result, err := f.rds.Eval(script, keys, args...).Result()
+	result, err := f.rds.Eval(context.Background(), script, keys, args...).Result()
 	if err != nil {
 		return nil, err
 	}

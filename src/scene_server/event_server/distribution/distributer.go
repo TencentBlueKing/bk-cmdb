@@ -30,11 +30,11 @@ import (
 	ewatcher "configcenter/src/scene_server/event_server/watcher"
 	"configcenter/src/source_controller/coreservice/event"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/redis.v5"
 )
 
 var (
@@ -60,7 +60,7 @@ type Distributor struct {
 	db dal.RDB
 
 	// cache is cc redis client.
-	cache *redis.Client
+	cache redis.Client
 
 	// subWatcher is subscription watcher.
 	subWatcher reflector.Interface
@@ -99,7 +99,7 @@ type Distributor struct {
 }
 
 // NewDistributer creates a new Distributor instance.
-func NewDistributer(ctx context.Context, engine *backbone.Engine, db dal.RDB, cache *redis.Client, subWatcher reflector.Interface) *Distributor {
+func NewDistributer(ctx context.Context, engine *backbone.Engine, db dal.RDB, cache redis.Client, subWatcher reflector.Interface) *Distributor {
 	return &Distributor{
 		ctx:                          ctx,
 		engine:                       engine,
@@ -266,7 +266,7 @@ func (d *Distributor) getResourceCursor(cursorType watch.CursorType) (*watch.Cur
 			cursorKey := etypes.EventCacheSubscriberCursorKey(eventType, subid)
 
 			// get target subscriber cursor from cache.
-			val, err := d.cache.Get(cursorKey).Result()
+			val, err := d.cache.Get(d.ctx, cursorKey).Result()
 			if err != nil || len(val) == 0 {
 				blog.Warnf("get resource[%+v] cursor failed, query target subscriber cursor[%s], %+v, %+v", cursorType, cursorKey, val, err)
 				continue

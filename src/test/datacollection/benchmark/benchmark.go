@@ -13,14 +13,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
 
+	"configcenter/src/storage/dal/redis"
+
+	rawRedis "github.com/go-redis/redis/v7"
 	"github.com/spf13/cobra"
-	"gopkg.in/redis.v5"
 )
 
 var (
@@ -59,12 +62,12 @@ func genBenchmarkMQCmd() *cobra.Command {
 
 			for i := 0; i < clientNum; i++ {
 				go func() {
-					client := redis.NewClient(&redis.Options{Addr: hostname})
-					if _, err := client.Ping().Result(); err != nil {
+					client := redis.NewClient(&rawRedis.Options{Addr: hostname})
+					if _, err := client.Ping(context.Background()).Result(); err != nil {
 						panic(err)
 					}
 					for i := 0; i < requestNum; i++ {
-						if _, err := client.Publish(topic, message).Result(); err != nil {
+						if _, err := client.Publish(context.Background(), topic, message).Result(); err != nil {
 							panic(err)
 						}
 					}
