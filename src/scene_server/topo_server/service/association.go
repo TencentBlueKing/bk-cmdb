@@ -312,7 +312,7 @@ func (s *Service) SearchAssociationInst(params types.ContextParams, pathParams, 
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	ret, err := s.Core.AssociationOperation().SearchInst(params, request)
 	if err != nil {
 		return nil, err
