@@ -336,7 +336,7 @@ func (ps *parseStream) dynamicGrouping() *parseStream {
 		return ps
 	}
 
-	if ps.hitRegexp(executeDynamicGroupRegexp, http.MethodGet) {
+	if ps.hitRegexp(executeDynamicGroupRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("execute dynamic group, but got invalid uri")
 			return ps

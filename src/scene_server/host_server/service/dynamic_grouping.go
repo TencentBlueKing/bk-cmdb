@@ -14,9 +14,11 @@ package service
 
 import (
 	"strconv"
+	"time"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -47,6 +49,7 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 	newDynamicGroup.CreateUser = ctx.Kit.User
+	newDynamicGroup.CreateTime = time.Now().UTC()
 	response := &meta.IDResult{}
 
 	// create base on auto run txn with func.
@@ -62,19 +65,32 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 				response.Code, response.ErrMsg, newDynamicGroup, ctx.Kit.Rid)
 			return response.CCError()
 		}
+		newDynamicGroup.ID = response.Data.ID
+
+		// audit log.
+		audit := auditlog.NewDynamicGroupAuditLog(s.CoreAPI.CoreService())
+		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditCreate)
+		auditLogs, err := audit.GenerateAuditLog(auditParam, &newDynamicGroup)
+		if err != nil {
+			blog.Errorf("generate audit log failed after create new dynamic group[%s], err: %+v, rid: %s", newDynamicGroup.ID, err, ctx.Kit.Rid)
+			return err
+		}
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed after create new dynamic group[%s], err: %+v, rid: %s", newDynamicGroup.ID, err, ctx.Kit.Rid)
+			return err
+		}
 
 		// register dynamic group resource create action to iam.
 		if auth.EnableAuthorize() {
-			newID := response.Data.ID
 			bizID := strconv.FormatInt(newDynamicGroup.AppID, 10)
 
-			resp, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, newID, ctx.Kit.Header)
+			resp, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, newDynamicGroup.ID, ctx.Kit.Header)
 			if err != nil {
-				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s", err, bizID, newID, ctx.Kit.Rid)
+				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s", err, bizID, newDynamicGroup.ID, ctx.Kit.Rid)
 				return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if !resp.Result {
-				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s", resp.ErrMsg, bizID, newID, ctx.Kit.Rid)
+				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s", resp.ErrMsg, bizID, newDynamicGroup.ID, ctx.Kit.Rid)
 				return resp.CCError()
 			}
 
@@ -198,6 +214,19 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 
 	// update base on auto run txn with func.
 	autoRunTxnFunc := func() error {
+		// audit log.
+		audit := auditlog.NewDynamicGroupAuditLog(s.CoreAPI.CoreService())
+		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updates)
+		auditLogs, err := audit.GenerateAuditLog(auditParam, &meta.DynamicGroup{ID: targetID, AppID: bizIDInt64})
+		if err != nil {
+			blog.Errorf("generate audit log failed after update dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			return err
+		}
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed after update dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			return err
+		}
+
 		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header, updates)
 		if err != nil {
 			blog.Errorf("update dynamic group failed, err: %+v, biz: %s, input: %+v, rid: %s",
@@ -242,6 +271,7 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 		ctx.RespAutoError(result.CCError())
 		return
 	}
+	dynamicGroup := result.Data
 
 	// delete base on auto run txn with func.
 	autoRunTxnFunc := func() error {
@@ -253,6 +283,19 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 		if !result.Result {
 			blog.Errorf("delete dynamic group failed, errcode: %d, errmsg: %s, bizID: %s, rid: %s", result.Code, result.ErrMsg, bizID, ctx.Kit.Rid)
 			return result.CCError()
+		}
+
+		// audit log.
+		audit := auditlog.NewDynamicGroupAuditLog(s.CoreAPI.CoreService())
+		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditDelete)
+		auditLogs, err := audit.GenerateAuditLog(auditParam, &dynamicGroup)
+		if err != nil {
+			blog.Errorf("generate audit log failed after delete dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			return err
+		}
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed after delete dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			return err
 		}
 		return nil
 	}
