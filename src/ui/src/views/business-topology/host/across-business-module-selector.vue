@@ -13,7 +13,7 @@
                     <cmdb-auth-option v-for="business in businessList"
                         :key="business.bk_biz_id"
                         :id="business.bk_biz_id"
-                        :name="business.bk_biz_name"
+                        :name="`[${business.bk_biz_id}] ${business.bk_biz_name}`"
                         :auth="{ type: $OPERATION.HOST_TRANSFER_ACROSS_BIZ, relation: [bizId, business.bk_biz_id] }">
                     </cmdb-auth-option>
                 </bk-select>
