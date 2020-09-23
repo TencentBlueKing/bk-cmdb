@@ -47,7 +47,6 @@
                     <template slot-scope="{ row }">
                         <cmdb-property-value
                             v-if="row.type === 'property'"
-                            :show-title="false"
                             :property="row.property"
                             :value="row.before">
                         </cmdb-property-value>
@@ -59,7 +58,6 @@
                     <template slot-scope="{ row }">
                         <cmdb-property-value
                             v-if="row.type === 'property'"
-                            :show-title="false"
                             :property="row.property"
                             :value="row.after">
                         </cmdb-property-value>

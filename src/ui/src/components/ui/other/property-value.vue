@@ -37,10 +37,6 @@
                 type: Boolean,
                 default: true
             },
-            showTitle: {
-                type: Boolean,
-                default: true
-            },
             tag: {
                 type: String,
                 default: 'span'
@@ -76,10 +72,6 @@
                 if (this.className) {
                     attrs.class = this.className
                 }
-                if (this.showTitle) {
-                    attrs.title = this.displayValue
-                }
-
                 return attrs
             },
             isUser () {

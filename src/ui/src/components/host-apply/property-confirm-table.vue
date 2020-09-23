@@ -17,6 +17,7 @@
                 :label="$t('修改值')"
                 width="530"
                 class-name="table-cell-change-value"
+                show-overflow-tooltip
                 :render-header="(h, data) => renderTableHeader(h, data, $t('红色为属性冲突值'), { placement: 'right' })">
                 <template slot-scope="{ row }">
                     <div class="cell-change-value"><vnodes :vnode="getChangeValue(row)"></vnodes></div>

@@ -30,7 +30,6 @@
                         :theme="['bk_host_id'].includes(property.bk_property_id) ? 'primary' : 'default'"
                         :value="row | hostValueFilter(property.bk_obj_id, property.bk_property_id)"
                         :show-unit="false"
-                        :show-title="false"
                         :property="property"
                         @click.native.stop="handleValueClick(row, property)">
                     </cmdb-property-value>

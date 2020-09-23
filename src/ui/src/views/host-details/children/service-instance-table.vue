@@ -72,12 +72,11 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                :show-overflow-tooltip="column.id !== 'bind_info'">
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value v-if="column.id !== 'bind_info'"
                         :value="(row.property || {})[column.id]"
                         :show-unit="false"
-                        :show-title="true"
                         :property="column.property">
                     </cmdb-property-value>
                     <process-bind-info-value v-else
