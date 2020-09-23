@@ -21,6 +21,11 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+const (
+	// firstLevelParentId serverCategory first level's parent id
+	firstLevelParentId = 0
+)
+
 func (p *processOperation) CreateServiceCategory(kit *rest.Kit, category metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := category.Validate(); err != nil {
@@ -51,11 +56,18 @@ func (p *processOperation) CreateServiceCategory(kit *rest.Kit, category metadat
 	// check name unique in business scope
 	var count uint64
 	filter := map[string]interface{}{
-		common.BKParentIDField: category.ParentID,
-		"name":                 category.Name,
+		"name": category.Name,
 		common.BKAppIDField: map[string]interface{}{
 			common.BKDBIN: []int64{0, category.BizID},
 		},
+	}
+	// judge levels of classification, ( bk_parent_id == 0 is 1 level, other is 2 level)
+	if category.ParentID == 0 {
+		filter[common.BKParentIDField] = firstLevelParentId
+	} else {
+		filter[common.BKParentIDField] = map[string]interface{}{
+			common.BKDBNE: firstLevelParentId,
+		}
 	}
 	if count, err = mongodb.Client().Table(common.BKTableNameServiceCategory).Find(filter).Count(kit.Ctx); nil != err {
 		blog.Errorf("CreateServiceCategory failed, mongodb query failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, kit.Rid)
