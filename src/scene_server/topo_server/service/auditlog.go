@@ -111,6 +111,8 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 		Page:      query.Page,
 	}
 	blog.V(5).Infof("AuditQuery, AuditOperation auditQuery: %+v, rid: %s", auditQuery, ctx.Kit.Rid)
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	count, list, err := s.Core.AuditOperation().SearchAuditList(ctx.Kit, auditQuery)
 	if nil != err {
 		ctx.RespAutoError(err)
@@ -128,6 +130,7 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 		return
 	}
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	resp, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, id)
 	if nil != err {
 		ctx.RespAutoError(err)

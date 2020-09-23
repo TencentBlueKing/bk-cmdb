@@ -508,22 +508,13 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 }
 
 func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
-	input := new(metadata.ListServiceInstanceDetailRequest)
+	input := new(metadata.ListServiceInstanceDetailOption)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	option := &metadata.ListServiceInstanceDetailOption{
-		BusinessID:         input.BizID,
-		ModuleID:           input.ModuleID,
-		SetID:              input.SetID,
-		HostID:             input.HostID,
-		ServiceInstanceIDs: input.ServiceInstanceIDs,
-		Page:               input.Page,
-		Selectors:          input.Selectors,
-	}
-	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
 		return

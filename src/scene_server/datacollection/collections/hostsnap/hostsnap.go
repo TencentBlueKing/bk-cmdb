@@ -31,7 +31,6 @@ import (
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -55,6 +54,16 @@ const (
 	defaultRateLimiterBurst = 100
 )
 
+var (
+	// 需要参与变化对比的字段
+	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
+		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
+		common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
+	reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
+
+	// notice: 为了对应不同版本和环境差异，再当前版本中设置compareFields中不参加对比的字段
+	ignoreCompareField = make(map[string]struct{}, 0)
+)
 
 type HostSnap struct {
 	redisCli    *redis.Client
@@ -93,10 +102,6 @@ func getRateLimiterConfig() (int, int) {
 	}
 	return qps, burst
 }
-
-var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
-	"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
-	common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
 
 // Hash returns hash value base on message.
 func (h *HostSnap) Hash(cloudid, ip string) (string, error) {
@@ -223,11 +228,16 @@ func (h *HostSnap) Analyze(msg *string) error {
 		return err
 	}
 
+	// notice: needToUpdate 需要顺序，只能在更新数据库之前，删除需要忽略更新的字段
+	for field := range ignoreCompareField {
+		delete(setter, field)
+	}
+
 	opt := &metadata.UpdateOption{
 		Condition: map[string]interface{}{
 			common.BKHostIDField: hostID,
 		},
-		Data:       mapstr.NewFromMap(setter),
+		Data:       setter,
 		CanEditAll: true,
 	}
 
@@ -282,7 +292,11 @@ func needToUpdate(src, toCompare string) bool {
 	datalimit := getLimitConfig("datacollection.hostsnap.datalimit", defaultDataLimit, minDataLimit)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
-	for idx := range compareFields {
+	for idx, field := range compareFields {
+		if _, ok := ignoreCompareField[field]; ok {
+			// 忽略变更对比的字段直接过滤掉
+			continue
+		}
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
 			// tolerate bk_cpu, bk_cpu_mhz, bk_disk, bk_mem changes less than the set value
@@ -450,8 +464,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 
 	return setter, raw.String()
 }
-
-var reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
 
 func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string, val *gjson.Result) (string, error) {
 	rid := util.GetHTTPCCRequestID(header)
