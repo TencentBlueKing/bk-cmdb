@@ -119,7 +119,7 @@
             <bk-tab-panel name="field" :label="$t('模型字段')">
                 <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
             </bk-tab-panel>
-            <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="activeModel">
+            <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="!!activeModel">
                 <the-relation v-if="tab.active === 'relation'" :model-id="modelId"></the-relation>
             </bk-tab-panel>
             <bk-tab-panel name="verification" :label="$t('唯一校验')">
