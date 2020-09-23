@@ -19,7 +19,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"reflect"
 	"strings"
 	"time"
 
@@ -337,8 +336,8 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 
 	// change the string query to regexp, only for frontend usage.
 	for k, v := range query.Condition {
-		if reflect.TypeOf(v).Kind() == reflect.String {
-			field := v.(string)
+		field, ok := v.(string)
+		if ok {
 			query.Condition[k] = mapstr.MapStr{
 				common.BKDBLIKE: params.SpecialCharChange(field),
 				// insensitive with the character case.
