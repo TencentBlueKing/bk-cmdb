@@ -1,6 +1,7 @@
 <template>
     <blueking-user-selector type="info"
         v-if="localValue.length"
+        style="font-size: 12px;"
         :api="api"
         :value="localValue">
     </blueking-user-selector>
