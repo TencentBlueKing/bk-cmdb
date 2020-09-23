@@ -221,7 +221,8 @@
                     const { count, info } = await this.$store.dispatch('hostSearch/searchHost', {
                         params: this.getParams(),
                         config: {
-                            requestId: this.request.list
+                            requestId: this.request.list,
+                            cancelPrevious: true
                         }
                     })
                     this.table.pagination.count = count
