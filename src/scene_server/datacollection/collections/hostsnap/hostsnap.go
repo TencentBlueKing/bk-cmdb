@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
@@ -41,13 +42,17 @@ import (
 
 const (
 	// defaultDataLimit is the value of the default percentage of data fluctuation
-	defaultDataLimit = 10
+	defaultDataLimit 	    = 10
 	// minDataLimit is the value of the minimum percentage of data fluctuation
-	minDataLimit     = 5
+	minDataLimit            = 5
 	// deafultTimeLimit is the default percentage value of update time
-	deafultTimeLimit = 10
+	deafultTimeLimit        = 10
 	// deafultTimeLimit is the minimum percentage value of update time
-	minTimeLimit     = 5
+	minTimeLimit            = 5
+	// defaultRateLimiterQPS is the default value of rateLimiter qps
+	defaultRateLimiterQPS   = 40
+	// defaultRateLimiterBurst is the default value of rateLimiter burst
+	defaultRateLimiterBurst = 100
 )
 
 
@@ -55,22 +60,38 @@ type HostSnap struct {
 	redisCli    *redis.Client
 	authManager *extensions.AuthManager
 	*backbone.Engine
-
+	rateLimit   flowctrl.RateLimiter
 	filter *filter
 	ctx    context.Context
 	db     dal.RDB
 }
 
 func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
+	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
 		redisCli:    redisCli,
 		ctx:         ctx,
 		db:          db,
+		rateLimit:   flowctrl.NewRateLimiter(int64(qps), int64(burst)),
 		authManager: authManager,
 		Engine:      engine,
 		filter:      newFilter(),
 	}
 	return h
+}
+
+func getRateLimiterConfig() (int, int) {
+	qps, err := cc.Int("datacollection.hostsnap.rateLimiter.qps")
+	if err != nil {
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s",defaultRateLimiterQPS)
+		qps = defaultRateLimiterQPS
+	}
+	burst, err := cc.Int("datacollection.hostsnap.rateLimiter.burst")
+	if err != nil {
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s",defaultRateLimiterBurst)
+		burst = defaultRateLimiterBurst
+	}
+	return qps, burst
 }
 
 var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
@@ -160,31 +181,25 @@ func (h *HostSnap) Analyze(msg *string) error {
 	// save host snapshot in redis
 	h.saveHostsnap(header, &val, hostID)
 
+	// limit the number of requests
+	if !h.rateLimit.TryAccept() {
+		return nil
+	}
+
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
 		return nil
 	}
 
-	// get time on redis ttl
-	timelimit := getLimitConfig("datacollection.timelimit", deafultTimeLimit, minTimeLimit)
-
-	key := common.RedisttlPrefix + strconv.FormatInt(hostID, 10)
-	value, err := h.redisCli.Incr(key).Result()
-	if err != nil {
-		blog.Errorf("an error occurred while increasing the redis value, key: %s, rid: %s", key, rid)
-	}
-	// if it is greater than 1, it means that the data has been updated within the specified time and does not need to be updated this time
-	if value > 1 {
+	key := common.RedisSnapCountPrefix + strconv.FormatInt(hostID, 10)
+	if h.needToSkip(key, rid) {
 		return nil
 	}
-	minTime := 0.5 * float64(timelimit)
-	maxTime := 1.5 * float64(timelimit)
-	randTime := util.RandInt64WithRange(int64(minTime), int64(maxTime))
-	err = h.redisCli.Expire(key, time.Minute*time.Duration(randTime)).Err()
-	if err != nil {
+	if err := h.expireRedisKey(key); err != nil {
 		blog.Errorf("an error occurred while expire the redis key, key: %s, rid: %s", key, rid)
 	}
+
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
 
@@ -238,9 +253,33 @@ func (h *HostSnap) Analyze(msg *string) error {
 	return nil
 }
 
+func (h *HostSnap) expireRedisKey(key string) error {
+	// get time on redis ttl
+	timelimit := getLimitConfig("datacollection.hostsnap.timelimit", deafultTimeLimit, minTimeLimit)
+	minTime := 0.5 * float64(timelimit)
+	maxTime := 1.5 * float64(timelimit)
+	randTime := util.RandInt64WithRange(int64(minTime), int64(maxTime))
+	if err := h.redisCli.Expire(key, time.Minute*time.Duration(randTime)).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *HostSnap) needToSkip(key string, rid string) bool {
+	value, err := h.redisCli.Incr(key).Result()
+	if err != nil {
+		blog.Errorf("an error occurred while increasing the redis value, key: %s, rid: %s", key, rid)
+	}
+	// if it is greater than 1, it means that the data has been updated within the specified time and does not need to be updated this time
+	if value > 1 {
+		return true
+	}
+	return false
+}
+
 func needToUpdate(src, toCompare string) bool {
 	// get data fluctuation limit
-	datalimit := getLimitConfig("datacollection.datalimit", defaultDataLimit, minDataLimit)
+	datalimit := getLimitConfig("datacollection.hostsnap.datalimit", defaultDataLimit, minDataLimit)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
 	for idx := range compareFields {
@@ -282,6 +321,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
+		osname = strings.TrimSpace(osname)
 		ostype = common.HostOSTypeEnumLinux
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
