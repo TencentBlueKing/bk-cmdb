@@ -13,6 +13,7 @@
 package redis
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -43,23 +44,24 @@ func TestRedis(t *testing.T) {
 	err = InitClient(prefix, config)
 	require.NoError(t, err)
 
+	ctx := context.Background()
 	testRedisKey := "test_redis_default_redis_key"
 	// test default redis
-	cacheErr := Client().Set(testRedisKey, "aa", time.Minute*10).Err()
+	cacheErr := Client().Set(ctx, testRedisKey, "aa", time.Minute*10).Err()
 	require.NoError(t, cacheErr)
-	val, cacheErr := Client().Get(testRedisKey).Result()
+	val, cacheErr := Client().Get(ctx, testRedisKey).Result()
 	require.NoError(t, cacheErr)
 	require.Equal(t, "aa", val)
-	cacheErr = Client().Del(testRedisKey).Err()
+	cacheErr = Client().Del(ctx, testRedisKey).Err()
 	require.NoError(t, cacheErr)
 
 	// test prefix
-	cacheErr = ClientInstance(prefix).Set(testRedisKey, "aa", time.Minute*10).Err()
+	cacheErr = ClientInstance(prefix).Set(ctx, testRedisKey, "aa", time.Minute*10).Err()
 	require.NoError(t, cacheErr)
-	val, cacheErr = ClientInstance(prefix).Get(testRedisKey).Result()
+	val, cacheErr = ClientInstance(prefix).Get(ctx, testRedisKey).Result()
 	require.NoError(t, cacheErr)
 	require.Equal(t, "aa", val)
-	cacheErr = ClientInstance(prefix).Del(testRedisKey).Err()
+	cacheErr = ClientInstance(prefix).Del(ctx, testRedisKey).Err()
 	require.NoError(t, cacheErr)
 
 }

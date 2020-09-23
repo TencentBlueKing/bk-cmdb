@@ -1,23 +1,26 @@
 package lock
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
+	"configcenter/src/storage/dal/redis"
+
+	rawRedis "github.com/go-redis/redis/v7"
 	"github.com/stretchr/testify/require"
-	redis "gopkg.in/redis.v5"
 )
 
-func testRedisClient() *redis.Client {
+func testRedisClient() redis.Client {
 
-	client := redis.NewClient(&redis.Options{
+	client := redis.NewClient(&rawRedis.Options{
 		Addr:     "127.0.0.1:44446", //s.Addr(),
 		Password: "xxxx",            // no password set
 		DB:       0,                 // use default DB
 	})
 
-	_, err := client.Ping().Result()
+	_, err := client.Ping(context.Background()).Result()
 	if err != nil {
 		panic(err)
 	}

@@ -94,7 +94,7 @@ func (h *Hash) updateLoop() {
 			blog.Errorf("Hash| update services hash values, %+v", err)
 			continue
 		}
-		blog.Infof("Hash| discovery newest servers now, %+v", servers)
+		blog.V(4).Infof("Hash| discovery newest servers now, %+v", servers)
 
 		// query.
 		newest := make(map[string]string)
@@ -129,13 +129,13 @@ func (h *Hash) updateLoop() {
 		}
 
 		// delete.
-		for hashValue, _ := range h.nodes {
+		for hashValue := range h.nodes {
 			if _, isExist := newest[hashValue]; !isExist {
 				blog.Infof("Hash| remove old consistent hash node, %s", hashValue)
 				h.consistent.Remove(hashValue)
 				delete(h.nodes, hashValue)
 			}
 		}
-		blog.Infof("Hash| sync consistent hash done, members %+v", h.consistent.Members())
+		blog.V(4).Infof("Hash| sync consistent hash done, members %+v", h.consistent.Members())
 	}
 }

@@ -164,7 +164,7 @@ func (w *Watcher) GetHeadTailNodeTargetNode(key event.Key) (*watch.ChainNode, *w
 // runScripts run lua scripts that returns an string if an error occurs.
 // or return a result array ChainNode
 func (w *Watcher) runScriptsWithArrayChainNode(script string, keys []string, args ...interface{}) ([]*watch.ChainNode, error) {
-	result, err := w.cache.Eval(script, keys, args...).Result()
+	result, err := w.cache.Eval(w.ctx, script, keys, args...).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func (w *Watcher) GetLatestEventDetail(key event.Key) (node *watch.ChainNode, de
 // runScripts run lua scripts that returns an string if an error occurs.
 // or return a result array string
 func (w *Watcher) runScriptsWithArrayString(script string, keys []string, args ...interface{}) ([]string, error) {
-	result, err := w.cache.Eval(script, keys, args...).Result()
+	result, err := w.cache.Eval(w.ctx, script, keys, args...).Result()
 	if err != nil {
 		return nil, err
 	}

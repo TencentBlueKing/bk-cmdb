@@ -27,11 +27,11 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 	etypes "configcenter/src/scene_server/event_server/types"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/stream/types"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
-	"gopkg.in/redis.v5"
 )
 
 const (
@@ -69,7 +69,7 @@ type EventHandler struct {
 	engine *backbone.Engine
 
 	// cache is cc redis client.
-	cache *redis.Client
+	cache redis.Client
 
 	// pushers is local event pushers, update in dynamic mode, subid -> EventPushers.
 	pushers map[int64]*EventPusher
@@ -95,7 +95,7 @@ type EventHandler struct {
 }
 
 // NewEventHandler creates new EventHandler object.
-func NewEventHandler(ctx context.Context, engine *backbone.Engine, cache *redis.Client) *EventHandler {
+func NewEventHandler(ctx context.Context, engine *backbone.Engine, cache redis.Client) *EventHandler {
 	return &EventHandler{
 		ctx:     ctx,
 		engine:  engine,
@@ -169,7 +169,7 @@ func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string
 
 	for idx, eventDetailStr := range eventDetailStrs {
 		updateFields := []string{}
-		for updateField, _ := range gjson.Get(eventDetailStr, "update_fields").Map() {
+		for updateField := range gjson.Get(eventDetailStr, "update_fields").Map() {
 			updateFields = append(updateFields, updateField)
 		}
 
@@ -189,7 +189,7 @@ func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string
 		}
 
 		eventInst := &metadata.EventInst{
-			ID:            h.cache.Incr(etypes.EventCacheEventIDKey).Val(),
+			ID:            h.cache.Incr(h.ctx, etypes.EventCacheEventIDKey).Val(),
 			Cursor:        event.Cursor,
 			UpdateFields:  updateFields,
 			DeletedFields: deletedFields,
@@ -243,15 +243,15 @@ func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string
 		switch event.EventType {
 		case watch.Create:
 			eventInst.Action = metadata.EventActionCreate
-			eventInst.Data = []metadata.EventData{metadata.EventData{CurData: event.Detail}}
+			eventInst.Data = []metadata.EventData{{CurData: event.Detail}}
 
 		case watch.Update:
 			eventInst.Action = metadata.EventActionUpdate
-			eventInst.Data = []metadata.EventData{metadata.EventData{CurData: event.Detail}}
+			eventInst.Data = []metadata.EventData{{CurData: event.Detail}}
 
 		case watch.Delete:
 			eventInst.Action = metadata.EventActionDelete
-			eventInst.Data = []metadata.EventData{metadata.EventData{PreData: event.Detail}}
+			eventInst.Data = []metadata.EventData{{PreData: event.Detail}}
 
 		default:
 			continue
@@ -266,7 +266,7 @@ func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string
 
 		// push event data to main event queue.
 		cost := time.Now()
-		err = h.cache.LPush(etypes.EventCacheEventQueueKey, eventData).Err()
+		err = h.cache.LPush(h.ctx, etypes.EventCacheEventQueueKey, eventData).Err()
 		h.eventHandleDuration.WithLabelValues("PushEventInst").Observe(time.Since(cost).Seconds())
 
 		if err != nil {
@@ -286,7 +286,7 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 
 	// pop from main event queue and re-add to duplicated queue for identifier.
 	cost := time.Now()
-	err := h.cache.BRPopLPush(etypes.EventCacheEventQueueKey,
+	err := h.cache.BRPopLPush(h.ctx, etypes.EventCacheEventQueueKey,
 		etypes.EventCacheEventQueueDuplicateKey, defaultTransTimeout).Scan(&eventStr)
 	h.eventHandleDuration.WithLabelValues("PopNewEvent").Observe(time.Since(cost).Seconds())
 
@@ -320,7 +320,7 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 
 // nextDistID returns new event dist id for target subscriber.
 func (h *EventHandler) nextDistID(subid int64) (int64, error) {
-	return h.cache.Incr(etypes.EventCacheDistIDPrefix + fmt.Sprint(subid)).Result()
+	return h.cache.Incr(h.ctx, etypes.EventCacheDistIDPrefix+fmt.Sprint(subid)).Result()
 }
 
 // sendToPushers sends new event instance to pusher of target subscriber.
@@ -423,7 +423,7 @@ func (h *EventHandler) cleaning() {
 		blog.Info("cleaning expire and redundancy events now")
 
 		// clean.
-		eventCount, err := h.cache.LLen(etypes.EventCacheEventQueueKey).Result()
+		eventCount, err := h.cache.LLen(h.ctx, etypes.EventCacheEventQueueKey).Result()
 		if err != nil {
 			blog.Errorf("fetch expire and redundancy events failed, %+v", err)
 			continue
@@ -436,14 +436,14 @@ func (h *EventHandler) cleaning() {
 		}
 
 		if eventCount < defaultCleanDelThreshold {
-			if err := h.cache.LTrim(etypes.EventCacheEventQueueKey, 0, eventCount-defaultCleanUnit).Err(); err != nil {
+			if err := h.cache.LTrim(h.ctx, etypes.EventCacheEventQueueKey, 0, eventCount-defaultCleanUnit).Err(); err != nil {
 				blog.Errorf("trim expire and redundancy events failed, %+v", err)
 				continue
 			}
 		}
 
 		// too many events.
-		if err := h.cache.Del(etypes.EventCacheEventQueueKey).Err(); err != nil {
+		if err := h.cache.Del(h.ctx, etypes.EventCacheEventQueueKey).Err(); err != nil {
 			blog.Errorf("delete expire and redundancy queue failed, %+v", err)
 			continue
 		}

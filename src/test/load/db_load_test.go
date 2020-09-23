@@ -20,13 +20,13 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/redis"
 	redisdal "configcenter/src/storage/dal/redis"
 	"configcenter/src/test"
 	"configcenter/src/test/run"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/redis.v5"
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 	redisPasswd     string
 	redisDatabase   string
 	redisMasterName string
-	redisClient     *redis.Client
+	redisClient     redis.Client
 	tConfig         test.TestConfig
 )
 
@@ -57,8 +57,7 @@ var DBWriteStr string
 func initData() {
 	tConfig = test.GetTestConfig()
 	redisCfg := redisdal.Config{
-		Address:  tConfig.RedisCfg.RedisAdress,
-		Port:     tConfig.RedisCfg.RedisPort,
+		Address:  tConfig.RedisCfg.RedisAdress + ":" + tConfig.RedisCfg.RedisPort,
 		Password: tConfig.RedisCfg.RedisPasswd,
 		Database: "0",
 		//MasterName: redisMasterName,
