@@ -13,7 +13,6 @@
 package service
 
 import (
-	"reflect"
 	"strconv"
 
 	"configcenter/src/ac/iam"
@@ -55,11 +54,12 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		input.Page.Sort = "-" + common.CreateTimeField
 	}
 
+
 	// if not exact search, change the string query to regexp
 	if input.Exact != true {
 		for k, v := range input.Condition {
-			if reflect.TypeOf(v).Kind() == reflect.String {
-				field := v.(string)
+			field,ok := v.(string)
+			if ok {
 				input.Condition[k] = mapstr.MapStr{
 					common.BKDBLIKE: params.SpecialCharChange(field),
 					"$options":      "i",
