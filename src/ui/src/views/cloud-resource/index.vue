@@ -219,6 +219,7 @@
                     }
                     if (this.filter) {
                         params.condition.bk_task_name = this.filter
+                        params.is_fuzzy = true
                     }
                     const data = await this.$store.dispatch('cloud/resource/findTask', {
                         params: params,
