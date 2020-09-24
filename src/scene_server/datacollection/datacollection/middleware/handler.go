@@ -662,6 +662,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return fmt.Errorf("get bk_inst_id failed: %s %s", inst[bkc.BKInstIDField], err.Error())
 	}
 
+	dataChange := map[string]interface{}{}
 	hasDiff := false
 	for attrId, attrValue := range bodyData {
 
@@ -671,27 +672,23 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				relateObj, ok := relateList[0].(map[string]interface{})
 
 				if ok && (relateObj["id"] != "" && relateObj["id"] != "0" && relateObj["id"] != nil) {
-					blog.Infof("skip update exist single relation attr: %s->%v", attrId, attrValue)
+					blog.Infof("skip updating single relation attr: [%s]=%v, since it is existed:%v.", defaultRelateAttr, attrValue, relateObj["id"])
 				} else {
-
-					if attrValue != "" {
-						blog.Debug("[relation changed]  %s: %v ---> %v", attrId, attrValue)
-						inst[attrId] = attrValue
+					if val, ok := attrValue.(string); ok && val != "" {
+						dataChange[defaultRelateAttr] = val
+						blog.Debug("[relation changed]  %s: %v ---> %v", defaultRelateAttr, "nil", dataChange[attrId])
 						hasDiff = true
 					}
 				}
-
 				continue
 			}
-
 			blog.Errorf("parse relation data failed, skip update: \n%v\n", inst[defaultRelateAttr])
 			continue
-
 		}
 
 		if inst[attrId] != attrValue {
-			inst[attrId] = attrValue
-			blog.Debug("[changed]  %s: %v ---> %v", attrId, attrValue, inst[attrId])
+			dataChange[attrId] = attrValue
+			blog.Debug("[changed]  %s: %v ---> %v", attrId, inst[attrId], dataChange[attrId])
 			hasDiff = true
 		}
 	}
@@ -709,7 +706,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	delete(inst, bkc.CreateTimeField)
 
 	input := metadata.UpdateOption{
-		Data: inst,
+		Data: dataChange,
 		Condition: map[string]interface{}{
 			common.BKInstIDField: instID,
 		},
