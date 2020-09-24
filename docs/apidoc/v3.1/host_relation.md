@@ -20,20 +20,20 @@
 ```
 * input字段说明:
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| host_info| object array| 是|无| 主机信息 | host info|
-| bk_supplier_id| int| 是| 无| 开发商 ID|supplier ID|
-| bk_biz_id| int| 否| 无| 业务ID |business ID|
+| 名称           | 类型         | 必填 | 默认值 | 说明      | Description |
+| -------------- | ------------ | ---- | ------ | --------- | ----------- |
+| host_info      | object array | 是   | 无     | 主机信息  | host info   |
+| bk_supplier_id | int          | 是   | 无     | 开发商 ID | supplier ID |
+| bk_biz_id      | int          | 否   | 无     | 业务ID    | business ID |
 
 host_info object 说明：
 
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_host_innerip| string| 是|无| 主机内网ip | host inner ip|
-| import_from| string| 是|api| 主机导入来源,以api方式导入为3 | host import source|
-| bk_cloud_id| int| 是| 无| 云区域ID|cloud area ID|
+| 名称            | 类型   | 必填 | 默认值 | 说明                          | Description        |
+| --------------- | ------ | ---- | ------ | ----------------------------- | ------------------ |
+| bk_host_innerip | string | 是   | 无     | 主机内网ip                    | host inner ip      |
+| import_from     | string | 是   | api    | 主机导入来源,以api方式导入为3 | host import source |
+| bk_cloud_id     | int    | 是   | 无     | 云区域ID                      | cloud area ID      |
 
 
 
@@ -49,12 +49,12 @@ host_info object 说明：
 
 * output字段说明:
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | json string | 请求返回的数据,示例如下（{"error":["6行字段正则校验失败","7行字段正则校验失败"],"success":["4","5"],"update_error":null}） |the data response|
+| 名称          | 类型        | 说明                                                                                                                       | Description                                                |
+| ------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| result        | bool        | 请求成功与否。true:请求成功；false请求失败                                                                                 | request result true or false                               |
+| bk_error_code | int         | 错误编码。 0表示success，>0表示失败错误                                                                                    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string      | 请求失败返回的错误信息                                                                                                     | error message from failed request                          |
+| data          | json string | 请求返回的数据,示例如下（{"error":["6行字段正则校验失败","7行字段正则校验失败"],"success":["4","5"],"update_error":null}） | the data response                                          |
 
 ###  主机转移到业务内模块
 * API: POST /api/{version}/hosts/modules
@@ -78,12 +78,12 @@ host_info object 说明：
 ```
 * input字段说明:
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_biz_id| int| 是|无|业务ID |  business ID|
-| bk_host_id| int数组| 是| 无|主机 ID|host ID|
-| bk_module_id| int数组| 是| 无|模块 id| module ID |
-| is_increment| bool| 是| 无|覆盖或者追加,会删除原有关系. true是更新，false是覆盖|cover or pursue ,true will cover |
+| 名称         | 类型    | 必填 | 默认值 | 说明                                                 | Description                      |
+| ------------ | ------- | ---- | ------ | ---------------------------------------------------- | -------------------------------- |
+| bk_biz_id    | int     | 是   | 无     | 业务ID                                               | business ID                      |
+| bk_host_id   | int数组 | 是   | 无     | 主机 ID                                              | host ID                          |
+| bk_module_id | int数组 | 是   | 无     | 模块 id                                              | module ID                        |
+| is_increment | bool    | 是   | 无     | 覆盖或者追加,会删除原有关系. true是更新，false是覆盖 | cover or pursue ,true will cover |
 
 
 * output：
@@ -98,12 +98,12 @@ host_info object 说明：
 
 * output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | null | 请求返回的数据 |the data response|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result true or false                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | null   | 请求返回的数据                             | the data response                                          |
 
 ### 资源池主机分配至业务的空闲机模块
 * API: POST /api/{version}/hosts/modules/resource/idle
@@ -123,10 +123,10 @@ host_info object 说明：
 ```
 * input字段说明:
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_biz_id| int| 是|无|业务ID | host ID|
-| bk_host_id| int数组| 是| 无|主机ID|host ID |
+| 名称       | 类型    | 必填 | 默认值 | 说明   | Description |
+| ---------- | ------- | ---- | ------ | ------ | ----------- |
+| bk_biz_id  | int     | 是   | 无     | 业务ID | host ID     |
+| bk_host_id | int数组 | 是   | 无     | 主机ID | host ID     |
 
 
 * output:
@@ -141,12 +141,12 @@ host_info object 说明：
 
 * output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---| 
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | null | 请求返回的数据 |the data response|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result true or false                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | null   | 请求返回的数据                             | the data response                                          |
 
 ### 主机上交至业务的故障机模块
 * API: POST /api/{version}/hosts/modules/fault
@@ -166,10 +166,10 @@ host_info object 说明：
 ```
 * input字段说明:
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_biz_id| int| 是|无|业务id | business ID|
-| bk_host_id| int数组| 是| 无|主机id| host ID|
+| 名称       | 类型    | 必填 | 默认值 | 说明   | Description |
+| ---------- | ------- | ---- | ------ | ------ | ----------- |
+| bk_biz_id  | int     | 是   | 无     | 业务id | business ID |
+| bk_host_id | int数组 | 是   | 无     | 主机id | host ID     |
 
 
 * output:
@@ -184,12 +184,12 @@ host_info object 说明：
 
 * output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | null | 请求返回的数据 |the data response|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result true or false                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | null   | 请求返回的数据                             | the data response                                          |
 
 
 ### 主机上交至业务的空闲机模块
@@ -210,10 +210,10 @@ host_info object 说明：
 ```
 * input字段说明
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_biz_id| int| 是|无|业务id | business ID|
-| bk_host_id| int数组| 是| 无|主机id| host ID|
+| 名称       | 类型    | 必填 | 默认值 | 说明   | Description |
+| ---------- | ------- | ---- | ------ | ------ | ----------- |
+| bk_biz_id  | int     | 是   | 无     | 业务id | business ID |
+| bk_host_id | int数组 | 是   | 无     | 主机id | host ID     |
 
 
 * output:
@@ -228,12 +228,12 @@ host_info object 说明：
 
 * output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | null | 请求返回的数据 |the data response|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result true or false                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | null   | 请求返回的数据                             | the data response                                          |
 
 ### 主机回收至资源池
 * API:  POST /api/{version}/hosts/modules/resource
@@ -251,10 +251,10 @@ host_info object 说明：
 ```
 * input字段说明:
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_biz_id| int| 是|无|业务id | business ID|
-| bk_host_id| int数组| 是| 无|主机id| host ID|
+| 名称       | 类型    | 必填 | 默认值 | 说明   | Description |
+| ---------- | ------- | ---- | ------ | ------ | ----------- |
+| bk_biz_id  | int     | 是   | 无     | 业务id | business ID |
+| bk_host_id | int数组 | 是   | 无     | 主机id | host ID     |
 
 
 * output:
@@ -269,12 +269,12 @@ host_info object 说明：
 
 * output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | null | 请求返回的数据 |the data response|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result true or false                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | null   | 请求返回的数据                             | the data response                                          |
 
 ### 清空集群/模块下主机
 * API:  POST /api/{version}/hosts/modules/idle/set
@@ -293,11 +293,11 @@ host_info object 说明：
 ```
 * input字段说明:
 
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_biz_id| int| 是|无|业务id | business ID|
-| bk_set_id| int | 是| 无|集群id| set ID|
-| bk_module_id| int| 是| 无|模块id| module ID|
+| 名称         | 类型 | 必填 | 默认值 | 说明   | Description |
+| ------------ | ---- | ---- | ------ | ------ | ----------- |
+| bk_biz_id    | int  | 是   | 无     | 业务id | business ID |
+| bk_set_id    | int  | 是   | 无     | 集群id | set ID      |
+| bk_module_id | int  | 是   | 无     | 模块id | module ID   |
 
 
 * output:
@@ -312,12 +312,12 @@ host_info object 说明：
 
 * output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | null | 请求返回的数据 |the data response|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result true or false                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | null   | 请求返回的数据                             | the data response                                          |
 
 
 
@@ -343,21 +343,21 @@ host_info object 说明：
 ```
 * input字段说明:
  
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| host_info| object array| 是|无| 主机信息 | host info|
-| bk_biz_id| int| 是| 无| 业务 ID|bussines ID|
-| bk_module_id|int array| 是| 无| 模块 ID|模块 ID|
+| 名称         | 类型         | 必填 | 默认值 | 说明     | Description |
+| ------------ | ------------ | ---- | ------ | -------- | ----------- |
+| host_info    | object array | 是   | 无     | 主机信息 | host info   |
+| bk_biz_id    | int          | 是   | 无     | 业务 ID  | bussines ID |
+| bk_module_id | int array    | 是   | 无     | 模块 ID  | 模块 ID     |
  	 
  	 
 host_info object 说明：
  
  
-| 名称  | 类型 |必填| 默认值 | 说明 |Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_host_innerip| string| 是|无| 主机内网ip | host inner ip|
-| bk_cloud_id| int| 是| 无| 云区域ID|cloud ID|
-|...|主机其他属性|
+| 名称            | 类型         | 必填 | 默认值 | 说明       | Description   |
+| --------------- | ------------ | ---- | ------ | ---------- | ------------- |
+| bk_host_innerip | string       | 是   | 无     | 主机内网ip | host inner ip |
+| bk_cloud_id     | int          | 是   | 无     | 云区域ID   | cloud ID      |
+| ...             | 主机其他属性 |
  
  
  
@@ -377,10 +377,10 @@ host_info object 说明：
  
 * output字段说明:
  
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | null | 请求返回的数据 |the data response|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result true or false                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | null   | 请求返回的数据                             | the data response                                          |
 

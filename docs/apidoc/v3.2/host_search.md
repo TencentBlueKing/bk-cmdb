@@ -68,48 +68,48 @@
 
 * input参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---| 
-| ip| object| 否| 无|主机ip列表|ip condition|
-| condition|object | 否| 无|组合条件|comb condition|
-| page| object| 否| 无|查询条件|page condition for  search|
-| pattern| string| 否| 无|按表达式搜索|search by pattern condition|
+| 名称      | 类型   | 必填 | 默认值 | 说明         | Description                 |
+| --------- | ------ | ---- | ------ | ------------ | --------------------------- |
+| ip        | object | 否   | 无     | 主机ip列表   | ip condition                |
+| condition | object | 否   | 无     | 组合条件     | comb condition              |
+| page      | object | 否   | 无     | 查询条件     | page condition for  search  |
+| pattern   | string | 否   | 无     | 按表达式搜索 | search by pattern condition |
 
 
 ip参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|
-| data | ip 数组| 否| 无|ip list for search| the list for search |
-| exact| int| 否| 无|是否根据ip精确搜索| is the exact query |
-| flag| string| 否| 空|bk_host_innerip只匹配内网ip,bk_host_outerip只匹配外网ip, bk_host_innerip,bk_host_outerip同时匹配|bk_host_innerip match lan ip,bk_host_outerip match wan ip|
+| 名称  | 类型    | 必填 | 默认值 | 说明                                                                                             | Description                                               |
+| ----- | ------- | ---- | ------ | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| data  | ip 数组 | 否   | 无     | ip list for search                                                                               | the list for search                                       |
+| exact | int     | 否   | 无     | 是否根据ip精确搜索                                                                               | is the exact query                                        |
+| flag  | string  | 否   | 空     | bk_host_innerip只匹配内网ip,bk_host_outerip只匹配外网ip, bk_host_innerip,bk_host_outerip同时匹配 | bk_host_innerip match lan ip,bk_host_outerip match wan ip |
 
 condition 参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_obj_id| string| 否| 无|对象名,可以为biz,set,module,host,object|object name, it can be biz,set,module,host,object|
-| fields| string数组| 否| 无|查询输出字段|fields output|
-| condition| object array| 否| 无|查询条件|search condition|
+| 名称      | 类型         | 必填 | 默认值 | 说明                                    | Description                                       |
+| --------- | ------------ | ---- | ------ | --------------------------------------- | ------------------------------------------------- |
+| bk_obj_id | string       | 否   | 无     | 对象名,可以为biz,set,module,host,object | object name, it can be biz,set,module,host,object |
+| fields    | string数组   | 否   | 无     | 查询输出字段                            | fields output                                     |
+| condition | object array | 否   | 无     | 查询条件                                | search condition                                  |
 
 二级condition 参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|
-| field| string| 否| 无|对象的字段|field of object|
-| operator| string| 否| 无|操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于|$eq is equal,$in is belongs, $nin is not belong,$neq is not equal|
-| value| string| 否| 无|字段对应的值|the value of field|
+| 名称     | 类型   | 必填 | 默认值 | 说明                                                   | Description                                                       |
+| -------- | ------ | ---- | ------ | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| field    | string | 否   | 无     | 对象的字段                                             | field of object                                                   |
+| operator | string | 否   | 无     | 操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于 | $eq is equal,$in is belongs, $nin is not belong,$neq is not equal |
+| value    | string | 否   | 无     | 字段对应的值                                           | the value of field                                                |
 
 可以指定特定的提交查询，例如设置biz 中default =1 查资源池下主机， BK_SUPPLIER_ID_FIELD= 查询开发商下主机
 
 
 page 参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---| 
-| start|int|是|无|记录开始位置 |start record|
-| limit|int|是|无|每页限制条数,最大200 |page limit, max is 200|
-| sort| string| 否| 无|排序字段|the field for sort|
+| 名称  | 类型   | 必填 | 默认值 | 说明                 | Description            |
+| ----- | ------ | ---- | ------ | -------------------- | ---------------------- |
+| start | int    | 是   | 无     | 记录开始位置         | start record           |
+| limit | int    | 是   | 无     | 每页限制条数,最大200 | page limit, max is 200 |
+| sort  | string | 否   | 无     | 排序字段             | the field for sort     |
 
 
 * output
@@ -200,28 +200,28 @@ page 参数说明：
 
 *  output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | object| 请求返回的数据 |return data|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result                                             |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | object | 请求返回的数据                             | return data                                                |
 
 data 字段说明：
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| count| int| 记录条数 |the num of record|
-| info| object array | 主机实际数据 |host data|
+| 名称  | 类型         | 说明         | Description       |
+| ----- | ------------ | ------------ | ----------------- |
+| count | int          | 记录条数     | the num of record |
+| info  | object array | 主机实际数据 | host data         |
 
 info 字段说明:
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---| 
-| biz | object array| 主机所属的业务信息 |host biz info|
-| set| object array | 主机所属的集群信息 |host set info|
-| module| object array| 主机所属的模块信息 |host module info|
-| host| object | 主机自身属性|host attr info|
+| 名称   | 类型         | 说明               | Description      |
+| ------ | ------------ | ------------------ | ---------------- |
+| biz    | object array | 主机所属的业务信息 | host biz info    |
+| set    | object array | 主机所属的集群信息 | host set info    |
+| module | object array | 主机所属的模块信息 | host module info |
+| host   | object       | 主机自身属性       | host attr info   |
 
 ###  获取主机详情
 
@@ -234,10 +234,10 @@ info 字段说明:
 无
 * input参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|
-| bk_supplier_account| string| 是|无|开发商账号 |supplier account code |
-| bk_host_id| int| 是|无|主机ID | host ID |
+| 名称                | 类型   | 必填 | 默认值 | 说明       | Description           |
+| ------------------- | ------ | ---- | ------ | ---------- | --------------------- |
+| bk_supplier_account | string | 是   | 无     | 开发商账号 | supplier account code |
+| bk_host_id          | int    | 是   | 无     | 主机ID     | host ID               |
 
 * output:
 ```
@@ -262,20 +262,20 @@ info 字段说明:
 
 * output字段说明
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | object| 请求返回的数据 |return data|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result                                             |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | object | 请求返回的数据                             | return data                                                |
 
 data说明：
 
-| 名称  | 类型  | 说明 | Description|
-| ---  | ---  | --- | ---|
-| bk_property_id| string| 属性id | property ID |
-| bk_property_name| string| 属性名称 |property name |
-| bk_property_value| string| 属性值 | property value |
+| 名称              | 类型   | 说明     | Description    |
+| ----------------- | ------ | -------- | -------------- |
+| bk_property_id    | string | 属性id   | property ID    |
+| bk_property_name  | string | 属性名称 | property name  |
+| bk_property_value | string | 属性值   | property value |
 
 
 ### 根据主机id获取主机快照数据
@@ -289,9 +289,9 @@ data说明：
 无
 * input参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | --- |
-| bk_host_id| int| 是|无|主机id | host ID |
+| 名称       | 类型 | 必填 | 默认值 | 说明   | Description |
+| ---------- | ---- | ---- | ------ | ------ | ----------- |
+| bk_host_id | int  | 是   | 无     | 主机id | host ID     |
 
 
 * output:
@@ -340,32 +340,32 @@ data说明：
 
 * output字段说明：
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-| data | object| 请求返回的数据 |return data|
+| 名称          | 类型   | 说明                                       | Description                                                |
+| ------------- | ------ | ------------------------------------------ | ---------------------------------------------------------- |
+| result        | bool   | 请求成功与否。true:请求成功；false请求失败 | request result                                             |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误    | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                     | error message from failed request                          |
+| data          | object | 请求返回的数据                             | return data                                                |
 
 data字段说明：
 
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---|
-| Cpu| int|  cpu个数 | cpu number|
-| Mem| int| 内存大小单位M | memory size|
-| bootTime| int| 系统启动时间时间戳 | boot time|
-| cpuUsage| int| cpu利用率，这个是乘以100后的值，展示需要除以100 eg:101 =1.01% | cpu usage|
-| diskUsage| int| 磁盘利用率，这个是乘以100后的值，展示需要除以100 eg:1100 = 11% | disk usage|
-| hosts| 字符串数组| 系统hosts文件| server hosts info |
-| loadavg| string| 系统负载 | load avg|
-| memUsage| int| 内存使用率，这个是乘以100后的值，展示需要除以100 eg:101 =1.01%  | memory usage|
-| memUsed| init| 已经用的内存大小，单位M | the mem used|
-| rcvRate| int| 系统总入流量，这个是乘以100后的值，展示需要除以100 eg:101 =1.01 | receive rate|
-| route| 字符串数组| 路由信息|route info|
-| iptables| 字符串数组| iptable信息 | iptables array|
-| sendRate| int| 系统总流出，这个是乘以100后的值，展示需要除以100 eg:111=1.11 |send rate|
-| timezone_number| int | 数字时区 | time zone number|
-| upTime| string | 最近更新时间 |data update time|
+| 名称            | 类型       | 说明                                                            | Description       |
+| --------------- | ---------- | --------------------------------------------------------------- | ----------------- |
+| Cpu             | int        | cpu个数                                                         | cpu number        |
+| Mem             | int        | 内存大小单位M                                                   | memory size       |
+| bootTime        | int        | 系统启动时间时间戳                                              | boot time         |
+| cpuUsage        | int        | cpu利用率，这个是乘以100后的值，展示需要除以100 eg:101 =1.01%   | cpu usage         |
+| diskUsage       | int        | 磁盘利用率，这个是乘以100后的值，展示需要除以100 eg:1100 = 11%  | disk usage        |
+| hosts           | 字符串数组 | 系统hosts文件                                                   | server hosts info |
+| loadavg         | string     | 系统负载                                                        | load avg          |
+| memUsage        | int        | 内存使用率，这个是乘以100后的值，展示需要除以100 eg:101 =1.01%  | memory usage      |
+| memUsed         | init       | 已经用的内存大小，单位M                                         | the mem used      |
+| rcvRate         | int        | 系统总入流量，这个是乘以100后的值，展示需要除以100 eg:101 =1.01 | receive rate      |
+| route           | 字符串数组 | 路由信息                                                        | route info        |
+| iptables        | 字符串数组 | iptable信息                                                     | iptables array    |
+| sendRate        | int        | 系统总流出，这个是乘以100后的值，展示需要除以100 eg:111=1.11    | send rate         |
+| timezone_number | int        | 数字时区                                                        | time zone number  |
+| upTime          | string     | 最近更新时间                                                    | data update time  |
 
 
 
