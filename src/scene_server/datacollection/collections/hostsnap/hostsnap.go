@@ -194,7 +194,7 @@ func (h *HostSnap) Analyze(msg *string) error {
 
 	// limit the number of requests
 	if !h.rateLimit.TryAccept() {
-		blog.V(4).Warn("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
+		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
 			hostID, innerIP, cloudID, rid)
 		return nil
 	}

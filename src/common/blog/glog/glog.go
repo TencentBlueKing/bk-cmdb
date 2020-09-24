@@ -1069,14 +1069,6 @@ func (v Verbose) InfoDepthf(depth int, format string, args ...interface{}) {
 	}
 }
 
-// Warn is equivalent to the global Warn function, guarded by the value of v.
-// See the documentation of V for usage.
-func (v Verbose) Warn(args ...interface{}) {
-	if v {
-		logging.print(warningLog, args...)
-	}
-}
-
 // Info logs to the INFO log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Info(args ...interface{}) {
