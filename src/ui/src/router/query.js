@@ -63,6 +63,10 @@ function createCallback (keys, handler, options = {}) {
     return callback
 }
 
+function isEmpty (value) {
+    return value === '' || value === undefined || value === null
+}
+
 class RouterQuery {
     constructor () {
         this.router = router
@@ -95,6 +99,11 @@ class RouterQuery {
         } else {
             query[key] = value
         }
+        Object.keys(query).forEach(queryKey => {
+            if (isEmpty(query[queryKey])) {
+                delete query[queryKey]
+            }
+        })
         redirect({
             ...this.route,
             query: query

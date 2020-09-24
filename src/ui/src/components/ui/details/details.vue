@@ -28,7 +28,6 @@
                                     <cmdb-property-value
                                         v-else
                                         v-bk-overflow-tips
-                                        :show-title="false"
                                         :class="'property-value fl'"
                                         :value="inst[property.bk_property_id]"
                                         :property="property">

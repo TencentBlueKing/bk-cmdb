@@ -33,12 +33,13 @@
             :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick"
             @sort-change="handleSortChange">
-            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight" sortable="custom">
+            <bk-table-column label="ID" prop="id" class-name="is-highlight" sortable="custom">
                 <div slot-scope="{ row }" v-bk-overflow-tips
                     :class="['template-name', { 'need-sync': row._need_sync_ }]">
-                    {{row.name}}
+                    {{row.id}}
                 </div>
             </bk-table-column>
+            <bk-table-column :label="$t('模板名称')" prop="name" sortable="custom"></bk-table-column>
             <bk-table-column :label="$t('应用数量')" prop="set_instance_count" sortable></bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="modifier" sortable="custom"></bk-table-column>
             <bk-table-column :label="$t('修改时间')" prop="last_time" sortable="custom" show-overflow-tooltip>

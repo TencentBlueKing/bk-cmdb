@@ -142,9 +142,16 @@
                 return false
             }
         },
-        created () {
-            this.searchRelationList()
-            this.initRelationList()
+        watch: {
+            activeModel: {
+                immediate: true,
+                handler (activeModel) {
+                    if (activeModel.bk_obj_id) {
+                        this.searchRelationList()
+                        this.initRelationList()
+                    }
+                }
+            }
         },
         methods: {
             ...mapActions('objectAssociation', [

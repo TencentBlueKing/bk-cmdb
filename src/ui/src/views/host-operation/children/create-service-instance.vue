@@ -106,7 +106,7 @@
                     Object.keys(template.property).forEach(key => {
                         const templateValue = template.property[key]
                         if (key === 'bind_info') {
-                            value[key] = templateValue.value.map(info => {
+                            value[key] = (templateValue.value || []).map(info => {
                                 const infoValue = {}
                                 Object.keys(info).forEach(infoKey => {
                                     if (infoKey === 'ip') {

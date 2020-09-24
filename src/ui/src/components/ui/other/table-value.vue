@@ -4,11 +4,11 @@
             :key="col.bk_property_id"
             :prop="col.bk_property_id"
             :label="col.bk_property_name"
-            :width="col.bk_property_type === 'bool' ? '90px' : ''">
+            :width="col.bk_property_type === 'bool' ? '90px' : ''"
+            show-overflow-tooltip>
             <template slot-scope="{ row }">
                 <cmdb-property-value
                     v-bk-overflow-tips
-                    :show-title="true"
                     :value="row[col['bk_property_id']]"
                     :property="col">
                 </cmdb-property-value>

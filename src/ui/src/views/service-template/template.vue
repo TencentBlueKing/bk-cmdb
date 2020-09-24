@@ -21,6 +21,7 @@
     import ServiceTemplateConfig from './children/operational'
     import ServiceTemplateInstance from './children/template-instance'
     import Bus from '@/utils/bus'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             ServiceTemplateConfig,
@@ -28,12 +29,22 @@
         },
         data () {
             return {
-                active: 'config'
+                active: RouterQuery.get('tab', 'config')
             }
         },
         computed: {
             isUpdate () {
                 return this.$route.params.templateId !== undefined
+            }
+        },
+        watch: {
+            active: {
+                immediate: true,
+                handler (active) {
+                    RouterQuery.set({
+                        tab: active
+                    })
+                }
             }
         },
         created () {

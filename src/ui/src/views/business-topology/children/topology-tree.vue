@@ -299,11 +299,16 @@
             handleSelectChange (node) {
                 this.$store.commit('businessHost/setSelectedNode', node)
                 Bus.$emit('toggle-host-filter', false)
-                RouterQuery.set({
+                const query = {
                     node: node.id,
                     page: 1,
                     _t: Date.now()
-                })
+                }
+                if (this.initialized) {
+                    query.ip = ''
+                    query.bk_asst_id = ''
+                }
+                RouterQuery.set(query)
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'

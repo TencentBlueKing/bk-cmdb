@@ -87,17 +87,17 @@
                                     </div>
                                     <p>{{fieldTypeMap[property.bk_property_type]}}</p>
                                 </div>
-                                <template v-if="!property.ispre">
+                                <template v-if="isGlobalView || isBizCustomData(property)">
                                     <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
                                         <bk-button slot-scope="{ disabled }"
                                             class="property-icon-btn"
                                             :text="true"
-                                            :disabled="disabled || !isFieldEditable(property)"
+                                            :disabled="disabled || !isFieldEditable(property, false)"
                                             @click.stop="handleEditField(group, property)">
                                             <i class="property-icon icon-cc-edit"></i>
                                         </bk-button>
                                     </cmdb-auth>
-                                    <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
+                                    <cmdb-auth class="mr10" :auth="authResources" @click.native.stop v-if="!property.ispre">
                                         <bk-button slot-scope="{ disabled }"
                                             class="property-icon-btn"
                                             :text="true"

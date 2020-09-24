@@ -24,7 +24,6 @@
                         :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
                         :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
                         :show-unit="false"
-                        :show-title="true"
                         :property="column"
                         @click.native.stop="handleValueClick(row, column)">
                     </cmdb-property-value>

@@ -11,12 +11,11 @@
                 :key="head.id"
                 :prop="head.id"
                 :label="head.name"
-                :show-overflow-tooltip="head.id !== 'bind_info'">
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value v-if="head.id !== 'bind_info'"
                         :value="row[head.id]"
                         :show-unit="false"
-                        :show-title="false"
                         :property="head.property">
                     </cmdb-property-value>
                     <process-bind-info-value v-else

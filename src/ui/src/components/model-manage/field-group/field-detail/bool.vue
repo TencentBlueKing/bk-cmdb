@@ -5,6 +5,7 @@
             size="small"
             theme="primary"
             :value="localValue"
+            :disabled="isReadonly"
             @change="handleChange">
         </bk-switcher>
     </div>
@@ -16,7 +17,8 @@
             value: {
                 type: [String, Boolean],
                 default: false
-            }
+            },
+            isReadonly: Boolean
         },
         data () {
             return {
