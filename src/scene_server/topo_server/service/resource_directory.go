@@ -14,7 +14,6 @@ package service
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 
 	"configcenter/src/ac/iam"
@@ -256,8 +255,8 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 	}
 	if input.Exact == false {
 		for k, v := range input.Condition {
-			if reflect.TypeOf(v).Kind() == reflect.String {
-				field := v.(string)
+			field, ok := v.(string)
+			if ok {
 				input.Condition[k] = mapstr.MapStr{
 					common.BKDBLIKE: params.SpecialCharChange(field),
 					"$options":      "i",
