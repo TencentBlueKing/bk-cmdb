@@ -146,8 +146,8 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
+	// if fuzzy search, change the string query to regexp
+	if option.IsFuzzy == true {
 		for k, v := range option.Condition {
 			field, ok := v.(string)
 			if ok {
@@ -326,8 +326,8 @@ func (lgc *Logics) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncH
 		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
+	// if fuzzy search, change the string query to regexp
+	if option.IsFuzzy == true {
 		for k, v := range option.Condition {
 			field, ok := v.(string)
 			if ok {

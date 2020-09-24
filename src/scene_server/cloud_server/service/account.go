@@ -191,8 +191,8 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
+	// if fuzzy search, change the string query to regexp
+	if option.IsFuzzy == true {
 		for k, v := range option.Condition {
 			field, ok := v.(string)
 			if ok {

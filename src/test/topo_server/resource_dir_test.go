@@ -103,15 +103,15 @@ var _ = Describe("resource pool directory test", func() {
 			Expect(rsp.Data.Info[0].String("bk_module_name")).To(Equal(testData2["bk_module_name"]))
 		})
 
-		It("search with configured exact is true", func() {
-			queryData := map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_module_name": "qq"}}
+		It("search with configured is_fuzzy is false", func() {
+			queryData := map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_module_name": "qq"}}
 			rsp, err := topoServerClient.ResourceDirectory().SearchResourceDirectory(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(0)))
 
-			queryData = map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_module_name": testData1["bk_module_name"]}}
+			queryData = map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_module_name": testData1["bk_module_name"]}}
 			rsp, err = topoServerClient.ResourceDirectory().SearchResourceDirectory(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
@@ -120,8 +120,8 @@ var _ = Describe("resource pool directory test", func() {
 			Expect(rsp.Data.Info[0].String("bk_module_name")).To(Equal(testData1["bk_module_name"]))
 		})
 
-		It("search with configured exact is false", func() {
-			queryData := map[string]interface{}{"exact": false, "condition": map[string]interface{}{"bk_module_name": "qwq"}}
+		It("search with configured is_fuzzy is true", func() {
+			queryData := map[string]interface{}{"is_fuzzy": true, "condition": map[string]interface{}{"bk_module_name": "qwq"}}
 			rsp, err := topoServerClient.ResourceDirectory().SearchResourceDirectory(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())

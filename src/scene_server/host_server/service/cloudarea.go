@@ -54,11 +54,10 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		input.Page.Sort = "-" + common.CreateTimeField
 	}
 
-
-	// if not exact search, change the string query to regexp
-	if input.Exact != true {
+	// if fuzzy search, change the string query to regexp
+	if input.IsFuzzy == true {
 		for k, v := range input.Condition {
-			field,ok := v.(string)
+			field, ok := v.(string)
 			if ok {
 				input.Condition[k] = mapstr.MapStr{
 					common.BKDBLIKE: params.SpecialCharChange(field),
@@ -121,7 +120,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 	}
 
 	user := util.GetUser(ctx.Request.Request.Header)
-	for i, _ := range input.Data {
+	for i := range input.Data {
 		input.Data[i][common.BKCreator] = user
 		input.Data[i][common.BKLastEditor] = user
 	}

@@ -78,7 +78,7 @@ type SearchResourceDirParams struct {
 	Fields    []string      `json:"fields"`
 	Page      BasePage      `json:"page"`
 	Condition mapstr.MapStr `json:"condition"`
-	Exact     bool          `json:"exact"`
+	IsFuzzy   bool          `json:"is_fuzzy"`
 }
 
 type SearchResourceDirResult struct {

@@ -253,7 +253,9 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
 		return
 	}
-	if input.Exact == false {
+
+	// if fuzzy search, change the string query to regexp
+	if input.IsFuzzy == true {
 		for k, v := range input.Condition {
 			field, ok := v.(string)
 			if ok {
