@@ -114,8 +114,8 @@ type SearchCloudOption struct {
 	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
 	Page      BasePage      `json:"page" bson:"page" field:"page"`
 	Fields    []string      `json:"fields,omitempty" bson:"fields,omitempty"`
-	// 对于condition里的属性值是否精确匹配，默认为false，即使用模糊匹配和忽略大小写
-	Exact bool `json:"exact" bson:"exact"`
+	// 对于condition里的属性值是否模糊匹配，默认为false，即不采用模糊匹配，而使用精确匹配
+	IsFuzzy bool `json:"is_fuzzy" bson:"is_fuzzy"`
 }
 
 type SearchSyncTaskOption struct {

@@ -259,15 +259,15 @@ var _ = Describe("cloud sync task test", func() {
 			Expect(len(rsp.Data.Info)).To(Equal(1))
 		})
 
-		It("search with configured exact is true", func() {
-			queryData := map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_task_name": "王者荣耀"}}
+		It("search with configured is_fuzzy is false", func() {
+			queryData := map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_task_name": "王者荣耀"}}
 			rsp, err := cloudServerClient.SearchSyncTask(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(0)))
 
-			queryData = map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_task_name": testData1["bk_task_name"]}}
+			queryData = map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_task_name": testData1["bk_task_name"]}}
 			rsp, err = cloudServerClient.SearchSyncTask(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
@@ -276,8 +276,8 @@ var _ = Describe("cloud sync task test", func() {
 			Expect(rsp.Data.Info[0].String("bk_task_name")).To(Equal(testData1["bk_task_name"]))
 		})
 
-		It("search with configured exact is false", func() {
-			queryData := map[string]interface{}{"exact": false, "condition": map[string]interface{}{"bk_task_name": "王者荣耀"}}
+		It("search with configured is_fuzzy is true", func() {
+			queryData := map[string]interface{}{"is_fuzzy": true, "condition": map[string]interface{}{"bk_task_name": "王者荣耀"}}
 			rsp, err := cloudServerClient.SearchSyncTask(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
