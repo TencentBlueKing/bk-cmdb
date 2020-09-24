@@ -22,6 +22,7 @@
 <script>
     import setTemplateInstance from './children/template-intance.vue'
     import setTemplateConfig from './children/template-config.vue'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             setTemplateInstance,
@@ -29,7 +30,7 @@
         },
         data () {
             return {
-                active: 'setting'
+                active: RouterQuery.get('tab', 'setting')
             }
         },
         computed: {
@@ -55,6 +56,9 @@
                     if (this.mode === 'view') {
                         this.checkSyncStatus()
                     }
+                    RouterQuery.set({
+                        tab: active
+                    })
                 }
             }
         },

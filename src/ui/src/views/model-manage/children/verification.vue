@@ -121,9 +121,16 @@
                 return false
             }
         },
-        async created () {
-            this.initAttrList()
-            this.searchVerification()
+        watch: {
+            activeModel: {
+                immediate: true,
+                handler (activeModel) {
+                    if (activeModel.bk_obj_id) {
+                        this.initAttrList()
+                        this.searchVerification()
+                    }
+                }
+            }
         },
         methods: {
             ...mapActions('objectModelProperty', [

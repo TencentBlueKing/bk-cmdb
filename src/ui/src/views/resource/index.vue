@@ -46,12 +46,12 @@
                 layout: {
                     collapse: false
                 },
-                activeTab: RouterQuery.get('scope', 1),
+                activeTab: RouterQuery.get('scope', '1'),
                 scopeList: [{
-                    id: 1,
+                    id: '1',
                     label: this.$t('未分配')
                 }, {
-                    id: 0,
+                    id: '0',
                     label: this.$t('已分配')
                 }, {
                     id: 'all',
@@ -64,7 +64,7 @@
                 Bus.$emit('toggle-host-filter', false)
                 Bus.$emit('reset-host-filter')
                 RouterQuery.set({
-                    scope: tab,
+                    scope: isNaN(tab) ? tab : parseInt(tab),
                     ip: '',
                     bk_asset_id: '',
                     page: 1,

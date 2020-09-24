@@ -89,11 +89,14 @@
         },
         watch: {
             activeTab (tab) {
-                const refresh = (this.$refs[tab] || {}).refresh
-                typeof refresh === 'function' && refresh(1)
-                RouterQuery.set('tab', tab)
-                RouterQuery.delete('page')
-                RouterQuery.delete('limit')
+                this.$nextTick(() => {
+                    RouterQuery.set({
+                        tab: tab,
+                        _t: Date.now(),
+                        page: '',
+                        limit: ''
+                    })
+                })
             }
         },
         async created () {

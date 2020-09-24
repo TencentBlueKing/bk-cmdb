@@ -115,7 +115,9 @@
                 </div>
             </template>
         </div>
-        <bk-tab class="model-details-tab" type="unborder-card" :active.sync="tab.active">
+        <bk-tab class="model-details-tab" type="unborder-card"
+            :active.sync="tab.active"
+            @tab-change="handleTabChange">
             <bk-tab-panel name="field" :label="$t('模型字段')">
                 <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
             </bk-tab-panel>
@@ -187,6 +189,7 @@
     import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
     import cmdbImport from '@/components/import/import'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import RouterQuery from '@/router/query'
     import {
         MENU_MODEL_MANAGEMENT,
         MENU_RESOURCE_HOST,
@@ -204,7 +207,7 @@
         data () {
             return {
                 tab: {
-                    active: 'field'
+                    active: RouterQuery.get('tab', 'field')
                 },
                 modelInfo: {
                     objName: '',
@@ -290,6 +293,9 @@
             this.initObject()
         },
         methods: {
+            handleTabChange (tab) {
+                RouterQuery.set({ tab })
+            },
             ...mapActions('objectModel', [
                 'searchObjects',
                 'updateObject',
