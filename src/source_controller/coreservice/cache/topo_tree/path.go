@@ -115,6 +115,10 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 
 	nodePath := make([]NodePaths, 0)
 	for _, node := range opt.Nodes {
+		// 过滤掉不存在的实例
+		if _, exist := objNameMap[node.Object][node.InstanceID]; !exist {
+			continue
+		}
 		nodePath = append(nodePath, NodePaths{
 			MainlineNode: node,
 			InstanceName: objNameMap[node.Object][node.InstanceID],

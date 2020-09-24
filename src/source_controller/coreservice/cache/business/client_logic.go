@@ -496,31 +496,51 @@ func (c *Client) listModuleDetailFromMongo(ids []int64) ([]string, error) {
 }
 
 func (c *Client) getModuleDetailFromMongo(id int64) (string, error) {
+	detail, _, err := c.getModuleDetailFromMongoCheckNotFound(id)
+	return detail, err
+}
+
+func (c *Client) getModuleDetailFromMongoCheckNotFound(id int64) (string, bool, error) {
 	mod := make(map[string]interface{})
 	filter := mapstr.MapStr{
 		common.BKModuleIDField: id,
 	}
 
 	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).One(context.Background(), &mod); err != nil {
-		blog.Errorf("get module %d update from mongo failed, err: %v", id, err)
-		return "", err
+		blog.Errorf("get module %d detail from mongo failed, err: %v", id, err)
+
+		// if module is not found, returns not found flag
+		if mongodb.Client().IsNotFoundError(err) {
+			return "", true, err
+		}
+		return "", false, err
 	}
 	js, _ := json.Marshal(mod)
-	return string(js), nil
+	return string(js), false, nil
 }
 
 func (c *Client) getSetDetailFromMongo(id int64) (string, error) {
+	detail, _, err := c.getSetDetailFromMongoCheckNotFound(id)
+	return detail, err
+}
+
+func (c *Client) getSetDetailFromMongoCheckNotFound(id int64) (string, bool, error) {
 	set := make(map[string]interface{})
 	filter := mapstr.MapStr{
 		common.BKSetIDField: id,
 	}
 
 	if err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).One(context.Background(), &set); err != nil {
-		blog.Errorf("get module %d update from mongo failed, err: %v", id, err)
-		return "", err
+		blog.Errorf("get set %d detail from mongo failed, err: %v", id, err)
+
+		// if set is not found, returns not found flag
+		if mongodb.Client().IsNotFoundError(err) {
+			return "", true, err
+		}
+		return "", false, err
 	}
 	js, _ := json.Marshal(set)
-	return string(js), nil
+	return string(js), false, nil
 }
 
 func (c *Client) listSetDetailFromMongo(ids []int64) ([]string, error) {
@@ -613,22 +633,33 @@ func (c *Client) getCustomLevelBaseList(objectID string, bizID int64) ([]CustomI
 	return list, nil
 }
 
-func (c *Client) getCustomLevelDetail(objID string, instID int64) (string, error) {
+func (c *Client) getCustomLevelDetail(objID string, id int64) (string, error) {
+	detail, _, err := c.getCustomLevelDetailCheckNotFound(objID, id)
+	return detail, err
+}
+
+func (c *Client) getCustomLevelDetailCheckNotFound(objID string, instID int64) (string, bool, error) {
 	filter := mapstr.MapStr{
 		common.BKObjIDField:  objID,
 		common.BKInstIDField: instID,
 	}
 	instance := make(map[string]interface{})
 	err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
+
+	// if module is not found, returns not found flag
+	if mongodb.Client().IsNotFoundError(err) {
+		return "", true, err
+	}
+
 	if err != nil {
 		blog.Errorf("get custom level object: %s, inst: %d from mongodb failed, err: %v", objID, instID, err)
-		return "", err
+		return "", false, err
 	}
 	js, err := json.Marshal(instance)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
-	return string(js), nil
+	return string(js), false, nil
 }
 
 func (c *Client) listCustomLevelDetail(objID string, instIDs []int64) ([]string, error) {
