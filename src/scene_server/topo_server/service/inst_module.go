@@ -356,11 +356,42 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	ctx.RespEntity(instanceResult.Data)
 }
 
-// SearchModule search the modules
+// SearchModuleInOneSet search module in one set
 func (s *Service) SearchModule(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	setID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKSetIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKSetIDField))
+		return
+	}
+
+	s.searchModule(ctx, bizID, setID)
+}
+
+// SearchModuleByCondition search module in one biz
+func (s *Service) SearchModuleByCondition(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	s.searchModule(ctx, bizID, 0)
+}
+
+func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
 	data := struct {
 		parser.SearchParams `json:",inline"`
-		ModelBizID          int64 `json:"bk_biz_id"`
+		// compatible for api /module/search/{owner_id}/{app_id}/{set_id}
+		SetID int64 `json:"bk_set_id"`
 	}{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -371,29 +402,15 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 		paramsCond.Condition = mapstr.New()
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
-	if nil != err {
-		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
-		return
-	}
-
-	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-module]failed to parse the set id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
-		return
-	}
-
 	paramsCond.Condition[common.BKAppIDField] = bizID
-	paramsCond.Condition[common.BKSetIDField] = setID
+
+	// compatible for api /module/search/{owner_id}/{app_id}/{set_id}
+	if data.SetID > 0 {
+		paramsCond.Condition[common.BKSetIDField] = data.SetID
+	}
+	if setID > 0 {
+		paramsCond.Condition[common.BKSetIDField] = setID
+	}
 
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
@@ -402,6 +419,13 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 	queryCond.Limit = page.Limit
 	queryCond.Sort = page.Sort
 	queryCond.Start = page.Start
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
 
 	cnt, instItems, err := s.Core.ModuleOperation().FindModule(ctx.Kit, obj, queryCond)
 	if nil != err {
@@ -418,7 +442,7 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 	return
 }
 
-// SearchModuleBatch search the modules in one biz
+// SearchModuleBatch search the modules by module IDs in one biz
 func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)

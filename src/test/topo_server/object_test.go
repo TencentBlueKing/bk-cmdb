@@ -1542,6 +1542,26 @@ var _ = Describe("object test", func() {
 			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_parent_id"])).To(Equal(setId))
 		})
 
+		It("search module by condition", func() {
+			setID, _ := strconv.ParseInt(setId, 10, 64)
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{
+					"bk_set_id": setID,
+				},
+				Page: map[string]interface{}{
+					"sort": "id",
+				},
+			}
+			rsp, err := instClient.SearchModuleByCondition(context.Background(), bizId, header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			Expect(map[string]interface{}(rsp.Data.Info[0])).To(HaveKeyWithValue("bk_module_name", "new_module"))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_set_id"])).To(Equal(setId))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_parent_id"])).To(Equal(setId))
+		})
+
 		It("search module batch", func() {
 			mid, _ := strconv.ParseInt(moduleId, 10, 64)
 			mid2, _ := strconv.ParseInt(moduleId1, 10, 64)
