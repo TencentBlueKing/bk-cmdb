@@ -505,6 +505,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 }
 
 func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
+	req.Request.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	srvData := s.newSrvComm(req.Request.Header)
 
 	body := new(meta.HostCommonSearch)

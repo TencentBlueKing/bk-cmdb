@@ -561,6 +561,7 @@ func (s *Service) SearchInstChildTopo(params types.ContextParams, pathParams, qu
 		return nil, err
 	}
 
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
