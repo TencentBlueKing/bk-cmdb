@@ -51,7 +51,7 @@ func (s *Service) SearchObject(params types.ContextParams, pathParams, queryPara
 	if err := cond.Parse(data); nil != err {
 		return nil, err
 	}
-
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	return s.Core.ObjectOperation().FindObject(params, cond)
 }
 

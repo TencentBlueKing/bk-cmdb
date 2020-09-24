@@ -82,6 +82,7 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
+	header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	hostResult, ccErr := s.listBizHosts(req.Request.Header, bizID, parameter)
 	if ccErr != nil {
 		blog.ErrorJSON("ListBizHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID, parameter, ccErr.Error(), rid)
