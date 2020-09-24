@@ -40,14 +40,14 @@ import (
 )
 
 const (
-	// defaultDataLimit is the value of the default percentage of data fluctuation
-	defaultDataLimit 	    = 10
-	// minDataLimit is the value of the minimum percentage of data fluctuation
-	minDataLimit            = 5
-	// deafultTimeLimit is the default percentage value of update time
-	deafultTimeLimit        = 10
-	// deafultTimeLimit is the minimum percentage value of update time
-	minTimeLimit            = 5
+	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
+	defaultChangeRangePercent 	    = 10
+	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
+	minChangeRangePercent            = 5
+	// deafultChangeCountExpireMinute is the default value of update time
+	deafultChangeCountExpireMinute        = 10
+	// minChangeCountExpireMinute is the minimum value of update time
+	minChangeCountExpireMinute            = 5
 	// defaultRateLimiterQPS is the default value of rateLimiter qps
 	defaultRateLimiterQPS   = 40
 	// defaultRateLimiterBurst is the default value of rateLimiter burst
@@ -186,23 +186,22 @@ func (h *HostSnap) Analyze(msg *string) error {
 	// save host snapshot in redis
 	h.saveHostsnap(header, &val, hostID)
 
-	// limit the number of requests
-	if !h.rateLimit.TryAccept() {
-		return nil
-	}
-
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
 		return nil
 	}
 
+	// limit the number of requests
+	if !h.rateLimit.TryAccept() {
+		blog.V(4).Warn("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
+			hostID, innerIP, cloudID, rid)
+		return nil
+	}
+
 	key := common.RedisSnapCountPrefix + strconv.FormatInt(hostID, 10)
 	if h.needToSkip(key, rid) {
 		return nil
-	}
-	if err := h.expireRedisKey(key); err != nil {
-		blog.Errorf("an error occurred while expire the redis key, key: %s, rid: %s", key, rid)
 	}
 
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
@@ -263,18 +262,6 @@ func (h *HostSnap) Analyze(msg *string) error {
 	return nil
 }
 
-func (h *HostSnap) expireRedisKey(key string) error {
-	// get time on redis ttl
-	timelimit := getLimitConfig("datacollection.hostsnap.timelimit", deafultTimeLimit, minTimeLimit)
-	minTime := 0.5 * float64(timelimit)
-	maxTime := 1.5 * float64(timelimit)
-	randTime := util.RandInt64WithRange(int64(minTime), int64(maxTime))
-	if err := h.redisCli.Expire(key, time.Minute*time.Duration(randTime)).Err(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (h *HostSnap) needToSkip(key string, rid string) bool {
 	value, err := h.redisCli.Incr(key).Result()
 	if err != nil {
@@ -284,12 +271,23 @@ func (h *HostSnap) needToSkip(key string, rid string) bool {
 	if value > 1 {
 		return true
 	}
+
+	// get time on redis ttl
+	changeCountExpireMinute := getLimitConfig("datacollection.hostsnap.changeCountExpireMinute", deafultChangeCountExpireMinute, minChangeCountExpireMinute)
+	minTime := 0.5 * float64(changeCountExpireMinute)
+	maxTime := 1.5 * float64(changeCountExpireMinute)
+	randTime := util.RandInt64WithRange(int64(minTime), int64(maxTime))
+	// expire redis key
+	if err := h.redisCli.Expire(key, time.Minute*time.Duration(randTime)).Err(); err != nil {
+		blog.Errorf("an error occurred while expire the redis key, key: %s, rid: %s", key, rid)
+	}
+
 	return false
 }
 
 func needToUpdate(src, toCompare string) bool {
 	// get data fluctuation limit
-	datalimit := getLimitConfig("datacollection.hostsnap.datalimit", defaultDataLimit, minDataLimit)
+	changeRangePercent := getLimitConfig("datacollection.hostsnap.changeRangePercent", defaultChangeRangePercent, minChangeRangePercent)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
 	for idx, field := range compareFields {
@@ -299,9 +297,10 @@ func needToUpdate(src, toCompare string) bool {
 		}
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
+			compareField := compareFields[idx]
 			// tolerate bk_cpu, bk_cpu_mhz, bk_disk, bk_mem changes less than the set value
-			if compareFields[idx] == "bk_cpu" || compareFields[idx] == "bk_cpu_mhz" || compareFields[idx] == "bk_disk" || compareFields[idx] == "bk_mem" {
-				val := compareElements[idx].Float() * (float64(datalimit)/100.0)
+			if compareField == "bk_cpu" || compareField == "bk_cpu_mhz" || compareField == "bk_disk" || compareField == "bk_mem" {
+				val := compareElements[idx].Float() * (float64(changeRangePercent)/100.0)
 				diff := srcElements[idx].Float() - compareElements[idx].Float()
 				if -val < diff && diff < val {
 					continue
@@ -315,6 +314,7 @@ func needToUpdate(src, toCompare string) bool {
 
 func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interface{}, string) {
 	var cpumodule = val.Get("data.cpu.cpuinfo.0.modelName").String()
+	cpumodule = strings.TrimSpace(cpumodule)
 	var cpunum int64
 	for _, core := range val.Get("data.cpu.cpuinfo.#.cores").Array() {
 		cpunum += core.Int()
@@ -326,16 +326,18 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	}
 	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
+	hostname = strings.TrimSpace(hostname)
 	var ostype = val.Get("data.system.info.os").String()
+	ostype = strings.TrimSpace(ostype)
 	var osname string
 	platform := val.Get("data.system.info.platform").String()
+	platform = strings.TrimSpace(platform)
 	version := val.Get("data.system.info.platformVersion").String()
 	switch strings.ToLower(ostype) {
 	case "linux":
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
-		osname = strings.TrimSpace(osname)
 		ostype = common.HostOSTypeEnumLinux
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
@@ -348,23 +350,28 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
+	version = strings.TrimSpace(version)
+	osname = strings.TrimSpace(osname)
 	var OuterMAC, InnerMAC string
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			ip := strings.Split(addr.String(), "/")[0]
 			if ip == innerIP {
 				InnerMAC = inter.Get("hardwareaddr").String()
+				InnerMAC = strings.TrimSpace(InnerMAC)
 			} else if ip == outerIP {
 				OuterMAC = inter.Get("hardwareaddr").String()
+				OuterMAC = strings.TrimSpace(OuterMAC)
 			}
 		}
 	}
 
 	osbit := val.Get("data.system.info.systemtype").String()
-
+	osbit = strings.TrimSpace(osbit)
 	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
+	dockerClientVersion = strings.TrimSpace(dockerClientVersion)
 	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
-
+	dockerServerVersion = strings.TrimSpace(dockerServerVersion)
 	mem = mem >> 10 >> 10
 	setter := map[string]interface{}{
 		"bk_cpu":                            cpunum,
