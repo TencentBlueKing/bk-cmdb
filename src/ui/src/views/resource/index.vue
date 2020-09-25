@@ -13,7 +13,7 @@
         </bk-tab>
         <div class="content">
             <cmdb-resize-layout
-                v-if="activeTab === 1"
+                v-if="isResourcePool"
                 :class="['resize-layout fl', { 'is-collapse': layout.collapse }]"
                 :handler-offset="3"
                 :min="200"
@@ -57,6 +57,11 @@
                     id: 'all',
                     label: this.$t('全部')
                 }]
+            }
+        },
+        computed: {
+            isResourcePool () {
+                return this.activeTab.toString() === '1'
             }
         },
         methods: {
