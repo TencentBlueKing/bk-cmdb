@@ -362,6 +362,7 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	ret, err := s.Core.AssociationOperation().SearchInst(ctx.Kit, request)
 	if err != nil {
 		ctx.RespAutoError(err)
