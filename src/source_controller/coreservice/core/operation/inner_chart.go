@@ -56,9 +56,9 @@ func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
 	return nil
 }
 
+// ModelInst number of statistical model instances， except the default model
 func (m *operationManager) ModelInst(kit *rest.Kit, wg *sync.WaitGroup) error {
 	defer wg.Done()
-	modelInstCount := make([]metadata.StringIDCount, 0)
 
 	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 	cond := mapstr.MapStr{}
@@ -76,11 +76,16 @@ func (m *operationManager) ModelInst(kit *rest.Kit, wg *sync.WaitGroup) error {
 		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
+	modelInstCountMap := make(map[string]int64, 0)
 	if count > 0 {
+		modelInstCount := make([]metadata.StringIDCount, 0)
 		pipeline := []M{{common.BKDBGroup: M{"_id": "$bk_obj_id", "count": M{common.BKDBSum: 1}}}}
 		if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &modelInstCount); err != nil {
 			blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, kit.Rid)
 			return err
+		}
+		for _, instCount := range modelInstCount {
+			modelInstCountMap[instCount.ID] = instCount.Count
 		}
 	}
 
@@ -89,11 +94,7 @@ func (m *operationManager) ModelInst(kit *rest.Kit, wg *sync.WaitGroup) error {
 			ID:    model.ObjectName,
 			Count: 0,
 		}
-		for _, instCount := range modelInstCount {
-			if instCount.ID == model.ObjectID {
-				info.Count = instCount.Count
-			}
-		}
+		info.Count = modelInstCountMap[model.ObjectID]
 		modelInstNumber = append(modelInstNumber, info)
 	}
 
@@ -211,8 +212,7 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 }
 
 func (m *operationManager) SearchBizHost(kit *rest.Kit) ([]metadata.StringIDCount, error) {
-	bizHostCount := make([]metadata.IntIDArrayCount, 0)
-
+	// query application info, except the resource pool
 	opt := mapstr.MapStr{"bk_data_status": M{common.BKDBNE: "disabled"}, common.BKAppIDField: M{common.BKDBNE: 1}}
 	bizInfo := make([]metadata.BizInst, 0)
 	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(opt).All(kit.Ctx, &bizInfo); err != nil {
@@ -226,11 +226,16 @@ func (m *operationManager) SearchBizHost(kit *rest.Kit) ([]metadata.StringIDCoun
 		blog.Errorf("SearchBizHost aggregate: biz' host count fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
+	bizHostCountMap := make(map[int64]int64)
 	if count > 0 {
+		bizHostCount := make([]metadata.IntIDArrayCount, 0)
 		pipeline := []M{{common.BKDBGroup: M{"_id": "$bk_biz_id", "count": M{common.BKDBAddToSet: "$bk_host_id"}}}}
 		if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).AggregateAll(kit.Ctx, pipeline, &bizHostCount); err != nil {
 			blog.Errorf("SearchBizHost aggregate: biz' host count fail, err: %v, rid: %v", err, kit.Rid)
 			return nil, err
+		}
+		for _, host := range bizHostCount {
+			bizHostCountMap[host.ID] = int64(len(host.Count))
 		}
 	}
 
@@ -240,11 +245,7 @@ func (m *operationManager) SearchBizHost(kit *rest.Kit) ([]metadata.StringIDCoun
 			ID:    biz.BizName,
 			Count: 0,
 		}
-		for _, host := range bizHostCount {
-			if host.ID == biz.BizID {
-				info.Count = int64(len(host.Count))
-			}
-		}
+		info.Count = bizHostCountMap[biz.BizID]
 		rData = append(rData, info)
 	}
 
