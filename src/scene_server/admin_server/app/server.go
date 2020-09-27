@@ -87,7 +87,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}
 		var db dal.RDB
 		if process.Config.MongoDB.Enable == "true" {
-			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), process.Config.MongoDB.MaxOpenConns, time.Minute)
 		} else {
 			db, err = remote.NewWithDiscover(process.Core)
 		}

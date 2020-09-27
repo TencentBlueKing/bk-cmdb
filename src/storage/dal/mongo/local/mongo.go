@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,18 +37,36 @@ type Mongo struct {
 	dbname    string
 }
 
-const secondaryCnt = 6
+const (
+	secondaryCnt = 6
+	// if maxOpenConns isn't configured, use default value
+	DefaultMaxOpenConns = 1500
+	// if maxOpenConns exceeds maximum value, use maximum value
+	MaximumMaxOpenConns = 3000
+)
 
 var _ dal.DB = new(Mongo)
 
 // NewMgo returns new RDB
-func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
+func NewMgo(uri, maxOpenConns string, timeout time.Duration) (*Mongo, error) {
+
 	cs, err := mgo.ParseURL(uri)
 	if err != nil {
 		return nil, err
 	}
 
-	primary, err := newClient(uri, mgo.PrimaryPreferred, 1500, time.Second*10)
+	poolLimit, err := strconv.Atoi(maxOpenConns)
+	if err != nil {
+		blog.Errorf("parse mongo.maxOpenConns config error: %s, use default value: %d", err.Error(), DefaultMaxOpenConns)
+		poolLimit = DefaultMaxOpenConns
+	}
+
+	if poolLimit > MaximumMaxOpenConns {
+		blog.Errorf("mongo.maxOpenConns config %d exceeds maximum value, use maximum value %d", poolLimit, MaximumMaxOpenConns)
+		poolLimit = MaximumMaxOpenConns
+	}
+
+	primary, err := newClient(uri, mgo.PrimaryPreferred, poolLimit, time.Second*10)
 	if err != nil {
 		return nil, err
 	}
