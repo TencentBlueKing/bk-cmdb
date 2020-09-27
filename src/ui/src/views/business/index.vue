@@ -69,7 +69,7 @@
         </div>
         <bk-table class="business-table"
             v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
-            :data="table.list"
+            :data="[] || table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 200"
             @sort-change="handleSortChange"
@@ -117,8 +117,18 @@
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="{ type: $OPERATION.C_BUSINESS }"
-                @create="handleCreate">
+                :auth="{ type: $OPERATION.C_BUSINESS }">
+                <i18n path="业务列表提示语" class="table-empty-tips">
+                    <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
+                    <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS }" place="create">
+                        <bk-link slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="handleCreate">
+                            {{$t('立即创建')}}
+                        </bk-link>
+                    </cmdb-auth>
+                </i18n>
             </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
@@ -158,6 +168,7 @@
 </template>
 
 <script>
+    import { translateAuth } from '@/setup/permission'
     import { mapState, mapGetters, mapActions } from 'vuex'
     import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
@@ -515,6 +526,18 @@
                 }
                 this.handleCancel()
                 return true
+            },
+            async handleApplyPermission () {
+                try {
+                    const permission = translateAuth({
+                        type: this.$OPERATION.R_BUSINESS,
+                        relation: []
+                    })
+                    const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
+                    window.open(url)
+                } catch (e) {
+                    console.error(e)
+                }
             }
         }
     }
@@ -558,5 +581,10 @@
     }
     .business-table{
         margin-top: 14px;
+    }
+    .table-empty-tips {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 </style>
