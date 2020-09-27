@@ -289,10 +289,7 @@
                     handler: this.exportField,
                     disabled: !this.table.checked.length
                 }]
-                if (this.scope === 1) {
-                    return buttonConfig.slice(0)
-                }
-                return buttonConfig.slice(2)
+                return buttonConfig
             },
             filterProperties () {
                 const { module, set, host, biz } = this.properties
@@ -305,7 +302,13 @@
                 }
             },
             saveAuth () {
-                return this.table.selection.map(({ host, module }) => {
+                return this.table.selection.map(({ host, module, biz }) => {
+                    if (biz[0].default === 0) {
+                        return {
+                            type: this.$OPERATION.U_HOST,
+                            relation: [biz[0].bk_biz_id, host.bk_host_id]
+                        }
+                    }
                     return {
                         type: this.$OPERATION.U_RESOURCE_HOST,
                         relation: [module[0].bk_module_id, host.bk_host_id]

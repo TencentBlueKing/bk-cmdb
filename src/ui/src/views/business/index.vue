@@ -69,7 +69,7 @@
         </div>
         <bk-table class="business-table"
             v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
-            :data="[] || table.list"
+            :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 200"
             @sort-change="handleSortChange"
