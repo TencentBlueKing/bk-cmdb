@@ -289,6 +289,9 @@
                     handler: this.exportField,
                     disabled: !this.table.checked.length
                 }]
+                if (this.scope !== 1) {
+                    buttonConfig.splice(1, 1)
+                }
                 return buttonConfig
             },
             filterProperties () {
