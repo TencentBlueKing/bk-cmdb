@@ -113,6 +113,13 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 		}
 	}
 
+	for obj, paths := range all {
+		for id, nodes := range paths {
+			paths[id] = reverseNode(nodes)
+		}
+		all[obj] = paths
+	}
+
 	nodePath := make([]NodePaths, 0)
 	for _, node := range opt.Nodes {
 		// 过滤掉不存在的实例
@@ -122,7 +129,7 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 		nodePath = append(nodePath, NodePaths{
 			MainlineNode: node,
 			InstanceName: objNameMap[node.Object][node.InstanceID],
-			Paths:        [][]Node{reverseNode(all[node.Object][node.InstanceID])},
+			Paths:        [][]Node{all[node.Object][node.InstanceID]},
 		})
 	}
 
