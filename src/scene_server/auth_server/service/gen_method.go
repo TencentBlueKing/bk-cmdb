@@ -83,9 +83,7 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		return types.ResourcePullMethod{
 			ListAttr:      s.lgc.ListAttr,
 			ListAttrValue: s.lgc.ListAttrValue,
-			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter, page types.Page) (*types.ListInstanceResult, error) {
-				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, nil)
-			},
+			ListInstance:  s.lgc.ListModelInstance,
 			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
 				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
 			},

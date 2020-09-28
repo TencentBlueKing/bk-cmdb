@@ -57,7 +57,13 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID, 
 		}, nil
 	}
 
-	return lgc.listInstance(kit, cond, resourceType, page, extraCond)
+	if len(extraCond) > 0 {
+		cond = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{cond, extraCond},
+		}
+	}
+
+	return lgc.listInstance(kit, cond, resourceType, page)
 }
 
 // list host instances that user is privileged to access by policy
