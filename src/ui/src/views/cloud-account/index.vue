@@ -192,9 +192,7 @@
                             ...this.$tools.getPageParams(this.pagination),
                             sort: this.sort
                         },
-                        condition: {
-                            bk_account_name: this.filter
-                        }
+                        condition: {}
                     }
                     if (this.filter) {
                         params.condition.bk_account_name = this.filter

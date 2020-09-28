@@ -221,7 +221,7 @@
             <field-details-view v-if="slider.isShow && slider.view === 'details'"
                 slot="content"
                 :field="slider.curField"
-                :can-edit="updateAuth && isFieldEditable(slider.curField)"
+                :can-edit="updateAuth && isFieldEditable(slider.curField, false)"
                 @on-edit="handleEditField(slider.curGroup, slider.curField)"
                 @on-delete="handleDeleteField({
                     property: slider.curField,
