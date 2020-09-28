@@ -219,7 +219,7 @@ func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.core.StatisticOperation().TimerFreshData(ctx.Kit)
+	err = s.core.StatisticOperation().TimerFreshData(ctx)
 	if err != nil {
 		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

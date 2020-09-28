@@ -25,28 +25,27 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
+func (m *operationManager) TimerFreshData(ctx *rest.Contexts) error {
 
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 	go func(wg *sync.WaitGroup) {
-		if err := m.ModelInst(kit, wg); err != nil {
+		if err := m.ModelInst(ctx.NewContexts(), wg); err != nil {
 			blog.Errorf("TimerFreshData, count model's instance, search model info fail ,err: %v, rid: %v", err)
 			return
 		}
 	}(wg)
 
 	// 因为审计日志太多，造成执行时间过长，先关闭此项统计
-	/*go func(wg *sync.WaitGroup) {
-		if err := m.ModelInstChange(kit, wg); err != nil {
+	go func(wg *sync.WaitGroup) {
+		if err := m.ModelInstChange(ctx.NewContexts(), wg); err != nil {
 			blog.Errorf("TimerFreshData, model inst change count fail, err: %v", err)
 			return
 		}
 	}(wg)
-	*/
 
 	go func(wg *sync.WaitGroup) {
-		if err := m.BizHostCountChange(kit, wg); err != nil {
+		if err := m.BizHostCountChange(ctx.NewContexts(), wg); err != nil {
 			blog.Errorf("TimerFreshData fail, biz host change count fail, err: %v", err)
 			return
 		}
@@ -57,31 +56,32 @@ func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
 }
 
 // ModelInst number of statistical model instances， except the default model
-func (m *operationManager) ModelInst(kit *rest.Kit, wg *sync.WaitGroup) error {
+func (m *operationManager) ModelInst(ctx *rest.Contexts, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 	cond := mapstr.MapStr{}
 	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
 	modelInstNumber := make([]metadata.StringIDCount, 0)
 	modelInfo := make([]metadata.Object, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelInfo); err != nil {
-		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(ctx.Kit.Ctx, &modelInfo); err != nil {
+		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
 
 	condition := mapstr.MapStr{}
-	count, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(condition).Count(kit.Ctx)
+	count, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(condition).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, kit.Rid)
+		blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
 	modelInstCountMap := make(map[string]int64, 0)
 	if count > 0 {
 		modelInstCount := make([]metadata.StringIDCount, 0)
 		pipeline := []M{{common.BKDBGroup: M{"_id": "$bk_obj_id", "count": M{common.BKDBSum: 1}}}}
-		if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &modelInstCount); err != nil {
-			blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, kit.Rid)
+		if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(ctx.Kit.Ctx, pipeline, &modelInstCount); err != nil {
+			blog.Errorf("model's instance count aggregate fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 			return err
 		}
 		for _, instCount := range modelInstCount {
@@ -98,19 +98,22 @@ func (m *operationManager) ModelInst(kit *rest.Kit, wg *sync.WaitGroup) error {
 		modelInstNumber = append(modelInstNumber, info)
 	}
 
-	if err := m.UpdateInnerChartData(kit, common.ModelInstChart, modelInstNumber); err != nil {
-		blog.Errorf("update inner chart ModelInst data fail, err: %v, rid: %v", err, kit.Rid)
+	ctx.SetReadPreference(common.PrimaryPreferredMode)
+	if err := m.UpdateInnerChartData(ctx.Kit, common.ModelInstChart, modelInstNumber); err != nil {
+		blog.Errorf("update inner chart ModelInst data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) error {
+func (m *operationManager) ModelInstChange(ctx *rest.Contexts, wg *sync.WaitGroup) error {
 	defer wg.Done()
-	operationLog, err := m.StatisticOperationLog(kit)
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	operationLog, err := m.StatisticOperationLog(ctx.Kit)
 	if err != nil {
-		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, kit.Rid)
+		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
 
@@ -118,8 +121,8 @@ func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) er
 	cond := mapstr.MapStr{}
 	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
 	modelData := make([]metadata.Object, 0)
-	if err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelData); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond, err.Error())
+	if err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(ctx.Kit.Ctx, &modelData); nil != err {
+		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.Kit.Rid, cond, err.Error())
 		return err
 	}
 
@@ -159,24 +162,24 @@ func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) er
 		}
 	}
 
-	if err = m.UpdateInnerChartData(kit, common.ModelInstChangeChart, modelInstData); err != nil {
-		blog.Errorf("update inner chart ModelInstChange data fail, err: %v, rid: %v", err, kit.Rid)
+	ctx.SetReadPreference(common.PrimaryPreferredMode)
+	if err = m.UpdateInnerChartData(ctx.Kit, common.ModelInstChangeChart, modelInstData); err != nil {
+		blog.Errorf("update inner chart ModelInstChange data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup) error {
+func (m *operationManager) BizHostCountChange(ctx *rest.Contexts, wg *sync.WaitGroup) error {
 	defer wg.Done()
-	bizHost, err := m.SearchBizHost(kit)
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	bizHost, err := m.SearchBizHost(ctx.Kit)
 	if err != nil {
-		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, kit.Rid)
+		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
-
-	// Clear data over 180 days
-	go m.clearDataOverDate(kit)
 
 	dateTemplate := "2006-01-02"
 	nowStrFormat := time.Unix(time.Now().Unix(), 0).Format(dateTemplate)
@@ -184,27 +187,31 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 	condition[common.OperationReportType] = common.HostChangeBizChart
 	condition[common.CreateTimeField] = nowStrFormat
 	bizHostChange := make([]metadata.HostChangeChartData, 0)
-	if err = mongodb.Client().Table(common.BKTableNameChartData).Find(condition).All(kit.Ctx, &bizHostChange); err != nil {
-		blog.Errorf("get host change data fail, err: %v, rid: %v", err, kit.Rid)
+	if err = mongodb.Client().Table(common.BKTableNameChartData).Find(condition).All(ctx.Kit.Ctx, &bizHostChange); err != nil {
+		blog.Errorf("get host change data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
 
 	if len(bizHostChange) > 0 {
 		bizHostChange[0].Data = bizHost
-		if err = mongodb.Client().Table(common.BKTableNameChartData).Update(kit.Ctx, condition, bizHostChange[0]); err != nil {
-			blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, kit.Rid)
+		if err = mongodb.Client().Table(common.BKTableNameChartData).Update(ctx.Kit.Ctx, condition, bizHostChange[0]); err != nil {
+			blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
 	}
+
+	ctx.SetReadPreference(common.PrimaryPreferredMode)
+	// Clear data over 180 days
+	go m.clearDataOverDate(ctx.Kit)
 	firstBizHostChange := metadata.HostChangeChartData{
 		ReportType: common.HostChangeBizChart,
 		Data:       bizHost,
-		OwnerID:    kit.SupplierAccount,
+		OwnerID:    ctx.Kit.SupplierAccount,
 		CreateTime: nowStrFormat,
 	}
-	if err = mongodb.Client().Table(common.BKTableNameChartData).Insert(kit.Ctx, firstBizHostChange); err != nil {
-		blog.Errorf("update biz host change fail, err: %v, rid: %v", err, kit.Rid)
+	if err = mongodb.Client().Table(common.BKTableNameChartData).Insert(ctx.Kit.Ctx, firstBizHostChange); err != nil {
+		blog.Errorf("update biz host change fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		return err
 	}
 

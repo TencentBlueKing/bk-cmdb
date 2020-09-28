@@ -184,7 +184,7 @@ type StatisticOperation interface {
 	DeleteOperationChart(kit *rest.Kit, id int64) (interface{}, error)
 	UpdateOperationChart(kit *rest.Kit, inputParam map[string]interface{}) (interface{}, error)
 	SearchTimerChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
-	TimerFreshData(kit *rest.Kit) error
+	TimerFreshData(kit *rest.Contexts) error
 }
 
 // Core core itnerfaces methods
