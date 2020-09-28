@@ -93,7 +93,7 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 
 func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) {
 	if c.Enable == "true" {
-		db, err = local.NewMgo(c.BuildURI(), time.Minute)
+		db, err = local.NewMgo(c.BuildURI(), c.MaxOpenConns, time.Minute)
 	} else {
 		db, err = remote.NewWithDiscover(engine)
 	}
@@ -105,7 +105,7 @@ func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) 
 
 func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transcation, err error) {
 	if c.Enable == "true" {
-		client, err = local.NewMgo(c.BuildURI(), time.Minute)
+		client, err = local.NewMgo(c.BuildURI(), c.MaxOpenConns, time.Minute)
 	} else {
 		client, err = remote.NewWithDiscover(engine)
 	}
