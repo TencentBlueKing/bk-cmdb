@@ -112,7 +112,7 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		category, err = ps.CoreAPI.CoreService().Process().CreateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, newCategory)
 		if err != nil {
 			blog.Errorf("create service category failed, err: %v", err)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		return nil
