@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/datacollection/hostsnap"
 	"configcenter/src/scene_server/datacollection/datacollection/middleware"
 	"configcenter/src/scene_server/datacollection/datacollection/netcollect"
@@ -44,7 +45,7 @@ func NewDataCollection(ctx context.Context, backbone *backbone.Engine, db dal.RD
 	return &DataCollection{ctx: ctx, Engine: backbone, db: db, registry: registry}
 }
 
-func (d *DataCollection) Run(redisCli, snapCli, disCli, netCli *redis.Client) error {
+func (d *DataCollection) Run(redisCli, snapCli, disCli, netCli *redis.Client, snapConfig options.HostSnap) error {
 	blog.Infof("data-collection start...")
 
 	var err error
@@ -62,7 +63,7 @@ func (d *DataCollection) Run(redisCli, snapCli, disCli, netCli *redis.Client) er
 
 	if snapCli != nil {
 		snapChanName := d.getSnapChanName(defaultAppID)
-		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, d.db, d.Engine, d.AuthManager)
+		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, d.db, d.Engine, d.AuthManager, snapConfig)
 		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, redisCli, snapCli, snapChanName, hostsnap.MockMessage, d.registry, d.Engine)
 		manager.AddPorter(snapPorter)
 	}
