@@ -88,7 +88,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			common.BKDBOR: []map[string]interface{}{
 				{
 					common.BKObjIDField:  common.BKInnerObjIDHost,
-					common.BKHostIDField: iHostID,
+					common.BKInstIDField: iHostID,
 				},
 				{
 					common.BKAsstObjIDField:  common.BKInnerObjIDHost,
