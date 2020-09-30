@@ -194,8 +194,13 @@ func (t *TopologyTree) genSetParentPaths(ctx context.Context, biz int64, revTopo
 		return nil, nil, err
 	}
 
+	setMap, customList, err := t.searchSets(ctx, biz, previousList)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// define at first, so that we can use it later, but return earlier.
-	var nameMap map[int64]string
+	nameMap := make(map[int64]string, len(setMap))
 
 	paths = make(map[int64][]Node)
 	// loop until we go to biz node.
@@ -206,20 +211,18 @@ func (t *TopologyTree) genSetParentPaths(ctx context.Context, biz int64, revTopo
 		}
 
 		// add biz path
-		for _, id := range previousList {
+		for id, set := range setMap {
 			paths[id] = append(paths[id], Node{
 				Object:       "biz",
 				InstanceID:   bizDetail.ID,
 				InstanceName: bizDetail.Name,
 				ParentID:     0,
 			})
-		}
-		return nameMap, paths, nil
-	}
 
-	setMap, customList, err := t.searchSets(ctx, biz, previousList)
-	if err != nil {
-		return nil, nil, err
+			nameMap[id] = set.Name
+		}
+
+		return nameMap, paths, nil
 	}
 
 	_, customPaths, err := t.genCustomParentPaths(ctx, biz, "set", revTopo, customList)
@@ -228,7 +231,6 @@ func (t *TopologyTree) genSetParentPaths(ctx context.Context, biz int64, revTopo
 		return nil, nil, err
 	}
 
-	nameMap = make(map[int64]string, len(setMap))
 	for id, set := range setMap {
 
 		custom, exist := customPaths[set.ParentID]
