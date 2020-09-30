@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/src/ac/extensions"
@@ -63,6 +64,12 @@ var (
 
 	// notice: 为了对应不同版本和环境差异，再当前版本中设置compareFields中不参加对比的字段
 	ignoreCompareField = make(map[string]struct{}, 0)
+
+	// Used to record the last start time of the window
+	lastStartTime = time.Now()
+
+	// lock when operating on lastStartTime
+	changeTimeLock sync.RWMutex
 )
 
 type HostSnap struct {
@@ -186,6 +193,11 @@ func (h *HostSnap) Analyze(msg *string) error {
 	// save host snapshot in redis
 	h.saveHostsnap(header, &val, hostID)
 
+	// window restriction on request
+	if needToWindowControl() {
+		return nil
+	}
+
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
@@ -260,6 +272,48 @@ func (h *HostSnap) Analyze(msg *string) error {
 		hostID, innerIP, cloudID, rid)
 
 	return nil
+}
+
+
+
+func needToWindowControl() bool {
+	// if not configured, the window is invalid
+	if !cc.IsExist("datacollection.hostsnap.timeWindow.period") || !cc.IsExist("datacollection.hostsnap.timeWindow.executionTime") {
+		return false
+	}
+
+	nextStartTime := calculateTime("datacollection.hostsnap.timeWindow.period", "1h")
+	deadline := calculateTime("datacollection.hostsnap.timeWindow.executionTime", "1m")
+
+	if !canPassWindow(nextStartTime, deadline) {
+		// cannot go through the window, request for restriction
+		return true
+	}
+	return false
+}
+
+func calculateTime(config, timeUnit string) time.Time {
+	timeInt, _ := cc.Int(config)
+	unit, _ := time.ParseDuration(timeUnit)
+	changeTimeLock.RLock()
+	time := lastStartTime.Add(time.Duration(timeInt) * unit)
+	changeTimeLock.RUnlock()
+	return time
+}
+
+func canPassWindow(nextStartTime, deadline time.Time) bool {
+	now := time.Now()
+	if now.After(deadline) && now.Before(nextStartTime) {
+		// not within the time that the request can be passed
+		return false
+	}
+	if now.After(nextStartTime) {
+		// set the start time of the next cycle
+		changeTimeLock.Lock()
+		lastStartTime = now
+		changeTimeLock.Unlock()
+	}
+	return true
 }
 
 func (h *HostSnap) needToSkip(key string, rid string) bool {
