@@ -72,6 +72,8 @@ maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
 enable = true
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
 
 [snap-redis]
 host = $redis_host
@@ -119,6 +121,8 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
 
 [redis]
 host = $redis_host
@@ -184,6 +188,8 @@ maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
 enable=true
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
 
 [confs]
 dir = $configures_dir
@@ -218,6 +224,9 @@ maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
 enable = true
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
+
 
 [redis]
 host = $redis_host
@@ -251,6 +260,8 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 enable = true
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
 '''
     template = FileTemplate(proc_file_template_str)
     result = template.substitute(**context)
@@ -268,6 +279,8 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 enable = true
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
 '''
     template = FileTemplate(operation_file_template_str)
     result = template.substitute(**context)
@@ -284,6 +297,8 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
 
 [transaction]
 enable = false
@@ -307,6 +322,8 @@ maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
 enable = true
+#mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+timeout = 10
 
 [level]
 businessTopoMax = 7
