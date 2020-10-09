@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
@@ -40,6 +41,7 @@ type DiscoveryInterface interface {
 	TaskServer() Interface
 	CloudServer() Interface
 	AuthServer() Interface
+	Server(name string) Interface
 	ServiceManageInterface
 }
 
@@ -138,4 +140,14 @@ func (d *discover) AuthServer() Interface {
 // IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
 	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().UUID)
+}
+
+// Server 根据服务名获取服务再服务发现组件中的相关信息
+func (d *discover) Server(name string) Interface {
+	if svr, ok := d.servers[name]; ok {
+		return svr
+	}
+	blog.V(5).Infof("not found server. name: %s", name)
+
+	return emptyServerInst
 }

@@ -12,10 +12,14 @@
 
 package service
 
-import "net/http"
+import (
+	"net/http"
+
+	"configcenter/src/apiserver/service/match"
+)
 
 const (
-	rootPath = "/api/v3"
+	rootPath = match.RootPath //"/api/v3"
 )
 
 // HTTPClient http client method
