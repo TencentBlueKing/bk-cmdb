@@ -15,7 +15,6 @@ package association_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -81,21 +80,21 @@ func (m *mockDependences) IsInstanceExist(ctx core.ContextParams, objID string, 
 
 func newModel(t *testing.T) core.ModelOperation {
 
-	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", "1500", time.Minute)
+	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", "1500", "60")
 	require.NoError(t, err)
 	return model.New(db, &mockDependences{})
 }
 
 func newAssociation(t *testing.T) core.AssociationOperation {
 
-	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", "1500", time.Minute)
+	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", "1500", "60")
 	require.NoError(t, err)
 	return association.New(db, &mockDependences{})
 }
 
 func newInstances(t *testing.T) core.InstanceOperation {
 
-	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", "1500", time.Minute)
+	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", "1500", "60")
 	require.NoError(t, err)
 	return instances.New(db, &instDependences{})
 }

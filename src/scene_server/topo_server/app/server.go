@@ -102,7 +102,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	var txn dal.Transcation
 	if server.Config.Mongo.Enable == "true" {
-		txn, err = local.NewMgo(server.Config.Mongo.BuildURI(), server.Config.Mongo.MaxOpenConns, time.Second*5)
+		txn, err = local.NewMgo(server.Config.Mongo.BuildURI(), server.Config.Mongo.MaxOpenConns, server.Config.Mongo.Timeout)
 	} else {
 		txn, err = remote.NewWithDiscover(engine)
 	}

@@ -81,7 +81,7 @@ func GetHeader() http.Header {
 
 func ClearDatabase() {
 	// clientSet.AdminServer().ClearDatabase(context.Background(), GetHeader())
-	db, err := local.NewMgo(tConfig.MongoURI, "1500", time.Minute)
+	db, err := local.NewMgo(tConfig.MongoURI, "1500","60")
 	Expect(err).Should(BeNil())
 	for _, tableName := range common.AllTables {
 		db.DropTable(tableName)

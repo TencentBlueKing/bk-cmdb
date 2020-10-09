@@ -16,7 +16,6 @@ import (
 	"errors"
 	"os"
 	"strings"
-	"time"
 
 	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal"
@@ -61,7 +60,7 @@ func NewMongoService(mongoURI string) (*Service, error) {
 	if mongoURI == "" {
 		return nil, errors.New("mongo-uri must set via flag or environment variable")
 	}
-	db, err := local.NewMgo(mongoURI, "1500", time.Minute)
+	db, err := local.NewMgo(mongoURI, "1500", "60")
 	if err != nil {
 		return nil, err
 	}

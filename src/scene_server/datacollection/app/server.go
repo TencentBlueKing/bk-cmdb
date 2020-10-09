@@ -76,7 +76,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 		var mgoCli dal.RDB
 		if process.Config.MongoDB.Enable == "true" {
-			mgoCli, err = local.NewMgo(process.Config.MongoDB.BuildURI(), process.Config.MongoDB.MaxOpenConns, time.Minute)
+			mgoCli, err = local.NewMgo(process.Config.MongoDB.BuildURI(), process.Config.MongoDB.MaxOpenConns, process.Config.MongoDB.Timeout)
 		} else {
 			mgoCli, err = remote.NewWithDiscover(process.Core)
 		}

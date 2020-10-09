@@ -72,7 +72,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		var db dal.RDB
 		var rpcCli rpc.Client
 		if process.Config.MongoDB.Enable == "true" {
-			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), process.Config.MongoDB.MaxOpenConns, time.Minute)
+			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), process.Config.MongoDB.MaxOpenConns, process.Config.MongoDB.Timeout)
 		} else {
 			rpcCli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
 			if err != nil {

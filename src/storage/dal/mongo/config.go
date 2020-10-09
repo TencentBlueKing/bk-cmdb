@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/storage/dal"
@@ -36,6 +35,7 @@ type Config struct {
 	MaxOpenConns string
 	MaxIdleConns string
 	Enable       string
+	Timeout		 string
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -88,12 +88,13 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
 		Mechanism:    conifgmap[prefix+".mechanism"],
 		Enable:       conifgmap[prefix+".enable"],
+		Timeout:      conifgmap[prefix+".timeout"],
 	}
 }
 
 func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) {
 	if c.Enable == "true" {
-		db, err = local.NewMgo(c.BuildURI(), c.MaxOpenConns, time.Minute)
+		db, err = local.NewMgo(c.BuildURI(), c.MaxOpenConns, c.Timeout)
 	} else {
 		db, err = remote.NewWithDiscover(engine)
 	}
@@ -105,7 +106,7 @@ func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) 
 
 func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transcation, err error) {
 	if c.Enable == "true" {
-		client, err = local.NewMgo(c.BuildURI(), c.MaxOpenConns, time.Minute)
+		client, err = local.NewMgo(c.BuildURI(), c.MaxOpenConns, c.Timeout)
 	} else {
 		client, err = remote.NewWithDiscover(engine)
 	}

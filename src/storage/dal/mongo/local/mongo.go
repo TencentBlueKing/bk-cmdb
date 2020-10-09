@@ -43,12 +43,21 @@ const (
 	DefaultMaxOpenConns = 1500
 	// if maxOpenConns exceeds maximum value, use maximum value
 	MaximumMaxOpenConns = 3000
+	// if timeout isn't configured, use default value
+	DefaultTimeout = 10
+	// if timeout exceeds maximum value, use maximum value
+	MaximumTimeout = 30
+	// if timeout less than the minimum value, use minimum value
+	MinimumTimeout = 5
+
+
+
 )
 
 var _ dal.DB = new(Mongo)
 
 // NewMgo returns new RDB
-func NewMgo(uri, maxOpenConns string, timeout time.Duration) (*Mongo, error) {
+func NewMgo(uri, maxOpenConns, timeout string) (*Mongo, error) {
 
 	cs, err := mgo.ParseURL(uri)
 	if err != nil {
@@ -66,14 +75,16 @@ func NewMgo(uri, maxOpenConns string, timeout time.Duration) (*Mongo, error) {
 		poolLimit = MaximumMaxOpenConns
 	}
 
-	primary, err := newClient(uri, mgo.PrimaryPreferred, poolLimit, time.Second*10)
+	timeoutIntVal := getTimeoutIntVal(timeout)
+
+	primary, err := newClient(uri, mgo.PrimaryPreferred, poolLimit, time.Second*time.Duration(timeoutIntVal))
 	if err != nil {
 		return nil, err
 	}
 
 	secondary := make([]*mgo.Session, secondaryCnt)
 	for i := 0; i < secondaryCnt; i++ {
-		sec, err := newClient(uri, mgo.Eventual, 300, time.Second*10)
+		sec, err := newClient(uri, mgo.Eventual, 300, time.Second*time.Duration(timeoutIntVal))
 		if err != nil {
 			return nil, err
 		}
@@ -85,6 +96,25 @@ func NewMgo(uri, maxOpenConns string, timeout time.Duration) (*Mongo, error) {
 		secondary: secondary,
 		dbname:    cs.Database,
 	}, nil
+}
+
+func getTimeoutIntVal(timeout string) int {
+	timeoutIntVal, err := strconv.Atoi(timeout)
+	if err != nil {
+		blog.Errorf("parse mongo.timeout config error: %s, use default value: %d", err.Error(), DefaultTimeout)
+		timeoutIntVal = DefaultTimeout
+	}
+
+	if timeoutIntVal > MaximumTimeout {
+		blog.Errorf("mongo.timeout config %d exceeds maximum value, use maximum value %d", timeoutIntVal, MaximumTimeout)
+		timeoutIntVal = MaximumTimeout
+	}
+
+	if timeoutIntVal < MinimumTimeout {
+		blog.Errorf("mongo.timeout config %d less than minimum value, use minimum value %d", timeoutIntVal, MinimumTimeout)
+		timeoutIntVal = MinimumTimeout
+	}
+	return timeoutIntVal
 }
 
 func newClient(uri string, mode mgo.Mode, pool int, timeout time.Duration) (*mgo.Session, error) {

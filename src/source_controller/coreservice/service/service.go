@@ -19,7 +19,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -91,7 +90,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	var dbErr error
 	var db dal.RDB
 	if s.cfg.Mongo.Enable == "true" {
-		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), s.cfg.Mongo.MaxOpenConns, time.Minute)
+		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), s.cfg.Mongo.MaxOpenConns, s.cfg.Mongo.Timeout)
 	} else {
 		db, dbErr = remote.NewWithDiscover(s.engin)
 	}
