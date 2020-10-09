@@ -53,10 +53,11 @@ type MongoConf struct {
 	MaxIdleConns   uint64
 	URI            string
 	RsName         string
+	Timeout        int
 }
 
 // NewMgo returns new RDB
-func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
+func NewMgo(config MongoConf) (*Mongo, error) {
 	connStr, err := connstring.Parse(config.URI)
 	if nil != err {
 		return nil, err
@@ -64,7 +65,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	if config.RsName == "" {
 		return nil, fmt.Errorf("mongodb rsName not set")
 	}
-
+	timeout := time.Second*time.Duration(config.Timeout)
 	// do not change this, our transaction plan need it to false.
 	// it's related with the transaction number(eg txnNumber) in a transaction session.
 	disableWriteRetry := false

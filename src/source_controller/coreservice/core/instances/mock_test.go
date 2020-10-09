@@ -15,7 +15,6 @@ package instances_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -53,7 +52,7 @@ func (s *mockDependences) SearchUnique(ctx core.ContextParams, objID string) (un
 
 func newInstances(t *testing.T) core.InstanceOperation {
 
-	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", time.Minute)
+	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
 	require.NoError(t, err)
 	return instances.New(db, &mockDependences{})
 }

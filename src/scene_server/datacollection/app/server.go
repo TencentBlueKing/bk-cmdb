@@ -268,7 +268,7 @@ func (c *DataCollection) initConfigs() error {
 // initModules inits modules for new DataCollection server.
 func (c *DataCollection) initModules() error {
 	// create mongodb client.
-	mgoCli, err := local.NewMgo(c.config.MongoDB.GetMongoConf(), defaultDBConnectTimeout)
+	mgoCli, err := local.NewMgo(c.config.MongoDB.GetMongoConf())
 	if err != nil {
 		return fmt.Errorf("create new mongodb client, %+v", err)
 	}

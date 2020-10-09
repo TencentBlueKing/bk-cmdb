@@ -84,7 +84,7 @@ func GetClient() (*local.Mongo, error) {
 		URI:          tConfig.MongoURI,
 		RsName:       "rs0",
 	}
-	m, err := local.NewMgo(mongoConfig, time.Minute)
+	m, err := local.NewMgo(mongoConfig)
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,7 @@ func BenchmarkLocalCUD(b *testing.B) {
 		URI:          "mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb",
 		RsName:       "rs0",
 	}
-	db, err := NewMgo(mongoConfig, time.Second*5)
+	db, err := NewMgo(mongoConfig)
 	require.NoError(b, err)
 
 	header := http.Header{}
@@ -71,7 +71,7 @@ func dbCleint(t *testing.T) *Mongo {
 		URI:          uri,
 		RsName:       os.Getenv("MONGORS"),
 	}
-	db, err := NewMgo(mongoConfig, time.Second*5)
+	db, err := NewMgo(mongoConfig)
 	require.NoError(t, err)
 	err = db.Ping()
 	require.NoError(t, err)

@@ -71,7 +71,7 @@ func Parse(args []string) error {
 	mongoConfig := cc.Mongo("mongodb")
 
 	// connect to mongo db
-	db, err := local.NewMgo(mongoConfig.GetMongoConf(), 0)
+	db, err := local.NewMgo(mongoConfig.GetMongoConf())
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}

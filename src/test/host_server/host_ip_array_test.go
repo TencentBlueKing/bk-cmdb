@@ -14,7 +14,6 @@ package host_server_test
 
 import (
 	"context"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -38,7 +37,7 @@ var _ = Describe("host ip array validation test", func() {
 			URI:          tConf.MongoURI,
 			RsName:       "rs0",
 		}
-		db, err := local.NewMgo(mongoConfig, time.Minute)
+		db, err := local.NewMgo(mongoConfig)
 		Expect(err).To(BeNil())
 
 		redisCfg := redis.Config{

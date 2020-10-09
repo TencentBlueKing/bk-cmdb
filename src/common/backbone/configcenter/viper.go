@@ -351,6 +351,24 @@ func Mongo(prefix string) mongo.Config {
 	} else {
 		c.MaxIdleConns = parser.getUint64(prefix+".maxIdleConns")
 	}
+
+	if !parser.isSet(prefix+".timeout") {
+		blog.Errorf("can not find mongo.timeout config, use default value: %d", mongo.DefaultTimeout)
+		c.Timeout = mongo.DefaultTimeout
+		return c
+	}
+
+	c.Timeout = parser.getInt(prefix + ".timeout")
+	if c.Timeout > mongo.MaximumTimeout {
+		blog.Errorf("mongo.timeout config %d exceeds maximum value, use maximum value %d", c.Timeout, mongo.MaximumTimeout)
+		c.Timeout = mongo.MaximumTimeout
+	}
+
+	if c.Timeout < mongo.MinimumTimeout {
+		blog.Errorf("mongo.timeout config %d less than minimum value, use minimum value %d", c.Timeout, mongo.MinimumTimeout)
+		c.Timeout = mongo.MinimumTimeout
+	}
+
 	return c
 }
 

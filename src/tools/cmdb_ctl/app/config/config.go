@@ -16,7 +16,6 @@ import (
 	"errors"
 	"os"
 	"strings"
-	"time"
 
 	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal"
@@ -70,7 +69,7 @@ func NewMongoService(mongoURI string, mongoRsName string) (*Service, error) {
 		URI:          mongoURI,
 		RsName:       mongoRsName,
 	}
-	db, err := local.NewMgo(mongoConfig, time.Minute)
+	db, err := local.NewMgo(mongoConfig)
 	if err != nil {
 		return nil, err
 	}
