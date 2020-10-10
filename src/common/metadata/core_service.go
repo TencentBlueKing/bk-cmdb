@@ -338,7 +338,6 @@ type ListServiceInstanceOption struct {
 
 type ListServiceInstanceDetailOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
-	SetID              int64              `json:"bk_set_id"`
 	ModuleID           int64              `json:"bk_module_id"`
 	HostID             int64              `json:"bk_host_id"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`

@@ -267,7 +267,6 @@ func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
 	option := &metadata.ListServiceInstanceDetailOption{
 		BusinessID:         bizID,
 		ModuleID:           input.ModuleID,
-		SetID:              input.SetID,
 		HostID:             input.HostID,
 		ServiceInstanceIDs: input.ServiceInstanceIDs,
 		Page:               input.Page,
