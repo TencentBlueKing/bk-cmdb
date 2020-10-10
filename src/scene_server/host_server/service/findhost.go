@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -210,6 +209,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 
 	// search all hosts
+	header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	option := &meta.ListHosts{
 		BizID:              bizID,
 		HostPropertyFilter: parameter.HostPropertyFilter,
@@ -243,6 +243,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	relationCond := meta.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		HostIDArr:     hostIDs,
+		Fields:        []string{common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	relations, err := srvData.lgc.GetConfigByCond(srvData.ctx, relationCond)
 	if nil != err {
@@ -270,15 +271,14 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	setIDs = util.IntArrayUnique(setIDs)
 	moduleIDs = util.IntArrayUnique(moduleIDs)
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKSetIDField).In(setIDs)
+	cond := map[string]interface{}{common.BKSetIDField: map[string]interface{}{common.BKDBIN: setIDs}}
 	query := &meta.QueryCondition{
 		Fields:    []string{common.BKSetIDField, common.BKSetNameField},
-		Condition: cond.ToMapStr(),
+		Condition: cond,
 	}
 	sets, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.ErrorJSON("get set by condition: %s failed, err: %s, rid: %s", cond.ToMapStr(), err, rid)
+		blog.ErrorJSON("get set by condition: %s failed, err: %s, rid: %s", cond, err, rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
@@ -299,15 +299,14 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		setMap[setID] = setName
 	}
 
-	cond = condition.CreateCondition()
-	cond.Field(common.BKModuleIDField).In(moduleIDs)
+	cond = map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN: moduleIDs}}
 	query = &meta.QueryCondition{
 		Fields:    []string{common.BKModuleIDField, common.BKModuleNameField},
-		Condition: cond.ToMapStr(),
+		Condition: cond,
 	}
 	modules, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, query)
 	if err != nil {
-		blog.ErrorJSON("get module by condition: %s failed, err: %s, rid: %s", cond.ToMapStr(), err, rid)
+		blog.ErrorJSON("get module by condition: %s failed, err: %s, rid: %s", cond, err, rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
