@@ -245,6 +245,7 @@ type HostModuleRelationRequest struct {
 	HostIDArr     []int64  `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids"`
 	ModuleIDArr   []int64  `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids"`
 	Page          BasePage `json:"page" bson:"page" field:"page"`
+	Fields        []string `json:"field" bson:"field"  field:"field"`
 }
 
 // Empty empty struct
@@ -461,4 +462,30 @@ type GetProc2ModuleResult struct {
 type MultipleMap struct {
 	Count uint64                   `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
+}
+
+// DistinctHostIDByTopoRelationRequest  distinct host id by topology request
+type DistinctHostIDByTopoRelationRequest struct {
+	ApplicationIDArr []int64 `json:"bk_biz_ids" bson:"bk_biz_ids" field:"bk_biz_ids" mapstructure:"bk_biz_ids"`
+	SetIDArr         []int64 `json:"bk_set_ids" bson:"bk_set_ids" field:"bk_set_ids" mapstructure:"bk_set_ids"`
+	HostIDArr        []int64 `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids" mapstructure:"bk_host_ids"`
+	ModuleIDArr      []int64 `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids" mapstructure:"bk_module_ids"`
+}
+
+// Empty empty struct
+func (h *DistinctHostIDByTopoRelationRequest) Empty() bool {
+	if len(h.ApplicationIDArr) != 0 {
+		return false
+	}
+	if len(h.SetIDArr) != 0 {
+		return false
+	}
+	if len(h.ModuleIDArr) != 0 {
+		return false
+	}
+
+	if len(h.HostIDArr) != 0 {
+		return false
+	}
+	return true
 }

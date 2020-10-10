@@ -507,3 +507,27 @@ func (c *MockCollection) AggregateOne(ctx context.Context, pipeline interface{},
 	c.Mock.retval = nil
 	return nil
 }
+
+func (c *MockCollection) Distinct(ctx context.Context, field string, filter dal.Filter, result interface{}) error {
+	out, err := json.Marshal([]interface{}{field, filter})
+	if err != nil {
+		return err
+	}
+	key := "DISTINCT:" + c.collName + ":" + string(out)
+	if retval, ok := c.Mock.cache[key]; ok {
+		err = bson.Unmarshal(retval.RawResult, result)
+		if err != nil {
+			return err
+		}
+		return retval.Err
+	}
+
+	bsonout, err := bson.Marshal(result)
+	if err != nil {
+		return err
+	}
+	c.Mock.retval.RawResult = bsonout
+	c.Mock.cache[key] = c.Mock.retval
+	c.Mock.retval = nil
+	return err
+}

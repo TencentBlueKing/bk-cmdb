@@ -47,6 +47,8 @@ const (
 	OPUpdateUnsetCode
 	// OPUpdateByOperatorCode update can use user operator
 	OPUpdateByOperatorCode
+	// OPDistinctCode distinct operation code
+	OPDistinctCode
 	// OPStartTransactionCode start a transaction code
 	OPStartTransactionCode OPCode = 666
 	// OPCommitCode transaction commit operation code
@@ -79,6 +81,8 @@ func (c OPCode) String() string {
 		return "OPAggregate"
 	case OPDDLCode:
 		return "OPDDL"
+	case OPDistinctCode:
+		return "OPDISTINCT"
 	default:
 		return "UNKNOW"
 	}
@@ -157,6 +161,14 @@ type OPAbortOperation struct {
 	MsgHeader
 }
 
+// OPDistinctOperation distinct operation request structure
+type OPDistinctOperation struct {
+	MsgHeader           // 标准报文头
+	Collection string   // "dbname.collectionname"
+	Field      string   // distinct field
+	Filter     Document // 过滤条件
+}
+
 // OPDDLCommand operation migrate comand  code
 type OPDDLCommand uint32
 
@@ -218,7 +230,8 @@ type ReplyHeader struct {
 
 // OPReply the operation reply message header structure
 type OPReply struct {
-	ReplyHeader           // 标准报文头
-	Count       uint64    // 文档查询结果数
-	Docs        Documents // 文档查询结果
+	ReplyHeader               // 标准报文头
+	Count       uint64        // 文档查询结果数
+	Docs        Documents     // 文档查询结果
+	DistinctRes []interface{} // 唯一查询结果
 }

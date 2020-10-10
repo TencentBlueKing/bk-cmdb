@@ -15,6 +15,7 @@ package remote
 import (
 	"context"
 	"errors"
+	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
@@ -383,4 +384,160 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 		return dal.ErrDocumentNotFound
 	}
 	return reply.Docs.Decode(result)
+}
+
+// Distinct 查询不重复的值
+func (c *Collection) Distinct(ctx context.Context, field string, filter dal.Filter, result interface{}) error {
+	// build msg
+	msg := types.OPDistinctOperation{}
+	msg.OPCode = types.OPDistinctCode
+	msg.Field = field
+	msg.Collection = c.collection
+	msg.Filter.Encode(filter)
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	return decodeDistinctIntoSlice(ctx, reply.DistinctRes, result)
+}
+
+func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, results interface{}) error {
+	resultv := reflect.ValueOf(results)
+	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
+		return errors.New("result argument must be a slice address")
+	}
+
+	elemt := resultv.Elem().Type().Elem()
+
+	isInt := false
+	isUint := false
+	isStr := false
+	switch elemt.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		isInt = true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		isUint = true
+	case reflect.String:
+		isStr = false
+	default:
+		return errors.New("not support decode distinct result to " + elemt.Kind().String())
+	}
+
+	slice := reflect.MakeSlice(resultv.Elem().Type(), 0, len(dbResults))
+
+	for _, item := range dbResults {
+
+		elemp := reflect.New(elemt)
+		switch val := item.(type) {
+		case int:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can int to " + elemt.Kind().String())
+			}
+		case int8:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can " + " to int8" + elemt.Kind().String())
+			}
+		case int16:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can " + " to int16" + elemt.Kind().String())
+			}
+		case int32:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can " + " to int32" + elemt.Kind().String())
+			}
+		case int64:
+			if isInt {
+				elemp.Elem().SetInt(val)
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can " + " to int64" + elemt.Kind().String())
+			}
+		case uint:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can " + " to uint" + elemt.Kind().String())
+			}
+		case uint8:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can " + " to uint8" + elemt.Kind().String())
+			}
+		case uint16:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can " + " to uint16" + elemt.Kind().String())
+			}
+		case uint32:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can uint32 to" + elemt.Kind().String())
+			}
+		case uint64:
+			if isInt {
+				elemp.Elem().SetInt(int64(val))
+			} else if isUint {
+				elemp.Elem().SetUint(uint64(val))
+			} else {
+				return errors.New("not can uint64 to" + elemt.Kind().String())
+			}
+		case string:
+			if !isStr {
+				return errors.New("not can string to" + elemt.Kind().String())
+			}
+			elemp.Elem().SetString(val)
+		default:
+			return errors.New("not can " + elemt.Kind().String())
+		}
+		slice = reflect.Append(slice, elemp.Elem())
+
+	}
+	resultv.Elem().Set(slice)
+
+	return nil
 }

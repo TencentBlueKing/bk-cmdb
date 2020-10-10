@@ -160,6 +160,9 @@ type HostOperation interface {
 
 	// host search
 	ListHosts(ctx ContextParams, input metadata.ListHosts) (*metadata.ListHostResult, error)
+
+	// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+	GetDistinctHostIDsByTopoRelation(ctx ContextParams, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error)
 }
 
 // AssociationOperation association methods

@@ -371,6 +371,7 @@ func (manager *TransferManager) GetHostModuleRelation(ctx core.ContextParams, in
 	hostModuleArr := make([]metadata.ModuleHost, 0)
 	db := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).
 		Find(cond).
+		Fields(input.Fields...).
 		Start(uint64(input.Page.Start)).
 		Sort(input.Page.Sort)
 
@@ -439,4 +440,39 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(ctx core.ContextParam
 		result[item.HostID] = append(result[item.HostID], item)
 	}
 	return result, nil
+}
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(ctx core.ContextParams, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+	if input.Empty() {
+		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+	moduleHostCond := condition.CreateCondition()
+	if len(input.ApplicationIDArr) > 0 {
+		moduleHostCond.Field(common.BKAppIDField).In(input.ApplicationIDArr)
+	}
+	if len(input.HostIDArr) > 0 {
+		moduleHostCond.Field(common.BKHostIDField).In(input.HostIDArr)
+	}
+	if len(input.ModuleIDArr) > 0 {
+		moduleHostCond.Field(common.BKModuleIDField).In(input.ModuleIDArr)
+	}
+	if len(input.SetIDArr) > 0 {
+		moduleHostCond.Field(common.BKSetIDField).In(input.SetIDArr)
+	}
+	cond := moduleHostCond.ToMapStr()
+	if len(cond) == 0 {
+		return nil, nil
+	}
+	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), ctx.SupplierAccount)
+
+	hostIDArr := make([]int64, 0)
+	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(ctx.Context, common.BKHostIDField, cond, &hostIDArr)
+	if err != nil {
+		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return hostIDArr, nil
 }
