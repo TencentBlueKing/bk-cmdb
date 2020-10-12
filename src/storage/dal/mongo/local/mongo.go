@@ -98,17 +98,17 @@ func NewMgo(uri, maxOpenConns, socketTimeout string, timeout time.Duration) (*Mo
 func getSocketTimeoutIntVal(socketTimeout string) int {
 	socketTimeoutIntVal, err := strconv.Atoi(socketTimeout)
 	if err != nil {
-		blog.Errorf("parse mongo.socketTimeout config error: %s, use default value: %d", err.Error(), DefaultSocketTimeout)
+		blog.Errorf("parse mongo.socketTimeoutSeconds config error: %s, use default value: %d", err.Error(), DefaultSocketTimeout)
 		socketTimeoutIntVal = DefaultSocketTimeout
 	}
 
 	if socketTimeoutIntVal > MaximumSocketTimeout {
-		blog.Errorf("mongo.socketTimeout config %d exceeds maximum value, use maximum value %d", socketTimeoutIntVal, MaximumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d", socketTimeoutIntVal, MaximumSocketTimeout)
 		socketTimeoutIntVal = MaximumSocketTimeout
 	}
 
 	if socketTimeoutIntVal < MinimumSocketTimeout {
-		blog.Errorf("mongo.socketTimeout config %d less than minimum value, use minimum value %d", socketTimeoutIntVal, MinimumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d", socketTimeoutIntVal, MinimumSocketTimeout)
 		socketTimeoutIntVal = MinimumSocketTimeout
 	}
 	return socketTimeoutIntVal

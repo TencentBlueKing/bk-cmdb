@@ -89,7 +89,7 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
 		Mechanism:    conifgmap[prefix+".mechanism"],
 		Enable:       conifgmap[prefix+".enable"],
-		SocketTimeout: conifgmap[prefix+".socketTimeout"],
+		SocketTimeout: conifgmap[prefix+".socketTimeoutSeconds"],
 	}
 }
 
