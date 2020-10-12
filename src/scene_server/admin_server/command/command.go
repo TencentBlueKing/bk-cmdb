@@ -73,7 +73,7 @@ func Parse(args []string) error {
 	mongoConfig := mongo.ParseConfigFromKV("mongodb", config.ConfigMap)
 
 	// connect to mongo db
-	db, err := local.NewMgo(mongoConfig.BuildURI(), mongoConfig.MaxOpenConns, 0)
+	db, err := local.NewMgo(mongoConfig.BuildURI(), mongoConfig.MaxOpenConns, mongoConfig.SocketTimeout, 0)
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
