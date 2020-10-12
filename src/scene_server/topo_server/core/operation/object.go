@@ -524,7 +524,7 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	// step 2. ensure model has no instances
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
-	findInstResponse, err := o.inst.FindOriginInst(params, targetObj, query)
+	findInstResponse, err := o.inst.FindOriginInst(params, targetObj.GetObjectID(), query)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to check if it (%s) has some insts, err: %s, rid: %s", tObject.ObjectID, err.Error(), params.ReqID)
 		return err

@@ -37,7 +37,7 @@ type InstOperationInterface interface {
 	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error
 	DeleteMainlineInstWithID(params types.ContextParams, obj model.Object, instID int64) error
 	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error
-	FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error)
+	FindOriginInst(params types.ContextParams, objID string, cond *metadata.QueryInput) (*metadata.InstResult, error)
 	FindInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
 	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (cont int, results []inst.Inst, err error)
 	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
@@ -966,18 +966,17 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	return c.FindInst(params, obj, query, false)
 }
 
-func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
-	switch obj.Object().ObjectID {
+func (c *commonInst) FindOriginInst(params types.ContextParams, objID string, cond *metadata.QueryInput) (*metadata.InstResult, error) {
+	switch objID {
 	case common.BKInnerObjIDHost:
-		rsp, err := c.clientSet.CoreService().Host().GetHosts(context.Background(), params.Header, cond)
+		rsp, err := c.clientSet.CoreService().Host().GetHosts(params.Context, params.Header, cond)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", objID, cond, rsp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -989,15 +988,14 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 		input.Limit.Offset = int64(cond.Start)
 		input.Limit.Limit = int64(cond.Limit)
 		input.Fields = strings.Split(cond.Fields, ",")
-		input.SortArr = metadata.NewSearchSortParse().String(cond.Sort).ToSearchSortArr()
-		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), input)
+		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, objID, input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", objID, cond, rsp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 		return &metadata.InstResult{Info: rsp.Data.Info, Count: rsp.Data.Count}, nil
@@ -1005,7 +1003,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 }
 
 func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
-	rsp, err := c.FindOriginInst(params, obj, cond)
+	rsp, err := c.FindOriginInst(params, obj.GetObjectID(), cond)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to find origin inst , err: %s, rid: %s", err.Error(), params.ReqID)
 		return 0, nil, err
