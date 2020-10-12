@@ -34,7 +34,7 @@ type BusinessOperationInterface interface {
 	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
 	// FindBusiness(params types.ContextParams, fields []string, cond condition.Condition) (count int, results []mapstr.MapStr, err error)
 	FindBusiness(params types.ContextParams, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
-	GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
+	GetInternalModule(params types.ContextParams, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
 	HasHosts(params types.ContextParams, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
@@ -300,67 +300,60 @@ func (b *business) FindBusiness(params types.ContextParams, cond *metadata.Query
 	return result.Data.Count, result.Data.Info, err
 }
 
-func (b *business) GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
+func (b *business) GetInternalModule(params types.ContextParams, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
 
 	// search the sets
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).Eq(common.DefaultResModuleFlag)
-	setObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDSet)
-	if nil != err {
-		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	querySet := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKAppIDField:   bizID,
+			common.BKDefaultField: common.DefaultResModuleFlag,
+		},
+		Fields: common.BKSetIDField + "," + common.BKSetNameField,
+		Limit:  common.BKNoLimit,
 	}
-
-	querySet := &metadata.QueryInput{}
-	querySet.Condition = cond.ToMapStr()
-	_, sets, err := b.set.FindSet(params, setObj, querySet)
+	setRsp, err := b.inst.FindOriginInst(params, common.BKInnerObjIDSet, querySet)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
 	// search modules
-	cond = condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).NotEq(0)
-
-	moduleObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDModule)
-	if nil != err {
-		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	queryModule := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKDefaultField: map[string]interface{}{
+				common.BKDBNE: 0,
+			},
+		},
+		Fields: common.BKModuleIDField + "," + common.BKModuleNameField,
+		Limit:  common.BKNoLimit,
 	}
-
-	queryModule := &metadata.QueryInput{}
-	queryModule.Condition = cond.ToMapStr()
-	_, modules, err := b.module.FindModule(params, moduleObj, queryModule)
+	moduleRsp, err := b.inst.FindOriginInst(params, common.BKInnerObjIDModule, queryModule)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
 	// construct result
 	result = &metadata.InnterAppTopo{}
-	for _, set := range sets {
-		id, err := set.GetInstID()
-		if nil != err {
-			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
-		}
-		name, err := set.GetInstName()
+	for _, set := range setRsp.Info {
+		id, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 		if nil != err {
 			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 		}
 
 		result.SetID = id
-		result.SetName = name
+		result.SetName = util.GetStrByInterface(set[common.BKSetNameField])
 		break // should be only one set
 	}
 
-	for _, moduleMapStr := range modules {
-		module := metadata.ModuleInst{}
-		if err := moduleMapStr.MarshalJSONInto(&module); err != nil {
-			blog.ErrorJSON("GetInternalModule failed, module: %s, ")
-			return 0, nil, params.Err.CCError(common.CCErrCommParseDBFailed)
+	for _, moduleMapStr := range moduleRsp.Info {
+		moduleID, err := util.GetInt64ByInterface(moduleMapStr[common.BKModuleIDField])
+		if nil != err {
+			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 		}
+
 		result.Module = append(result.Module, metadata.InnerModule{
-			ModuleID:   module.ModuleID,
-			ModuleName: module.ModuleName,
+			ModuleID:   moduleID,
+			ModuleName: util.GetStrByInterface(moduleMapStr[common.BKModuleNameField]),
 		})
 	}
 

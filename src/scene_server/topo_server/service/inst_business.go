@@ -457,17 +457,12 @@ func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, 
 }
 
 func (s *Service) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
-	}
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	_, result, err := s.Core.BusinessOperation().GetInternalModule(params, obj, bizID)
+	_, result, err := s.Core.BusinessOperation().GetInternalModule(params, bizID)
 	if nil != err {
 		return nil, err
 	}
