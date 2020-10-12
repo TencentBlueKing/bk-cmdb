@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -96,10 +97,14 @@ func NewMgo(uri, maxOpenConns, socketTimeout string, timeout time.Duration) (*Mo
 }
 
 func getSocketTimeoutIntVal(socketTimeout string) int {
+	if socketTimeout == "" {
+		blog.Errorf("no setting mongo.socketTimeoutSeconds config, use default value: %d", DefaultSocketTimeout)
+		return DefaultSocketTimeout
+	}
 	socketTimeoutIntVal, err := strconv.Atoi(socketTimeout)
 	if err != nil {
-		blog.Errorf("parse mongo.socketTimeoutSeconds config error: %s, use default value: %d", err.Error(), DefaultSocketTimeout)
-		socketTimeoutIntVal = DefaultSocketTimeout
+		blog.Errorf("parse mongo.socketTimeoutSeconds config error: %s", err.Error())
+		os.Exit(1)
 	}
 
 	if socketTimeoutIntVal > MaximumSocketTimeout {
