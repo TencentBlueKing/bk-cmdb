@@ -3,6 +3,7 @@
         <cmdb-tips class="ml20 mr20 mb10" tips-key="showCustomFields" v-model="featureTips">{{$t('自定义字段功能提示')}}</cmdb-tips>
         <bk-tab class="tab-layout"
             :style="`--subHeight: ${featureTips ? '42px' : 0}`"
+            :active.sync="active"
             type="unborder-card"
             @tab-change="handleTabChange">
             <bk-tab-panel v-for="model in mainLine"
@@ -23,14 +24,26 @@
 
 <script>
     import fieldGroup from '@/components/model-manage/field-group'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             fieldGroup
         },
         data () {
             return {
+                active: RouterQuery.get('tab', 'set'),
                 featureTips: true,
                 mainLine: []
+            }
+        },
+        watch: {
+            active: {
+                immediate: true,
+                handler (active) {
+                    RouterQuery.set({
+                        tab: active
+                    })
+                }
             }
         },
         async created () {

@@ -69,7 +69,7 @@
                 ></the-config>
                 <component
                     v-if="isComponentShow"
-                    :is-read-only="isReadOnly"
+                    :is-read-only="isReadOnly || field.ispre"
                     :is="`the-field-${fieldType}`"
                     v-model="fieldInfo.option"
                     ref="component"
@@ -90,7 +90,7 @@
             <div class="form-label">
                 <span class="label-text">{{$t('用户提示')}}</span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
-                    <textarea style="width: 94%;"
+                    <textarea
                         class="raw"
                         name="placeholder"
                         v-model.trim="fieldInfo['placeholder']"

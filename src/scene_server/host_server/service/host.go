@@ -88,7 +88,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			common.BKDBOR: []map[string]interface{}{
 				{
 					common.BKObjIDField:  common.BKInnerObjIDHost,
-					common.BKHostIDField: iHostID,
+					common.BKInstIDField: iHostID,
 				},
 				{
 					common.BKAsstObjIDField:  common.BKInnerObjIDHost,
@@ -578,6 +578,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 		return
 	}
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
@@ -924,7 +925,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 				return err
 			}
 			if !result.Result {
-				blog.Errorf("UpdateHostPropertyBatch UpdateObject http response error, err code:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, ctx.Kit.Rid)
+				blog.Errorf("UpdateHostPropertyBatch UpdateObject http response error, err code:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.Error(), data, opt, ctx.Kit.Rid)
 				return result.CCError()
 			}
 

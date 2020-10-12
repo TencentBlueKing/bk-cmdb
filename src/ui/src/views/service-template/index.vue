@@ -58,13 +58,15 @@
             :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick"
             @page-limit-change="handleSizeChange"
-            @page-change="handlePageChange">
-            <bk-table-column prop="name" :label="$t('模板名称')" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+            @page-change="handlePageChange"
+            @sort-change="handleSortChange">
+            <bk-table-column prop="id" label="ID" class-name="is-highlight" show-overflow-tooltip sortable="custom"></bk-table-column>
+            <bk-table-column prop="name" :label="$t('模板名称')" show-overflow-tooltip sortable="custom"></bk-table-column>
             <bk-table-column prop="service_category" :label="$t('服务分类')" show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
             <bk-table-column prop="module_count" :label="$t('已应用模块数')"></bk-table-column>
-            <bk-table-column prop="modifier" :label="$t('修改人')"></bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('修改时间')" show-overflow-tooltip>
+            <bk-table-column prop="modifier" :label="$t('修改人')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('修改时间')" show-overflow-tooltip sortable="custom">
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}
                 </template>
@@ -129,7 +131,6 @@
                         count: 0,
                         ...this.$tools.getDefaultPaginationConfig()
                     },
-                    defaultSort: '-last_time',
                     sort: '-id',
                     stuff: {
                         type: 'default',
@@ -159,7 +160,7 @@
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.limit,
                         limit: this.table.pagination.limit,
-                        sort: this.table.defaultSort
+                        sort: this.table.sort
                     }
                 }
             },
@@ -277,7 +278,7 @@
                 })
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort, '-id')
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {

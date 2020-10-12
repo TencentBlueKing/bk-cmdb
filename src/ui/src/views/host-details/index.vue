@@ -43,6 +43,7 @@
     import cmdbHostStatus from './children/status.vue'
     import cmdbAuditHistory from '@/components/model-instance/audit-history'
     import cmdbHostService from './children/service-list.vue'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             cmdbHostInfo,
@@ -54,7 +55,7 @@
         },
         data () {
             return {
-                active: this.$route.query.tab || 'property',
+                active: RouterQuery.get('tab', 'property'),
                 infoHeight: '81px',
                 loading: true
             }
@@ -90,6 +91,9 @@
                 if (active !== 'association') {
                     this.$store.commit('hostDetails/toggleExpandAll', false)
                 }
+                RouterQuery.set({
+                    tab: active
+                })
             }
         },
         created () {

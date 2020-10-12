@@ -23,9 +23,11 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -35,6 +37,21 @@ import (
 	"configcenter/src/storage/dal/redis"
 
 	"github.com/tidwall/gjson"
+)
+
+const (
+	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
+	defaultChangeRangePercent 	    = 10
+	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
+	minChangeRangePercent            = 5
+	// deafultChangeCountExpireMinute is the default value of update time
+	deafultChangeCountExpireMinute        = 10
+	// minChangeCountExpireMinute is the minimum value of update time
+	minChangeCountExpireMinute            = 5
+	// defaultRateLimiterQPS is the default value of rateLimiter qps
+	defaultRateLimiterQPS   = 40
+	// defaultRateLimiterBurst is the default value of rateLimiter burst
+	defaultRateLimiterBurst = 100
 )
 
 var (
@@ -52,22 +69,38 @@ type HostSnap struct {
 	redisCli    redis.Client
 	authManager *extensions.AuthManager
 	*backbone.Engine
-
+	rateLimit   flowctrl.RateLimiter
 	filter *filter
 	ctx    context.Context
 	db     dal.RDB
 }
 
 func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
+	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
 		redisCli:    redisCli,
 		ctx:         ctx,
 		db:          db,
+		rateLimit:   flowctrl.NewRateLimiter(int64(qps), int64(burst)),
 		authManager: authManager,
 		Engine:      engine,
 		filter:      newFilter(),
 	}
 	return h
+}
+
+func getRateLimiterConfig() (int, int) {
+	qps, err := cc.Int("datacollection.hostsnap.rateLimiter.qps")
+	if err != nil {
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s",defaultRateLimiterQPS)
+		qps = defaultRateLimiterQPS
+	}
+	burst, err := cc.Int("datacollection.hostsnap.rateLimiter.burst")
+	if err != nil {
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s",defaultRateLimiterBurst)
+		burst = defaultRateLimiterBurst
+	}
+	return qps, burst
 }
 
 // Hash returns hash value base on message.
@@ -87,6 +120,23 @@ func (h *HostSnap) Hash(cloudid, ip string) (string, error) {
 // Mock returns local mock message for testing.
 func (h *HostSnap) Mock() string {
 	return MockMessage
+}
+
+// getLimitConfig return the configured limit value
+func getLimitConfig(config string, defaultValue, minValue int) int {
+	var err error
+	limit := defaultValue
+	if cc.IsExist(config) {
+		limit, err = cc.Int(config)
+		if err != nil {
+			blog.Errorf("get %s value error, err: %v ", config, err)
+			limit = defaultValue
+		}
+		if limit < minValue {
+			limit = minValue
+		}
+	}
+	return limit
 }
 
 func (h *HostSnap) Analyze(msg *string) error {
@@ -112,7 +162,6 @@ func (h *HostSnap) Analyze(msg *string) error {
 		blog.Errorf("get host detail with ips: %v failed, err: %v, rid: %s", ips, err, rid)
 		return err
 	}
-
 	elements := gjson.GetMany(host, common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField)
 	// check host id field
 	if !elements[0].Exists() {
@@ -140,6 +189,18 @@ func (h *HostSnap) Analyze(msg *string) error {
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
+		return nil
+	}
+
+	// limit the number of requests
+	if !h.rateLimit.TryAccept() {
+		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
+			hostID, innerIP, cloudID, rid)
+		return nil
+	}
+
+	key := common.RedisSnapCountPrefix + strconv.FormatInt(hostID, 10)
+	if h.needToSkip(key, rid) {
 		return nil
 	}
 
@@ -201,7 +262,32 @@ func (h *HostSnap) Analyze(msg *string) error {
 	return nil
 }
 
+func (h *HostSnap) needToSkip(key string, rid string) bool {
+	value, err := h.redisCli.Incr(h.ctx, key).Result()
+	if err != nil {
+		blog.Errorf("an error occurred while increasing the redis value, key: %s, rid: %s", key, rid)
+	}
+	// if it is greater than 1, it means that the data has been updated within the specified time and does not need to be updated this time
+	if value > 1 {
+		return true
+	}
+
+	// get time on redis ttl
+	changeCountExpireMinute := getLimitConfig("datacollection.hostsnap.changeCountExpireMinute", deafultChangeCountExpireMinute, minChangeCountExpireMinute)
+	minTime := 0.5 * float64(changeCountExpireMinute)
+	maxTime := 1.5 * float64(changeCountExpireMinute)
+	randTime := util.RandInt64WithRange(int64(minTime), int64(maxTime))
+	// expire redis key
+	if err := h.redisCli.Expire(h.ctx, key, time.Minute*time.Duration(randTime)).Err(); err != nil {
+		blog.Errorf("an error occurred while expire the redis key, key: %s, rid: %s", key, rid)
+	}
+
+	return false
+}
+
 func needToUpdate(src, toCompare string) bool {
+	// get data fluctuation limit
+	changeRangePercent := getLimitConfig("datacollection.hostsnap.changeRangePercent", defaultChangeRangePercent, minChangeRangePercent)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
 	for idx, field := range compareFields {
@@ -211,10 +297,12 @@ func needToUpdate(src, toCompare string) bool {
 		}
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
-			// tolerate bk_cpu_mhz changes less than 100
-			if compareFields[idx] == "bk_cpu_mhz" {
-				diff := srcElements[idx].Int() - compareElements[idx].Int()
-				if -100 < diff && diff < 100 {
+			compareField := compareFields[idx]
+			// tolerate bk_cpu, bk_cpu_mhz, bk_disk, bk_mem changes less than the set value
+			if compareField == "bk_cpu" || compareField == "bk_cpu_mhz" || compareField == "bk_disk" || compareField == "bk_mem" {
+				val := compareElements[idx].Float() * (float64(changeRangePercent)/100.0)
+				diff := srcElements[idx].Float() - compareElements[idx].Float()
+				if -val < diff && diff < val {
 					continue
 				}
 			}
@@ -226,6 +314,7 @@ func needToUpdate(src, toCompare string) bool {
 
 func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interface{}, string) {
 	var cpumodule = val.Get("data.cpu.cpuinfo.0.modelName").String()
+	cpumodule = strings.TrimSpace(cpumodule)
 	var cpunum int64
 	for _, core := range val.Get("data.cpu.cpuinfo.#.cores").Array() {
 		cpunum += core.Int()
@@ -237,9 +326,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	}
 	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
+	hostname = strings.TrimSpace(hostname)
 	var ostype = val.Get("data.system.info.os").String()
+	ostype = strings.TrimSpace(ostype)
 	var osname string
 	platform := val.Get("data.system.info.platform").String()
+	platform = strings.TrimSpace(platform)
 	version := val.Get("data.system.info.platformVersion").String()
 	switch strings.ToLower(ostype) {
 	case "linux":
@@ -258,23 +350,28 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
+	version = strings.TrimSpace(version)
+	osname = strings.TrimSpace(osname)
 	var OuterMAC, InnerMAC string
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			ip := strings.Split(addr.String(), "/")[0]
 			if ip == innerIP {
 				InnerMAC = inter.Get("hardwareaddr").String()
+				InnerMAC = strings.TrimSpace(InnerMAC)
 			} else if ip == outerIP {
 				OuterMAC = inter.Get("hardwareaddr").String()
+				OuterMAC = strings.TrimSpace(OuterMAC)
 			}
 		}
 	}
 
 	osbit := val.Get("data.system.info.systemtype").String()
-
+	osbit = strings.TrimSpace(osbit)
 	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
+	dockerClientVersion = strings.TrimSpace(dockerClientVersion)
 	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
-
+	dockerServerVersion = strings.TrimSpace(dockerServerVersion)
 	mem = mem >> 10 >> 10
 	setter := map[string]interface{}{
 		"bk_cpu":                            cpunum,

@@ -564,6 +564,7 @@ func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 	}
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
@@ -629,6 +630,7 @@ func (s *Service) SearchInstChildTopo(ctx *rest.Contexts) {
 		return
 	}
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)

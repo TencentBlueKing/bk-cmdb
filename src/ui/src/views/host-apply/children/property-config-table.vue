@@ -40,7 +40,7 @@
             v-if="multiple || readonly"
             :width="readonly ? null : 200"
             :label="$t('当前值')"
-        >
+            show-overflow-tooltip>
             <template slot-scope="{ row }">
                 <template v-if="multiple">
                     <template v-for="(id, index) in moduleIdList">

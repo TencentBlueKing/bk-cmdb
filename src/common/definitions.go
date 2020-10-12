@@ -901,6 +901,8 @@ const (
 	EventCacheEventTxnCommitQueueKey = BKCacheKeyV3Prefix + "event:inst_txn_commit_queue"
 	EventCacheEventTxnAbortQueueKey  = BKCacheKeyV3Prefix + "event:inst_txn_abort_queue"
 	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
+	// this is the prefix of a key used to record the number of executions of the host snapshot
+	RedisSnapCountPrefix             = RedisSnapKeyPrefix + "count:"
 )
 
 // api cache keys
@@ -929,13 +931,13 @@ const (
 	BKHTTPSecretsToken   = "BK-Secrets-Token"
 	BKHTTPSecretsProject = "BK-Secrets-Project"
 	BKHTTPSecretsEnv     = "BK-Secrets-Env"
-	// BKHTTPReadRefernce  query db use secondary node
-	BKHTTPReadPrefernce = "Cc_Read_Preference"
+	// BKHTTPReadReference  query db use secondary node
+	BKHTTPReadReference = "Cc_Read_Preference"
 )
 
-type ReadPrefernceMode string
+type ReadPreferenceMode string
 
-func (r ReadPrefernceMode) String() string {
+func (r ReadPreferenceMode) String() string {
 	return string(r)
 }
 
@@ -944,25 +946,25 @@ func (r ReadPrefernceMode) String() string {
 const (
 
 	// NilMode not set
-	NilMode ReadPrefernceMode = ""
+	NilMode ReadPreferenceMode = ""
 	// PrimaryMode indicates that only a primary is
 	// considered for reading. This is the default
 	// mode.
-	PrimaryMode ReadPrefernceMode = "1"
+	PrimaryMode ReadPreferenceMode = "1"
 	// PrimaryPreferredMode indicates that if a primary
 	// is available, use it; otherwise, eligible
 	// secondaries will be considered.
-	PrimaryPreferredMode ReadPrefernceMode = "2"
+	PrimaryPreferredMode ReadPreferenceMode = "2"
 	// SecondaryMode indicates that only secondaries
 	// should be considered.
-	SecondaryMode ReadPrefernceMode = "3"
+	SecondaryMode ReadPreferenceMode = "3"
 	// SecondaryPreferredMode indicates that only secondaries
 	// should be considered when one is available. If none
 	// are available, then a primary will be considered.
-	SecondaryPreferredMode ReadPrefernceMode = "4"
+	SecondaryPreferredMode ReadPreferenceMode = "4"
 	// NearestMode indicates that all primaries and secondaries
 	// will be considered.
-	NearestMode ReadPrefernceMode = "5"
+	NearestMode ReadPreferenceMode = "5"
 )
 
 // transaction related

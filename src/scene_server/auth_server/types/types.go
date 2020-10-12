@@ -34,6 +34,7 @@ const (
 	ListInstanceMethod         Method = "list_instance"
 	FetchInstanceInfoMethod    Method = "fetch_instance_info"
 	ListInstanceByPolicyMethod Method = "list_instance_by_policy"
+	SearchInstanceMethod       Method = "search_instance"
 
 	IDField   = "id"
 	NameField = "display_name"
@@ -72,7 +73,7 @@ func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 			return err
 		}
 		req.Filter = filter
-	case ListInstanceMethod:
+	case ListInstanceMethod, SearchInstanceMethod:
 		filter := ListInstanceFilter{}
 		err := json.Unmarshal(data.Filter, &filter)
 		if err != nil {
@@ -122,9 +123,8 @@ type ListAttrValueFilter struct {
 }
 
 type ListInstanceFilter struct {
-	Parent            *ParentFilter             `json:"parent,omitempty"`
-	Search            map[iam.TypeID][]string   `json:"search,omitempty"`
-	ResourceTypeChain []ResourceTypeChainFilter `json:"resource_type_chain,omitempty"`
+	Parent  *ParentFilter `json:"parent,omitempty"`
+	Keyword string        `json:"keyword,omitempty"`
 }
 
 type ParentFilter struct {

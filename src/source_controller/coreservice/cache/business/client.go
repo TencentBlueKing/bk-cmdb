@@ -318,19 +318,25 @@ func (c *Client) ListModuleDetails(moduleIDs []int64) ([]string, error) {
 
 	modules, err := c.rds.MGet(context.Background(), keys...).Result()
 	if err == nil {
-		list := make([]string, len(modules))
+		list := make([]string, 0)
 		for idx, m := range modules {
 			if m == nil {
-				detail, err := c.getModuleDetailFromMongo(moduleIDs[idx])
+				detail, isNotFound, err := c.getModuleDetailFromMongoCheckNotFound(moduleIDs[idx])
+				// 跳过不存在的模块，因为作为批量查询的API，调用方希望查询到存在的资源，并自动过滤掉不存在的资源
+				if isNotFound {
+					blog.Errorf("module %d not exist, err: %v", moduleIDs[idx], err)
+					continue
+				}
+
 				if err != nil {
 					blog.Errorf("get module %d detail from db failed, err: %v", moduleIDs[idx], err)
 					return nil, err
 				}
 
-				list[idx] = detail
+				list = append(list, detail)
 				continue
 			}
-			list[idx] = m.(string)
+			list = append(list, m.(string))
 		}
 		return list, nil
 	}
@@ -427,18 +433,24 @@ func (c *Client) ListSetDetails(setIDs []int64) ([]string, error) {
 
 	sets, err := c.rds.MGet(context.Background(), keys...).Result()
 	if err == nil && len(sets) != 0 {
-		all := make([]string, len(sets))
+		all := make([]string, 0)
 		for idx, s := range sets {
 			if s == nil {
-				detail, err := c.getSetDetailFromMongo(setIDs[idx])
+				detail, isNotFound, err := c.getSetDetailFromMongoCheckNotFound(setIDs[idx])
+				// 跳过不存在的集群，因为作为批量查询的API，调用方希望查询到存在的资源，并自动过滤掉不存在的资源
+				if isNotFound {
+					blog.Errorf("set %d not exist, err: %v", setIDs[idx], err)
+					continue
+				}
+
 				if err != nil {
 					blog.Errorf("get set %d from mongodb failed, err: %v", setIDs[idx], err)
 					return nil, err
 				}
-				all[idx] = detail
+				all = append(all, detail)
 				continue
 			}
-			all[idx] = s.(string)
+			all = append(all, s.(string))
 		}
 
 		return all, nil
@@ -513,19 +525,25 @@ func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string,
 
 	customs, err := c.rds.MGet(context.Background(), keys...).Result()
 	if err == nil && len(customs) != 0 {
-		all := make([]string, len(customs))
+		all := make([]string, 0)
 		for idx, cu := range customs {
 			if cu == nil {
-				detail, err := c.getCustomLevelDetail(objID, instIDs[idx])
+				detail, isNotFound, err := c.getCustomLevelDetailCheckNotFound(objID, instIDs[idx])
+				// 跳过不存在的自定义节点，因为作为批量查询的API，调用方希望查询到存在的资源，并自动过滤掉不存在的资源
+				if isNotFound {
+					blog.Errorf("custom layer %s/%d not exist, err: %v", objID, instIDs[idx], err)
+					continue
+				}
+
 				if err != nil {
 					blog.Errorf("get %s/%d detail from mongodb failed, err: %v", objID, instIDs[idx], err)
 					return nil, err
 				}
-				all[idx] = detail
+				all = append(all, detail)
 				continue
 			}
 
-			all[idx] = cu.(string)
+			all = append(all, cu.(string))
 		}
 		return all, nil
 	}

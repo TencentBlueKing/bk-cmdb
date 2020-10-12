@@ -4,11 +4,9 @@
             :data="detailsData"
             :max-height="$APP.height - 120">
             <bk-table-column prop="property_name" :label="$t('属性名称')" show-overflow-tooltip></bk-table-column>
-            <bk-table-column prop="property_value" :label="$t('变更前')">
+            <bk-table-column prop="property_value" :label="$t('变更前')" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value v-if="row.property_id !== 'bind_info'"
-                        v-bk-overflow-tips
-                        :show-title="true"
                         :value="getCellValue(row, 'before')"
                         :property="properties.find(property => property.bk_property_id === row.property_id)">
                     </cmdb-property-value>
@@ -18,11 +16,9 @@
                     </process-bind-info-value>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="show_value" :label="$t('变更后')">
+            <bk-table-column prop="show_value" :label="$t('变更后')" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value v-if="row.property_id !== 'bind_info'"
-                        v-bk-overflow-tips
-                        :show-title="true"
                         :value="getCellValue(row, 'after')"
                         :property="properties.find(property => property.bk_property_id === row.property_id)">
                     </cmdb-property-value>

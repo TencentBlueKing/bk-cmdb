@@ -296,8 +296,8 @@ func SetMigrateFromFile(target string) error {
 
 // Redis return redis configuration information according to the prefix.
 func Redis(prefix string) redis.Config {
-	confLock.Lock()
-	defer confLock.Unlock()
+	confLock.RLock()
+	defer confLock.RUnlock()
 	parser := getRedisParser()
 	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
 	for parser == nil {
@@ -317,8 +317,8 @@ func Redis(prefix string) redis.Config {
 
 // Mongo return mongo configuration information according to the prefix.
 func Mongo(prefix string) mongo.Config {
-	confLock.Lock()
-	defer confLock.Unlock()
+	confLock.RLock()
+	defer confLock.RUnlock()
 	parser := getMongodbParser()
 	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
 	for parser == nil {
@@ -357,8 +357,8 @@ func Mongo(prefix string) mongo.Config {
 
 // String return the string value of the configuration information according to the key.
 func String(key string) (string,error) {
-	confLock.Lock()
-	defer confLock.Unlock()
+	confLock.RLock()
+	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
 		return migrateParser.getString(key),nil
 	}
@@ -373,8 +373,8 @@ func String(key string) (string,error) {
 
 // Int return the int value of the configuration information according to the key.
 func Int(key string) (int,error) {
-	confLock.Lock()
-	defer confLock.Unlock()
+	confLock.RLock()
+	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
 		return migrateParser.getInt(key),nil
 	}
@@ -389,8 +389,8 @@ func Int(key string) (int,error) {
 
 // Bool return the bool value of the configuration information according to the key.
 func Bool(key string) (bool,error) {
-	confLock.Lock()
-	defer confLock.Unlock()
+	confLock.RLock()
+	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
 		return migrateParser.getBool(key),nil
 	}
@@ -404,8 +404,8 @@ func Bool(key string) (bool,error) {
 }
 
 func IsExist(key string) bool {
-	confLock.Lock()
-	defer confLock.Unlock()
+	confLock.RLock()
+	defer confLock.RUnlock()
 	if migrateParser != nil {
 		return migrateParser.isSet(key)
 	}

@@ -49,7 +49,6 @@
                                 {{changed.property.bk_property_name}}：
                                 <span class="info-item-value">
                                     <cmdb-property-value
-                                        :show-title="false"
                                         :value="getChangedValue(changed)"
                                         :property="changed.property">
                                     </cmdb-property-value>

@@ -13,7 +13,7 @@
         </bk-tab>
         <div class="content">
             <cmdb-resize-layout
-                v-if="activeTab === 1"
+                v-if="isResourcePool"
                 :class="['resize-layout fl', { 'is-collapse': layout.collapse }]"
                 :handler-offset="3"
                 :min="200"
@@ -46,12 +46,12 @@
                 layout: {
                     collapse: false
                 },
-                activeTab: RouterQuery.get('scope', 1),
+                activeTab: RouterQuery.get('scope', '1'),
                 scopeList: [{
-                    id: 1,
+                    id: '1',
                     label: this.$t('未分配')
                 }, {
-                    id: 0,
+                    id: '0',
                     label: this.$t('已分配')
                 }, {
                     id: 'all',
@@ -59,12 +59,17 @@
                 }]
             }
         },
+        computed: {
+            isResourcePool () {
+                return this.activeTab.toString() === '1'
+            }
+        },
         methods: {
             handleTabChange (tab) {
                 Bus.$emit('toggle-host-filter', false)
                 Bus.$emit('reset-host-filter')
                 RouterQuery.set({
-                    scope: tab,
+                    scope: isNaN(tab) ? tab : parseInt(tab),
                     ip: '',
                     bk_asset_id: '',
                     page: 1,

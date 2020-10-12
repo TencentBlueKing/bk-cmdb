@@ -72,7 +72,7 @@
         </div>
         <div class="btns" :class="{ 'sticky-layout': scrollbar }" v-if="canEdit">
             <bk-button class="mr10" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
-            <bk-button class="delete-btn" @click="handleDelete">{{$t('删除')}}</bk-button>
+            <bk-button class="delete-btn" v-if="!field.ispre" @click="handleDelete">{{$t('删除')}}</bk-button>
         </div>
     </div>
 </template>

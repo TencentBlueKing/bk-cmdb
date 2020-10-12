@@ -16,14 +16,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
@@ -44,7 +45,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, string(current.ConfigData))
 
 	var err error
-	t.Config.Es, err = elasticsearch.ParseConfigFromKV("topoServer.es", nil)
+	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", nil)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
 	}
@@ -52,9 +53,10 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 
 func (t *TopoServer) setBusinessTopoLevelMax() error {
 	tryCnt := 30
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
-		res, err := t.Core.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), http.Header{})
+		res, err := t.Core.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
 		if err != nil {
 			blog.Warnf("setBusinessTopoLevelMax failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
 			continue

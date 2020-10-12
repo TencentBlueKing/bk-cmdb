@@ -71,7 +71,7 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 		ctx.RespBkEntity(res)
 		return
 
-	case types.ListInstanceMethod:
+	case types.ListInstanceMethod, types.SearchInstanceMethod:
 		if method.ListInstance == nil {
 			ctx.RespBkEntity(types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}})
 			return

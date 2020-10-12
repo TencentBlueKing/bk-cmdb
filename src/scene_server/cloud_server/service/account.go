@@ -13,7 +13,6 @@
 package service
 
 import (
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -192,11 +191,11 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
+	// if fuzzy search, change the string query to regexp
+	if option.IsFuzzy == true {
 		for k, v := range option.Condition {
-			if reflect.TypeOf(v).Kind() == reflect.String {
-				field := v.(string)
+			field, ok := v.(string)
+			if ok {
 				option.Condition[k] = mapstr.MapStr{
 					common.BKDBLIKE: params.SpecialCharChange(field),
 					"$options":      "i",

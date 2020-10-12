@@ -54,7 +54,7 @@ func clearAccountData() {
 // 准备测试用例需要的数据
 func prepareAccountData() {
 	accountData := []map[string]interface{}{accountData1, accountData2}
-	for i, _ := range accountData {
+	for i := range accountData {
 		rsp, err := cloudServerClient.CreateAccount(context.Background(), header, accountData[i])
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
@@ -208,15 +208,15 @@ var _ = Describe("cloud account test", func() {
 			Expect(len(rsp.Data.Info)).To(Equal(1))
 		})
 
-		It("search with configured exact is true", func() {
-			queryData := map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_account_name": "aws"}}
+		It("search with configured is_fuzzy is false", func() {
+			queryData := map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_account_name": "aws"}}
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(0)))
 
-			queryData = map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_account_name": "awsAccount1"}}
+			queryData = map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_account_name": "awsAccount1"}}
 			rsp, err = cloudServerClient.SearchAccount(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
@@ -225,8 +225,8 @@ var _ = Describe("cloud account test", func() {
 			Expect(rsp.Data.Info[0].String("bk_account_name")).To(Equal("awsAccount1"))
 		})
 
-		It("search with configured exact is false", func() {
-			queryData := map[string]interface{}{"exact": false, "condition": map[string]interface{}{"bk_account_name": "aws"}}
+		It("search with configured is_fuzzy is true", func() {
+			queryData := map[string]interface{}{"is_fuzzy": true, "condition": map[string]interface{}{"bk_account_name": "aws"}}
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())

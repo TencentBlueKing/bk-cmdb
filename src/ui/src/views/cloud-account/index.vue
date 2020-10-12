@@ -187,16 +187,19 @@
             },
             async getData () {
                 try {
-                    const data = await this.$store.dispatch('cloud/account/findMany', {
-                        params: {
-                            page: {
-                                ...this.$tools.getPageParams(this.pagination),
-                                sort: this.sort
-                            },
-                            condition: {
-                                bk_account_name: this.filter
-                            }
+                    const params = {
+                        page: {
+                            ...this.$tools.getPageParams(this.pagination),
+                            sort: this.sort
                         },
+                        condition: {}
+                    }
+                    if (this.filter) {
+                        params.condition.bk_account_name = this.filter
+                        params.is_fuzzy = true
+                    }
+                    const data = await this.$store.dispatch('cloud/account/findMany', {
+                        params: params,
                         config: {
                             requestId: this.request.search
                         }
