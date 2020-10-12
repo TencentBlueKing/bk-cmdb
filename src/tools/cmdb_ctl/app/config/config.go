@@ -61,7 +61,7 @@ func NewMongoService(mongoURI string) (*Service, error) {
 	if mongoURI == "" {
 		return nil, errors.New("mongo-uri must set via flag or environment variable")
 	}
-	db, err := local.NewMgo(mongoURI, "1500", time.Minute)
+	db, err := local.NewMgo(mongoURI, "1500", "10", time.Minute)
 	if err != nil {
 		return nil, err
 	}

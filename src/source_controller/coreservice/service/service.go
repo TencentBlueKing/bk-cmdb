@@ -91,7 +91,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	var dbErr error
 	var db dal.RDB
 	if s.cfg.Mongo.Enable == "true" {
-		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), s.cfg.Mongo.MaxOpenConns, time.Minute)
+		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), s.cfg.Mongo.MaxOpenConns, s.cfg.Mongo.SocketTimeout, time.Minute)
 	} else {
 		db, dbErr = remote.NewWithDiscover(s.engin)
 	}

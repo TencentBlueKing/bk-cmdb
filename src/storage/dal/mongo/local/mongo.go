@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -43,12 +44,18 @@ const (
 	DefaultMaxOpenConns = 1500
 	// if maxOpenConns exceeds maximum value, use maximum value
 	MaximumMaxOpenConns = 3000
+	// if timeout isn't configured, use default value
+	DefaultSocketTimeout = 10
+	// if timeout exceeds maximum value, use maximum value
+	MaximumSocketTimeout = 30
+	// if timeout less than the minimum value, use minimum value
+	MinimumSocketTimeout = 5
 )
 
 var _ dal.DB = new(Mongo)
 
 // NewMgo returns new RDB
-func NewMgo(uri, maxOpenConns string, timeout time.Duration) (*Mongo, error) {
+func NewMgo(uri, maxOpenConns, socketTimeout string, timeout time.Duration) (*Mongo, error) {
 
 	cs, err := mgo.ParseURL(uri)
 	if err != nil {
@@ -66,14 +73,16 @@ func NewMgo(uri, maxOpenConns string, timeout time.Duration) (*Mongo, error) {
 		poolLimit = MaximumMaxOpenConns
 	}
 
-	primary, err := newClient(uri, mgo.PrimaryPreferred, poolLimit, time.Second*10)
+	socketTimeoutIntVal := getSocketTimeoutIntVal(socketTimeout)
+
+	primary, err := newClient(uri, mgo.PrimaryPreferred, poolLimit, time.Second*10, time.Second*time.Duration(socketTimeoutIntVal))
 	if err != nil {
 		return nil, err
 	}
 
 	secondary := make([]*mgo.Session, secondaryCnt)
 	for i := 0; i < secondaryCnt; i++ {
-		sec, err := newClient(uri, mgo.Eventual, 300, time.Second*10)
+		sec, err := newClient(uri, mgo.Eventual, 300, time.Second*10, time.Second*time.Duration(socketTimeoutIntVal))
 		if err != nil {
 			return nil, err
 		}
@@ -87,13 +96,36 @@ func NewMgo(uri, maxOpenConns string, timeout time.Duration) (*Mongo, error) {
 	}, nil
 }
 
-func newClient(uri string, mode mgo.Mode, pool int, timeout time.Duration) (*mgo.Session, error) {
+func getSocketTimeoutIntVal(socketTimeout string) int {
+	if socketTimeout == "" {
+		blog.Errorf("no setting mongo.socketTimeoutSeconds config, use default value: %d", DefaultSocketTimeout)
+		return DefaultSocketTimeout
+	}
+	socketTimeoutIntVal, err := strconv.Atoi(socketTimeout)
+	if err != nil {
+		blog.Errorf("parse mongo.socketTimeoutSeconds config error: %s", err.Error())
+		os.Exit(1)
+	}
+
+	if socketTimeoutIntVal > MaximumSocketTimeout {
+		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d", socketTimeoutIntVal, MaximumSocketTimeout)
+		socketTimeoutIntVal = MaximumSocketTimeout
+	}
+
+	if socketTimeoutIntVal < MinimumSocketTimeout {
+		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d", socketTimeoutIntVal, MinimumSocketTimeout)
+		socketTimeoutIntVal = MinimumSocketTimeout
+	}
+	return socketTimeoutIntVal
+}
+
+func newClient(uri string, mode mgo.Mode, pool int, timeout, socketTimeoutIntVal time.Duration) (*mgo.Session, error) {
 	client, err := mgo.DialWithTimeout(uri, time.Second*10)
 	if err != nil {
 		return nil, err
 	}
 	client.SetSyncTimeout(timeout)
-	client.SetSocketTimeout(timeout)
+	client.SetSocketTimeout(socketTimeoutIntVal)
 	client.SetPoolLimit(pool)
 	client.SetMode(mode, false)
 	if err := client.Ping(); err != nil {
