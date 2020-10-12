@@ -137,7 +137,10 @@ func (o *Object) GetObjectID() string {
 
 // IsCommon is common object
 func (o *Object) IsCommon() bool {
-	switch o.ObjectID {
+	return IsCommon(o.ObjectID)
+}
+func IsCommon(objID string) bool {
+	switch objID {
 	case common.BKInnerObjIDApp:
 		return false
 	case common.BKInnerObjIDSet:

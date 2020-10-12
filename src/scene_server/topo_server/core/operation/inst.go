@@ -39,7 +39,7 @@ type InstOperationInterface interface {
 	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error
 	FindOriginInst(params types.ContextParams, objID string, cond *metadata.QueryInput) (*metadata.InstResult, error)
 	FindInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
-	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (cont int, results []inst.Inst, err error)
+	FindInstByAssociationInst(params types.ContextParams, objID string, data mapstr.MapStr) (*metadata.InstResult, error)
 	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
 	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []CommonInstTopoV2, err error)
@@ -831,19 +831,17 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 	return len(results), results, nil
 }
 
-func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (cont int, results []inst.Inst, err error) {
+func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, objID string, data mapstr.MapStr) (*metadata.InstResult, error) {
 
 	asstParamCond := &AssociationParams{}
 	if err := data.MarshalJSONInto(asstParamCond); nil != err {
 		blog.Errorf("[operation-inst] find inst by association inst , err: %s, rid: %s", err.Error(), params.ReqID)
-		return 0, nil, params.Err.Errorf(common.CCErrTopoInstSelectFailed, err.Error())
+		return nil, params.Err.Errorf(common.CCErrTopoInstSelectFailed, err.Error())
 	}
 
-	object := obj.Object()
-
 	instCond := map[string]interface{}{}
-	if obj.IsCommon() {
-		instCond[common.BKObjIDField] = object.ObjectID
+	if metadata.IsCommon(objID) {
+		instCond[common.BKObjIDField] = objID
 	}
 	targetInstIDS := make([]int64, 0)
 
@@ -856,7 +854,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 
 		for _, objCondition := range objs {
 			if objCondition.Operator != common.BKDBEQ {
-				if object.ObjectID == keyObjID {
+				if objID == keyObjID {
 					if objCondition.Operator == common.BKDBLIKE ||
 						objCondition.Operator == common.BKDBMULTIPLELike {
 						switch t := objCondition.Value.(type) {
@@ -883,7 +881,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 					}
 				}
 			} else {
-				if object.ObjectID == keyObjID {
+				if objID == keyObjID {
 					// deal self condition
 					switch t := objCondition.Value.(type) {
 					case string:
@@ -902,7 +900,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 
 		}
 
-		if object.ObjectID == keyObjID {
+		if objID == keyObjID {
 			// no need to search the association objects
 			continue
 		}
@@ -916,7 +914,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		asstInstIDS, err := c.searchAssociationInst(params, keyObjID, innerCond)
 		if nil != err {
 			blog.Errorf("[operation-inst]failed to search the association inst, err: %s, rid: %s", err.Error(), params.ReqID)
-			return 0, nil, err
+			return nil, err
 		}
 		blog.V(4).Infof("[FindInstByAssociationInst] search association insts, keyObjID %s, condition: %v, results: %v, rid: %s", keyObjID, innerCond, asstInstIDS, params.ReqID)
 
@@ -926,29 +924,29 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 				common.BKDBIN: asstInstIDS,
 			},
 			"bk_asst_obj_id": keyObjID,
-			"bk_obj_id":      object.ObjectID,
+			"bk_obj_id":      objID,
 		}
 
 		asstInst, err := c.asst.SearchInstAssociation(params, query)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to search the association inst, err: %s, rid: %s", err.Error(), params.ReqID)
-			return 0, nil, err
+			return nil, err
 		}
 
 		for _, asst := range asstInst {
 			targetInstIDS = append(targetInstIDS, asst.InstID)
 		}
-		blog.V(4).Infof("[FindInstByAssociationInst] search association, objectID=%s, keyObjID=%s, condition: %v, results: %v, rid: %s", object.ObjectID, keyObjID, query, targetInstIDS, params.ReqID)
+		blog.V(4).Infof("[FindInstByAssociationInst] search association, objectID=%s, keyObjID=%s, condition: %v, results: %v, rid: %s", objID, keyObjID, query, targetInstIDS, params.ReqID)
 
 	}
 
 	if 0 != len(targetInstIDS) {
-		instCond[obj.GetInstIDFieldName()] = map[string]interface{}{
+		instCond[metadata.GetInstIDFieldByObjID(objID)] = map[string]interface{}{
 			common.BKDBIN: targetInstIDS,
 		}
 	} else if 0 != len(asstParamCond.Condition) {
-		if _, ok := asstParamCond.Condition[object.ObjectID]; !ok {
-			instCond[obj.GetInstIDFieldName()] = map[string]interface{}{
+		if _, ok := asstParamCond.Condition[objID]; !ok {
+			instCond[metadata.GetInstNameFieldName(objID)] = map[string]interface{}{
 				common.BKDBIN: targetInstIDS,
 			}
 		}
@@ -956,14 +954,14 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 
 	query := &metadata.QueryInput{}
 	query.Condition = instCond
-	if fields, ok := asstParamCond.Fields[object.ObjectID]; ok {
+	if fields, ok := asstParamCond.Fields[objID]; ok {
 		query.Fields = strings.Join(fields, ",")
 	}
 	query.Limit = asstParamCond.Page.Limit
 	query.Sort = asstParamCond.Page.Sort
 	query.Start = asstParamCond.Page.Start
-	blog.V(4).Infof("[FindInstByAssociationInst] search object[%s] with inst condition: %v, rid: %s", object.ObjectID, instCond, params.ReqID)
-	return c.FindInst(params, obj, query, false)
+
+	return c.FindOriginInst(params, objID, query)
 }
 
 func (c *commonInst) FindOriginInst(params types.ContextParams, objID string, cond *metadata.QueryInput) (*metadata.InstResult, error) {

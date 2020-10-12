@@ -203,11 +203,11 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 
 	instHandler := m.dbProxy.Table(tableName).Find(inputParam.Condition)
 	for _, sort := range inputParam.SortArr {
-		fileld := sort.Field
+		field := sort.Field
 		if sort.IsDsc {
-			fileld = "-" + fileld
+			field = "-" + field
 		}
-		instHandler = instHandler.Sort(fileld)
+		instHandler = instHandler.Sort(field)
 	}
 	instItems := make([]mapstr.MapStr, 0)
 	err := instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).
@@ -218,7 +218,7 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 		return &metadata.QueryResult{}, err
 	}
 
-	count, countErr := m.dbProxy.Table(tableName).Find(inputParam.Condition).Count(ctx.Context)
+	count, countErr := instHandler.Count(ctx.Context)
 	if countErr != nil {
 		blog.Errorf("count instance error [%v], rid: %s", countErr, ctx.ReqID)
 		return nil, countErr
