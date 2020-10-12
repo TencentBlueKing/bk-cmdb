@@ -186,18 +186,16 @@ mongodb:
 #    secretsProject:
 #    secretsEnv:
 
-# topo_server专属配置
-topoServer:
-  #elasticsearch相关
-  es:
-    #全文检索功能开关(取值：off/on)，默认是off，开启是on
-    fullTextSearch: $full_text_search
-    #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
-    url: $es_url
-    #用户
-    usr: $es_user
-    #密码
-    pwd: $es_pass
+#elasticsearch配置
+es:
+  #全文检索功能开关(取值：off/on)，默认是off，开启是on
+  fullTextSearch: "$full_text_search"
+  #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
+  url: $es_url
+  #用户
+  usr: $es_user
+  #密码
+  pwd: $es_pass
 # web_server专属配置
 webServer:
   api:
@@ -224,8 +222,6 @@ webServer:
     resourcesPath: /tmp/
     #前端基础页面位置
     htmlRoot: $ui_root
-    #全文检索功能开关(取值：off/on)，默认是off，开启是on
-    fullTextSearch: $full_text_search
   app:
     agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
     #权限模式，web页面使用，可选值: internal, iam
@@ -255,6 +251,17 @@ cloudServer:
     secretsToken: ${secrets_token}
     secretsProject: ${secrets_project}
     secretsEnv: ${secrets_env}
+#datacollection专属配置
+datacollection:
+  hostsnap:
+    # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
+    changeRangePercent: 10
+    # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
+    changeCountExpireMinute: 10
+    # 用于设置单个服务主机快照处理请求能力，起到限流的作用，令牌桶配置，最多请求数通过burst设置。qps的默认值为40，burst的默认值为100
+    rateLimiter:
+      qps: 40
+      burst: 100
     '''
 
     template = FileTemplate(common_file_template_str)

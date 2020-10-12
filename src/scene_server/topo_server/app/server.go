@@ -45,7 +45,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, string(current.ConfigData))
 
 	var err error
-	t.Config.Es, err = elasticsearch.ParseConfigFromKV("topoServer.es", nil)
+	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", nil)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
 	}
