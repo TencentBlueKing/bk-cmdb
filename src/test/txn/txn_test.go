@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
@@ -90,7 +90,7 @@ var _ = Describe("Transaction Test", func() {
 				Timeout: time.Minute,
 			}
 			// create a new txnHeader to deliver the transaction info.
-			txnHeader := http.Header{}
+			txnHeader := util.CloneHeader(h)
 			// create a new transaction
 			txn, err := clientSet.CoreService().Txn().NewTransaction(true, txnHeader, ops)
 			Expect(err).Should(BeNil())
