@@ -35,7 +35,7 @@
     "lodash.throttle": "4.1.1",
     "md5": "2.2.1",
     "moment": "2.22.2",
-    "plotly.js": "^1.51.3",
+    "plotly.js": "1.51.3",
     "sortablejs": "1.8.4",
     "utf8-byte-length": "^1.0.4",
     "v-click-outside": "1.0.5",
