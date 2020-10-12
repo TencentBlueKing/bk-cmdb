@@ -41,15 +41,15 @@ import (
 
 const (
 	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
-	defaultChangeRangePercent 	    = 10
+	defaultChangeRangePercent = 10
 	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
-	minChangeRangePercent            = 5
+	minChangeRangePercent = 5
 	// deafultChangeCountExpireMinute is the default value of update time
-	deafultChangeCountExpireMinute        = 10
+	deafultChangeCountExpireMinute = 10
 	// minChangeCountExpireMinute is the minimum value of update time
-	minChangeCountExpireMinute            = 5
+	minChangeCountExpireMinute = 5
 	// defaultRateLimiterQPS is the default value of rateLimiter qps
-	defaultRateLimiterQPS   = 40
+	defaultRateLimiterQPS = 40
 	// defaultRateLimiterBurst is the default value of rateLimiter burst
 	defaultRateLimiterBurst = 100
 )
@@ -69,10 +69,10 @@ type HostSnap struct {
 	redisCli    *redis.Client
 	authManager *extensions.AuthManager
 	*backbone.Engine
-	rateLimit   flowctrl.RateLimiter
-	filter *filter
-	ctx    context.Context
-	db     dal.RDB
+	rateLimit flowctrl.RateLimiter
+	filter    *filter
+	ctx       context.Context
+	db        dal.RDB
 }
 
 func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
@@ -92,12 +92,12 @@ func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine
 func getRateLimiterConfig() (int, int) {
 	qps, err := cc.Int("datacollection.hostsnap.rateLimiter.qps")
 	if err != nil {
-		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s",defaultRateLimiterQPS)
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s", defaultRateLimiterQPS)
 		qps = defaultRateLimiterQPS
 	}
 	burst, err := cc.Int("datacollection.hostsnap.rateLimiter.burst")
 	if err != nil {
-		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s",defaultRateLimiterBurst)
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s", defaultRateLimiterBurst)
 		burst = defaultRateLimiterBurst
 	}
 	return qps, burst
@@ -300,7 +300,7 @@ func needToUpdate(src, toCompare string) bool {
 			compareField := compareFields[idx]
 			// tolerate bk_cpu, bk_cpu_mhz, bk_disk, bk_mem changes less than the set value
 			if compareField == "bk_cpu" || compareField == "bk_cpu_mhz" || compareField == "bk_disk" || compareField == "bk_mem" {
-				val := compareElements[idx].Float() * (float64(changeRangePercent)/100.0)
+				val := compareElements[idx].Float() * (float64(changeRangePercent) / 100.0)
 				diff := srcElements[idx].Float() - compareElements[idx].Float()
 				if -val < diff && diff < val {
 					continue
@@ -492,7 +492,7 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 			Fields:  reqireFields,
 		}
 
-		host, err := h.Engine.CoreAPI.CoreService().Cache().SearchHostWithInnerIP(context.Background(), header, opt)
+		host, err := h.Engine.CoreAPI.CacheService().Cache().Host().SearchHostWithInnerIP(context.Background(), header, opt)
 		if err != nil {
 			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
 			if ccErr, ok := err.(ccErr.CCErrorCoder); ok {

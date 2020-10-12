@@ -18,9 +18,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream"
-	"gopkg.in/redis.v5"
 )
 
 // get resource key
@@ -54,9 +52,7 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 type FlowOptions struct {
 	Collection string
 	key        Key
-	rds        *redis.Client
 	watch      stream.Interface
-	db         dal.DB
 	isMaster   discovery.ServiceManageInterface
 }
 

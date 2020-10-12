@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package cache
+package topology
 
 import (
 	"context"
@@ -18,15 +18,11 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/cache/topo_tree"
+	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 )
 
 type Interface interface {
 	SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error)
-	SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error)
-	SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error)
-	ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonString string, err error)
-	ListHostWithPage(ctx context.Context, h http.Header, opt *metadata.ListHostWithPage) (cnt int64, jsonString string, err error)
 	SearchBusiness(ctx context.Context, h http.Header, bizID int64) (jsonString string, err error)
 	ListBusiness(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonArray string, err error)
 	SearchSet(ctx context.Context, h http.Header, setID int64) (jsonString string, err error)

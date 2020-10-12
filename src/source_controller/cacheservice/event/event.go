@@ -18,16 +18,12 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream"
-	"gopkg.in/redis.v5"
 )
 
-func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster discovery.ServiceManageInterface) error {
+func NewEvent(watch stream.Interface, isMaster discovery.ServiceManageInterface) error {
 	e := Event{
-		rds:      rds,
 		watch:    watch,
-		db:       db,
 		isMaster: isMaster,
 	}
 
@@ -80,9 +76,7 @@ func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster dis
 }
 
 type Event struct {
-	rds      *redis.Client
 	watch    stream.Interface
-	db       dal.DB
 	isMaster discovery.ServiceManageInterface
 }
 
@@ -90,9 +84,7 @@ func (e *Event) runHost(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameBaseHost,
 		key:        HostKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -103,9 +95,7 @@ func (e *Event) runModuleHostRelation(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameModuleHostConfig,
 		key:        ModuleHostRelationKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -116,9 +106,7 @@ func (e *Event) runBiz(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameBaseApp,
 		key:        BizKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -129,9 +117,7 @@ func (e *Event) runSet(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameBaseSet,
 		key:        SetKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -142,9 +128,7 @@ func (e *Event) runModule(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameBaseModule,
 		key:        ModuleKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -155,9 +139,7 @@ func (e *Event) runSetTemplate(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameSetTemplate,
 		key:        SetTemplateKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -168,9 +150,7 @@ func (e *Event) runObjectBase(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameBaseInst,
 		key:        ObjectBaseKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -181,9 +161,7 @@ func (e *Event) runProcess(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameBaseProcess,
 		key:        ProcessKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 
@@ -194,9 +172,7 @@ func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameProcessInstanceRelation,
 		key:        ProcessInstanceRelationKey,
-		rds:        e.rds,
 		watch:      e.watch,
-		db:         e.db,
 		isMaster:   e.isMaster,
 	}
 

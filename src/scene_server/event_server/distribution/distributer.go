@@ -28,7 +28,7 @@ import (
 	"configcenter/src/common/watch"
 	etypes "configcenter/src/scene_server/event_server/types"
 	ewatcher "configcenter/src/scene_server/event_server/watcher"
-	"configcenter/src/source_controller/coreservice/event"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"

@@ -421,7 +421,7 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				if process.ProcessID != instID {
 					continue
 				}
-				
+
 				for _, field := range diffFields {
 					switch field {
 					case common.BKProcessNameField:
@@ -683,7 +683,7 @@ func getCache(ctx context.Context, cache *redis.Client, clientSet apimachinery.C
 		}
 
 		// 0. get host data
-		host, err := clientSet.CoreService().Cache().SearchHostWithHostID(ctx, header, &metadata.SearchHostWithIDOption{
+		host, err := clientSet.CacheService().Cache().Host().SearchHostWithHostID(ctx, header, &metadata.SearchHostWithIDOption{
 			HostID: instID, Fields: append(hostIndentDiffFields[common.BKInnerObjIDHost], common.BKHostIDField, common.BKOwnerIDField)})
 		if err != nil {
 			blog.Errorf("search host with id: %d failed, err: %s", instID, err.Error())
@@ -743,19 +743,19 @@ func getCache(ctx context.Context, cache *redis.Client, clientSet apimachinery.C
 		}
 		return &inst, nil
 	case common.BKInnerObjIDApp:
-		instDataStr, err = clientSet.CoreService().Cache().SearchBusiness(ctx, header, instID)
+		instDataStr, err = clientSet.CacheService().Cache().Topology().SearchBusiness(ctx, header, instID)
 		if err != nil {
 			blog.Errorf("search biz with id: %d failed, err: %s", instID, err.Error())
 			return nil, err
 		}
 	case common.BKInnerObjIDSet:
-		instDataStr, err = clientSet.CoreService().Cache().SearchSet(ctx, header, instID)
+		instDataStr, err = clientSet.CacheService().Cache().Topology().SearchSet(ctx, header, instID)
 		if err != nil {
 			blog.Errorf("search set with id: %d failed, err: %s", instID, err.Error())
 			return nil, err
 		}
 	case common.BKInnerObjIDModule:
-		instDataStr, err = clientSet.CoreService().Cache().SearchModule(ctx, header, instID)
+		instDataStr, err = clientSet.CacheService().Cache().Topology().SearchModule(ctx, header, instID)
 		if err != nil {
 			blog.Errorf("search module with id: %d failed, err: %s", instID, err.Error())
 			return nil, err
@@ -773,7 +773,7 @@ func getCache(ctx context.Context, cache *redis.Client, clientSet apimachinery.C
 		}
 		return &inst, nil
 	default:
-		instDataStr, err = clientSet.CoreService().Cache().SearchCustomLayer(ctx, header, objType, instID)
+		instDataStr, err = clientSet.CacheService().Cache().Topology().SearchCustomLayer(ctx, header, objType, instID)
 		if err != nil {
 			blog.Errorf("search custom layer %s with id: %d failed, err: %s", objType, instID, err.Error())
 			return nil, err
