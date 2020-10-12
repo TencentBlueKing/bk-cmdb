@@ -192,7 +192,7 @@ func (es *EventServer) initConfigs() error {
 // initModules inits modules for new EventServer.
 func (es *EventServer) initModules() error {
 	// create mongodb client.
-	db, err := local.NewMgo(es.config.MongoDB.GetMongoConf())
+	db, err := local.NewMgo(es.config.MongoDB.GetMongoConf(), defaultDBConnectTimeout)
 	if err != nil {
 		return fmt.Errorf("create new mongodb client, %+v", err)
 	}

@@ -92,7 +92,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf())
+		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}

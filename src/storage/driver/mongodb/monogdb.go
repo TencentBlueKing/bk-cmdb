@@ -13,6 +13,8 @@
 package mongodb
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -66,7 +68,7 @@ func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, err
 func InitClient(prefix string, config *mongo.Config) errors.CCErrorCoder {
 	lastInitErr = nil
 	var dbErr error
-	db, dbErr = local.NewMgo(config.GetMongoConf())
+	db, dbErr = local.NewMgo(config.GetMongoConf(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the mongo server, error info is %s", dbErr.Error())
 		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'"+prefix+".mongodb' initialization failed")

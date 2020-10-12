@@ -134,8 +134,8 @@ mongodb:
   maxIdleConns: 100
   mechanism: SCRAM-SHA-1
   rsName: $rs_name
-  #mongo连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
-  timeout: 10
+  #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+  socketTimeout: 10
     '''
     template = FileTemplate(mongodb_file_template_str)
     result = template.substitute(**context)

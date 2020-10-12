@@ -15,6 +15,7 @@ package mongo
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -28,11 +29,11 @@ const (
 	// if maxIDleConns is less than minimum value, use minimum value
 	MinimumMaxIdleOpenConns = 50
 	// if timeout isn't configured, use default value
-	DefaultTimeout = 10
+	DefaultSocketTimeout = 10
 	// if timeout exceeds maximum value, use maximum value
-	MaximumTimeout = 30
+	MaximumSocketTimeout = 30
 	// if timeout less than the minimum value, use minimum value
-	MinimumTimeout = 5
+	MinimumSocketTimeout = 5
 )
 
 // Config config
@@ -47,7 +48,7 @@ type Config struct {
 	MaxOpenConns uint64
 	MaxIdleConns uint64
 	RsName       string
-	Timeout      int
+	SocketTimeout   int
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -75,7 +76,7 @@ func (c Config) GetMongoConf() local.MongoConf {
 		MaxIdleConns: c.MaxIdleConns,
 		URI:          c.BuildURI(),
 		RsName:       c.RsName,
-		Timeout:      c.Timeout,
+		SocketTimeout:  c.SocketTimeout,
 	}
 }
 
@@ -85,9 +86,9 @@ func (c Config) GetMongoClient() (db dal.RDB, err error) {
 		MaxIdleConns: c.MaxIdleConns,
 		URI:          c.BuildURI(),
 		RsName:       c.RsName,
-		Timeout:      c.Timeout,
+		SocketTimeout: c.SocketTimeout,
 	}
-	db, err = local.NewMgo(mongoConf)
+	db, err = local.NewMgo(mongoConf, time.Minute)
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
 	}

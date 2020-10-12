@@ -75,7 +75,7 @@ func init() {
 		URI:          tConfig.MongoURI,
 		RsName:       tConfig.MongoRsName,
 	}
-	db, err = local.NewMgo(mongoConfig)
+	db, err = local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
@@ -118,7 +118,7 @@ func ClearDatabase() {
 		URI:          tConfig.MongoURI,
 		RsName:       tConfig.MongoRsName,
 	}
-	db, err := local.NewMgo(mongoConfig)
+	db, err := local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
 	for _, tableName := range common.AllTables {
 		db.DropTable(context.Background(), tableName)
