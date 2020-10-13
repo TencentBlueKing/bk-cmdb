@@ -11,7 +11,6 @@ import setFeatures from './modules/view/set-features.js'
 import auth from './modules/api/auth.js'
 import eventSub from './modules/api/event-sub.js'
 import hostBatch from './modules/api/host-batch.js'
-import hostCustomApi from './modules/api/host-custom-api.js'
 import hostDelete from './modules/api/host-delete.js'
 import hostFavorites from './modules/api/host-favorites.js'
 import hostRelation from './modules/api/host-relation.js'
@@ -63,6 +62,7 @@ import businessHost from './modules/view/business-host.js'
 import resourceHost from './modules/view/resource-host.js'
 import cloudarea from './modules/api/cloudarea'
 import audit from './modules/api/audit.js'
+import dynamicGroup from './modules/api/dynamic-group'
 
 Vue.use(Vuex)
 
@@ -79,7 +79,6 @@ export default new Vuex.Store({
         request,
         eventSub,
         hostBatch,
-        hostCustomApi,
         hostDelete,
         hostFavorites,
         hostRelation,
@@ -127,6 +126,7 @@ export default new Vuex.Store({
         resource,
         cloudarea,
         organization,
-        audit
+        audit,
+        dynamicGroup
     }
 })

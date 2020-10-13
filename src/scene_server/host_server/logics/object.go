@@ -24,22 +24,33 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-// get the object attributes
-func (lgc *Logics) GetObjectAttributes(kit *rest.Kit, objID string, page meta.BasePage) ([]meta.Attribute, errors.CCError) {
-	opt := hutil.NewOperation().WithObjID(objID).MapStr()
+// SearchObjectAttributes returns attributes of target object.
+func (lgc *Logics) SearchObjectAttributes(kit *rest.Kit, bizID int64, objectID string) ([]meta.Attribute, error) {
 	query := &meta.QueryCondition{
-		Condition: opt,
+		Condition: map[string]interface{}{
+			common.BKDBOR: []map[string]interface{}{
+				{
+					common.BKObjIDField: objectID,
+					common.BKAppIDField: 0,
+				},
+				{
+					common.BKObjIDField: objectID,
+					common.BKAppIDField: bizID,
+				},
+			},
+		},
 	}
-	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, query)
+
+	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objectID, query)
 	if err != nil {
-		blog.Errorf("GetObjectAttributes http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, kit.Rid)
+		blog.Errorf("search object attributes failed, err: %+v, objID: %s, input: %+v, rid: %s", err, objectID, query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetObjectAttributes http response error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, objID, query, kit.Rid)
+		blog.Errorf("search object attributes failed, errcode: %d, errmsg: %s, objID: %s, input: %+v, rid: %s",
+			result.Code, result.ErrMsg, objectID, query, kit.Rid)
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
-
 	return result.Data.Info, nil
 }
 

@@ -9,6 +9,7 @@ import cmdbAppMixin from './mixins/app.js'
 import cmdbFormatter from './filters/formatter.js'
 import cmdbUnitFilter from './filters/unit.js'
 import cmdbUI from './components/ui'
+import cmdbSearchComponent from './components/search/index'
 import routerActions from './router/actions'
 import tools from './utils/tools'
 import clipboard from 'vue-clipboard2'
@@ -22,6 +23,7 @@ import '@icon-cool/bk-icon-cmdb-colorful/src/index'
 import './assets/scss/common.scss'
 
 Vue.use(cmdbUI)
+Vue.use(cmdbSearchComponent)
 Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)
 Vue.mixin(cmdbAuthMixin)

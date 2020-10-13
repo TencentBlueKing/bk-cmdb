@@ -66,6 +66,7 @@ const (
 	BKTableNameAuditLog         = "cc_AuditLog"
 	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
+	BKTableNameDynamicGroup     = "cc_DynamicGroup"
 	BKTableNameUserCustom       = "cc_UserCustom"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
@@ -134,6 +135,7 @@ var AllTables = []string{
 	BKTableNameAuditLog,
 	BKTableNameSubscription,
 	BKTableNameUserAPI,
+	BKTableNameDynamicGroup,
 	BKTableNameUserCustom,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,

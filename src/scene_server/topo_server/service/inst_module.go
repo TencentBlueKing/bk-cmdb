@@ -28,6 +28,13 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 )
 
+const (
+	// bKMaxPageSize maximum page size
+	bKMaxPageSize = 500
+	// bkSetIdSMaxSize maximum number of set's id
+	bkSetIdSMaxSize = 200
+)
+
 func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, errors.CCErrorCoder) {
 	qc := &metadata.QueryCondition{
 		Fields: []string{common.BKSetTemplateIDField},
@@ -490,6 +497,73 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(instanceResult.Data.Info)
+}
+
+// SearchModuleWithRelation search the modules by set's ids and service template's ids under application
+func (s *Service) SearchModuleWithRelation(ctx *rest.Contexts) {
+	// parsing input params
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+	data := struct {
+		BkSetIdS             []int64           `json:"bk_set_ids"`
+		BkServiceTemplateIds []int64           `json:"bk_service_template_ids"`
+		Fields               []string          `json:"fields"`
+		Page                 metadata.BasePage `json:"page"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// check input params
+	if len(data.Fields) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "fields"))
+		return
+	}
+	if len(data.BkSetIdS) > bkSetIdSMaxSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommOverLimit, "the number of bk_set_ids"))
+		return
+	}
+	if data.Page.Limit > bKMaxPageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommOverLimit, "page"))
+		return
+	}
+
+	// set query condition
+	cond := mapstr.MapStr{common.BKAppIDField: bizID}
+	if len(data.BkSetIdS) != 0 {
+		bkSetIdS := util.IntArrayUnique(data.BkSetIdS)
+		cond[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: bkSetIdS}
+	}
+	if len(data.BkServiceTemplateIds) != 0 {
+		bkServiceTemplateIds := util.IntArrayUnique(data.BkServiceTemplateIds)
+		cond[common.BKServiceTemplateIDField] = mapstr.MapStr{common.BKDBIN: bkServiceTemplateIds}
+	}
+	qc := &metadata.QueryCondition{
+		Fields:    data.Fields,
+		Page:      data.Page,
+		Condition: cond,
+	}
+
+	// query and check result
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
+	if err != nil {
+		blog.Errorf("SearchModuleWithRelation failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !instanceResult.Result {
+		blog.ErrorJSON("SearchModuleWithRelation failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
+		return
+	}
+
+	ctx.RespEntityWithCount(int64(instanceResult.Data.Count), instanceResult.Data.Info)
+	return
 }
 
 func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {

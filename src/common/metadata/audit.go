@@ -427,6 +427,9 @@ const (
 	// - cloud synchronize job
 	// - others
 	CloudResourceType AuditType = "cloud_resource"
+
+	// DynamicGroupType is dynamic grouping audit type.
+	DynamicGroupType AuditType = "dynamic_grouping"
 )
 
 type ResourceType string
@@ -569,7 +572,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "host":
 		return []AuditType{HostType}
 	case "other":
-		return []AuditType{ModelType, AssociationKindType, EventPushType}
+		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType}
 	}
 	return []AuditType{}
 }
@@ -722,6 +725,15 @@ var auditDict = []resourceTypeInfo{
 	{
 		ID:   CloudSyncTaskRes,
 		Name: "云资源同步任务",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   DynamicGroupRes,
+		Name: "动态分组",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
