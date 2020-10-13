@@ -2370,9 +2370,10 @@ func (ps *parseStream) fullTextSearch() *parseStream {
 }
 
 const (
-	findManyCloudAreaPattern   = "/api/v3/findmany/cloudarea"
-	createCloudAreaPattern     = "/api/v3/create/cloudarea"
-	createManyCloudAreaPattern = "/api/v3/createmany/cloudarea"
+	findManyCloudAreaPattern      = "/api/v3/findmany/cloudarea"
+	createCloudAreaPattern        = "/api/v3/create/cloudarea"
+	createManyCloudAreaPattern    = "/api/v3/createmany/cloudarea"
+	findCloudAreaHostCountPattern = "/api/v3/findmany/cloudarea/hostcount"
 )
 
 var (
@@ -2453,6 +2454,18 @@ func (ps *parseStream) cloudArea() *parseStream {
 					Type:       meta.CloudAreaInstance,
 					Action:     meta.Delete,
 					InstanceID: id,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findCloudAreaHostCountPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.CloudAreaInstance,
+					Action: meta.SkipAction,
 				},
 			},
 		}

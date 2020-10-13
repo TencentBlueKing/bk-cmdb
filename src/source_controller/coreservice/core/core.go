@@ -149,6 +149,7 @@ type HostOperation interface {
 	GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 	UpdateHostCloudAreaField(kit *rest.Kit, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
+	FindCloudAreaHostCount(kit *rest.Kit, input metadata.CloudAreaHostCount) ([]metadata.CloudAreaHostCountElem, error)
 
 	LockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError
 	UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError

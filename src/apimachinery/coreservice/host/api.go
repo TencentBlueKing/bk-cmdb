@@ -496,6 +496,20 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 	return nil
 }
 
+func (h *host) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+	resp = new(metadata.CloudAreaHostCountResult)
+	subPath := "/findmany/cloudarea/hostcount"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
 func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 	rid := util.GetHTTPCCRequestID(header)
 

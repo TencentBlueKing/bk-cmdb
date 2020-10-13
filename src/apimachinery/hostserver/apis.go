@@ -61,7 +61,7 @@ func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.He
 	return
 }
 
-func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.HostSnapBatchResult, err error){
+func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.HostSnapBatchResult, err error) {
 	subPath := "/hosts/snapshot/batch"
 
 	err = hs.client.Get().
@@ -73,7 +73,6 @@ func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat 
 		Into(resp)
 	return
 }
-
 
 func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
@@ -623,6 +622,20 @@ func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudI
 		Body(nil).
 		SubResourcef(subPath, cloudID).
 		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+	resp = new(metadata.CloudAreaHostCountResult)
+	subPath := "/findmany/cloudarea/hostcount"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
