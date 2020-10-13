@@ -49,3 +49,8 @@ func (hm *hostManager) RemoveFromModule(ctx core.ContextParams, input *metadata.
 func (hm *hostManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	return hm.hostTransfer.GetHostModuleRelation(ctx, input)
 }
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (hm *hostManager) GetDistinctHostIDsByTopoRelation(ctx core.ContextParams, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+	return hm.hostTransfer.GetDistinctHostIDsByTopoRelation(ctx, input)
+}

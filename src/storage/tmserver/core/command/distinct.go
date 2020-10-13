@@ -21,22 +21,21 @@ import (
 )
 
 func init() {
-	core.GCommands.SetCommand(types.OPCountCode, &count{})
+	core.GCommands.SetCommand(types.OPDistinctCode, &distinct{})
 }
 
-var _ core.SetDBProxy = (*count)(nil)
+var _ core.SetDBProxy = (*distinct)(nil)
 
-type count struct {
+type distinct struct {
 	dbProxy mongodb.Client
 }
 
-func (d *count) SetDBProxy(db mongodb.Client) {
+func (d *distinct) SetDBProxy(db mongodb.Client) {
 	d.dbProxy = db
 }
 
-func (d *count) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
-
-	msg := types.OPCountOperation{}
+func (d *distinct) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+	msg := types.OPDistinctOperation{}
 	reply := &types.OPReply{}
 	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
@@ -52,12 +51,12 @@ func (d *count) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPR
 		targetCol = d.dbProxy.Collection(msg.Collection)
 	}
 
-	cnt, err := targetCol.Count(ctx, msg.Selector)
-	reply.Count = cnt
+	results, err := targetCol.Distinct(ctx, msg.Field, msg.Filter)
+	reply.DistinctRes = results
 	if nil == err {
 		reply.Success = true
 	} else {
-		blog.ErrorJSON("count execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
+		blog.ErrorJSON("distinct execute error.  err: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 

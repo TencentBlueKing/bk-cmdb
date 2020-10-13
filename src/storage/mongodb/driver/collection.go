@@ -594,3 +594,19 @@ func (c *collection) Update(ctx context.Context, filter interface{}, update map[
 		ModifiedCount: uint64(updateResult.ModifiedCount),
 	}, nil
 }
+
+func (c *collection) Distinct(ctx context.Context, field string, filter interface{}) ([]interface{}, error) {
+	// in a session
+	if c.innerSession != nil {
+		var results []interface{} = nil
+		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			var err error
+			results, err = c.innerCollection.Distinct(ctx, field, filter)
+			return err
+		})
+		return results, err
+	}
+
+	// no session
+	return c.innerCollection.Distinct(ctx, field, filter)
+}

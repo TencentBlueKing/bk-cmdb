@@ -149,20 +149,18 @@ func (s *Service) SearchBusinessTopo(params types.ContextParams, pathParams, que
 // SearchBusinessTopo search the business topo
 func (s *Service) searchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr, withStatistics bool) ([]*metadata.TopoInstRst, error) {
 
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("id", pathParams("bk_biz_id"))
-	id, err := paramPath.Int64("id")
+	id, err := strconv.ParseInt(pathParams("bk_biz_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("app_id"), err.Error(), params.ReqID)
+		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("bk_biz_id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		return nil, err
+	withDefault := false
+	if len(queryParams("with_default")) > 0 {
+		withDefault = true
 	}
 
-	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id, withStatistics)
+	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, common.BKInnerObjIDApp, id, withStatistics, withDefault)
 	if err != nil {
 		return nil, err
 	}
@@ -210,12 +208,7 @@ func (s *Service) SearchMainLineChildInstTopo(params types.ContextParams, pathPa
 	}
 	_ = bizID
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
-	if nil != err {
-		return nil, err
-	}
-
-	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID, false)
+	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, objID, instID, false, false)
 }
 
 func (s *Service) SearchAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

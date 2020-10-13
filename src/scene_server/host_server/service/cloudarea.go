@@ -82,18 +82,24 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 
 	}
-	platIDArr := make([]int64, 0)
-	for _, item := range res.Data.Info {
+	platIDArr := make([]int64, len(res.Data.Info))
+	simplifiedPlats := make([]extensions.PlatSimplify, len(res.Data.Info))
+	for index, item := range res.Data.Info {
 		platID, err := util.GetInt64ByInterface(item[common.BKCloudIDField])
 		if err != nil {
 			blog.Errorf("FindManyCloudArea failed, parse plat id field failed, input:%+v,rid:%s", err.Error(), res.Data, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 			return
 		}
-		platIDArr = append(platIDArr, platID)
+
+		platIDArr[index] = platID
+		simplifiedPlats[index] = extensions.PlatSimplify{
+			BKCloudIDField:   platID,
+			BKCloudNameField: util.GetStrByInterface(item[common.BKCloudNameField]),
+		}
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByPlatIDs(srvData.ctx, srvData.header, authmeta.Find, platIDArr...); err != nil {
+	if err := s.AuthManager.AuthorizeByPlat(srvData.ctx, srvData.header, authmeta.Find, simplifiedPlats...); err != nil {
 		blog.Errorf("check plats authorization failed, plats: %+v, err: %v", platIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return

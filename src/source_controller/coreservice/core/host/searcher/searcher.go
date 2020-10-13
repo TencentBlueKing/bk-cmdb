@@ -14,6 +14,7 @@ package searcher
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -60,18 +61,18 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		}
 	}
 	hostIDFilter := map[string]interface{}{}
+	needHostIDFilter := false
+	hostIDs := make([]int64, 0)
 	if len(relationFilter) > 0 {
-		relations := make([]metadata.ModuleHost, 0)
-		if err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(ctx, &relations); err != nil {
+		needHostIDFilter = true
+		if err := s.DbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(ctx, common.BKHostIDField, relationFilter, &hostIDs); err != nil {
 			blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", relationFilter, err, rid)
 			return nil, err
 		}
 
-		hostIDs := make([]int64, 0)
-		for _, relation := range relations {
-			hostIDs = append(hostIDs, relation.HostID)
+		if len(hostIDs) == 0 {
+			return new(metadata.ListHostResult), nil
 		}
-		hostIDs = util.IntArrayUnique(hostIDs)
 
 		hostIDFilter = map[string]interface{}{
 			common.BKHostIDField: map[string]interface{}{
@@ -98,6 +99,18 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		finalFilter[common.BKDBAND] = filters
 	}
 
+	if needHostIDFilter && len(filters) == 1 && option.BizID != 0 {
+		sort := strings.TrimLeft(option.Page.Sort, "+-")
+		if len(option.Page.Sort) == 0 || sort == common.BKHostIDField || strings.Contains(sort, ",") == false &&
+			strings.HasPrefix(sort, common.BKHostIDField+":") {
+			searchResult, err = s.listAllBizHostsPage(ctx, option.Fields, option.Page, hostIDs, rid)
+			if err != nil {
+				return nil, err
+			}
+			return searchResult, nil
+		}
+	}
+
 	total, err := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Count(ctx)
 	if err != nil {
 		blog.Errorf("ListHosts failed, db select failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
@@ -121,5 +134,42 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		return nil, err
 	}
 	searchResult.Info = hosts
+	return searchResult, nil
+}
+
+// listAllBizHostsPage 专有流程
+func (s *Searcher) listAllBizHostsPage(ctx context.Context, fields []string, page metadata.BasePage,
+	allBizHostIDs []int64, rid string) (searchResult *metadata.ListHostResult, err error) {
+	cnt := len(allBizHostIDs)
+	start := page.Start
+	if start > cnt {
+		return new(metadata.ListHostResult), nil
+	}
+	if start < 0 {
+		start = 0
+	}
+	end := start + page.Limit
+	if end > cnt {
+		end = cnt
+	}
+	blog.V(10).Infof("list biz host start: %d, end: %d, rid: %s", start, end, rid)
+
+	finalFilter := make(map[string]interface{}, 0)
+	// 针对获取业务下所有的主机的场景优化
+	finalFilter[common.BKHostIDField] = map[string]interface{}{
+		common.BKDBIN: allBizHostIDs[start:end],
+	}
+	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(ctx))
+
+	hosts := make([]map[string]interface{}, 0)
+	if err := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Fields(fields...).
+		Sort(page.Sort).All(ctx, &hosts); err != nil {
+		blog.Errorf("list hosts failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
+		return nil, err
+	}
+	searchResult = &metadata.ListHostResult{
+		Count: cnt,
+		Info:  hosts,
+	}
 	return searchResult, nil
 }

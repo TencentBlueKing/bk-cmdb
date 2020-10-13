@@ -469,3 +469,18 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 	}
 	return nil
 }
+
+// GetDistinctHostIDByTopology get distion host id by topology relation
+func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header, input *metadata.DistinctHostIDByTopoRelationRequest) (resp *metadata.DistinctIDResponse, err error) {
+	resp = new(metadata.DistinctIDResponse)
+	subPath := "/read/distinct/host_id/topology/relation"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}

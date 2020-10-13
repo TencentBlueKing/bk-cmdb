@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -186,29 +185,49 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 }
 
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	if nil != err {
-		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, ctx.ReqID)
-		return &metadata.QueryResult{}, err
-	}
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
-
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, ctx.ReqID)
-	instItems, err := m.searchInstance(ctx, objID, inputParam)
+
+	tableName := common.GetInstTableName(objID)
+	if tableName == common.BKTableNameBaseInst {
+		if inputParam.Condition == nil {
+			inputParam.Condition = mapstr.MapStr{}
+		}
+		objIDCond, ok := inputParam.Condition[common.BKObjIDField]
+		if ok && objIDCond != objID {
+			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, ctx.ReqID)
+			return nil, nil
+		}
+		inputParam.Condition[common.BKObjIDField] = objID
+	}
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, ctx.SupplierAccount)
+
+	instHandler := m.dbProxy.Table(tableName).Find(inputParam.Condition)
+	for _, sort := range inputParam.SortArr {
+		field := sort.Field
+		if sort.IsDsc {
+			field = "-" + field
+		}
+		instHandler = instHandler.Sort(field)
+	}
+	instItems := make([]mapstr.MapStr, 0)
+	err := instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).
+		Fields(inputParam.Fields...).All(ctx, &instItems)
+
 	if nil != err {
 		blog.Errorf("search instance error [%v], rid: %s", err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
 
-	dataResult := &metadata.QueryResult{}
-	dataResult.Count, err = m.countInstance(ctx, objID, inputParam.Condition)
-	if nil != err {
-		blog.Errorf("count instance error [%v], rid: %s", err, ctx.ReqID)
-		return &metadata.QueryResult{}, err
+	count, countErr := instHandler.Count(ctx.Context)
+	if countErr != nil {
+		blog.Errorf("count instance error [%v], rid: %s", countErr, ctx.ReqID)
+		return nil, countErr
 	}
-	dataResult.Info = instItems
+
+	dataResult := &metadata.QueryResult{
+		Count: count,
+		Info:  instItems,
+	}
 
 	return dataResult, nil
 }

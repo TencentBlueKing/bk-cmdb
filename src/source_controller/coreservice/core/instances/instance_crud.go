@@ -16,9 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
@@ -66,9 +64,6 @@ func (m *instanceManager) getInsts(ctx core.ContextParams, objID string, cond ma
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
-	if nil != err {
-		return origins, false, err
-	}
 	err = m.dbProxy.Table(tableName).Find(cond).All(ctx, &origins)
 	return origins, !m.dbProxy.IsNotFoundError(err), err
 }
@@ -85,33 +80,6 @@ func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, 
 		return nil, err
 	}
 	return origin, nil
-}
-
-func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (results []mapstr.MapStr, err error) {
-	results = []mapstr.MapStr{}
-	tableName := common.GetInstTableName(objID)
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	results = make([]mapstr.MapStr, 0)
-	if nil != err {
-		return results, err
-	}
-	if tableName == common.BKTableNameBaseInst {
-		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
-	}
-	condsMap := util.SetQueryOwner(condition.ToMapStr(), ctx.SupplierAccount)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, condition.ToMapStr(), ctx.ReqID)
-	instHandler := m.dbProxy.Table(tableName).Find(condsMap)
-	for _, sort := range inputParam.SortArr {
-		fileld := sort.Field
-		if sort.IsDsc {
-			fileld = "-" + fileld
-		}
-		instHandler = instHandler.Sort(fileld)
-	}
-	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).Fields(inputParam.Fields...).All(ctx, &results)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, condition.ToMapStr(), results, ctx.ReqID)
-
-	return results, err
 }
 
 func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, cond mapstr.MapStr) (count uint64, err error) {

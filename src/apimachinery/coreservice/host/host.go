@@ -63,6 +63,8 @@ type HostClientInterface interface {
 
 	// update host's cloud area field
 	UpdateHostCloudAreaField(ctx context.Context, header http.Header, option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
+
+	GetDistinctHostIDByTopology(ctx context.Context, header http.Header, input *metadata.DistinctHostIDByTopoRelationRequest) (resp *metadata.DistinctIDResponse, err error)
 }
 
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {

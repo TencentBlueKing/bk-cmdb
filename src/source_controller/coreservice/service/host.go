@@ -222,3 +222,18 @@ func (s *coreService) GetHostSnap(params core.ContextParams, pathParams, queryPa
 		Data: result,
 	}, nil
 }
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (s *coreService) GetDistinctHostIDsByTopoRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputData := &metadata.DistinctHostIDByTopoRelationRequest{}
+	if err := data.MarshalJSONInto(&inputData); err != nil {
+		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	hostIDArr, err := s.core.HostOperation().GetDistinctHostIDsByTopoRelation(params, inputData)
+	if err != nil {
+		blog.Errorf("get distinct hostIDs by topo relation  error. err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+	return metadata.DistinctID{IDArr: hostIDArr}, nil
+}

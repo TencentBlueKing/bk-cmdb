@@ -158,7 +158,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 
 	authInstances := make([]extensions.InstanceSimplify, 0)
 	_, insts, err := s.Core.InstOperation().FindInst(params, obj, &metadata.QueryInput{Condition: map[string]interface{}{
-		obj.GetInstIDFieldName(): map[string]interface{}{common.BKDBIN:deleteCondition.Delete.InstID}}}, false)
+		obj.GetInstIDFieldName(): map[string]interface{}{common.BKDBIN: deleteCondition.Delete.InstID}}}, false)
 	if nil != err {
 		blog.Errorf("DeleteInst failed, find authInstances to be deleted failed, error info is %s, rid: %s", err.Error(), params.ReqID)
 	}
@@ -426,11 +426,6 @@ func (s *Service) SearchInsts(params types.ContextParams, pathParams, queryParam
 // SearchInstAndAssociationDetail search the inst with association details
 func (s *Service) SearchInstAndAssociationDetail(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
-		return nil, err
-	}
 
 	// construct the query inst condition
 	queryCond := &paraparse.SearchParams{
@@ -448,16 +443,7 @@ func (s *Service) SearchInstAndAssociationDetail(params types.ContextParams, pat
 	query.Sort = page.Sort
 	query.Start = page.Start
 
-	cnt, instItems, err := s.Core.InstOperation().FindInst(params, obj, query, true)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
-		return nil, err
-	}
-
-	result := mapstr.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
-	return result, nil
+	return s.Core.InstOperation().FindOriginInst(params, objID, query)
 }
 
 // SearchInstByObject search the inst of the object
@@ -501,22 +487,8 @@ func (s *Service) SearchInstByAssociation(params types.ContextParams, pathParams
 
 	objID := pathParams("bk_obj_id")
 	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
-		return nil, err
-	}
 
-	cnt, instItems, err := s.Core.InstOperation().FindInstByAssociationInst(params, obj, data)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("bk_obj_id"), err.Error(), params.ReqID)
-		return nil, err
-	}
-
-	result := mapstr.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
-	return result, nil
+	return s.Core.InstOperation().FindInstByAssociationInst(params, objID, data)
 }
 
 // SearchInstByInstID search the inst by inst ID

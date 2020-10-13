@@ -110,6 +110,12 @@ type Table interface {
 	RenameColumn(ctx context.Context, oldName, newColumn string) error
 	// DropColumn 移除字段
 	DropColumn(ctx context.Context, field string) error
+
+	// Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
+	// field the field for which to return distinct values.
+	// filter query that specifies the documents from which to retrieve the distinct values.
+	// result execute query result.  result must be ptr, ptr raw type is must be array,  array item type can integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint),string
+	Distinct(ctx context.Context, field string, filter Filter, result interface{}) error
 }
 
 // JoinOption defind join transaction options

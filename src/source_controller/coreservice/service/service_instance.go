@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 
 	"configcenter/src/common"
@@ -114,6 +115,7 @@ func (s *coreService) ListServiceInstanceDetail(params core.ContextParams, pathP
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
+	params.Context = context.WithValue(params.Context, common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	result, err := s.core.ProcessOperation().ListServiceInstanceDetail(params, fp)
 	if err != nil {
 		blog.Errorf("ListServiceInstanceDetail failed, err: %+v, rid: %s", err, params.ReqID)

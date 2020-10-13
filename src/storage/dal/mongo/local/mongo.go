@@ -580,3 +580,28 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 	blog.V(4).InfoDepthf(1, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	return err
 }
+
+// Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
+// field the field for which to return distinct values.
+// filter query that specifies the documents from which to retrieve the distinct values.
+// result execute query result.  result must be ptr, ptr raw type is must be array,  array item type can integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint),string
+func (c *Collection) Distinct(ctx context.Context, field string, filter dal.Filter, result interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo distinct cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
+	if filter == nil {
+		filter = bson.M{}
+	}
+
+	sess := c.dbc.Clone()
+	err := sess.DB(c.dbname).C(c.collName).Find(filter).Distinct(field, result)
+	if err != nil {
+		return err
+	}
+	sess.Close()
+
+	return nil
+}
