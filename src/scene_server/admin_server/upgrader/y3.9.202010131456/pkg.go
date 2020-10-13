@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202009171032
+package y3_9_202010131456
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202009171032", upgrade)
+	upgrader.RegistUpgrader("y3.9.202010131456", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
