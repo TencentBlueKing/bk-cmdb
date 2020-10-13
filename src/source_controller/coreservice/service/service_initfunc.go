@@ -195,6 +195,34 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/userapi/{bk_biz_id}/{id}", Handler: s.DeleteUserConfig})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/userapi/search", Handler: s.GetUserConfig})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/userapi/detail/{bk_biz_id}/{id}", Handler: s.UserConfigDetail})
+
+	// dynamic grouping handlers.
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/create/dynamicgroup",
+		Handler: s.CreateDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPut,
+		Path:    "/update/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.UpdateDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodGet,
+		Path:    "/find/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.GetDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodDelete,
+		Path:    "/delete/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.DeleteDynamicGroup,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/dynamicgroup/search",
+		Handler: s.SearchDynamicGroup,
+	})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/usercustom/{bk_user}", Handler: s.AddUserCustom})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/{bk_user}/{id}", Handler: s.UpdateUserCustomByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/usercustom/user/search/{bk_user}", Handler: s.GetUserCustomByUser})

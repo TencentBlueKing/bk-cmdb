@@ -373,6 +373,16 @@ var _ = Describe("service template test", func() {
 			j, err := json.Marshal(rsp)
 			Expect(j).To(Equal(resMap["service_instance"]))
 		})
+
+		It("search service instance by set template id", func() {
+			input := map[string]interface{}{
+				"set_template_id": 1,
+			}
+			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(), strconv.FormatInt(bizId, 10), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+		})
 	})
 
 	Describe("process template test", func() {

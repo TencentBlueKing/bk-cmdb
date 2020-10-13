@@ -57,6 +57,41 @@ func (lgc *Logics) GetSetIDByCond(kit *rest.Kit, cond []metadata.ConditionItem) 
 	return setIDArr, nil
 }
 
+// ExecuteSetDynamicGroup searches sets base on conditions without filling topology informations.
+func (lgc *Logics) ExecuteSetDynamicGroup(kit *rest.Kit, setCommonSearch *metadata.SetCommonSearch,
+	fields []string, disableCounter bool) (*metadata.InstDataInfo, errors.CCError) {
+
+	// search parameters with condition.
+	queryParams := &metadata.QueryCondition{Fields: fields, Page: setCommonSearch.Page, Condition: mapstr.New(), DisableCounter: disableCounter}
+
+	// parse set search conditions.
+	for _, searchCondition := range setCommonSearch.Condition {
+		condc := make(map[string]interface{})
+		if err := parse.ParseCommonParams(searchCondition.Condition, condc); err != nil {
+			blog.Errorf("search set failed, can't parse condition, err: %+v, cond: %+v, rid: %s", err, searchCondition.Condition, kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		// add field conditions to query params.
+		for field, value := range condc {
+			queryParams.Condition.Set(field, value)
+		}
+	}
+	queryParams.Condition.Set(common.BKAppIDField, setCommonSearch.AppID)
+
+	// search set with conditions.
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, queryParams)
+	if err != nil {
+		blog.Errorf("search set failed, err: %+v, input: %+v, rid: %s", err, queryParams, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("search set failed, errcode: %d, errmsg: %s, input: %+v, rid: %s", result.Code, result.ErrMsg, queryParams, kit.Rid)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
+	}
+	return &result.Data, nil
+}
+
 func (lgc *Logics) GetSetMapByCond(kit *rest.Kit, fields []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryCondition{
 		Condition: cond,
@@ -95,7 +130,7 @@ func (lgc *Logics) GetSetIDsByTopo(kit *rest.Kit, objID string, instID int64) ([
 	}
 
 	// get mainline association, generate map of object and its child
-	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx,kit.Header, &metadata.QueryCondition{
+	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
 	if err != nil {
 		blog.Errorf("get set IDs by topo failed, get mainline association err: %s, rid: %s", err.Error(), kit.Rid)
