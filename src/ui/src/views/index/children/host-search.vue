@@ -81,7 +81,10 @@
                 })
             },
             handleKeypress (content, event) {
-                if (event.ctrlKey && event.code.toLowerCase() === 'enter') {
+                const agent = window.navigator.userAgent.toLowerCase()
+                const isMac = /macintosh|mac os x/i.test(agent)
+                const modifierKey = isMac ? event.metaKey : event.ctrlKey
+                if (modifierKey && event.code.toLowerCase() === 'enter') {
                     this.handleSearch()
                 }
             },
