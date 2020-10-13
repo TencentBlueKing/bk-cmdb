@@ -345,8 +345,8 @@ export function transformHostSearchParams (params) {
 const defaultPaginationConfig = window.innerHeight > 750
     ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
     : { limit: 10, 'limit-list': [10, 50, 100, 500] }
-export function getDefaultPaginationConfig () {
-    return { ...defaultPaginationConfig }
+export function getDefaultPaginationConfig (customConfig = {}) {
+    return { ...defaultPaginationConfig, ...customConfig }
 }
 
 export default {

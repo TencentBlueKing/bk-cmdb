@@ -167,7 +167,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        ...this.$tools.getDefaultPaginationConfig()
+                        ...this.$tools.getDefaultPaginationConfig({ 'limit-list': [10, 50, 100, 200] })
                     },
                     defaultSort: '-op_time',
                     sort: '-op_time'
