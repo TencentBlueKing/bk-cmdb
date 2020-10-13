@@ -301,7 +301,7 @@ func (b *business) FindBusiness(params types.ContextParams, cond *metadata.Query
 }
 
 func (b *business) GetInternalModule(params types.ContextParams, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
-
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	// search the sets
 	querySet := &metadata.QueryInput{
 		Condition: map[string]interface{}{

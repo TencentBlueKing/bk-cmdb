@@ -220,6 +220,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, objID string, instID int64,
 	withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, error) {
 
+	params.Header.Add(common.ReadPreferencePolicyKey, common.SecondaryPreference)
 	// read mainline object association and construct child relation map excluding host
 	mainlineAsstRsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(params.Context, params.Header,
 		&metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
