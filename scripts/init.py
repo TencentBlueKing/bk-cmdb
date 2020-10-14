@@ -456,7 +456,8 @@ def main(argv):
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
         "cmdb_cloudserver": 60013,
-        "cmdb_authserver": 60014
+        "cmdb_authserver": 60014,
+        "cmdb_cacheservice": 50010
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
