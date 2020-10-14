@@ -353,6 +353,9 @@ func (e *HostDynamicGroupExecutor) searchByHostConds() error {
 	if err != nil {
 		return err
 	}
+	if e.isNotFound {
+		return nil
+	}
 	e.conds.hostCond.Fields = append(e.conds.hostCond.Fields, e.fields...)
 
 	// empty means all fileds.
@@ -487,6 +490,10 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 
 		e.needPaged = true
 	} else {
+		if len(respHostIDInfo.Data.IDArr) == 0 {
+			e.isNotFound = true
+			return nil
+		}
 		hostIDs = respHostIDInfo.Data.IDArr
 	}
 
@@ -554,6 +561,10 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 
 func (e *HostDynamicGroupExecutor) buildSearchResult() ([]mapstr.MapStr, int) {
 	result := make([]mapstr.MapStr, 0)
+
+	if e.isNotFound {
+		return result, 0
+	}
 
 	for _, host := range e.hosts {
 		result = append(result, host.hostInfo)
