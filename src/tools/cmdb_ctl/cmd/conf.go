@@ -15,14 +15,12 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-)
-const(
-	DefaultDir = "../cmdb_adminserver/configures"
 )
 
 func init() {
@@ -39,35 +37,64 @@ func NewConfCommand() *cobra.Command {
 			return checkConf(cmd)
 		},
 	}
-	cmd.Flags().StringP("path","p", "", "the path of config")
+	cmd.Flags().StringP("dir","d", "", "the directory path where the configuration file is located")
+	cmd.Flags().StringP("file","f", "", "the path of the configuration file")
 	return cmd
+}
+// isExists checks target dir/file exist or not.
+func isExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsExist(err) {
+			return true
+		}
+		return false
+	}
+	return true
 }
 
 func checkConf(cmd *cobra.Command) error {
-	path, err := cmd.Flags().GetString("path")
+	// check the configuration of a single file
+	file, err := cmd.Flags().GetString("file")
 	if err != nil {
 		return err
 	}
-	var configPath string
-	if len(path) == 0 {
-		configPath = DefaultDir
-	} else {
-		configPath = path
-	}
-	fmt.Println("the path is "+configPath)
-	// query config file from configPath
-	filePaths, err := filepath.Glob(filepath.Join(configPath, "*"))
-	if err != nil {
-		return err
-	}
-	// check config file
-	for _, filepath := range filePaths {
-		err := checkFileType(filepath)
-		if err != nil {
-			fmt.Println("file format error,the file is " + filepath)
+	if len(file) != 0 {
+		if !isExists(file) {
+			fmt.Println("this file does not exist")
+			return nil
+		}
+		if err := checkFileType(file); err != nil {
+			fmt.Println("file format error,the file is " + file)
 			return nil
 		}
 	}
+
+	// check the configuration files in the directory
+	dir, err := cmd.Flags().GetString("dir")
+	if err != nil {
+		return err
+	}
+	if len(dir) != 0 {
+		if !isExists(dir) {
+			fmt.Println("this directory does not exist")
+			return nil
+		}
+		// query config file from configPath
+		filePaths, err := filepath.Glob(filepath.Join(dir, "*"))
+		if err != nil {
+			return err
+		}
+		// check config file
+		for _, filepath := range filePaths {
+			err := checkFileType(filepath)
+			if err != nil {
+				fmt.Println("file format error,the file is " + filepath)
+				return nil
+			}
+		}
+	}
+
 	fmt.Println("vaild successfuly!")
 	return nil
 }

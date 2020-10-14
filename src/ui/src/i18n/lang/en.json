@@ -64,7 +64,7 @@
     "确定": "Confirm",
     "查询": "Query",
     "正则验证": "Regex",
-    "立即创建": "Add Now",
+    "立即创建": "Create Now",
     "该字段": "This field",
     "刷新查询": "Refresh",
     "请选择": "Please Select",
@@ -1338,5 +1338,7 @@
     "该功能仅支持对业务下的主机进行操作": "Only support operate hosts under business",
     "所选主机已在资源池中": "Selected hosts already in resource pool",
     "第一内网IP": "First inner IP",
-    "第一外网IP": "First outer IP"
+    "第一外网IP": "First outer IP",
+    "业务列表提示语": "No authorized business, you can {auth} or {create}",
+    "申请查看权限": "Apply Permission"
 }

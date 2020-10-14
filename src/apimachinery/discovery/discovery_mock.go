@@ -90,6 +90,10 @@ func (d *MockDiscovery) IsMaster() bool {
 	return true
 }
 
+func (d *MockDiscovery) Server(name string) Interface {
+	return emptyServerInst
+}
+
 type mockServer struct{}
 
 func (*mockServer) GetServers() ([]string, error) {

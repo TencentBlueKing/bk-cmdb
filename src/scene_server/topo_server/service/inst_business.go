@@ -586,19 +586,15 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 }
 
 func (s *Service) GetInternalModule(ctx *rest.Contexts) {
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoAppSearchFailed, err.Error()))
 		return
 	}
 
-	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, obj, bizID)
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	_, result, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -614,13 +610,7 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	_, innerAppTopo, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, obj, bizID)
+	_, innerAppTopo, err := s.Core.BusinessOperation().GetInternalModule(ctx.Kit, bizID)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return

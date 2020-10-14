@@ -141,23 +141,23 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 
 **Monstache配置解释**
 
-| 参数                     | 说明                                                         |
-| ------------------------ | ------------------------------------------------------------ |
-| mongo-url                | MongoDB实例的主节点访问地址。详情请参见。[mongo-url](https://rwynn.github.io/monstache-site/config/#mongo-url) |
-| elasticsearch-urls       | Elasticsearch的访问地址。详情请参见 [elasticsearch-urls](https://rwynn.github.io/monstache-site/config/#elasticsearch-urls) |
-| direct-read-namespaces   | 指定待同步的集合，详情请参见[direct-read-namespaces](https://rwynn.github.io/monstache-site/config/#direct-read-namespaces)。 |
-| change-stream-namespaces | 如果要使用MongoDB变更流功能，需要指定此参数。启用此参数后，oplog追踪会被设置为无效，详情请参见[change-stream-namespaces](https://rwynn.github.io/monstache-site/config/#change-stream-namespaces)。 |
-| namespace-regex          | 通过正则表达式指定需要监听的集合。此设置可以用来监控符合正则表达式的集合中数据的变化。 |
-| elasticsearch-user       | 访问Elasticsearch的用户名。                                  |
-| elasticsearch-password   | 访问Elasticsearch的用户密码。                                |
-| elasticsearch-max-conns  | 定义连接ES的线程数。默认为4，即使用4个Go线程同时将数据同步到ES。 |
-| dropped-collections      | 默认为true，表示当删除MongoDB集合时，会同时删除ES中对应的索引。 |
-| dropped-databases        | 默认为true，表示当删除MongoDB数据库时，会同时删除ES中对应的索引。 |
+| 参数                     | 说明                                                                                                                                                                                                                                                                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| mongo-url                | MongoDB实例的主节点访问地址。详情请参见。[mongo-url](https://rwynn.github.io/monstache-site/config/#mongo-url)                                                                                                                                                                                     |
+| elasticsearch-urls       | Elasticsearch的访问地址。详情请参见 [elasticsearch-urls](https://rwynn.github.io/monstache-site/config/#elasticsearch-urls)                                                                                                                                                                        |
+| direct-read-namespaces   | 指定待同步的集合，详情请参见[direct-read-namespaces](https://rwynn.github.io/monstache-site/config/#direct-read-namespaces)。                                                                                                                                                                      |
+| change-stream-namespaces | 如果要使用MongoDB变更流功能，需要指定此参数。启用此参数后，oplog追踪会被设置为无效，详情请参见[change-stream-namespaces](https://rwynn.github.io/monstache-site/config/#change-stream-namespaces)。                                                                                                |
+| namespace-regex          | 通过正则表达式指定需要监听的集合。此设置可以用来监控符合正则表达式的集合中数据的变化。                                                                                                                                                                                                             |
+| elasticsearch-user       | 访问Elasticsearch的用户名。                                                                                                                                                                                                                                                                        |
+| elasticsearch-password   | 访问Elasticsearch的用户密码。                                                                                                                                                                                                                                                                      |
+| elasticsearch-max-conns  | 定义连接ES的线程数。默认为4，即使用4个Go线程同时将数据同步到ES。                                                                                                                                                                                                                                   |
+| dropped-collections      | 默认为true，表示当删除MongoDB集合时，会同时删除ES中对应的索引。                                                                                                                                                                                                                                    |
+| dropped-databases        | 默认为true，表示当删除MongoDB数据库时，会同时删除ES中对应的索引。                                                                                                                                                                                                                                  |
 | resume                   | 默认为false。设置为true，Monstache会将已成功同步到ES的MongoDB操作的时间戳写入monstache.monstache集合中。当Monstache因为意外停止时，可通过该时间戳恢复同步任务，避免数据丢失。如果指定了cluster-name，该参数将自动开启，详情请参见[resume](https://rwynn.github.io/monstache-site/config/#resume)。 |
-| resume-strategy          | 指定恢复策略。仅当resume为true时生效，详情请参见[resume-strategy](https://rwynn.github.io/monstache-site/config/#resume-strategy)。 |
-| verbose                  | 默认为false，表示不启用调试日志。                            |
-| cluster-name             | 指定集群名称。指定后，Monstache将进入高可用模式，集群名称相同的进程将进行协调，详情请参见[cluster-name](https://rwynn.github.io/monstache-site/config/#cluster-name)。 |
-| mapping                  | 指定ES索引映射。默认情况下，数据从MongoDB同步到ES时，索引会自动映射为`数据库名.集合名`。如果需要修改索引名称，可通过该参数设置，详情请参见[Index Mapping](https://rwynn.github.io/monstache-site/advanced/#index-mapping)。 |
+| resume-strategy          | 指定恢复策略。仅当resume为true时生效，详情请参见[resume-strategy](https://rwynn.github.io/monstache-site/config/#resume-strategy)。                                                                                                                                                                |
+| verbose                  | 默认为false，表示不启用调试日志。                                                                                                                                                                                                                                                                  |
+| cluster-name             | 指定集群名称。指定后，Monstache将进入高可用模式，集群名称相同的进程将进行协调，详情请参见[cluster-name](https://rwynn.github.io/monstache-site/config/#cluster-name)。                                                                                                                             |
+| mapping                  | 指定ES索引映射。默认情况下，数据从MongoDB同步到ES时，索引会自动映射为`数据库名.集合名`。如果需要修改索引名称，可通过该参数设置，详情请参见[Index Mapping](https://rwynn.github.io/monstache-site/advanced/#index-mapping)。                                                                        |
 
 **config.toml 内容举例如下：**
 
@@ -192,9 +192,9 @@ elasticsearch-user = ""
 elasticsearch-password = ""
 # use 4 go routines concurrently pushing documents to Elasticsearch
 elasticsearch-max-conns = 4 
-# propogate dropped collections in MongoDB as index deletes in Elasticsearch
+# propagate dropped collections in MongoDB as index deletes in Elasticsearch
 dropped-collections = true
-# propogate dropped databases in MongoDB as index deletes in Elasticsearch
+# propagate dropped databases in MongoDB as index deletes in Elasticsearch
 dropped-databases = true
 # resume processing from a timestamp saved in a previous run
 resume = true
@@ -285,31 +285,31 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 
 各目录代表的服务及职责：
 
-|目标|类型|用途描述|
-|---|---|---|
-|cmdb_adminserver|server|负责系统数据的初始化以及配置管理工作|
-|cmdb_apiserver|server|场景层服务，api 服务|
-|cmdb_coreservice|server|资源管理层，提供原子接口服务|
-|cmdb_datacollection|server|场景层服务，数据采集服务|
-|cmdb_eventserver|server|场景层服务，事件推送服务|
-|cmdb_hostserver|server|场景层服务，主机数据维护|
-|cmdb_operationserver|server|场景层服务，提供与运营统计相关功能服务|
-|cmdb_procserver|server|场景层服务，负责进程数据的维护|
-|cmdb_synchronizeserver|server|场景层服务，数据同步服务|
-|cmdb_taskserver|server|场景层服务，异步任务管理服务|
-|cmdb_toposerver|server|场景层服务，负责模型的定义以及主机、业务、模块及进程等实例数据的维护|
-|cmdb_webserver|server|web server 服务子目录|
-|docker|Dockerfile|各服务的Dockerfile模板|
-|image.sh|script|用于制作Docker镜像|
-|init.py|script|用于初始化服务及配置项，在需要重置服务配置的时候也可以运行此脚本，按照提示输入配置参数|
-|init_db.sh|script|初始化数据库的数据|
-|ip.py|script|查询主机真实的IP脚本|
-|restart.sh|script|用于重启所有服务
-|start.sh|script|用于启动所有服务|
-|stop.sh|script|用于停止所有服务|
-|tool_ctl|ctl|管理小工具|
-|upgrade.sh|script|用于全量升级服务进程|
-|web|ui|CMDB UI 页面|
+| 目标                   | 类型       | 用途描述                                                                               |
+| ---------------------- | ---------- | -------------------------------------------------------------------------------------- |
+| cmdb_adminserver       | server     | 负责系统数据的初始化以及配置管理工作                                                   |
+| cmdb_apiserver         | server     | 场景层服务，api 服务                                                                   |
+| cmdb_coreservice       | server     | 资源管理层，提供原子接口服务                                                           |
+| cmdb_datacollection    | server     | 场景层服务，数据采集服务                                                               |
+| cmdb_eventserver       | server     | 场景层服务，事件推送服务                                                               |
+| cmdb_hostserver        | server     | 场景层服务，主机数据维护                                                               |
+| cmdb_operationserver   | server     | 场景层服务，提供与运营统计相关功能服务                                                 |
+| cmdb_procserver        | server     | 场景层服务，负责进程数据的维护                                                         |
+| cmdb_synchronizeserver | server     | 场景层服务，数据同步服务                                                               |
+| cmdb_taskserver        | server     | 场景层服务，异步任务管理服务                                                           |
+| cmdb_toposerver        | server     | 场景层服务，负责模型的定义以及主机、业务、模块及进程等实例数据的维护                   |
+| cmdb_webserver         | server     | web server 服务子目录                                                                  |
+| docker                 | Dockerfile | 各服务的Dockerfile模板                                                                 |
+| image.sh               | script     | 用于制作Docker镜像                                                                     |
+| init.py                | script     | 用于初始化服务及配置项，在需要重置服务配置的时候也可以运行此脚本，按照提示输入配置参数 |
+| init_db.sh             | script     | 初始化数据库的数据                                                                     |
+| ip.py                  | script     | 查询主机真实的IP脚本                                                                   |
+| restart.sh             | script     | 用于重启所有服务                                                                       |
+| start.sh               | script     | 用于启动所有服务                                                                       |
+| stop.sh                | script     | 用于停止所有服务                                                                       |
+| tool_ctl               | ctl        | 管理小工具                                                                             |
+| upgrade.sh             | script     | 用于全量升级服务进程                                                                   |
+| web                    | ui         | CMDB UI 页面                                                                           |
 
 ### 9. 初始化
 
@@ -340,30 +340,30 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 
 **init.py 参数详解：**
 
-|ZooKeeper地址|用途说明|必填|默认值|
-|---|---|---|---|
-|--discovery|服务发现组件，ZooKeeper 服务地址|是|无|
-|--database|数据库名字|mongodb 中数据库名|否|cmdb|
-|--redis_ip|Redis监听的IP|是|无|
-|--redis_port|Redis监听的端口|否|6379|
-|--redis_pass|Redis登陆密码|是|无|
-|--mongo_ip|MongoDB服务监听的IP|是|无|
-|--mongo_port|MongoDB端口|否|27017|
-|--mongo_user|MongoDB中CMDB数据库用户名|是|无|
-|--mongo_pass|MongoDB中CMDB数据库用户名密码|是|无|
-|--blueking_cmdb_url|该值表示部署完成后,输入到浏览器中访问的cmdb 网址, 格式: http://xx.xxx.com:80, 用户自定义填写;在没有配置 DNS 解析的情况下, 填写服务器的 IP:PORT。端口为当前cmdb_webserver监听的端口。|是|无|
-|--blueking_paas_url|蓝鲸PAAS 平台的地址，对于独立部署的CC版本可以不配置|否|无|
-|--listen_port|cmdb_webserver服务监听的端口，默认是8083|是|8083|
-|--full_text_search|全文检索功能开关(取值：off/on)，默认是off，开启是on|否|off|
-|--es_url|elasticsearch服务监听url，默认是http://127.0.0.1:9200|否|http://127.0.0.1:9200|
-|--auth_scheme | 权限模式，web页面使用，可选值: internal, iam | 否 | internal |
-|--auth_enabled | 是否采用蓝鲸权限中心鉴权 |      否 | false |
-|--auth_address       | 蓝鲸权限中心地址 | auth_enabled 为真时必填 | https://iam.domain.com/ |
-|--auth_app_code      | cmdb项目在蓝鲸权限中心的应用编码 | auth_enabled 为真时必填 | bk_cmdb |
-|--auth_app_secret    | cmdb项目在蓝鲸权限中心的应用密钥 | auth_enabled 为真时必填 | xxxxxxx |
-|--log_level          | 日志级别0-9, 9日志最详细 | 否 | 3  |
-|--register_ip        | 进程注册到zookeeper上的IP地址，可以是域名 |  否 | 无 |
-|--user_info |登陆 web 页面的账号密码|否|无|
+| ZooKeeper地址       | 用途说明                                                                                                                                                                             | 必填                    | 默认值                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- | ----------------------- |
+| --discovery         | 服务发现组件，ZooKeeper 服务地址                                                                                                                                                     | 是                      | 无                      |
+| --database          | 数据库名字                                                                                                                                                                           | mongodb 中数据库名      | 否                      | cmdb |
+| --redis_ip          | Redis监听的IP                                                                                                                                                                        | 是                      | 无                      |
+| --redis_port        | Redis监听的端口                                                                                                                                                                      | 否                      | 6379                    |
+| --redis_pass        | Redis登陆密码                                                                                                                                                                        | 是                      | 无                      |
+| --mongo_ip          | MongoDB服务监听的IP                                                                                                                                                                  | 是                      | 无                      |
+| --mongo_port        | MongoDB端口                                                                                                                                                                          | 否                      | 27017                   |
+| --mongo_user        | MongoDB中CMDB数据库用户名                                                                                                                                                            | 是                      | 无                      |
+| --mongo_pass        | MongoDB中CMDB数据库用户名密码                                                                                                                                                        | 是                      | 无                      |
+| --blueking_cmdb_url | 该值表示部署完成后,输入到浏览器中访问的cmdb 网址, 格式: http://xx.xxx.com:80, 用户自定义填写;在没有配置 DNS 解析的情况下, 填写服务器的 IP:PORT。端口为当前cmdb_webserver监听的端口。 | 是                      | 无                      |
+| --blueking_paas_url | 蓝鲸PAAS 平台的地址，对于独立部署的CC版本可以不配置                                                                                                                                  | 否                      | 无                      |
+| --listen_port       | cmdb_webserver服务监听的端口，默认是8083                                                                                                                                             | 是                      | 8083                    |
+| --full_text_search  | 全文检索功能开关(取值：off/on)，默认是off，开启是on                                                                                                                                  | 否                      | off                     |
+| --es_url            | elasticsearch服务监听url，默认是http://127.0.0.1:9200                                                                                                                                | 否                      | http://127.0.0.1:9200   |
+| --auth_scheme       | 权限模式，web页面使用，可选值: internal, iam                                                                                                                                         | 否                      | internal                |
+| --auth_enabled      | 是否采用蓝鲸权限中心鉴权                                                                                                                                                             | 否                      | false                   |
+| --auth_address      | 蓝鲸权限中心地址                                                                                                                                                                     | auth_enabled 为真时必填 | https://iam.domain.com/ |
+| --auth_app_code     | cmdb项目在蓝鲸权限中心的应用编码                                                                                                                                                     | auth_enabled 为真时必填 | bk_cmdb                 |
+| --auth_app_secret   | cmdb项目在蓝鲸权限中心的应用密钥                                                                                                                                                     | auth_enabled 为真时必填 | xxxxxxx                 |
+| --log_level         | 日志级别0-9, 9日志最详细                                                                                                                                                             | 否                      | 3                       |
+| --register_ip       | 进程注册到zookeeper上的IP地址，可以是域名                                                                                                                                            | 否                      | 无                      |
+| --user_info         | 登陆 web 页面的账号密码                                                                                                                                                              | 否                      | 无                      |
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 

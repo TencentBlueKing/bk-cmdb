@@ -22,13 +22,13 @@
 
 - input 字段说明
 
-|字段|类型|必填|默认值|说明|Description|
-|---|---|---|---|---|---|
-|bk_supplier_account|string|是|无|开发商账号|supplier account code|
-|bk_biz_name|string|是|无|业务名|the business name|
-|bk_biz_maintainer|string|否|无|运维人员|operation staff|
-|bk_biz_developer|string|否|无|开发人员|the developer|
-|bk_biz_tester|string|否|无|测试人员|the tester|
+| 字段                | 类型   | 必填 | 默认值 | 说明       | Description           |
+| ------------------- | ------ | ---- | ------ | ---------- | --------------------- |
+| bk_supplier_account | string | 是   | 无     | 开发商账号 | supplier account code |
+| bk_biz_name         | string | 是   | 无     | 业务名     | the business name     |
+| bk_biz_maintainer   | string | 否   | 无     | 运维人员   | operation staff       |
+| bk_biz_developer    | string | 否   | 无     | 开发人员   | the developer         |
+| bk_biz_tester       | string | 否   | 无     | 测试人员   | the tester            |
 **注：此处的输入参数仅对必填以及系统内置的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段。**
 
 ### 删除业务
@@ -45,10 +45,10 @@
 
 - input 字段说明
 
-| 字段|类型|必填|默认值|说明|Description|
-|---|---|---|---|---|---|
-|bk_biz_id|int|是|无|业务id|the business id|
-|bk_supplier_account|string|是|无|开发商账号|supplier account code|
+| 字段                | 类型   | 必填 | 默认值 | 说明       | Description           |
+| ------------------- | ------ | ---- | ------ | ---------- | --------------------- |
+| bk_biz_id           | int    | 是   | 无     | 业务id     | the business id       |
+| bk_supplier_account | string | 是   | 无     | 开发商账号 | supplier account code |
 
 
 - output
@@ -67,12 +67,12 @@
 - output 字段说明
 
 
-| 字段|类型|说明|Description|
-|---|---|---|---|
-|result|bool|ture：成功，false：失败 |true:success, false: failure|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-|data|string|操作结果|the result|
+| 字段          | 类型   | 说明                                    | Description                                                |
+| ------------- | ------ | --------------------------------------- | ---------------------------------------------------------- |
+| result        | bool   | ture：成功，false：失败                 | true:success, false: failure                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误 | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                  | error message from failed request                          |
+| data          | string | 操作结果                                | the result                                                 |
 
 ### 修改业务启用状态
 
@@ -92,11 +92,11 @@
 
 - input 字段说明
 
-| 字段|类型|必填|默认值|说明|Description|
-|---|---|---|---|---|---|
-|bk_biz_id|int|是|无|业务id|the business id|
-|bk_supplier_account|string|是|无|开发商账号|supplier account code|
-|flag|string|是|无|启用状态，为disabled 或者enable|the business name, it should be disabled or enable|
+| 字段                | 类型   | 必填 | 默认值 | 说明                            | Description                                        |
+| ------------------- | ------ | ---- | ------ | ------------------------------- | -------------------------------------------------- |
+| bk_biz_id           | int    | 是   | 无     | 业务id                          | the business id                                    |
+| bk_supplier_account | string | 是   | 无     | 开发商账号                      | supplier account code                              |
+| flag                | string | 是   | 无     | 启用状态，为disabled 或者enable | the business name, it should be disabled or enable |
 
 
 
@@ -114,12 +114,12 @@
 
 - output 字段说明
 
-| 字段|类型|说明|Description|
-|---|---|---|---|
-|result|bool|ture：成功，false：失败 |true:success, false: failure|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-|data|string|操作结果|the result|
+| 字段          | 类型   | 说明                                    | Description                                                |
+| ------------- | ------ | --------------------------------------- | ---------------------------------------------------------- |
+| result        | bool   | ture：成功，false：失败                 | true:success, false: failure                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误 | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                  | error message from failed request                          |
+| data          | string | 操作结果                                | the result                                                 |
 
 
 
@@ -147,15 +147,15 @@
 
 - input 字段说明
 
-| 字段|类型|必填|默认值|说明|Description|
-|---|---|---|---|---|---|
-|bk_biz_id|int|是|无|业务id|the business id|
-|bk_supplier_account|string|是|无|开发商账号|supplier account code|
-|bk_biz_name|string|否|无|业务名称|the business name|
-|bk_biz_developer|string|否|无|开发人员|the developer|
-|bk_biz_maintainer|string|否|无|运维人员|the maintainers|
-|bk_biz_productor|string|否|无|产品人员|the productor|
-|bk_biz_tester|string|否|无|测试人员|the tester|
+| 字段                | 类型   | 必填 | 默认值 | 说明       | Description           |
+| ------------------- | ------ | ---- | ------ | ---------- | --------------------- |
+| bk_biz_id           | int    | 是   | 无     | 业务id     | the business id       |
+| bk_supplier_account | string | 是   | 无     | 开发商账号 | supplier account code |
+| bk_biz_name         | string | 否   | 无     | 业务名称   | the business name     |
+| bk_biz_developer    | string | 否   | 无     | 开发人员   | the developer         |
+| bk_biz_maintainer   | string | 否   | 无     | 运维人员   | the maintainers       |
+| bk_biz_productor    | string | 否   | 无     | 产品人员   | the productor         |
+| bk_biz_tester       | string | 否   | 无     | 测试人员   | the tester            |
 
 **注：此处的输入参数仅对必填以及系统内置的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段。**
 
@@ -175,12 +175,12 @@
 - output 字段说明
 
 
-| 字段|类型|说明|Description|
-|---|---|---|---|
-|result|bool|ture：成功，false：失败 |true:success, false: failure|
-| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-|data|string|操作结果|the result|
+| 字段          | 类型   | 说明                                    | Description                                                |
+| ------------- | ------ | --------------------------------------- | ---------------------------------------------------------- |
+| result        | bool   | ture：成功，false：失败                 | true:success, false: failure                               |
+| bk_error_code | int    | 错误编码。 0表示success，>0表示失败错误 | error code. 0 represent success, >0 represent failure code |
+| bk_error_msg  | string | 请求失败返回的错误信息                  | error message from failed request                          |
+| data          | string | 操作结果                                | the result                                                 |
 
 ### 查询业务
 
@@ -208,19 +208,19 @@
 
 - input 字段说明:
 
-| 字段|类型|必填|默认值|说明|Description|
-|---|---|---|---|---|---|
-|fields|array|否|无|指定查询的字段|need to show|
-|condition|object|否|无|查询条件|search condition|
-|page|object|否|无|分页条件|page condition|
+| 字段      | 类型   | 必填 | 默认值 | 说明           | Description      |
+| --------- | ------ | ---- | ------ | -------------- | ---------------- |
+| fields    | array  | 否   | 无     | 指定查询的字段 | need to show     |
+| condition | object | 否   | 无     | 查询条件       | search condition |
+| page      | object | 否   | 无     | 分页条件       | page condition   |
 
 page 参数说明：
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|
-| start|int|是|无|记录开始位置 |start record|
-| limit|int|是|无|每页限制条数,最大200 |page limit, max is 200|
-| sort| string| 否| 无|排序字段|the field for sort|
+| 名称  | 类型   | 必填 | 默认值 | 说明                 | Description            |
+| ----- | ------ | ---- | ------ | -------------------- | ---------------------- |
+| start | int    | 是   | 无     | 记录开始位置         | start record           |
+| limit | int    | 是   | 无     | 每页限制条数,最大200 | page limit, max is 200 |
+| sort  | string | 否   | 无     | 排序字段             | the field for sort     |
 
 **注：sort 字段通过在字段前面增加 -，如 sort:"-field" 可以表示按照字段field降序。**
 

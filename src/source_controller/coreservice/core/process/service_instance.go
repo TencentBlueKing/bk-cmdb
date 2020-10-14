@@ -297,7 +297,7 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.Li
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	instances := make([]metadata.ServiceInstance, 0)
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Start(
+	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Sort(option.Page.Sort).Start(
 		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx, &instances); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -314,56 +314,25 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	if option.BusinessID == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
-
 	if option.Page.Limit > common.BKMaxPageSize {
 		return nil, kit.CCError.CCError(common.CCErrCommOverLimit)
 	}
 
-	moduleFilter := map[string]interface{}{
-		common.BKAppIDField: option.BusinessID,
-	}
-	if option.SetID != 0 {
-		moduleFilter[common.BKSetIDField] = option.SetID
-	}
-	if option.ModuleID != 0 {
-		moduleFilter[common.BKModuleIDField] = option.ModuleID
-	}
-	modules := make([]metadata.ModuleInst, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
-		blog.Errorf("ListServiceInstanceDetail failed, list modules failed, filter: %+v, err: %+v, rid: %s", moduleFilter, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	targetModuleIDs := make([]int64, 0)
-	moduleCategoryMap := make(map[int64]int64)
-	for _, module := range modules {
-		targetModuleIDs = append(targetModuleIDs, module.ModuleID)
-		moduleCategoryMap[module.ModuleID] = module.ServiceCategoryID
-	}
-
-	if len(targetModuleIDs) == 0 {
-		result := &metadata.MultipleServiceInstanceDetail{
-			Count: 0,
-			Info:  make([]metadata.ServiceInstanceDetail, 0),
-		}
-		return result, nil
-	}
-
+	// set query params
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
-		common.BKModuleIDField: map[string]interface{}{
-			common.BKDBIN: targetModuleIDs,
-		},
+	}
+	if option.ModuleID != 0 {
+		filter[common.BKModuleIDField] = option.ModuleID
 	}
 	if option.HostID != 0 {
 		filter[common.BKHostIDField] = option.HostID
 	}
-
 	if option.ServiceInstanceIDs != nil {
 		filter[common.BKFieldID] = map[string]interface{}{
 			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
-
 	if key, err := option.Selectors.Validate(); err != nil {
 		blog.Errorf("ListServiceInstance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, rid: %s", option.Selectors, key, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, key)
@@ -411,10 +380,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 
 	// filter process instances
 	serviceInstanceIDs := make([]int64, 0)
-	for idx, serviceInstance := range serviceInstanceDetails {
+	for _, serviceInstance := range serviceInstanceDetails {
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
-		// set service_category_id field
-		serviceInstanceDetails[idx].ServiceCategoryID = moduleCategoryMap[serviceInstance.ModuleID]
 	}
 
 	relations := make([]metadata.ProcessInstanceRelation, 0)

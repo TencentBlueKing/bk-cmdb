@@ -388,7 +388,7 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	if rawErr := option.Validate(); rawErr.ErrCode != 0 {
 		blog.Errorf("find hosts by topo failed, validate err: %v, option: %#v, rid: %s", rawErr, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
@@ -413,7 +413,7 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 	} else {
 		setIDArr, err := s.Logic.GetSetIDsByTopo(ctx.Kit, option.ObjID, option.InstID)
 		if err != nil {
-			blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, rid: %s", 
+			blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, rid: %s",
 				err, option.ObjID, option.InstID, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
@@ -434,12 +434,12 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("find hosts by topo failed, cond: %#v, search cond: %#v, er: %v, rid: %s", err, *distinctHostCond, 
+		blog.Errorf("find hosts by topo failed, cond: %#v, search cond: %#v, er: %v, rid: %s", err, *distinctHostCond,
 			*searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	ctx.RespEntity(result.Data)
 }
 
@@ -548,6 +548,7 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 		ctx.RespAutoError(ccErr)
 		return
 	}
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
 		blog.ErrorJSON("ListBizHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID, parameter, ccErr.Error(), rid)
@@ -558,7 +559,7 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 }
 
 func (s *Service) listBizHosts(ctx *rest.Contexts, bizID int64, parameter meta.ListHostsParameter) (result *meta.ListHostResult, ccErr errors.CCErrorCoder) {
-	header:=ctx.Kit.Header
+	header := ctx.Kit.Header
 	rid := ctx.Kit.Rid
 	defErr := ctx.Kit.CCError
 
@@ -658,6 +659,8 @@ func (s *Service) ListHostsWithNoBiz(ctx *rest.Contexts) {
 		Fields:             parameter.Fields,
 		Page:               parameter.Page,
 	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, err := s.CoreAPI.CoreService().Host().ListHosts(ctx.Kit.Ctx, header, option)
 	if err != nil {
 		blog.Errorf("find host failed, err: %s, input:%#v, rid:%s", err.Error(), parameter, rid)
@@ -702,6 +705,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		return
 	}
 
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	// search all hosts
 	option := &meta.ListHosts{
 		BizID:              bizID,

@@ -15,6 +15,7 @@ package service
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -483,6 +484,78 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("SearchServiceInstancesBySetTemplate failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+	input := new(metadata.GetServiceInstanceBySetTemplateInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if input.SetTemplateID == 0 {
+		blog.Errorf("SearchServiceInstancesBySetTemplate failed, lost input params SetTemplateID, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsLostField, "set_template_id"))
+		return
+	}
+
+	// query modules by set_template_id
+	cond := mapstr.MapStr{
+		common.BKAppIDField:         bizID,
+		common.BKSetTemplateIDField: input.SetTemplateID,
+	}
+	qc := &metadata.QueryCondition{
+		Fields: []string{common.BKModuleIDField},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: cond,
+	}
+	moduleInsts, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
+	if err != nil {
+		blog.Errorf("SearchServiceInstancesBySetTemplate failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !moduleInsts.Result {
+		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, moduleInsts, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(moduleInsts.Code, moduleInsts.ErrMsg))
+		return
+	}
+
+	// get the list of module by moduleInsts
+	modules := make([]int64, moduleInsts.Data.Count)
+	for _, moduleInst := range moduleInsts.Data.Info {
+		moduleID, err := util.GetInt64ByInterface(moduleInst[common.BKModuleIDField])
+		if err != nil {
+			blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, GetInt64ByInterface failed, moduleInst: %s, err: %#v, rid: %s", moduleInsts, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.New(moduleInsts.Code, moduleInsts.ErrMsg))
+			return
+		}
+		modules = append(modules, moduleID)
+	}
+
+	// set return the list of service instances sorted by id
+	input.Page.Sort = "id"
+	// query serviceInstances
+	option := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		ModuleIDs:  modules,
+		Page:       input.Page,
+	}
+	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ListServiceInstance failed, filter: %s, err: %s, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in set_template_id: %d failed, err: %v", input.SetTemplateID, err)
+		return
+	}
+
+	ctx.RespEntity(serviceInstanceResult)
+}
+
 func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -508,22 +581,13 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 }
 
 func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
-	input := new(metadata.ListServiceInstanceDetailRequest)
+	input := new(metadata.ListServiceInstanceDetailOption)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	option := &metadata.ListServiceInstanceDetailOption{
-		BusinessID:         input.BizID,
-		ModuleID:           input.ModuleID,
-		SetID:              input.SetID,
-		HostID:             input.HostID,
-		ServiceInstanceIDs: input.ServiceInstanceIDs,
-		Page:               input.Page,
-		Selectors:          input.Selectors,
-	}
-	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
 		return

@@ -28,6 +28,13 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 )
 
+const (
+	// bKMaxPageSize maximum page size
+	bKMaxPageSize = 500
+	// bkSetIdSMaxSize maximum number of set's id
+	bkSetIdSMaxSize = 200
+)
+
 func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, errors.CCErrorCoder) {
 	qc := &metadata.QueryCondition{
 		Fields: []string{common.BKSetTemplateIDField},
@@ -356,11 +363,42 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	ctx.RespEntity(instanceResult.Data)
 }
 
-// SearchModule search the modules
+// SearchModuleInOneSet search module in one set
 func (s *Service) SearchModule(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	setID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKSetIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKSetIDField))
+		return
+	}
+
+	s.searchModule(ctx, bizID, setID)
+}
+
+// SearchModuleByCondition search module in one biz
+func (s *Service) SearchModuleByCondition(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	s.searchModule(ctx, bizID, 0)
+}
+
+func (s *Service) searchModule(ctx *rest.Contexts, bizID, setID int64) {
 	data := struct {
 		parser.SearchParams `json:",inline"`
-		ModelBizID          int64 `json:"bk_biz_id"`
+		// compatible for api /module/search/{owner_id}/{app_id}/{set_id}
+		SetID int64 `json:"bk_set_id"`
 	}{}
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -371,29 +409,15 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 		paramsCond.Condition = mapstr.New()
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
-	if nil != err {
-		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-module]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
-		return
-	}
-
-	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-module]failed to parse the set id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
-		return
-	}
-
 	paramsCond.Condition[common.BKAppIDField] = bizID
-	paramsCond.Condition[common.BKSetIDField] = setID
+
+	// compatible for api /module/search/{owner_id}/{app_id}/{set_id}
+	if data.SetID > 0 {
+		paramsCond.Condition[common.BKSetIDField] = data.SetID
+	}
+	if setID > 0 {
+		paramsCond.Condition[common.BKSetIDField] = setID
+	}
 
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
@@ -402,6 +426,13 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 	queryCond.Limit = page.Limit
 	queryCond.Sort = page.Sort
 	queryCond.Start = page.Start
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("failed to search the module, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
 
 	cnt, instItems, err := s.Core.ModuleOperation().FindModule(ctx.Kit, obj, queryCond)
 	if nil != err {
@@ -418,7 +449,7 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 	return
 }
 
-// SearchModuleBatch search the modules in one biz
+// SearchModuleBatch search the modules by module IDs in one biz
 func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -466,6 +497,73 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(instanceResult.Data.Info)
+}
+
+// SearchModuleWithRelation search the modules by set's ids and service template's ids under application
+func (s *Service) SearchModuleWithRelation(ctx *rest.Contexts) {
+	// parsing input params
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+	data := struct {
+		BkSetIdS             []int64           `json:"bk_set_ids"`
+		BkServiceTemplateIds []int64           `json:"bk_service_template_ids"`
+		Fields               []string          `json:"fields"`
+		Page                 metadata.BasePage `json:"page"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// check input params
+	if len(data.Fields) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "fields"))
+		return
+	}
+	if len(data.BkSetIdS) > bkSetIdSMaxSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommOverLimit, "the number of bk_set_ids"))
+		return
+	}
+	if data.Page.Limit > bKMaxPageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommOverLimit, "page"))
+		return
+	}
+
+	// set query condition
+	cond := mapstr.MapStr{common.BKAppIDField: bizID}
+	if len(data.BkSetIdS) != 0 {
+		bkSetIdS := util.IntArrayUnique(data.BkSetIdS)
+		cond[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: bkSetIdS}
+	}
+	if len(data.BkServiceTemplateIds) != 0 {
+		bkServiceTemplateIds := util.IntArrayUnique(data.BkServiceTemplateIds)
+		cond[common.BKServiceTemplateIDField] = mapstr.MapStr{common.BKDBIN: bkServiceTemplateIds}
+	}
+	qc := &metadata.QueryCondition{
+		Fields:    data.Fields,
+		Page:      data.Page,
+		Condition: cond,
+	}
+
+	// query and check result
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
+	if err != nil {
+		blog.Errorf("SearchModuleWithRelation failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !instanceResult.Result {
+		blog.ErrorJSON("SearchModuleWithRelation failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
+		return
+	}
+
+	ctx.RespEntityWithCount(int64(instanceResult.Data.Count), instanceResult.Data.Info)
+	return
 }
 
 func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {

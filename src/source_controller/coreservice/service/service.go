@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/cache"
@@ -29,6 +30,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/auditlog"
 	"configcenter/src/source_controller/coreservice/core/auth"
 	"configcenter/src/source_controller/coreservice/core/cloud"
+	coreCommon "configcenter/src/source_controller/coreservice/core/common"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	e "configcenter/src/source_controller/coreservice/core/event"
 	"configcenter/src/source_controller/coreservice/core/host"
@@ -139,6 +141,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		cloud.New(mongodb.Client()),
 		auth.New(mongodb.Client()),
 		e.New(mongodb.Client(), redis.Client()),
+		coreCommon.New(),
 	)
 
 	watcher, watchErr := stream.NewStream(s.cfg.Mongo.GetMongoConf())
@@ -159,10 +162,11 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
-
+	getErrFunc := func() errors.CCErrorIf {
+		return s.err
+	}
 	api := new(restful.WebService)
-	api.Path("/api/v3").Filter(s.engine.Metric().RestfulMiddleWare).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-
+	api.Path("/api/v3").Filter(s.engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	// init service actions
 	s.initService(api)
 	container.Add(api)

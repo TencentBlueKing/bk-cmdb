@@ -7,11 +7,10 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                :show-overflow-tooltip="column.id !== 'bind_info'">
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
                         v-if="column.id !== 'bind_info'"
-                        :show-title="false"
                         :show-on="'cell'"
                         :value="row[column.id]"
                         :property="column.property">

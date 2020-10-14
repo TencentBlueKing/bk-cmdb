@@ -14,7 +14,6 @@ package settemplate
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"configcenter/src/common"
@@ -233,7 +232,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*met
 }
 
 func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
-	detail.Header = http.Header{}
+	detail.Header = util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for taskIdx := range detail.Detail {
 		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
 		if !ok {

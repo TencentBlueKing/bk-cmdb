@@ -21,6 +21,7 @@ var _ = Describe("object test", func() {
 	var bizId string
 	var childInstId string
 	var setId string
+	var serviceTemplateId string
 	var childInstIdInt, bizIdInt int64
 	objectClient := topoServerClient.Object()
 	instClient := topoServerClient.Instance()
@@ -1542,12 +1543,32 @@ var _ = Describe("object test", func() {
 			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_parent_id"])).To(Equal(setId))
 		})
 
+		It("search module by condition", func() {
+			setID, _ := strconv.ParseInt(setId, 10, 64)
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{
+					"bk_set_id": setID,
+				},
+				Page: map[string]interface{}{
+					"sort": "id",
+				},
+			}
+			rsp, err := instClient.SearchModuleByCondition(context.Background(), bizId, header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			Expect(map[string]interface{}(rsp.Data.Info[0])).To(HaveKeyWithValue("bk_module_name", "new_module"))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_set_id"])).To(Equal(setId))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_parent_id"])).To(Equal(setId))
+		})
+
 		It("search module batch", func() {
 			mid, _ := strconv.ParseInt(moduleId, 10, 64)
 			mid2, _ := strconv.ParseInt(moduleId1, 10, 64)
 			input := &metadata.SearchInstBatchOption{
 				IDs:    []int64{mid, mid2},
-				Fields: []string{"bk_module_id", "bk_module_name"},
+				Fields: []string{"bk_module_id", "bk_module_name", "bk_set_id", "service_template_id"},
 			}
 			rsp, err := instClient.SearchModuleBatch(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
@@ -1556,6 +1577,30 @@ var _ = Describe("object test", func() {
 			Expect(len(rsp.Data)).To(Equal(1))
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_id"])).To(Equal(moduleId))
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_name"])).To(Equal("new_module"))
+
+			setId = commonutil.GetStrByInterface(rsp.Data[0]["bk_set_id"])
+			serviceTemplateId = commonutil.GetStrByInterface(rsp.Data[0]["service_template_id"])
+		})
+
+		It("search module with relation", func() {
+			setid, _ := strconv.ParseInt(setId, 10, 64)
+			serviceTemplateid, _ := strconv.ParseInt(serviceTemplateId, 10, 64)
+			input := map[string]interface{}{
+				"bk_set_ids":              []int64{setid},
+				"bk_service_template_ids": []int64{serviceTemplateid},
+				"fields":                  []string{"bk_module_id", "bk_module_name"},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 500,
+				},
+			}
+			rsp, err := topoServerClient.Instance().SearchModuleWithRelation(context.Background(), bizId, header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_id"])).To(Equal(moduleId))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_name"])).To(Equal("new_module"))
 		})
 	})
 })

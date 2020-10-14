@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -373,7 +374,6 @@ type ListServiceInstanceOption struct {
 
 type ListServiceInstanceDetailOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
-	SetID              int64              `json:"bk_set_id"`
 	ModuleID           int64              `json:"bk_module_id"`
 	HostID             int64              `json:"bk_host_id"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
@@ -598,4 +598,28 @@ type SubscriptionResult struct {
 type MultipleSubscriptionResult struct {
 	BaseResp `json:",inline"`
 	Data     RspSubscriptionSearch `json:"data"`
+}
+
+type DistinctFieldOption struct {
+	TableName string                 `json:"table_name"`
+	Field     string                 `json:"field"`
+	Filter    map[string]interface{} `json:"filter"`
+}
+
+func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
+	if d.TableName == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"table_name"},
+		}
+	}
+
+	if d.Field == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"Field"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

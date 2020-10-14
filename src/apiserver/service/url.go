@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strings"
 
+	"configcenter/src/apiserver/service/match"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 
@@ -53,6 +54,9 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	case u.WithCloud(req):
 		return CloudType, nil
 	default:
+		if server, isHit := match.FilterMatch(req); isHit {
+			return RequestType(server), nil
+		}
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
 	}
@@ -212,6 +216,13 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/userapi/"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	// dynamic grouping URL matching, and proxy to host server.
+	case string(*u) == (rootPath + "/dynamicgroup"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/dynamicgroup/"):
 		from, to, isHit = rootPath, hostRoot, true
 
 	case string(*u) == (rootPath + "/usercustom"):

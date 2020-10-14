@@ -18,8 +18,7 @@
                         <cmdb-property-value
                             :ref="`property-value-${property.bk_property_id}`"
                             :value="instState[property.bk_property_id]"
-                            :property="property"
-                            :show-title="false">
+                            :property="property">
                         </cmdb-property-value>
                     </span>
                     <template v-if="!loadingState.includes(property)">

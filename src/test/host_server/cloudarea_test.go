@@ -207,15 +207,15 @@ var _ = Describe("cloud area test", func() {
 			Expect(len(rsp.Data.Info)).To(Equal(int(1)))
 		})
 
-		It("search with configured exact is true", func() {
-			queryData := map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
+		It("search with configured is_fuzzy is false", func() {
+			queryData := map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(0)))
 
-			queryData = map[string]interface{}{"exact": true, "condition": map[string]interface{}{"bk_cloud_name": testData2["bk_cloud_name"]}}
+			queryData = map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_cloud_name": testData2["bk_cloud_name"]}}
 			rsp, err = hostServerClient.SearchCloudArea(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
@@ -224,8 +224,8 @@ var _ = Describe("cloud area test", func() {
 			Expect(rsp.Data.Info[0].String("bk_cloud_name")).To(Equal(testData2["bk_cloud_name"]))
 		})
 
-		It("search with configured exact is false", func() {
-			queryData := map[string]interface{}{"exact": false, "condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
+		It("search with configured is_fuzzy is true", func() {
+			queryData := map[string]interface{}{"is_fuzzy": true, "condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())

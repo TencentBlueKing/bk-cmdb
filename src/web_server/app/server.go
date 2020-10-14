@@ -132,7 +132,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 		w.Config.Site.AuthScheme = authscheme
 	}
 
-	fullTextSearch, err := cc.String("webServer.site.fullTextSearch")
+	fullTextSearch, err := cc.String("es.fullTextSearch")
 	if err != nil {
 		w.Config.Site.FullTextSearch = "off"
 	} else {

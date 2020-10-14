@@ -56,6 +56,7 @@
             <p class="title mb10">{{$t('默认值设置')}}</p>
             <bk-select style="width: 100%;"
                 :clearable="false"
+                :disabled="isReadOnly"
                 v-model="defaultValue"
                 @change="handleSettingDefault">
                 <bk-option v-for="option in settingList"
@@ -108,7 +109,7 @@
                 deep: true,
                 handler (value) {
                     this.settingList = (value || []).filter(item => item.id && item.name)
-                    if (this.settingList.length) {
+                    if (this.settingList.length && this.defaultIndex > -1) {
                         this.defaultValue = this.settingList[this.defaultIndex].id
                     }
                 }

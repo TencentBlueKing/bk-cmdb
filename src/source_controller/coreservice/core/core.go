@@ -205,6 +205,7 @@ type Core interface {
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
 	EventOperation()  EventOperation
+	CommonOperation() CommonOperation
 }
 
 // ProcessOperation methods
@@ -319,6 +320,10 @@ type EventOperation interface {
 	ListSubscriptions(kit *rest.Kit, data *metadata.ParamSubscriptionSearch) (*metadata.RspSubscriptionSearch, errors.CCErrorCoder)
 }
 
+type CommonOperation interface {
+	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -336,6 +341,7 @@ type core struct {
 	cloud           CloudOperation
 	auth            AuthOperation
 	event           EventOperation
+	common          CommonOperation
 }
 
 // New create core
@@ -355,6 +361,7 @@ func New(
 	cloud CloudOperation,
 	auth AuthOperation,
 	event EventOperation,
+	common CommonOperation,
 ) Core {
 	return &core{
 		model:           model,
@@ -373,6 +380,7 @@ func New(
 		cloud:           cloud,
 		auth:            auth,
 		event:			 event,
+		common:          common,
 	}
 }
 
@@ -438,4 +446,8 @@ func (m *core) AuthOperation() AuthOperation {
 
 func (m *core) EventOperation() EventOperation {
 	return m.event
+}
+
+func (m *core) CommonOperation() CommonOperation {
+	return m.common
 }

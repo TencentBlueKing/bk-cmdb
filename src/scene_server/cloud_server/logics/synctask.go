@@ -14,7 +14,6 @@ package logics
 
 import (
 	"fmt"
-	"reflect"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -147,11 +146,11 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
+	// if fuzzy search, change the string query to regexp
+	if option.IsFuzzy == true {
 		for k, v := range option.Condition {
-			if reflect.TypeOf(v).Kind() == reflect.String {
-				field := v.(string)
+			field, ok := v.(string)
+			if ok {
 				option.Condition[k] = mapstr.MapStr{
 					common.BKDBLIKE: params.SpecialCharChange(field),
 					"$options":      "i",
@@ -206,9 +205,9 @@ func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.Multipl
 	vpcToUpdate := make(map[string]*metadata.VpcSyncInfo)
 	accountOption := make(map[int64]*metadata.SearchVpcHostCntOption)
 
-	for i, _ := range multiTask.Info {
+	for i := range multiTask.Info {
 		task := multiTask.Info[i]
-		for j, _ := range task.SyncVpcs {
+		for j := range task.SyncVpcs {
 			syncVpc := &task.SyncVpcs[j]
 			vpcToUpdate[syncVpc.VpcID] = syncVpc
 			if accountOption[task.AccountID] == nil {
@@ -241,7 +240,7 @@ func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.Multipl
 	}
 
 	// 更新返回结果里vpc对应的主机数
-	for vpcID, _ := range vpcToUpdate {
+	for vpcID := range vpcToUpdate {
 		vpcToUpdate[vpcID].VpcHostCount = allVpcHostCnt[vpcID]
 	}
 
@@ -327,11 +326,11 @@ func (lgc *Logics) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncH
 		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
+	// if fuzzy search, change the string query to regexp
+	if option.IsFuzzy == true {
 		for k, v := range option.Condition {
-			if reflect.TypeOf(v).Kind() == reflect.String {
-				field := v.(string)
+			field, ok := v.(string)
+			if ok {
 				option.Condition[k] = mapstr.MapStr{
 					common.BKDBLIKE: params.SpecialCharChange(field),
 					"$options":      "i",

@@ -223,6 +223,7 @@
                     }
                     if (this.filter) {
                         params.condition.bk_cloud_name = this.filter
+                        params.is_fuzzy = true
                     }
                     const data = await this.$store.dispatch('cloud/area/findMany', {
                         params: params,

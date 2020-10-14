@@ -107,14 +107,9 @@ type GetServiceInstanceInModuleInput struct {
 	Selectors selector.Selectors `json:"selectors"`
 }
 
-type ListServiceInstanceDetailRequest struct {
-	BizID              int64              `json:"bk_biz_id"`
-	SetID              int64              `json:"bk_set_id"`
-	ModuleID           int64              `json:"bk_module_id"`
-	HostID             int64              `json:"bk_host_id"`
-	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
-	Page               BasePage           `json:"page"`
-	Selectors          selector.Selectors `json:"selectors"`
+type GetServiceInstanceBySetTemplateInput struct {
+	SetTemplateID int64    `json:"set_template_id"`
+	Page          BasePage `json:"page"`
 }
 
 type DiffModuleWithTemplateOption struct {
@@ -1591,8 +1586,7 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 
 type ServiceInstanceDetail struct {
 	ServiceInstance
-	ServiceCategoryID int64               `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
-	ProcessInstances  []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
+	ProcessInstances []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
 }
 
 type ServiceInstanceWithTopoPath struct {

@@ -417,6 +417,10 @@ func (c *Contexts) NewHeader() http.Header {
 	return util.CCHeader(c.Kit.Header)
 }
 
+func (c *Contexts) SetReadPreference(mode common.ReadPreferenceMode) {
+	c.Kit.Ctx, c.Kit.Header = util.SetReadPreference(c.Kit.Ctx, c.Kit.Header, mode)
+}
+
 // NewKit 产生一个新的kit， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
 func (kit *Kit) NewKit() *Kit {
 	newHeader := util.CCHeader(kit.Header)

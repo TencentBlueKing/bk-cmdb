@@ -114,8 +114,10 @@ func (s *Service) initModule(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/{app_id}/{set_id}", Handler: s.CreateModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/module/{app_id}/{set_id}/{module_id}", Handler: s.DeleteModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/module/{app_id}/{set_id}/{module_id}", Handler: s.UpdateModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/search/{owner_id}/{app_id}/{set_id}", Handler: s.SearchModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/search/{owner_id}/{bk_biz_id}/{bk_set_id}", Handler: s.SearchModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module/biz/{bk_biz_id}", Handler: s.SearchModuleByCondition})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module/bk_biz_id/{bk_biz_id}", Handler: s.SearchModuleBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module/with_relation/biz/{bk_biz_id}", Handler: s.SearchModuleWithRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}", Handler: s.ListModulesByServiceTemplateID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}/bk_module_id/{bk_module_id}", Handler: s.UpdateModuleHostApplyEnableStatus})
 

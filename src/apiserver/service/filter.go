@@ -106,6 +106,11 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 	case CloudType:
 		servers, err = s.discovery.CloudServer().GetServers()
+	default:
+		name := string(kind)
+		if name != "" {
+			servers, err = s.discovery.Server(name).GetServers()
+		}
 	}
 
 	if err != nil {

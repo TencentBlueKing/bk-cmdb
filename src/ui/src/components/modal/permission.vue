@@ -21,13 +21,14 @@
                 <bk-table-column prop="name" :label="$t('需要申请的权限')"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
-                        <template v-if="row.relations.length">
+                        <div v-if="row.relations.length" style="overflow: auto;">
                             <div class="permission-resource"
                                 v-for="(relation, index) in row.relations"
+                                v-bk-overflow-tips
                                 :key="index">
                                 {{relation}}
                             </div>
-                        </template>
+                        </div>
                         <span v-else>--</span>
                     </template>
                 </bk-table-column>
