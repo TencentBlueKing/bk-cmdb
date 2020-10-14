@@ -781,25 +781,29 @@ func (ps *ProcServer) ListProcessInstancesNameIDsInModule(ctx *rest.Contexts) {
 		return
 	}
 
-	option := &metadata.ListServiceInstanceOption{
-		BusinessID: input.BizID,
-		ModuleIDs:  []int64{input.ModuleID},
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
+	option := &metadata.DistinctFieldOption{
+		TableName: common.BKTableNameServiceInstance,
+		Field:     common.BKFieldID,
+		Filter: map[string]interface{}{
+			common.BKAppIDField:    input.BizID,
+			common.BKModuleIDField: input.ModuleID,
 		},
 	}
-	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	sIDs, err := ps.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "ListProcessInstancesNameIDsInModule failed, module: %d, err: %v", input.ModuleID, err)
 		return
 	}
-	if len(serviceInstanceResult.Info) == 0 {
+	if len(sIDs) == 0 {
 		ctx.RespEntityWithCount(0, []map[string][]int64{})
 		return
 	}
-	serviceInstanceIDs := make([]int64, 0)
-	for _, instance := range serviceInstanceResult.Info {
-		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
+
+	serviceInstanceIDs := make([]int64, len(sIDs))
+	for idx, sID := range sIDs {
+		if ID, err := strconv.ParseInt(fmt.Sprintf("%v", sID), 10, 64); err == nil {
+			serviceInstanceIDs[idx] = ID
+		}
 	}
 	listRelationOption := &metadata.ListProcessInstanceRelationOption{
 		BusinessID:         input.BizID,
