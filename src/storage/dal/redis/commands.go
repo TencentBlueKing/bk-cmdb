@@ -26,16 +26,17 @@ type Commands interface {
 	Close() error
 	Del(ctx context.Context, keys ...string) IntResult
 	Eval(ctx context.Context, script string, keys []string, args ...interface{}) Result
+	Exists(ctx context.Context, keys ...string) IntResult
 	Expire(ctx context.Context, key string, expiration time.Duration) BoolResult
 	FlushDB(ctx context.Context) StatusResult
 	Get(ctx context.Context, key string) StringResult
-	Exists(ctx context.Context, keys ...string) IntResult
 	HDel(ctx context.Context, key string, fields ...string) IntResult
 	HGet(ctx context.Context, key, field string) StringResult
 	HGetAll(ctx context.Context, key string) StringStringMapResult
 	HIncrBy(ctx context.Context, key, field string, incr int64) IntResult
 	HKeys(ctx context.Context, key string) StringSliceResult
 	HMGet(ctx context.Context, key string, fields ...string) SliceResult
+	HScan(ctx context.Context, key string, cursor uint64, match string, count int64) ScanResult
 	HSet(ctx context.Context, key string, values ...interface{}) IntResult
 	Incr(ctx context.Context, key string) IntResult
 	Keys(ctx context.Context, pattern string) StringSliceResult

@@ -1,7 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package redis_test
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -16,7 +29,7 @@ import (
 // these test cases extract from cases in following files at git commit bfb4c92
 // https://github.com/go-redis/redis/blob/master/commands_test.go
 // https://github.com/go-redis/redis/blob/master/pubsub_test.go
-// little modification on some cases to make them available to test the encapsulated redis Client
+// little modification on some test cases to make them available to test the encapsulated redis Client
 var _ = Describe("Commands", func() {
 	var client localRedis.Client
 	ctx := context.Background()
@@ -87,7 +100,7 @@ var _ = Describe("Commands", func() {
 
 	})
 
-	It("Subscribe", func() {
+	It("should Subscribe", func() {
 		pubsub := client.Subscribe(ctx, "mychannel", "mychannel2")
 		defer pubsub.Close()
 
@@ -241,7 +254,7 @@ var _ = Describe("Commands", func() {
 		Expect(n).To(Equal(int64(2)))
 	})
 
-	It("should eval returns keys and values", func() {
+	It("should Eval returns keys and values", func() {
 		vals, err := client.Eval(
 			ctx,
 			"return {KEYS[1],ARGV[1]}",
@@ -252,7 +265,7 @@ var _ = Describe("Commands", func() {
 		Expect(vals).To(Equal([]interface{}{"key", "hello"}))
 	})
 
-	It("should eval returns all values after an error", func() {
+	It("should Eval returns all values after an error", func() {
 		vals, err := client.Eval(
 			ctx,
 			`return {12, {err="error"}, "abc"}`,
@@ -352,6 +365,18 @@ var _ = Describe("Commands", func() {
 		hIncrBy = client.HIncrBy(ctx, "hash", "key", -10)
 		Expect(hIncrBy.Err()).NotTo(HaveOccurred())
 		Expect(hIncrBy.Val()).To(Equal(int64(-5)))
+	})
+
+	It("should HScan", func() {
+		for i := 0; i < 1000; i++ {
+			sadd := client.HSet(ctx, "myhash", fmt.Sprintf("key%d", i), "hello")
+			Expect(sadd.Err()).NotTo(HaveOccurred())
+		}
+
+		keys, cursor, err := client.HScan(ctx, "myhash", 0, "", 0).Result()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(keys).NotTo(BeEmpty())
+		Expect(cursor).NotTo(BeZero())
 	})
 
 	It("should HSet", func() {

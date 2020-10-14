@@ -73,12 +73,12 @@ func (c *client) Del(ctx context.Context, keys ...string) IntResult {
 	return c.cli.Del(keys...)
 }
 
-func (c *client) Exists(ctx context.Context, keys ...string) IntResult {
-	return c.cli.Exists(keys...)
-}
-
 func (c *client) Eval(ctx context.Context, script string, keys []string, args ...interface{}) Result {
 	return c.cli.Eval(script, keys, args...)
+}
+
+func (c *client) Exists(ctx context.Context, keys ...string) IntResult {
+	return c.cli.Exists(keys...)
 }
 
 func (c *client) Expire(ctx context.Context, key string, expiration time.Duration) BoolResult {
@@ -115,6 +115,10 @@ func (c *client) HKeys(ctx context.Context, key string) StringSliceResult {
 
 func (c *client) HMGet(ctx context.Context, key string, fields ...string) SliceResult {
 	return c.cli.HMGet(key, fields...)
+}
+
+func (c *client) HScan(ctx context.Context, key string, cursor uint64, match string, count int64) ScanResult {
+	return c.cli.HScan(key, cursor, match, count)
 }
 
 func (c *client) HSet(ctx context.Context, key string, values ...interface{}) IntResult {

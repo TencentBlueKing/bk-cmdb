@@ -119,3 +119,10 @@ type DurationResult interface {
 	Val() time.Duration
 	Result() (time.Duration, error)
 }
+
+// ScanResult is the duration result for redis commands
+type ScanResult interface {
+	baseResult
+	Val() (keys []string, cursor uint64)
+	Result() (keys []string, cursor uint64, err error)
+}
