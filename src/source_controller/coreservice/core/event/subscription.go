@@ -13,6 +13,9 @@
 package event
 
 import (
+	"fmt"
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -20,8 +23,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"fmt"
-	"strconv"
 )
 
 const (
@@ -145,7 +146,7 @@ func (e *eventOperation) ListSubscriptions(kit *rest.Kit, data *metadata.ParamSu
 	if data.Page.Limit <= 0 {
 		data.Page.Limit = common.BKNoLimit
 	}
-
+	util.SetQueryOwner(data.Condition, kit.SupplierAccount)
 	count, err := e.dbProxy.Table(common.BKTableNameSubscription).Find(data.Condition).Count(kit.Ctx)
 	if err != nil {
 		// 400, query host count failed.

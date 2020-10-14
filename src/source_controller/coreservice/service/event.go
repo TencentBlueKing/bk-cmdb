@@ -39,10 +39,10 @@ func (s *coreService) Subscribe(ctx *rest.Contexts) {
 // UnSubscribe unsubscribes target resource event in callback mode.
 func (s *coreService) UnSubscribe(ctx *rest.Contexts) {
 	//get subscribeID
-	subscribeIDStr := ctx.Request.PathParameter("subscribeID")
+	subscribeIDStr := ctx.Request.PathParameter(common.BKSubscribeID)
 	subscribeID, err := strconv.ParseInt(subscribeIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "subscribeID"))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSubscribeID))
 		return
 	}
 
@@ -57,10 +57,10 @@ func (s *coreService) UnSubscribe(ctx *rest.Contexts) {
 // UpdateSubscription updates target subscription in callback mode.
 func (s *coreService) UpdateSubscription(ctx *rest.Contexts) {
 	//get subscribeID
-	subscribeIDStr := ctx.Request.PathParameter("subscribeID")
+	subscribeIDStr := ctx.Request.PathParameter(common.BKSubscribeID)
 	subscribeID, err := strconv.ParseInt(subscribeIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "subscribeID"))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSubscribeID))
 		return
 	}
 

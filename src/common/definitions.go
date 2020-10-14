@@ -622,6 +622,8 @@ const (
 	BKGroupField               = "group"
 
 	BKAttributeIDField = "bk_attribute_id"
+
+	BKSubscribeID = "subscribeID"
 )
 
 const (
