@@ -85,6 +85,11 @@ type CoreUint64Response struct {
 	Data     uint64 `json:"data"`
 }
 
+type ArrayResponse struct {
+	BaseResp `json:",inline"`
+	Data     []interface{} `json:"data"`
+}
+
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`
