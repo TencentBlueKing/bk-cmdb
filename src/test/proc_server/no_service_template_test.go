@@ -698,7 +698,7 @@ var _ = Describe("no service template test", func() {
 						"bk_start_param_regex": "1234",
 						"bk_process_id":        processId,
 						"bind_info": []map[string]interface{}{
-							map[string]interface{}{
+							{
 								"ip":       "127.0.0.1",
 								"port":     "1024",
 								"protocol": "1",
@@ -795,6 +795,27 @@ var _ = Describe("no service template test", func() {
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp.Data)
 			Expect(resMap["process_instance"]).To(Equal(j))
+		})
+
+		It("list process related info", func() {
+			input := metadata.ListProcessRelatedInfoOption{
+				Set:    metadata.SetCondOfP{},
+				Module: metadata.ModuleCondOfP{},
+				ServiceInstance: metadata.ServiceInstanceCondOfP{
+					IDs: []int64{serviceId},
+				},
+				Process: metadata.ProcessCondOfP{},
+				Fields:  []string{},
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 100,
+				},
+			}
+			rsp, err := processClient.ListProcessRelatedInfo(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			Expect(rsp.Data.Count).To(Not(Equal(0)))
 		})
 
 		It("list process instance names with their ids in one module", func() {

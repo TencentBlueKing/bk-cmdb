@@ -101,15 +101,15 @@ func DefaultBizIDGetter(request *RequestContext, config AuthConfig) (bizID int64
 }
 
 var (
-	BizIDRegex = regexp.MustCompile("bk_biz_id/([0-9]+)")
+	BizIDRegex = regexp.MustCompile("(biz|bk_biz_id)/([0-9]+)")
 )
 
 func BizIDFromURLGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
 	match := BizIDRegex.FindStringSubmatch(request.URI)
-	if len(match) == 0 {
+	if len(match) < 3 {
 		return 0, fmt.Errorf("url: %s not match regex: %s", request.URI, BizIDRegex)
 	}
-	bizID, err = util.GetInt64ByInterface(match[1])
+	bizID, err = util.GetInt64ByInterface(match[2])
 	if err != nil {
 		blog.Warnf("get business id from request path failed, name: %s, err: %v, rid: %s", config.Name, err, request.Rid)
 		return 0, err

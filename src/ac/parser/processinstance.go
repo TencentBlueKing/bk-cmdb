@@ -14,6 +14,7 @@ package parser
 
 import (
 	"net/http"
+	"regexp"
 
 	"configcenter/src/ac/meta"
 )
@@ -67,6 +68,14 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		Pattern:        "/api/v3/findmany/proc/process_instance/with_host",
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Find,
+	}, {
+		Name:           "listProcessRelatedInfo",
+		Description:    "点分五位查询进程实例相关的信息",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/process_related_info/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
 	}, {

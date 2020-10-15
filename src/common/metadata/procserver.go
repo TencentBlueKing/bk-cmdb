@@ -64,9 +64,9 @@ type ProcInstModelResult struct {
 }
 
 type GseHost struct {
-	HostID       int64  `json:"bk_host_id,omitempty"`
-	Ip           string `json:"ip,omitempty"`
-	BkCloudId    int64  `json:"bk_cloud_id"`
+	HostID    int64  `json:"bk_host_id,omitempty"`
+	Ip        string `json:"ip,omitempty"`
+	BkCloudId int64  `json:"bk_cloud_id"`
 }
 
 type GseProcMeta struct {
@@ -325,4 +325,12 @@ type TemplateVersion struct {
 	Content     string `json:"content" field:"content"`
 	Status      string `json:"status" field:"status"`
 	Description string `json:"description" field:"description"`
+}
+
+type ListProcessRelatedInfoResponse struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int                            `json:"count"`
+		Info  []ListProcessRelatedInfoResult `json:"info"`
+	} `json:"data"`
 }
