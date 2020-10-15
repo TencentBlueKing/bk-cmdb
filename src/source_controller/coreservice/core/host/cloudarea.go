@@ -130,74 +130,50 @@ func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.Clou
 	}
 
 	cloudIDs := util.IntArrayUnique(input.CloudIDs)
-	cloudIDsLen := len(cloudIDs)
-
-	cloudAreaHostCountChan := make(chan []int64, 10)
-	cloudIDsChan := make(chan int64, 10)
-	errs := make([]error, 0)
-	errChan := make(chan error, 10)
-
-	go func() {
-		for _, cloudID := range cloudIDs {
-			cloudIDsChan <- cloudID
-		}
-		close(cloudIDsChan)
-	}()
-
-	procNum := 10
-	if procNum > cloudIDsLen {
-		procNum = cloudIDsLen
-	}
 
 	// to speed up, multi goroutine to query host count for multi cloudarea
-	var wg, wg2, wg3 sync.WaitGroup
-	wg.Add(cloudIDsLen)
-	for i := 0; i < procNum; i++ {
-		go func() {
-			defer wg.Done()
-			cloudID := <-cloudIDsChan
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	pipeline := make(chan bool, 10)
+	cloudCountMap := make(map[int64]int64)
+	var firstErr errors.CCErrorCoder
+
+	for _, cloudID := range cloudIDs {
+		pipeline <- true
+		wg.Add(1)
+		var ccErr errors.CCErrorCoder
+
+		go func(cloudID int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+				if ccErr != nil && firstErr == nil {
+					firstErr = ccErr
+				}
+			}()
+
 			filter := map[string]interface{}{common.BKCloudIDField: cloudID}
 			hostCnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(kit.Ctx)
 			if err != nil {
 				blog.ErrorJSON("UpdateHostCloudAreaField failed, db selected failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameBaseHost, filter, err.Error(), kit.Rid)
-				errChan <- err
+				ccErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 			}
-			cloudAreaHostCountChan <- []int64{cloudID, int64(hostCnt)}
-		}()
+
+			lock.Lock()
+			cloudCountMap[cloudID] = int64(hostCnt)
+			lock.Unlock()
+
+		}(cloudID)
 	}
 
-	// collect cloudarea host count
-	wg2.Add(1)
-	cloudCountMap := make(map[int64]int64)
-	go func() {
-		defer wg2.Done()
-		for item := range cloudAreaHostCountChan {
-			cloudCountMap[item[0]] = item[1]
-
-		}
-	}()
-
-	// collect err
-	wg3.Add(1)
-	go func() {
-		defer wg3.Done()
-		for err := range errChan {
-			errs = append(errs, err)
-		}
-	}()
-
 	wg.Wait()
-	close(cloudAreaHostCountChan)
-	close(errChan)
-	wg2.Wait()
-	wg3.Wait()
 
-	if len(errs) > 0 {
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	if firstErr != nil {
+		return nil, firstErr
 	}
 
 	sort.Sort(util.Int64Slice(cloudIDs))
-	ret := make([]metadata.CloudAreaHostCountElem, cloudIDsLen)
+	ret := make([]metadata.CloudAreaHostCountElem, len(cloudIDs))
 	for idx, cloudID := range cloudIDs {
 		ret[idx] = metadata.CloudAreaHostCountElem{
 			CloudID:   cloudID,

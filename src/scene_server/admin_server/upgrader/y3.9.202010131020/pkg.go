@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202010131020
+package y3_9_202010151650
 
 import (
 	"context"
@@ -21,18 +21,17 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202010131020", upgrade)
+	upgrader.RegistUpgrader("y3.9.202010151650", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.9.202002131522")
+	blog.Infof("start execute y3.9.202010151650")
 
 	err = addCloudIDIndex(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002131522] addCloudHostIndex failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202010151650] addCloudIDIndex failed, error  %s", err.Error())
 		return err
 	}
 
 	return nil
 }
-
