@@ -43,7 +43,7 @@ const (
 	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
 	defaultChangeRangePercent 	    = 10
 	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
-	minChangeRangePercent            = 5
+	minChangeRangePercent            = 1
 	// defaultRateLimiterQPS is the default value of rateLimiter qps
 	defaultRateLimiterQPS   = 40
 	// defaultRateLimiterBurst is the default value of rateLimiter burst

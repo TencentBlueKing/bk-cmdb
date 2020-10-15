@@ -13,7 +13,6 @@
 package hostsnap
 
 import (
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,9 +25,13 @@ import (
 const (
 	// oneDayToMinutes the value of one day converted into minutes. 24 * 60
 	oneDayToMinutes = 1440
-
 	// oneDayToHours the value of one day converted into hours.
 	oneDayToHours = 24
+	defaultWindowMinutes = 15
+	defaultCheckIntervalHours = 1
+	defaultAtTime = "1:00"
+	defaultAtTimeHour = 1
+	defaultAtTimeMin = 0
 )
 
 type Window struct {
@@ -36,39 +39,49 @@ type Window struct {
 	exist bool
 	// startTime the start time of each timed task
 	startTime time.Time
-	// durationInMinutes duration of each timed task
-	durationInMinutes  int
+	// windowMinutes duration of each timed task
+	windowMinutes  int
 	changeTimeLock sync.RWMutex
 }
 
-// doFixedTimeTasks do tasks based on a fixed hour each day
-func (w *Window) doFixedTimeTasks(hour int) {
-	now := time.Now()
-	targetTime := time.Date(now.Year(), now.Month(), now.Day(), hour, 0, 0, 0, now.Location())
-	if hour > now.Hour() {
-		beforeOneDay, _ := time.ParseDuration("-24h")
-		w.changeTimeLock.Lock()
-		w.startTime = targetTime.Add(beforeOneDay)
-		w.changeTimeLock.Unlock()
+func (w *Window) setStartTime(startTime time.Time) {
+	w.changeTimeLock.Lock()
+	w.startTime = startTime
+	w.changeTimeLock.Unlock()
+}
 
-		time.Sleep(targetTime.Sub(now))
+func (w *Window) getStartTime() time.Time {
+	w.changeTimeLock.RLock()
+	defer w.changeTimeLock.RUnlock()
+	return w.startTime
+}
 
-		w.changeTimeLock.Lock()
-		w.startTime = targetTime
-		w.changeTimeLock.Unlock()
-	} else {
-		w.changeTimeLock.Lock()
-		w.startTime = targetTime
-		w.changeTimeLock.Unlock()
-
-		afterOneDay, _ := time.ParseDuration("24h")
-		time.Sleep(targetTime.Add(afterOneDay).Sub(now))
-
-		w.changeTimeLock.Lock()
-		w.startTime = targetTime.Add(afterOneDay)
-		w.changeTimeLock.Unlock()
+func (w *Window) setWindowMinutes(windowMinutes, intervalTime int) {
+	w.windowMinutes = windowMinutes
+	if windowMinutes <= 0 {
+		blog.Errorf("windowMinutes val %d can not be less than or equal to 0, set the default value %d", windowMinutes, defaultWindowMinutes)
+		w.windowMinutes = defaultWindowMinutes
 	}
 
+	if windowMinutes > intervalTime {
+		blog.Errorf("the value of the task cycle %d min is less than the window time value %d min, set the default value %d .", intervalTime, windowMinutes, defaultWindowMinutes)
+		w.windowMinutes = defaultWindowMinutes
+	}
+}
+
+// doFixedTimeTasks do tasks based on a fixed hour each day
+func (w *Window) doFixedTimeTasks(atTime string) {
+	hour, min := parseTime(atTime)
+	now := time.Now()
+	targetTime := time.Date(now.Year(), now.Month(), now.Day(), hour, min, 0, 0, now.Location())
+
+	if hour > now.Hour() || (now.Hour() == hour && min > now.Minute()) {
+		time.Sleep(targetTime.Sub(now))
+	} else {
+		time.Sleep(targetTime.Add(time.Hour*24).Sub(now))
+	}
+
+	w.setStartTime(time.Now())
 	w.doTimedTasks(oneDayToHours)
 }
 
@@ -78,98 +91,82 @@ func (w *Window) doTimedTasks(intervalTimeIntVal int) {
 	for {
 		select {
 		case <-timer.C:
-			w.changeTimeLock.Lock()
-			w.startTime = time.Now()
-			w.changeTimeLock.Unlock()
+			w.setStartTime(time.Now())
 		}
-	}
-}
-
-// NewWindow create a time window
-func newWindow() *Window {
-	w := &Window{}
-	// if the parameters are configured, the time window is valid
-	if cc.IsExist("datacollection.hostsnap.timeWindow.hourRule") && cc.IsExist("datacollection.hostsnap.timeWindow.durationInMinutes") {
-
-		hourRule, _ := cc.String("datacollection.hostsnap.timeWindow.hourRule")
-		durationInMinutes, _ := cc.Int("datacollection.hostsnap.timeWindow.durationInMinutes")
-
-		w.durationInMinutes = durationInMinutes
-		w.exist = true
-
-		splitVal := strings.Split(hourRule, "/")
-
-		// means to be executed regularly at a fixed time every day
-		if len(splitVal) == 1 {
-			hour, err := strconv.Atoi(hourRule)
-			if err != nil {
-				blog.Errorf("parse hourRule config %s error: %s", hourRule, err.Error())
-				os.Exit(1)
-			}
-
-			if hour > 24 || hour < 0 {
-				blog.Errorf("the current time value is %d, the value range is 0-24, need to reset the value.", hour)
-				os.Exit(1)
-			}
-
-			checkDurationInMinutes(durationInMinutes, oneDayToMinutes)
-
-			go w.doFixedTimeTasks(hour)
-			return w
-		}
-
-		// means that the execution is an interval of cyclic tasks
-		if len(splitVal) == 2 {
-			intervalTimeIntVal, err := strconv.Atoi(splitVal[1])
-			if err != nil {
-				blog.Errorf("parse hourRule config %s error: %s", hourRule, err.Error())
-				os.Exit(1)
-			}
-
-			if intervalTimeIntVal <= 0 {
-				blog.Errorf("the current time value is %d, value needs to be greater than 0", intervalTimeIntVal)
-				os.Exit(1)
-			}
-
-			checkDurationInMinutes(durationInMinutes, intervalTimeIntVal*60)
-
-			w.startTime = time.Now()
-			go w.doTimedTasks(intervalTimeIntVal)
-
-			return w
-
-		}
-
-		// means that the rules are wrong and need to exit
-		blog.Errorf("the hourRule rule is wrong and needs to be checked.")
-		os.Exit(1)
-	}
-
-	return w
-}
-
-// judge whether the time of each cycle of the timed task is less than the time that the window can pass
-func checkDurationInMinutes(durationInMinutes, intervalTime int) {
-	if durationInMinutes > intervalTime {
-		blog.Errorf("the value of the task cycle %d min is less than the window time value %d min.", intervalTime, durationInMinutes)
-		os.Exit(1)
 	}
 }
 
 // canPassWindow used to judge whether the request can be passed
 func (w *Window) canPassWindow() bool {
-	w.changeTimeLock.RLock()
-	defer w.changeTimeLock.RUnlock()
 	// exist time window requires time judgment
 	if w.exist == true {
 		now := time.Now()
-		unit, _ := time.ParseDuration("1m")
-		stopTime := w.startTime.Add(time.Duration(w.durationInMinutes)*unit)
+		stopTime := w.getStartTime().Add(time.Duration(w.windowMinutes) * time.Minute)
 		// not within the time window, unable to pass through the window
-		if now.Before(w.startTime) || now.After(stopTime) {
+		if now.Before(w.getStartTime()) || now.After(stopTime) {
 			return false
 		}
 	}
 
 	return true
+}
+
+// NewWindow create a time window
+func newWindow() *Window {
+	w := &Window{}
+
+	// if the parameters are configured, the time window is valid
+	if cc.IsExist("datacollection.hostsnap.timeWindow.windowMinutes") {
+		windowMinutes, _ := cc.Int("datacollection.hostsnap.timeWindow.windowMinutes")
+
+		if cc.IsExist("datacollection.hostsnap.timeWindow.atTime") {
+			atTime, _ := cc.String("datacollection.hostsnap.timeWindow.atTime")
+			w.setWindowMinutes(windowMinutes, oneDayToMinutes)
+
+			w.setStartTime(time.Now())
+			go w.doFixedTimeTasks(atTime)
+
+			w.exist = true
+			return w
+		}
+
+		if cc.IsExist("datacollection.hostsnap.timeWindow.checkIntervalHours") {
+			checkIntervalHours, _ := cc.Int("datacollection.hostsnap.timeWindow.checkIntervalHours")
+			if checkIntervalHours <= 0 {
+				blog.Errorf("checkIntervalHours val %d can not be less than or equal to 0, set the default value %d", checkIntervalHours, defaultCheckIntervalHours)
+				checkIntervalHours = defaultCheckIntervalHours
+			}
+			w.setWindowMinutes(windowMinutes, checkIntervalHours*60)
+
+			w.setStartTime(time.Now())
+			go w.doTimedTasks(checkIntervalHours)
+
+			w.exist = true
+			return w
+		}
+	}
+
+	return w
+}
+
+func parseTime(atTime string) (hour, min int) {
+	timeVal := strings.Split(atTime,":")
+	if len(timeVal) != 2 {
+		blog.Errorf("the format of atTime value %s is wrong, set the default value %s", atTime, defaultAtTime)
+		return defaultAtTimeHour, defaultAtTimeMin
+	}
+
+	var err error
+	hour, err = strconv.Atoi(timeVal[0])
+	if err != nil || hour < 0 || hour > 24 {
+		blog.Errorf("the format of atTime value %s is wrong, set the default value %s", atTime, defaultAtTime)
+		return defaultAtTimeHour, defaultAtTimeMin
+	}
+
+	min, err = strconv.Atoi(timeVal[1])
+	if err != nil || min < 0 || min > 60 {
+		blog.Errorf("the format of atTime value %s is wrong, set the default value %s", atTime, defaultAtTime)
+		return defaultAtTimeHour, defaultAtTimeMin
+	}
+	return hour, min
 }
