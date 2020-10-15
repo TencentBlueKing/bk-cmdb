@@ -657,6 +657,9 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	if err != nil {
 		return err
 	}
+	if sh.noData {
+		return nil
+	}
 
 	if 0 != len(sh.conds.hostCond.Fields) {
 		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField, common.BKCloudIDField)
@@ -805,6 +808,10 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		}
 		sh.paged = true
 	} else {
+		if len(respHostIDInfo.Data.IDArr) == 0 {
+			sh.noData = true
+			return nil
+		}
 		hostIDArr = respHostIDInfo.Data.IDArr
 	}
 
