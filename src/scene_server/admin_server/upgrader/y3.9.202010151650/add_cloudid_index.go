@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
@@ -32,21 +31,7 @@ func addCloudIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 		Background: true,
 	}
 
-	existIndexes, err := db.Table(tableName).Indexes(ctx)
-	if err != nil {
-		blog.ErrorJSON("get exist indexes for table %s failed, err:%s", tableName, err)
-		return err
-	}
-	existIndexNames := make([]string, 0)
-	for _, item := range existIndexes {
-		existIndexNames = append(existIndexNames, item.Name)
-	}
-
-	if util.InStrArr(existIndexNames, index.Name) {
-		return nil
-	}
-
-	err = db.Table(tableName).CreateIndex(ctx, index)
+	err := db.Table(tableName).CreateIndex(ctx, index)
 	if err != nil {
 		blog.ErrorJSON("add index %s for table %s failed, err:%s", index, tableName, err)
 		return err
