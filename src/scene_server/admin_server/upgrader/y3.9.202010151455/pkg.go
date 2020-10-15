@@ -10,28 +10,28 @@
  * limitations under the License.
  */
 
-package y3_9_202009171032
+package y3_9_202010151455
 
 import (
 	"context"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202009171032", upgrade)
+	upgrader.RegistUpgrader("y3.9.202010151455", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = createTable(ctx, db, conf)
+	blog.Infof("start execute y3.9.202010151455")
+
+	err = addBizIDOnCommonAttr(ctx, db, conf)
 	if err != nil {
+		blog.Errorf("[upgrade y3.9.202010151455] addBizIDOnCommonAttr error  %s", err.Error())
 		return err
 	}
 
-	err = migrateHistory(ctx, db, conf)
-	if err != nil {
-		return err
-	}
-	return
+	return nil
 }

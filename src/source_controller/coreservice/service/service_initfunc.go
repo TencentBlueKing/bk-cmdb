@@ -396,6 +396,17 @@ func (s *coreService) initAuth(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initCommon(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_field", Handler: s.GetDistinctField})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
@@ -420,4 +431,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initCache(web)
 	s.initCloudSync(web)
 	s.initAuth(web)
+	s.initCommon(web)
 }
