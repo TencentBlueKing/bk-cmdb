@@ -61,6 +61,13 @@ func migrateHistory(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				continue
 			}
 
+			if infoCond.ObjID != common.BKInnerObjIDHost &&
+				infoCond.ObjID != common.BKInnerObjIDModule &&
+				infoCond.ObjID != common.BKInnerObjIDSet {
+				blog.Warnf("ignore old dynamic group condition, %+v", infoCond)
+				continue
+			}
+
 			for idxCond, cond := range infoCond.Condition {
 				if cond.Operator == common.BKDBMULTIPLELike {
 					dynamicGroupInfo.Condition[idxInfo].Condition[idxCond].Operator = common.BKDBIN
