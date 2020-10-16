@@ -10,6 +10,23 @@
  * limitations under the License.
  */
 
+/*
+ 主机快照属性，如cpu,bk_cpu_mhz,bk_disk,bk_mem等数据的处理时间窗口,用于限制在指定周期的前多少分钟可以让请求通过,超过限定时间将不会处理请求。
+ 有三个参数，atTime,checkIntervalHours,windowMinute
+
+ 当不配置windowMinute，窗口不生效。当配置了windowMinute,至少配置atTime或者checkIntervalHours中的一个,否则不生效。
+ 当atTime和checkIntervalHours都配置时，取atTime这个配置的语义功能
+
+ 如果窗口生效,启动的时候,会先跑完windowMinutes。然后再生效
+
+ atTime,设置一天中,几点开启时间窗口,如配置成14:40,表示14:40开启窗口,如果配置格式不正确,默认值为1:00
+
+ checkIntervalHours,规定每隔几个小时窗口开启,单位为小时,如配置成 3,表示每隔3个小时,开启时间窗口,如果配置格式不正确,默认值为 1。
+
+ windowMinutes,代表开启时间窗口后,多长时间内请求可以通过,单位为分钟。如配置成 60,表示开启窗口时间60分钟内请求可以通过。
+ 注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
+ */
+
 package hostsnap
 
 import (
@@ -99,7 +116,7 @@ func (w *Window) doTimedTasks(intervalTimeIntVal int) {
 // canPassWindow used to judge whether the request can be passed
 func (w *Window) canPassWindow() bool {
 	// exist time window requires time judgment
-	if w.exist == true {
+	if w.exist {
 		now := time.Now()
 		stopTime := w.getStartTime().Add(time.Duration(w.windowMinutes) * time.Minute)
 		// not within the time window, unable to pass through the window
