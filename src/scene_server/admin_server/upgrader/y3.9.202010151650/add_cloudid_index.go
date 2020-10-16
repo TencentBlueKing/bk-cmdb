@@ -23,7 +23,7 @@ import (
 )
 
 func addCloudIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameBaseHost
+
 	index := types.Index{
 		Keys:       map[string]int32{"bk_cloud_id": 1},
 		Name:       "bk_cloud_id_1",
@@ -31,10 +31,17 @@ func addCloudIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 		Background: true,
 	}
 
-	err := db.Table(tableName).CreateIndex(ctx, index)
-	if err != nil {
-		blog.ErrorJSON("add index %s for table %s failed, err:%s", index, tableName, err)
-		return err
+	tableNames := []string{
+		common.BKTableNameBaseHost,
+		common.BKTableNameBasePlat,
+	}
+
+	for _, tableName := range tableNames {
+		err := db.Table(tableName).CreateIndex(ctx, index)
+		if err != nil {
+			blog.ErrorJSON("add index %s for table %s failed, err:%s", index, common.tableName, err)
+			return err
+		}
 	}
 
 	return nil

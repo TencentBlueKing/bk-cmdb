@@ -13,7 +13,6 @@
 package host
 
 import (
-	"sort"
 	"strings"
 	"sync"
 
@@ -134,29 +133,27 @@ func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.Clou
 	// to speed up, multi goroutine to query host count for multi cloudarea
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
+	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 10)
 	cloudCountMap := make(map[int64]int64)
-	var firstErr errors.CCErrorCoder
 
 	for _, cloudID := range cloudIDs {
 		pipeline <- true
 		wg.Add(1)
-		var ccErr errors.CCErrorCoder
 
 		go func(cloudID int64) {
 			defer func() {
 				wg.Done()
 				<-pipeline
-				if ccErr != nil && firstErr == nil {
-					firstErr = ccErr
-				}
 			}()
 
 			filter := map[string]interface{}{common.BKCloudIDField: cloudID}
 			hostCnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(kit.Ctx)
 			if err != nil {
 				blog.ErrorJSON("UpdateHostCloudAreaField failed, db selected failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameBaseHost, filter, err.Error(), kit.Rid)
-				ccErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				if firstErr == nil {
+					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				}
 			}
 
 			lock.Lock()
@@ -172,9 +169,8 @@ func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.Clou
 		return nil, firstErr
 	}
 
-	sort.Sort(util.Int64Slice(cloudIDs))
-	ret := make([]metadata.CloudAreaHostCountElem, len(cloudIDs))
-	for idx, cloudID := range cloudIDs {
+	ret := make([]metadata.CloudAreaHostCountElem, len(input.CloudIDs))
+	for idx, cloudID := range input.CloudIDs {
 		ret[idx] = metadata.CloudAreaHostCountElem{
 			CloudID:   cloudID,
 			HostCount: cloudCountMap[cloudID],
