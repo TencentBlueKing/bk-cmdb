@@ -562,6 +562,33 @@ type CloudAreaSearchParam struct {
 	SyncTaskIDs       bool `json:"sync_task_ids"`
 }
 
+// CloudAreaHostCount cloud area host count param
+type CloudAreaHostCount struct {
+	CloudIDs []int64 `json:"bk_cloud_ids"`
+}
+
+func (c *CloudAreaHostCount) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 50
+	if len(c.CloudIDs) == 0 || len(c.CloudIDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_cloud_ids", maxLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type CloudAreaHostCountResult struct {
+	BaseResp `json:",inline"`
+	Data     []CloudAreaHostCountElem `json:"data"`
+}
+
+type CloudAreaHostCountElem struct {
+	CloudID   int64 `json:"bk_cloud_id"`
+	HostCount int64 `json:"host_count"`
+}
+
 type CreateManyCloudAreaResult struct {
 	BaseResp `json:",inline"`
 	Data     []CreateManyCloudAreaElem `json:"data"`

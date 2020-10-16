@@ -255,7 +255,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: -1,
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -293,6 +293,15 @@ var _ = Describe("host test", func() {
 					break
 				}
 			}
+		})
+
+		It("get host count in multi cloud area", func() {
+			opt := metadata.CloudAreaHostCount{CloudIDs: []int64{0, 100}}
+			rsp, err := hostServerClient.FindCloudAreaHostCount(context.Background(), header, opt)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(len(rsp.Data)).To(Equal(2))
 		})
 	})
 
@@ -410,7 +419,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -483,7 +492,7 @@ var _ = Describe("host test", func() {
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -522,7 +531,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -563,7 +572,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -600,7 +609,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -626,7 +635,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -667,7 +676,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -706,7 +715,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -736,7 +745,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -760,7 +769,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: -1,
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -800,7 +809,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: -1,
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -827,7 +836,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: -1,
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -859,7 +868,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -900,7 +909,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -965,7 +974,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -989,7 +998,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1032,7 +1041,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1056,7 +1065,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1091,7 +1100,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1130,7 +1139,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: -1,
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
