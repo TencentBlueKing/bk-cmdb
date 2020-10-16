@@ -10,17 +10,28 @@
  * limitations under the License.
  */
 
-package util
+package x20_10_16_11
 
-import "strings"
+import (
+	"context"
 
-const (
-	TxnIDName = "cmdb_transaction_id"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func IsDuplicatedIndexErr(err error) bool {
-	if strings.Contains(err.Error(), "already exists") {
-		return true
+func init() {
+	upgrader.RegistUpgrader("x20_10_16_11", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute x20_10_16_11")
+
+	err = addCloudIDIndex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x20_10_16_11] addCloudIDIndex failed, error  %s", err.Error())
+		return err
 	}
-	return false
+
+	return nil
 }
