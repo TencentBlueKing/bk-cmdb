@@ -103,7 +103,7 @@ appCode = $auth_app_code
 appSecret = $auth_app_secret
 
 [hostsnap]
-#当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
+#当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为1%，以百分比为单位
 changeRangePercent = 10
 #用于设置单个服务主机快照处理请求能力，起到限流的作用，令牌桶配置，最多请求数通过burst设置。qps的默认值为40，burst的默认值为100
 qps = 40
