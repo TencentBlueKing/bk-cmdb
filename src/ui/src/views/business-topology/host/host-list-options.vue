@@ -445,9 +445,7 @@
                     modelData.forEach(data => {
                         const value = data[target.bk_property_id]
                         const formattedValue = Formatter(value, target)
-                        if (formattedValue !== '--') {
-                            curCopyText.push(formattedValue)
-                        }
+                        curCopyText.push(formattedValue)
                     })
                     if (curCopyText.length) {
                         copyText.push(curCopyText.join(','))
