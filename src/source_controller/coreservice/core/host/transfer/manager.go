@@ -381,7 +381,7 @@ func (manager *TransferManager) setDefaultPrivateField(kit *rest.Kit, attributes
 func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	if input.Empty() {
 		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "GetHostModuleRelation input")
 	}
 	moduleHostCond := condition.CreateCondition()
 	if input.ApplicationID > 0 {
