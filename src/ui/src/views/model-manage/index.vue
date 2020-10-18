@@ -502,8 +502,10 @@
                     biz: MENU_RESOURCE_BUSINESS
                 }
                 if (map.hasOwnProperty(model.bk_obj_id)) {
+                    const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
                     this.$routerActions.redirect({
-                        name: map[model.bk_obj_id]
+                        name: map[model.bk_obj_id],
+                        query
                     })
                 } else {
                     this.$routerActions.redirect({
