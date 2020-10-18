@@ -1,8 +1,9 @@
 <template>
     <bk-select
+        multiple
+        searchable
         v-model="localValue"
-        v-bind="$attrs"
-        multiple>
+        v-bind="$attrs">
         <bk-option v-for="(option, index) in options"
             :key="index"
             :id="option"
