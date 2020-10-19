@@ -477,12 +477,6 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
 
 	// construct the query inst condition
 	queryCond := data.SearchParams
@@ -498,16 +492,12 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	query.Sort = page.Sort
 	query.Start = page.Start
 
-	cnt, instItems, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, query, true)
+	result, err := s.Core.InstOperation().FindOriginInst(ctx.Kit, objID, query)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
-	result := mapstr.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
 	ctx.RespEntity(result)
 }
 
@@ -565,23 +555,14 @@ func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
+
+	result, err := s.Core.InstOperation().FindInstByAssociationInst(ctx.Kit, objID, &data.AssociationParams)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	cnt, instItems, err := s.Core.InstOperation().FindInstByAssociationInst(ctx.Kit, obj, &data.AssociationParams)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	result := mapstr.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
 	ctx.RespEntity(result)
 }
 

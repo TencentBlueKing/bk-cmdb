@@ -14,11 +14,13 @@
             </div>
             <div class="property-selector-group"
                 v-for="model in models"
+                v-show="isShowGroup(model)"
                 :key="model.id">
                 <label class="group-label">{{model.bk_obj_name}}</label>
                 <div class="group-property-list">
                     <bk-checkbox class="group-property-item"
-                        v-for="property in propertyMap[model.bk_obj_id]"
+                        v-for="property in matchedPropertyMap[model.bk_obj_id]"
+                        v-show="isShowProperty(property)"
                         :key="property.id"
                         :title="property.bk_property_name"
                         :checked="isChecked(property)"
@@ -49,7 +51,8 @@
             return {
                 isShow: false,
                 filter: '',
-                localSelected: [...this.selected]
+                localSelected: [...this.selected],
+                matchedPropertyMap: this.dynamicGroupForm.propertyMap
             }
         },
         computed: {
@@ -66,7 +69,35 @@
                 return this.dynamicGroupForm.propertyMap
             }
         },
+        watch: {
+            filter (filter) {
+                this.filterTimer && clearTimeout(this.filterTimer)
+                this.filterTimer = setTimeout(() => this.handleFilter(filter), 500)
+            }
+        },
         methods: {
+            handleFilter (filter) {
+                if (!filter.length) {
+                    this.matchedPropertyMap = this.propertyMap
+                } else {
+                    const matchedPropertyMap = {}
+                    const lowerCaseFilter = filter.toLowerCase()
+                    Object.keys(this.propertyMap).forEach(modelId => {
+                        matchedPropertyMap[modelId] = this.propertyMap[modelId].filter(property => {
+                            const lowerCaseName = property.bk_property_name.toLowerCase()
+                            return lowerCaseName.indexOf(lowerCaseFilter) > -1
+                        })
+                    })
+                    this.matchedPropertyMap = matchedPropertyMap
+                }
+            },
+            isShowGroup (model) {
+                return !!this.matchedPropertyMap[model.bk_obj_id].length
+            },
+            isShowProperty (property) {
+                const modelId = property.bk_obj_id
+                return this.matchedPropertyMap[modelId].some(target => target === property)
+            },
             isChecked (property) {
                 return this.localSelected.some(target => target.id === property.id)
             },

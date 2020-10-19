@@ -93,6 +93,7 @@
                     this.nodes = []
                 } finally {
                     this.pending = false
+                    this.$emit('path-ready', this.getFullModulePath())
                 }
             },
             getModulePath (moduleId) {
@@ -101,6 +102,9 @@
                     return '--'
                 }
                 return node.topo_path.map(path => path.bk_inst_name).reverse().join(' / ')
+            },
+            getFullModulePath () {
+                return this.modules.map(moduleId => this.getModulePath(moduleId))
             },
             handleLinkToTopology (moduleId) {
                 this.$routerActions.redirect({

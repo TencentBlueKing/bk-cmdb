@@ -13,9 +13,8 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	"time"
 
@@ -25,8 +24,8 @@ import (
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
+	rawRedis "github.com/go-redis/redis/v7"
 	"github.com/spf13/cobra"
-	"gopkg.in/redis.v5"
 )
 
 func init() {
@@ -83,7 +82,6 @@ func runSnapshotCheck(c *snapshotCheckConf) error {
 }
 
 func (s *snapshotCheckService) snapshotCheck() error {
-	redis.SetLogger(log.New(os.Stdout, "redis", 0))
 	fmt.Println("=====================\nstart check")
 	fmt.Println("start checkConf")
 	if err := s.checkConf(); err != nil {
@@ -136,7 +134,7 @@ func (s *snapshotCheckService) checkCCHostSnaphot() error {
 		return fmt.Errorf("connect redis [%s] failed: %s", redisConfig.Address, err.Error())
 	}
 
-	keys, err := client.Keys(common.RedisSnapKeyPrefix + "*").Result()
+	keys, err := client.Keys(context.Background(), common.RedisSnapKeyPrefix+"*").Result()
 	if err != nil {
 		return fmt.Errorf("execute keys command in redis [%s] failed: %s", redisConfig.Address, err.Error())
 	}
@@ -155,10 +153,7 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 	}
 
 	channelArr := getSnapshotName(s.bizID)
-	sub, err := client.PSubscribe(channelArr...)
-	if err != nil {
-		return fmt.Errorf("subscribe channel [%#v] from redis [%s] failed: %s", channelArr, redisConfig.Address, err.Error())
-	}
+	sub := client.PSubscribe(context.Background(), channelArr...)
 
 	stopChn := make(chan bool, 2)
 	receiveMsgCount := 0
@@ -171,7 +166,7 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 				receiveMsgErr = fmt.Errorf("receive message from channel [%#v] in redis [%s] failed: %s", channelArr, redisConfig.Address, err.Error())
 				return
 			}
-			msg, ok := received.(*redis.Message)
+			msg, ok := received.(*rawRedis.Message)
 			if !ok {
 				continue
 			}

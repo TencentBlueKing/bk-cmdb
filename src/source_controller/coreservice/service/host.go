@@ -233,8 +233,8 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	hostID := ctx.Request.PathParameter(common.BKHostIDField)
 	key := common.RedisSnapKeyPrefix + hostID
-	result, err := redis.Client().Get(key).Result()
-	if nil != err && err != redis.Nil {
+	result, err := redis.Client().Get(ctx.Kit.Ctx, key).Result()
+	if nil != err && !redis.IsNilErr(err) {
 		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
 		return
@@ -262,9 +262,9 @@ func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
 		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
 	}
 
-	res, err := redis.Client().MGet(keys...).Result()
+	res, err := redis.Client().MGet(ctx.Kit.Ctx, keys...).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if redis.IsNilErr(err) {
 			ctx.RespEntity(map[int64]string{})
 			return
 		}

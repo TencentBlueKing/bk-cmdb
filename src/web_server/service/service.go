@@ -24,19 +24,19 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.ServerOption
 	Engine   *backbone.Engine
-	CacheCli *redis.Client
+	CacheCli redis.Client
 	*logics.Logics
 	Config  *options.Config
 	Session sessions.RedisStore

@@ -134,7 +134,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 		return
 	}
-	s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
+	s.cache.Del(s.ctx, types.EventCacheDistCallBackCountPrefix+fmt.Sprint(sub.SubscriptionID))
 
 	// register cloud sync task resource creator action to iam
 	if auth.EnableAuthorize() {
@@ -196,7 +196,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 		return
 	}
-	s.cache.Del(types.EventCacheDistIDPrefix+fmt.Sprint(sub.SubscriptionID),
+	s.cache.Del(s.ctx, types.EventCacheDistIDPrefix+fmt.Sprint(sub.SubscriptionID),
 		types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(sub.SubscriptionID),
 		types.EventCacheDistCallBackCountPrefix+fmt.Sprint(sub.SubscriptionID))
 
@@ -327,7 +327,6 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	rid := util.GetHTTPCCRequestID(header)
 	ownerID := util.GetOwnerID(header)
 
-
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	// decode request data.
@@ -405,7 +404,7 @@ func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response
 	}
 
 	for index := range results {
-		val := s.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
+		val := s.cache.HGetAll(s.ctx, types.EventCacheDistCallBackCountPrefix+fmt.Sprint(results[index].SubscriptionID)).Val()
 
 		failure, err := strconv.ParseInt(val["failue"], 10, 64)
 		if nil != err {

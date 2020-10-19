@@ -9,12 +9,9 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-
 	"github.com/tidwall/gjson"
 )
 
@@ -559,11 +556,9 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitRegexp(findHostModuleRelationsRegex, http.MethodPost) {
-		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
-		bizID, err := util.GetInt64ByInterface(match[1])
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			blog.Errorf("get business id from request path failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
-			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			ps.err = fmt.Errorf("find host module relations, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 
@@ -732,13 +727,12 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitRegexp(countHostByTopoNodeRegexp, http.MethodPost) {
-		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
-		bizID, err := util.GetInt64ByInterface(match[1])
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s", countHostByTopoNodeRegexp, err, ps.RequestCtx.Rid)
-			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			ps.err = fmt.Errorf("count host by topo node, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1230,14 +1224,13 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
 		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
-		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
-		bizID, err := util.GetInt64ByInterface(match[1])
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s",
-				transferHostWithAutoClearServiceInstanceRegex, err, ps.RequestCtx.Rid)
-			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			ps.err = fmt.Errorf("transfer host with auto clear service instance, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,

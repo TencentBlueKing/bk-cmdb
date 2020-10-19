@@ -25,9 +25,9 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/distribution"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 // Service impls main logics as service for datacolection app.
@@ -39,7 +39,7 @@ type Service struct {
 	db dal.RDB
 
 	// cache is cc redis client.
-	cache *redis.Client
+	cache redis.Client
 
 	// distributer is event subscription distributer.
 	distributer *distribution.Distributor
@@ -58,10 +58,9 @@ func (s *Service) SetDB(db dal.RDB) {
 }
 
 // SetCache setups cc main redis.
-func (s *Service) SetCache(db *redis.Client) {
+func (s *Service) SetCache(db redis.Client) {
 	s.cache = db
 }
-
 
 func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 	s.authorizer = authorizer
@@ -124,7 +123,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
 	// cc main redis health status info.
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

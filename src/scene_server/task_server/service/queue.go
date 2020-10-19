@@ -267,7 +267,7 @@ func (tq *TaskQueue) executePush(ctx context.Context, taskInfo TaskInfo, taskQue
 func (tq *TaskQueue) lockTask(ctx context.Context, taskID string) (locked bool, err error) {
 
 	key := fmt.Sprintf("%s:apiTask:%s", common.BKCacheKeyV3Prefix, taskID)
-	locked, err = tq.service.CacheDB.SetNX(key, time.Now(), time.Minute*2).Result()
+	locked, err = tq.service.CacheDB.SetNX(ctx, key, time.Now(), time.Minute*2).Result()
 	if err != nil {
 		blog.Errorf("lock task error. err:%s, taskID:%s", err.Error(), taskID)
 		return false, tq.service.CCErr.Error("zh-cn", common.CCErrTaskLockedTaskFail)
@@ -278,7 +278,7 @@ func (tq *TaskQueue) lockTask(ctx context.Context, taskID string) (locked bool, 
 func (tq *TaskQueue) unLockTask(ctx context.Context, taskID string) (err error) {
 
 	key := fmt.Sprintf("%s:apiTask:%s", common.BKCacheKeyV3Prefix, taskID)
-	_, err = tq.service.CacheDB.Del(key).Result()
+	_, err = tq.service.CacheDB.Del(ctx, key).Result()
 	if err != nil {
 		blog.Errorf("unlock task error. err:%s, taskID:%s", err.Error(), taskID)
 		return tq.service.CCErr.Error("zh-cn", common.CCErrTaskUnLockedTaskFail)

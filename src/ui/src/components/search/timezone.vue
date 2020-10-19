@@ -1,6 +1,7 @@
 <template>
     <bk-select
         multiple
+        searchable
         v-model="localValue"
         v-bind="$attrs">
         <bk-option v-for="timezone in timezones"

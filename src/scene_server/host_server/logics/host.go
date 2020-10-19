@@ -185,8 +185,8 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 
 	}
 
-	hmAudit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, []int64{hostID})
-	if err := hmAudit.WithPrevious(kit.Ctx); err != nil {
+	hmAudit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), []int64{hostID})
+	if err := hmAudit.WithPrevious(kit); err != nil {
 		return err
 	}
 
@@ -209,7 +209,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 		return kit.CCError.New(hmResult.Code, hmResult.ErrMsg)
 	}
 
-	if err := hmAudit.SaveAudit(kit.Ctx); err != nil {
+	if err := hmAudit.SaveAudit(kit); err != nil {
 		return err
 	}
 	return nil
@@ -381,8 +381,8 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		return kit.CCError.Errorf(common.CCErrHostNotINAPP, notExistHostIDs)
 	}
 
-	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, hostID)
-	if err := audit.WithPrevious(kit.Ctx); err != nil {
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), hostID)
+	if err := audit.WithPrevious(kit); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
@@ -397,7 +397,7 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		return kit.CCError.New(delRet.Code, delRet.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(kit.Ctx); err != nil {
+	if err := audit.SaveAudit(kit); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 

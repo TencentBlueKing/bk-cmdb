@@ -16,10 +16,10 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-gonic/gin"
-	"gopkg.in/redis.v5"
 )
 
 // User 登录系统抽象出来接口
@@ -33,6 +33,6 @@ type LoginInterface interface {
 }
 
 // NewUser return user instance by type
-func NewUser(config options.Config, engine *backbone.Engine, cacheCli *redis.Client) LoginInterface {
+func NewUser(config options.Config, engine *backbone.Engine, cacheCli redis.Client) LoginInterface {
 	return &publicUser{config, engine, cacheCli}
 }

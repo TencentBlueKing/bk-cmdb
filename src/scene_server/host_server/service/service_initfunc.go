@@ -38,6 +38,7 @@ func (s *Service) initCloudarea(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloudarea/{bk_cloud_id}", Handler: s.UpdatePlat})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloudarea/{bk_cloud_id}", Handler: s.DeletePlat})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/cloudarea_field", Handler: s.UpdateHostCloudAreaField})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea/hostcount", Handler: s.FindCloudAreaHostCount})
 
 	utility.AddToRestfulWebService(web)
 

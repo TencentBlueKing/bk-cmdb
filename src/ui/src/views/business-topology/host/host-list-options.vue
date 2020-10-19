@@ -445,9 +445,7 @@
                     modelData.forEach(data => {
                         const value = data[target.bk_property_id]
                         const formattedValue = Formatter(value, target)
-                        if (formattedValue !== '--') {
-                            curCopyText.push(formattedValue)
-                        }
+                        curCopyText.push(formattedValue)
                     })
                     if (curCopyText.length) {
                         copyText.push(curCopyText.join(','))
@@ -505,7 +503,7 @@
                 this.sideslider.componentProps = {
                     properties: this.columnsConfigProperties,
                     selected: this.columnDisplayProperties,
-                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
                 }
                 this.sideslider.title = this.$t('列表显示属性配置')
                 this.sideslider.show = true

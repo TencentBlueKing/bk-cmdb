@@ -13,6 +13,7 @@
 package business
 
 import (
+	"context"
 	"time"
 
 	"configcenter/src/common/blog"
@@ -22,7 +23,7 @@ func upsertListCache(ms *forUpsertCache) {
 	listKeyName := ms.listKey
 	blog.V(3).Infof("received key %s %d/%s change event, and try refresh cache, data: %s", listKeyName, ms.instID, ms.name, string(ms.doc))
 
-	listKeys, err := ms.rds.SMembers(listKeyName).Result()
+	listKeys, err := ms.rds.SMembers(context.Background(), listKeyName).Result()
 	if err != nil {
 		blog.Errorf("upsert cache, but get all cached keys %s failed. err: %v", listKeyName, err)
 		return
@@ -36,7 +37,7 @@ func upsertListCache(ms *forUpsertCache) {
 			// invalid key, delete immediately
 			// normally, this can not be happen.
 			// we try our best to correct the data
-			if ms.rds.SRem(listKeyName, key).Err() != nil {
+			if ms.rds.SRem(context.Background(), listKeyName, key).Err() != nil {
 				blog.Errorf("delete invalid list key name %s: value: %s failed,", listKeyName, key)
 				// we do not return and continue
 			}
@@ -48,7 +49,7 @@ func upsertListCache(ms *forUpsertCache) {
 					blog.Errorf("upsert cache, got invalid cache key %s, try to correct it, but get name failed, err: %v", listKeyName, key, err)
 				} else {
 					newKey := ms.genListKeyValue(id, parentID, name)
-					if err := ms.rds.SAdd(listKeyName, newKey).Err(); err != nil {
+					if err := ms.rds.SAdd(context.Background(), listKeyName, newKey).Err(); err != nil {
 						blog.Errorf("add new cache key failed, key: %s, err: %v", newKey, err)
 						// we do not return and continue
 					}

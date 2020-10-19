@@ -1,6 +1,7 @@
 <template>
     <bk-tag-input
         allow-create
+        allow-auto-match
         v-if="multiple"
         v-model="localValue"
         v-bind="$attrs"

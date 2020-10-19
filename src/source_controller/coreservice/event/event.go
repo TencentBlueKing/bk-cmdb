@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/stream"
-	"gopkg.in/redis.v5"
 )
 
-func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster discovery.ServiceManageInterface) error {
+func NewEvent(db dal.DB, rds redis.Client, watch stream.Interface, isMaster discovery.ServiceManageInterface) error {
 	e := Event{
 		rds:      rds,
 		watch:    watch,
@@ -80,7 +80,7 @@ func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster dis
 }
 
 type Event struct {
-	rds      *redis.Client
+	rds      redis.Client
 	watch    stream.Interface
 	db       dal.DB
 	isMaster discovery.ServiceManageInterface

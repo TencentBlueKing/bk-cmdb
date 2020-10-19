@@ -76,6 +76,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/process_related_info/biz/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
 	}, {

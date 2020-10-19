@@ -25,15 +25,15 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
 	db           dal.RDB
-	cache        *redis.Client
+	cache        redis.Client
 	ccApiSrvAddr string
 	ctx          context.Context
 	Config       options.Config
@@ -50,7 +50,7 @@ func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
-func (s *Service) SetCache(cache *redis.Client) {
+func (s *Service) SetCache(cache redis.Client) {
 	s.cache = cache
 }
 
@@ -107,7 +107,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, healthItem)
 
 	// redis
-	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err())
 	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {

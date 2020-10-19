@@ -30,6 +30,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/create/topo/set_template/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.Create,
 	}, {
@@ -38,6 +39,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/update/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPut,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.Update,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
@@ -57,6 +59,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/deletemany/topo/set_template/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.Delete,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
@@ -74,6 +77,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/find/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodGet,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.Find,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
@@ -93,6 +97,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -101,6 +106,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/bk_biz_id/([0-9]+)/web/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -109,6 +115,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/service_templates/?$`),
 		HTTPMethod:     http.MethodGet,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -117,6 +124,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/service_templates/with_statistics/?$`),
 		HTTPMethod:     http.MethodGet,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -125,6 +133,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/sets/web/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -133,6 +142,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/diff_with_instances/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.ModelSet,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -141,6 +151,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/updatemany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/sync_to_instances/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.ModelSet,
 		ResourceAction: meta.UpdateMany,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
@@ -158,6 +169,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/instances_sync_status/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
 		ResourceType:   meta.ModelSet,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -166,6 +178,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template_sync_status/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.ModelSet,
 		ResourceAction: meta.FindMany,
 	}, {
@@ -174,6 +187,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:            regexp.MustCompile(`^/api/v3/findmany/topo/set_template_sync_history/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:       http.MethodPost,
 		BizIDGetter:      BizIDFromURLGetter,
+		BizIndex:         6,
 		ResourceType:     meta.ModelSet,
 		ResourceAction:   meta.FindMany,
 		InstanceIDGetter: nil,
@@ -183,6 +197,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:            regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/set_template_status/?$`),
 		HTTPMethod:       http.MethodGet,
 		BizIDGetter:      BizIDFromURLGetter,
+		BizIndex:         7,
 		ResourceType:     meta.ModelSet,
 		ResourceAction:   meta.FindMany,
 		InstanceIDGetter: nil,
@@ -192,6 +207,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Regex:            regexp.MustCompile(`^/api/v3/findmany/topo/set_template/bk_biz_id/([0-9]+)/set_template_status/?$`),
 		HTTPMethod:       http.MethodPost,
 		BizIDGetter:      BizIDFromURLGetter,
+		BizIndex:         6,
 		ResourceType:     meta.ModelSet,
 		ResourceAction:   meta.FindMany,
 		InstanceIDGetter: nil,
