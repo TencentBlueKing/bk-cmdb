@@ -28,7 +28,8 @@ function createIdProperty (objId) {
         bk_issystem: true,
         isreadonly: true,
         editable: false,
-        bk_property_group: null
+        bk_property_group: null,
+        _is_inject_: true
     }
 }
 
@@ -113,9 +114,14 @@ const actions = {
      */
     searchObjectAttribute ({ commit, state, dispatch }, { params, config, injectId = false }) {
         return $http.post('find/objectattr', params, config).then(data => {
-            if (injectId === params.bk_obj_id) {
-                data.unshift(createIdProperty(injectId))
+            if (injectId !== params.bk_obj_id) {
+                return data
             }
+            const alreadyInject = data.some(property => property._is_inject_)
+            if (alreadyInject) {
+                return data
+            }
+            data.unshift(createIdProperty(injectId))
             return data
         })
     },
@@ -131,14 +137,19 @@ const actions = {
     batchSearchObjectAttribute ({ commit, state, dispatch }, { params, config, injectId = false }) {
         return $http.post(`find/objectattr`, params, config).then(properties => {
             const result = {}
-            params['bk_obj_id']['$in'].forEach(objId => {
+            params.bk_obj_id.$in.forEach(objId => {
                 result[objId] = []
-                if (injectId === objId) {
-                    result[objId].push(createIdProperty(objId))
-                }
             })
             properties.forEach(property => {
                 result[property['bk_obj_id']].push(property)
+            })
+            Object.keys(result).forEach(objId => {
+                if (injectId === objId) {
+                    const alreadyInject = result[objId].some(property => property._is_inject_)
+                    if (!alreadyInject) {
+                        result[objId].unshift(createIdProperty(objId))
+                    }
+                }
             })
             return result
         })

@@ -28,20 +28,25 @@
                 :data="table.list"
                 :pagination="table.pagination"
                 :max-height="$APP.height - 229"
-                :row-style="{ cursor: 'pointer' }"
-                @row-click="handleEdit"
+                @cell-click="handleCellClick"
                 @page-change="handlePageChange"
                 @page-limit-change="handlePageLimitChange"
                 @sort-change="handleSortChange">
-                <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed class-name="is-highlight"></bk-table-column>
-                <bk-table-column prop="id" label="ID" sortable="custom" fixed show-overflow-tooltip></bk-table-column>
-                <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom"></bk-table-column>
+                <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed>
+                    <span class="name-text" slot-scope="{ row }">{{row.name}}</span>
+                </bk-table-column>
+                <bk-table-column prop="id" label="ID" show-overflow-tooltip></bk-table-column>
+                <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom" show-overflow-tooltip>
+                    <template slot-scope="{ row }">
+                        <cmdb-form-objuser :value="row.create_user" type="info"></cmdb-form-objuser>
+                    </template>
+                </bk-table-column>
                 <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
                     <template slot-scope="{ row }">
                         {{row.create_time | formatter('time')}}
                     </template>
                 </bk-table-column>
-                <bk-table-column prop="modify_user" :label="$t('修改人')" sortable="custom">
+                <bk-table-column prop="modify_user" :label="$t('修改人')" sortable="custom" show-overflow-tooltip>
                     <template slot-scope="{ row }">
                         <cmdb-form-objuser :value="row.modify_user" type="info"></cmdb-form-objuser>
                     </template>
@@ -176,6 +181,15 @@
                     title: this.$t('新建动态分组')
                 })
             },
+            handleCellClick (row, column, cell, event) {
+                if (column.property !== 'name') {
+                    return false
+                }
+                const clickTarget = event.target
+                if (clickTarget.classList && clickTarget.classList.contains('name-text')) {
+                    this.handleEdit(row)
+                }
+            },
             handleEdit (row) {
                 DynamicGroupForm.show({
                     id: row.id,
@@ -246,5 +260,9 @@
     }
     .dynamic-group-table {
         margin-top: 15px;
+        .name-text {
+            cursor: pointer;
+            color: $primaryColor;
+        }
     }
 </style>

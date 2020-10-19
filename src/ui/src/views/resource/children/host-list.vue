@@ -2,6 +2,7 @@
     <div class="resource-layout">
         <host-list-options></host-list-options>
         <bk-table class="hosts-table"
+            ref="tableVM"
             v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="table.list"
             :pagination="table.pagination"
@@ -23,7 +24,8 @@
                 <template slot-scope="{ row }">
                     <cmdb-host-topo-path
                         v-if="property.bk_property_type === 'topology'"
-                        :host="row">
+                        :host="row"
+                        @path-ready="handlePathReady(row, ...arguments)">
                     </cmdb-host-topo-path>
                     <cmdb-property-value
                         v-else
@@ -339,6 +341,9 @@
                     sort: this.$tools.getSort(sort),
                     _t: Date.now()
                 })
+            },
+            handlePathReady (row, paths) {
+                row.__bk_host_topology__ = paths
             }
         }
     }

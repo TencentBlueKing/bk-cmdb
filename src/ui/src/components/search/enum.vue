@@ -1,5 +1,6 @@
 <template>
     <bk-select
+        searchable
         v-model="localValue"
         v-bind="$attrs"
         :multiple="multiple">

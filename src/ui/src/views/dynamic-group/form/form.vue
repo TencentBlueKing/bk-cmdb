@@ -38,13 +38,13 @@
                     </bk-option>
                 </bk-select>
             </bk-form-item>
-            <bk-form-item
+            <bk-form-item class="form-condition-tips"
                 desc-type="icon"
                 desc-icon="icon-cc-tips"
                 :label="$t('查询条件')"
                 :desc="$t('针对查询内容进行条件过滤')">
                 <form-property-list ref="propertyList" @remove="handleRemoveProperty"></form-property-list>
-                <bk-button :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
+                <bk-button class="form-condition-button" :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
                     icon="icon-plus-circle"
                     :text="true"
                     @click="showPropertySelector">
@@ -320,6 +320,24 @@
             font-size: 12px;
             line-height: 14px;
             color: $dangerColor;
+        }
+        .form-condition-tips {
+            /deep/ .bk-label .bk-label-text{
+                display: inline-flex;
+                align-items: center;
+                .bk-icon {
+                    margin-left: 4px;
+                }
+            }
+        }
+        .form-condition-button {
+            /deep/ > div {
+                display: flex;
+                align-items: center;
+                .bk-icon {
+                    top: 0;
+                }
+            }
         }
     }
     .dynamic-group-options {
