@@ -160,10 +160,29 @@
                             fromCache: true
                         }
                     })
+                    propertyMap.module.unshift(this.getServiceTemplateProperty())
                     this.propertyMap = Object.freeze(propertyMap)
                 } catch (error) {
                     console.error(error)
                     this.propertyMap = {}
+                }
+            },
+            getServiceTemplateProperty () {
+                return {
+                    id: Date.now(),
+                    bk_obj_id: 'module',
+                    bk_property_id: 'service_template_id',
+                    bk_property_name: this.$t('服务模板'),
+                    bk_property_index: -1,
+                    bk_property_type: 'service-template',
+                    isonly: true,
+                    ispre: true,
+                    bk_isapi: true,
+                    bk_issystem: true,
+                    isreadonly: true,
+                    editable: false,
+                    bk_property_group: null,
+                    _is_inject_: true
                 }
             },
             async getDetails () {
