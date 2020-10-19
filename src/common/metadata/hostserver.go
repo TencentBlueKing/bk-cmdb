@@ -134,6 +134,12 @@ type HostCommonSearch struct {
 	Pattern   string            `json:"pattern,omitempty"`
 }
 
+type SetCommonSearch struct {
+	AppID     int64             `json:"bk_biz_id,omitempty"`
+	Condition []SearchCondition `json:"condition"`
+	Page      BasePage          `json:"page"`
+}
+
 type HostModuleFind struct {
 	ModuleIDS []int64  `json:"bk_module_ids"`
 	AppID     int64    `json:"bk_biz_id"`
@@ -554,6 +560,33 @@ type DeleteHostFromBizParameter struct {
 type CloudAreaSearchParam struct {
 	SearchCloudOption `json:",inline"`
 	SyncTaskIDs       bool `json:"sync_task_ids"`
+}
+
+// CloudAreaHostCount cloud area host count param
+type CloudAreaHostCount struct {
+	CloudIDs []int64 `json:"bk_cloud_ids"`
+}
+
+func (c *CloudAreaHostCount) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 50
+	if len(c.CloudIDs) == 0 || len(c.CloudIDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_cloud_ids", maxLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type CloudAreaHostCountResult struct {
+	BaseResp `json:",inline"`
+	Data     []CloudAreaHostCountElem `json:"data"`
+}
+
+type CloudAreaHostCountElem struct {
+	CloudID   int64 `json:"bk_cloud_id"`
+	HostCount int64 `json:"host_count"`
 }
 
 type CreateManyCloudAreaResult struct {

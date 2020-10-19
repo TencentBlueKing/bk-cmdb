@@ -53,6 +53,7 @@ type MongoConf struct {
 	MaxIdleConns   uint64
 	URI            string
 	RsName         string
+	SocketTimeout  int
 }
 
 // NewMgo returns new RDB
@@ -64,7 +65,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	if config.RsName == "" {
 		return nil, fmt.Errorf("mongodb rsName not set")
 	}
-
+	socketTimeout := time.Second * time.Duration(config.SocketTimeout)
 	// do not change this, our transaction plan need it to false.
 	// it's related with the transaction number(eg txnNumber) in a transaction session.
 	disableWriteRetry := false
@@ -72,6 +73,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		MaxPoolSize:    &config.MaxOpenConns,
 		MinPoolSize:    &config.MaxIdleConns,
 		ConnectTimeout: &timeout,
+		SocketTimeout:  &socketTimeout,
 		ReplicaSet:     &config.RsName,
 		RetryWrites:    &disableWriteRetry,
 	}
@@ -669,6 +671,13 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.CreateOne(ctx, createIndexInfo)
+	if err != nil {
+		// ignore the duplicated index error
+		if strings.Contains(err.Error(), "already exists") {
+			return nil
+		}
+	}
+
 	return err
 }
 

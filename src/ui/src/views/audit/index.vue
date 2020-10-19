@@ -105,7 +105,7 @@
                 condition: {},
                 table: {
                     list: [],
-                    pagination: this.$tools.getDefaultPaginationConfig(),
+                    pagination: this.$tools.getDefaultPaginationConfig({ 'limit-list': [20, 50, 100, 200] }),
                     sort: '-operation_time',
                     stuff: {
                         // 如果初始化时有查询参数，则认为处在查询模式

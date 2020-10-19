@@ -149,6 +149,7 @@ type HostOperation interface {
 	GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 	UpdateHostCloudAreaField(kit *rest.Kit, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
+	FindCloudAreaHostCount(kit *rest.Kit, input metadata.CloudAreaHostCount) ([]metadata.CloudAreaHostCountElem, error)
 
 	LockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError
 	UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError
@@ -204,6 +205,7 @@ type Core interface {
 	SystemOperation() SystemOperation
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
+	CommonOperation() CommonOperation
 }
 
 // ProcessOperation methods
@@ -311,6 +313,10 @@ type AuthOperation interface {
 	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder)
 }
 
+type CommonOperation interface {
+	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -327,6 +333,7 @@ type core struct {
 	hostApplyRule   HostApplyRuleOperation
 	cloud           CloudOperation
 	auth            AuthOperation
+	common          CommonOperation
 }
 
 // New create core
@@ -345,6 +352,7 @@ func New(
 	sys SystemOperation,
 	cloud CloudOperation,
 	auth AuthOperation,
+	common CommonOperation,
 ) Core {
 	return &core{
 		model:           model,
@@ -362,6 +370,7 @@ func New(
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
 		auth:            auth,
+		common:          common,
 	}
 }
 
@@ -423,4 +432,8 @@ func (m *core) CloudOperation() CloudOperation {
 
 func (m *core) AuthOperation() AuthOperation {
 	return m.auth
+}
+
+func (m *core) CommonOperation() CommonOperation {
+	return m.common
 }

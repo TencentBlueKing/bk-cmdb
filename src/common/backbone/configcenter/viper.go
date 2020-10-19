@@ -352,6 +352,24 @@ func Mongo(prefix string) mongo.Config {
 	} else {
 		c.MaxIdleConns = parser.getUint64(prefix+".maxIdleConns")
 	}
+
+	if !parser.isSet(prefix+".socketTimeoutSeconds") {
+		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d", mongo.DefaultSocketTimeout)
+		c.SocketTimeout = mongo.DefaultSocketTimeout
+		return c
+	}
+
+	c.SocketTimeout = parser.getInt(prefix + ".socketTimeoutSeconds")
+	if c.SocketTimeout > mongo.MaximumSocketTimeout {
+		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d", c.SocketTimeout, mongo.MaximumSocketTimeout)
+		c.SocketTimeout = mongo.MaximumSocketTimeout
+	}
+
+	if c.SocketTimeout < mongo.MinimumSocketTimeout {
+		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d", c.SocketTimeout, mongo.MinimumSocketTimeout)
+		c.SocketTimeout = mongo.MinimumSocketTimeout
+	}
+
 	return c
 }
 

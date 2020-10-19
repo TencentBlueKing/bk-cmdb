@@ -208,11 +208,16 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	count, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
-	if err != nil {
-		blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
-		return
+	var finalCount uint64
+
+	if !dat.DisableCounter {
+		count, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
+		if err != nil {
+			blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
+			return
+		}
+		finalCount = count
 	}
 
 	info := make([]mapstr.MapStr, len(result))
@@ -220,7 +225,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		info[index] = mapstr.MapStr(host)
 	}
 	ctx.RespEntity(metadata.HostInfo{
-		Count: int(count),
+		Count: int(finalCount),
 		Info:  info,
 	})
 }

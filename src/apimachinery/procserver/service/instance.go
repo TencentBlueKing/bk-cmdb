@@ -49,6 +49,20 @@ func (s *service) SearchServiceInstance(ctx context.Context, h http.Header, data
 	return
 }
 
+func (s *service) SearchServiceInstanceBySetTemplate(ctx context.Context, appID string, h http.Header, data map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	subPath := "/findmany/proc/service/set_template/list_service_instance/biz/%s"
+
+	err = s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (s *service) DiffServiceInstanceWithTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/proc/service_instance/difference"

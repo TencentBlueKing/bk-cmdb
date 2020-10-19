@@ -107,6 +107,11 @@ type GetServiceInstanceInModuleInput struct {
 	Selectors selector.Selectors `json:"selectors"`
 }
 
+type GetServiceInstanceBySetTemplateInput struct {
+	SetTemplateID int64    `json:"set_template_id"`
+	Page          BasePage `json:"page"`
+}
+
 type DiffModuleWithTemplateOption struct {
 	BizID     int64   `json:"bk_biz_id"`
 	ModuleIDs []int64 `json:"bk_module_ids"`

@@ -103,3 +103,17 @@ func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h 
 		Into(resp)
 	return
 }
+
+func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	subPath := "/findmany/module/with_relation/biz/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

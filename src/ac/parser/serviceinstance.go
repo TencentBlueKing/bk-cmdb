@@ -13,10 +13,17 @@
 package parser
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"configcenter/src/ac/meta"
+)
+
+var (
+	searchServiceInstancesBySetTemplateRuleRegex = regexp.MustCompile(`^/api/v3/findmany/proc/service/set_template/list_service_instance/biz/([0-9]+)/?$`)
 )
 
 var ServiceInstanceAuthConfigs = []AuthConfig{
@@ -52,7 +59,8 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
-	}, {
+	},
+	{
 		Name:           "findServiceInstanceDetailsPattern",
 		Description:    "list 服务实例详情",
 		Pattern:        "/api/v3/findmany/proc/service_instance/details",
@@ -153,5 +161,30 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 }
 
 func (ps *parseStream) ServiceInstance() *parseStream {
+
+	if ps.hitRegexp(searchServiceInstancesBySetTemplateRuleRegex, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 9 {
+			ps.err = errors.New("search serviceInstance by setTemplate, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[8], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("search serviceInstance by setTemplate, but got invalid business id %s", ps.RequestCtx.Elements[8])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	return ParseStreamWithFramework(ps, ServiceInstanceAuthConfigs)
 }
