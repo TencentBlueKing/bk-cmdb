@@ -43,11 +43,7 @@ const (
 	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
 	defaultChangeRangePercent 	    = 10
 	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
-	minChangeRangePercent            = 5
-	// deafultChangeCountExpireMinute is the default value of update time
-	deafultChangeCountExpireMinute        = 10
-	// minChangeCountExpireMinute is the minimum value of update time
-	minChangeCountExpireMinute            = 5
+	minChangeRangePercent            = 1
 	// defaultRateLimiterQPS is the default value of rateLimiter qps
 	defaultRateLimiterQPS   = 40
 	// defaultRateLimiterBurst is the default value of rateLimiter burst
@@ -73,6 +69,7 @@ type HostSnap struct {
 	filter *filter
 	ctx    context.Context
 	db     dal.RDB
+	window *Window
 }
 
 func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
@@ -85,6 +82,7 @@ func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine
 		authManager: authManager,
 		Engine:      engine,
 		filter:      newFilter(),
+		window:      newWindow(),
 	}
 	return h
 }
@@ -186,6 +184,12 @@ func (h *HostSnap) Analyze(msg *string) error {
 	// save host snapshot in redis
 	h.saveHostsnap(header, &val, hostID)
 
+	// window restriction on request
+	if !h.window.canPassWindow() {
+		blog.V(4).Info("not within the time window that can pass, skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
+			hostID, innerIP, cloudID, rid)
+		return nil
+	}
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
@@ -196,11 +200,6 @@ func (h *HostSnap) Analyze(msg *string) error {
 	if !h.rateLimit.TryAccept() {
 		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
 			hostID, innerIP, cloudID, rid)
-		return nil
-	}
-
-	key := common.RedisSnapCountPrefix + strconv.FormatInt(hostID, 10)
-	if h.needToSkip(key, rid) {
 		return nil
 	}
 
@@ -260,29 +259,6 @@ func (h *HostSnap) Analyze(msg *string) error {
 		hostID, innerIP, cloudID, rid)
 
 	return nil
-}
-
-func (h *HostSnap) needToSkip(key string, rid string) bool {
-	value, err := h.redisCli.Incr(key).Result()
-	if err != nil {
-		blog.Errorf("an error occurred while increasing the redis value, key: %s, rid: %s", key, rid)
-	}
-	// if it is greater than 1, it means that the data has been updated within the specified time and does not need to be updated this time
-	if value > 1 {
-		return true
-	}
-
-	// get time on redis ttl
-	changeCountExpireMinute := getLimitConfig("datacollection.hostsnap.changeCountExpireMinute", deafultChangeCountExpireMinute, minChangeCountExpireMinute)
-	minTime := 0.5 * float64(changeCountExpireMinute)
-	maxTime := 1.5 * float64(changeCountExpireMinute)
-	randTime := util.RandInt64WithRange(int64(minTime), int64(maxTime))
-	// expire redis key
-	if err := h.redisCli.Expire(key, time.Minute*time.Duration(randTime)).Err(); err != nil {
-		blog.Errorf("an error occurred while expire the redis key, key: %s, rid: %s", key, rid)
-	}
-
-	return false
 }
 
 func needToUpdate(src, toCompare string) bool {
