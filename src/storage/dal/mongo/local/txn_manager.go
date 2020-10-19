@@ -23,10 +23,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/dal/redis"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
-	"gopkg.in/redis.v5"
 )
 
 const (
@@ -41,18 +41,18 @@ func (s sessionKey) genKey() string {
 
 // a transaction manager
 type TxnManager struct {
-	cache *redis.Client
+	cache redis.Client
 }
 
 // InitTxnManager is to init txn manager, set the redis storage
-func (t *TxnManager) InitTxnManager(r *redis.Client) error {
+func (t *TxnManager) InitTxnManager(r redis.Client) error {
 	t.cache = r
 	return nil
 }
 
 func (t *TxnManager) GetTxnNumber(sessionID string) (int64, error) {
 	key := sessionKey(sessionID).genKey()
-	v, err := t.cache.Get(key).Result()
+	v, err := t.cache.Get(context.Background(), key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -87,7 +87,7 @@ func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, e
 
 func (t *TxnManager) RemoveSessionKey(sessionID string) error {
 	key := sessionKey(sessionID).genKey()
-	return t.cache.Del(key).Err()
+	return t.cache.Del(context.Background(), key).Err()
 }
 
 func (t *TxnManager) ReloadSession(sess mongo.Session, info *mongo.SessionInfo) (mongo.Session, error) {

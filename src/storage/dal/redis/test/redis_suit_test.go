@@ -9,29 +9,17 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package y3_8_202002101113
+
+package redis_test
 
 import (
-	"context"
-	"fmt"
+	"testing"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/redis"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func init() {
-	upgrader.RegisterUpgraderWithRedis("y3.8.202002101113", upgrade)
-}
-
-func upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *upgrader.Config) error {
-	blog.Infof("start execute y3.8.202002101113")
-
-	if err := migrateEventIDToMongo(ctx, db, cache, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202002101113] migrateEventIDToMongo failed, error %s", err.Error())
-		return fmt.Errorf("migrateEventIDToMongo failed, error %s", err.Error())
-	}
-
-	return nil
+func TestTest(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "redis Suite")
 }

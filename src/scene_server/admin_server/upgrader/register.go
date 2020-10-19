@@ -26,8 +26,7 @@ import (
 	"configcenter/src/common/util"
 	ccversion "configcenter/src/common/version"
 	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
 // Config config for upgrader
@@ -40,7 +39,7 @@ type Config struct {
 // Upgrader define a version upgrader
 type Upgrader struct {
 	version string // v3.0.8-beta.11
-	do      func(context.Context, dal.RDB, *redis.Client, *Config) error
+	do      func(context.Context, dal.RDB, redis.Client, *Config) error
 }
 
 var upgraderPool = []Upgrader{}
@@ -175,14 +174,14 @@ func RegistUpgrader(version string, handlerFunc func(context.Context, dal.RDB, *
 	}
 	registLock.Lock()
 	defer registLock.Unlock()
-	v := Upgrader{version: version, do: func(ctx context.Context, rdb dal.RDB, cache *redis.Client, config *Config) error {
+	v := Upgrader{version: version, do: func(ctx context.Context, rdb dal.RDB, cache redis.Client, config *Config) error {
 		return handlerFunc(ctx, rdb, config)
 	}}
 	upgraderPool = append(upgraderPool, v)
 }
 
 // RegisterUpgraderWithRedis register upgrader with redis
-func RegisterUpgraderWithRedis(version string, handlerFunc func(context.Context, dal.RDB, *redis.Client, *Config) error) {
+func RegisterUpgraderWithRedis(version string, handlerFunc func(context.Context, dal.RDB, redis.Client, *Config) error) {
 	if err := ValidateMigrationVersionFormat(version); err != nil {
 		blog.Fatalf("ValidateMigrationVersionFormat failed, err: %s", err.Error())
 	}
@@ -195,7 +194,7 @@ func RegisterUpgraderWithRedis(version string, handlerFunc func(context.Context,
 // Upgrade upgrade the db data to newest version
 // we use date instead of version later since 2018.09.04, because the version wasn't manage by the developer
 // ps: when use date instead of version, the date should add x prefix cause x > v
-func Upgrade(ctx context.Context, db dal.RDB, cache *redis.Client, conf *Config) (currentVersion string, finishedMigrations []string, err error) {
+func Upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *Config) (currentVersion string, finishedMigrations []string, err error) {
 	sort.Slice(upgraderPool, func(i, j int) bool {
 		return VersionCmp(upgraderPool[i].version, upgraderPool[j].version) < 0
 	})

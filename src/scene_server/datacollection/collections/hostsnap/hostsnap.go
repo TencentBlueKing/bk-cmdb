@@ -34,9 +34,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/tidwall/gjson"
-	"gopkg.in/redis.v5"
 )
 
 const (
@@ -62,7 +62,7 @@ var (
 )
 
 type HostSnap struct {
-	redisCli    *redis.Client
+	redisCli    redis.Client
 	authManager *extensions.AuthManager
 	*backbone.Engine
 	rateLimit   flowctrl.RateLimiter
@@ -72,7 +72,7 @@ type HostSnap struct {
 	window *Window
 }
 
-func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
+func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
 	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
 		redisCli:    redisCli,
@@ -540,7 +540,7 @@ func (h *HostSnap) saveHostsnap(header http.Header, hostData *gjson.Result, host
 	}
 
 	key := common.RedisSnapKeyPrefix + strconv.FormatInt(hostID, 10)
-	if err := h.redisCli.Set(key, *snapshot, time.Minute*10).Err(); err != nil {
+	if err := h.redisCli.Set(context.Background(), key, *snapshot, time.Minute*10).Err(); err != nil {
 		blog.Errorf("saveHostsnap failed, set key: %s to redis err: %v, rid: %s", key, err, rid)
 		return err
 	}

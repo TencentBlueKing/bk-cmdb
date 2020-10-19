@@ -9,29 +9,29 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package y3_8_202002101113
+
+package redis
 
 import (
-	"context"
-	"fmt"
+	"time"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/redis"
+	"github.com/go-redis/redis/v7"
 )
 
-func init() {
-	upgrader.RegisterUpgraderWithRedis("y3.8.202002101113", upgrade)
+// PubSub is the interface for redis Pub/Sub commands
+type PubSub interface {
+	Channel() <-chan *redis.Message
+	ChannelSize(size int) <-chan *redis.Message
+	ChannelWithSubscriptions(size int) <-chan interface{}
+	Close() error
+	PSubscribe(patterns ...string) error
+	PUnsubscribe(patterns ...string) error
+	Ping(payload ...string) error
+	Receive() (interface{}, error)
+	ReceiveMessage() (*redis.Message, error)
+	ReceiveTimeout(timeout time.Duration) (interface{}, error)
+	String() string
+	Subscribe(channels ...string) error
+	Unsubscribe(channels ...string) error
 }
 
-func upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *upgrader.Config) error {
-	blog.Infof("start execute y3.8.202002101113")
-
-	if err := migrateEventIDToMongo(ctx, db, cache, conf); err != nil {
-		blog.Errorf("[upgrade y3.8.202002101113] migrateEventIDToMongo failed, error %s", err.Error())
-		return fmt.Errorf("migrateEventIDToMongo failed, error %s", err.Error())
-	}
-
-	return nil
-}

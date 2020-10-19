@@ -25,13 +25,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	validator "configcenter/src/source_controller/coreservice/core/instances"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
 type OwnerManager struct {
 	Engine   *backbone.Engine
-	CacheCli *redis.Client
+	CacheCli redis.Client
 	OwnerID  string
 	UserName string
 	header   http.Header
@@ -67,7 +66,7 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 	if !exist {
 		redisCli := m.CacheCli
 		for {
-			ok, err := redisCli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
+			ok, err := redisCli.SetNX(context.Background(), common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
 			if nil != err {
 				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
 				return nil, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -78,7 +77,7 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 			time.Sleep(time.Second)
 		}
 		defer func() {
-			if err := redisCli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock:" + m.OwnerID).Err(); err != nil {
+			if err := redisCli.Del(context.Background(), common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID).Err(); err != nil {
 				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
 			}
 		}()

@@ -22,11 +22,10 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
-func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) (*metadata.HostIdentifier, error) {
+func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) (*metadata.HostIdentifier, error) {
 	// fill cloudName
 	cloud, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDPlat, identifier.CloudID)
 	if err != nil {
@@ -61,7 +60,7 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 	return identifier, nil
 }
 
-func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
 	proc, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDProc, process.ProcessID)
 	if err != nil {
 		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
@@ -82,7 +81,7 @@ func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache 
 }
 
 func fillModule(identifier *metadata.HostIdentifier, hostIdentModule *metadata.HostIdentModule, customLayers []string,
-	ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+	ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
 
 	biz, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDApp, hostIdentModule.BizID)
 	if err != nil {
