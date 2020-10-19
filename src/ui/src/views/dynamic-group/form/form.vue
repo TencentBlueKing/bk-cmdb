@@ -191,13 +191,51 @@
                         bizId: this.bizId,
                         id: this.id
                     })
-                    this.formData.name = details.name
-                    this.formData.bk_obj_id = details.bk_obj_id
-                    this.details = details
+                    const transformedDetails = this.transformDetails(details)
+                    this.formData.name = transformedDetails.name
+                    this.formData.bk_obj_id = transformedDetails.bk_obj_id
+                    this.details = transformedDetails
                     this.$nextTick(this.setDetailsSelectedProperties)
                     setTimeout(this.$refs.propertyList.setDetailsCondition, 0)
                 } catch (error) {
                     console.error(error)
+                }
+            },
+            // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
+            transformDetails (details) {
+                const condition = details.info.condition
+                const transformedCondition = []
+                condition.forEach(data => {
+                    transformedCondition.push({
+                        bk_obj_id: data.bk_obj_id,
+                        condition: data.condition.reduce((accumulator, current) => {
+                            if (['$gte', '$lte'].includes(current.operator)) {
+                                let index = accumulator.findIndex(exist => exist.field === current.field)
+                                if (index === -1) {
+                                    index = accumulator.push({
+                                        field: current.field,
+                                        operator: '$range',
+                                        value: []
+                                    }) - 1
+                                }
+                                const range = accumulator[index]
+                                if (current.operator === '$gte') {
+                                    range.value.unshift(current.value)
+                                } else {
+                                    range.value.push(current.value)
+                                }
+                            } else {
+                                accumulator.push(current)
+                            }
+                            return accumulator
+                        }, [])
+                    })
+                })
+                return {
+                    ...details,
+                    info: {
+                        condition: transformedCondition
+                    }
                 }
             },
             setDetailsSelectedProperties () {
