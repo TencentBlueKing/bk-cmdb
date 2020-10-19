@@ -43,6 +43,7 @@ type Commands interface {
 	LLen(ctx context.Context, key string) IntResult
 	LPush(ctx context.Context, key string, values ...interface{}) IntResult
 	LRange(ctx context.Context, key string, start, stop int64) StringSliceResult
+	LRem(ctx context.Context, key string, count int64, value interface{}) IntResult
 	LTrim(ctx context.Context, key string, start, stop int64) StatusResult
 	MGet(ctx context.Context, keys ...string) SliceResult
 	MSet(ctx context.Context, values ...interface{}) StatusResult

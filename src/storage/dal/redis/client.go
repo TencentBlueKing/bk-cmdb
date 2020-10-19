@@ -145,6 +145,10 @@ func (c *client) LRange(ctx context.Context, key string, start, stop int64) Stri
 	return c.cli.LRange(key, start, stop)
 }
 
+func (c *client) LRem(ctx context.Context, key string, count int64, value interface{}) IntResult {
+	return c.cli.LRem(key, count, value)
+}
+
 func (c *client) LTrim(ctx context.Context, key string, start, stop int64) StatusResult {
 	return c.cli.LTrim(key, start, stop)
 }
