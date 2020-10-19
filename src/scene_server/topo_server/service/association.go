@@ -380,24 +380,24 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationRelatedInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
 	//check condition
 	if request.Condition.InstID == 0 || request.Condition.ObjectID == "" {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "'bk_inst_id' and 'bk_obj_id' should not be empty."))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "'bk_inst_id' and 'bk_obj_id' should not be empty."))
 		return
 	}
 	//check fields,if there's none param,return err.
 	if len(request.Fields) == 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "there should be at least one param in 'fields'."))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "there should be at least one param in 'fields'."))
 		return
 	}
 	//Use id as sort parameters
 	request.Page.Sort = common.BKFieldID
 	//check Maximum limit
-	if request.Page.Limit > 500 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "The maximum limit should be less than 500."))
+	if request.Page.Limit > common.BKMaxInstanceLimit {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "The maximum limit should be less than 500."))
 		return
 	}
 
@@ -407,7 +407,7 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 		return
 	}
 
-	if ret.Code != 0 {
+	if err := ret.CCError(); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
 		return
 	}
