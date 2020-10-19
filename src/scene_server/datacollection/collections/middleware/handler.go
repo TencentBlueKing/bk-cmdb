@@ -70,7 +70,7 @@ func (d *Discover) CreateInstKey(objID string, ownerID string, val []string) str
 
 func (d *Discover) GetInstFromRedis(instKey string) (map[string]interface{}, error) {
 
-	val, err := d.redisCli.Get(instKey).Result()
+	val, err := d.redisCli.Get(d.ctx, instKey).Result()
 	if err != nil {
 		return nil, fmt.Errorf("%s: get inst cache error: %s", instKey, err)
 	}
@@ -86,7 +86,7 @@ func (d *Discover) GetInstFromRedis(instKey string) (map[string]interface{}, err
 }
 
 func (d *Discover) TrySetRedis(key string, value []byte, duration time.Duration) {
-	_, err := d.redisCli.Set(key, value, duration).Result()
+	_, err := d.redisCli.Set(d.ctx, key, value, duration).Result()
 	if err != nil {
 		blog.Warnf("%s: flush to redis failed: %s", key, err)
 	} else {
@@ -96,7 +96,7 @@ func (d *Discover) TrySetRedis(key string, value []byte, duration time.Duration)
 }
 
 func (d *Discover) TryUnsetRedis(key string) {
-	_, err := d.redisCli.Del(key).Result()
+	_, err := d.redisCli.Del(d.ctx, key).Result()
 	if err != nil {
 		blog.Warnf("%s: remove from redis failed: %s", key, err)
 	} else {

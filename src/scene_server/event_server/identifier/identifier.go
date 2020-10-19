@@ -29,8 +29,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
 var delayTime = time.Second * 30
@@ -164,11 +163,11 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 			return err
 		}
 
-		hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
+		hostIdentify.ID = ih.cache.Incr(ih.ctx, types.EventCacheEventIDKey).Val()
 		d := metadata.EventData{CurData: inst.ident, PreData: preInst.ident}
 		hostIdentify.Data = append(hostIdentify.Data, d)
 
-		ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)
+		ih.cache.LPush(ih.ctx, types.EventCacheEventQueueKey, &hostIdentify)
 		blog.InfoJSON("identifier: pushed event inst %s, rid: %s", hostIdentify, rid)
 	} else {
 		if err := ih.handleRelatedInst(hostIdentify, event.ObjType, instID, curData, diffFields); err != nil {
@@ -421,7 +420,7 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				if process.ProcessID != instID {
 					continue
 				}
-				
+
 				for _, field := range diffFields {
 					switch field {
 					case common.BKProcessNameField:
@@ -489,8 +488,8 @@ func (ih *IdentifierHandler) handleHostBatch(hostIdentify metadata.EventInst, ho
 		}
 		index += bufSize
 
-		hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
-		if err := ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify).Err(); err != nil {
+		hostIdentify.ID = ih.cache.Incr(ih.ctx, types.EventCacheEventIDKey).Val()
+		if err := ih.cache.LPush(ih.ctx, types.EventCacheEventQueueKey, &hostIdentify).Err(); err != nil {
 			blog.Warnf("identifier: push event inst %v failure %v, rid: %s", hostIdentify, err, rid)
 		} else {
 			blog.InfoJSON("identifier: pushed event inst %s, rid: %s", hostIdentify, rid)
@@ -594,12 +593,12 @@ func (i *Inst) set(key string, value interface{}) error {
 	return err
 }
 
-func (i *Inst) saveCache(cache *redis.Client) error {
+func (i *Inst) saveCache(cache redis.Client) error {
 	out, err := json.Marshal(i.ident)
 	if err != nil {
 		return err
 	}
-	return cache.Set(getInstCacheKey(i.objType, i.instID), string(out), time.Minute*20).Err()
+	return cache.Set(context.Background(), getInstCacheKey(i.objType, i.instID), string(out), time.Minute*20).Err()
 }
 
 func (i *Inst) copy() *Inst {
@@ -665,7 +664,7 @@ func NewHostIdentifier(m map[string]interface{}) (*metadata.HostIdentifier, erro
 	return &ident, nil
 }
 
-func getCache(ctx context.Context, cache *redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB,
+func getCache(ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB,
 	objType string, instID int64) (*Inst, error) {
 	var err error
 	header := getHeader()
@@ -673,7 +672,7 @@ func getCache(ctx context.Context, cache *redis.Client, clientSet apimachinery.C
 	inst := Inst{objType: objType, instID: instID, ident: &metadata.HostIdentifier{}, data: map[string]interface{}{}}
 	switch objType {
 	case common.BKInnerObjIDHost:
-		ret := cache.Get(getInstCacheKey(objType, instID)).Val()
+		ret := cache.Get(ctx, getInstCacheKey(objType, instID)).Val()
 		if "" != ret && types.NilStr != ret {
 			err = json.Unmarshal([]byte(ret), inst.ident)
 			if err == nil {
@@ -900,7 +899,7 @@ func (ih *IdentifierHandler) handleEventLoop() error {
 func (ih *IdentifierHandler) popEvent() *metadata.EventInstCtx {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 
-	eventStrs := ih.cache.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
+	eventStrs := ih.cache.BRPop(ih.ctx, time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
 	if len(eventStrs) == 0 || eventStrs[1] == types.NilStr || len(eventStrs[1]) == 0 {
 		return nil
@@ -949,7 +948,7 @@ func getHeader() http.Header {
 }
 
 type IdentifierHandler struct {
-	cache     *redis.Client
+	cache     redis.Client
 	db        dal.RDB
 	ctx       context.Context
 	clientSet apimachinery.ClientSetInterface
@@ -959,7 +958,7 @@ func getInstCacheKey(objType string, instID int64) string {
 	return types.EventCacheIdentInstPrefix + objType + "_" + strconv.FormatInt(instID, 10)
 }
 
-func NewIdentifierHandler(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apimachinery.ClientSetInterface) *IdentifierHandler {
+func NewIdentifierHandler(ctx context.Context, cache redis.Client, db dal.RDB, clientSet apimachinery.ClientSetInterface) *IdentifierHandler {
 	return &IdentifierHandler{ctx: ctx, cache: cache, db: db, clientSet: clientSet}
 }
 

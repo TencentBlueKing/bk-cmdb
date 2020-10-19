@@ -25,10 +25,10 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/logics"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 // Service impls main logics as service for datacolection app.
@@ -37,10 +37,10 @@ type Service struct {
 	engine *backbone.Engine
 
 	db      dal.RDB
-	cache   *redis.Client
-	snapCli *redis.Client
-	disCli  *redis.Client
-	netCli  *redis.Client
+	cache   redis.Client
+	snapCli redis.Client
+	disCli  redis.Client
+	netCli  redis.Client
 
 	logics *logics.Logics
 }
@@ -61,22 +61,22 @@ func (s *Service) SetDB(db dal.RDB) {
 }
 
 // SetCache setups cc main redis.
-func (s *Service) SetCache(db *redis.Client) {
+func (s *Service) SetCache(db redis.Client) {
 	s.cache = db
 }
 
 // SetSnapCli setups snap redis.
-func (s *Service) SetSnapCli(db *redis.Client) {
+func (s *Service) SetSnapCli(db redis.Client) {
 	s.snapCli = db
 }
 
 // SetDiscoverCli setups discover redis.
-func (s *Service) SetDiscoverCli(db *redis.Client) {
+func (s *Service) SetDiscoverCli(db redis.Client) {
 	s.disCli = db
 }
 
 // SetNetCollectCli setups netcollect redis.
-func (s *Service) SetNetCollectCli(db *redis.Client) {
+func (s *Service) SetNetCollectCli(db redis.Client) {
 	s.netCli = db
 }
 
@@ -152,21 +152,21 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
 	// cc main redis health status info.
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err()))
 
 	// snap redis health status info.
 	if s.snapCli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - snapCli", types.CCFunctionalityRedis), s.snapCli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - snapCli", types.CCFunctionalityRedis), s.snapCli.Ping(context.Background()).Err()))
 	}
 
 	// discover redis health status info.
 	if s.disCli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - disCli", types.CCFunctionalityRedis), s.disCli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - disCli", types.CCFunctionalityRedis), s.disCli.Ping(context.Background()).Err()))
 	}
 
 	// netcollect redis health status info.
 	if s.netCli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - netCli", types.CCFunctionalityRedis), s.netCli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(fmt.Sprintf("%s - netCli", types.CCFunctionalityRedis), s.netCli.Ping(context.Background()).Err()))
 	}
 
 	for _, item := range meta.Items {

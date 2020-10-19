@@ -13,17 +13,16 @@
 package redis
 
 import (
-	cc "configcenter/src/common/backbone/configcenter"
+	"context"
 	"sync"
 
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
-	dalRedis "configcenter/src/storage/dal/redis"
-
-	redis "gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
 /*
@@ -33,18 +32,18 @@ import (
 var (
 	defaultPrefix string = "redis"
 	// redis is default
-	cacheMap = make(map[string]*redis.Client, 0)
+	cacheMap = make(map[string]redis.Client, 0)
 	lock     = &sync.RWMutex{}
 
 	// 在并发的情况下，这里存在panic的问题
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
 
-	Nil = redis.Nil
+	IsNilErr = redis.IsNilErr
 )
 
 // Client  get default error
-func Client() *redis.Client {
+func Client() redis.Client {
 	lock.RLock()
 	defer lock.RUnlock()
 	if db, ok := cacheMap[defaultPrefix]; ok {
@@ -54,7 +53,7 @@ func Client() *redis.Client {
 }
 
 // ClientInstance  获取指定的redis
-func ClientInstance(prefix string) *redis.Client {
+func ClientInstance(prefix string) redis.Client {
 	lock.RLock()
 	defer lock.RUnlock()
 	if db, ok := cacheMap[prefix]; ok {
@@ -63,7 +62,7 @@ func ClientInstance(prefix string) *redis.Client {
 	return nil
 }
 
-func ParseConfig(prefix string, configMap map[string]string) (*dalRedis.Config, errors.CCErrorCoder) {
+func ParseConfig(prefix string, configMap map[string]string) (*redis.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
 	config := cc.Redis(prefix)
 	if config.Address == "" {
@@ -78,7 +77,7 @@ func ParseConfig(prefix string, configMap map[string]string) (*dalRedis.Config, 
 	return &config, nil
 }
 
-func InitClient(prefix string, config *dalRedis.Config) errors.CCErrorCoder {
+func InitClient(prefix string, config *redis.Config) errors.CCErrorCoder {
 	lock.Lock()
 	defer lock.Unlock()
 	if cacheMap[prefix] != nil {
@@ -87,7 +86,7 @@ func InitClient(prefix string, config *dalRedis.Config) errors.CCErrorCoder {
 		return nil
 	}
 	lastInitErr = nil
-	db, dbErr := dalRedis.NewFromConfig(*config)
+	db, dbErr := redis.NewFromConfig(*config)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the redis server, error info is %s", dbErr.Error())
 		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'"+prefix+" redis' initialization failed")
@@ -104,7 +103,7 @@ func Validate() errors.CCErrorCoder {
 	return nil
 }
 
-func UpdateConfig(prefix string, config dalRedis.Config) {
+func UpdateConfig(prefix string, config redis.Config) {
 	// 不支持热更行
 	return
 }
@@ -124,7 +123,7 @@ func Healthz() (items []metric.HealthItem) {
 			item.Message = "[" + prefix + "] not initialized"
 			continue
 		}
-		if err := db.Ping().Err(); err != nil {
+		if err := db.Ping(context.Background()).Err(); err != nil {
 			item.IsHealthy = false
 			item.Message = "[" + prefix + "] connect error. err: " + err.Error()
 			continue

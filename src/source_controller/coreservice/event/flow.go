@@ -25,12 +25,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/stream/types"
+
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
-
-	"gopkg.in/redis.v5"
 )
 
 func newFlow(ctx context.Context, opts FlowOptions) error {
@@ -222,7 +222,7 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 		return false, err
 	}
 
-	keys, err := f.rds.HMGet(f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
+	keys, err := f.rds.HMGet(context.Background(), f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
 	if err != nil {
 		return true, err
 	}
@@ -271,9 +271,9 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 	}
 
 	// get previous node with previous cursor
-	prev, err := f.rds.HGet(f.key.MainHashKey(), prevCursor).Result()
+	prev, err := f.rds.HGet(context.Background(), f.key.MainHashKey(), prevCursor).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if redis.IsNilErr(err) {
 			blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
 			return false, err
 		}
@@ -364,7 +364,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 	// already get the lock. prepare to release the lock.
 	releaseLock := func() {
-		if err := f.rds.Del(f.key.LockKey()).Err(); err != nil {
+		if err := f.rds.Del(context.Background(), f.key.LockKey()).Err(); err != nil {
 			blog.ErrorfDepthf(1, "run flow, set head and tail key, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		}
 	}
@@ -434,9 +434,9 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 // getStartToken get the started token when the system is started.
 // if this token is empty, then system need to watch from now on.
 func (f *Flow) getStartToken() (token string, err error) {
-	tail, err := f.rds.HGet(f.key.MainHashKey(), f.key.TailKey()).Result()
+	tail, err := f.rds.HGet(context.Background(), f.key.MainHashKey(), f.key.TailKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			return "", err
 		}
 		// the tail key is not exist.
@@ -525,7 +525,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 
 	// already get the lock. prepare to release the lock.
 	releaseLock := func() {
-		if err := f.rds.Del(f.key.LockKey()).Err(); err != nil {
+		if err := f.rds.Del(context.Background(), f.key.LockKey()).Err(); err != nil {
 			blog.ErrorfDepthf(1, "run flow, insert node, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		}
 	}
@@ -550,7 +550,7 @@ func (f *Flow) getLockWithRetry(name string, oid string) bool {
 	getLock := false
 	for retry := 0; retry < 10; retry++ {
 		// get operate lock to avoid concurrent revise the chain
-		success, err := f.rds.SetNX(f.key.LockKey(), "lock", 5*time.Second).Result()
+		success, err := f.rds.SetNX(context.Background(), f.key.LockKey(), "lock", 5*time.Second).Result()
 		if err != nil {
 			blog.Errorf("get lock failed, err: %v, oid: %s", name, err, oid)
 			time.Sleep(500 * time.Millisecond)

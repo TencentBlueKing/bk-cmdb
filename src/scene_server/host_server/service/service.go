@@ -13,6 +13,8 @@
 package service
 
 import (
+	"context"
+
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
@@ -24,20 +26,21 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.Config
 	*backbone.Engine
 	disc        discovery.DiscoveryInterface
-	CacheDB     *redis.Client
+	CacheDB     redis.Client
 	AuthManager *extensions.AuthManager
 	EnableTxn   bool
-	Logic		*logics.Logics
+	Logic       *logics.Logics
 }
+
 func (s *Service) WebService() *restful.Container {
 
 	container := restful.NewContainer()
@@ -80,7 +83,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, coreSrv)
 
 	// redis
-	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.CacheDB.Ping().Err())
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.CacheDB.Ping(context.Background()).Err())
 	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {

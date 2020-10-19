@@ -13,6 +13,7 @@
 package event
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -64,7 +65,7 @@ func (e *eventOperation) Subscribe(kit *rest.Kit, subscription *metadata.Subscri
 		return nil, kit.CCError.CCError(common.CCErrEventSubscribeInsertFailed)
 	}
 
-	e.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(subscription.SubscriptionID))
+	e.cache.Del(context.Background(), types.EventCacheDistCallBackCountPrefix+fmt.Sprint(subscription.SubscriptionID))
 
 	return subscription, nil
 }
@@ -87,9 +88,9 @@ func (e *eventOperation) UnSubscribe(kit *rest.Kit, subscribeID int64) errors.CC
 		return kit.CCError.CCError(common.CCErrEventSubscribeDeleteFailed)
 	}
 
-	e.cache.Del(types.EventCacheDistIDPrefix+fmt.Sprint(subscribeID),
-		types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(subscribeID),
-		types.EventCacheDistCallBackCountPrefix+fmt.Sprint(subscribeID))
+	e.cache.Del(context.Background(), types.EventCacheDistIDPrefix+fmt.Sprint(sub.SubscriptionID),
+		types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(sub.SubscriptionID),
+		types.EventCacheDistCallBackCountPrefix+fmt.Sprint(sub.SubscriptionID))
 
 	return nil
 }
@@ -163,8 +164,7 @@ func (e *eventOperation) ListSubscriptions(kit *rest.Kit, data *metadata.ParamSu
 	}
 
 	for index := range results {
-		val := e.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
-
+		val := e.cache.HGetAll(context.Background(), types.EventCacheDistCallBackCountPrefix+fmt.Sprint(results[index].SubscriptionID)).Val()
 		failure, err := strconv.ParseInt(val["failue"], 10, 64)
 		if nil != err {
 			blog.Warnf("get failure value error %s, rid: %s", err.Error(), kit.Rid)

@@ -13,19 +13,18 @@
 package event
 
 import (
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 )
 
 type eventOperation struct {
 	dbProxy dal.DB
-	cache   *redis.Client
+	cache   redis.Client
 }
 
 // New create a new event manager instance
-func New(dbProxy dal.DB, cache *redis.Client) core.EventOperation {
+func New(dbProxy dal.DB, cache redis.Client) core.EventOperation {
 	eventOps := &eventOperation{
 		dbProxy:  dbProxy,
 		cache:    cache,

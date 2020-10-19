@@ -25,19 +25,20 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
+	rawRedis "github.com/go-redis/redis/v7"
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
-	"gopkg.in/redis.v5"
 )
 
 type hostCache struct {
 	key   hostKeyGenerator
-	rds   *redis.Client
+	rds   redis.Client
 	event reflector.Interface
 }
 
@@ -48,9 +49,9 @@ func (h *hostCache) Run() error {
 		Collection:  common.BKTableNameBaseHost,
 	}
 
-	_, err := h.rds.Get(h.key.ListDoneKey()).Result()
+	_, err := h.rds.Get(context.Background(), h.key.ListDoneKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			blog.Errorf("get host list done redis key failed, err: %v", err)
 			return fmt.Errorf("get host list done redis key failed, err: %v", err)
 		}
@@ -150,7 +151,7 @@ func (h *hostCache) onDelete(e *types.Event) {
 }
 
 func (h *hostCache) onListDone() {
-	if err := h.rds.Set(h.key.ListDoneKey(), "done", 0).Err(); err != nil {
+	if err := h.rds.Set(context.Background(), h.key.ListDoneKey(), "done", 0).Err(); err != nil {
 		blog.Errorf("list host data to cache and list done, but set list done key failed, err: %v", err)
 		return
 	}
@@ -158,9 +159,9 @@ func (h *hostCache) onListDone() {
 }
 
 // refreshHostDetailCache refresh the host's detail cache
-func refreshHostDetailCache(rds *redis.Client, hostID int64, ips string, cloudID int64, hostDetail []byte) {
+func refreshHostDetailCache(rds redis.Client, hostID int64, ips string, cloudID int64, hostDetail []byte) {
 	// get refresh lock to avoid concurrent
-	success, err := rds.SetNX(hostKey.HostDetailLockKey(hostID), 1, 10*time.Second).Result()
+	success, err := rds.SetNX(context.Background(), hostKey.HostDetailLockKey(hostID), 1, 10*time.Second).Result()
 	if err != nil {
 		blog.Errorf("upsert host: %d %s detail cache, but got redis lock failed, err: %v", hostID, ips, err)
 		return
@@ -172,7 +173,7 @@ func refreshHostDetailCache(rds *redis.Client, hostID int64, ips string, cloudID
 	}
 
 	defer func() {
-		if err := rds.Del(hostKey.HostDetailLockKey(hostID)).Err(); err != nil {
+		if err := rds.Del(context.Background(), hostKey.HostDetailLockKey(hostID)).Err(); err != nil {
 			blog.Errorf("upsert host: %d %s detail cache, but delete redis lock failed, err: %v", hostID, ips, err)
 		}
 	}()
@@ -191,7 +192,7 @@ func refreshHostDetailCache(rds *redis.Client, hostID int64, ips string, cloudID
 	pipeline.Set(hostKey.HostDetailKey(hostID), hostDetail, ttl)
 
 	// add host id to id list.
-	pipeline.ZAddNX(hostKey.HostIDListKey(), redis.Z{
+	pipeline.ZAddNX(hostKey.HostIDListKey(), &rawRedis.Z{
 		// set host id as it's score number
 		Score:  float64(hostID),
 		Member: hostID,
