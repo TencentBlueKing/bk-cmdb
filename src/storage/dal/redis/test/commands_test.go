@@ -479,6 +479,25 @@ var _ = Describe("Commands", func() {
 		Expect(lRange.Val()).To(Equal([]string{}))
 	})
 
+	It("should LRem", func() {
+		rPush := client.RPush(ctx, "list", "hello")
+		Expect(rPush.Err()).NotTo(HaveOccurred())
+		rPush = client.RPush(ctx, "list", "hello")
+		Expect(rPush.Err()).NotTo(HaveOccurred())
+		rPush = client.RPush(ctx, "list", "key")
+		Expect(rPush.Err()).NotTo(HaveOccurred())
+		rPush = client.RPush(ctx, "list", "hello")
+		Expect(rPush.Err()).NotTo(HaveOccurred())
+
+		lRem := client.LRem(ctx, "list", -2, "hello")
+		Expect(lRem.Err()).NotTo(HaveOccurred())
+		Expect(lRem.Val()).To(Equal(int64(2)))
+
+		lRange := client.LRange(ctx, "list", 0, -1)
+		Expect(lRange.Err()).NotTo(HaveOccurred())
+		Expect(lRange.Val()).To(Equal([]string{"hello", "key"}))
+	})
+
 	It("should LTrim", func() {
 		rPush := client.RPush(ctx, "list", "one")
 		Expect(rPush.Err()).NotTo(HaveOccurred())
