@@ -44,8 +44,8 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 		}
 	}
 
-	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, config.HostID)
-	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), config.HostID)
+	if err := audit.WithPrevious(ctx.Kit); err != nil {
 		blog.Errorf("host module relation, get prev module host config failed, err: %v,param:%+v,rid:%s", err, config, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
 		return
@@ -65,7 +65,7 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 			return result.CCError()
 		}
 
-		if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {
+		if err := audit.SaveAudit(ctx.Kit); err != nil {
 			blog.Errorf("host module relation, save audit log failed, err: %v,input:%+v,rid:%s", err, config, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
@@ -281,8 +281,8 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 		return
 	}
 
-	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, conf.HostIDs)
-	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), conf.HostIDs)
+	if err := audit.WithPrevious(ctx.Kit); err != nil {
 		blog.Errorf("move host to default module s failed, get prev module host config failed, hostIDs: %v, err: %s, rid: %s", conf.HostIDs, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
 		return
@@ -307,7 +307,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 			return defErr.New(result.Code, result.ErrMsg)
 		}
 
-		if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {
+		if err := audit.SaveAudit(ctx.Kit); err != nil {
 			blog.ErrorJSON("move host to default module failed, save audit log failed, input:%s, err:%s, rid:%s", conf, err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 		}
@@ -347,8 +347,8 @@ func (s *Service) TransferHostResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, input.HostID)
-	if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), input.HostID)
+	if err := audit.WithPrevious(ctx.Kit); err != nil {
 		blog.Errorf("TransferHostResourceDirectory, but get prev module host config failed, err: %v, hostIDs:%#v,rid:%s", err, input.HostID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
 		return
@@ -361,7 +361,7 @@ func (s *Service) TransferHostResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {
+	if err := audit.SaveAudit(ctx.Kit); err != nil {
 		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, input.HostID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
 		return

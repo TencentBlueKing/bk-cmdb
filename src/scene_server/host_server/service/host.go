@@ -1135,7 +1135,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	idleModuleID := moduleIDArr[0]
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
-	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, hostIDArr)
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), hostIDArr)
 
 	var exceptionArr []meta.ExceptionResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
@@ -1216,7 +1216,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 			}
 		}
 
-		if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {
+		if err := audit.SaveAudit(ctx.Kit); err != nil {
 			blog.Errorf("SaveAudit failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
 		}
