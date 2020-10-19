@@ -15,6 +15,7 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -209,30 +210,22 @@ func (s *coreService) DeleteInstanceAssociation(params core.ContextParams, pathP
 	return s.core.AssociationOperation().DeleteInstanceAssociation(params, inputData)
 }
 
-//Delete all associations of certain model instance,by regarding the instance as both Association source and Association target.
-func (s *coreService) DeleteInstanceAssociationRelated(ctx core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+//Delete associations batch by id.
+func (s *coreService) DeleteInstanceAssociationBatch(ctx core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := metadata.DeleteOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	objID := inputData.Condition[common.BKObjIDField]
-	instID := inputData.Condition[common.BKInstIDField]
+	instAssociationIDList := inputData.Condition[common.BKFieldID]
 
-	countBKObjID, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, inputData)
+	cond := metadata.DeleteOption{Condition: mapstr.MapStr{
+		common.BKFieldID: mapstr.MapStr{condition.BKDBIN: instAssociationIDList},
+	}}
+	count, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, cond)
 	if nil != err {
-		blog.Errorf("delete instance related association when it's association source failed, error %v, rid: %s", err, ctx.ReqID)
-		return nil, err
-	}
-	cnt := countBKObjID.Count
-
-	bkAsstObjIDCond := metadata.DeleteOption{Condition: mapstr.MapStr{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID}}
-	countBKAsstObjID, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, bkAsstObjIDCond)
-	if nil != err {
-		blog.Errorf("delete instance related association when it's association target failed, error %v, rid: %s", err, ctx.ReqID)
-		return &metadata.DeletedCount{Count: cnt}, err
+		blog.Errorf("delete instance association batch failed, error %v, rid: %s", err, ctx.ReqID)
+		return &metadata.DeletedCount{}, err
 	}
 
-	cnt = countBKObjID.Count + countBKAsstObjID.Count
-	return &metadata.DeletedCount{Count: cnt}, nil
+	return &metadata.DeletedCount{Count: count.Count}, nil
 }

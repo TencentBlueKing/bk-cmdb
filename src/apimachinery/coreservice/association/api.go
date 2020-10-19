@@ -313,9 +313,9 @@ func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Heade
 	return
 }
 
-func (asst *association) DeleteInstAssociationRelated(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (asst *association) DeleteInstAssociationBatch(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
-	subPath := "/delete/instanceassociation/related"
+	subPath := "/delete/instanceassociation/batch"
 
 	err = asst.client.Delete().
 		WithContext(ctx).

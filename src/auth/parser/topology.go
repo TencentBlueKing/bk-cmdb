@@ -605,10 +605,10 @@ func (ps *parseStream) objectAssociation() *parseStream {
 }
 
 const (
-	findObjectInstanceAssociationPattern          = "/api/v3/inst/association/action/search"
-	findObjectInstanceAssociationRelatedPattern   = "/api/v3/inst/association/related/action/search"
-	createObjectInstanceAssociationPattern        = "/api/v3/inst/association/action/create"
-	deleteObjectInstanceAssociationRelatedPattern = "/api/v3/inst/association/related/action/delete"
+	findObjectInstanceAssociationPattern        = "/api/v3/inst/association/action/search"
+	findObjectInstanceAssociationRelatedPattern = "/api/v3/inst/association/related/action/search"
+	createObjectInstanceAssociationPattern      = "/api/v3/inst/association/action/create"
+	deleteObjectInstanceAssociationBatchPattern = "/api/v3/inst/association/batch/action/delete"
 )
 
 var (
@@ -660,8 +660,8 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 		return ps
 	}
 
-	// delete object's instance associations operation.
-	if ps.RequestCtx.URI == deleteObjectInstanceAssociationRelatedPattern && ps.RequestCtx.Method == http.MethodDelete {
+	// delete object's instance associations.
+	if ps.RequestCtx.URI == deleteObjectInstanceAssociationBatchPattern && ps.RequestCtx.Method == http.MethodDelete {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

@@ -390,17 +390,20 @@ func (s *Service) DeleteAssociationInst(params types.ContextParams, pathParams, 
 	}
 }
 
-//Delete all associations of certain model instance,by regarding the instance as both Association source and Association target.
-func (s *Service) DeleteAssociationRelatedInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	request := &metadata.DeleteAssociationRelatedInstRequest{}
+//Delete association batch by ID.
+func (s *Service) DeleteAssociationInstBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	request := &metadata.DeleteAssociationInstBatchRequest{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	if request.InstID == 0 || request.ObjectID == "" {
+	if len(request.ID) == 0 {
 		return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
 	}
-
-	_, err := s.Core.AssociationOperation().DeleteInstAssociationRelated(params, &metadata.DeleteAssociationRelatedInstRequest{AssociationRelatedInstRequestCond: request.AssociationRelatedInstRequestCond})
+	//check Maximum limit
+	if len(request.ID) > 500 {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, "The number of ID should be less than 500")
+	}
+	_, err := s.Core.AssociationOperation().DeleteInstAssociationBatch(params, &metadata.DeleteAssociationInstBatchRequest{ID: request.ID})
 	if err != nil {
 		return nil, err
 	}
