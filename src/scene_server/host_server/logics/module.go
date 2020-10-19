@@ -224,8 +224,8 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 		DstModuleIDArr:   []int64{ownerModuleID},
 	}
 
-	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, conf.HostIDs)
-	if err := audit.WithPrevious(kit.Ctx); err != nil {
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), conf.HostIDs)
+	if err := audit.WithPrevious(kit); err != nil {
 		blog.Errorf("move host to resource pool, but get prev module host config failed, err: %v, input:%+v,rid:%s", err, conf, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
@@ -240,7 +240,7 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 
 	}
 
-	if err := audit.SaveAudit(kit.Ctx); err != nil {
+	if err := audit.SaveAudit(kit); err != nil {
 		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, conf, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
@@ -357,8 +357,8 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 		DstModuleIDArr:   []int64{moduleID},
 	}
 
-	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), kit, conf.HostIDs)
-	if err := audit.WithPrevious(kit.Ctx); err != nil {
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), conf.HostIDs)
+	if err := audit.WithPrevious(kit); err != nil {
 		blog.Warnf("WithPrevious failed, err: %+v, rid: %s", err, kit.Rid)
 	}
 
@@ -372,7 +372,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 		return result.Data, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(kit.Ctx); err != nil {
+	if err := audit.SaveAudit(kit); err != nil {
 		blog.Errorf("assign host to app, but save audit failed, err: %v, rid:%s", err, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}

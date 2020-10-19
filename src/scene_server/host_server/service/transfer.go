@@ -121,8 +121,8 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 			moduleMap[mod.ModuleID] = mod.ServiceTemplateID
 		}
 
-		audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, option.HostIDs)
-		if err := audit.WithPrevious(ctx.Kit.Ctx); err != nil {
+		audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), option.HostIDs)
+		if err := audit.WithPrevious(ctx.Kit); err != nil {
 			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, get prev module host config for audit failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
 			return err
 		}
@@ -235,7 +235,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		if firstErr != nil {
 			return firstErr
 		}
-		if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {
+		if err := audit.SaveAudit(ctx.Kit); err != nil {
 			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
 			return err
 		}
