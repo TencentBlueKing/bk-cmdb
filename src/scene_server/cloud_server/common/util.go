@@ -43,7 +43,7 @@ func CovertInstState(instState string) string {
 // NewHeader 创建云资源同步需要的header
 func NewHeader() http.Header {
 	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
+	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 	header.Add(common.BKHTTPHeaderUser, common.BKCloudSyncUser)
 	header.Add(common.BKHTTPLanguage, "cn")
 	header.Add(common.BKHTTPCCRequestID, util.GenerateRID())
