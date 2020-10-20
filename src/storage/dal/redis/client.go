@@ -169,6 +169,14 @@ func (c *client) Publish(ctx context.Context, channel string, message interface{
 	return c.cli.Publish(channel, message)
 }
 
+func (c *client) Rename(ctx context.Context, key, newkey string) StatusResult {
+	return c.cli.Rename(key, newkey)
+}
+
+func (c *client) RenameNX(ctx context.Context, key, newkey string) BoolResult {
+	return c.cli.RenameNX(key, newkey)
+}
+
 func (c *client) RPop(ctx context.Context, key string) StringResult {
 	return c.cli.RPop(key)
 }
