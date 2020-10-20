@@ -344,6 +344,23 @@ func (o *ListProcessInstancesNameIDsOption) Validate() (rawError cErr.RawErrorIn
 	return cErr.RawErrorInfo{}
 }
 
+type ListProcessInstancesDetailsOption struct {
+	ProcessIDs []int64  `json:"bk_process_ids"`
+	Fields     []string `json:"fields"`
+}
+
+// Validate validates the input param
+func (o *ListProcessInstancesDetailsOption) Validate() (rawError cErr.RawErrorInfo) {
+	if len(o.ProcessIDs) == 0 || len(o.ProcessIDs) > common.BKMaxInstanceLimit {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_process_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 type ListProcessInstancesDetailsByIDsOption struct {
 	BizID      int64    `json:"bk_biz_id"`
 	ProcessIDs []int64  `json:"process_ids"`

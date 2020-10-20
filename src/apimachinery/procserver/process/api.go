@@ -34,6 +34,7 @@ type ProcessClientInterface interface {
 	ListProcessInstancesWithHost(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	ListProcessInstancesNameIDsInModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	ListProcessInstancesDetailsByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	ListProcessInstancesDetails(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessInstancesDetailsOption) (resp *metadata.MapArrayResponse, err error)
 	UpdateProcessInstancesByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 }
 
