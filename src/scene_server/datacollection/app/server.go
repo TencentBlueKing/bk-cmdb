@@ -143,7 +143,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			datacollection.AuthManager = *extensions.NewAuthManager(engine.CoreAPI, authorize)
 		}
 
-		err = datacollection.Run(redisCli, snapcli, disCli, netCli)
+		err = datacollection.Run(redisCli, snapcli, disCli, netCli, process.Config.HostSnap)
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
@@ -214,6 +214,12 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if err != nil {
 			blog.Fatalf("auth config invalid, err: %+v", err)
 		}
+
+		hostsnapPrefix := "hostsnap"
+		h.Config.HostSnap.ChangeRangePercent = current.ConfigMap[hostsnapPrefix+".changeRangePercent"]
+		h.Config.HostSnap.QPS = current.ConfigMap[hostsnapPrefix+".qps"]
+		h.Config.HostSnap.Burst = current.ConfigMap[hostsnapPrefix+".burst"]
+
 	}
 }
 

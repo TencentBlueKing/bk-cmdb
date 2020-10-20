@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
@@ -28,6 +29,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/datacollection/app/options"
 	dcUtil "configcenter/src/scene_server/datacollection/datacollection/middleware"
 	"configcenter/src/storage/dal"
 
@@ -37,6 +40,14 @@ import (
 
 var (
 	fetchDBInterval = time.Minute * 10
+	// defaultRateLimiterQPS is the default value of rateLimiter qps
+	defaultRateLimiterQPS   = 40
+	// defaultRateLimiterBurst is the default value of rateLimiter burst
+	defaultRateLimiterBurst = 100
+	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
+	defaultChangeRangePercent = 10
+	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
+	minChangeRangePercent = 1
 )
 
 type HostSnap struct {
@@ -44,7 +55,8 @@ type HostSnap struct {
 	authManager extensions.AuthManager
 	httpHeader  http.Header
 	*backbone.Engine
-
+	rateLimit   flowctrl.RateLimiter
+	changeRangePercent int
 	cache     *Cache
 	cachelock sync.RWMutex
 	ctx       context.Context
@@ -56,7 +68,7 @@ type Cache struct {
 	flag  bool
 }
 
-func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager extensions.AuthManager) *HostSnap {
+func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager extensions.AuthManager, snapConfig options.HostSnap) *HostSnap {
 	header := http.Header{}
 	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 	header.Add(common.BKHTTPHeaderUser, common.CCSystemCollectorUserName)
@@ -64,6 +76,8 @@ func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine
 		redisCli:   redisCli,
 		ctx:        ctx,
 		db:         db,
+		rateLimit:  getRateLimiter(snapConfig.QPS, snapConfig.Burst),
+		changeRangePercent: getConfigIntVal(snapConfig.ChangeRangePercent,"hostsnap.changeRangePercentVal", defaultChangeRangePercent, minChangeRangePercent),
 		httpHeader: header,
 		cache: &Cache{
 			cache: map[bool]*HostCache{},
@@ -74,6 +88,26 @@ func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine
 	}
 	go h.fetchDBLoop()
 	return h
+}
+
+func getRateLimiter(qps, burst string) flowctrl.RateLimiter {
+	qpsVal := getConfigIntVal(qps, "hostsnap.qps", defaultRateLimiterQPS,1)
+	burstVal := getConfigIntVal(burst, "hostsnap.burst", defaultRateLimiterBurst,1)
+	return flowctrl.NewRateLimiter(int64(qpsVal), int64(burstVal))
+}
+
+// getConfigIntVal return the configured int value
+func getConfigIntVal(configVal, configName string, defaultValue, minValue int) int {
+	configIntVal, err := strconv.Atoi(configVal)
+	if err != nil {
+		blog.Errorf("can't find the value of %s settings, set the default value: %s", configName, defaultValue)
+		configIntVal = defaultValue
+	}
+	if configIntVal < minValue {
+		blog.Errorf("%s config %d smaller than minimum value, use minimum value %d", configName, configIntVal, minValue)
+		configIntVal = minValue
+	}
+	return configIntVal
 }
 
 func (h *HostSnap) Analyze(mesg string) error {
@@ -114,7 +148,13 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 	setter := parseSetter(&val, innerIp, outIp)
 	// no need to update
-	if !needToUpdate(setter, host) {
+	if !h.needToUpdate(setter, host) {
+		return nil
+	}
+
+	// limit the number of requests
+	if !h.rateLimit.TryAccept() {
+		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s", hostID, innerIp)
 		return nil
 	}
 
@@ -199,12 +239,28 @@ func copyVal(a map[string]interface{}, b *HostInst) {
 	}
 }
 
-func needToUpdate(a map[string]interface{}, b *HostInst) bool {
-	for k, v := range a {
-		if b.get(k) == nil && v == "" {
+func (h *HostSnap) needToUpdate(src map[string]interface{}, toCompare *HostInst) bool {
+	for key, val := range src {
+		compareVal := toCompare.get(key)
+		if compareVal == nil && val == "" {
 			continue
 		}
-		if b.get(k) != v {
+		if compareVal != val {
+			if key == "bk_cpu" || key == "bk_cpu_mhz" || key == "bk_disk" || key == "bk_mem" {
+				srcFloat64Val, err := util.GetFloat64ByInterface(val)
+				if err != nil {
+					continue
+				}
+				compareFloat64Val, err := util.GetFloat64ByInterface(compareVal)
+				if err != nil {
+					continue
+				}
+				rangeVal := compareFloat64Val * (float64(h.changeRangePercent)/100.0)
+				diff := srcFloat64Val - compareFloat64Val
+				if -rangeVal < diff && diff < rangeVal {
+					continue
+				}
+			}
 			return true
 		}
 	}
@@ -213,6 +269,7 @@ func needToUpdate(a map[string]interface{}, b *HostInst) bool {
 
 func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interface{} {
 	var cpumodule = val.Get("data.cpu.cpuinfo.0.modelName").String()
+	cpumodule = strings.TrimSpace(cpumodule)
 	var cupnum int64
 	for _, core := range val.Get("data.cpu.cpuinfo.#.cores").Array() {
 		cupnum += core.Int()
@@ -224,9 +281,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	}
 	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
+	hostname = strings.TrimSpace(hostname)
 	var ostype = val.Get("data.system.info.os").String()
+	ostype = strings.TrimSpace(ostype)
 	var osname string
 	platform := val.Get("data.system.info.platform").String()
+	platform = strings.TrimSpace(platform)
 	version := val.Get("data.system.info.platformVersion").String()
 	switch strings.ToLower(ostype) {
 	case "linux":
@@ -245,22 +305,29 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
+	version = strings.TrimSpace(version)
+	osname = strings.TrimSpace(osname)
 	var OuterMAC, InnerMAC string
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			ip := strings.Split(addr.String(), "/")[0]
 			if ip == innerIP {
 				InnerMAC = inter.Get("hardwareaddr").String()
+				InnerMAC = strings.TrimSpace(InnerMAC)
 			} else if ip == outerIP {
 				OuterMAC = inter.Get("hardwareaddr").String()
+				OuterMAC = strings.TrimSpace(OuterMAC)
 			}
 		}
 	}
 
 	osbit := val.Get("data.system.info.systemtype").String()
+	osbit = strings.TrimSpace(osbit)
 
 	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
+	dockerClientVersion = strings.TrimSpace(dockerClientVersion)
 	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
+	dockerServerVersion = strings.TrimSpace(dockerServerVersion)
 
 	mem = mem >> 10 >> 10
 	setter := map[string]interface{}{

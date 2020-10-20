@@ -51,9 +51,16 @@ type Config struct {
 	NetCollectRedis SnapRedis
 	Esb             esbutil.EsbConfig
 	AuthConfig      authcenter.AuthConfig
+	HostSnap	    HostSnap
 }
 
 type SnapRedis struct {
 	redis.Config
 	Enable string
+}
+
+type HostSnap struct {
+	ChangeRangePercent string
+	QPS string
+	Burst string
 }
