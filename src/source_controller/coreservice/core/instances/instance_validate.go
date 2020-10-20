@@ -118,6 +118,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
+
+	if err := m.validCloudID(kit, objID, instanceData); err != nil {
+		return err
+	}
+
 	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
 		return err
 	}
@@ -252,6 +257,11 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			return kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
 		}
 	}
+
+	if err := m.validCloudID(kit, objID, instanceData); err != nil {
+		return err
+	}
+
 	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
 		return err
 	}
@@ -334,5 +344,19 @@ func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string,
 			break
 		}
 	}
+	return nil
+}
+
+// validCloudID valid the bk_cloud_id
+func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, BKInnerObjIDHost mapstr.MapStr) error {
+	if objID == common.BKInnerObjIDHost {
+		if BKInnerObjIDHost.Exists(common.BKCloudIDField) {
+			if cloudID, err := BKInnerObjIDHost.Int64(common.BKCloudIDField); err != nil || cloudID < 0 {
+				blog.Errorf("invalid bk_cloud_id value:%#v, err:%v, rid:%s", BKInnerObjIDHost[common.BKCloudIDField], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+			}
+		}
+	}
+
 	return nil
 }
