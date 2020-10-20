@@ -80,6 +80,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
 	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
 	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
+	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.GET("/healthz").To(s.Healthz))
 
 	container.Add(api)
