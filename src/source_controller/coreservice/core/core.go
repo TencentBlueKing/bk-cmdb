@@ -205,6 +205,7 @@ type Core interface {
 	SystemOperation() SystemOperation
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
+	EventOperation()  EventOperation
 	CommonOperation() CommonOperation
 }
 
@@ -313,6 +314,13 @@ type AuthOperation interface {
 	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder)
 }
 
+type EventOperation interface {
+	Subscribe(kit *rest.Kit, subscription *metadata.Subscription) (*metadata.Subscription, errors.CCErrorCoder)
+	UnSubscribe(kit *rest.Kit, subscribeID int64) errors.CCErrorCoder
+	UpdateSubscription(kit *rest.Kit, subscribeID int64, subscription *metadata.Subscription) errors.CCErrorCoder
+	ListSubscriptions(kit *rest.Kit, data *metadata.ParamSubscriptionSearch) (*metadata.RspSubscriptionSearch, errors.CCErrorCoder)
+}
+
 type CommonOperation interface {
 	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
 }
@@ -333,6 +341,7 @@ type core struct {
 	hostApplyRule   HostApplyRuleOperation
 	cloud           CloudOperation
 	auth            AuthOperation
+	event           EventOperation
 	common          CommonOperation
 }
 
@@ -352,6 +361,7 @@ func New(
 	sys SystemOperation,
 	cloud CloudOperation,
 	auth AuthOperation,
+	event EventOperation,
 	common CommonOperation,
 ) Core {
 	return &core{
@@ -370,6 +380,7 @@ func New(
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
 		auth:            auth,
+		event:			 event,
 		common:          common,
 	}
 }
@@ -432,6 +443,10 @@ func (m *core) CloudOperation() CloudOperation {
 
 func (m *core) AuthOperation() AuthOperation {
 	return m.auth
+}
+
+func (m *core) EventOperation() EventOperation {
+	return m.event
 }
 
 func (m *core) CommonOperation() CommonOperation {
