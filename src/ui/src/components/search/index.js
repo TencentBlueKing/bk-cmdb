@@ -10,6 +10,7 @@ import organization from './organization'
 import singlechar from './singlechar'
 import time from './time'
 import timezone from './timezone'
+import serviceTemplate from './service-template'
 
 export default {
     install (Vue, ops = {}) {
@@ -25,7 +26,8 @@ export default {
             organization,
             singlechar,
             time,
-            timezone
+            timezone,
+            serviceTemplate
         ]
         components.forEach(component => {
             Vue.component(component.name, component)
