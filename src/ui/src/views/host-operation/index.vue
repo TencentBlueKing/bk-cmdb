@@ -51,7 +51,7 @@
                             </span>
                         </li>
                         <li class="module-item is-trigger"
-                            v-if="['acrossBusiness', 'business'].includes(type)"
+                            v-if="type === 'business'"
                             @click="handleChangeModule">
                             <i class="icon icon-cc-edit"></i>
                         </li>
@@ -143,7 +143,6 @@
     import DeletedServiceInstance from './children/deleted-service-instance.vue'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
     import ModuleSelector from '@/views/business-topology/host/module-selector.vue'
-    import AcrossBusinessModuleSelector from '@/views/business-topology/host/across-business-module-selector.vue'
     import HostSelector from '@/views/business-topology/host/host-selector.vue'
     import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
     import {
@@ -157,7 +156,6 @@
             [DeletedServiceInstance.name]: DeletedServiceInstance,
             [MoveToIdleHost.name]: MoveToIdleHost,
             [ModuleSelector.name]: ModuleSelector,
-            [AcrossBusinessModuleSelector.name]: AcrossBusinessModuleSelector,
             [HostSelector.name]: HostSelector,
             [HostAttrsAutoApply.name]: HostAttrsAutoApply
         },
@@ -239,8 +237,7 @@
                 const textMap = {
                     remove: this.$t('确认移除'),
                     idle: this.$t('确认转移'),
-                    business: this.$t('确认转移'),
-                    acrossBusiness: this.$t('确认转移')
+                    business: this.$t('确认转移')
                 }
                 return this.isRetry ? this.$t('失败重试') : textMap[this.type]
             },
@@ -248,8 +245,7 @@
                 const map = {
                     remove: ['deletedServiceInstance', 'moveToIdleHost', 'hostAttrsAutoApply'],
                     idle: ['deletedServiceInstance', 'hostAttrsAutoApply'],
-                    business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply'],
-                    acrossBusiness: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
+                    business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
                 }
                 const available = map[this.type]
                 return this.tabList.filter(tab => available.includes(tab.id) && tab.props.info.length > 0)
@@ -330,29 +326,21 @@
                     this.resources = String(resources).split(',').map(id => Number(id))
                 }
 
-                if (this.type === 'acrossBusiness') { // 跨业务转主机
-                    this.confirmParams = {
-                        src_bk_biz_id: this.bizId,
-                        dst_bk_biz_id: Number(query.targetBizId),
-                        bk_host_id: this.resources,
-                        bk_module_ids: this.targetModules
+                const isTransfer = ['idle', 'business'].includes(this.type)
+
+                const params = {
+                    bk_host_ids: this.resources,
+                    remove_from_node: {
+                        bk_inst_id: isTransfer ? this.bizId : Number(query.sourceId),
+                        bk_obj_id: isTransfer ? 'biz' : query.sourceModel
                     }
-                } else {
-                    const isTransfer = ['idle', 'business'].includes(this.type)
-                    const params = {
-                        bk_host_ids: this.resources,
-                        remove_from_node: {
-                            bk_inst_id: isTransfer ? this.bizId : Number(query.sourceId),
-                            bk_obj_id: isTransfer ? 'biz' : query.sourceModel
-                        }
-                    }
-                    if (this.type === 'idle') {
-                        params.default_internal_module = this.targetModules[0]
-                    } else if (this.targetModules.length) {
-                        params.add_to_modules = this.targetModules
-                    }
-                    this.confirmParams = params
                 }
+                if (this.type === 'idle') {
+                    params.default_internal_module = this.targetModules[0]
+                } else if (this.targetModules.length) {
+                    params.add_to_modules = this.targetModules
+                }
+                this.confirmParams = params
             },
             setBreadcrumbs () {
                 const titleMap = {
@@ -377,10 +365,14 @@
             async getPreviewData () {
                 try {
                     this.loading = true
-                    const previewRequest = this.type === 'acrossBusiness'
-                        ? this.getAcrossBusinessTransferPreview
-                        : this.getInternalTransferPreview
-                    const data = await previewRequest()
+                    const data = await this.$http.post(
+                        `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}/preview`,
+                        this.confirmParams,
+                        {
+                            requestId: this.request.preview,
+                            globalPermission: false
+                        }
+                    )
                     this.setConfirmState(data)
                     this.setModulePathInfo(data)
                     this.setHostAttrsAutoApply(data)
@@ -402,26 +394,6 @@
                     }
                 }
             },
-            getInternalTransferPreview () {
-                return this.$http.post(
-                    `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}/preview`,
-                    this.confirmParams,
-                    {
-                        requestId: this.request.preview,
-                        globalPermission: false
-                    }
-                )
-            },
-            getAcrossBusinessTransferPreview () {
-                return this.$http.post(
-                    'hosts/modules/across/biz/preview',
-                    this.confirmParams,
-                    {
-                        requestId: this.request.preview,
-                        globalPermission: false
-                    }
-                )
-            },
             setConfirmState (data) {
                 // 是否是相同的模块转换
                 this.isSameModule = data.every(datum => !(datum.to_add_to_modules.length || datum.to_remove_from_modules.length))
@@ -441,7 +413,7 @@
                     })
                     const uniqueModules = [...new Set(moduleIds)]
                     const result = await this.$store.dispatch('objectMainLineModule/getTopoPath', {
-                        bizId: this.type === 'acrossBusiness' ? this.confirmParams.dst_bk_biz_id : this.bizId,
+                        bizId: this.bizId,
                         params: {
                             topo_nodes: uniqueModules.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
                         }
@@ -468,20 +440,16 @@
             },
             setCreateServiceInstance (data) {
                 const instanceInfo = []
-                const tab = this.tabList.find(tab => tab.id === 'createServiceInstance')
-                if (String(this.$route.query.isIdleModule) === 'true') {
-                    tab.props.info = []
-                } else {
-                    data.forEach(item => {
-                        item.to_add_to_modules.forEach(moduleInfo => {
-                            instanceInfo.push({
-                                bk_host_id: item.bk_host_id,
-                                ...moduleInfo
-                            })
+                data.forEach(item => {
+                    item.to_add_to_modules.forEach(moduleInfo => {
+                        instanceInfo.push({
+                            bk_host_id: item.bk_host_id,
+                            ...moduleInfo
                         })
                     })
-                    tab.props.info = Object.freeze(instanceInfo)
-                }
+                })
+                const tab = this.tabList.find(tab => tab.id === 'createServiceInstance')
+                tab.props.info = Object.freeze(instanceInfo)
             },
             setFailHostTableList (data) {
                 this.failDetailDialog.list = this.failHostList.map(item => {
@@ -585,22 +553,6 @@
                 this.tab.active = tab.id
             },
             handleChangeModule () {
-                if (this.type === 'acrossBusiness') {
-                    this.changeAcrossBusinessModules()
-                } else {
-                    this.changeInternalModules()
-                }
-            },
-            changeAcrossBusinessModules () {
-                this.dialog.props = {
-                    defaultChecked: this.targetModules,
-                    defaultBizId: this.confirmParams.dst_bk_biz_id
-                }
-                this.dialog.width = 720
-                this.dialog.component = AcrossBusinessModuleSelector.name
-                this.dialog.show = true
-            },
-            changeInternalModules () {
                 const props = {
                     moduleType: this.type,
                     title: this.type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块'),
@@ -638,7 +590,7 @@
                 this.dialog.show = false
             },
             handleDialogConfirm () {
-                if ([ModuleSelector.name, AcrossBusinessModuleSelector.name].includes(this.dialog.component)) {
+                if (this.dialog.component === ModuleSelector.name) {
                     this.gotoTransferPage(...arguments)
                     this.dialog.show = false
                 } else if (this.dialog.component === HostSelector.name) {
@@ -658,21 +610,16 @@
                     }
                 })
             },
-            gotoTransferPage (modules, targetBizId) {
-                const newQuery = {
-                    ...this.$route.query,
-                    targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                    isIdleModule: modules.some(node => node.data.default !== 0)
-                }
-                if (targetBizId) {
-                    newQuery.targetBizId = targetBizId
-                }
+            gotoTransferPage (modules) {
                 this.$routerActions.redirect({
-                    name: this.$route.name,
+                    name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
-                        type: this.$route.params.type
+                        type: this.dialog.props.moduleType
                     },
-                    query: newQuery
+                    query: {
+                        ...this.$route.query,
+                        targetModules: modules.map(node => node.data.bk_inst_id).join(',')
+                    }
                 })
             },
             refreshRetry (hosts) {
@@ -690,44 +637,52 @@
             },
             async handleConfrim () {
                 try {
-                    const request = this.type === 'acrossBusiness'
-                        ? this.dispatchAcrossBusinessTransfer
-                        : this.dispatchInternalTransfer
-                    await request()
+                    const params = { ...this.confirmParams }
+                    const createComponent = this.$refs.createServiceInstance && this.$refs.createServiceInstance[0]
+                    const hostAttrsComponent = this.$refs.hostAttrsAutoApply && this.$refs.hostAttrsAutoApply[0]
+                    if (createComponent || hostAttrsComponent) {
+                        params.options = {}
+                        if (createComponent) {
+                            params.options.service_instance_options = createComponent.getServiceInstanceOptions()
+                        }
+                        if (hostAttrsComponent) {
+                            params.options.host_apply_conflict_resolvers = hostAttrsComponent.getHostApplyConflictResolvers()
+                        }
+                    }
+                    const { result, data } = await this.$http.post(
+                        `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, params, {
+                            requestId: this.request.confirm,
+                            globalError: false,
+                            transformData: false
+                        }
+                    )
+
                     const successText = this.type === 'remove' ? '移除成功' : '转移成功'
-                    this.$success(this.$t(successText))
-                    this.redirect()
+                    const errorText = this.type === 'remove' ? '主机移除结果' : '主机转移结果'
+                    if (!result) {
+                        const failList = []
+                        const successList = []
+                        data.forEach(item => {
+                            if (item.code !== 0) {
+                                failList.push(item)
+                            } else {
+                                successList.push(item)
+                            }
+                        })
+                        this.$error(this.$t(errorText, { success: successList.length, fail: failList.length }))
+
+                        // 刷新页面显示错误主机数据
+                        this.refreshRetry(failList)
+
+                        // 放入store用于刷新后使用
+                        this.$store.commit('businessHost/setFailHostList', failList)
+                    } else {
+                        this.$success(this.$t(successText))
+                        this.redirect()
+                    }
                 } catch (e) {
                     console.error(e)
                 }
-            },
-            dispatchAcrossBusinessTransfer () {
-                return this.$http.post(
-                    'hosts/modules/across/biz',
-                    this.confirmParams,
-                    {
-                        requestId: this.request.confirm
-                    }
-                )
-            },
-            dispatchInternalTransfer () {
-                const params = { ...this.confirmParams }
-                const createComponent = this.$refs.createServiceInstance && this.$refs.createServiceInstance[0]
-                const hostAttrsComponent = this.$refs.hostAttrsAutoApply && this.$refs.hostAttrsAutoApply[0]
-                if (createComponent || hostAttrsComponent) {
-                    params.options = {}
-                    if (createComponent) {
-                        params.options.service_instance_options = createComponent.getServiceInstanceOptions()
-                    }
-                    if (hostAttrsComponent) {
-                        params.options.host_apply_conflict_resolvers = hostAttrsComponent.getHostApplyConflictResolvers()
-                    }
-                }
-                return this.$http.post(
-                    `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, params, {
-                        requestId: this.request.confirm
-                    }
-                )
             },
             handleCancel () {
                 this.redirect()

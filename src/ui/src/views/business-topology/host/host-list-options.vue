@@ -38,12 +38,12 @@
                         @click="handleTransfer($event, 'business', false)">
                         {{$t('业务模块')}}
                     </cmdb-auth>
-                    <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
+                    <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]"
                         v-bk-tooltips="{
-                            disabled: isIdleModule,
-                            content: $t('仅空闲机模块才能转移到其他业务')
+                            disabled: isIdleSetModules,
+                            content: $t('仅空闲模块主机才能转移到其他业务')
                         }"
-                        @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
+                        @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
                         {{$t('其他业务')}}
                     </li>
                     <!-- 暂忽略鉴权，交互待调整，需要选择目录 -->
@@ -253,6 +253,11 @@
                 return this.$parent.table.selection.every(data => {
                     const modules = data.module
                     return modules.every(module => module.default === 1)
+                })
+            },
+            isIdleSetModules () {
+                return this.$parent.table.selection.every(data => {
+                    return data.module.every(module => module.default >= 1)
                 })
             },
             clipboardList () {

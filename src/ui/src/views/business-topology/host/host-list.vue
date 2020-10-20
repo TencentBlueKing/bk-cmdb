@@ -308,7 +308,7 @@
                 } else if (this.dialog.component === MoveToResourceConfirm.name) {
                     this.moveHostToResource()
                 } else if (this.dialog.component === AcrossBusinessModuleSelector.name) {
-                    this.gotoTransferPage(...arguments)
+                    this.moveHostToOtherBusiness(...arguments)
                 }
             },
             async transferDirectly (modules) {
@@ -342,28 +342,18 @@
                     console.error(e)
                 }
             },
-            gotoTransferPage (modules, targetBizId) {
-                let query
-                if (targetBizId) { // 跨业务转主机
-                    query = {
-                        targetBizId: targetBizId,
-                        targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                        resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
-                        isIdleModule: modules.some(node => node.data.default !== 0)
-                    }
-                } else {
-                    query = {
-                        sourceModel: this.selectedNode.data.bk_obj_id,
-                        sourceId: this.selectedNode.data.bk_inst_id,
-                        targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                        resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
-                        node: this.selectedNode.id
-                    }
+            gotoTransferPage (modules) {
+                const query = {
+                    sourceModel: this.selectedNode.data.bk_obj_id,
+                    sourceId: this.selectedNode.data.bk_inst_id,
+                    targetModules: modules.map(node => node.data.bk_inst_id).join(','),
+                    resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+                    node: this.selectedNode.id
                 }
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
-                        type: targetBizId ? 'acrossBusiness' : this.dialog.props.moduleType
+                        type: this.dialog.props.moduleType
                     },
                     query: query,
                     history: true
@@ -380,19 +370,36 @@
                             requestId: this.request.moveToResource
                         }
                     })
-                    Bus.$emit('refresh-count', {
-                        type: 'host_count',
-                        hosts: [...this.table.selection]
-                    })
-                    this.table.selection = []
-                    this.$success('转移成功')
-                    RouterQuery.set({
-                        _t: Date.now(),
-                        page: 1
-                    })
+                    this.refreshHost()
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            async moveHostToOtherBusiness (modules, targetBizId) {
+                try {
+                    const [targetModule] = modules
+                    await this.$http.post('hosts/modules/across/biz', {
+                        src_bk_biz_id: this.bizId,
+                        dst_bk_biz_id: targetBizId,
+                        bk_host_id: this.table.selection.map(({ host }) => host.bk_host_id),
+                        bk_module_id: targetModule.data.bk_inst_id
+                    })
+                    this.refreshHost()
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            refreshHost () {
+                Bus.$emit('refresh-count', {
+                    type: 'host_count',
+                    hosts: [...this.table.selection]
+                })
+                this.table.selection = []
+                this.$success('转移成功')
+                RouterQuery.set({
+                    _t: Date.now(),
+                    page: 1
+                })
             }
         }
     }

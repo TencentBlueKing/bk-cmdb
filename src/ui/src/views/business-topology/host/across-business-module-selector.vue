@@ -18,9 +18,8 @@
                     </cmdb-auth-option>
                 </bk-select>
                 <template v-if="targetBizId">
-                    <bk-input class="tree-filter" clearable right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
                     <bk-big-tree ref="tree" class="topology-tree"
-                        display-matched-node-descendants
+                        default-expand-all
                         :options="{
                             idKey: getNodeId,
                             nameKey: 'bk_inst_name',
@@ -36,7 +35,7 @@
                                 v-if="data.default !== 0"
                                 :class="getInternalNodeClass(node, data)">
                             </i>
-                            <i v-else :class="['node-icon fl', { 'is-template': isTemplate(data) }]">{{data.bk_obj_name[0]}}</i>
+                            <i v-else class="node-icon fl">{{data.bk_obj_name[0]}}</i>
                             <span class="node-name" :title="node.name">{{node.name}}</span>
                         </template>
                     </bk-big-tree>
@@ -86,25 +85,12 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import debounce from 'lodash.debounce'
     export default {
         name: 'cmdb-across-business-module-selector',
-        props: {
-            defaultChecked: {
-                type: Array,
-                default: () => ([])
-            },
-            defaultBizId: {
-                type: Number,
-                default: null
-            }
-        },
         data () {
             return {
-                filter: '',
                 businessList: [],
                 targetBizId: '',
-                handlerFilter: null,
                 checked: [],
                 request: {
                     internal: Symbol('internal'),
@@ -119,17 +105,12 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', ['getModelById']),
-            ...mapGetters('objectBiz', ['bizId'])
-        },
-        watch: {
-            filter () {
-                this.handlerFilter()
+            ...mapGetters('objectBiz', ['bizId']),
+            targetBiz () {
+                return this.businessList.find(biz => biz.bk_biz_id === this.targetBizId)
             }
         },
         async created () {
-            this.handlerFilter = debounce(() => {
-                this.$refs.tree.filter(this.filter)
-            }, 300)
             this.getFullAmountBusiness()
         },
         methods: {
@@ -138,7 +119,6 @@
                     const data = await this.$http.get('biz/simplify?sort=bk_biz_id')
                     const availableBusiness = (data.info || []).filter(business => business.bk_biz_id !== this.bizId)
                     this.businessList = Object.freeze(availableBusiness)
-                    this.targetBizId = this.defaultBizId || ''
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
@@ -147,33 +127,12 @@
             async getModules () {
                 try {
                     this.checked = []
-                    const [internalTopo, businessTopo] = await Promise.all([
-                        this.getInternalModules(),
-                        this.getBusinessModules()
-                    ])
-                    const [businessNode] = businessTopo
-                    businessNode.child = [...internalTopo, ...(businessNode.child || [])]
-                    this.$refs.tree.setData(Object.freeze(businessTopo))
-                    this.$refs.tree.setExpanded(this.getNodeId(businessTopo[0]))
-                    this.setDefaultChecked()
+                    const internalTop = await this.getInternalModules()
+                    this.$refs.tree.setData(internalTop)
                 } catch (e) {
                     this.$refs.tree.setData([])
                     console.error(e)
                 }
-            },
-            setDefaultChecked () {
-                this.$nextTick(() => {
-                    this.defaultChecked.forEach(id => {
-                        const node = this.$refs.tree.getNodeById(this.getNodeId({
-                            bk_obj_id: 'module',
-                            bk_inst_id: id
-                        }))
-                        if (node) {
-                            this.checked.push(node)
-                            this.$refs.tree.setChecked(node.id)
-                        }
-                    })
-                })
             },
             getInternalModules () {
                 return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
@@ -183,27 +142,26 @@
                     }
                 }).then(data => {
                     return [{
-                        bk_inst_id: data.bk_set_id,
-                        bk_inst_name: data.bk_set_name,
-                        bk_obj_id: 'set',
-                        bk_obj_name: this.getModelById('set').bk_obj_name,
+                        bk_inst_id: this.targetBizId,
+                        bk_inst_name: this.targetBiz.bk_biz_name,
+                        bk_obj_id: 'biz',
+                        bk_obj_name: this.getModelById('biz').bk_obj_name,
                         default: 0,
-                        child: (data.module || []).map(module => ({
-                            bk_inst_id: module.bk_module_id,
-                            bk_inst_name: module.bk_module_name,
-                            bk_obj_id: 'module',
-                            bk_obj_name: this.getModelById('module').bk_obj_name,
-                            default: module.default
-                        }))
+                        child: [{
+                            bk_inst_id: data.bk_set_id,
+                            bk_inst_name: data.bk_set_name,
+                            bk_obj_id: 'set',
+                            bk_obj_name: this.getModelById('set').bk_obj_name,
+                            default: 0,
+                            child: (data.module || []).map(module => ({
+                                bk_inst_id: module.bk_module_id,
+                                bk_inst_name: module.bk_module_name,
+                                bk_obj_id: 'module',
+                                bk_obj_name: this.getModelById('module').bk_obj_name,
+                                default: module.default
+                            }))
+                        }]
                     }]
-                })
-            },
-            getBusinessModules () {
-                return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
-                    bizId: this.targetBizId,
-                    config: {
-                        requestId: this.request.instance
-                    }
                 })
             },
             getNodeId (data) {
@@ -250,14 +208,7 @@
                 this.$emit('cancel')
             },
             handleNextStep () {
-                if (!this.checked.length) {
-                    this.$warn('请选择模块')
-                    return false
-                }
                 this.$emit('confirm', this.checked, this.targetBizId)
-            },
-            isTemplate (data) {
-                return data.service_template_id || data.set_template_id
             },
             isShowCheckbox (data) {
                 return data.bk_obj_id === 'module'

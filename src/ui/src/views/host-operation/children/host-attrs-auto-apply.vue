@@ -20,7 +20,7 @@
             max-height="auto"
             :list="list"
             :render-icon="true"
-            :show-operation="showOperation">
+            :show-operation="!!conflictList.length">
         </property-confirm-table>
     </div>
 </template>
@@ -39,15 +39,6 @@
             }
         },
         computed: {
-            showOperation () {
-                if (this.isAcrossBusiness) {
-                    return false
-                }
-                return !!this.conflictList.length
-            },
-            isAcrossBusiness () {
-                return this.$parent.type === 'acrossBusiness'
-            },
             conflictList () {
                 return this.info.filter(item => item.unresolved_conflict_count > 0)
             },
