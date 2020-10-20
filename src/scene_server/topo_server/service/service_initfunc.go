@@ -54,6 +54,7 @@ func (s *Service) initAssociation(web *restful.WebService) {
 
 	// inst association methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inst/association/action/search", Handler: s.SearchAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inst/association/related/action/search", Handler: s.SearchAssociationRelatedInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inst/association/action/create", Handler: s.CreateAssociationInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/inst/association/{association_id}/action/delete", Handler: s.DeleteAssociationInst})
 
