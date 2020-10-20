@@ -242,7 +242,7 @@ func Upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *Config) 
 }
 
 // UpgradeSpecifyVersion 强制执行version版本的migrate, 不会修改数据库cc_System表中migrate 版本
-func UpgradeSpecifyVersion(ctx context.Context, db dal.RDB, cache *redis.Client, conf *Config, version string) (err error) {
+func UpgradeSpecifyVersion(ctx context.Context, db dal.RDB, cache redis.Client, conf *Config, version string) (err error) {
 	sort.Slice(upgraderPool, func(i, j int) bool {
 		return VersionCmp(upgraderPool[i].version, upgraderPool[j].version) < 0
 	})
