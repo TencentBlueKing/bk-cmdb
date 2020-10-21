@@ -162,7 +162,6 @@
         data () {
             return {
                 hasScrollbar: false,
-                hostCount: 108,
                 hostInfo: [],
                 tab: {
                     active: null
