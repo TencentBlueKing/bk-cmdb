@@ -98,6 +98,7 @@
                         </category-input>
                         <template v-else>
                             <div class="child-title">
+                                <span class="child-id">{{childCategory['id']}}</span>
                                 <span>{{childCategory['name']}}</span>
                                 <div class="child-edit" v-if="!childCategory['is_built_in']">
                                     <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
@@ -554,12 +555,22 @@
                     color: #63656e;
                     font-size: 14px;
                     flex: 1;
-                    padding-right: 20px;
-                    padding-left: 16px;
+                    padding-right: 12px;
+                    padding-left: 8px;
                     margin-left: 10px;
+                    justify-content: normal;
                     >span {
                         @include ellipsis;
                         padding-right: 10px;
+                    }
+
+                    .child-id {
+                        min-width: 42px;
+                        color: #C4C6CC;
+                        padding-right: 6px;
+                        &::before {
+                            content: "#";
+                        }
                     }
                 }
                 >span {
@@ -568,6 +579,7 @@
                 }
                 .child-edit {
                     opacity: 0;
+                    margin-left: auto;
                     &.tips-active {
                         opacity: 1;
                     }
