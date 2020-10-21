@@ -118,6 +118,12 @@ func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.L
 			blog.ErrorJSON("ListBizHosts failed, GetSetIDByCond %s failed, error: %s, rid:%s", parameter.SetCond, err.Error(), srvData.rid)
 			return result, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
+		if len(setIDs) == 0 {
+			return &meta.ListHostResult{
+				Count: 0,
+				Info:  []map[string]interface{}{},
+			}, nil
+		}
 	}
 
 	option := &meta.ListHosts{
