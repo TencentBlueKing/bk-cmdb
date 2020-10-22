@@ -201,6 +201,7 @@
                     serviceTemplateId: this.selectedNode.data.service_template_id,
                     processTemplateId: row.relation.process_template_id,
                     hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
                     submitHandler: this.editSubmitHandler
                 })
             },
@@ -212,6 +213,7 @@
                     serviceTemplateId: this.selectedNode.data.service_template_id,
                     processTemplateId: row.relation.process_template_id,
                     hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
                     submitHandler: this.editSubmitHandler
                 })
             },

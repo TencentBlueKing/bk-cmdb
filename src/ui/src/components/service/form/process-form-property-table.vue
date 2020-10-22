@@ -65,7 +65,7 @@
             },
             lockStates () {
                 const property = this.form.processTemplate.property || { bind_info: { value: [] } }
-                const values = property.bind_info.value
+                const values = property.bind_info.value || []
                 return values.map(row => {
                     const state = {}
                     Object.keys(row).forEach(key => {

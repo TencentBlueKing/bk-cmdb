@@ -1,5 +1,5 @@
 <template>
-    <bk-table v-if="showOn !== 'cell'" class="table-value" :data="list">
+    <bk-table v-if="displayType === 'table'" class="table-value" :data="list">
         <bk-table-column v-for="col in header"
             :key="col.bk_property_id"
             :prop="col.bk_property_id"
@@ -33,7 +33,7 @@
         },
         props: {
             value: {
-                type: Array,
+                type: [Array, String], // String是为了兼容后台数据未给默认值的情况
                 default: () => ([])
             },
             property: {
@@ -56,7 +56,13 @@
         },
         computed: {
             header () {
-                return this.property.option.map(option => option)
+                return (this.property.option || []).map(option => option)
+            },
+            displayType () {
+                if (this.header.length) {
+                    return this.showOn === 'default' ? 'table' : 'info'
+                }
+                return 'info'
             },
             cellValue () {
                 const list = this.list.map(item => {
@@ -100,7 +106,7 @@
                 if (this.formatCellValue) {
                     return (<span>{this.formatCellValue(this.cellValue)}</span>)
                 }
-                return (<span >{this.cellValue.map(item => (Object.values(item).join(' '))).join(',')}</span>)
+                return (<span >{this.cellValue.map(item => (Object.values(item).join(' '))).join(',') || '--'}</span>)
             }
         }
     }
