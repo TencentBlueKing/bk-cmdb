@@ -192,6 +192,21 @@ func (asst *Association) DeleteInst(ctx context.Context, h http.Header, assoID i
 	return
 }
 
+func (asst *Association) DeleteInstBatch(ctx context.Context, h http.Header, assoIDs *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error) {
+	resp = new(metadata.DeleteAssociationInstBatchResult)
+	subPath := "/inst/association/batch/action/delete"
+
+	err = asst.client.Delete().
+		WithContext(ctx).
+		Body(assoIDs).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
 func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error) {
 	resp = new(metadata.ListAssociationsWithAssociationKindResult)
 	subPath := "/topo/association/type/action/search/batch"
