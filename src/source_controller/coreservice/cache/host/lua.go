@@ -150,6 +150,10 @@ func (c *Client) getPagedHostDetailList(page metadata.BasePage) (int64, []int64,
 		return 0, nil, nil, err
 	}
 
+	if result == nil {
+		return 0, nil, nil, fmt.Errorf("unsupported redis eval result value with get paged host id list, response: %v", result)
+	}
+
 	switch reflect.TypeOf(result).Kind() {
 	case reflect.String:
 		err := result.(string)

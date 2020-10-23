@@ -365,6 +365,11 @@ const exactUserRegexp = `(^USER_PLACEHOLDER$)|(^USER_PLACEHOLDER[,]{1})|([,]{1}U
 func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFieldArr []string) map[string]interface{} {
 	output := make(map[string]interface{})
 	for i, j := range input {
+		if j == nil {
+			output[i] = j
+			continue
+		}
+
 		objType := reflect.TypeOf(j)
 		switch objType.Kind() {
 		case reflect.String:
@@ -376,7 +381,7 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 			if util.InStrArr(userFieldArr, i) {
 				exactOr := make([]map[string]interface{}, 0)
 				for _, user := range strings.Split(strings.Trim(targetStr, ","), ",") {
-					// search with exactly the user's name with regexp
+					// search with exactly the user's name with regexpF
 					like := strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", gparams.SpecialCharChange(user), -1)
 					exactOr = append(exactOr, mapstr.MapStr{i: mapstr.MapStr{common.BKDBLIKE: like}})
 				}
