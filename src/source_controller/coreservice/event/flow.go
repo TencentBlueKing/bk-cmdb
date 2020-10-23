@@ -339,7 +339,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 		return false, err
 	}
 
-	val := map[string]string{
+	val := map[string]interface{}{
 		currentCursor:   string(nByte),
 		f.key.HeadKey(): string(hByte),
 		f.key.TailKey(): string(tByte),
@@ -500,7 +500,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 		return false, err
 	}
 
-	values := map[string]string{
+	values := map[string]interface{}{
 		prevCursor:      string(pBytes),
 		currentCursor:   string(nBytes),
 		f.key.TailKey(): string(tBytes),
