@@ -79,7 +79,7 @@ func SyncCloudResource(taskChan chan *metadata.CloudSyncTask, conf *SyncConf) {
 
 	// 云主机同步器处理同步任务
 	for i := 1; i <= syncorNum; i++ {
-		syncor := NewHostSyncor(i, conf.Logics)
+		syncor := NewHostSyncor(conf.Logics)
 		go func(syncor *HostSyncor) {
 			for {
 				task := <-hostChan
