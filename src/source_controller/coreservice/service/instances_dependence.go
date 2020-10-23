@@ -78,15 +78,17 @@ func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, biz
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
-	var bizCond mapstr.MapStr
-	if bizID != 0 {
-		bizCond = metadata.NewPublicOrBizConditionByBizID(bizID)
-	} else {
-		bizCond = metadata.BizLabelNotExist
-	}
+
+	bizCond := make(mapstr.MapStr)
+	util.AddModelBizIDConditon(bizCond, bizID)
+
 	queryCond.Condition.Merge(bizCond)
 	result, err := s.core.ModelOperation().SearchModelAttributes(kit, objID, queryCond)
-	return result.Info, err
+	if err != nil {
+		blog.Errorf("select object att with params error %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	return result.Info, nil
 }
 
 // SearchUnique search unique attribute
