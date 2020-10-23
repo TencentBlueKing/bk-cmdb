@@ -22,7 +22,7 @@ import (
 
 type AuditOperationInterface interface {
 	SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLog, error)
-	SearchAuditDetail(kit *rest.Kit, id int64) (*metadata.AuditLog, error)
+	SearchAuditDetail(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLog, error)
 }
 
 // NewAuditOperation create a new inst operation instance
@@ -46,23 +46,17 @@ func (a *audit) SearchAuditList(kit *rest.Kit, query metadata.QueryCondition) (i
 	return rsp.Data.Count, rsp.Data.Info, nil
 }
 
-func (a *audit) SearchAuditDetail(kit *rest.Kit, id int64) (*metadata.AuditLog, error) {
-	input := metadata.QueryCondition{
-		Condition: map[string]interface{}{
-			common.BKFieldID: id,
-		},
-	}
-
-	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(kit.Ctx, kit.Header, input)
+func (a *audit) SearchAuditDetail(kit *rest.Kit, query metadata.QueryCondition) (int64, []metadata.AuditLog, error) {
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(kit.Ctx, kit.Header, query)
 	if nil != err {
-		blog.Errorf("search audit log detail by id(%d) failed, error: %s, rid: %s", id, err.Error(), kit.Rid)
-		return nil, err
+		blog.Errorf("search audit log detail list failed, error: %s, query: %s, rid: %s", err.Error(), query, kit.Rid)
+		return 0, nil, err
 	}
 
 	if len(rsp.Data.Info) == 0 {
-		blog.Errorf("get no audit log detail by id(%d), rid: %s", id, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID)
+		blog.Errorf("get no audit log detail, rid: %s", kit.Rid)
+		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID)
 	}
 
-	return &rsp.Data.Info[0], nil
+	return rsp.Data.Count, rsp.Data.Info, nil
 }
