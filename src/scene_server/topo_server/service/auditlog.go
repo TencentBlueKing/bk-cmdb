@@ -147,17 +147,16 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 
 	auditDetailQuery := metadata.QueryCondition{
 		Condition: cond,
-		Page:      query.Page,
 	}
 	blog.V(5).Infof("AuditDetailQuery, AuditOperation auditDetailQuery: %+v, rid: %s", auditDetailQuery, ctx.Kit.Rid)
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	count, list, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, auditDetailQuery)
+	list, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, auditDetailQuery)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithCount(count, list)
+	ctx.RespEntity(list)
 }
 
 func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{}, error) {

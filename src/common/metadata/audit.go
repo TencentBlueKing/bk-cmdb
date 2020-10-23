@@ -768,7 +768,6 @@ type actionTypeInfo struct {
 
 type AuditDetailQueryInput struct {
 	Condition AuditDetailQueryCondition `json:"condition"`
-	Page      BasePage            `json:"page,omitempty"`
 }
 
 type AuditDetailQueryCondition struct {
@@ -777,14 +776,7 @@ type AuditDetailQueryCondition struct {
 
 // Validate validates the input param
 func (input *AuditDetailQueryInput) Validate() errors.RawErrorInfo {
-	if input.Page.Limit <= 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"limit"},
-		}
-	}
-
-	if input.Page.Limit > common.BKAuditLogPageLimit {
+	if len(input.Condition.IDs) > common.BKAuditLogPageLimit {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommPageLimitIsExceeded,
 		}

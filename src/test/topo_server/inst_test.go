@@ -567,10 +567,6 @@ var _ = Describe("audit test", func() {
 			Condition:  metadata.AuditDetailQueryCondition{
 				IDs: id,
 			},
-			Page: metadata.BasePage{
-				Limit: 10,
-				Start: 0,
-			},
 		}
 		rsp, err := instClient.SearchAuditDetail(context.Background(), header, input)
 		util.RegisterResponse(rsp)
