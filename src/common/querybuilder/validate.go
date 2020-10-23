@@ -44,28 +44,28 @@ func getType(value interface{}) string {
 
 func validateBasicType(value interface{}) error {
 	if t := getType(value); t == TypeUnknown {
-		return fmt.Errorf("unknow value type: %s with value: %+v", reflect.TypeOf(value).String(), value)
+		return fmt.Errorf("unknow value type: %v with value: %+v", reflect.TypeOf(value), value)
 	}
 	return nil
 }
 
 func validateNumericType(value interface{}) error {
 	if t := getType(value); t != TypeNumeric {
-		return fmt.Errorf("unknow value type: %s, value: %+v", reflect.TypeOf(value).String(), value)
+		return fmt.Errorf("unknow value type: %v, value: %+v", reflect.TypeOf(value), value)
 	}
 	return nil
 }
 
 func validateBoolType(value interface{}) error {
 	if t := getType(value); t != TypeBoolean {
-		return fmt.Errorf("unknow value type: %s, value: %+v", reflect.TypeOf(value).String(), value)
+		return fmt.Errorf("unknow value type: %v, value: %+v", reflect.TypeOf(value), value)
 	}
 	return nil
 }
 
 func validateStringType(value interface{}) error {
 	if t := getType(value); t != TypeString {
-		return fmt.Errorf("unknow value type of: %s, value: %+v", reflect.TypeOf(value).String(), value)
+		return fmt.Errorf("unknow value type of: %v, value: %+v", reflect.TypeOf(value), value)
 	}
 	return nil
 }
@@ -90,6 +90,10 @@ func validateDatetimeStringType(value interface{}) error {
 }
 
 func validateSliceOfBasicType(value interface{}, requireSameType bool) error {
+	if value == nil {
+		return nil
+	}
+
 	t := reflect.TypeOf(value)
 	if t.Kind() != reflect.Array && t.Kind() != reflect.Slice {
 		return fmt.Errorf("unexpected value type: %s, expect array", t.Kind().String())
