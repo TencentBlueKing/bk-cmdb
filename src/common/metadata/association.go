@@ -159,6 +159,7 @@ type DeleteAssociationInstResult struct {
 
 type DeleteAssociationInstBatchResult struct {
 	BaseResp `json:",inline"`
+	Data     int `json:"data"`
 }
 
 type AssociationKindIDs struct {

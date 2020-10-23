@@ -43,7 +43,6 @@ type AssociationClientInterface interface {
 	ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadInstAssociationResult, err error)
 	ReadInstAssociationRelated(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadInstAssociationResult, err error)
 	DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	DeleteInstAssociationBatch(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
 }
 
 func NewAssociationClientInterface(client rest.ClientInterface) AssociationClientInterface {
