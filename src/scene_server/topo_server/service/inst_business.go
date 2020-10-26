@@ -276,6 +276,11 @@ const exactUserRegexp = `(^USER_PLACEHOLDER$)|(^USER_PLACEHOLDER[,]{1})|([,]{1}U
 func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFieldArr []string) map[string]interface{} {
 	output := make(map[string]interface{})
 	for i, j := range input {
+		if j == nil {
+			output[i] = j
+			continue
+		}
+
 		objType := reflect.TypeOf(j)
 		switch objType.Kind() {
 		case reflect.String:

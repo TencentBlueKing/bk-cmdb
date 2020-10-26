@@ -88,6 +88,10 @@ func validateDatetimeStringType(value interface{}) error {
 }
 
 func validateSliceOfBasicType(value interface{}, requireSameType bool) error {
+	if value == nil {
+		return nil
+	}
+
 	t := reflect.TypeOf(value)
 	if t.Kind() != reflect.Array && t.Kind() != reflect.Slice {
 		return fmt.Errorf("unexpected value type: %s, expect array", t.Kind().String())
