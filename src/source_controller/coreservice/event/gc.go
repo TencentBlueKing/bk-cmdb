@@ -169,6 +169,11 @@ func (f *Flow) cleanExpiredEvents() {
 			// redirect the head key.
 			pipe.HSet(mainKey, headKey, hBytes)
 			for _, expire := range expiredNodes {
+				// do not delete the last node before tail, in case no event occurred after the last event and watch with that cursor failed
+				if expire.NextCursor == tailKey {
+					continue
+				}
+
 				// delete expired chain node
 				pipe.HDel(mainKey, expire.Cursor)
 				// delete expired cursor targeted detail key
