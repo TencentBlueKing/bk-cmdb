@@ -316,13 +316,8 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 }
 
 func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
-	// TODO replace this logic with cond := metadata.NewPublicOrBizConditionByBizID(bizID) when old interface can't operate biz custom field
-	var cond map[string]interface{}
-	if modelBizID == 0 {
-		cond = make(map[string]interface{}, 0)
-	} else {
-		cond = metadata.NewPublicOrBizConditionByBizID(modelBizID)
-	}
+	cond := make(map[string]interface{})
+	util.AddModelBizIDConditon(cond, modelBizID)
 
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
