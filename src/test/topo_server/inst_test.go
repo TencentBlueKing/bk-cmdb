@@ -564,9 +564,7 @@ var _ = Describe("audit test", func() {
 	It("search audit detail", func() {
 		id := []int64{1}
 		input := &metadata.AuditDetailQueryInput{
-			Condition:  metadata.AuditDetailQueryCondition{
 				IDs: id,
-			},
 		}
 		rsp, err := instClient.SearchAuditDetail(context.Background(), header, input)
 		util.RegisterResponse(rsp)

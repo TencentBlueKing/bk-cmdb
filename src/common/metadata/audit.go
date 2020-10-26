@@ -767,16 +767,12 @@ type actionTypeInfo struct {
 }
 
 type AuditDetailQueryInput struct {
-	Condition AuditDetailQueryCondition `json:"condition"`
-}
-
-type AuditDetailQueryCondition struct {
 	IDs []int64 `json:"id"`
 }
 
 // Validate validates the input param
 func (input *AuditDetailQueryInput) Validate() errors.RawErrorInfo {
-	if len(input.Condition.IDs) > common.BKAuditLogPageLimit {
+	if len(input.IDs) > common.BKAuditLogPageLimit {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommPageLimitIsExceeded,
 		}

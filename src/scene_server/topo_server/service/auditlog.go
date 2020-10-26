@@ -134,11 +134,10 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 	}
 
 	cond := make(map[string]interface{})
-	condition := query.Condition
 
-	if len(condition.IDs) > 0 {
+	if len(query.IDs) > 0 {
 		cond[common.BKFieldID] = map[string]interface{}{
-			common.BKDBIN: condition.IDs,
+			common.BKDBIN: query.IDs,
 		}
 	} else {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKFieldID))
