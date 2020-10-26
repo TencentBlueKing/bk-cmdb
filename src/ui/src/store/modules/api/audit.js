@@ -7,7 +7,7 @@ const actions = {
         return $http.get('find/audit_dict', config)
     },
     getDetails (context, { id, config }) {
-        return $http.get(`find/audit/${id}`, config)
+        return $http.post('find/audit', { id: [id] }, config).then(([detail]) => detail)
     }
 }
 
