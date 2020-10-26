@@ -778,5 +778,12 @@ func (input *AuditDetailQueryInput) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if len(input.IDs) <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKFieldID},
+		}
+	}
+
 	return errors.RawErrorInfo{}
 }
