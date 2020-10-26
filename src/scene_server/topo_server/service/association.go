@@ -475,34 +475,40 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 
 func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 	request := &metadata.DeleteAssociationInstBatchRequest{}
+	result := &metadata.DeleteAssociationInstBatchResult{}
 	if err := ctx.DecodeInto(request); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
 	if len(request.ID) == 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPInputInvalid))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommHTTPInputInvalid))
 		return
 	}
 	if len(request.ID) > common.BKMaxInstanceLimit {
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "The number of ID should be less than 500."))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded, "The number of ID should be less than 500."))
 		return
 	}
-	result := &metadata.DeleteAssociationInstBatchResult{}
-	for _, id := range request.ID {
-		var ret *metadata.DeleteAssociationInstResult
-		var err error
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
-		//Delete the association instances in batch as much as possible.
-		if err != nil {
-			blog.Errorf("delete association instance failed,id: ,err: %s", id, err.Error())
-			break
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		for _, id := range request.ID {
+			var ret *metadata.DeleteAssociationInstResult
+			var err error
+			ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
+			if err != nil {
+				return err
+			}
+			if err = ret.CCError(); err != nil {
+				return err
+			}
+			result.Data++
 		}
-		if ret.Code != 0 {
-			blog.Errorf(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg).Error())
-			break
-		}
-		result.Data++
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
+
 	ctx.RespEntity(result.Data)
 }
 
