@@ -99,7 +99,6 @@ type AssociationOperationInterface interface {
 	SearchInstAssociationRelated(params types.ContextParams, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.ReadInstAssociationResult, err error)
 	CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
-	DeleteInstAssociationBatch(params types.ContextParams, request *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error)
 
 	ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error)
 
@@ -1016,30 +1015,6 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 	}
 
 	return resp, err
-}
-
-//Delete instance association batch
-func (assoc *association) DeleteInstAssociationBatch(params types.ContextParams, request *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error) {
-
-	cond := mapstr.MapStr{
-		common.BKFieldID: request.ID,
-	}
-	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociationBatch(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond})
-	if nil != err {
-		blog.Errorf("delete instance association batch failed, err: %s, rid: %s", err.Error(), params.ReqID)
-		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if !rsp.Result {
-		blog.Errorf("delete instance association batch failed, err: %s, rid: %s", rsp.ErrMsg, params.ReqID)
-		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	resp = &metadata.DeleteAssociationInstBatchResult{
-		BaseResp: rsp.BaseResp,
-	}
-
-	return resp, nil
 }
 
 // SearchInstAssociationList 与实例有关系的实例关系数据,以分页的方式返回

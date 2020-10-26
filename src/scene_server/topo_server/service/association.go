@@ -382,7 +382,7 @@ func (s *Service) DeleteAssociationInst(params types.ContextParams, pathParams, 
 	ret, err := s.Core.AssociationOperation().DeleteInst(params, id)
 	if err != nil {
 		return nil, err
-	} else if ret.Code != 0 {
+	} else if err = ret.CCError(); err != nil {
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
 	} else {
 		return ret.Data, nil
@@ -392,8 +392,12 @@ func (s *Service) DeleteAssociationInst(params types.ContextParams, pathParams, 
 
 //Delete association batch by ID.
 func (s *Service) DeleteAssociationInstBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	var err error
+	var count int
 	request := &metadata.DeleteAssociationInstBatchRequest{}
-	if err := data.MarshalJSONInto(request); err != nil {
+	ret := &metadata.DeleteAssociationInstResult{}
+
+	if err = data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 	if len(request.ID) == 0 {
@@ -401,11 +405,20 @@ func (s *Service) DeleteAssociationInstBatch(params types.ContextParams, pathPar
 	}
 	//check Maximum limit
 	if len(request.ID) > 500 {
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, "The number of ID should be less than 500")
+		return nil, params.Err.Errorf(common.CCErrCommPageLimitIsExceeded, "The number of ID should be less than 500")
 	}
-	_, err := s.Core.AssociationOperation().DeleteInstAssociationBatch(params, &metadata.DeleteAssociationInstBatchRequest{ID: request.ID})
-	if err != nil {
-		return nil, err
+	for _, id := range request.ID {
+		ret, err = s.Core.AssociationOperation().DeleteInst(params, id)
+		if err != nil {
+			return nil, err
+		} else if err = ret.CCError(); err != nil {
+			return nil, err
+		} else {
+			count++
+		}
 	}
-	return nil, nil
+	if ret.Data == "" {
+		ret.Data = strconv.Itoa(count)
+	}
+	return ret.Data, nil
 }
