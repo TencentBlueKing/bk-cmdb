@@ -99,7 +99,6 @@ type AssociationOperationInterface interface {
 	SearchInstAssociationRelated(params types.ContextParams, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.ReadInstAssociationResult, err error)
 	CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
-	DeleteInstAssociationBatch(params types.ContextParams, request *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error)
 
 	ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error)
 
@@ -1016,74 +1015,6 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 	}
 
 	return resp, err
-}
-
-//Delete instance association batch
-func (assoc *association) DeleteInstAssociationBatch(params types.ContextParams, request *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error) {
-	rsp := &metadata.DeletedOptionResult{}
-	count := 0
-	for _, id := range request.ID {
-		// get preAudit log
-		searchCondition := metadata.QueryCondition{
-			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(id).ToMapStr(),
-		}
-		data, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, &searchCondition)
-		if err != nil {
-			blog.ErrorJSON("DeleteInst failed, get instance association failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
-			break
-		}
-		if len(data.Data.Info) == 0 {
-			blog.ErrorJSON("DeleteInst failed, instance association not found, searchCondition: %+v, err: %+v, rid: %s", searchCondition, err, params.ReqID)
-			break
-		}
-		if len(data.Data.Info) > 1 {
-			blog.ErrorJSON("DeleteInst failed, get instance association with id:%d get multiple, err: %+v, rid: %s", id, err, params.ReqID)
-			break
-		}
-		preData := mapstr.NewFromStruct(data.Data.Info[0], "json")
-
-		//deleteInstAssociation
-		cond := metadata.DeleteOption{
-			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(id).ToMapStr(),
-		}
-		rsp, err = assoc.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), params.Header, &cond)
-		if nil != err {
-			blog.ErrorJSON("delete instance association batch failed, err: %s, rid: %s", err.Error(), params.ReqID)
-			break
-		}
-		if !rsp.Result {
-			blog.ErrorJSON("delete instance association batch failed, err: %s, rid: %s", rsp.ErrMsg, params.ReqID)
-			break
-		}
-		count++
-
-		//record auditLog
-		auditLog := metadata.SaveAuditLogParams{
-			ID:    id,
-			Model: data.Data.Info[0].ObjectID,
-			Content: metadata.Content{
-				PreData: preData,
-				Headers: InstanceAssociationAuditHeaders,
-			},
-			OpDesc: "delete instance association",
-			OpType: auditoplog.AuditOpTypeDel,
-		}
-		auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditLog)
-		if err != nil {
-			blog.ErrorJSON("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", auditResp, err, params.ReqID)
-			break
-		}
-		if !auditResp.Result {
-			blog.ErrorJSON("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
-			break
-		}
-	}
-
-	resp = &metadata.DeleteAssociationInstBatchResult{
-		BaseResp: rsp.BaseResp,
-		Data:     count,
-	}
-	return resp, nil
 }
 
 // SearchInstAssociationList 与实例有关系的实例关系数据,以分页的方式返回
