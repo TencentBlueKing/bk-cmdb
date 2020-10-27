@@ -398,7 +398,8 @@ func (s *Service) DeleteAssociationInstBatch(params types.ContextParams, pathPar
 	ret := &metadata.DeleteAssociationInstResult{}
 
 	if err = data.MarshalJSONInto(request); err != nil {
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+		blog.ErrorJSON("data convert error. raw data: %s, err: %s, rid: %s", data, err.Error(), params.ReqID)
+		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 	if len(request.ID) == 0 {
 		return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
