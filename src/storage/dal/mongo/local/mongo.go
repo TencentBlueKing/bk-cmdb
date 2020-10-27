@@ -878,13 +878,13 @@ func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result inte
 
 // validHostType valid if host query uses specified type that transforms ip & operator array to string
 func validHostType(collection string, projection map[string]int, result interface{}, rid interface{}) error {
+	if collection != common.BKTableNameBaseHost {
+		return nil
+	}
+
 	if result == nil {
 		blog.Errorf("host query result is nil, rid: %s", rid)
 		return fmt.Errorf("host query result type invalid")
-	}
-
-	if collection != common.BKTableNameBaseHost {
-		return nil
 	}
 
 	// check if specified fields include special fields

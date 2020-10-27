@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/test/run"
 	testutil "configcenter/src/test/util"
 
@@ -79,6 +80,19 @@ func init() {
 	Expect(err).Should(BeNil())
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
+
+	redisCfg := redis.Config{
+		Address:  tConfig.RedisCfg.RedisAdress,
+		Password: tConfig.RedisCfg.RedisPasswd,
+		Database: "0",
+	}
+	redisClient, err := redis.NewFromConfig(redisCfg)
+	if err != nil {
+		fmt.Printf("NewFromConfig err:%s\n", err)
+	}
+	Expect(err).Should(BeNil())
+	db.InitTxnManager(redisClient)
+
 	disc, err := discovery.NewServiceDiscovery(client)
 	Expect(err).Should(BeNil())
 	c := &util.APIMachineryConfig{

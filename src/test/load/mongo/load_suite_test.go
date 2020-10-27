@@ -10,20 +10,16 @@
  * limitations under the License.
  */
 
-package load_test
+package mongo_test
 
 import (
 	"testing"
-
-	"configcenter/src/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var clientSet = test.GetClientSet()
-
 func TestBusiness(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Load Suite")
+	RunSpecs(t, "Mongo Load Suite")
 }
