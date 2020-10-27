@@ -86,7 +86,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	coreSvr.Core = engine
 
 	if err := initResource(coreSvr); err != nil {
-		return nil
+		return err
 	}
 
 	err = coreService.SetConfig(*coreSvr.Config, engine, engine.CCErr, engine.Language)

@@ -130,6 +130,7 @@ func (f *Flow) tryLoopFlow(ctx context.Context, opts *types.WatchOptions) error 
 					blog.Errorf("loop flow %s failed, err: %v", f.Collection, err)
 					continue
 				}
+
 				blog.Warnf("retry loop flow: %s from token: %s success.", f.Collection, lastToken)
 			}
 		}
@@ -146,8 +147,17 @@ func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
 		blog.Errorf("run flow, but watch failed, err: %v", err)
 		return err
 	}
+
 	go func() {
 		for e := range watcher.EventChan {
+
+			select {
+			case <-ctx.Done():
+				blog.Warnf("received stop watch flow collection: %s, err: %v", opts.Collection, ctx.Err())
+				return
+			default:
+
+			}
 
 			if !f.isMaster.IsMaster() {
 				blog.V(4).Infof("run flow, received collection %s event, type: %s, oid: %s, but not master, skip.", f.Collection,
