@@ -732,9 +732,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// delete object instance's association batch operation.
 	if ps.hitRegexp(deleteObjectInstanceAssociationBatchLatestRegexp, http.MethodDelete) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.DeleteMany,
