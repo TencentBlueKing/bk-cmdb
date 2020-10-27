@@ -63,6 +63,9 @@ func (req *RequestContext) getBizIDFromBody() (biz int64, err error) {
 		return
 	}
 	biz = val.Int()
+	if biz <= 0 {
+		err = errors.New("invalid bk_biz_id value")
+	}
 	return
 }
 

@@ -578,6 +578,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 		instanceID := val.Int()
+		if instanceID <= 0 {
+			ps.err = errors.New("invalid bk_inst_id value")
+			return ps
+		}
 
 		val, err = ps.RequestCtx.getValueFromBody(common.BKAsstInstIDField)
 		if err != nil {
@@ -585,6 +589,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 		asstInstID := val.Int()
+		if asstInstID <= 0 {
+			ps.err = errors.New("invalid bk_asst_inst_id value")
+			return ps
+		}
 		// 处理模型自关联的情况
 		if len(models) == 1 {
 			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
@@ -833,10 +841,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		if isMainline {
-			if bizID == 0 {
-				ps.err = errors.New("create mainline instance must have biz id")
-				return ps
-			}
 			modelType = meta.MainlineInstance
 		}
 
@@ -1023,10 +1027,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 		if isMainline {
 			// special logic for mainline object's instance authorization.
-			if bizID == 0 {
-				ps.err = errors.New("delete mainline instance must have biz id")
-				return ps
-			}
 			modelType = meta.MainlineInstance
 		}
 
