@@ -20,8 +20,8 @@
             <bk-tab-panel name="history" :label="$t('变更记录')">
                 <cmdb-audit-history v-if="active === 'history'"
                     resource-type="model_instance"
-                    :target="objId"
-                    :inst-id="instId">
+                    category="resource"
+                    :resource-id="instId">
                 </cmdb-audit-history>
             </bk-tab-panel>
         </bk-tab>
