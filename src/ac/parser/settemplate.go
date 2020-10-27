@@ -66,7 +66,11 @@ var SetTemplateAuthConfigs = []AuthConfig{
 			data := &struct {
 				SetTemplateIDs []int64 `json:"set_template_ids" mapstructure:"set_template_ids"`
 			}{}
-			if err := json.Unmarshal(request.Body, data); err != nil {
+			body, err := request.getRequestBody()
+			if err != nil {
+				return nil, err
+			}
+			if err := json.Unmarshal(body, data); err != nil {
 				return nil, fmt.Errorf("unmarshal failed, err: %+v", err)
 			}
 			return data.SetTemplateIDs, nil
@@ -158,7 +162,11 @@ var SetTemplateAuthConfigs = []AuthConfig{
 			data := &struct {
 				SetIDs []int64 `json:"bk_set_ids" mapstructure:"bk_set_ids"`
 			}{}
-			if err := json.Unmarshal(request.Body, data); err != nil {
+			body, err := request.getRequestBody()
+			if err != nil {
+				return nil, err
+			}
+			if err := json.Unmarshal(body, data); err != nil {
 				return nil, fmt.Errorf("unmarshal failed, err: %+v", err)
 			}
 			return data.SetIDs, nil

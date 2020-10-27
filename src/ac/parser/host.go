@@ -12,7 +12,6 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) hostRelated() *parseStream {
@@ -42,10 +41,14 @@ var (
 )
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
-	if !gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Exists() {
+	val, err := ps.RequestCtx.getValueFromBody(common.BKAppIDField)
+	if err != nil {
+		return 0, err
+	}
+	if !val.Exists() {
 		return 0, nil
 	}
-	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+	bizID := val.Int()
 	if bizID == 0 {
 		return 0, errors.New("invalid bk_biz_id value")
 	}
@@ -426,9 +429,15 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.UserCustom,
 					Action: meta.Create,
@@ -436,7 +445,7 @@ func (ps *parseStream) userCustom() *parseStream {
 				},
 			},
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
@@ -524,9 +533,16 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -665,7 +681,12 @@ func (ps *parseStream) host() *parseStream {
 
 	if ps.hitPattern(updateHostCloudAreaFieldPattern, http.MethodPut) {
 		input := metadata.UpdateHostCloudAreaFieldOption{}
-		if err := json.Unmarshal(ps.RequestCtx.Body, &input); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, &input); err != nil {
 			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
 			return ps
 		}
@@ -985,7 +1006,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// add hosts to resource pool
 	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
-		dirID := gjson.GetBytes(ps.RequestCtx.Body, "directory").Int()
+		val, err := ps.RequestCtx.getValueFromBody("directory")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dirID := val.Int()
 		if dirID == 0 {
 			var err error
 			dirID, err = ps.getResourcePoolDefaultDirID()
@@ -1072,7 +1098,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	// move resource pool hosts to a business idle module operation.
 	if ps.hitPattern(moveResPoolHostToBizIdleModulePattern, http.MethodPost) {
 		opt := new(hostPool)
-		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, opt); err != nil {
 			ps.err = err
 			return ps
 		}
@@ -1169,12 +1200,22 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// transfer host to another business
 	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
-		srcBizID := gjson.GetBytes(ps.RequestCtx.Body, "src_bk_biz_id").Int()
+		val, err := ps.RequestCtx.getValueFromBody("src_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		srcBizID := val.Int()
 		if srcBizID == 0 {
 			ps.err = errors.New("src_bk_biz_id invalid")
 			return ps
 		}
-		dstBizID := gjson.GetBytes(ps.RequestCtx.Body, "dst_bk_biz_id").Int()
+		val, err = ps.RequestCtx.getValueFromBody("dst_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dstBizID := val.Int()
 		if dstBizID == 0 {
 			ps.err = errors.New("dst_bk_biz_id invalid")
 			return ps
@@ -1261,7 +1302,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	// move the resource pool host to another dir in resource pool
 	if ps.hitPattern(moveRscPoolHostToRscPoolDir, http.MethodPost) {
 		opt := new(metadata.TransferHostResourceDirectory)
-		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, opt); err != nil {
 			ps.err = err
 			return ps
 		}

@@ -22,8 +22,6 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
-
-	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) cloudRelated() *parseStream {
@@ -182,7 +180,11 @@ var cloudResourceTaskConfigs = []AuthConfig{
 		ResourceType:   meta.CloudResourceTask,
 		ResourceAction: meta.Find,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			taskID := gjson.GetBytes(request.Body, common.BKCloudTaskID).Int()
+			val, err := request.getValueFromBody(common.BKCloudTaskID)
+			if err != nil {
+				return nil, err
+			}
+			taskID := val.Int()
 			if taskID <= 0 {
 				return nil, errors.New("invalid cloud sync task id")
 			}
