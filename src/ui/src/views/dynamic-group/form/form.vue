@@ -201,7 +201,6 @@
                     console.error(error)
                 }
             },
-            // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
             transformDetails (details) {
                 const condition = details.info.condition
                 const transformedCondition = []
@@ -210,6 +209,7 @@
                         bk_obj_id: data.bk_obj_id,
                         condition: data.condition.reduce((accumulator, current) => {
                             if (['$gte', '$lte'].includes(current.operator)) {
+                                // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
                                 let index = accumulator.findIndex(exist => exist.field === current.field)
                                 if (index === -1) {
                                     index = accumulator.push({
@@ -224,6 +224,19 @@
                                 } else {
                                     range.value.push(current.value)
                                 }
+                            } else if (current.operator === '$eq') {
+                                // 将老数据的eq转换为当前支持的数据格式
+                                const transformType = ['singlechar', 'longchar', 'enum']
+                                const property = this.getConditionProperty(data.bk_obj_id, current.field)
+                                if (property && transformType.includes(property.bk_property_type)) {
+                                    accumulator.push({
+                                        field: current.field,
+                                        operator: '$in',
+                                        value: Array.isArray(current.value) ? current.value : [current.value]
+                                    })
+                                } else {
+                                    accumulator.push(current)
+                                }
                             } else {
                                 accumulator.push(current)
                             }
@@ -237,6 +250,10 @@
                         condition: transformedCondition
                     }
                 }
+            },
+            getConditionProperty (modelId, field) {
+                const properties = this.propertyMap[modelId] || []
+                return properties.find(property => property.bk_property_id === field)
             },
             setDetailsSelectedProperties () {
                 const conditions = this.details.info.condition
