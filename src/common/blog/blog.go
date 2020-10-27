@@ -117,6 +117,12 @@ func InfoJSON(format string, args ...interface{}) {
 			params = append(params, f.String())
 			continue
 		}
+
+		if arg == nil {
+			params = append(params, []byte("null"))
+			continue
+		}
+
 		kind := reflect.TypeOf(arg).Kind()
 		if kind == reflect.Ptr {
 			kind = reflect.TypeOf(arg).Elem().Kind()
@@ -169,6 +175,12 @@ func WarnJSON(format string, args ...interface{}) {
 			params = append(params, f.String())
 			continue
 		}
+
+		if arg == nil {
+			params = append(params, []byte("null"))
+			continue
+		}
+
 		kind := reflect.TypeOf(arg).Kind()
 		if kind == reflect.Ptr {
 			kind = reflect.TypeOf(arg).Elem().Kind()

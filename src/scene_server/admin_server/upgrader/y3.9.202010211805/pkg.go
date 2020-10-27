@@ -10,28 +10,34 @@
  * limitations under the License.
  */
 
-package util
+package y3_9_202010211805
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
+	"context"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-// AddModelBizIDConditon add model bizID condition according to bizID value
-func AddModelBizIDConditon(cond mapstr.MapStr, modelBizID int64) {
-	if modelBizID > 0 {
-		// special business model and global shared model
-		cond[common.BKDBOR] = []mapstr.MapStr{
-			{common.BKAppIDField: modelBizID},
-			{common.BKAppIDField: 0},
-			{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
-		}
-	} else {
-		// global shared model
-		cond[common.BKDBOR] = []mapstr.MapStr{
-			{common.BKAppIDField: 0},
-			{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
-		}
+func init() {
+	upgrader.RegistUpgrader("y3.9.202010211805", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.9.202010211805")
+
+	err = addHostLockTable(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202010211805] addHostLockTable failed, error  %s", err.Error())
+		return err
 	}
-	delete(cond, common.BKAppIDField)
+
+	err = addIndex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202010211805] addIndex failed, error  %s", err.Error())
+		return err
+	}
+
+	return nil
 }

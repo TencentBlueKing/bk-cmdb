@@ -420,9 +420,10 @@ const (
 )
 
 var (
-	deleteObjectInstanceAssociationLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/[0-9]+/?$")
-	findObjectInstanceTopologyUILatestRegexp    = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
-	findInstAssociationObjInstInfoLatestRegexp  = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
+	deleteObjectInstanceAssociationLatestRegexp      = regexp.MustCompile("^/api/v3/delete/instassociation/[0-9]+/?$")
+	deleteObjectInstanceAssociationBatchLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/batch")
+	findObjectInstanceTopologyUILatestRegexp         = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
+	findInstAssociationObjInstInfoLatestRegexp       = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -620,6 +621,20 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 				})
 		}
 
+		return ps
+	}
+
+	// delete object instance's association batch operation.
+	if ps.hitRegexp(deleteObjectInstanceAssociationBatchLatestRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: ps.RequestCtx.BizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.DeleteMany,
+				},
+			},
+		}
 		return ps
 	}
 

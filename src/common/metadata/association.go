@@ -133,9 +133,18 @@ type DeleteAssociationInstRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 }
 
+type DeleteAssociationInstBatchRequest struct {
+	ID []int64 `json:"id"`
+}
+
 type DeleteAssociationInstResult struct {
 	BaseResp `json:",inline"`
 	Data     string `json:"data"`
+}
+
+type DeleteAssociationInstBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     int `json:"data"`
 }
 
 type AssociationKindIDs struct {

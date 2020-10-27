@@ -179,5 +179,27 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
+	//check "DeleteInstBatch" "the number of IDs should be less than 500." function.
+	It("delete inst association batch", func() {
+		list := make([]int64, 501, 501)
+		input := &metadata.DeleteAssociationInstBatchRequest{
+			ID: list,
+		}
+		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+	//check "DeleteInstBatch" features available.
+	It("delete inst association batch", func() {
+		input := &metadata.DeleteAssociationInstBatchRequest{
+			ID: []int64{1, 2},
+		}
+		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data).To(Equal(2))
+	})
 
 })

@@ -111,8 +111,8 @@ func (e *Event) loopWatch(ctx context.Context,
 
 			newStruct := newEventStruct(typ)
 			if err := stream.Decode(newStruct.Addr().Interface()); err != nil {
-				blog.Errorf("watch collection %s, but decode to event struct: %s failed, err: %v",
-					opts.Collection, reflect.TypeOf(opts.EventStruct).Name(), err)
+				blog.Errorf("watch collection %s, but decode to event struct: %v failed, err: %v",
+					opts.Collection, reflect.TypeOf(opts.EventStruct), err)
 				continue
 			}
 
