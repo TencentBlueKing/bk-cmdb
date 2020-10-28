@@ -20,9 +20,10 @@
                 <li class="topology-item"
                     v-for="(item, index) in topologyList"
                     :key="index">
-                    <span class="topology-path" v-bk-overflow-tips>{{item.path}}</span>
+                    <span class="topology-path" v-bk-overflow-tips @click="handlePathClick(item)">{{item.path}}</span>
                     <i class="topology-remove-trigger icon-cc-tips-close"
                         v-if="!item.isInternal"
+                        v-bk-tooltips="{ content: $t('从该模块移除'), interactive: false }"
                         @click="handleRemove(item.id)">
                     </i>
                 </li>
@@ -39,7 +40,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_TRANSFER_HOST } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_TRANSFER_HOST, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     export default {
         name: 'cmdb-host-info',
@@ -132,6 +133,14 @@
                 this.displayType = this.displayType === 'single' ? 'double' : 'single'
                 this.$emit('info-toggle')
                 window.localStorage.setItem('host_topology_display_type', this.displayType)
+            },
+            handlePathClick (item) {
+                this.$routerActions.open({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: {
+                        node: `module-${item.id}`
+                    }
+                })
             },
             handleRemove (moduleId) {
                 this.$routerActions.redirect({
