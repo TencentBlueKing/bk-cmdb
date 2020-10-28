@@ -123,7 +123,7 @@
             :properties="hostProperties"
             :selection="$parent.table.selection">
         </edit-multiple-host>
-        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="460">
+        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="650">
             <component
                 :is="dialog.component"
                 v-bind="dialog.componentProps"
@@ -151,7 +151,7 @@
     import HostFilter from '@/components/hosts/filter'
     import CmdbImport from '@/components/import/import'
     import EditMultipleHost from './edit-multiple-host.vue'
-    import HostSelector from './host-selector.vue'
+    import HostSelector from './host-selector-new'
     import CmdbColumnsConfig from '@/components/columns-config/columns-config'
     import { mapGetters, mapState } from 'vuex'
     import {
@@ -176,7 +176,7 @@
                 dialog: {
                     show: false,
                     props: {
-                        width: 850,
+                        width: 1100,
                         showCloseIcon: false
                     },
                     component: null,

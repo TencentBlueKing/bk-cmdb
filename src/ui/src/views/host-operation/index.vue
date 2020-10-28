@@ -102,7 +102,7 @@
                 <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             </div>
         </div>
-        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="460" :body-scroll="false">
+        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height" :body-scroll="false">
             <component
                 :is="dialog.component"
                 :confirm-text="$t('确定')"
@@ -143,7 +143,7 @@
     import DeletedServiceInstance from './children/deleted-service-instance.vue'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
     import ModuleSelector from '@/views/business-topology/host/module-selector.vue'
-    import HostSelector from '@/views/business-topology/host/host-selector.vue'
+    import HostSelector from '@/views/business-topology/host/host-selector-new'
     import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
     import {
         MENU_BUSINESS_TRANSFER_HOST
@@ -169,6 +169,7 @@
                 },
                 dialog: {
                     width: 720,
+                    height: 460,
                     show: false,
                     component: null,
                     props: {}
@@ -572,6 +573,7 @@
                 }
                 this.dialog.props = props
                 this.dialog.width = 720
+                this.dialog.height = 460
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },
@@ -583,7 +585,8 @@
                     props.displayNodes = [`${this.$route.query.sourceModel}-${this.$route.query.sourceId}`]
                 }
                 this.dialog.props = props
-                this.dialog.width = 850
+                this.dialog.width = 1110
+                this.dialog.height = 650
                 this.dialog.component = HostSelector.name
                 this.dialog.show = true
             },

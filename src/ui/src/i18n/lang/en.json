@@ -1340,5 +1340,10 @@
     "第一内网IP": "First inner IP",
     "第一外网IP": "First outer IP",
     "业务列表提示语": "No authorized business, you can {auth} or {create}",
-    "申请查看权限": "Apply Permission"
+    "申请查看权限": "Apply Permission",
+    "搜索拓扑节点": "Search topology node",
+    "结果预览": "Results preview",
+    "移除所有": "Remove all",
+    "静态拓扑": "Static topology",
+    "自定义输入": "Custom input"
 }
