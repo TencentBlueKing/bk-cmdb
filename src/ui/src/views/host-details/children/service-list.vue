@@ -35,7 +35,7 @@
                         @change="handleSearch">
                     </bk-search-select>
                 </div>
-                <cmdb-switcher-group v-model="currentView" tips-key="hostServiceListViewTips" :tips="$t('标签或路径切换')">
+                <cmdb-switcher-group v-model="currentView" tips-key="host_service_list_view_tips" :tips="$t('标签或路径切换')">
                     <cmdb-switcher-item name="path" :tips="$t('显示拓扑')">
                         <i class="icon-cc-instance-path"></i>
                     </cmdb-switcher-item>
