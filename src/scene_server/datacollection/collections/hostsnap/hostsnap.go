@@ -186,8 +186,10 @@ func (h *HostSnap) Analyze(msg *string) error {
 
 	// window restriction on request
 	if !h.window.canPassWindow() {
-		blog.V(4).Info("not within the time window that can pass, skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
-			hostID, innerIP, cloudID, rid)
+		if blog.V(4) {
+			blog.Infof("not within the time window that can pass, skip host snapshot data update, host id: %d, ip: %s, cloud id: %d, rid: %s",
+				hostID, innerIP, cloudID, rid)
+		}
 		return nil
 	}
 	setter, raw := parseSetter(&val, innerIP, outerIP)
