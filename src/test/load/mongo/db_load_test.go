@@ -13,10 +13,11 @@
 package mongo_test
 
 import (
+	"fmt"
+
 	"configcenter/src/common/blog"
 	"configcenter/src/test/db/mongo/operator"
 	"configcenter/src/test/run"
-	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

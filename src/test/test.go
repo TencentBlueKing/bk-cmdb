@@ -30,14 +30,15 @@ var reportDir string
 var db *local.Mongo
 
 type TestConfig struct {
-	ZkAddr         string
-	Concurrent     int
-	SustainSeconds float64
-	TotalRequest   int64
-	DBWriteKBSize  int
-	MongoURI       string
-	MongoRsName    string
-	RedisCfg       RedisConfig
+	ZkAddr          string
+	Concurrent      int
+	SustainSeconds  float64
+	TotalRequest    int64
+	DBWriteKBSize   int
+	DBWriteByteSize int
+	MongoURI        string
+	MongoRsName     string
+	RedisCfg        RedisConfig
 }
 
 type RedisConfig struct {
@@ -48,10 +49,11 @@ type RedisConfig struct {
 
 func init() {
 	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
-	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
+	flag.IntVar(&tConfig.Concurrent, "concurrent", 10, "concurrent request during the load test.")
 	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
 	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0, "the load test total request,it has higher priority than SustainSeconds")
-	flag.IntVar(&tConfig.DBWriteKBSize, "write-size", 1, "MongoDB write size , unit is KB.")
+	flag.IntVar(&tConfig.DBWriteKBSize, "write-size-kb", 1, "MongoDB write size , unit is KB.")
+	flag.IntVar(&tConfig.DBWriteByteSize, "write-size-b", 10, "MongoDB write size , unit is Byte.")
 	flag.StringVar(&tConfig.RedisCfg.RedisAdress, "redis-addr", "127.0.0.1:6379", "redis host address with port")
 	flag.StringVar(&tConfig.RedisCfg.RedisPasswd, "redis-passwd", "cc", "redis password")
 	flag.StringVar(&tConfig.MongoURI, "mongo-addr", "mongodb://127.0.0.1:27017/cmdb", "mongodb URI")

@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
+	//"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -25,7 +25,8 @@ import (
 	"configcenter/src/test"
 )
 
-var str_1KB string = `
+var (
+	str_1KB = `
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -37,6 +38,9 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 `
+
+	str_1Byte = "a"
+)
 
 // MongoOperator mongo operator which contains mongo test cases
 type MongoOperator struct {
@@ -50,8 +54,8 @@ type MongoOperator struct {
 func NewMongoOperator(tableName string) *MongoOperator {
 	tConfig := test.GetTestConfig()
 	data := ""
-	for i := 0; i < tConfig.DBWriteKBSize; i++ {
-		data += str_1KB
+	for i := 0; i < tConfig.DBWriteByteSize; i++ {
+		data += str_1Byte
 	}
 	return &MongoOperator{
 		tableName: tableName,
@@ -72,6 +76,9 @@ func (m *MongoOperator) ClearData() error {
 	if err != nil {
 		return err
 	}
+
+	// 准备一条数据，用于读
+	m.db.Table(m.tableName).Insert(context.Background(), map[string]string{"testread": m.data})
 
 	return nil
 }
@@ -134,7 +141,8 @@ func (m *MongoOperator) ReadWithTxn() error {
 	}
 
 	result := make([]interface{}, 0)
-	filter := map[string]interface{}{"_id": fmt.Sprintf("%d", time.Now().UnixNano())}
+	//filter := map[string]interface{}{"_id": fmt.Sprintf("%d", time.Now().UnixNano())}
+	filter := map[string]interface{}{"testread": m.data}
 	txnErr := m.db.Table(m.tableName).Find(filter).All(ctx, &result)
 	if txnErr == nil {
 		err := m.db.CommitTransaction(ctx, cap)
@@ -168,10 +176,26 @@ func (m *MongoOperator) WriteNoTxn() error {
 // 无事务的Read
 func (m *MongoOperator) ReadNoTxn() error {
 	result := make([]interface{}, 0)
-	filter := map[string]interface{}{"_id": fmt.Sprintf("%d", time.Now().UnixNano())}
+	//filter := map[string]interface{}{"_id": fmt.Sprintf("%d", time.Now().UnixNano())}
+	filter := map[string]interface{}{"testread": m.data}
 	err := m.db.Table(m.tableName).Find(filter).All(context.Background(), &result)
 	if err != nil {
-		blog.Info("ReadNoTxn Insert err: %s", err)
+		blog.Info("ReadNoTxn Find err: %s", err)
+		return err
+	}
+	return nil
+}
+
+// 优先读从节点的Read
+func (m *MongoOperator) ReadSecondaryPrefer() error {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, common.BKHTTPReadReference, common.SecondaryPreferredMode)
+	result := make([]interface{}, 0)
+	//filter := map[string]interface{}{"_id": fmt.Sprintf("%d", time.Now().UnixNano())}
+	filter := map[string]interface{}{"testread": m.data}
+	err := m.db.Table(m.tableName).Find(filter).All(context.Background(), &result)
+	if err != nil {
+		blog.Info("ReadSecondaryPrefer Find err: %s", err)
 		return err
 	}
 	return nil
