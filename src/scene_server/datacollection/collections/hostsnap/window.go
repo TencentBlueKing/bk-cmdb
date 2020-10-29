@@ -142,6 +142,7 @@ func newWindow() *Window {
 		if cc.IsExist("datacollection.hostsnap.timeWindow.atTime") {
 			atTime, _ := cc.String("datacollection.hostsnap.timeWindow.atTime")
 			w.setWindowMinutes(windowMinutes, oneDayToMinutes)
+
 			w.setStartTime(time.Now())
 			go w.doFixedTimeTasks(atTime)
 
@@ -159,6 +160,7 @@ func newWindow() *Window {
 			now := time.Now()
 			w.setStartTime(now)
 			time.Sleep(time.Minute * time.Duration(oneHourToMinutes - now.Minute()))
+
 			go w.doTimedTasks(checkIntervalHours)
 
 			w.exist = true
