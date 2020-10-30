@@ -15,7 +15,6 @@ package discovery
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 
 	"configcenter/src/common/blog"
@@ -43,12 +42,11 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 
 type server struct {
 	sync.RWMutex
-	index int
+	next int
 	// server's name
 	name         string
 	path         string
 	servers      []*types.ServerInfo
-	uuids        []string
 	discoverChan <-chan *registerdiscover.DiscoverEvent
 	serversChan  chan []string
 }
@@ -65,16 +63,22 @@ func (s *server) GetServers() ([]string, error) {
 		return []string{}, fmt.Errorf("oops, there is no %s can be used", s.name)
 	}
 
-	if s.index < num-1 {
-		s.index = s.index + 1
-		s.servers = append(s.servers[s.index-1:], s.servers[:s.index-1]...)
-	} else {
-		s.index = 0
-		s.servers = append(s.servers[num-1:], s.servers[:num-1]...)
+	servers := make([]string, 0)
+	for _, server := range s.servers {
+		servers = append(servers, server.RegisterAddress())
 	}
+
+	if s.next != 0 {
+		// update first server's location.
+		servers[0], servers[s.next] = servers[s.next], servers[0]
+	}
+
+	// round robin policy.
+	// update the next index
+	s.next = (s.next + 1) % num
 	s.Unlock()
 
-	return s.GetRegAddrs(), nil
+	return servers, nil
 }
 
 // IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
@@ -179,18 +183,7 @@ func (s *server) updateServer(svrs []string) {
 		s.Unlock()
 
 		if blog.V(5) {
-			blog.Infof("update component with new server instance[%s] about path: %s", strings.Join(s.GetRegAddrs(), "; "), s.path)
+			blog.InfoJSON("update component with new server instance %s about path: %s", servers, s.path)
 		}
 	}
-}
-
-// 获取注册地址
-func (s *server) GetRegAddrs() []string {
-	s.RLock()
-	regAddrs := make([]string, 0)
-	for _, server := range s.servers {
-		regAddrs = append(regAddrs, server.RegisterAddress())
-	}
-	s.RUnlock()
-	return regAddrs
 }
