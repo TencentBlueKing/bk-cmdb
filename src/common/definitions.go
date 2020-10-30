@@ -898,10 +898,6 @@ const (
 // event cache keys
 const (
 	EventCacheEventIDKey             = BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey          = BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventTxnQueuePrefix    = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
-	EventCacheEventTxnCommitQueueKey = BKCacheKeyV3Prefix + "event:inst_txn_commit_queue"
-	EventCacheEventTxnAbortQueueKey  = BKCacheKeyV3Prefix + "event:inst_txn_abort_queue"
 	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
 )
 
