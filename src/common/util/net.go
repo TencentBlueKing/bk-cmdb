@@ -14,7 +14,6 @@ package util
 
 import (
 	"bytes"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -33,23 +32,14 @@ func GetDailAddress(URL string) (string, error) {
 	return uri.Hostname() + ":" + port, err
 }
 
-func PeekRequest(req *http.Request) (content []byte, err error) {
-	buf := &bytes.Buffer{}
-	content, err = ioutil.ReadAll(io.TeeReader(req.Body, buf))
-	if err != nil {
-		return
+func PeekRequest(req *http.Request) ([]byte, error) {
+	if req.Body != nil {
+		byt, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(byt))
+		return byt, nil
 	}
-	req.Body = NewCloserWrapper(buf, req.Body.Close)
-	return
+	return make([]byte, 0), nil
 }
-
-func NewCloserWrapper(r io.Reader, closeFunc func() error) io.ReadCloser {
-	return &closerWrapper{Reader: r, closeFunc: closeFunc}
-}
-
-type closerWrapper struct {
-	io.Reader
-	closeFunc func() error
-}
-
-func (c *closerWrapper) Close() error { return c.closeFunc() }
