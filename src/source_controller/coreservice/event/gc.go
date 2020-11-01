@@ -30,9 +30,12 @@ func getLoopInternalMinutes() int {
 	// give a random sleep interval to avoid clean different resource keys
 	// at the same time.
 	rand.Seed(time.Now().UnixNano())
-	// time range [60, 180] minutes
-	return 120 + (rand.Intn(60-1) + 1)
+	// time range [30, 60）minutes
+	return int(30 + 6000*rand.Float32()/200)
 }
+
+// gc count for each time
+const gcCount = 1000
 
 func (f *Flow) cleanExpiredEvents() {
 	blog.Infof("will clean expired events job for key: %s after sleep", f.key.Namespace())
@@ -57,19 +60,20 @@ func (f *Flow) cleanExpiredEvents() {
 			}
 
 			if !continueLoop {
-				time.Sleep(interval)
+				// update loop interval
+				interval = time.Duration(getLoopInternalMinutes())
 				// update rid
 				rid = util.GenerateRID()
-				// update loop interval
-				minute := getLoopInternalMinutes()
-				interval = time.Duration(minute) * time.Minute
+				blog.Infof("clean expired events for key: %s, loop interval minutes: %d, rid: %s",
+					f.key.Namespace(), interval, rid)
+
+				time.Sleep(interval * time.Minute)
 				continueLoop = true
-				blog.Infof("clean expired events for key: %s, loop interval minutes: %d, rid: %s", f.key.Namespace(), minute, rid)
 			}
 
 			blog.Infof("start clean expired events for key: %s, rid: %s", f.key.Namespace(), rid)
 
-			nodes, err := f.getNodesFromCursor(100, headKey, f.key)
+			nodes, err := f.getNodesFromCursor(gcCount, headKey, f.key)
 			if err != nil {
 				blog.Errorf("clean expired events for key: %s, but get cursor node from head failed, err: %v, rid: %s",
 					f.key.Namespace(), err, rid)
@@ -221,7 +225,7 @@ func (f *Flow) cleanExpiredEvents() {
 
 			blog.Infof("clean expired events for key: %s success, expire cursor: %v. rid: %s", f.key.Namespace(), expireCursor, rid)
 			// sleep a while during the loop
-			time.Sleep(30 * time.Second)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 }
