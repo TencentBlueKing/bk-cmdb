@@ -141,10 +141,10 @@ type TopoOperation interface {
 
 // HostOperation methods
 type HostOperation interface {
-	TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
-	TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
-	TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
-	RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
+	TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) error
+	TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) error
+	TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) error
+	RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) error
 	DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error
 	GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
@@ -205,7 +205,7 @@ type Core interface {
 	SystemOperation() SystemOperation
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
-	EventOperation()  EventOperation
+	EventOperation() EventOperation
 	CommonOperation() CommonOperation
 }
 
@@ -241,7 +241,7 @@ type ProcessOperation interface {
 	ListServiceInstance(kit *rest.Kit, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
 	ListServiceInstanceDetail(kit *rest.Kit, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 	DeleteServiceInstance(kit *rest.Kit, serviceInstanceIDs []int64) errors.CCErrorCoder
-	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID int64) errors.CCErrorCoder
 	ReconstructServiceInstanceName(kit *rest.Kit, instanceID int64) errors.CCErrorCoder
 
@@ -380,7 +380,7 @@ func New(
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
 		auth:            auth,
-		event:			 event,
+		event:           event,
 		common:          common,
 	}
 }

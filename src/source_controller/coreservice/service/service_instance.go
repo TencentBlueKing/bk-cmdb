@@ -204,13 +204,13 @@ func (s *coreService) GetBusinessDefaultSetModuleInfo(ctx *rest.Contexts) {
 }
 
 // AutoCreateServiceInstanceModuleHost is dependence for host
-func (s *coreService) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
-	serviceInstance, err := s.core.ProcessOperation().AutoCreateServiceInstanceModuleHost(kit, hostID, moduleID)
+func (s *coreService) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder {
+	err := s.core.ProcessOperation().AutoCreateServiceInstanceModuleHost(kit, hostIDs, moduleIDs)
 	if err != nil {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, hostID: %d, moduleID: %d, err: %+v, rid: %s", hostID, moduleID, err, kit.Rid)
-		return nil, err
+		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, hostID: %+v, moduleID: %+v, err: %+v, rid: %s", hostIDs, moduleIDs, err, kit.Rid)
+		return err
 	}
-	return serviceInstance, nil
+	return nil
 }
 
 func (s *coreService) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
