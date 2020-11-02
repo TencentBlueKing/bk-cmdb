@@ -50,7 +50,7 @@
                 <bk-table-column type="selection" width="50" :selectable="handleSelectable" align="center"></bk-table-column>
                 <bk-table-column :label="$t('集群名称')" prop="bk_set_name" show-overflow-tooltip></bk-table-column>
                 <bk-table-column :label="$t('拓扑路径')" prop="topo_path" show-overflow-tooltip>
-                    <template slot-scope="{ row }">{{getTopoPath(row)}}</template>
+                    <span class="topo-path" slot-scope="{ row }" @click="handlePathClick(row)">{{getTopoPath(row)}}</span>
                 </bk-table-column>
                 <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
                 <bk-table-column :label="$t('状态')" prop="status">
@@ -430,6 +430,14 @@
                     },
                     history: true
                 })
+            },
+            handlePathClick (row) {
+                this.$routerActions.open({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: {
+                        node: `set-${row.bk_set_id}`
+                    }
+                })
             }
         }
     }
@@ -461,6 +469,12 @@
             }
         }
         .instance-table {
+            .topo-path {
+                cursor: pointer;
+                &:hover {
+                    color: $primaryColor;
+                }
+            }
             .sync-status {
                 color: #63656E;
                 .status-circle {

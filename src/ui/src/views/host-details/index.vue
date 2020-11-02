@@ -181,7 +181,10 @@
                 }
             },
             setInfoHeight (height) {
-                this.infoHeight = height + 'px'
+                this.infoTimer && clearTimeout(this.infoTimer)
+                this.infoTimer = setTimeout(() => {
+                    this.infoHeight = this.$refs.info.$el.offsetHeight + 'px'
+                }, 250)
             }
         }
     }

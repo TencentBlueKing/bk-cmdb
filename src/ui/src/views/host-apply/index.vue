@@ -302,7 +302,8 @@
                     name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
                     query: {
                         mid: this.moduleId
-                    }
+                    },
+                    history: true
                 })
             },
             handleEdit () {
@@ -310,7 +311,8 @@
                     name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: this.moduleId
-                    }
+                    },
+                    history: true
                 })
             },
             handleSelectModule (data) {

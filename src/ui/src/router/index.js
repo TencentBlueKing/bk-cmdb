@@ -158,7 +158,7 @@ router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
             cancelRequest(router.app)
-            router.app.$store.commit('setTitle', '')
+            to.name !== from.name && router.app.$store.commit('setTitle', '')
             if (to.meta.view !== 'permission') {
                 Vue.set(to.meta, 'view', 'default')
             }

@@ -181,7 +181,8 @@
                         mid: checkedIds.join(','),
                         batch: 1,
                         action: this.actionMode
-                    }
+                    },
+                    history: true
                 })
             },
             handleCancelEdit () {

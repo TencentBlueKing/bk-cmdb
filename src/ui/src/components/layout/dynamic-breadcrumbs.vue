@@ -15,16 +15,23 @@
                 const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
                 return this.title || this.$route.meta.title || menuI18n
             },
+            defaultFrom () {
+                const menu = this.$route.meta.menu || {}
+                if (menu.relative) {
+                    return { name: menu.relative }
+                }
+                return null
+            },
             from () {
                 const queryStr = this.$route.query._f
                 if (queryStr) {
                     try {
                         return JSON.parse(Base64.decode(queryStr))
                     } catch (error) {
-                        return null
+                        return this.defaultFrom
                     }
                 }
-                return null
+                return this.defaultFrom
             }
         },
         methods: {
