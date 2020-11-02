@@ -229,6 +229,8 @@ webServer:
     resourcesPath: /tmp/
     #前端基础页面位置
     htmlRoot: $ui_root
+    #帮助文档地址
+    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
   app:
     agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
     #权限模式，web页面使用，可选值: internal, iam
