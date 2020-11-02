@@ -49,7 +49,7 @@
                 }">
                 <i class="question-icon icon-cc-default"></i>
                 <template slot="content">
-                    <a class="question-link" target="_blank" href="http://docs.bk.tencent.com/product_white_paper/cmdb/">{{$t('帮助文档')}}</a>
+                    <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('帮助文档')}}</a>
                     <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
                 </template>
             </bk-popover>
@@ -68,8 +68,11 @@
             }
         },
         computed: {
-            ...mapGetters(['userName']),
-            ...mapGetters('objectBiz', ['bizId'])
+            ...mapGetters(['site', 'userName']),
+            ...mapGetters('objectBiz', ['bizId']),
+            helpDocUrl () {
+                return this.site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
+            }
         },
         methods: {
             isLinkActive (nav) {
