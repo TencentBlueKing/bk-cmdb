@@ -168,6 +168,12 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 		if strings.Contains(err.Error(), "IndexOptionsConflict") {
 			return true
 		}
+		if strings.Contains(err.Error(), "already exists with a different name") {
+			return true
+		}
+		if strings.Contains(err.Error(), "already exists with different options") {
+			return true
+		}
 	}
 	return err == types.ErrDuplicated
 }
