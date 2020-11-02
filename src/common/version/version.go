@@ -25,8 +25,8 @@ var (
 	CCBRANCH        = ""
 	CCBuildTime     = "2017-03-28 19:50:00"
 	CCGitHash       = "unknown"
-	CCRunMode       = "product" // product, test, dev
-	CCDistro        = "enterprise"
+	CCRunMode       = "product"   // product, test, dev
+	CCDistro        = "community" // enterprise, community
 	CCDistroVersion = "9999.9999.9999"
 	ServiceName     = "unknown"
 )
@@ -36,6 +36,11 @@ var (
 	CCRunModeProduct = "product"
 	CCRunModeTest    = "test"
 	CCRunModeDev     = "dev"
+)
+
+var (
+	CCDistrEnterprise = "enterprise"
+	CCDistrCommunity  = "community"
 )
 
 var (
@@ -50,12 +55,13 @@ func ShowVersion() {
 
 // GetVersion return the version info
 func GetVersion() string {
-	version := fmt.Sprintf(`Version    : %s
-Tag        : %s
-BuildTime  : %s
-GitHash    : %s
-RunMode    : %s
-ServiceName: %s
-`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, ServiceName)
+	version := fmt.Sprintf(`Version     : %s
+Tag         : %s
+BuildTime   : %s
+GitHash     : %s
+RunMode     : %s
+Distribution: %s
+ServiceName : %s
+`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, CCDistro, ServiceName)
 	return version
 }
