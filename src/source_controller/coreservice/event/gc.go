@@ -73,6 +73,27 @@ func (f *Flow) cleanExpiredEvents() {
 
 			blog.Infof("start clean expired events for key: %s, rid: %s", f.key.Namespace(), rid)
 
+			// get operate lock to avoid concurrent revise the chain
+			success, err := f.rds.SetNX(context.Background(), f.key.LockKey(), 1, 15*time.Second).Result()
+			if err != nil {
+				blog.Errorf("clean expired events for key: %s, but get lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			if !success {
+				blog.Errorf("clean expired events for key: %s, can not get lock, rid: %s", f.key.Namespace(), rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			// already get the lock. prepare to release the lock.
+			releaseLock := func() {
+				if err := f.rds.Del(context.Background(), f.key.LockKey()).Err(); err != nil {
+					blog.Errorf("clean expired events for key: %s, but delete lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				}
+			}
+
 			nodes, err := f.getNodesFromCursor(gcCount, headKey, f.key)
 			if err != nil {
 				blog.Errorf("clean expired events for key: %s, but get cursor node from head failed, err: %v, rid: %s",
@@ -131,27 +152,6 @@ func (f *Flow) cleanExpiredEvents() {
 					// is definitely not expired.
 					continueLoop = false
 					break
-				}
-			}
-
-			// get operate lock to avoid concurrent revise the chain
-			success, err := f.rds.SetNX(context.Background(), f.key.LockKey(), 1, 5*time.Second).Result()
-			if err != nil {
-				blog.Errorf("clean expired events for key: %s, but get lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
-				time.Sleep(10 * time.Second)
-				continue
-			}
-
-			if !success {
-				blog.Errorf("clean expired events for key: %s, get lock success, rid: %s", f.key.Namespace(), rid)
-				time.Sleep(10 * time.Second)
-				continue
-			}
-
-			// already get the lock. prepare to release the lock.
-			releaseLock := func() {
-				if err := f.rds.Del(context.Background(), f.key.LockKey()).Err(); err != nil {
-					blog.Errorf("clean expired events for key: %s, but delete lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
 				}
 			}
 
