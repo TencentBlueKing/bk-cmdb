@@ -151,7 +151,7 @@ mongodb:
     common_file_template_str = '''
 #topoServer:
 #  es:
-#    fullTextSearch: off
+#    fullTextSearch: "off"
 #    url: http://127.0.0.1:9200
 #    usr: cc
 #    pwd: cc
