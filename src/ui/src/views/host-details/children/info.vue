@@ -7,10 +7,10 @@
         </div>
         <div class="info-topology">
             <div class="topology-label">
-                {{$t('所属拓扑')}}
+                <span>{{$t('所属拓扑')}}</span>
                 <i class="topology-toggle icon-cc-single-column" v-if="isSingleColumn" @click="toggleDisplayType"></i>
                 <i class="topology-toggle icon-cc-double-column" v-else @click="toggleDisplayType"></i>
-                <span v-pre>：</span>
+                <span v-pre style="padding: 0 5px;">:</span>
             </div>
             <ul class="topology-list"
                 :class="{ 'is-single-column': isSingleColumn }"
@@ -217,8 +217,9 @@
             padding: 0 0 0 50px;
             font-size: 14px;
             font-weight: bold;
+            line-height: 20px;
             .topology-toggle {
-                font-size: 14px;
+                font-size: 16px;
                 margin: 0 0 0 5px;
                 cursor: pointer;
                 &:hover {
