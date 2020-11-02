@@ -33,10 +33,10 @@ func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToInnerModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToInnerModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToDefaultModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.Errorf("transfer host to default module failed. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -48,10 +48,10 @@ func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToNormalModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.Errorf("transfer host to normal module failed. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -64,10 +64,10 @@ func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("transfer host across business failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -79,10 +79,10 @@ func (s *coreService) RemoveFromModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("RemoveFromModule error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("remove host from module failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -137,13 +137,13 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 }
 
 // TransferHostModuleDep is a TransferHostModule dependence
-func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(kit, input)
+func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) error {
+	err := s.core.HostOperation().TransferToNormalModule(kit, input)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, kit.Rid)
-		return exceptionArr, err
+		blog.Errorf("transfer host to normal module failed. err: %s, rid: %s", err.Error(), kit.Rid)
+		return err
 	}
-	return nil, nil
+	return nil
 }
 
 func (s *coreService) GetHostByID(ctx *rest.Contexts) {
