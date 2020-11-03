@@ -160,7 +160,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	for _, inst := range instAsst {
 		sheet.Cell(rowIndex, 0).SetString(inst.ObjectAsstID)
 		sheet.Cell(rowIndex, 1).SetString("")
-		srcInst, ok := instPrimaryInfo[inst.InstID]
+		srcInst, ok := asstData[inst.ObjectID][inst.InstID]
 		if !ok {
 			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, objID, rid)
 			// return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", objID, inst.InstID))
