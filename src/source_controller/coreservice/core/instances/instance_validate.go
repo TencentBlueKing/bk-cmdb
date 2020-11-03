@@ -13,6 +13,7 @@
 package instances
 
 import (
+	stderr "errors"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -118,6 +119,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
+
+	if err := m.validCloudID(kit, objID, instanceData); err != nil {
+		return err
+	}
+
 	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
 		return err
 	}
@@ -149,6 +155,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
+	}
+
+	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	// module instance's name must coincide with template
@@ -252,6 +263,11 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			return kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
 		}
 	}
+
+	if err := m.validCloudID(kit, objID, instanceData); err != nil {
+		return err
+	}
+
 	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
 		return err
 	}
@@ -284,6 +300,11 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 				rawErr.ToCCError(kit.CCError), val, key, kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
+	}
+
+	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	for key, val := range instanceData {
@@ -333,6 +354,42 @@ func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string,
 			}
 			break
 		}
+	}
+	return nil
+}
+
+// validCloudID valid the bk_cloud_id
+func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, BKInnerObjIDHost mapstr.MapStr) error {
+	if objID == common.BKInnerObjIDHost {
+		if BKInnerObjIDHost.Exists(common.BKCloudIDField) {
+			if cloudID, err := BKInnerObjIDHost.Int64(common.BKCloudIDField); err != nil || cloudID < 0 {
+				blog.Errorf("invalid bk_cloud_id value:%#v, err:%v, rid:%s", BKInnerObjIDHost[common.BKCloudIDField], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []metadata.Attribute) error {
+	for _, field := range propertys {
+		if field.PropertyType != common.FieldTypeTime {
+			continue
+		}
+		val, ok := valData[field.PropertyID]
+		if ok == false || val == nil {
+			continue
+		}
+		valStr, ok := val.(string)
+		if ok == false {
+			return stderr.New("it is not a string of time type")
+		}
+		if util.IsTime(valStr) {
+			valData[field.PropertyID] = util.Str2Time(valStr)
+			continue
+		}
+		return stderr.New("can not convert value from string type to time type")
 	}
 	return nil
 }

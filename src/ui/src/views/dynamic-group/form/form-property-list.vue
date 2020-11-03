@@ -7,7 +7,7 @@
                 :label="getPropertyLabel(property)">
                 <div class="form-property-item">
                     <form-operator-selector class="item-operator"
-                        v-if="!['date', 'time'].includes(property.bk_property_type)"
+                        v-if="!withoutOperator.includes(property.bk_property_type)"
                         :type="property.bk_property_type"
                         v-model="condition[property.id].operator"
                         @change="handleOperatorChange(property, ...arguments)">
@@ -38,7 +38,8 @@
         inject: ['dynamicGroupForm'],
         data () {
             return {
-                condition: {}
+                condition: {},
+                withoutOperator: ['date', 'time', 'bool', 'service-template']
             }
         },
         computed: {
@@ -88,6 +89,10 @@
                     },
                     time: {
                         operator: '$range',
+                        value: []
+                    },
+                    'service-template': {
+                        operator: '$in',
                         value: []
                     }
                 }

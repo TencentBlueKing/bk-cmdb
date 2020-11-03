@@ -198,7 +198,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	}
 	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(kit.Ctx, kit.Header, params)
 	if ccErr != nil {
-		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, err.Error(), kit.Rid)
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, ccErr.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hmResult.Result {
@@ -368,39 +368,94 @@ func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond metadata.HostModule
 	return &result.Data, nil
 }
 
-// TransferHostAcrossBusiness  Transfer host across business,
+// TransferHostAcrossBusiness  Transfer host across business, can only transfer between resource set modules
 // delete old business  host and module relation
-func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID int64, hostID []int64, moduleID []int64) errors.CCError {
-	notExistHostIDs, err := lgc.ExistHostIDSInApp(kit, srcBizID, hostID)
+func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID int64, hostID []int64, moduleID int64) errors.CCError {
+	// get both biz's resource set's modules
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKModuleIDField, common.BKAppIDField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField:   map[string]interface{}{common.BKDBIN: []int64{srcBizID, dstAppID}},
+			common.BKDefaultField: map[string]interface{}{common.BKDBNE: common.NormalModuleFlag},
+		},
+	}
+
+	moduleRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query)
+	if err != nil {
+		blog.Errorf("transfer host across business, get modules failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("transfer host across business, get modules failed, err: %s, rid: %s", err.Error(), kit.Rid)
+		return err
+	}
+
+	// valid if dest module is dest biz's resource set's module, get src biz module ids
+	moduleIDArr := make([]int64, 0)
+	isDestModuleValid := false
+	for _, module := range moduleRes.Data.Info {
+		modID, err := module.Int64(common.BKModuleIDField)
+		if err != nil {
+			blog.ErrorJSON("transfer host across business, get module(%s) id failed, err: %s, rid: %s", module, err.Error(), kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		}
+
+		bizID, err := module.Int64(common.BKAppIDField)
+		if err != nil {
+			blog.ErrorJSON("transfer host across business, get module(%s) biz id failed, err: %s, rid: %s", module, err.Error(), kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		}
+
+		if modID == moduleID && bizID == dstAppID {
+			isDestModuleValid = true
+		}
+
+		if bizID == srcBizID {
+			moduleIDArr = append(moduleIDArr, modID)
+		}
+	}
+
+	if !isDestModuleValid {
+		blog.Errorf("transfer host across business, dest module(%d) does not belong to the resource set of the dest biz, rid: %s", moduleID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	// valid if hosts are in the resource set's modules of the src biz
+	notExistHostIDs, err := lgc.notExistAppModuleHost(kit, srcBizID, moduleIDArr, hostID)
 	if err != nil {
 		blog.Errorf("TransferHostAcrossBusiness IsHostExistInApp err:%s,input:{appID:%d,hostID:%d},rid:%s", err.Error(), srcBizID, hostID, kit.Rid)
 		return err
 	}
+
 	if len(notExistHostIDs) > 0 {
-		blog.Errorf("TransferHostAcrossBusiness Host does not belong to the current application; error, params:{appID:%d, hostID:%+v}, rid:%s", srcBizID, notExistHostIDs, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrHostNotINAPP, notExistHostIDs)
+		notExistHostIP := lgc.convertHostIDToHostIP(kit, notExistHostIDs)
+		blog.Errorf("transfer host across business, has host not belong to idle module , host ids: %+v, rid: %s", notExistHostIDs, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrHostModuleConfigNotMatch, util.PrettyIPStr(notExistHostIP))
 	}
 
+	// do transfer and save audit log
 	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), hostID)
 	if err := audit.WithPrevious(kit); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+		return err
 	}
-	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID, DstApplicationID: dstAppID, DstModuleIDArr: moduleID}
+
+	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID, DstApplicationID: dstAppID, DstModuleIDArr: []int64{moduleID}}
 	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, conf)
 	if doErr != nil {
 		blog.Errorf("TransferHostAcrossBusiness http do error, err:%s, input:%+v, rid:%s", doErr.Error(), conf, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !delRet.Result {
+
+	if err := delRet.CCError(); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness http response error, err code:%d, err msg:%s, input:%#v, rid:%s", delRet.Code, delRet.ErrMsg, conf, kit.Rid)
-		return kit.CCError.New(delRet.Code, delRet.ErrMsg)
+		return err
 	}
 
 	if err := audit.SaveAudit(kit); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommResourceInitFailed, "audit server")
-
+		return err
 	}
 
 	return nil

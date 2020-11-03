@@ -1318,7 +1318,7 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 	ctx.RespEntityWithCount(int64(len(processIDs)), ret)
 }
 
-// ListProcessInstancesDetailsByIDs get process instances details by their ids
+// ListProcessInstancesDetailsByIDs get process instances details and relation by their ids
 func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 	input := new(metadata.ListProcessInstancesDetailsByIDsOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1412,6 +1412,54 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithCount(int64(processResult.Data.Count), processInstanceList)
+}
+
+// ListProcessInstancesDetails get process instances details by their ids
+func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("ListProcessRelatedInfo failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	input := new(metadata.ListProcessInstancesDetailsOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	filter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+		common.BKProcessIDField: map[string]interface{}{
+			common.BKDBIN: input.ProcessIDs,
+		},
+	}
+
+	reqParam := &metadata.QueryCondition{
+		Condition: filter,
+		Fields:    input.Fields,
+	}
+
+	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, reqParam)
+	if nil != err {
+		blog.Errorf("ListProcessInstancesDetails failed, coreservice http ReadInstance fail, reqParam: %v, err: %v, rid:%s", *reqParam, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !processResult.Result {
+		blog.Errorf("ListProcessInstancesDetails failed, reqParam: %v, err: %v, rid:%s", *reqParam, err, ctx.Kit.Rid)
+		ctx.RespAutoError(processResult.CCError())
+	}
+
+	ctx.RespEntity(processResult.Data.Info)
 }
 
 var UnbindServiceTemplateOnModuleEnable = true

@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 
 	"github.com/google/uuid"
 )
@@ -92,7 +93,7 @@ type DynamicGroupCondition struct {
 
 // Validate validates dynamic group conditions format.
 func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
-	_, isSupport := DynamicGroupOperators[c.Operator]
+	operator, isSupport := DynamicGroupOperators[c.Operator]
 	if !isSupport {
 		return fmt.Errorf("not support operator, %s", c.Operator)
 	}
@@ -101,12 +102,84 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 		return nil
 	}
 
-	_, isSupport = attributeMap[c.Field]
+	attributeType, isSupport := attributeMap[c.Field]
 	if !isSupport {
 		return fmt.Errorf("not support condition filed, %+v", c.Field)
 	}
 
+	attrType, err := getAttributeType(attributeType)
+	if err != nil {
+		return err
+	}
+
+	if c.Field == common.BKServiceTemplateIDField {
+		if c.Operator != DynamicGroupOperatorIN {
+			return fmt.Errorf("service template field only support $in operator, not support operator, %s", c.Operator)
+		}
+	}
+
+	switch operator {
+	case DynamicGroupOperatorEQ, DynamicGroupOperatorNE, DynamicGroupOperatorLTE, DynamicGroupOperatorGTE:
+		return validAttributeValueType(attrType, c.Value)
+	case DynamicGroupOperatorIN, DynamicGroupOperatorNIN:
+		valueArr, ok := c.Value.([]interface{})
+		if !ok {
+			return fmt.Errorf("operator %s only support array value, not support value, %+v", c.Operator, c.Value)
+		}
+
+		for _, value := range valueArr {
+			if err := validAttributeValueType(attrType, value); err != nil {
+				return err
+			}
+		}
+	case DynamicGroupOperatorLIKE:
+		if attrType != stringType {
+			return fmt.Errorf("operator %s only support string value, not support attribute type, %s", c.Operator, attributeType)
+		}
+
+		return validAttributeValueType(attrType, c.Value)
+	}
+
 	return nil
+}
+
+func validAttributeValueType(attrType string, value interface{}) error {
+	switch attrType {
+	case stringType:
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("attribute only support string value, not support value, %+v", value)
+		}
+	case numericType:
+		if !util.IsNumeric(value) {
+			return fmt.Errorf("attribute only support numeric value, not support value, %+v", value)
+		}
+	case boolType:
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("attribute only support bool value, not support value, %+v", value)
+		}
+	}
+
+	return nil
+}
+
+const (
+	numericType = "numeric"
+	boolType    = "bool"
+	stringType  = "string"
+)
+
+func getAttributeType(attributeType string) (string, error) {
+	switch attributeType {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime,
+		common.FieldTypeTimeZone, common.FieldTypeUser, common.FieldTypeList, common.FieldTypeOrganization:
+		return stringType, nil
+	case common.FieldTypeInt, common.FieldTypeFloat:
+		return numericType, nil
+	case common.FieldTypeBool:
+		return boolType, nil
+	default:
+		return "", fmt.Errorf("not support attribute type, %s", attributeType)
+	}
 }
 
 // DynamicGroupInfoCondition is condition for dynamic grouping, user could search

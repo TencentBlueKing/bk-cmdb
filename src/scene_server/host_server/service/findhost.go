@@ -599,6 +599,13 @@ func (s *Service) listBizHosts(ctx *rest.Contexts, bizID int64, parameter meta.L
 			return nil, errors.New(setList.Code, setList.ErrMsg)
 		}
 
+		if len(setList.Data.Info) == 0 {
+			return &meta.ListHostResult{
+				Count: 0,
+				Info:  []map[string]interface{}{},
+			}, nil
+		}
+
 		for _, set := range setList.Data.Info {
 			id, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 			if err != nil {

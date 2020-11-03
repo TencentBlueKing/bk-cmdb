@@ -32,6 +32,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/cloud"
 	coreCommon "configcenter/src/source_controller/coreservice/core/common"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
+	e "configcenter/src/source_controller/coreservice/core/event"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -139,6 +140,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		dbSystem.New(),
 		cloud.New(mongodb.Client()),
 		auth.New(mongodb.Client()),
+		e.New(mongodb.Client(), redis.Client()),
 		coreCommon.New(),
 	)
 

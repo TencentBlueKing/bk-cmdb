@@ -54,7 +54,8 @@
                     organization: [IN, NIN],
                     singlechar: [IN, NIN],
                     time: [GTE, LTE],
-                    timezone: [IN, NIN]
+                    timezone: [IN, NIN],
+                    'service-template': [IN]
                 }
                 return typeMap[this.type].map(operator => ({ id: operator, name: optionMap[operator] }))
             },

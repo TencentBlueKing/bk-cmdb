@@ -62,6 +62,7 @@ type Site struct {
 	// available value: off, on
 	FullTextSearch string
 	PaasDomainUrl  string
+	HelpDocUrl     string
 }
 
 type Config struct {

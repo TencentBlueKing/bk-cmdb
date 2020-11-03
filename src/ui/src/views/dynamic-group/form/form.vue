@@ -160,10 +160,29 @@
                             fromCache: true
                         }
                     })
+                    propertyMap.module.unshift(this.getServiceTemplateProperty())
                     this.propertyMap = Object.freeze(propertyMap)
                 } catch (error) {
                     console.error(error)
                     this.propertyMap = {}
+                }
+            },
+            getServiceTemplateProperty () {
+                return {
+                    id: Date.now(),
+                    bk_obj_id: 'module',
+                    bk_property_id: 'service_template_id',
+                    bk_property_name: this.$t('服务模板'),
+                    bk_property_index: -1,
+                    bk_property_type: 'service-template',
+                    isonly: true,
+                    ispre: true,
+                    bk_isapi: true,
+                    bk_issystem: true,
+                    isreadonly: true,
+                    editable: false,
+                    bk_property_group: null,
+                    _is_inject_: true
                 }
             },
             async getDetails () {
@@ -172,14 +191,69 @@
                         bizId: this.bizId,
                         id: this.id
                     })
-                    this.formData.name = details.name
-                    this.formData.bk_obj_id = details.bk_obj_id
-                    this.details = details
+                    const transformedDetails = this.transformDetails(details)
+                    this.formData.name = transformedDetails.name
+                    this.formData.bk_obj_id = transformedDetails.bk_obj_id
+                    this.details = transformedDetails
                     this.$nextTick(this.setDetailsSelectedProperties)
                     setTimeout(this.$refs.propertyList.setDetailsCondition, 0)
                 } catch (error) {
                     console.error(error)
                 }
+            },
+            transformDetails (details) {
+                const condition = details.info.condition
+                const transformedCondition = []
+                condition.forEach(data => {
+                    transformedCondition.push({
+                        bk_obj_id: data.bk_obj_id,
+                        condition: data.condition.reduce((accumulator, current) => {
+                            if (['$gte', '$lte'].includes(current.operator)) {
+                                // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
+                                let index = accumulator.findIndex(exist => exist.field === current.field)
+                                if (index === -1) {
+                                    index = accumulator.push({
+                                        field: current.field,
+                                        operator: '$range',
+                                        value: []
+                                    }) - 1
+                                }
+                                const range = accumulator[index]
+                                if (current.operator === '$gte') {
+                                    range.value.unshift(current.value)
+                                } else {
+                                    range.value.push(current.value)
+                                }
+                            } else if (current.operator === '$eq') {
+                                // 将老数据的eq转换为当前支持的数据格式
+                                const transformType = ['singlechar', 'longchar', 'enum']
+                                const property = this.getConditionProperty(data.bk_obj_id, current.field)
+                                if (property && transformType.includes(property.bk_property_type)) {
+                                    accumulator.push({
+                                        field: current.field,
+                                        operator: '$in',
+                                        value: Array.isArray(current.value) ? current.value : [current.value]
+                                    })
+                                } else {
+                                    accumulator.push(current)
+                                }
+                            } else {
+                                accumulator.push(current)
+                            }
+                            return accumulator
+                        }, [])
+                    })
+                })
+                return {
+                    ...details,
+                    info: {
+                        condition: transformedCondition
+                    }
+                }
+            },
+            getConditionProperty (modelId, field) {
+                const properties = this.propertyMap[modelId] || []
+                return properties.find(property => property.bk_property_id === field)
             },
             setDetailsSelectedProperties () {
                 const conditions = this.details.info.condition

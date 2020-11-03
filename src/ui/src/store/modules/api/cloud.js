@@ -13,6 +13,9 @@ const cloudArea = {
         },
         update (context, { id, params, config }) {
             return $http.put(`update/cloudarea/${id}`, params, config)
+        },
+        getHostCount (context, { params, config }) {
+            return $http.post('findmany/cloudarea/hostcount', params, config)
         }
     }
 }

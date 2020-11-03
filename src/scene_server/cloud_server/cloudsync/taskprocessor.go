@@ -21,7 +21,7 @@ import (
 
 const (
 	// 循环检查任务列表的间隔
-	checkInterval int = 5
+	checkInterval time.Duration = 5 * time.Minute
 )
 
 // 任务处理器
@@ -40,12 +40,13 @@ func (t *taskProcessor) TaskChanLoop(taskChan chan *metadata.CloudSyncTask) {
 			tasks, err := t.scheduler.GetTaskList()
 			if err != nil {
 				blog.Errorf("scheduler GetTaskList err:%s", err.Error())
-				time.Sleep(time.Second * time.Duration(checkInterval))
+				time.Sleep(checkInterval)
+				continue
 			}
-			for i, _ := range tasks {
+			for i := range tasks {
 				taskChan <- tasks[i]
 			}
-			time.Sleep(time.Second * time.Duration(checkInterval))
+			time.Sleep(checkInterval)
 		}
 	}()
 }

@@ -935,7 +935,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 
 		// save audit log.
 		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -1377,6 +1377,15 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		hosts[index] = hostInfo
 		indexHostIDMap[index] = intHostID
 	}
+
+	if len(hostIDArr) == 0 {
+		ctx.RespEntity(map[string]interface{}{
+			"error":   errMsg,
+			"success": []string{},
+		})
+		return
+	}
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)

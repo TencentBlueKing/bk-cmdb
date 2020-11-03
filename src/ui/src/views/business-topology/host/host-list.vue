@@ -44,6 +44,7 @@
 <script>
     import HostListOptions from './host-list-options.vue'
     import ModuleSelector from './module-selector.vue'
+    import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
     import { mapGetters, mapState } from 'vuex'
@@ -58,6 +59,7 @@
         components: {
             HostListOptions,
             [ModuleSelector.name]: ModuleSelector,
+            [AcrossBusinessModuleSelector.name]: AcrossBusinessModuleSelector,
             [MoveToResourceConfirm.name]: MoveToResourceConfirm
         },
         filters: {
@@ -233,38 +235,54 @@
                 return params
             },
             handleTransfer (type) {
-                if (['idle', 'business'].includes(type)) {
-                    const props = {
-                        moduleType: type,
-                        business: this.currentBusiness
-                    }
-                    if (type === 'idle') {
-                        props.title = this.$t('转移主机到空闲模块')
-                    } else {
-                        props.title = this.$t('转移主机到业务模块')
-                        const selection = this.table.selection
-                        const firstSelectionModules = selection[0].module.map(module => module.bk_module_id).sort()
-                        const firstSelectionModulesStr = firstSelectionModules.join(',')
-                        const allSame = selection.slice(1).every(item => {
-                            const modules = item.module.map(module => module.bk_module_id).sort().join(',')
-                            return modules === firstSelectionModulesStr
-                        })
-                        if (allSame) {
-                            props.previousModules = firstSelectionModules
-                        }
-                    }
-                    this.dialog.props = props
-                    this.dialog.width = 720
-                    this.dialog.height = 460
-                    this.dialog.component = ModuleSelector.name
-                } else {
-                    this.dialog.props = {
-                        count: this.table.selection.length
-                    }
-                    this.dialog.width = 400
-                    this.dialog.height = 231
-                    this.dialog.component = MoveToResourceConfirm.name
+                const actionMap = {
+                    idle: this.openModuleSelector,
+                    business: this.openModuleSelector,
+                    acrossBusiness: this.openAcrollBusinessModuleSelector,
+                    resource: this.openResourceConfirm
                 }
+                actionMap[type] && actionMap[type](type)
+            },
+            openModuleSelector (type) {
+                const props = {
+                    moduleType: type,
+                    business: this.currentBusiness
+                }
+                if (type === 'idle') {
+                    props.title = this.$t('转移主机到空闲模块')
+                } else {
+                    props.title = this.$t('转移主机到业务模块')
+                    const selection = this.table.selection
+                    const firstSelectionModules = selection[0].module.map(module => module.bk_module_id).sort()
+                    const firstSelectionModulesStr = firstSelectionModules.join(',')
+                    const allSame = selection.slice(1).every(item => {
+                        const modules = item.module.map(module => module.bk_module_id).sort().join(',')
+                        return modules === firstSelectionModulesStr
+                    })
+                    if (allSame) {
+                        props.previousModules = firstSelectionModules
+                    }
+                }
+                this.dialog.props = props
+                this.dialog.width = 720
+                this.dialog.height = 460
+                this.dialog.component = ModuleSelector.name
+                this.dialog.show = true
+            },
+            openResourceConfirm () {
+                this.dialog.props = {
+                    count: this.table.selection.length
+                }
+                this.dialog.width = 400
+                this.dialog.height = 231
+                this.dialog.component = MoveToResourceConfirm.name
+                this.dialog.show = true
+            },
+            openAcrollBusinessModuleSelector () {
+                this.dialog.props = {}
+                this.dialog.width = 720
+                this.dialog.height = 460
+                this.dialog.component = AcrossBusinessModuleSelector.name
                 this.dialog.show = true
             },
             handleDialogCancel () {
@@ -288,6 +306,8 @@
                     }
                 } else if (this.dialog.component === MoveToResourceConfirm.name) {
                     this.moveHostToResource()
+                } else if (this.dialog.component === AcrossBusinessModuleSelector.name) {
+                    this.moveHostToOtherBusiness(...arguments)
                 }
             },
             async transferDirectly (modules) {
@@ -322,18 +342,19 @@
                 }
             },
             gotoTransferPage (modules) {
+                const query = {
+                    sourceModel: this.selectedNode.data.bk_obj_id,
+                    sourceId: this.selectedNode.data.bk_inst_id,
+                    targetModules: modules.map(node => node.data.bk_inst_id).join(','),
+                    resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+                    node: this.selectedNode.id
+                }
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: this.dialog.props.moduleType
                     },
-                    query: {
-                        sourceModel: this.selectedNode.data.bk_obj_id,
-                        sourceId: this.selectedNode.data.bk_inst_id,
-                        targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                        resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
-                        node: this.selectedNode.id
-                    },
+                    query: query,
                     history: true
                 })
             },
@@ -348,19 +369,36 @@
                             requestId: this.request.moveToResource
                         }
                     })
-                    Bus.$emit('refresh-count', {
-                        type: 'host_count',
-                        hosts: [...this.table.selection]
-                    })
-                    this.table.selection = []
-                    this.$success('转移成功')
-                    RouterQuery.set({
-                        _t: Date.now(),
-                        page: 1
-                    })
+                    this.refreshHost()
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            async moveHostToOtherBusiness (modules, targetBizId) {
+                try {
+                    const [targetModule] = modules
+                    await this.$http.post('hosts/modules/across/biz', {
+                        src_bk_biz_id: this.bizId,
+                        dst_bk_biz_id: targetBizId,
+                        bk_host_id: this.table.selection.map(({ host }) => host.bk_host_id),
+                        bk_module_id: targetModule.data.bk_inst_id
+                    })
+                    this.refreshHost()
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            refreshHost () {
+                Bus.$emit('refresh-count', {
+                    type: 'host_count',
+                    hosts: [...this.table.selection]
+                })
+                this.table.selection = []
+                this.$success('转移成功')
+                RouterQuery.set({
+                    _t: Date.now(),
+                    page: 1
+                })
             }
         }
     }

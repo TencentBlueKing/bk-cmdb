@@ -27,6 +27,17 @@ const actions = {
         return $http.post(`findmany/proc/service_template/with_detail`, params, config)
     },
     /**
+     * 查询服务模板详情列表
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    searchServiceTemplateWithoutDetails ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`findmany/proc/service_template`, params, config)
+    },
+    /**
      * 创建服务模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state

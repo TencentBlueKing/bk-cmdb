@@ -38,6 +38,14 @@
                         @click="handleTransfer($event, 'business', false)">
                         {{$t('业务模块')}}
                     </cmdb-auth>
+                    <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]"
+                        v-bk-tooltips="{
+                            disabled: isIdleSetModules,
+                            content: $t('仅空闲模块主机才能转移到其他业务')
+                        }"
+                        @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
+                        {{$t('其他业务')}}
+                    </li>
                     <!-- 暂忽略鉴权，交互待调整，需要选择目录 -->
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
                         ignore
@@ -123,7 +131,7 @@
             :properties="hostProperties"
             :selection="$parent.table.selection">
         </edit-multiple-host>
-        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="460">
+        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="650">
             <component
                 :is="dialog.component"
                 v-bind="dialog.componentProps"
@@ -151,7 +159,7 @@
     import HostFilter from '@/components/hosts/filter'
     import CmdbImport from '@/components/import/import'
     import EditMultipleHost from './edit-multiple-host.vue'
-    import HostSelector from './host-selector.vue'
+    import HostSelector from './host-selector-new'
     import CmdbColumnsConfig from '@/components/columns-config/columns-config'
     import { mapGetters, mapState } from 'vuex'
     import {
@@ -176,7 +184,7 @@
                 dialog: {
                     show: false,
                     props: {
-                        width: 850,
+                        width: 1100,
                         showCloseIcon: false
                     },
                     component: null,
@@ -245,6 +253,11 @@
                 return this.$parent.table.selection.every(data => {
                     const modules = data.module
                     return modules.every(module => module.default === 1)
+                })
+            },
+            isIdleSetModules () {
+                return this.$parent.table.selection.every(data => {
+                    return data.module.every(module => module.default >= 1)
                 })
             },
             clipboardList () {

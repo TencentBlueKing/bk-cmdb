@@ -64,23 +64,23 @@ type CCHandler struct {
 	OnExtraUpdate    ProcHandlerFunc
 	OnLanguageUpdate func(previous, current map[string]language.LanguageMap)
 	OnErrorUpdate    func(previous, current map[string]errors.ErrorCode)
-	OnMongodbUpdate  func(previous,current ProcessConfig)
-	OnRedisUpdate    func(previous,current ProcessConfig)
+	OnMongodbUpdate  func(previous, current ProcessConfig)
+	OnRedisUpdate    func(previous, current ProcessConfig)
 }
 
 type CC struct {
 	sync.Mutex
 	// used to stop the config center gracefully.
-	ctx           context.Context
-	disc          crd.ConfRegDiscvIf
-	handler       *CCHandler
-	procName      string
-	previousProc  *ProcessConfig
-	previousExtra *ProcessConfig
-	previousMongodb  *ProcessConfig
-	previousRedis    *ProcessConfig
-	previousLang  map[string]language.LanguageMap
-	previousError map[string]errors.ErrorCode
+	ctx             context.Context
+	disc            crd.ConfRegDiscvIf
+	handler         *CCHandler
+	procName        string
+	previousProc    *ProcessConfig
+	previousExtra   *ProcessConfig
+	previousMongodb *ProcessConfig
+	previousRedis   *ProcessConfig
+	previousLang    map[string]language.LanguageMap
+	previousError   map[string]errors.ErrorCode
 }
 
 func (c *CC) run() error {
@@ -152,7 +152,8 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	prev := c.previousProc
 	c.previousProc = now
 	if err := SetCommonFromByte(now.ConfigData); err != nil {
-		blog.Warnf("add updated configuration error: %v", err)
+		blog.Errorf("add updated configuration error: %v", err)
+		return
 	}
 	if c.handler != nil {
 		if c.handler.OnProcessUpdate != nil {
@@ -176,7 +177,8 @@ func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 	}
 	c.previousExtra = now
 	if err := SetExtraFromByte(now.ConfigData); err != nil {
-		blog.Warnf("add updated configuration error: %v", err)
+		blog.Errorf("add updated extra configuration error: %v", err)
+		return
 	}
 	if c.handler != nil {
 		if c.handler.OnExtraUpdate != nil {

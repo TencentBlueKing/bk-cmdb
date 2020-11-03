@@ -11,6 +11,8 @@ export const IAM_VIEWS = {
     CUSTOM_QUERY: 'biz_custom_query',
     // 业务列表
     BIZ: 'biz',
+    // 跨业务转主机选择的主机所属业务的列表
+    BIZ_FOR_HOST_TRANS: 'biz_for_host_trans',
     // 主机列表
     HOST: 'host',
     // 主机池目录列表(作为源目录时使用的视图)
@@ -413,6 +415,31 @@ export const IAM_ACTIONS = {
             })
             const directoryVerifyMeta = IAM_ACTIONS.C_RESOURCE_HOST.transform(IAM_ACTIONS.C_RESOURCE_HOST.cmdb_action, [1]) // 主机池空闲机ID为1，交互待调整
             return [hostVerifyMeta, directoryVerifyMeta]
+        }
+    },
+    // 跨业务转主机
+    HOST_TRANSFER_ACROSS_BIZ: {
+        id: 'host_transfer_across_business',
+        name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
+        cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
+        relation: [{
+            view: IAM_VIEWS.BIZ_FOR_HOST_TRANS,
+            instances: [IAM_VIEWS.BIZ_FOR_HOST_TRANS]
+        }, {
+            view: IAM_VIEWS.BIZ,
+            instances: [IAM_VIEWS.BIZ]
+        }],
+        transform: (cmdbAction, relationIds) => {
+            const [currentBizId, targetBizId] = relationIds
+            const verifyMeta = basicTransform(cmdbAction)
+            verifyMeta.parent_layers = [{
+                resource_id: currentBizId,
+                resource_type: 'biz'
+            }, {
+                resource_id: targetBizId,
+                resource_type: 'biz'
+            }]
+            return verifyMeta
         }
     },
 

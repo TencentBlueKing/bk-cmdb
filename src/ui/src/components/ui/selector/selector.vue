@@ -16,6 +16,7 @@
                 :key="option[settingKey]"
                 :id="option[settingKey]"
                 :name="option[displayKey]">
+                <slot v-bind="option" />
             </bk-option>
         </bk-option-group>
     </bk-select>
@@ -34,6 +35,7 @@
             :key="option[settingKey]"
             :id="option[settingKey]"
             :name="option[displayKey]">
+            <slot v-bind="option" />
         </bk-option>
     </bk-select>
 </template>

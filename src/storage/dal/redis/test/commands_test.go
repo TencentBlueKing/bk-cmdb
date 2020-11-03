@@ -531,6 +531,34 @@ var _ = Describe("Commands", func() {
 		Expect(ping.Val()).To(Equal("PONG"))
 	})
 
+	It("should Rename", func() {
+		set := client.Set(ctx, "key", "hello", 0)
+		Expect(set.Err()).NotTo(HaveOccurred())
+		Expect(set.Val()).To(Equal("OK"))
+
+		status := client.Rename(ctx, "key", "key1")
+		Expect(status.Err()).NotTo(HaveOccurred())
+		Expect(status.Val()).To(Equal("OK"))
+
+		get := client.Get(ctx, "key1")
+		Expect(get.Err()).NotTo(HaveOccurred())
+		Expect(get.Val()).To(Equal("hello"))
+	})
+
+	It("should RenameNX", func() {
+		set := client.Set(ctx, "key", "hello", 0)
+		Expect(set.Err()).NotTo(HaveOccurred())
+		Expect(set.Val()).To(Equal("OK"))
+
+		renameNX := client.RenameNX(ctx, "key", "key1")
+		Expect(renameNX.Err()).NotTo(HaveOccurred())
+		Expect(renameNX.Val()).To(Equal(true))
+
+		get := client.Get(ctx, "key1")
+		Expect(get.Err()).NotTo(HaveOccurred())
+		Expect(get.Val()).To(Equal("hello"))
+	})
+
 	It("should RPop", func() {
 		rPush := client.RPush(ctx, "list", "one")
 		Expect(rPush.Err()).NotTo(HaveOccurred())

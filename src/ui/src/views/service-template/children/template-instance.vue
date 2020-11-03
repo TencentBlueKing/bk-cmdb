@@ -27,7 +27,7 @@
                 <bk-table-column type="selection" :selectable="checkSelectable"></bk-table-column>
                 <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
                 <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath" show-overflow-tooltip>
-                    <template slot-scope="{ row }">{{row._path_}}</template>
+                    <span slot-scope="{ row }" class="topo-path" @click="handlePathClick(row)">{{row._path_}}</span>
                 </bk-table-column>
                 <bk-table-column :label="$t('上次同步时间')" sortable :sort-method="sortByTime" show-overflow-tooltip>
                     <template slot-scope="{ row }">{{row.last_time | time}}</template>
@@ -223,6 +223,14 @@
             },
             handleToCreatedInstance () {
                 this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
+            },
+            handlePathClick (row) {
+                this.$routerActions.open({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: {
+                        node: `module-${row.bk_module_id}`
+                    }
+                })
             }
         }
     }
@@ -232,6 +240,12 @@
     .template-instance-layout {
         height: 100%;
         padding: 0 20px;
+    }
+    .topo-path {
+        cursor: pointer;
+        &:hover {
+            color: $primaryColor;
+        }
     }
     .instance-main {
         .options {

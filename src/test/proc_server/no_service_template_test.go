@@ -866,6 +866,20 @@ var _ = Describe("no service template test", func() {
 			Expect(data.Info[0].Property[common.BKProcessNameField]).To(Equal("p3"))
 		})
 
+		It("list process instance details", func() {
+			input := metadata.ListProcessInstancesDetailsOption{
+				ProcessIDs: []int64{processId},
+				Fields:     []string{common.BKProcessIDField, common.BKProcessNameField},
+			}
+			rsp, err := processClient.ListProcessInstancesDetails(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			Expect(len(rsp.Data)).To(Equal(1))
+			pName, _ := rsp.Data[0].String(common.BKProcessNameField)
+			Expect(pName).To(Equal("p3"))
+		})
+
 		It("update process instances by their ids", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
@@ -880,7 +894,7 @@ var _ = Describe("no service template test", func() {
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 		})
 
-		It("list process instance details by their ids", func() {
+		It("list process instance details with bind info", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
 				"process_ids":       []int64{processId},

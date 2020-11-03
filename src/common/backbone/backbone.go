@@ -164,14 +164,14 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		OnLanguageUpdate: engine.onLanguageUpdate,
 		OnErrorUpdate:    engine.onErrorUpdate,
 		OnMongodbUpdate:  engine.onMongodbUpdate,
-		OnRedisUpdate:	  engine.onRedisUpdate,
+		OnRedisUpdate:    engine.onRedisUpdate,
 	}
 
 	// add default configcenter
 	zkdisc := crd.NewZkRegDiscover(client)
 	configCenter := &cc.ConfigCenter{
-		Type:       common.BKDefaultConfigCenter,
-		ConfigCenterDetail:    zkdisc,
+		Type:               common.BKDefaultConfigCenter,
+		ConfigCenterDetail: zkdisc,
 	}
 	cc.AddConfigCenter(configCenter)
 
@@ -200,21 +200,26 @@ func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTP
 		PProfEnabled: pprofEnabled,
 	}
 
-	return ListenAndServe(e.server, e.SvcDisc, cancel)
+	if err := ListenAndServe(e.server, e.SvcDisc, cancel); err != nil {
+		return err
+	}
+
+	// wait for a while to see if ListenAndServe in goroutine is successful
+	// to avoid registering an invalid server address on zk
+	time.Sleep(time.Second)
+
+	return e.SvcDisc.Register(e.RegisterPath, e.ServerInfo)
 }
 
 func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
-	if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
-		return nil, err
-	}
-
 	return &Engine{
-		ServerInfo: c.RegisterInfo,
-		CoreAPI:    c.CoreAPI,
-		SvcDisc:    disc,
-		Language:   language.NewFromCtx(language.EmptyLanguageSetting),
-		CCErr:      errors.NewFromCtx(errors.EmptyErrorsSetting),
-		CCCtx:      newCCContext(),
+		RegisterPath: c.RegisterPath,
+		ServerInfo:   c.RegisterInfo,
+		CoreAPI:      c.CoreAPI,
+		SvcDisc:      disc,
+		Language:     language.NewFromCtx(language.EmptyLanguageSetting),
+		CCErr:        errors.NewFromCtx(errors.EmptyErrorsSetting),
+		CCCtx:        newCCContext(),
 	}, nil
 }
 
@@ -230,9 +235,10 @@ type Engine struct {
 
 	sync.Mutex
 
-	ServerInfo types.ServerInfo
-	server     Server
-	srvInfo    *types.ServerInfo
+	RegisterPath string
+	ServerInfo   types.ServerInfo
+	server       Server
+	srvInfo      *types.ServerInfo
 
 	Language language.CCLanguageIf
 	CCErr    errors.CCErrorIf

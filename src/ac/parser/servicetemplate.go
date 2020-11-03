@@ -23,8 +23,6 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-
-	"github.com/tidwall/gjson"
 )
 
 var ServiceTemplateAuthConfigs = []AuthConfig{
@@ -45,7 +43,11 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.Update,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			templateID := gjson.GetBytes(request.Body, common.BKFieldID).Int()
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+			templateID := val.Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")
 			}
@@ -132,7 +134,11 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.Delete,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			templateID := gjson.GetBytes(request.Body, common.BKServiceTemplateIDField).Int()
+			val, err := request.getValueFromBody(common.BKServiceTemplateIDField)
+			if err != nil {
+				return nil, err
+			}
+			templateID := val.Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")
 			}

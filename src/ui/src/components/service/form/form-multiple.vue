@@ -40,8 +40,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
-            ...mapGetters('objectBiz', ['bizId'])
+            ...mapGetters(['supplierAccount'])
         },
         async created () {
             try {

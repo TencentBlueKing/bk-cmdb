@@ -193,6 +193,7 @@
                     title: this.$t('批量编辑'),
                     instance: {},
                     hostId: this.hostId,
+                    bizId: this.bizId,
                     submitHandler: this.handleSubmit,
                     invisibleProperties: ['bind_info']
                 })
@@ -204,6 +205,7 @@
                     title: `${this.$t('编辑进程')}${item.bk_process_name}`,
                     instance: item,
                     hostId: this.hostId,
+                    bizId: this.bizId,
                     submitHandler: this.handleSubmit
                 })
             },

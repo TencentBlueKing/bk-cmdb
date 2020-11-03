@@ -169,6 +169,10 @@ func (w *Watcher) runScriptsWithArrayChainNode(script string, keys []string, arg
 		return nil, err
 	}
 
+	if result == nil {
+		return nil, fmt.Errorf("unsupported redis eval result value: %v", result)
+	}
+
 	switch reflect.TypeOf(result).Kind() {
 	case reflect.String:
 		err := result.(string)
@@ -291,6 +295,10 @@ func (w *Watcher) runScriptsWithArrayString(script string, keys []string, args .
 	result, err := w.cache.Eval(w.ctx, script, keys, args...).Result()
 	if err != nil {
 		return nil, err
+	}
+
+	if result == nil {
+		return nil, fmt.Errorf("unsupported redis eval result value: %v", result)
 	}
 
 	switch reflect.TypeOf(result).Kind() {
