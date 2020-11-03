@@ -57,22 +57,19 @@
                 try {
                     await this.validateList()
                     if (this.validList.length) {
-                        const hostList = []
-                        const result = await this.$store.dispatch('hostSearch/searchHost', {
+                        const { info } = await this.$store.dispatch('hostSearch/searchHost', {
                             params: this.getParams(),
                             config: {
                                 requestId: this.request.host
                             }
                         })
-                        this.validList.forEach(ip => {
-                            const targetHost = result.info.find(target => target.host.bk_host_innerip === ip)
-                            if (targetHost) {
-                                hostList.push(targetHost)
-                            } else {
-                                this.invalidList.push(ip)
-                            }
+                        const unexistList = this.validList.filter(ip => {
+                            const exist = info.some(target => target.host.bk_host_innerip === ip)
+                            return !exist
                         })
-                        this.hostList = hostList
+                        const newHostList = info.filter(({ host }) => !this.hostList.some(target => target.host.bk_host_id === host.bk_host_id))
+                        this.hostList.push(...newHostList)
+                        this.invalidList.push(...unexistList)
                     }
                     this.value = this.invalidList.join('\n')
                 } catch (e) {
