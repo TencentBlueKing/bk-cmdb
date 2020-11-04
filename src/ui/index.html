@@ -29,7 +29,8 @@
             authscheme: <%= htmlWebpackPlugin.options.config.AUTH_SCHEME %> || 'internal',
             authCenter: <%= htmlWebpackPlugin.options.config.AUTH_CENTER %>,
             buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>',
-            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH %> || 'off'
+            fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH %> || 'off',
+            helpDocUrl: <%= htmlWebpackPlugin.options.config.HELP_DOC_URL %>
         }
         window.User = {
             admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,

@@ -24,19 +24,19 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.ServerOption
 	Engine   *backbone.Engine
-	CacheCli *redis.Client
+	CacheCli redis.Client
 	*logics.Logics
 	Config  *options.Config
 	Session sessions.RedisStore
@@ -107,6 +107,11 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/netproperty/import", s.ImportNetProperty)
 	ws.POST("/netproperty/export", s.ExportNetProperty)
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
+
+	// if no route, redirect to 404 page
+	ws.NoRoute(func(c *gin.Context) {
+		c.Redirect(302, "/#/404")
+	})
 
 	return ws
 }

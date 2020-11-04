@@ -22,13 +22,12 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
-
-	"gopkg.in/redis.v5"
 )
 
 type Client struct {
-	rds   *redis.Client
+	rds   redis.Client
 	event reflector.Interface
 	lock  tools.RefreshingLock
 }
@@ -38,9 +37,9 @@ type Client struct {
 func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWithIDOption) (string, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	needRefresh := false
-	data, err := c.rds.Get(hostKey.HostDetailKey(opt.HostID)).Result()
+	data, err := c.rds.Get(context.Background(), hostKey.HostDetailKey(opt.HostID)).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			// return directly to avoid cache penetration
 			blog.Errorf("get host: %d from redis failed, err: %v, rid: %s", opt.HostID, err, rid)
 			return "", err
@@ -94,7 +93,7 @@ func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWith
 		keys[i] = hostKey.HostDetailKey(id)
 	}
 
-	hosts, err := c.rds.MGet(keys...).Result()
+	hosts, err := c.rds.MGet(context.Background(), keys...).Result()
 	if err != nil {
 		blog.Errorf("list host with ids, but get from redis failed, err: %v, rid: %s", err, rid)
 		return nil, err

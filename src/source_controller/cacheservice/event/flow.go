@@ -131,6 +131,7 @@ func (f *Flow) tryLoopFlow(ctx context.Context, opts *types.WatchOptions) error 
 					blog.Errorf("loop flow %s failed, err: %v", f.Collection, err)
 					continue
 				}
+
 				blog.Warnf("retry loop flow: %s from token: %s success.", f.Collection, lastToken)
 			}
 		}
@@ -147,8 +148,17 @@ func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
 		blog.Errorf("run flow, but watch failed, err: %v", err)
 		return err
 	}
+
 	go func() {
 		for e := range watcher.EventChan {
+
+			select {
+			case <-ctx.Done():
+				blog.Warnf("received stop watch flow collection: %s, err: %v", opts.Collection, ctx.Err())
+				return
+			default:
+
+			}
 
 			if !f.isMaster.IsMaster() {
 				blog.V(4).Infof("run flow, received collection %s event, type: %s, oid: %s, but not master, skip.", f.Collection,
@@ -223,7 +233,7 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 		return false, err
 	}
 
-	keys, err := redis.Client().HMGet(f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
+	keys, err := redis.Client().HMGet(context.Background(), f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
 	if err != nil {
 		return true, err
 	}
@@ -272,9 +282,9 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 	}
 
 	// get previous node with previous cursor
-	prev, err := redis.Client().HGet(f.key.MainHashKey(), prevCursor).Result()
+	prev, err := redis.Client().HGet(context.Background(), f.key.MainHashKey(), prevCursor).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if redis.IsNilErr(err) {
 			blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
 			return false, err
 		}
@@ -340,7 +350,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 		return false, err
 	}
 
-	val := map[string]string{
+	val := map[string]interface{}{
 		currentCursor:   string(nByte),
 		f.key.HeadKey(): string(hByte),
 		f.key.TailKey(): string(tByte),
@@ -365,7 +375,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 	// already get the lock. prepare to release the lock.
 	releaseLock := func() {
-		if err := redis.Client().Del(f.key.LockKey()).Err(); err != nil {
+		if err := redis.Client().Del(context.Background(), f.key.LockKey()).Err(); err != nil {
 			blog.ErrorfDepthf(1, "run flow, set head and tail key, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		}
 	}
@@ -435,9 +445,9 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 // getStartToken get the started token when the system is started.
 // if this token is empty, then system need to watch from now on.
 func (f *Flow) getStartToken() (token string, err error) {
-	tail, err := redis.Client().HGet(f.key.MainHashKey(), f.key.TailKey()).Result()
+	tail, err := redis.Client().HGet(context.Background(), f.key.MainHashKey(), f.key.TailKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			return "", err
 		}
 		// the tail key is not exist.
@@ -501,7 +511,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 		return false, err
 	}
 
-	values := map[string]string{
+	values := map[string]interface{}{
 		prevCursor:      string(pBytes),
 		currentCursor:   string(nBytes),
 		f.key.TailKey(): string(tBytes),
@@ -526,7 +536,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 
 	// already get the lock. prepare to release the lock.
 	releaseLock := func() {
-		if err := redis.Client().Del(f.key.LockKey()).Err(); err != nil {
+		if err := redis.Client().Del(context.Background(), f.key.LockKey()).Err(); err != nil {
 			blog.ErrorfDepthf(1, "run flow, insert node, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		}
 	}
@@ -551,7 +561,7 @@ func (f *Flow) getLockWithRetry(name string, oid string) bool {
 	getLock := false
 	for retry := 0; retry < 10; retry++ {
 		// get operate lock to avoid concurrent revise the chain
-		success, err := redis.Client().SetNX(f.key.LockKey(), "lock", 5*time.Second).Result()
+		success, err := redis.Client().SetNX(context.Background(), f.key.LockKey(), "lock", 5*time.Second).Result()
 		if err != nil {
 			blog.Errorf("get lock failed, err: %v, oid: %s", name, err, oid)
 			time.Sleep(500 * time.Millisecond)

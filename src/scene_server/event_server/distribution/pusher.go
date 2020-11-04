@@ -29,9 +29,9 @@ import (
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/redis.v5"
 )
 
 var httpCli = httpclient.NewHttpClient()
@@ -53,7 +53,7 @@ type EventPusher struct {
 	subid int64
 
 	// cache is cc redis client.
-	cache *redis.Client
+	cache redis.Client
 
 	// distributer handles all events distribution.
 	distributer *Distributor
@@ -67,7 +67,7 @@ type EventPusher struct {
 }
 
 // NewEventPusher creates a new EventPusher object.
-func NewEventPusher(ctx context.Context, engine *backbone.Engine, subid int64, cache *redis.Client, distributer *Distributor,
+func NewEventPusher(ctx context.Context, engine *backbone.Engine, subid int64, cache redis.Client, distributer *Distributor,
 	pusherHandleTotal *prometheus.CounterVec, pusherHandleDuration *prometheus.HistogramVec) *EventPusher {
 	return &EventPusher{
 		ctx:                  ctx,
@@ -93,7 +93,7 @@ func (s *EventPusher) Handle(dist *metadata.DistInst) error {
 	}
 
 	subscriberEventQueueKey := types.EventCacheSubscriberEventQueueKeyPrefix + fmt.Sprint(dist.SubscriptionID)
-	if err := s.cache.LPush(subscriberEventQueueKey, distData).Err(); err != nil {
+	if err := s.cache.LPush(s.ctx, subscriberEventQueueKey, distData).Err(); err != nil {
 		return err
 	}
 	return nil
@@ -109,7 +109,7 @@ func (s *EventPusher) increaseFailure(subid int64) error {
 
 // statIncrease stats callback details by increase in cache.
 func (s *EventPusher) statIncrease(subid int64, key string) error {
-	return s.cache.HIncrBy(types.EventCacheDistCallBackCountPrefix+fmt.Sprint(subid), key, 1).Err()
+	return s.cache.HIncrBy(s.ctx, types.EventCacheDistCallBackCountPrefix+fmt.Sprint(subid), key, 1).Err()
 }
 
 // cleaning keeps cleaning expire or redundancy events in subscriber event cache queue.
@@ -129,7 +129,7 @@ func (s *EventPusher) cleaning() {
 
 		// clean.
 		subscriberEventQueueKey := types.EventCacheSubscriberEventQueueKeyPrefix + fmt.Sprint(s.subid)
-		eventCount, err := s.cache.LLen(subscriberEventQueueKey).Result()
+		eventCount, err := s.cache.LLen(s.ctx, subscriberEventQueueKey).Result()
 		if err != nil {
 			blog.Errorf("fetch expire and redundancy subscriber events failed, %+v", err)
 			continue
@@ -142,14 +142,14 @@ func (s *EventPusher) cleaning() {
 		}
 
 		if eventCount < defaultCleanDelThreshold {
-			if err := s.cache.LTrim(subscriberEventQueueKey, 0, eventCount-defaultCleanUnit).Err(); err != nil {
+			if err := s.cache.LTrim(s.ctx, subscriberEventQueueKey, 0, eventCount-defaultCleanUnit).Err(); err != nil {
 				blog.Errorf("trim expire and redundancy subscriber events failed, %+v", err)
 				continue
 			}
 		}
 
 		// too many events.
-		if err := s.cache.Del(subscriberEventQueueKey).Err(); err != nil {
+		if err := s.cache.Del(s.ctx, subscriberEventQueueKey).Err(); err != nil {
 			blog.Errorf("delete expire and redundancy subscriber queue failed, %+v", err)
 			continue
 		}
@@ -242,7 +242,7 @@ func (s *EventPusher) push(dist *metadata.DistInst) error {
 	eventType := dist.EventInst.GetType()
 	suberCursorKey := types.EventCacheSubscriberCursorKey(eventType, s.subid)
 
-	if err := s.cache.Set(suberCursorKey, dist.Cursor, defaultEventCacheSubscriberCursorExpire).Err(); err != nil {
+	if err := s.cache.Set(s.ctx, suberCursorKey, dist.Cursor, defaultEventCacheSubscriberCursorExpire).Err(); err != nil {
 		blog.Warnf("save subscriber[%d] cursor for action[%s] failed, %+v", s.subid, eventType, err)
 	}
 	return nil
@@ -261,7 +261,7 @@ func (s *EventPusher) run() {
 
 		// keep sending.
 		cost := time.Now()
-		distDatas := s.cache.BRPop(defaultTransTimeout, types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(s.subid)).Val()
+		distDatas := s.cache.BRPop(s.ctx, defaultTransTimeout, types.EventCacheSubscriberEventQueueKeyPrefix+fmt.Sprint(s.subid)).Val()
 		s.pusherHandleDuration.WithLabelValues("PopSubscriberEvent").Observe(time.Since(cost).Seconds())
 
 		// distDatas is redis brpop results, and you can parse it base on CMD

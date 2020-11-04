@@ -16,7 +16,7 @@
   "dependencies": {
     "@blueking/paas-login": "0.0.6",
     "@blueking/user-selector": "^1.0.5-beta.2",
-    "@icon-cool/bk-icon-cmdb": "0.0.18",
+    "@icon-cool/bk-icon-cmdb": "^0.1.2",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "axios": "0.18.0",
     "bk-magic-vue": "2.2.2",
@@ -35,7 +35,7 @@
     "lodash.throttle": "4.1.1",
     "md5": "2.2.1",
     "moment": "2.22.2",
-    "plotly.js": "^1.51.3",
+    "plotly.js": "1.51.3",
     "sortablejs": "1.8.4",
     "utf8-byte-length": "^1.0.4",
     "v-click-outside": "1.0.5",

@@ -105,7 +105,7 @@ func (lgc *Logics) ListSystemInstance(kit *rest.Kit, resourceType iam.TypeID, fi
 
 	cond := make(map[string]interface{})
 	if len(filter.Keyword) != 0 {
-		cond[GetResourceNameField(resourceType)] = map[string]interface{}{common.BKDBLIKE: filter.Keyword}
+		cond[GetResourceNameField(resourceType)] = map[string]interface{}{common.BKDBLIKE: filter.Keyword, common.BKDBOPTIONS: "i"}
 	}
 
 	if len(extraCond) > 0 {
@@ -127,7 +127,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 	}
 
 	if len(filter.Keyword) != 0 {
-		cond[GetResourceNameField(resourceType)] = map[string]interface{}{common.BKDBLIKE: filter.Keyword}
+		cond[GetResourceNameField(resourceType)] = map[string]interface{}{common.BKDBLIKE: filter.Keyword, common.BKDBOPTIONS: "i"}
 	}
 
 	if filter.Parent == nil {
@@ -159,7 +159,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 	}
 
 	if len(filter.Keyword) != 0 {
-		cond[common.BKInstNameField] = map[string]interface{}{common.BKDBLIKE: filter.Keyword}
+		cond[common.BKInstNameField] = map[string]interface{}{common.BKDBLIKE: filter.Keyword, common.BKDBOPTIONS: "i"}
 	}
 
 	if filter.Parent == nil {
@@ -340,7 +340,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 	instances := make([]types.InstanceResource, 0)
 	for _, host := range hosts {
 		name := getHostDisplayName(host.InnerIP, cloudMap[host.CloudID])
-		if len(keyword) != 0 && !strings.Contains(name, keyword) {
+		if len(keyword) != 0 && !strings.Contains(strings.ToUpper(name), strings.ToUpper(keyword)) {
 			continue
 		}
 

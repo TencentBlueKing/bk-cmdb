@@ -131,8 +131,8 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 
 	err = m.update(kit, objID, inputParam.Data, inputParam.Condition)
 	if err != nil {
-		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, inputParam.Condition, kit.Rid)
-		return nil, err
+		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, err, inputParam.Condition, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBUpdateFailed)
 	}
 
 	if objID == common.BKInnerObjIDHost {
@@ -335,14 +335,19 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 		return nil, instErr
 	}
 
-	count, countErr := mongodb.Client().Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
-	if countErr != nil {
-		blog.Errorf("count instance error [%v], rid: %s", countErr, kit.Rid)
-		return nil, countErr
+	var finalCount uint64
+
+	if !inputParam.DisableCounter {
+		count, countErr := mongodb.Client().Table(tableName).Find(inputParam.Condition).Count(kit.Ctx)
+		if countErr != nil {
+			blog.Errorf("count instance error [%v], rid: %s", countErr, kit.Rid)
+			return nil, countErr
+		}
+		finalCount = count
 	}
 
 	dataResult := &metadata.QueryResult{
-		Count: count,
+		Count: finalCount,
 		Info:  instItems,
 	}
 

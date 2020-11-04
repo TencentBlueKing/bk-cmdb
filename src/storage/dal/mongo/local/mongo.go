@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 	dtype "configcenter/src/storage/types"
 
@@ -35,7 +36,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
-	"gopkg.in/redis.v5"
 )
 
 type Mongo struct {
@@ -53,6 +53,7 @@ type MongoConf struct {
 	MaxIdleConns   uint64
 	URI            string
 	RsName         string
+	SocketTimeout  int
 }
 
 // NewMgo returns new RDB
@@ -64,7 +65,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	if config.RsName == "" {
 		return nil, fmt.Errorf("mongodb rsName not set")
 	}
-
+	socketTimeout := time.Second * time.Duration(config.SocketTimeout)
 	// do not change this, our transaction plan need it to false.
 	// it's related with the transaction number(eg txnNumber) in a transaction session.
 	disableWriteRetry := false
@@ -72,6 +73,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		MaxPoolSize:    &config.MaxOpenConns,
 		MinPoolSize:    &config.MaxIdleConns,
 		ConnectTimeout: &timeout,
+		SocketTimeout:  &socketTimeout,
 		ReplicaSet:     &config.RsName,
 		RetryWrites:    &disableWriteRetry,
 	}
@@ -136,7 +138,7 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 }
 
 // InitTxnManager TxnID management of initial transaction
-func (c *Mongo) InitTxnManager(r *redis.Client) error {
+func (c *Mongo) InitTxnManager(r redis.Client) error {
 	return c.tm.InitTxnManager(r)
 }
 
@@ -164,6 +166,12 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 			return true
 		}
 		if strings.Contains(err.Error(), "IndexOptionsConflict") {
+			return true
+		}
+		if strings.Contains(err.Error(), "already exists with a different name") {
+			return true
+		}
+		if strings.Contains(err.Error(), "already exists with different options") {
 			return true
 		}
 	}
@@ -669,6 +677,13 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.CreateOne(ctx, createIndexInfo)
+	if err != nil {
+		// ignore the duplicated index error
+		if strings.Contains(err.Error(), "already exists") {
+			return nil
+		}
+	}
+
 	return err
 }
 
@@ -869,6 +884,11 @@ func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result inte
 
 // validHostType valid if host query uses specified type that transforms ip & operator array to string
 func validHostType(collection string, projection map[string]int, result interface{}, rid interface{}) error {
+	if result == nil {
+		blog.Errorf("host query result is nil, rid: %s", rid)
+		return fmt.Errorf("host query result type invalid")
+	}
+
 	if collection != common.BKTableNameBaseHost {
 		return nil
 	}

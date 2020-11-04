@@ -28,7 +28,8 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             i18n: '主机属性自动应用',
-            parent: MENU_BUSINESS_HOST_APPLY
+            parent: MENU_BUSINESS_HOST_APPLY,
+            relative: MENU_BUSINESS_HOST_APPLY
         }
     })
 }, {
@@ -39,7 +40,8 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             i18n: '主机属性自动应用',
-            parent: MENU_BUSINESS_HOST_APPLY
+            parent: MENU_BUSINESS_HOST_APPLY,
+            relative: MENU_BUSINESS_HOST_APPLY
         }
     })
 }, {
@@ -50,7 +52,8 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             i18n: '主机属性自动应用',
-            parent: MENU_BUSINESS_HOST_APPLY
+            parent: MENU_BUSINESS_HOST_APPLY,
+            relative: MENU_BUSINESS_HOST_APPLY
         }
     })
 }, {
@@ -61,7 +64,8 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             i18n: '主机属性自动应用',
-            parent: MENU_BUSINESS_HOST_APPLY
+            parent: MENU_BUSINESS_HOST_APPLY,
+            relative: MENU_BUSINESS_HOST_APPLY
         }
     })
 }]

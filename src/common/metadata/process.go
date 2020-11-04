@@ -107,6 +107,11 @@ type GetServiceInstanceInModuleInput struct {
 	Selectors selector.Selectors `json:"selectors"`
 }
 
+type GetServiceInstanceBySetTemplateInput struct {
+	SetTemplateID int64    `json:"set_template_id"`
+	Page          BasePage `json:"page"`
+}
+
 type DiffModuleWithTemplateOption struct {
 	BizID     int64   `json:"bk_biz_id"`
 	ModuleIDs []int64 `json:"bk_module_ids"`
@@ -339,6 +344,23 @@ func (o *ListProcessInstancesNameIDsOption) Validate() (rawError cErr.RawErrorIn
 	return cErr.RawErrorInfo{}
 }
 
+type ListProcessInstancesDetailsOption struct {
+	ProcessIDs []int64  `json:"bk_process_ids"`
+	Fields     []string `json:"fields"`
+}
+
+// Validate validates the input param
+func (o *ListProcessInstancesDetailsOption) Validate() (rawError cErr.RawErrorInfo) {
+	if len(o.ProcessIDs) == 0 || len(o.ProcessIDs) > common.BKMaxInstanceLimit {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_process_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 type ListProcessInstancesDetailsByIDsOption struct {
 	BizID      int64    `json:"bk_biz_id"`
 	ProcessIDs []int64  `json:"process_ids"`
@@ -502,11 +524,9 @@ type Process struct {
 	ProcessID    int64   `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id" mapstructure:"bk_process_id"`
 	FuncName     *string `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name" mapstructure:"bk_func_name"`
 	WorkPath     *string `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path" mapstructure:"work_path"`
-	//BindIP          *string       `field:"bind_ip" json:"bind_ip" bson:"bind_ip" structs:"bind_ip" mapstructure:"bind_ip"`
 	Priority    *int64  `field:"priority" json:"priority" bson:"priority" structs:"priority" mapstructure:"priority"`
 	ReloadCmd   *string `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd" mapstructure:"reload_cmd"`
 	ProcessName *string `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name" mapstructure:"bk_process_name"`
-	//Port           *string   `field:"port" json:"port" bson:"port" structs:"port" mapstructure:"port"`
 	PidFile        *string   `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file" mapstructure:"pid_file"`
 	AutoStart      *bool     `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start" mapstructure:"auto_start"`
 	AutoTimeGap    *int64    `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" structs:"auto_time_gap" mapstructure:"auto_time_gap"`
@@ -517,16 +537,9 @@ type Process struct {
 	FuncID         *string   `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id" structs:"bk_func_id" mapstructure:"bk_func_id"`
 	User           *string   `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
 	TimeoutSeconds *int64    `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
-	//Protocol        *ProtocolType `field:"protocol" json:"protocol" bson:"protocol" structs:"protocol" mapstructure:"protocol"`
 	Description     *string `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
 	SupplierAccount string  `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 	StartParamRegex *string `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
-	//PortEnable      *bool         `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
-	//GatewayIP       *string       `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip" structs:"bk_gateway_ip" mapstructure:"bk_gateway_ip"`
-	//GatewayPort     *string       `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port" structs:"bk_gateway_port" mapstructure:"bk_gateway_port"`
-	//GatewayProtocol *ProtocolType `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol" structs:"bk_gateway_protocol" mapstructure:"bk_gateway_protocol"`
-	//GatewayCity     *string       `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city" structs:"bk_gateway_city" mapstructure:"bk_gateway_city"`
-
 	BindInfo []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 

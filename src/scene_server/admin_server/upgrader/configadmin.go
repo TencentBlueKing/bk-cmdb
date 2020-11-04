@@ -16,11 +16,13 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/version"
 	"configcenter/src/storage/dal"
 )
 
@@ -34,18 +36,7 @@ type configChangeItem struct {
 	config string
 }
 
-// configChangeHistory 配置变更历史
-// 每次配置有变更时，需要在configChangeHistory里增加一项configChangeItem，表示当前要变更的配置
-var configChangeHistory = []configChangeItem{
-	{
-		dir:         "y3.8.202006092135",
-		description: "第一次初始化前的配置",
-		config:      ``,
-	},
-	{
-		dir:         "y3.8.202006092135",
-		description: "第一次初始化后的配置",
-		config: `
+var initConfig = `
 {
     "backend": {
         "snapshotBizName": "蓝鲸",
@@ -53,10 +44,10 @@ var configChangeHistory = []configChangeItem{
     },
     "site": {
         "title": {
-            "value": "配置平台 | 蓝鲸智云企业版",
+            "value": "SITE_TITLE_VAL",
             "description": "网站标题",
             "i18n": {
-                "cn": "配置平台 | 蓝鲸智云企业版",
+                "cn": "SITE_TITLE_VAL",
                 "en": "CMDB | BlueKing"
             }
         },
@@ -216,8 +207,35 @@ var configChangeHistory = []configChangeItem{
         }
     }
 }
-`,
+`
+
+// configChangeHistory 配置变更历史
+// 每次配置有变更时，需要在configChangeHistory里增加一项configChangeItem，表示当前要变更的配置
+var configChangeHistory = []configChangeItem{
+	{
+		dir:         "y3.8.202006092135",
+		description: "第一次初始化前的配置",
+		config:      ``,
 	},
+	{
+		dir:         "y3.8.202006092135",
+		description: "第一次初始化后的配置",
+		config:      initConfig,
+	},
+}
+
+// setInitConfigSiteTitle 根据版本编译参数设置网站title
+func setInitConfigSiteTitle() {
+	switch version.CCDistro {
+	case version.CCDistrCommunity:
+		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版")
+	case version.CCDistrEnterprise:
+		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云企业版")
+	default:
+		initConfig = strings.ReplaceAll(initConfig, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版")
+	}
+
+	configChangeHistory[1].config = initConfig
 }
 
 // UpgradeConfigAdmin 升级配置管理
@@ -225,6 +243,7 @@ var configChangeHistory = []configChangeItem{
 // 将configChangeHistory里的最后一项作为当前配置项curCfg，倒数第二项作为上一次配置项preCfg
 // 需要将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
 func UpgradeConfigAdmin(ctx context.Context, db dal.RDB) error {
+	setInitConfigSiteTitle()
 
 	preCfg, curCfg, dbCfg, err := getConfigs(ctx, db)
 	if err != nil {

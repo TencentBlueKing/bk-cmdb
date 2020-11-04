@@ -14,7 +14,7 @@ class FileTemplate(Template):
 
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
-        redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
+        redis_pass_v, sentinel_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
         enable_cryptor_v, secret_key_url_v, secrets_addrs_v, secrets_token_v, secrets_project_v, secrets_env_v
@@ -28,6 +28,7 @@ def generate_config_file(
         mongo_port=mongo_port_v,
         redis_host=redis_ip_v,
         redis_pass=redis_pass_v,
+        sentinel_pass=sentinel_pass_v,
         redis_port=redis_port_v,
         cc_url=cc_url_v,
         paas_url=paas_url_v,
@@ -84,6 +85,7 @@ redis:
   #公共redis配置信息,用于存取缓存，用户信息等数据
   host: $redis_host:$redis_port
   pwd: "$redis_pass"
+  sentinelPwd: "$sentinel_pass"
   database: "0"
   maxOpenConns: 3000
   maxIDleConns: 1000
@@ -92,16 +94,19 @@ redis:
   snap:
     host: $redis_host:$redis_port
     pwd: "$redis_pass"
+    sentinelPwd: "$sentinel_pass"
     database: "0"
   #接收模型实例数据的redis
   discover:
     host: $redis_host:$redis_port
     pwd: "$redis_pass"
+    sentinelPwd: "$sentinel_pass"
     database: "0"
   #接受硬件数据的redis
   netcollect:
     host: $redis_host:$redis_port
     pwd: "$redis_pass"
+    sentinelPwd: "$sentinel_pass"
     database: "0"
     '''
 
@@ -134,6 +139,8 @@ mongodb:
   maxIdleConns: 100
   mechanism: SCRAM-SHA-1
   rsName: $rs_name
+  #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+  socketTimeoutSeconds: 10
     '''
     template = FileTemplate(mongodb_file_template_str)
     result = template.substitute(**context)
@@ -144,7 +151,7 @@ mongodb:
     common_file_template_str = '''
 #topoServer:
 #  es:
-#    fullTextSearch: off
+#    fullTextSearch: "off"
 #    url: http://127.0.0.1:9200
 #    usr: cc
 #    pwd: cc
@@ -186,18 +193,16 @@ mongodb:
 #    secretsProject:
 #    secretsEnv:
 
-# topo_server专属配置
-topoServer:
-  #elasticsearch相关
-  es:
-    #全文检索功能开关(取值：off/on)，默认是off，开启是on
-    fullTextSearch: $full_text_search
-    #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
-    url: $es_url
-    #用户
-    usr: $es_user
-    #密码
-    pwd: $es_pass
+#elasticsearch配置
+es:
+  #全文检索功能开关(取值：off/on)，默认是off，开启是on
+  fullTextSearch: "$full_text_search"
+  #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
+  url: $es_url
+  #用户
+  usr: $es_user
+  #密码
+  pwd: $es_pass
 # web_server专属配置
 webServer:
   api:
@@ -224,8 +229,8 @@ webServer:
     resourcesPath: /tmp/
     #前端基础页面位置
     htmlRoot: $ui_root
-    #全文检索功能开关(取值：off/on)，默认是off，开启是on
-    fullTextSearch: $full_text_search
+    #帮助文档地址
+    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
   app:
     agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
     #权限模式，web页面使用，可选值: internal, iam
@@ -255,6 +260,17 @@ cloudServer:
     secretsToken: ${secrets_token}
     secretsProject: ${secrets_project}
     secretsEnv: ${secrets_env}
+#datacollection专属配置
+datacollection:
+  hostsnap:
+    # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
+    changeRangePercent: 10
+    # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
+    changeCountExpireMinute: 10
+    # 用于设置单个服务主机快照处理请求能力，起到限流的作用，令牌桶配置，最多请求数通过burst设置。qps的默认值为40，burst的默认值为100
+    rateLimiter:
+      qps: 40
+      burst: 100
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -335,6 +351,7 @@ mongodb:
 redis:
   host: $redis_host:$redis_port
   pwd: "$redis_pass"
+  sentinelPwd: "$sentinel_pass"
   database: "0"
   maxOpenConns: 5
   maxIDleConns: 1
@@ -411,6 +428,7 @@ def main(argv):
     redis_ip = ''
     redis_port = 6379
     redis_pass = ''
+    sentinel_pass = ''
     mongo_ip = ''
     mongo_port = 27017
     mongo_user = ''
@@ -461,7 +479,7 @@ def main(argv):
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
-        "redis_pass=", "mongo_ip=", "mongo_port=", "rs_name=",
+        "redis_pass=", "sentinel_pass=", "mongo_ip=", "mongo_port=", "rs_name=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
@@ -475,6 +493,7 @@ def main(argv):
       --redis_ip           <redis_ip>             the redis ip, eg:127.0.0.1
       --redis_port         <redis_port>           the redis port, default:6379
       --redis_pass         <redis_pass>           the redis user password
+      --sentinel_pass      <sentinel_pass>        the redis sentinel password
       --mongo_ip           <mongo_ip>             the mongo ip ,eg:127.0.0.1
       --mongo_port         <mongo_port>           the mongo port, eg:27017
       --mongo_user         <mongo_user>           the mongo user name, default:cc
@@ -509,6 +528,7 @@ def main(argv):
       --redis_ip           127.0.0.1 \\
       --redis_port         6379 \\
       --redis_pass         1111 \\
+      --sentinel_pass      2222 \\
       --mongo_ip           127.0.0.1 \\
       --mongo_port         27017 \\
       --mongo_user         cc \\
@@ -563,6 +583,9 @@ def main(argv):
         elif opt in ("-s", "--redis_pass"):
             redis_pass = arg
             print('redis_pass:', redis_pass)
+        elif opt in ("-s", "--sentinel_pass"):
+            sentinel_pass = arg
+            print('sentinel_pass:', sentinel_pass)
         elif opt in ("-m", "--mongo_ip"):
             mongo_ip = arg
             print('mongo_ip:', mongo_ip)
@@ -730,6 +753,7 @@ def main(argv):
         redis_ip_v=redis_ip,
         redis_port_v=redis_port,
         redis_pass_v=redis_pass,
+        sentinel_pass_v=sentinel_pass,
         mongo_ip_v=mongo_ip,
         mongo_port_v=mongo_port,
         mongo_user_v=mongo_user,

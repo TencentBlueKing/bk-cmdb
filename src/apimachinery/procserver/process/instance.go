@@ -105,6 +105,20 @@ func (p *process) ListProcessInstancesDetailsByIDs(ctx context.Context, h http.H
 	return
 }
 
+func (p *process) ListProcessInstancesDetails(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessInstancesDetailsOption) (resp *metadata.MapArrayResponse, err error) {
+	resp = new(metadata.MapArrayResponse)
+	subPath := "/findmany/proc/process_instance/detail/biz/%d"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (p *process) UpdateProcessInstancesByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/proc/process_instance/by_ids"

@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"configcenter/src/ac/iam"
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/cloud_server/app/options"
 	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"configcenter/src/scene_server/cloud_server/logics"
@@ -179,5 +179,6 @@ func (c *CloudServer) getSecretKey() (string, error) {
 		return "", err
 	}
 
-	return secretsClient.GetCloudAccountSecretKey(context.Background(), http.Header{})
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	return secretsClient.GetCloudAccountSecretKey(context.Background(), header)
 }

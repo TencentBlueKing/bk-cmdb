@@ -15,7 +15,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"reflect"
 	"strconv"
 	"sync"
@@ -39,12 +38,11 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	dalredis "configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/redis.v5"
 )
 
 const (
@@ -76,16 +74,16 @@ type DataCollectionConfig struct {
 	MongoDB mongo.Config
 
 	// CCRedis CC main redis configs.
-	CCRedis dalredis.Config
+	CCRedis redis.Config
 
 	// SnapRedis snap redis configs.
-	SnapRedis dalredis.Config
+	SnapRedis redis.Config
 
 	// DiscoverRedis discover redis configs.
-	DiscoverRedis dalredis.Config
+	DiscoverRedis redis.Config
 
 	// NetCollectRedis net collection redis configs.
-	NetCollectRedis dalredis.Config
+	NetCollectRedis redis.Config
 
 	// ESB blueking ESB configs.
 	Esb esbutil.EsbConfig
@@ -115,16 +113,16 @@ type DataCollection struct {
 	db dal.RDB
 
 	// redisCli is cc main cache redis client.
-	redisCli *redis.Client
+	redisCli redis.Client
 
 	// snapCli is snap redis client.
-	snapCli *redis.Client
+	snapCli redis.Client
 
 	// disCli is discover redis client.
-	disCli *redis.Client
+	disCli redis.Client
 
 	// netCli is net collect redis client.
-	netCli *redis.Client
+	netCli redis.Client
 
 	// authManager is auth manager.
 	authManager *extensions.AuthManager
@@ -288,7 +286,7 @@ func (c *DataCollection) initModules() error {
 	c.service.SetLogics(mgoCli, esb)
 
 	// connect to cc main redis.
-	redisCli, err := dalredis.NewFromConfig(c.config.CCRedis)
+	redisCli, err := redis.NewFromConfig(c.config.CCRedis)
 	if err != nil {
 		return fmt.Errorf("connect to cc main redis, %+v", err)
 	}
@@ -298,7 +296,7 @@ func (c *DataCollection) initModules() error {
 
 	// connect to snap redis.
 	if c.config.SnapRedis.Enable != "false" {
-		snapCli, err := dalredis.NewFromConfig(c.config.SnapRedis)
+		snapCli, err := redis.NewFromConfig(c.config.SnapRedis)
 		if err != nil {
 			return fmt.Errorf("connect to snap redis, %+v", err)
 		}
@@ -309,7 +307,7 @@ func (c *DataCollection) initModules() error {
 
 	// connect to discover redis.
 	if c.config.DiscoverRedis.Enable != "false" {
-		disCli, err := dalredis.NewFromConfig(c.config.DiscoverRedis)
+		disCli, err := redis.NewFromConfig(c.config.DiscoverRedis)
 		if nil != err {
 			return fmt.Errorf("connect to discover redis, %+v", err)
 		}
@@ -320,7 +318,7 @@ func (c *DataCollection) initModules() error {
 
 	// connect to net collect redis.
 	if c.config.NetCollectRedis.Enable != "false" {
-		netCli, err := dalredis.NewFromConfig(c.config.NetCollectRedis)
+		netCli, err := redis.NewFromConfig(c.config.NetCollectRedis)
 		if nil != err {
 			return fmt.Errorf("connect to netcollect redis, %+v", err)
 		}
@@ -484,9 +482,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 func (c *DataCollection) setSnapshotBizName() error {
 	tryCnt := 30
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
-		res, err := c.engine.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), http.Header{})
+		res, err := c.engine.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
 		if err != nil {
 			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
 			continue

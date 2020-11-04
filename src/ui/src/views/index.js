@@ -4,7 +4,7 @@ import hostLanding from '@/views/host-details/router.config'
 
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
-import customQuery from '@/views/custom-query/router.config'
+import customQuery from '@/views/dynamic-group/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'

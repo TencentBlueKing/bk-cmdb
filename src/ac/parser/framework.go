@@ -33,7 +33,9 @@ type AuthConfig struct {
 	ResourceAction   meta.Action
 	InstanceIDGetter InstanceIDGetter
 	BizIDGetter      BizIDGetter
-	Description      string
+	// BizIndex is the index in the request uri elements, used when the BizIDGetter get bizID from url
+	BizIndex    int
+	Description string
 }
 
 func (config *AuthConfig) Match(request *RequestContext) bool {
@@ -52,6 +54,7 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 		if item.Match(request) == false {
 			continue
 		}
+		blog.V(4).Infof("match method:%s, pattern:%s, regex:%s", item.HTTPMethod, item.Pattern, item.Regex)
 
 		var bizID int64
 		var err error
@@ -97,23 +100,27 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 }
 
 func DefaultBizIDGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
-	return request.BizID, nil
+	bizID, err = request.getBizIDFromBody()
+	if err != nil {
+		return
+	}
+	return
 }
 
-var (
-	BizIDRegex = regexp.MustCompile("bk_biz_id/([0-9]+)")
-)
-
 func BizIDFromURLGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
-	match := BizIDRegex.FindStringSubmatch(request.URI)
-	if len(match) == 0 {
-		return 0, fmt.Errorf("url: %s not match regex: %s", request.URI, BizIDRegex)
+
+	if len(request.Elements) <= config.BizIndex {
+		blog.Errorf("invalid BizIndex:%d for uri:%s", config.BizIndex, request.URI)
+		return 0, fmt.Errorf("invalid BizIndex:%d for uri:%s", config.BizIndex, request.URI)
 	}
-	bizID, err = util.GetInt64ByInterface(match[1])
+
+	bizIDStr := request.Elements[config.BizIndex]
+	bizID, err = util.GetInt64ByInterface(bizIDStr)
 	if err != nil {
-		blog.Warnf("get business id from request path failed, name: %s, err: %v, rid: %s", config.Name, err, request.Rid)
+		blog.Errorf("get business id from request path failed, name: %s, BizIndex:%d, uri:%s, err: %v, rid: %s", config.Name, config.BizIndex, request.URI, err, request.Rid)
 		return 0, err
 	}
+
 	return bizID, nil
 }
 

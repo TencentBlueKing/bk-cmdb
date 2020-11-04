@@ -61,7 +61,7 @@ func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.He
 	return
 }
 
-func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.HostSnapBatchResult, err error){
+func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.HostSnapBatchResult, err error) {
 	subPath := "/hosts/snapshot/batch"
 
 	err = hs.client.Get().
@@ -73,7 +73,6 @@ func (hs *hostServer) HostSnapInfoBatch(ctx context.Context, h http.Header, dat 
 		Into(resp)
 	return
 }
-
 
 func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
@@ -523,6 +522,108 @@ func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, 
 	return
 }
 
+// CreateDynamicGroup is dynamic group create action api machinery.
+func (hs *hostServer) CreateDynamicGroup(ctx context.Context, header http.Header,
+	data map[string]interface{}) (resp *metadata.IDResult, err error) {
+
+	resp = new(metadata.IDResult)
+	subPath := "/dynamicgroup"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// UpdateDynamicGroup is dynamic group update action api machinery.
+func (hs *hostServer) UpdateDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error) {
+
+	resp = new(metadata.BaseResp)
+	subPath := "/dynamicgroup/%s/%s"
+
+	err = hs.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// DeleteDynamicGroup is dynamic group delete action api machinery.
+func (hs *hostServer) DeleteDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.BaseResp, err error) {
+
+	resp = new(metadata.BaseResp)
+	subPath := "/dynamicgroup/%s/%s"
+
+	err = hs.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// GetDynamicGroup is dynamic group query detail action api machinery.
+func (hs *hostServer) GetDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.GetDynamicGroupResult, err error) {
+
+	resp = new(metadata.GetDynamicGroupResult)
+	subPath := "/dynamicgroup/%s/%s"
+
+	err = hs.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchDynamicGroup is dynamic group search action api machinery.
+func (hs *hostServer) SearchDynamicGroup(ctx context.Context, bizID string, header http.Header,
+	data *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error) {
+
+	resp = new(metadata.SearchDynamicGroupResult)
+	subPath := "/dynamicgroup/search/%s"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// ExecuteDynamicGroup is dynamic group execute action base on conditions api machinery.
+func (hs *hostServer) ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
+
+	resp = new(metadata.Response)
+	subPath := "/dynamicgroup/data/%s/%s"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
 func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
@@ -623,6 +724,20 @@ func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudI
 		Body(nil).
 		SubResourcef(subPath, cloudID).
 		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+	resp = new(metadata.CloudAreaHostCountResult)
+	subPath := "/findmany/cloudarea/hostcount"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return

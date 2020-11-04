@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -587,4 +588,38 @@ type MultipleSyncHistoryResult struct {
 type MultipleSyncRegionResult struct {
 	BaseResp `json:",inline"`
 	Data     []*Region `json:"data"`
+}
+
+type SubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     Subscription `json:"data"`
+}
+
+type MultipleSubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     RspSubscriptionSearch `json:"data"`
+}
+
+type DistinctFieldOption struct {
+	TableName string                 `json:"table_name"`
+	Field     string                 `json:"field"`
+	Filter    map[string]interface{} `json:"filter"`
+}
+
+func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
+	if d.TableName == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"table_name"},
+		}
+	}
+
+	if d.Field == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"Field"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

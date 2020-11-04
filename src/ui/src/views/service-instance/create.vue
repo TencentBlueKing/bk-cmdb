@@ -85,7 +85,7 @@
 </template>
 
 <script>
-    import HostSelector from '@/views/business-topology/host/host-selector.vue'
+    import HostSelector from '@/views/business-topology/host/host-selector-new'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
     import { mapGetters } from 'vuex'
@@ -126,8 +126,8 @@
                 dialog: {
                     show: false,
                     props: {
-                        width: 850,
-                        height: 460,
+                        width: 1110,
+                        height: 650,
                         showCloseIcon: false
                     },
                     component: null,

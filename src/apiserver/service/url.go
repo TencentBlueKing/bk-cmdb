@@ -179,7 +179,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/findmany/audit_list"):
 		from, to, isHit = rootPath, topoRoot, true
 
-	case strings.HasPrefix(string(*u), rootPath+"/find/audit/"):
+	case strings.HasPrefix(string(*u), rootPath+"/find/audit"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):
@@ -216,6 +216,13 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/userapi/"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	// dynamic grouping URL matching, and proxy to host server.
+	case string(*u) == (rootPath + "/dynamicgroup"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/dynamicgroup/"):
 		from, to, isHit = rootPath, hostRoot, true
 
 	case string(*u) == (rootPath + "/usercustom"):

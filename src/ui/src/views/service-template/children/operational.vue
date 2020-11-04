@@ -53,6 +53,7 @@
                             <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('mainClassificationId') }" style="width: auto;">
                                 <cmdb-selector
                                     class="fl"
+                                    display-key="displayName"
                                     :placeholder="$t('请选择一级分类')"
                                     :searchable="true"
                                     :list="mainList"
@@ -63,12 +64,20 @@
                                     name="mainClassificationId"
                                     v-model="formData['mainClassification']"
                                     @on-selected="handleSelect">
+                                    <template slot-scope="{ name, id }">
+                                        <div class="bk-option-content-default" :title="`${name}（#${id}）`">
+                                            <div class="bk-option-name medium-font">
+                                                {{name}}<span class="category-id">（#{{id}}）</span>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </cmdb-selector>
                                 <p class="form-error">{{errors.first('mainClassificationId')}}</p>
                             </div>
                             <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('secondaryClassificationId') }" style="width: auto;">
                                 <cmdb-selector
                                     class="fl"
+                                    display-key="displayName"
                                     :placeholder="$t('请选择二级分类')"
                                     :auto-select="true"
                                     :searchable="true"
@@ -76,6 +85,13 @@
                                     v-validate="'required'"
                                     name="secondaryClassificationId"
                                     v-model="formData['secondaryClassification']">
+                                    <template slot-scope="{ name, id }">
+                                        <div class="bk-option-content-default" :title="`${name}（#${id}）`">
+                                            <div class="bk-option-name medium-font">
+                                                {{name}}<span class="category-id">（#{{id}}）</span>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </cmdb-selector>
                                 <p class="form-error">{{errors.first('secondaryClassificationId')}}</p>
                             </div>
@@ -357,7 +373,13 @@
                     const [properties, groups, { info: categories }, templateResponse] = await Promise.all(request)
                     this.properties = properties
                     this.propertyGroups = groups
-                    const categoryList = categories.map(item => item.category)
+                    const categoryList = categories.map(item => {
+                        return {
+                            ...item.category,
+                            displayName: `${item.category.name}（#${item.category.id}）`
+                        }
+                    })
+                    this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
                     this.mainList = categoryList.filter(classification => !classification.bk_parent_id)
                     this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
                     if (!this.isCreateMode) {
@@ -995,5 +1017,10 @@
     }
     .cmdb-form-input.is-edit-name {
         width: 120px;
+    }
+    .bk-option-name {
+        .category-id {
+            color: #c4c6cc;
+        }
     }
 </style>

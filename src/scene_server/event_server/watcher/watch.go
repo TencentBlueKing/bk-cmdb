@@ -21,9 +21,10 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/stream/types"
 
-	"gopkg.in/redis.v5"
+	rawRedis "github.com/go-redis/redis/v7"
 )
 
 /* eventserver watcher defines, just created base on old service/watch.go */
@@ -41,11 +42,11 @@ type Watcher struct {
 	ctx context.Context
 
 	// cache is cc redis client.
-	cache *redis.Client
+	cache redis.Client
 }
 
 // NewWatcher creates a new Watcher object.
-func NewWatcher(ctx context.Context, cache *redis.Client) *Watcher {
+func NewWatcher(ctx context.Context, cache redis.Client) *Watcher {
 	return &Watcher{ctx: ctx, cache: cache}
 }
 
@@ -175,7 +176,7 @@ func (w *Watcher) WatchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 func (w *Watcher) GetEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNodes []*watch.ChainNode,
 	key event.Key, rid string) ([]*watch.WatchEventDetail, error) {
 
-	results := make([]*redis.StringCmd, 0)
+	results := make([]*rawRedis.StringCmd, 0)
 	pipe := w.cache.Pipeline()
 	for _, node := range hitNodes {
 		if node.Cursor == key.TailKey() {
@@ -212,7 +213,7 @@ func (w *Watcher) GetEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNod
 
 // GetEventDetailsWithCursorNodes gets event detail strings base on target hit chain nodes.
 func (w *Watcher) GetEventDetailsWithCursorNodes(hitNodes []*watch.ChainNode, key event.Key) ([]string, error) {
-	results := make([]*redis.StringCmd, 0)
+	results := make([]*rawRedis.StringCmd, 0)
 
 	pipe := w.cache.Pipeline()
 	for _, node := range hitNodes {

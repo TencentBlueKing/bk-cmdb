@@ -21,18 +21,18 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/middleware/user/plugins"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	"gopkg.in/redis.v5"
 )
 
 type publicUser struct {
 	config   options.Config
 	engine   *backbone.Engine
-	cacheCli *redis.Client
+	cacheCli redis.Client
 }
 
 // LoginUser  user login

@@ -925,7 +925,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 				return err
 			}
 			if !result.Result {
-				blog.Errorf("UpdateHostPropertyBatch UpdateObject http response error, err code:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, ctx.Kit.Rid)
+				blog.Errorf("UpdateHostPropertyBatch UpdateObject http response error, err code:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.Error(), data, opt, ctx.Kit.Rid)
 				return result.CCError()
 			}
 
@@ -935,7 +935,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 
 		// save audit log.
 		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -1135,7 +1135,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	idleModuleID := moduleIDArr[0]
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
-	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), ctx.Kit, hostIDArr)
+	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), hostIDArr)
 
 	var exceptionArr []meta.ExceptionResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
@@ -1216,7 +1216,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 			}
 		}
 
-		if err := audit.SaveAudit(ctx.Kit.Ctx); err != nil {
+		if err := audit.SaveAudit(ctx.Kit); err != nil {
 			blog.Errorf("SaveAudit failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
 		}
@@ -1377,6 +1377,15 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		hosts[index] = hostInfo
 		indexHostIDMap[index] = intHostID
 	}
+
+	if len(hostIDArr) == 0 {
+		ctx.RespEntity(map[string]interface{}{
+			"error":   errMsg,
+			"success": []string{},
+		})
+		return
+	}
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)

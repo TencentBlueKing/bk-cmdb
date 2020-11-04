@@ -149,6 +149,20 @@ func (asst *Association) SearchInst(ctx context.Context, h http.Header, request 
 
 	return
 }
+func (asst *Association) SearchAssociationRelatedInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+	resp = new(metadata.SearchAssociationInstResult)
+	subPath := "/inst/association/related/action/search"
+
+	err = asst.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
 func (asst *Association) CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	resp = new(metadata.CreateAssociationInstResult)
 	subPath := "/inst/association/action/create"
@@ -171,6 +185,21 @@ func (asst *Association) DeleteInst(ctx context.Context, h http.Header, assoID i
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef(subPath, assoID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (asst *Association) DeleteInstBatch(ctx context.Context, h http.Header, assoIDs *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error) {
+	resp = new(metadata.DeleteAssociationInstBatchResult)
+	subPath := "/inst/association/batch/action/delete"
+
+	err = asst.client.Delete().
+		WithContext(ctx).
+		Body(assoIDs).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

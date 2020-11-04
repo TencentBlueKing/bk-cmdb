@@ -14,20 +14,22 @@ package service
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/distribution"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 // Service impls main logics as service for datacolection app.
@@ -39,7 +41,7 @@ type Service struct {
 	db dal.RDB
 
 	// cache is cc redis client.
-	cache *redis.Client
+	cache redis.Client
 
 	// distributer is event subscription distributer.
 	distributer *distribution.Distributor
@@ -58,10 +60,9 @@ func (s *Service) SetDB(db dal.RDB) {
 }
 
 // SetCache setups cc main redis.
-func (s *Service) SetCache(db *redis.Client) {
+func (s *Service) SetCache(db redis.Client) {
 	s.cache = db
 }
-
 
 func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 	s.authorizer = authorizer
@@ -86,14 +87,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
 	api.Produces(restful.MIME_JSON)
 
-	api.Route(api.POST("/subscribe/search/{ownerID}/{appID}").To(s.ListSubscriptions))
-	api.Route(api.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
-	api.Route(api.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
-	api.Route(api.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UpdateSubscription))
-
-	api.Route(api.POST("/subscribe/ping").To(s.Ping))
-	api.Route(api.POST("/subscribe/telnet").To(s.Telnet))
-	api.Route(api.POST("/watch/resource/{resource}").To(s.WatchEvent))
+	s.initService(api)
 
 	container.Add(api)
 
@@ -102,6 +96,25 @@ func (s *Service) WebService() *restful.Container {
 	container.Add(healthzAPI)
 
 	return container
+}
+
+func (s *Service) initService(web *restful.WebService) {
+
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/search/{ownerID}/{appID}", Handler: s.ListSubscriptions})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/{ownerID}/{appID}", Handler: s.Subscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UnSubscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UpdateSubscription})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/ping", Handler: s.Ping})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/telnet", Handler: s.Telnet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
+
+	utility.AddToRestfulWebService(web)
+
 }
 
 // Healthz is a HTTP restful interface for health check.
@@ -124,7 +137,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
 	// cc main redis health status info.
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

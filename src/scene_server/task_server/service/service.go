@@ -30,16 +30,16 @@ import (
 	"configcenter/src/scene_server/task_server/app/options"
 	"configcenter/src/scene_server/task_server/logics"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.Config
 	*backbone.Engine
 	disc    discovery.DiscoveryInterface
-	CacheDB *redis.Client
+	CacheDB redis.Client
 	DB      dal.RDB
 }
 
@@ -132,7 +132,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	if s.CacheDB == nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = "not connected"
-	} else if err := s.CacheDB.Ping().Err(); err != nil {
+	} else if err := s.CacheDB.Ping(context.Background()).Err(); err != nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = err.Error()
 	}

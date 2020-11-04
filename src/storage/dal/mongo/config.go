@@ -28,6 +28,12 @@ const (
 	MaximumMaxOpenConns = 3000
 	// if maxIDleConns is less than minimum value, use minimum value
 	MinimumMaxIdleOpenConns = 50
+	// if timeout isn't configured, use default value
+	DefaultSocketTimeout = 10
+	// if timeout exceeds maximum value, use maximum value
+	MaximumSocketTimeout = 30
+	// if timeout less than the minimum value, use minimum value
+	MinimumSocketTimeout = 5
 )
 
 // Config config
@@ -42,6 +48,7 @@ type Config struct {
 	MaxOpenConns uint64
 	MaxIdleConns uint64
 	RsName       string
+	SocketTimeout   int
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -69,6 +76,7 @@ func (c Config) GetMongoConf() local.MongoConf {
 		MaxIdleConns: c.MaxIdleConns,
 		URI:          c.BuildURI(),
 		RsName:       c.RsName,
+		SocketTimeout:  c.SocketTimeout,
 	}
 }
 
@@ -78,6 +86,7 @@ func (c Config) GetMongoClient() (db dal.RDB, err error) {
 		MaxIdleConns: c.MaxIdleConns,
 		URI:          c.BuildURI(),
 		RsName:       c.RsName,
+		SocketTimeout: c.SocketTimeout,
 	}
 	db, err = local.NewMgo(mongoConf, time.Minute)
 	if err != nil {

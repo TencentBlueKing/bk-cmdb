@@ -103,4 +103,11 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202008101530"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202008121631"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202008172134"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010131456"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010151455"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010151650"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010211805"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010281615"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011021415"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011021501"
 )

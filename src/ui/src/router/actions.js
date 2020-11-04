@@ -47,7 +47,13 @@ export const back = function () {
     }
 }
 
+export const open = function (to) {
+    const href = router.resolve(to).href
+    window.open(href)
+}
+
 export default {
     redirect,
-    back
+    back,
+    open
 }

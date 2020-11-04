@@ -85,6 +85,11 @@ type CoreUint64Response struct {
 	Data     uint64 `json:"data"`
 }
 
+type ArrayResponse struct {
+	BaseResp `json:",inline"`
+	Data     []interface{} `json:"data"`
+}
+
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`
@@ -108,11 +113,12 @@ type ResponseDataMapStr struct {
 }
 
 type QueryInput struct {
-	Condition map[string]interface{} `json:"condition"`
-	Fields    string                 `json:"fields,omitempty"`
-	Start     int                    `json:"start,omitempty"`
-	Limit     int                    `json:"limit,omitempty"`
-	Sort      string                 `json:"sort,omitempty"`
+	Condition      map[string]interface{} `json:"condition"`
+	Fields         string                 `json:"fields,omitempty"`
+	Start          int                    `json:"start,omitempty"`
+	Limit          int                    `json:"limit,omitempty"`
+	Sort           string                 `json:"sort,omitempty"`
+	DisableCounter bool                   `json:"disable_counter,omitempty"`
 }
 
 // ConvTime cc_type key

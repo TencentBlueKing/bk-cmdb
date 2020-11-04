@@ -29,16 +29,16 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/synchronize_server/app/options"
 	"configcenter/src/scene_server/synchronize_server/logics"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.Config
 	*backbone.Engine
 	disc           discovery.DiscoveryInterface
-	CacheDB        *redis.Client
+	CacheDB        redis.Client
 	synchronizeSrv synchronize.SynchronizeClientInterface
 }
 

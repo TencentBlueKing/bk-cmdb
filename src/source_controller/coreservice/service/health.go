@@ -13,7 +13,7 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
+	"context"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -21,6 +21,8 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
@@ -50,7 +52,7 @@ func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
 	if redis.Client() == nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = "not connected"
-	} else if err := redis.Client().Ping().Err(); err != nil {
+	} else if err := redis.Client().Ping(context.Background()).Err(); err != nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = err.Error()
 	}

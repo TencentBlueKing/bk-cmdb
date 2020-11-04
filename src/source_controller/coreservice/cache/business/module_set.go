@@ -21,18 +21,18 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/coreservice/cache/tools"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
 	"github.com/tidwall/gjson"
-	"gopkg.in/redis.v5"
 )
 
 type moduleSet struct {
 	key        keyGenerator
 	collection string
-	rds        *redis.Client
+	rds        redis.Client
 	event      reflector.Interface
 
 	lock tools.RefreshingLock
@@ -45,9 +45,9 @@ func (ms *moduleSet) Run() error {
 		Collection:  ms.collection,
 	}
 
-	_, err := ms.rds.Get(ms.key.listDoneKey()).Result()
+	_, err := ms.rds.Get(context.Background(), ms.key.listDoneKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			blog.Errorf("get  %s list done redis key failed, err: %v", ms.collection, err)
 			return fmt.Errorf("get %s list done redis key failed, err: %v", ms.collection, err)
 		}
@@ -181,7 +181,7 @@ func (ms *moduleSet) onDelete(e *types.Event) {
 }
 
 func (ms *moduleSet) onListDone() {
-	if err := ms.rds.Set(ms.key.listDoneKey(), "done", 0).Err(); err != nil {
+	if err := ms.rds.Set(context.Background(), ms.key.listDoneKey(), "done", 0).Err(); err != nil {
 		blog.Errorf("list %s cache done, but set list done key failed, err: %v", ms.key.listDoneKey(), err)
 		return
 	}
@@ -190,11 +190,11 @@ func (ms *moduleSet) onListDone() {
 
 func (ms *moduleSet) setOidRelation(oid string, instID int64) error {
 
-	return ms.rds.HSet(ms.key.objectIDKey(), oid, instID).Err()
+	return ms.rds.HSet(context.Background(), ms.key.objectIDKey(), oid, instID).Err()
 }
 
 func (ms *moduleSet) getInstIDWithOid(oid string) (int64, error) {
-	id, err := ms.rds.HGet(ms.key.objectIDKey(), oid).Result()
+	id, err := ms.rds.HGet(context.Background(), ms.key.objectIDKey(), oid).Result()
 	if err != nil {
 		return 0, err
 	}

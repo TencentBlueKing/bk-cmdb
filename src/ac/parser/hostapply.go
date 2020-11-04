@@ -26,6 +26,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/create/host_apply_rule/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
 		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Update,
 	}, {
@@ -34,6 +35,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/update/host_apply_rule/([0-9]+)/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPut,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Update,
 	}, {
@@ -42,6 +44,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/deletemany/host_apply_rule/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
 		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Update,
 	}, {
@@ -50,6 +53,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/find/host_apply_rule/([0-9]+)/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodGet,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
 		ResourceType:   meta.MainlineInstanceTopology,
 		ResourceAction: meta.SkipAction,
 	}, {
@@ -58,6 +62,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/host_apply_rule/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
 		ResourceType:   meta.MainlineInstanceTopology,
 		ResourceAction: meta.SkipAction,
 	}, {
@@ -66,6 +71,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/createmany/host_apply_rule/bk_biz_id/([0-9]+)/batch_create_or_update/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
 		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Update,
 	}, {
@@ -74,6 +80,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/createmany/host_apply_plan/bk_biz_id/([0-9]+)/preview/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
 		ResourceType:   meta.MainlineInstanceTopology,
 		ResourceAction: meta.SkipAction,
 	}, {
@@ -82,6 +89,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/updatemany/host_apply_plan/bk_biz_id/([0-9]+)/run/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
 		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Update,
 	}, {
@@ -90,6 +98,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/host_apply_rule/bk_biz_id/([0-9]+)/host_related_rules/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       5,
 		ResourceType:   meta.MainlineInstanceTopology,
 		ResourceAction: meta.SkipAction,
 	},

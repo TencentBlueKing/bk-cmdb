@@ -22,17 +22,17 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/coreservice/cache/tools"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
 	"github.com/tidwall/gjson"
-	"gopkg.in/redis.v5"
 )
 
 type customLevel struct {
 	key   customKeyGen
-	rds   *redis.Client
+	rds   redis.Client
 	event reflector.Interface
 	lock  tools.RefreshingLock
 	// key is object id
@@ -56,9 +56,9 @@ func (m *customLevel) Run() error {
 // to watch mainline topology change for it's cache update.
 func (m *customLevel) runMainlineTopology() error {
 
-	_, err := m.rds.Get(m.key.mainlineListDoneKey()).Result()
+	_, err := m.rds.Get(context.Background(), m.key.mainlineListDoneKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			blog.Errorf("get biz list done redis key failed, err: %v", err)
 			return fmt.Errorf("get biz list done redis key failed, err: %v", err)
 		}
@@ -144,9 +144,9 @@ func (m *customLevel) runCustomWatch(objID string) error {
 		},
 	}
 
-	_, err := m.rds.Get(m.key.listDoneKey(objID)).Result()
+	_, err := m.rds.Get(context.Background(), m.key.listDoneKey(objID)).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			blog.Errorf("get biz mainline key: %s list done redis key failed, err: %v", m.key.listDoneKey(objID), err)
 			return fmt.Errorf("get biz mainline key: %s list done redis key failed, err: %v", m.key.listDoneKey(objID), err)
 		}
@@ -259,11 +259,11 @@ func (m *customLevel) onChange(_ *types.Event) {
 	m.reconcileCustomWatch(rank)
 
 	// then set the rank to cache
-	m.rds.Set(m.key.topologyKey(), m.key.topologyValue(rank), 0)
+	m.rds.Set(context.Background(), m.key.topologyKey(), m.key.topologyValue(rank), 0)
 }
 
 func (m *customLevel) onMainlineTopologyListDone() {
-	if err := m.rds.Set(m.key.mainlineListDoneKey(), "done", 0).Err(); err != nil {
+	if err := m.rds.Set(context.Background(), m.key.mainlineListDoneKey(), "done", 0).Err(); err != nil {
 		blog.Errorf("list business mainline topology to cache and list done, but set list done key: %s failed, err: %v",
 			m.key.mainlineListDoneKey(), err)
 		return
@@ -333,7 +333,7 @@ func (m *customLevel) onUpsertCustomInstance(e *types.Event) {
 }
 
 func (m *customLevel) onCustomInstanceListDone(objID string) {
-	if err := m.rds.Set(m.key.listDoneKey(objID), "done", 0).Err(); err != nil {
+	if err := m.rds.Set(context.Background(), m.key.listDoneKey(objID), "done", 0).Err(); err != nil {
 		blog.Errorf("list business custom level %s to cache and list done, but set list done key: %s failed, err: %v",
 			objID, m.key.listDoneKey(objID), err)
 		return
@@ -414,21 +414,21 @@ func (m *customLevel) getCustomObjInstName(instID int64) (name string, err error
 
 func (m *customLevel) upsertOid(objID string, bizID int64, instID int64, oid string) {
 	value := customKey.genObjectIDKeyValue(bizID, instID, objID)
-	if err := m.rds.HSet(customKey.objectIDKey(), oid, value).Err(); err != nil {
+	if err := m.rds.HSet(context.Background(), customKey.objectIDKey(), oid, value).Err(); err != nil {
 		blog.Errorf("upsert business custom level object instance oid: %s relation failed, key: %s, value: %s, err: %v",
 			oid, customKey.objectIDKey(), value, err)
 	}
 }
 
 func (m *customLevel) delOid(oid string) {
-	if err := m.rds.HDel(customKey.objectIDKey(), oid).Err(); err != nil {
+	if err := m.rds.HDel(context.Background(), customKey.objectIDKey(), oid).Err(); err != nil {
 		blog.Errorf("delete business custom level object instance oid: %s relation failed, key: %s, err: %v",
 			oid, customKey.objectIDKey(), err)
 	}
 }
 
 func (m *customLevel) getOidValue(oid string) (*oidValue, error) {
-	value, err := m.rds.HGet(customKey.objectIDKey(), oid).Result()
+	value, err := m.rds.HGet(context.Background(), customKey.objectIDKey(), oid).Result()
 	if err != nil {
 		blog.Errorf("get business custom level object instance oid: %s relation failed, key: %s, err: %v",
 			oid, customKey.objectIDKey(), err)

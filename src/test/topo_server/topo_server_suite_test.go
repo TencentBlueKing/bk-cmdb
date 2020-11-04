@@ -17,6 +17,7 @@ var topoServerClient = clientSet.TopoServer()
 var procServerClient = clientSet.ProcServer()
 var apiServerClient = clientSet.ApiServer()
 var instClient = topoServerClient.Instance()
+var asstClient = topoServerClient.Association()
 var objectClient = topoServerClient.Object()
 var serviceClient = clientSet.ProcServer().Service()
 

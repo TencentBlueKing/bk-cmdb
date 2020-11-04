@@ -417,7 +417,7 @@ func (c *Contexts) NewHeader() http.Header {
 	return util.CCHeader(c.Kit.Header)
 }
 
-func (c *Contexts) SetReadPreference(mode common.ReadPrefernceMode) {
+func (c *Contexts) SetReadPreference(mode common.ReadPreferenceMode) {
 	c.Kit.Ctx, c.Kit.Header = util.SetReadPreference(c.Kit.Ctx, c.Kit.Header, mode)
 }
 

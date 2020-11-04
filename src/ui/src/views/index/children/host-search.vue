@@ -9,7 +9,7 @@
                 v-model="searchContent"
                 @focus="handleFocus"
                 @blur="handleBlur"
-                @keypress="handleKeypress">
+                @keydown="handleKeydown">
             </bk-input>
             <bk-button theme="primary" class="search-btn"
                 :loading="$loading(request.search)"
@@ -80,8 +80,11 @@
                     this.textareaDom && (this.textareaDom.scrollTop = 0)
                 })
             },
-            handleKeypress (content, event) {
-                if (event.ctrlKey && event.code.toLowerCase() === 'enter') {
+            handleKeydown (content, event) {
+                const agent = window.navigator.userAgent.toLowerCase()
+                const isMac = /macintosh|mac os x/i.test(agent)
+                const modifierKey = isMac ? event.metaKey : event.ctrlKey
+                if (modifierKey && event.code.toLowerCase() === 'enter') {
                     this.handleSearch()
                 }
             },

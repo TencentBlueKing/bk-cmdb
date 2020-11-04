@@ -33,9 +33,12 @@ func getLoopInternalMinutes() int {
 	// give a random sleep interval to avoid clean different resource keys
 	// at the same time.
 	rand.Seed(time.Now().UnixNano())
-	// time range [60, 180] minutes
-	return 120 + (rand.Intn(60-1) + 1)
+	// time range [30, 60）minutes
+	return int(30 + 6000*rand.Float32()/200)
 }
+
+// gc count for each time
+const gcCount = 1000
 
 func (f *Flow) cleanExpiredEvents() {
 	blog.Infof("will clean expired events job for key: %s after sleep", f.key.Namespace())
@@ -60,19 +63,41 @@ func (f *Flow) cleanExpiredEvents() {
 			}
 
 			if !continueLoop {
-				time.Sleep(interval)
+				// update loop interval
+				interval = time.Duration(getLoopInternalMinutes())
 				// update rid
 				rid = util.GenerateRID()
-				// update loop interval
-				minute := getLoopInternalMinutes()
-				interval = time.Duration(minute) * time.Minute
+				blog.Infof("clean expired events for key: %s, loop interval minutes: %d, rid: %s",
+					f.key.Namespace(), interval, rid)
+
+				time.Sleep(interval * time.Minute)
 				continueLoop = true
-				blog.Infof("clean expired events for key: %s, loop interval minutes: %d, rid: %s", f.key.Namespace(), minute, rid)
 			}
 
 			blog.Infof("start clean expired events for key: %s, rid: %s", f.key.Namespace(), rid)
 
-			nodes, err := f.getNodesFromCursor(100, headKey, f.key)
+			// get operate lock to avoid concurrent revise the chain
+			success, err := redis.Client().SetNX(context.Background(), f.key.LockKey(), 1, 15*time.Second).Result()
+			if err != nil {
+				blog.Errorf("clean expired events for key: %s, but get lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			if !success {
+				blog.Errorf("clean expired events for key: %s, can not get lock, rid: %s", f.key.Namespace(), rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			// already get the lock. prepare to release the lock.
+			releaseLock := func() {
+				if err := redis.Client().Del(context.Background(), f.key.LockKey()).Err(); err != nil {
+					blog.Errorf("clean expired events for key: %s, but delete lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				}
+			}
+
+			nodes, err := f.getNodesFromCursor(gcCount, headKey, f.key)
 			if err != nil {
 				blog.Errorf("clean expired events for key: %s, but get cursor node from head failed, err: %v, rid: %s",
 					f.key.Namespace(), err, rid)
@@ -133,27 +158,6 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 			}
 
-			// get operate lock to avoid concurrent revise the chain
-			success, err := redis.Client().SetNX(f.key.LockKey(), 1, 5*time.Second).Result()
-			if err != nil {
-				blog.Errorf("clean expired events for key: %s, but get lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
-				time.Sleep(10 * time.Second)
-				continue
-			}
-
-			if !success {
-				blog.Errorf("clean expired events for key: %s, get lock success, rid: %s", f.key.Namespace(), rid)
-				time.Sleep(10 * time.Second)
-				continue
-			}
-
-			// already get the lock. prepare to release the lock.
-			releaseLock := func() {
-				if err := redis.Client().Del(f.key.LockKey()).Err(); err != nil {
-					blog.Errorf("clean expired events for key: %s, but delete lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
-				}
-			}
-
 			lastNode := expiredNodes[len(expiredNodes)-1]
 			// set head cursor to last node's next node.
 			headNode := &watch.ChainNode{
@@ -172,6 +176,12 @@ func (f *Flow) cleanExpiredEvents() {
 			// redirect the head key.
 			pipe.HSet(mainKey, headKey, hBytes)
 			for _, expire := range expiredNodes {
+				// do not delete the last node before tail, in case no event occurred after the last event and watch 
+				// with that cursor failed
+				if expire.NextCursor == tailKey {
+					continue
+				}
+
 				// delete expired chain node
 				pipe.HDel(mainKey, expire.Cursor)
 				// delete expired cursor targeted detail key
@@ -219,7 +229,7 @@ func (f *Flow) cleanExpiredEvents() {
 
 			blog.Infof("clean expired events for key: %s success, expire cursor: %v. rid: %s", f.key.Namespace(), expireCursor, rid)
 			// sleep a while during the loop
-			time.Sleep(30 * time.Second)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 }

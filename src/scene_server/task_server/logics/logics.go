@@ -15,14 +15,13 @@ package logics
 import (
 	"net/http"
 
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 )
 
 type Logics struct {
@@ -33,7 +32,7 @@ type Logics struct {
 	ccLang  language.DefaultCCLanguageIf
 	user    string
 	ownerID string
-	cache   *redis.Client
+	cache   redis.Client
 	db      dal.RDB
 }
 
@@ -69,7 +68,7 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 }
 
 // NewLogics get logics handle
-func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, db dal.RDB) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, cache redis.Client, db dal.RDB) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
 		Engine:  b,

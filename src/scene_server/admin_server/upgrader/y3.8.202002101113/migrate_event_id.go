@@ -19,13 +19,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/storage/dal/redis"
 )
 
-func migrateEventIDToMongo(ctx context.Context, db dal.RDB, cache *redis.Client, conf *upgrader.Config) error {
-	sid, err := cache.Get(common.EventCacheEventIDKey).Result()
-	if redis.Nil == err {
+func migrateEventIDToMongo(ctx context.Context, db dal.RDB, cache redis.Client, conf *upgrader.Config) error {
+	sid, err := cache.Get(ctx, common.EventCacheEventIDKey).Result()
+	if redis.IsNilErr(err) {
 		return nil
 	}
 	if err != nil {
@@ -54,5 +53,5 @@ func migrateEventIDToMongo(ctx context.Context, db dal.RDB, cache *redis.Client,
 		return err
 	}
 
-	return cache.Del(common.EventCacheEventIDKey).Err()
+	return cache.Del(ctx, common.EventCacheEventIDKey).Err()
 }

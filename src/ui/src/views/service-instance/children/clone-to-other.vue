@@ -35,7 +35,7 @@
             </cmdb-auth>
             <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
         </div>
-        <cmdb-dialog v-model="dialog.show" :width="850" :height="460" :show-close-icon="false">
+        <cmdb-dialog v-model="dialog.show" :width="1110" :height="650" :show-close-icon="false">
             <component
                 :is="dialog.component"
                 v-bind="dialog.props"
@@ -48,7 +48,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import HostSelector from '@/views/business-topology/host/host-selector'
+    import HostSelector from '@/views/business-topology/host/host-selector-new'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {

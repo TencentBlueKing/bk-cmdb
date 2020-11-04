@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -8,14 +9,9 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/framework/core/errors"
-
-	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) hostRelated() *parseStream {
@@ -26,6 +22,7 @@ func (ps *parseStream) hostRelated() *parseStream {
 	ps.host().
 		hostTransfer().
 		userAPI().
+		dynamicGrouping().
 		userCustom().
 		hostFavorite().
 		hostSnapshot().
@@ -44,10 +41,14 @@ var (
 )
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
-	if !gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Exists() {
+	val, err := ps.RequestCtx.getValueFromBody(common.BKAppIDField)
+	if err != nil {
+		return 0, err
+	}
+	if !val.Exists() {
 		return 0, nil
 	}
-	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+	bizID := val.Int()
 	if bizID == 0 {
 		return 0, errors.New("invalid bk_biz_id value")
 	}
@@ -208,6 +209,162 @@ func (ps *parseStream) userAPI() *parseStream {
 }
 
 var (
+	createDynamicGroupPattern = "/api/v3/dynamicgroup"
+	updateDynamicGroupRegexp  = regexp.MustCompile(`^/api/v3/dynamicgroup/[0-9]+/[^\s/]+/?$`)
+	deleteDynamicGroupRegexp  = regexp.MustCompile(`^/api/v3/dynamicgroup/[0-9]+/[^\s/]+/?$`)
+	getDynamicGroupRegexp     = regexp.MustCompile(`^/api/v3/dynamicgroup/[0-9]+/[^\s/]+/?$`)
+	searchDynamicGroupRegexp  = regexp.MustCompile(`^/api/v3/dynamicgroup/search/[0-9]+/?$`)
+	executeDynamicGroupRegexp = regexp.MustCompile(`^/api/v3/dynamicgroup/data/[0-9]+/[^\s/]+/?$`)
+)
+
+func (ps *parseStream) dynamicGrouping() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(createDynamicGroupPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.DynamicGrouping,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateDynamicGroupRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("update dynamic group, but got invalid uri")
+			return ps
+		}
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("update dynamic group failed, err: %v", err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Update,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
+				},
+			},
+		}
+		return ps
+
+	}
+
+	if ps.hitRegexp(deleteDynamicGroupRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("delete dynamic group, but got invalid uri")
+			return ps
+		}
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("update dynamic group failed, err: %v", err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Delete,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
+				},
+			},
+		}
+		return ps
+
+	}
+
+	if ps.hitRegexp(searchDynamicGroupRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("search dynamic groups, but got invalid uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("search dynamic groups failed, err: %v", err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.DynamicGrouping,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(getDynamicGroupRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("find dynamic group detail, but got invalid uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find dynamic group failed, err: %v", err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Find,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(executeDynamicGroupRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("execute dynamic group, but got invalid uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("execute dynamic group failed, err: %v", err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.DynamicGrouping,
+					Action: meta.Execute,
+					Name:   ps.RequestCtx.Elements[5],
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+var (
 	saveUserCustomPattern         = `/api/v3/usercustom`
 	searchUserCustomPattern       = `/api/v3/usercustom/user/search`
 	getModelDefaultCustomPattern  = `/api/v3/usercustom/default/model`
@@ -272,9 +429,15 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.UserCustom,
 					Action: meta.Create,
@@ -282,7 +445,7 @@ func (ps *parseStream) userCustom() *parseStream {
 				},
 			},
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
@@ -370,9 +533,16 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -402,11 +572,9 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitRegexp(findHostModuleRelationsRegex, http.MethodPost) {
-		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
-		bizID, err := util.GetInt64ByInterface(match[1])
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			blog.Errorf("get business id from request path failed, err: %v, rid: %s", err, ps.RequestCtx.Rid)
-			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			ps.err = fmt.Errorf("find host module relations, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 
@@ -513,7 +681,12 @@ func (ps *parseStream) host() *parseStream {
 
 	if ps.hitPattern(updateHostCloudAreaFieldPattern, http.MethodPut) {
 		input := metadata.UpdateHostCloudAreaFieldOption{}
-		if err := json.Unmarshal(ps.RequestCtx.Body, &input); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, &input); err != nil {
 			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
 			return ps
 		}
@@ -575,13 +748,12 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitRegexp(countHostByTopoNodeRegexp, http.MethodPost) {
-		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
-		bizID, err := util.GetInt64ByInterface(match[1])
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s", countHostByTopoNodeRegexp, err, ps.RequestCtx.Rid)
-			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			ps.err = fmt.Errorf("count host by topo node, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -834,7 +1006,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// add hosts to resource pool
 	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
-		dirID := gjson.GetBytes(ps.RequestCtx.Body, "directory").Int()
+		val, err := ps.RequestCtx.getValueFromBody("directory")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dirID := val.Int()
 		if dirID == 0 {
 			var err error
 			dirID, err = ps.getResourcePoolDefaultDirID()
@@ -921,7 +1098,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	// move resource pool hosts to a business idle module operation.
 	if ps.hitPattern(moveResPoolHostToBizIdleModulePattern, http.MethodPost) {
 		opt := new(hostPool)
-		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, opt); err != nil {
 			ps.err = err
 			return ps
 		}
@@ -1018,12 +1200,22 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// transfer host to another business
 	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
-		srcBizID := gjson.GetBytes(ps.RequestCtx.Body, "src_bk_biz_id").Int()
+		val, err := ps.RequestCtx.getValueFromBody("src_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		srcBizID := val.Int()
 		if srcBizID == 0 {
 			ps.err = errors.New("src_bk_biz_id invalid")
 			return ps
 		}
-		dstBizID := gjson.GetBytes(ps.RequestCtx.Body, "dst_bk_biz_id").Int()
+		val, err = ps.RequestCtx.getValueFromBody("dst_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dstBizID := val.Int()
 		if dstBizID == 0 {
 			ps.err = errors.New("dst_bk_biz_id invalid")
 			return ps
@@ -1073,14 +1265,13 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
 		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
-		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
-		bizID, err := util.GetInt64ByInterface(match[1])
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s",
-				transferHostWithAutoClearServiceInstanceRegex, err, ps.RequestCtx.Rid)
-			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			ps.err = fmt.Errorf("transfer host with auto clear service instance, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1111,7 +1302,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	// move the resource pool host to another dir in resource pool
 	if ps.hitPattern(moveRscPoolHostToRscPoolDir, http.MethodPost) {
 		opt := new(metadata.TransferHostResourceDirectory)
-		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, opt); err != nil {
 			ps.err = err
 			return ps
 		}

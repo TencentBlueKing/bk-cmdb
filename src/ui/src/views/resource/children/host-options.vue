@@ -391,7 +391,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
-                            relation: [[this.directoryId || '*'], [item.bk_biz_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_biz_id]]]
                         }
                     }))
                 } else {
@@ -401,7 +401,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
-                            relation: [[this.directoryId] || '*', [item.bk_module_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_module_id]]]
                         }
                     }))
                 }
@@ -474,9 +474,11 @@
                     return this.table.checked.includes(item['host']['bk_host_id'])
                 })
                 const copyText = []
-                this.$tools.clone(copyList).forEach(item => {
-                    const cellText = this.getHostCellText(target, item)
-                    if (cellText !== '--') {
+                copyList.forEach(item => {
+                    if (target.id === '__bk_host_topology__') {
+                        copyText.push((item.__bk_host_topology__ || []).join(','))
+                    } else {
+                        const cellText = this.getHostCellText(target, item)
                         copyText.push(cellText)
                     }
                 })

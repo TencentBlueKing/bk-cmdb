@@ -14,6 +14,7 @@ package host
 
 import (
 	"strings"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -84,8 +85,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 		innerIPArr := strings.Split(innerIP, ",")
 		ipCond[index] = map[string]interface{}{
 			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBAll:  innerIPArr,
-				common.BKDBSize: len(innerIPArr),
+				common.BKDBIN:  innerIPArr,
 			},
 		}
 	}
@@ -120,4 +120,61 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
+}
+
+func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.CloudAreaHostCount) ([]metadata.CloudAreaHostCountElem, error) {
+	if len(input.CloudIDs) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_cloud_ids")
+	}
+
+	cloudIDs := util.IntArrayUnique(input.CloudIDs)
+
+	// to speed up, multi goroutine to query host count for multi cloudarea
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 10)
+	cloudCountMap := make(map[int64]int64)
+
+	for _, cloudID := range cloudIDs {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(cloudID int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			filter := map[string]interface{}{common.BKCloudIDField: cloudID}
+			hostCnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(kit.Ctx)
+			if err != nil {
+				blog.ErrorJSON("UpdateHostCloudAreaField failed, db selected failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameBaseHost, filter, err.Error(), kit.Rid)
+				if firstErr == nil {
+					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				}
+			}
+
+			lock.Lock()
+			cloudCountMap[cloudID] = int64(hostCnt)
+			lock.Unlock()
+
+		}(cloudID)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
+	ret := make([]metadata.CloudAreaHostCountElem, len(input.CloudIDs))
+	for idx, cloudID := range input.CloudIDs {
+		ret[idx] = metadata.CloudAreaHostCountElem{
+			CloudID:   cloudID,
+			HostCount: cloudCountMap[cloudID],
+		}
+	}
+
+	return ret, nil
 }
