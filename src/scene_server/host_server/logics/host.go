@@ -102,8 +102,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	ipArr := strings.Split(ip, ",")
 	conds := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBAll:  ipArr,
-			common.BKDBSize: len(ipArr),
+			common.BKDBIN: ipArr,
 		},
 		common.BKCloudIDField: cloudID,
 	}
@@ -636,7 +635,6 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 	condition := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
 			common.BKDBAll:  ipArr,
-			common.BKDBSize: len(ipArr),
 		},
 		common.BKCloudIDField: cloudID,
 	}

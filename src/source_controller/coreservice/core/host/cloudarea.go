@@ -85,8 +85,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 		innerIPArr := strings.Split(innerIP, ",")
 		ipCond[index] = map[string]interface{}{
 			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBAll:  innerIPArr,
-				common.BKDBSize: len(innerIPArr),
+				common.BKDBIN:  innerIPArr,
 			},
 		}
 	}

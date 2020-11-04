@@ -76,8 +76,7 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 				cond.Element(&mongo.KV{
 					Key: key,
 					Val: map[string]interface{}{
-						common.BKDBAll:  valArr,
-						common.BKDBSize: len(valArr),
+						common.BKDBIN: valArr,
 					},
 				})
 			} else {
@@ -162,8 +161,7 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 				cond.Element(&mongo.KV{
 					Key: key,
 					Val: map[string]interface{}{
-						common.BKDBAll:  valArr,
-						common.BKDBSize: len(valArr),
+						common.BKDBIN: valArr,
 					},
 				})
 			} else {
