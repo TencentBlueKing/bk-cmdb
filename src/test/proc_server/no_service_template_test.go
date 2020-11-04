@@ -544,6 +544,23 @@ var _ = Describe("no service template test", func() {
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId3)))
 		})
 
+		It("update service instance with no process", func() {
+			input := map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"service_instance_id": serviceId1,
+						"update": map[string]interface{}{
+							"name": "inst_update_test",
+						},
+					},
+				},
+			}
+			rsp, err := serviceClient.UpdateServiceInstances(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+		})
+
 		It("delete service instance with no process", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
