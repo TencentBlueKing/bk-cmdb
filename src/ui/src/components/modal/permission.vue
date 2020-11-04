@@ -93,35 +93,28 @@
                 this.isModalShow = true
             },
             setList () {
-                const list = []
                 const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
-                this.permission.actions.forEach(action => {
-                    const definition = Object.values(IAM_ACTIONS).find(definition => definition.id === action.id)
-                    if (action.related_resource_types.length) {
-                        action.related_resource_types.forEach(({ type, instances = [] }) => {
-                            const listItem = {
-                                id: definition.id,
-                                name: definition.name[languageIndex],
-                                relations: instances.map(instance => {
-                                    return instance.map(data => {
-                                        if (data.name) {
-                                            return `${IAM_VIEWS_NAME[data.type][languageIndex]}：${data.name || data.id}`
-                                        }
-                                        return `${IAM_VIEWS_NAME[data.type][languageIndex]}ID：${data.id}`
-                                    }).join(' / ')
-                                })
-                            }
-                            list.push(listItem)
+                this.list = this.permission.actions.map(action => {
+                    const { id: actionId, related_resource_types: relatedResourceTypes = [] } = action
+                    const definition = Object.values(IAM_ACTIONS).find(definition => definition.id === actionId)
+                    const allRelationPath = []
+                    relatedResourceTypes.forEach(({ type, instances = [] }) => {
+                        instances.forEach(fullPaths => {
+                            const topoPath = fullPaths.map(pathData => {
+                                if (pathData.name) {
+                                    return `${IAM_VIEWS_NAME[pathData.type][languageIndex]}：${pathData.name}`
+                                }
+                                return `${IAM_VIEWS_NAME[pathData.type][languageIndex]}ID：${pathData.id}`
+                            }).join(' / ')
+                            allRelationPath.push(topoPath)
                         })
-                    } else {
-                        list.push({
-                            id: definition.id,
-                            name: definition.name[languageIndex],
-                            relations: []
-                        })
+                    })
+                    return {
+                        id: actionId,
+                        name: definition.name[languageIndex],
+                        relations: allRelationPath
                     }
                 })
-                this.list = list
             },
             onCloseDialog () {
                 this.isModalShow = false

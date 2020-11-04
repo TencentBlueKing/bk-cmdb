@@ -391,7 +391,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
-                            relation: [[this.directoryId || '*'], [item.bk_biz_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_biz_id]]]
                         }
                     }))
                 } else {
@@ -401,7 +401,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
-                            relation: [[this.directoryId] || '*', [item.bk_module_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_module_id]]]
                         }
                     }))
                 }
