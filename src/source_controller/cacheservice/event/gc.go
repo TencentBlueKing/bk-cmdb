@@ -23,6 +23,9 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -74,7 +77,7 @@ func (f *Flow) cleanExpiredEvents() {
 			blog.Infof("start clean expired events for key: %s, rid: %s", f.key.Namespace(), rid)
 
 			// get operate lock to avoid concurrent revise the chain
-			success, err := f.rds.SetNX(context.Background(), f.key.LockKey(), 1, 15*time.Second).Result()
+			success, err := redis.Client().SetNX(context.Background(), f.key.LockKey(), 1, 15*time.Second).Result()
 			if err != nil {
 				blog.Errorf("clean expired events for key: %s, but get lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
 				time.Sleep(10 * time.Second)
@@ -89,7 +92,7 @@ func (f *Flow) cleanExpiredEvents() {
 
 			// already get the lock. prepare to release the lock.
 			releaseLock := func() {
-				if err := f.rds.Del(context.Background(), f.key.LockKey()).Err(); err != nil {
+				if err := redis.Client().Del(context.Background(), f.key.LockKey()).Err(); err != nil {
 					blog.Errorf("clean expired events for key: %s, but delete lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
 				}
 			}
@@ -169,11 +172,12 @@ func (f *Flow) cleanExpiredEvents() {
 			}
 
 			expireCursor := make([]string, 0)
-			pipe := f.rds.Pipeline()
+			pipe := redis.Client().Pipeline()
 			// redirect the head key.
 			pipe.HSet(mainKey, headKey, hBytes)
 			for _, expire := range expiredNodes {
-				// do not delete the last node before tail, in case no event occurred after the last event and watch with that cursor failed
+				// do not delete the last node before tail, in case no event occurred after the last event and watch 
+				// with that cursor failed
 				if expire.NextCursor == tailKey {
 					continue
 				}
@@ -280,7 +284,7 @@ func (f *Flow) doClean(rid string) {
 			},
 		}
 
-		count, err := f.db.Table(common.BKTableNameDelArchive).Find(filter).Count(context.Background())
+		count, err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).Count(context.Background())
 		if err != nil {
 			blog.Errorf("clean cc_DelArchive data, but count expired data in %s failed. rid: %s", common.BKTableNameDelArchive, rid)
 			continue
@@ -292,7 +296,7 @@ func (f *Flow) doClean(rid string) {
 		success := true
 		for start := 0; start < int(count); start += pageSize {
 			docs := make([]archived, pageSize)
-			err = f.db.Table(common.BKTableNameDelArchive).Find(filter).Fields("oid").All(context.Background(), &docs)
+			err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).Fields("oid").All(context.Background(), &docs)
 			if err != nil {
 				blog.Errorf("clean cc_DelArchive data, but find expired data failed, err: %v, rid: %s", err, rid)
 				time.Sleep(10 * time.Second)
@@ -311,7 +315,7 @@ func (f *Flow) doClean(rid string) {
 				},
 			}
 
-			err = f.db.Table(common.BKTableNameDelArchive).Delete(context.Background(), delFilter)
+			err = mongodb.Client().Table(common.BKTableNameDelArchive).Delete(context.Background(), delFilter)
 			if err != nil {
 				blog.Errorf("clean cc_DelArchive data, but delete data failed, err: %v, rid: %s", err, rid)
 				time.Sleep(10 * time.Second)

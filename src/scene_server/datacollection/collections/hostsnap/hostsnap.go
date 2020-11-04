@@ -41,11 +41,11 @@ import (
 
 const (
 	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
-	defaultChangeRangePercent 	    = 10
+	defaultChangeRangePercent = 10
 	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
 	minChangeRangePercent            = 1
 	// defaultRateLimiterQPS is the default value of rateLimiter qps
-	defaultRateLimiterQPS   = 40
+	defaultRateLimiterQPS = 40
 	// defaultRateLimiterBurst is the default value of rateLimiter burst
 	defaultRateLimiterBurst = 100
 )
@@ -470,7 +470,7 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 			Fields:  reqireFields,
 		}
 
-		host, err := h.Engine.CoreAPI.CoreService().Cache().SearchHostWithInnerIP(context.Background(), header, opt)
+		host, err := h.Engine.CoreAPI.CacheService().Cache().Host().SearchHostWithInnerIP(context.Background(), header, opt)
 		if err != nil {
 			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
 			if ccErr, ok := err.(ccErr.CCErrorCoder); ok {

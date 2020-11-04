@@ -17,14 +17,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/cache"
-	cacheop "configcenter/src/source_controller/coreservice/cache"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
@@ -43,11 +41,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
-	watchEvent "configcenter/src/source_controller/coreservice/event"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/driver/redis"
-	"configcenter/src/storage/reflector"
-	"configcenter/src/storage/stream"
 
 	"github.com/emicklei/go-restful"
 )
@@ -108,19 +102,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	mongodb.Client() = db
 	s.rds = cache */
 
-	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
-	if eventErr != nil {
-		blog.Errorf("new reflector failed, err: %v", eventErr)
-		return eventErr
-	}
-
-	c, cacheErr := cacheop.NewCache(event)
-	if cacheErr != nil {
-		blog.Errorf("new cache instance failed, err: %v", cacheErr)
-		return cacheErr
-	}
-	s.cacheSet = c
-
 	// connect the remote mongodb
 	instance := instances.New(s, lang)
 	hostApplyRuleCore := hostapplyrule.New(instance)
@@ -130,7 +111,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		association.New(s),
 		datasynchronize.New(s),
 		mainline.New(lang),
-		host.New(s, hostApplyRuleCore, c),
+		host.New(s, hostApplyRuleCore),
 		auditlog.New(),
 		process.New(s),
 		label.New(),
@@ -143,18 +124,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		e.New(mongodb.Client(), redis.Client()),
 		coreCommon.New(),
 	)
-
-	watcher, watchErr := stream.NewStream(s.cfg.Mongo.GetMongoConf())
-	if watchErr != nil {
-		blog.Errorf("new watch stream failed, err: %v", watchErr)
-		return watchErr
-	}
-
-	if err := watchEvent.NewEvent(mongodb.Client(), redis.Client(), watcher, engine.ServiceManageInterface); err != nil {
-		blog.Errorf("new watch event failed, err: %v", err)
-		return err
-	}
-
 	return nil
 }
 
