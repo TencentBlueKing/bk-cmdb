@@ -116,6 +116,13 @@ func (w *Window) doTimedTasks(intervalTimeIntVal int) {
 	}
 }
 
+func (w *Window) doIntervalHoursTasks(checkIntervalHours int) {
+	now := time.Now()
+	w.setStartTime(now)
+	time.Sleep(time.Minute * time.Duration(oneHourToMinutes - now.Minute()))
+	w.doTimedTasks(checkIntervalHours)
+}
+
 // canPassWindow used to judge whether the request can be passed
 func (w *Window) canPassWindow() bool {
 	// exist time window requires time judgment
@@ -136,36 +143,33 @@ func newWindow() *Window {
 	w := &Window{}
 
 	// if the parameters are configured, the time window is valid
-	if cc.IsExist("datacollection.hostsnap.timeWindow.windowMinutes") {
-		windowMinutes, _ := cc.Int("datacollection.hostsnap.timeWindow.windowMinutes")
+	if !cc.IsExist("datacollection.hostsnap.timeWindow.windowMinutes") {
+		return w
+	}
+	windowMinutes, _ := cc.Int("datacollection.hostsnap.timeWindow.windowMinutes")
 
-		if cc.IsExist("datacollection.hostsnap.timeWindow.atTime") {
-			atTime, _ := cc.String("datacollection.hostsnap.timeWindow.atTime")
-			w.setWindowMinutes(windowMinutes, oneDayToMinutes)
+	if cc.IsExist("datacollection.hostsnap.timeWindow.atTime") {
+		atTime, _ := cc.String("datacollection.hostsnap.timeWindow.atTime")
+		w.setWindowMinutes(windowMinutes, oneDayToMinutes)
 
-			w.setStartTime(time.Now())
-			go w.doFixedTimeTasks(atTime)
+		w.setStartTime(time.Now())
+		go w.doFixedTimeTasks(atTime)
 
-			w.exist = true
-			return w
+		w.exist = true
+		return w
+	}
+
+	if cc.IsExist("datacollection.hostsnap.timeWindow.checkIntervalHours") {
+		checkIntervalHours, _ := cc.Int("datacollection.hostsnap.timeWindow.checkIntervalHours")
+		if checkIntervalHours <= 0 {
+			blog.Errorf("checkIntervalHours val %d can not be less than or equal to 0, set the default value %d", checkIntervalHours, defaultCheckIntervalHours)
+			checkIntervalHours = defaultCheckIntervalHours
 		}
+		w.setWindowMinutes(windowMinutes, checkIntervalHours*60)
+		go w.doIntervalHoursTasks(checkIntervalHours)
 
-		if cc.IsExist("datacollection.hostsnap.timeWindow.checkIntervalHours") {
-			checkIntervalHours, _ := cc.Int("datacollection.hostsnap.timeWindow.checkIntervalHours")
-			if checkIntervalHours <= 0 {
-				blog.Errorf("checkIntervalHours val %d can not be less than or equal to 0, set the default value %d", checkIntervalHours, defaultCheckIntervalHours)
-				checkIntervalHours = defaultCheckIntervalHours
-			}
-			w.setWindowMinutes(windowMinutes, checkIntervalHours*60)
-			now := time.Now()
-			w.setStartTime(now)
-			time.Sleep(time.Minute * time.Duration(oneHourToMinutes - now.Minute()))
-
-			go w.doTimedTasks(checkIntervalHours)
-
-			w.exist = true
-			return w
-		}
+		w.exist = true
+		return w
 	}
 
 	return w
