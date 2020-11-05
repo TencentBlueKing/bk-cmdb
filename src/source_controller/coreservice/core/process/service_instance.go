@@ -634,6 +634,9 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			common.BKDBIN: moduleIDs,
 		},
 		common.BKDefaultField: common.NormalModuleFlag,
+		common.BKServiceTemplateIDField: map[string]interface{}{
+			common.BKDBNE: common.ServiceTemplateIDNotSet,
+		},
 	}
 
 	modules := make([]metadata.ModuleInst, 0)
@@ -657,9 +660,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 
 	serviceTemplateIDs := make([]int64, 0)
 	for _, module := range modules {
-		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-			serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
-		}
+		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
 	}
 
 	serviceProcessTemplateMap := make(map[int64][]metadata.ProcessTemplate)

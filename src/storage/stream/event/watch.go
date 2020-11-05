@@ -71,7 +71,10 @@ func (e *Event) loopWatch(ctx context.Context,
 			blog.Warnf("received stopped loop watch signal, stop watch db: %s, collection: %s, err: %v", e.database,
 				opts.Collection, ctx.Err())
 
-			stream.Close(context.Background())
+			if stream != nil {
+				stream.Close(context.Background())
+			}
+
 			return
 		default:
 
