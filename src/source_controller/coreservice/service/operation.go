@@ -218,7 +218,7 @@ func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
 		ctx.RespEntity(false)
 		return
 	}
-
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	err = s.core.StatisticOperation().TimerFreshData(ctx.Kit)
 	if err != nil {
 		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, ctx.Kit.Rid)
