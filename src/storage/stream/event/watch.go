@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"configcenter/src/common/blog"
@@ -94,7 +95,17 @@ func (e *Event) loopWatch(ctx context.Context,
 				Collection(opts.Collection).
 				Watch(ctx, pipeline, streamOptions)
 			if err != nil {
+				if isFatalError(err) {
+					// TODO: send alarm immediately.
+					blog.Errorf("mongodb watch collection: %s got a fatal error, skip resume token and retry, err: %v",
+						opts.Collection, err)
+					// reset the resume token, because we can not use the former resume token to watch success for now.
+					streamOptions.StartAfter = nil
+					currentToken.Data = ""
+				}
+
 				blog.Warnf("mongodb watch collection: %s failed with conf: %v, err: %v", opts.Collection, *opts, err)
+
 				retry = true
 				continue
 			}
@@ -130,6 +141,7 @@ func (e *Event) loopWatch(ctx context.Context,
 
 				// clean the last resume token to force the next try watch from the beginning. otherwise we will
 				// receive the invalid event again.
+				streamOptions.StartAfter = nil
 				currentToken.Data = ""
 
 				stream.Close(ctx)
@@ -189,4 +201,20 @@ func (e *Event) setCleaner(ctx context.Context, eventChan chan *types.Event, col
 			return
 		}
 	}()
+}
+
+// if watch encountered a fatal error, we should watch without resume token, which means from now.
+// errors like:
+// https://jira.mongodb.org/browse/SERVER-44610
+// https://jira.mongodb.org/browse/SERVER-44733
+func isFatalError(err error) bool {
+	if strings.Contains(err.Error(), "ChangeStreamFatalError") {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "the resume point may no longer be in the oplog") {
+		return true
+	}
+
+	return false
 }
