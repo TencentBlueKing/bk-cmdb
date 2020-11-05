@@ -523,8 +523,14 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
 			Expect(len(rsp.Data.Module)).To(Equal(3))
-			idleModuleId = rsp.Data.Module[0].ModuleID
-			faultModuleId = rsp.Data.Module[1].ModuleID
+			for _, module := range rsp.Data.Module {
+				switch module.ModuleName {
+				case "空闲机":
+					idleModuleId = module.ModuleID
+				case "故障机":
+					faultModuleId = module.ModuleID
+				}
+			}
 		})
 
 		It("search fault host", func() {
