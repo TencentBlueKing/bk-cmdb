@@ -15,7 +15,6 @@ package logics
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -211,11 +210,15 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 	}
 
 	if filter == nil {
-		return lgc.listHostInstanceFromCache(kit, nil, page, "")
+		return lgc.listHostInstanceFromCache(kit, nil, page)
 	}
 
 	if filter.Parent == nil {
-		return lgc.listHostInstanceFromCache(kit, nil, page, filter.Keyword)
+		if filter.Keyword != "" {
+			return lgc.listHostInstanceFromDB(kit, nil, page, filter.Keyword)
+		}
+		return lgc.listHostInstanceFromCache(kit, nil, page)
+
 	}
 
 	if filter.Parent.Type != iam.SysHostRscPoolDirectory && filter.Parent.Type != iam.Business /* iam.Module */ {
@@ -249,7 +252,64 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
-	return lgc.listHostInstanceFromCache(kit, hostRsp.Data.IDArr, page, filter.Keyword)
+	if filter.Keyword != "" {
+		return lgc.listHostInstanceFromDB(kit, hostRsp.Data.IDArr, page, filter.Keyword)
+	}
+
+	return lgc.listHostInstanceFromCache(kit, hostRsp.Data.IDArr, page)
+}
+
+func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page types.Page, keyword string) (*types.ListInstanceResult, error) {
+	condition := make(map[string]interface{})
+
+	if len(hostIDs) != 0 {
+		condition[common.BKHostIDField] = map[string]interface{}{common.BKDBIN: hostIDs}
+	}
+	if keyword != "" {
+		condition[common.BKHostInnerIPField] = map[string]interface{}{common.BKDBLIKE: keyword}
+	}
+
+	input := &metadata.QueryInput{
+		Condition: condition,
+		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKCloudIDField,
+		Start:     int(page.Offset),
+		Limit:     int(page.Limit),
+	}
+
+	hostResp, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, input)
+	if err != nil {
+		return nil, err
+	}
+
+	// get cloud area to generate host display name
+	cloudIDs := make([]int64, len(hostResp.Data.Info))
+	for index, host := range hostResp.Data.Info {
+		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+		if err != nil {
+			return nil, err
+		}
+
+		cloudIDs[index] = cloudID
+	}
+
+	cloudMap, err := lgc.getCloudNameMapByIDs(kit, cloudIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	instances := make([]types.InstanceResource, 0)
+	for _, host := range hostResp.Data.Info {
+		cloudID, _ := util.GetInt64ByInterface(host[common.BKCloudIDField])
+		instances = append(instances, types.InstanceResource{
+			ID:          util.GetStrByInterface(host[common.BKHostIDField]),
+			DisplayName: getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]), cloudMap[cloudID]),
+		})
+	}
+
+	return &types.ListInstanceResult{
+		Count:   int64(hostResp.Data.Count),
+		Results: instances,
+	}, nil
 }
 
 type hostInstance struct {
@@ -258,7 +318,7 @@ type hostInstance struct {
 	CloudID int64  `json:"bk_cloud_id"`
 }
 
-func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page, keyword string) (*types.ListInstanceResult, error) {
+func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page) (*types.ListInstanceResult, error) {
 
 	// if hostIDs are set, get hosts from cache returns hosts using ids directly without paging, we need to do it here
 	hosts := make([]hostInstance, 0)
@@ -272,9 +332,8 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 		if hostIDLen > hostLen {
 			hostIDLen = hostLen
 		}
-		hostIDs = hostIDs[page.Offset:hostIDLen]
 
-		for offset := int64(0); offset < hostIDLen; offset += 500 {
+		for offset := page.Offset; offset < hostIDLen; offset += 500 {
 			limit := offset + 500
 			if limit > hostIDLen {
 				limit = hostIDLen
@@ -339,14 +398,9 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 
 	instances := make([]types.InstanceResource, 0)
 	for _, host := range hosts {
-		name := getHostDisplayName(host.InnerIP, cloudMap[host.CloudID])
-		if len(keyword) != 0 && !strings.Contains(strings.ToUpper(name), strings.ToUpper(keyword)) {
-			continue
-		}
-
 		instances = append(instances, types.InstanceResource{
 			ID:          strconv.FormatInt(host.ID, 10),
-			DisplayName: name,
+			DisplayName: getHostDisplayName(host.InnerIP, cloudMap[host.CloudID]),
 		})
 	}
 
