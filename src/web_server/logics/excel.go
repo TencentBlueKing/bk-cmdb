@@ -14,13 +14,14 @@ package logics
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -108,7 +109,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		if err != nil {
 			blog.ErrorJSON("BuildHostExcelFromData failed, hostData: %s, err: %s, rid: %s", hostData, err.Error(), rid)
 			msg := fmt.Sprintf("data format error:%v", hostData)
-			return errors.New(msg)
+			return ccErr.Errorf(common.CCErrCommReplyDataFormatError, msg)
 		}
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
@@ -135,6 +136,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 }
 
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
+	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	rid := util.ExtractRequestIDFromContext(ctx)
 	var instIDArr []int64
 	for instID := range instPrimaryInfo {
@@ -154,12 +156,34 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		blog.Errorf("setExcelRowDataByIndex add excel  assocation sheet error. err:%s, rid:%s", err.Error(), rid)
 		return err
 	}
-	productExcelAssociationHealer(ctx, sheet, lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header)))
+
+	////确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	resp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			condition.BKDBOR: []mapstr.MapStr{
+				{
+					common.BKObjIDField: objID,
+				},
+				{
+					common.BKAsstObjIDField: objID,
+				},
+			}}})
+	if err != nil {
+		blog.Errorf("get object association list failed, err: %v, rid: %s", err, rid)
+		return err
+	}
+	if !resp.Result {
+		blog.Errorf("get object association list failed, err: %v, rid: %s", resp.ErrMsg, rid)
+		return errors.New(resp.Code, resp.ErrMsg)
+	}
+	asstList := resp.Data.Info
+	productExcelAssociationHealer(ctx, sheet, defLang, len(instAsst), asstList)
 
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset
+
 	for _, inst := range instAsst {
-		sheet.Cell(rowIndex, 0).SetString(inst.ObjectAsstID)
-		sheet.Cell(rowIndex, 1).SetString("")
+		sheet.Cell(rowIndex, 1).SetString(inst.ObjectAsstID)
+		sheet.Cell(rowIndex, 2).SetString("")
 		srcInst, ok := asstData[inst.ObjectID][inst.InstID]
 		if !ok {
 			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, objID, rid)
@@ -171,11 +195,11 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, inst.AsstObjectID, rid)
 			continue
 		}
-		sheet.Cell(rowIndex, 2).SetString(buildEexcelPrimaryKey(srcInst))
-		sheet.Cell(rowIndex, 3).SetString(buildEexcelPrimaryKey(dstInst))
-		style := sheet.Cell(rowIndex, 2).GetStyle()
+		sheet.Cell(rowIndex, 3).SetString(buildEexcelPrimaryKey(srcInst))
+		sheet.Cell(rowIndex, 4).SetString(buildEexcelPrimaryKey(dstInst))
+		style := sheet.Cell(rowIndex, 3).GetStyle()
 		style.Alignment.WrapText = true
-		style = sheet.Cell(rowIndex, 3).GetStyle()
+		style = sheet.Cell(rowIndex, 4).GetStyle()
 		style.Alignment.WrapText = true
 		rowIndex++
 	}
