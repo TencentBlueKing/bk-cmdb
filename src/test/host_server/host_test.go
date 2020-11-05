@@ -1371,17 +1371,14 @@ var _ = Describe("multiple ip host validation test", func() {
 	It("multiple ip host validation", func() {
 		test.ClearDatabase()
 
-		By("add hosts with one same ip using api")
+		By("add hosts with different ip using api")
 		hostInput := map[string]interface{}{
 			"host_info": map[string]interface{}{
 				"1": map[string]interface{}{
 					"bk_host_innerip": "1.0.0.1,1.0.0.2",
 				},
 				"2": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.1",
-				},
-				"3": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.1,1.0.0.2,1.0.0.3",
+					"bk_host_innerip": "1.0.0.3",
 				},
 			},
 		}
@@ -1400,7 +1397,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
-		Expect(searchRsp.Data.Count).To(Equal(3))
+		Expect(searchRsp.Data.Count).To(Equal(2))
 
 		By("add same multiple ip host using api")
 		input := &metadata.CreateModelInstance{
@@ -1410,6 +1407,18 @@ var _ = Describe("multiple ip host validation test", func() {
 			},
 		}
 		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		util.RegisterResponse(addHostResult)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
+
+		By("add hosts with one same ip using api")
+		input = &metadata.CreateModelInstance{
+			Data: map[string]interface{}{
+				"bk_host_innerip": "1.0.0.1",
+				"bk_cloud_id":     0,
+			},
+		}
+		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
