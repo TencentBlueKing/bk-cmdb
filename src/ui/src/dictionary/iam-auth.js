@@ -444,7 +444,7 @@ export const IAM_ACTIONS = {
         }
     },
 
-    // 资源池主机
+    // 主机池主机
     C_RESOURCE_HOST: {
         id: 'create_resource_pool_host',
         name: ['主机池主机创建', 'Create Resource Pool Host'],
@@ -562,7 +562,7 @@ export const IAM_ACTIONS = {
         }
     },
 
-    // 资源池目录
+    // 主机池目录
     C_RESOURCE_DIRECTORY: {
         id: 'create_resource_pool_directory',
         name: ['主机池目录创建', 'Create Resource Pool Directory'],
