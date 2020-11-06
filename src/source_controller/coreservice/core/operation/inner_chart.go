@@ -20,11 +20,15 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+)
+
+const (
+	AuditLog_InstanceOpDetail_ModelID_Field = "operation_detail.bk_obj_id"
+	AuditLog_ResourceID_Field               = "resource_id"
 )
 
 func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
@@ -55,7 +59,7 @@ func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
 	return nil
 }
 
-// ModelInstCount 统计模型实例数量
+// ModelInstCount 统计各模型的实例数量
 func (m *operationManager) ModelInstCount(kit *rest.Kit, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
@@ -63,8 +67,8 @@ func (m *operationManager) ModelInstCount(kit *rest.Kit, wg *sync.WaitGroup) err
 	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 	cond := mapstr.MapStr{}
 	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
-	modelInfos := make([]metadata.Object, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelInfos); err != nil {
+	modelInfos := []map[string]interface{}{}
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Fields(common.BKObjIDField).All(kit.Ctx, &modelInfos); err != nil {
 		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
@@ -82,45 +86,36 @@ func (m *operationManager) ModelInstCount(kit *rest.Kit, wg *sync.WaitGroup) err
 	if count > 0 {
 		for _, modelInfo := range modelInfos {
 			condition := mapstr.MapStr{
-				common.BKObjIDField: modelInfo.ObjectID,
+				common.BKObjIDField: util.GetStrByInterface(modelInfo[common.BKObjIDField]),
 			}
 			count, err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(condition).Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("model %s's instance count fail, err: %v, rid: %v", modelInfo.ObjectID, err, kit.Rid)
+				blog.Errorf("model %s's instance count fail, err: %v, rid: %v", modelInfo[common.BKObjIDField], err, kit.Rid)
 				return err
 			}
 
 			modelInstNumber = append(modelInstNumber, metadata.StringIDCount{
-				ID:    modelInfo.ObjectID,
+				ID:    util.GetStrByInterface(modelInfo[common.BKObjIDField]),
 				Count: int64(count),
 			})
 		}
 	}
-
 	if err := m.UpdateInnerChartData(kit, common.ModelInstChart, modelInstNumber); err != nil {
 		blog.Errorf("update inner chart ModelInstCount data fail, err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
+
 	return nil
 }
 
 func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) error {
 	defer wg.Done()
+
 	operationLog, err := m.StatisticOperationLog(kit)
 	if err != nil {
 		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
-
-	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
-	cond := mapstr.MapStr{}
-	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
-	modelData := make([]metadata.Object, 0)
-	if err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).All(kit.Ctx, &modelData); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond, err.Error())
-		return err
-	}
-
 	modelInstChange := metadata.ModelInstChange{}
 	for _, createInst := range operationLog.Create {
 		if _, ok := modelInstChange[createInst.ID]; !ok {
@@ -146,17 +141,28 @@ func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) er
 		}
 	}
 
+	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+	cond := mapstr.MapStr{}
+	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
+	fields := []string{common.BKObjIDField, common.BKObjNameField}
+	modelData := []map[string]interface{}{}
+	if err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Fields(fields...).All(kit.Ctx, &modelData); nil != err {
+		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond, err.Error())
+		return err
+	}
+
 	modelInstData := metadata.ModelInstChange{}
 	// 把bk_obj_id换成bk_obj_name
 	for _, model := range modelData {
-		modelInstData[model.ObjectName] = &metadata.InstChangeCount{}
+		objName := util.GetStrByInterface(model[common.BKObjNameField])
+		objID := util.GetStrByInterface(model[common.BKObjIDField])
+		modelInstData[objName] = &metadata.InstChangeCount{}
 		for key, value := range modelInstChange {
-			if key == model.ObjectID {
-				modelInstData[model.ObjectName] = value
+			if key == objID {
+				modelInstData[objName] = value
 			}
 		}
 	}
-
 	if err = m.UpdateInnerChartData(kit, common.ModelInstChangeChart, modelInstData); err != nil {
 		blog.Errorf("update inner chart ModelInstChange data fail, err: %v, rid: %v", err, kit.Rid)
 		return err
@@ -168,6 +174,7 @@ func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) er
 // BizHostCountChange 统计业务下主机数量
 func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup) error {
 	defer wg.Done()
+
 	bizHost, err := m.BizHostCount(kit)
 	if err != nil {
 		blog.Errorf("search biz's host count fail, err: %v, rid: %v", err, kit.Rid)
@@ -196,7 +203,6 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 			blog.Errorf("update biz host change chart fail, err: %v, rid: %v", err, kit.Rid)
 			return err
 		}
-		return nil
 	} else {
 		firstBizHostChange := metadata.HostChangeChartData{
 			ReportType: common.HostChangeBizChart,
@@ -209,6 +215,7 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -216,8 +223,9 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
 	// 查询所有业务信息 （排除归档业务和资源池）
 	cond := mapstr.MapStr{"bk_data_status": M{common.BKDBNE: "disabled"}, common.BKAppIDField: M{common.BKDBNE: 1}}
-	bizInfos := make([]metadata.BizInst, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).All(kit.Ctx, &bizInfos); err != nil {
+	bizInfos := []map[string]interface{}{}
+	fields := []string{common.BKAppIDField, common.BKAppNameField}
+	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Fields(fields...).All(kit.Ctx, &bizInfos); err != nil {
 		blog.Errorf("BizHostCount, get biz info fail, err: %v, rid: %v ", err, kit.Rid)
 		return nil, err
 	}
@@ -234,15 +242,21 @@ func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount
 	bizHostData := make([]metadata.StringIDCount, 0)
 	if count > 0 {
 		for _, bizInfo := range bizInfos {
-			condition := mapstr.MapStr{common.BKAppIDField: bizInfo.BizID}
+			bizID, err := util.GetInt64ByInterface(bizInfo[common.BKAppIDField])
+			if err != nil {
+				return nil, err
+			}
+			condition := mapstr.MapStr{
+				common.BKAppIDField: bizID,
+			}
 			count, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condition).Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("BizHostCount count: biz %s' host count fail, err: %v, rid: %v", bizInfo.BizName, err, kit.Rid)
+				blog.Errorf("BizHostCount count: biz %s' host count fail, err: %v, rid: %v", bizInfo[common.BKAppIDField], err, kit.Rid)
 				return nil, err
 			}
 
 			bizHostData = append(bizHostData, metadata.StringIDCount{
-				ID:    bizInfo.BizName,
+				ID:    util.GetStrByInterface(bizInfo[common.BKAppNameField]),
 				Count: int64(count),
 			})
 		}
@@ -322,132 +336,117 @@ func (m *operationManager) UpdateInnerChartData(kit *rest.Kit, reportType string
 	return nil
 }
 
-// StatisticOperationLog 根据 bk_obj_id 分类统计模型实例操作次数
+// StatisticOperationLog 根据 bk_obj_id 分类统计模型实例操作次数, 因操作审计记录太多，采用分批查询统计
 func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.StatisticInstOperation, error) {
-	lastTime := time.Now().AddDate(0, 0, -30)
+	lastTime := time.Now().AddDate(0, 0, -1)
 
+	createInstCountMap := make(map[string]int64, 0)
+	deleteInstCountMap := make(map[string]int64, 0)
+	updateInstCountMap := make(map[string]map[int64]int64, 0)
 	// 查询模型实例创建操作审记，并根据 bk_obj_id 分类统计数量
 	createCond := mapstr.MapStr{
-		common.BKActionField: metadata.AuditCreate,
+		common.BKAuditTypeField:    metadata.ModelInstanceType,
+		common.BKResourceTypeField: metadata.ModelInstanceRes,
+		common.BKActionField:       metadata.AuditCreate,
 		common.BKOperationTimeField: M{
 			common.BKDBGTE: lastTime,
 		},
-		common.BKAuditTypeField:    metadata.ModelInstanceType,
-		common.BKResourceTypeField: metadata.ModelInstanceRes,
 	}
+	fields := []string{AuditLog_InstanceOpDetail_ModelID_Field}
 	// 查询操作审计
-	createAuditLogs := make([]metadata.AuditLog, 0)
-	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(createCond).All(kit.Ctx, &createAuditLogs); err != nil {
+	createAuditLogs := []map[string]interface{}{}
+	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(createCond).Fields(fields...).All(kit.Ctx, &createAuditLogs); err != nil {
 		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, createCond: %+v, err: %v, rid: %s", createCond, err, kit.Rid)
 		return nil, err
 	}
-	createInstCountMap := make(map[string]int64, 0)
+
 	for _, adtlog := range createAuditLogs {
-		bytes, err := json.Marshal(adtlog.OperationDetail)
+		detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
+		moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
+		if _, ok := createInstCountMap[moduleID]; ok {
+			createInstCountMap[moduleID] = createInstCountMap[moduleID] + 1
+		} else {
+			createInstCountMap[moduleID] = 1
+		}
+	}
+
+	// 查询模型实例删除操作审记，并根据 bk_obj_id 分类统计数量
+	deleteCond := mapstr.MapStr{
+		common.BKAuditTypeField:    metadata.ModelInstanceType,
+		common.BKResourceTypeField: metadata.ModelInstanceRes,
+		common.BKActionField:       metadata.AuditDelete,
+		common.BKOperationTimeField: M{
+			common.BKDBGTE: lastTime,
+		},
+	}
+	fields = []string{AuditLog_InstanceOpDetail_ModelID_Field}
+	// 查询操作审计
+	deleteAuditLogs := []map[string]interface{}{}
+	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(deleteCond).Fields(fields...).All(kit.Ctx, &deleteAuditLogs); err != nil {
+		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, deleteCond: %+v, err: %v, rid: %s", deleteCond, err, kit.Rid)
+		return nil, err
+	}
+
+	for _, adtlog := range deleteAuditLogs {
+		detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
+		moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
+		if _, ok := deleteInstCountMap[moduleID]; ok {
+			deleteInstCountMap[moduleID] = deleteInstCountMap[moduleID] + 1
+		} else {
+			deleteInstCountMap[moduleID] = 1
+		}
+	}
+
+	// 查询模型实例更新操作审记，并根据 bk_obj_id， 分类统计数量
+	updateCond := mapstr.MapStr{
+		common.BKAuditTypeField:    metadata.ModelInstanceType,
+		common.BKResourceTypeField: metadata.ModelInstanceRes,
+		common.BKActionField:       metadata.AuditUpdate,
+		common.BKOperationTimeField: M{
+			common.BKDBGTE: lastTime,
+		},
+	}
+	fields = []string{AuditLog_InstanceOpDetail_ModelID_Field, AuditLog_ResourceID_Field}
+	// 查询操作审计
+	updateAuditLogs := []map[string]interface{}{}
+	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(updateCond).Fields(fields...).All(kit.Ctx, &updateAuditLogs); err != nil {
+		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, updateCond: %+v, err: %v, rid: %s", updateCond, err, kit.Rid)
+		return nil, err
+	}
+
+	for _, adtlog := range updateAuditLogs {
+		detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
+
+		moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
+		instID, err := util.GetInt64ByInterface(adtlog[AuditLog_ResourceID_Field])
 		if err != nil {
 			return nil, err
 		}
-		detail := &metadata.InstanceOpDetail{}
-		if err = json.Unmarshal(bytes, detail); err != nil {
-			return nil, err
+		if _, ok := updateInstCountMap[moduleID]; !ok {
+			updateInstCountMap[moduleID] = make(map[int64]int64, 0)
 		}
-
-		if _, ok := createInstCountMap[detail.ModelID]; ok {
-			createInstCountMap[detail.ModelID] = createInstCountMap[detail.ModelID] + 1
+		if _, ok := updateInstCountMap[moduleID][instID]; !ok {
+			updateInstCountMap[moduleID][instID] = updateInstCountMap[moduleID][instID] + 1
 		} else {
-			createInstCountMap[detail.ModelID] = 1
+			updateInstCountMap[moduleID][instID] = 1
 		}
 	}
-	createInstCount := make([]metadata.StringIDCount, len(createInstCountMap))
+
+	createInstCount := make([]metadata.StringIDCount, 0)
+	deleteInstCount := make([]metadata.StringIDCount, 0)
+	updateInstCount := make([]metadata.UpdateInstCount, 0)
 	for key, value := range createInstCountMap {
 		createInstCount = append(createInstCount, metadata.StringIDCount{
 			ID:    key,
 			Count: value,
 		})
 	}
-
-	// 查询模型实例删除操作审记，并根据 bk_obj_id 分类统计数量
-	deleteCond := mapstr.MapStr{
-		common.BKActionField: metadata.AuditDelete,
-		common.BKOperationTimeField: M{
-			common.BKDBGTE: lastTime,
-		},
-		common.BKAuditTypeField:    metadata.ModelInstanceType,
-		common.BKResourceTypeField: metadata.ModelInstanceRes,
-	}
-	// 查询操作审计
-	deleteAuditLogs := make([]metadata.AuditLog, 0)
-	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(deleteCond).All(kit.Ctx, &deleteAuditLogs); err != nil {
-		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, deleteCond: %+v, err: %v, rid: %s", deleteCond, err, kit.Rid)
-		return nil, err
-	}
-	deleteInstCountMap := make(map[string]int64, 0)
-	for _, adtlog := range deleteAuditLogs {
-		bytes, err := json.Marshal(adtlog.OperationDetail)
-		if err != nil {
-			return nil, err
-		}
-		detail := &metadata.InstanceOpDetail{}
-		if err = json.Unmarshal(bytes, detail); err != nil {
-			return nil, err
-		}
-
-		if _, ok := deleteInstCountMap[detail.ModelID]; ok {
-			deleteInstCountMap[detail.ModelID] = deleteInstCountMap[detail.ModelID] + 1
-		} else {
-			deleteInstCountMap[detail.ModelID] = 1
-		}
-	}
-	deleteInstCount := make([]metadata.StringIDCount, len(deleteInstCountMap))
 	for key, value := range deleteInstCountMap {
 		deleteInstCount = append(deleteInstCount, metadata.StringIDCount{
 			ID:    key,
 			Count: value,
 		})
 	}
-
-	// 查询模型实例更新操作审记，并根据 bk_obj_id， 分类统计数量
-	updateCond := mapstr.MapStr{
-		common.BKActionField: metadata.AuditUpdate,
-		common.BKOperationTimeField: M{
-			common.BKDBGTE: lastTime,
-		},
-		common.BKAuditTypeField:    metadata.ModelInstanceType,
-		common.BKResourceTypeField: metadata.ModelInstanceRes,
-	}
-	// 查询操作审计
-	updateAuditLogs := make([]metadata.AuditLog, 0)
-	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(updateCond).All(kit.Ctx, &updateAuditLogs); err != nil {
-		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, updateCond: %+v, err: %v, rid: %s", updateCond, err, kit.Rid)
-		return nil, err
-	}
-
-	updateInstCountMap := make(map[string]map[int64]int64, 0)
-	for _, adtlog := range updateAuditLogs {
-		bytes, err := json.Marshal(adtlog.OperationDetail)
-		if err != nil {
-			return nil, err
-		}
-		detail := &metadata.InstanceOpDetail{}
-		if err = json.Unmarshal(bytes, detail); err != nil {
-			return nil, err
-		}
-
-		instID, err := util.GetInt64ByInterface(adtlog.ResourceID)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := updateInstCountMap[detail.ModelID]; !ok {
-			updateInstCountMap[detail.ModelID] = make(map[int64]int64, 0)
-		}
-		if _, ok := updateInstCountMap[detail.ModelID][instID]; !ok {
-			updateInstCountMap[detail.ModelID][instID] = updateInstCountMap[detail.ModelID][instID] + 1
-		} else {
-			updateInstCountMap[detail.ModelID][instID] = 1
-		}
-	}
-
-	updateInstCount := make([]metadata.UpdateInstCount, len(updateInstCountMap))
 	for objID, innerMap := range updateInstCountMap {
 		for instID, count := range innerMap {
 			updateInstCount = append(updateInstCount, metadata.UpdateInstCount{
