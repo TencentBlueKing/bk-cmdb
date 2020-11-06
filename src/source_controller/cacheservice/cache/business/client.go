@@ -61,11 +61,11 @@ func (c *Client) GetBizBaseList() ([]BizBaseInfo, error) {
 // get a business's all info.
 func (c *Client) GetBusiness(bizID int64) (string, error) {
 	key := bizKey.detailKey(bizID)
-	exist, err := redis.Client().Exists(key).Result()
+	exist, err := redis.Client().Exists(context.Background(), key).Result()
 	if err != nil {
 		blog.Warnf("get business info from cache,  biz: %d, but check exist failed, err: %v", bizID, err)
 		// get from db directly.
-		exist = false
+		exist = 0
 	}
 
 	// try to refresh cache.
@@ -77,8 +77,8 @@ func (c *Client) GetBusiness(bizID int64) (string, error) {
 		getDetail:      c.getBusinessFromMongo,
 	})
 
-	if exist {
-		biz, err := redis.Client().Get(key).Result()
+	if exist == 1 {
+		biz, err := redis.Client().Get(context.Background(), key).Result()
 		if err == nil {
 			return biz, nil
 		}
@@ -108,7 +108,7 @@ func (c *Client) ListBusiness(ctx context.Context, opt *metadata.ListWithIDOptio
 		})
 	}
 
-	bizList, err := redis.Client().MGet(keys...).Result()
+	bizList, err := redis.Client().MGet(context.Background(), keys...).Result()
 	if err != nil {
 		blog.Errorf("get business %d info from cache failed, get from db directly, err: %v, rid: %v", opt.IDs, err, rid)
 		return c.listBusinessFromMongo(ctx, opt.IDs, opt.Fields)
@@ -167,7 +167,7 @@ func (c *Client) ListModules(ctx context.Context, opt *metadata.ListWithIDOption
 		})
 	}
 
-	list, err := redis.Client().MGet(keys...).Result()
+	list, err := redis.Client().MGet(context.Background(), keys...).Result()
 	if err != nil {
 		blog.Errorf("list module %d info from cache failed, get from db directly, err: %v, rid: %v", opt.IDs, err, rid)
 		return c.listModuleFromMongo(ctx, opt.IDs, opt.Fields)
@@ -225,7 +225,7 @@ func (c *Client) ListSets(ctx context.Context, opt *metadata.ListWithIDOption) (
 		})
 	}
 
-	list, err := redis.Client().MGet(keys...).Result()
+	list, err := redis.Client().MGet(context.Background(), keys...).Result()
 	if err != nil {
 		blog.Errorf("list set %d info from cache failed, get from db directly, err: %v, rid: %v", opt.IDs, err, rid)
 		return c.listSetFromMongo(ctx, opt.IDs, opt.Fields)
@@ -313,7 +313,7 @@ func (c *Client) ListModuleDetails(moduleIDs []int64) ([]string, error) {
 		keys[idx] = moduleKey.detailKey(module)
 	}
 
-	modules, err := redis.Client().MGet(keys...).Result()
+	modules, err := redis.Client().MGet(context.Background(), keys...).Result()
 	if err == nil {
 		list := make([]string, 0)
 		for idx, m := range modules {
@@ -353,7 +353,7 @@ func (c *Client) GetModuleDetail(moduleID int64) (string, error) {
 		getDetail:      c.getModuleDetailFromMongo,
 	})
 
-	mod, err := redis.Client().Get(moduleKey.detailKey(moduleID)).Result()
+	mod, err := redis.Client().Get(context.Background(), moduleKey.detailKey(moduleID)).Result()
 	if err == nil && len(mod) != 0 {
 		return mod, nil
 	}
@@ -401,7 +401,7 @@ func (c *Client) GetSet(setID int64) (string, error) {
 		getDetail:      c.getSetDetailFromMongo,
 	})
 
-	set, err := redis.Client().Get(setKey.detailKey(setID)).Result()
+	set, err := redis.Client().Get(context.Background(), setKey.detailKey(setID)).Result()
 	if err == nil && len(set) != 0 {
 		return set, nil
 	}
@@ -428,7 +428,7 @@ func (c *Client) ListSetDetails(setIDs []int64) ([]string, error) {
 		keys[idx] = setKey.detailKey(set)
 	}
 
-	sets, err := redis.Client().MGet(keys...).Result()
+	sets, err := redis.Client().MGet(context.Background(), keys...).Result()
 	if err == nil && len(sets) != 0 {
 		all := make([]string, 0)
 		for idx, s := range sets {
@@ -490,7 +490,7 @@ func (c *Client) GetCustomLevelDetail(objID string, instID int64) (string, error
 		},
 	})
 
-	custom, err := redis.Client().Get(customKey.detailKey(objID, instID)).Result()
+	custom, err := redis.Client().Get(context.Background(), customKey.detailKey(objID, instID)).Result()
 	if err == nil && len(custom) != 0 {
 		return custom, nil
 	}
@@ -520,7 +520,7 @@ func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string,
 		keys[idx] = customKey.detailKey(objID, instID)
 	}
 
-	customs, err := redis.Client().MGet(keys...).Result()
+	customs, err := redis.Client().MGet(context.Background(), keys...).Result()
 	if err == nil && len(customs) != 0 {
 		all := make([]string, 0)
 		for idx, cu := range customs {
@@ -553,7 +553,7 @@ func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string,
 func (c *Client) GetTopology() ([]string, error) {
 	// TODO: try refresh the cache.
 	key := customKey.topologyKey()
-	rank, err := redis.Client().Get(key).Result()
+	rank, err := redis.Client().Get(context.Background(), key).Result()
 	if err != nil {
 		return nil, err
 	}

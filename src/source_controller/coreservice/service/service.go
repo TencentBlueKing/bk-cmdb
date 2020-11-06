@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
-	"configcenter/src/source_controller/coreservice/cache"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
@@ -42,6 +41,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 
 	"github.com/emicklei/go-restful"
 )
@@ -65,7 +65,6 @@ type coreService struct {
 	err         errors.CCErrorIf
 	cfg         options.Config
 	core        core.Core
-	cacheSet    *cache.ClientSet
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {

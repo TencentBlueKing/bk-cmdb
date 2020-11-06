@@ -34,9 +34,9 @@ type Client struct {
 func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWithIDOption) (string, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	needRefresh := false
-	data, err := redis.Client().Get(hostKey.HostDetailKey(opt.HostID)).Result()
+	data, err := redis.Client().Get(context.Background(), hostKey.HostDetailKey(opt.HostID)).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			// return directly to avoid cache penetration
 			blog.Errorf("get host: %d from redis failed, err: %v, rid: %s", opt.HostID, err, rid)
 			return "", err
@@ -90,7 +90,7 @@ func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWith
 		keys[i] = hostKey.HostDetailKey(id)
 	}
 
-	hosts, err := redis.Client().MGet(keys...).Result()
+	hosts, err := redis.Client().MGet(context.Background(), keys...).Result()
 	if err != nil {
 		blog.Errorf("list host with ids, but get from redis failed, err: %v, rid: %s", err, rid)
 		return nil, err

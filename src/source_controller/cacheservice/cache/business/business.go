@@ -19,8 +19,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
@@ -39,9 +39,9 @@ func (b *business) Run() error {
 		Collection:  common.BKTableNameBaseApp,
 	}
 
-	_, err := redis.Client().Get(b.key.listDoneKey()).Result()
+	_, err := redis.Client().Get(context.Background(), b.key.listDoneKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			blog.Errorf("get biz list done redis key failed, err: %v", err)
 			return fmt.Errorf("get biz list done redis key failed, err: %v", err)
 		}
@@ -119,7 +119,7 @@ func (b *business) onDelete(e *types.Event) {
 // onListDone is to tell us that all the business has been list from mongodb and already
 // sync it to cache.
 func (b *business) onListDone() {
-	if err := redis.Client().Set(b.key.listDoneKey(), "done", 0).Err(); err != nil {
+	if err := redis.Client().Set(context.Background(), b.key.listDoneKey(), "done", 0).Err(); err != nil {
 		blog.Errorf("list business data to cache and list done, but set list done key failed, err: %v", err)
 		return
 	}

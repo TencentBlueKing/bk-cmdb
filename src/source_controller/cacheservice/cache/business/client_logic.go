@@ -121,7 +121,7 @@ func (c *Client) listSetFromMongo(ctx context.Context, ids []int64, fields []str
 // from the db directly.
 func (c *Client) getBusinessBaseInfo() (list []BizBaseInfo, err error) {
 	// get all keys which contains the biz id.
-	keys, err := redis.Client().SMembers(bizKey.listKeyWithBiz(0)).Result()
+	keys, err := redis.Client().SMembers(context.Background(), bizKey.listKeyWithBiz(0)).Result()
 	if err != nil {
 		return nil, fmt.Errorf("get bizlist keys %s falied. err: %v", bizKey.listKeyWithBiz(0), err)
 	}
@@ -129,7 +129,7 @@ func (c *Client) getBusinessBaseInfo() (list []BizBaseInfo, err error) {
 		instID, _, name, err := bizKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
-			if err := redis.Client().SRem(bizKey.listKeyWithBiz(0), key).Err(); err != nil {
+			if err := redis.Client().SRem(context.Background(), bizKey.listKeyWithBiz(0), key).Err(); err != nil {
 				blog.Errorf("delete invalid biz hash %s key: %s failed, err: %v", bizKey.listKeyWithBiz(0), key, err)
 			}
 			return nil, fmt.Errorf("got invalid key %s", key)
@@ -173,9 +173,9 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 		}()
 
 		// get expire key
-		expireStart, err := redis.Client().Get(ref.expireKey).Result()
+		expireStart, err := redis.Client().Get(context.Background(), ref.expireKey).Result()
 		if err != nil {
-			if err != redis.Nil {
+			if !redis.IsNilErr(err) {
 				blog.Errorf("try to refresh list %s cache, but get expire key failed, er: %v", ref.expireKey, err)
 				return
 			}
@@ -194,7 +194,7 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 		}
 
 		// get the lock key, so that it can only be done by one instance.
-		success, err := redis.Client().SetNX(ref.lockKey, 1, 15*time.Second).Result()
+		success, err := redis.Client().SetNX(context.Background(), ref.lockKey, 1, 15*time.Second).Result()
 		if err != nil {
 			blog.Errorf("sync %s list to refresh cache, but got redis lock failed, err: %v", ref.mainKey, err)
 			return
@@ -206,7 +206,7 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 		}
 
 		defer func() {
-			if err := redis.Client().Del(ref.lockKey).Err(); err != nil {
+			if err := redis.Client().Del(context.Background(), ref.lockKey).Err(); err != nil {
 				blog.Errorf("sync %s list to refresh cache, but delete redis lock failed, err: %v", ref.mainKey, err)
 			}
 		}()
@@ -219,7 +219,7 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 		}
 
 		// get real keys for compare later.
-		realKeys, err := redis.Client().SMembers(ref.mainKey).Result()
+		realKeys, err := redis.Client().SMembers(context.Background(), ref.mainKey).Result()
 		if err != nil {
 			blog.Errorf("sync list to refresh cache, but get list from redis key: %s failed, err: %v", ref.mainKey, err)
 			return
@@ -279,9 +279,9 @@ func (c *Client) tryRefreshInstanceDetail(instID int64, ref refreshInstance) {
 		}()
 
 		// get expire key
-		expireStart, err := redis.Client().Get(ref.expireKey).Result()
+		expireStart, err := redis.Client().Get(context.Background(), ref.expireKey).Result()
 		if err != nil {
-			if err != redis.Nil {
+			if !redis.IsNilErr(err) {
 				blog.Errorf("try to refresh instance %s cache, but get expire key failed, er: %v", ref.expireKey, err)
 				return
 			}
@@ -301,7 +301,7 @@ func (c *Client) tryRefreshInstanceDetail(instID int64, ref refreshInstance) {
 		}
 
 		// get the lock key, so that it can only be done by one cacheservice instance.
-		success, err := redis.Client().SetNX(ref.lockKey, 1, 15*time.Second).Result()
+		success, err := redis.Client().SetNX(context.Background(), ref.lockKey, 1, 15*time.Second).Result()
 		if err != nil {
 			blog.Errorf("sync %s instance to refresh cache, but got redis lock failed, err: %v", ref.mainKey, err)
 			return
@@ -313,7 +313,7 @@ func (c *Client) tryRefreshInstanceDetail(instID int64, ref refreshInstance) {
 		}
 
 		defer func() {
-			if err := redis.Client().Del(ref.lockKey).Err(); err != nil {
+			if err := redis.Client().Del(context.Background(), ref.lockKey).Err(); err != nil {
 				blog.Errorf("sync %s instance to refresh cache, but delete redis lock failed, err: %v", ref.mainKey, err)
 			}
 		}()
@@ -341,7 +341,7 @@ func (c *Client) tryRefreshInstanceDetail(instID int64, ref refreshInstance) {
 
 func (c *Client) getModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 	// get all keys which contains the biz id.
-	keys, err := redis.Client().SMembers(moduleKey.listKeyWithBiz(bizID)).Result()
+	keys, err := redis.Client().SMembers(context.Background(), moduleKey.listKeyWithBiz(bizID)).Result()
 	if err != nil {
 		return nil, fmt.Errorf("get module keys %s falied. err: %v", moduleKey.listKeyWithBiz(bizID), err)
 	}
@@ -351,7 +351,7 @@ func (c *Client) getModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 		moduleID, setID, name, err := moduleKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
-			if redis.Client().SRem(moduleKey.listKeyWithBiz(bizID), key).Err() != nil {
+			if redis.Client().SRem(context.Background(), moduleKey.listKeyWithBiz(bizID), key).Err() != nil {
 				blog.Errorf("delete invalid module %s key: %s failed,", moduleKey.listKeyWithBiz(bizID), key)
 			}
 			return nil, fmt.Errorf("got invalid key %s", key)
@@ -367,7 +367,7 @@ func (c *Client) getModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 
 func (c *Client) getSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 	// get all keys which contains the biz id.
-	keys, err := redis.Client().SMembers(setKey.listKeyWithBiz(bizID)).Result()
+	keys, err := redis.Client().SMembers(context.Background(), setKey.listKeyWithBiz(bizID)).Result()
 	if err != nil {
 		return nil, fmt.Errorf("get set keys %s falied. err: %v", setKey.listKeyWithBiz(bizID), err)
 	}
@@ -377,7 +377,7 @@ func (c *Client) getSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 		setID, parentID, name, err := setKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
-			if redis.Client().SRem(setKey.listKeyWithBiz(bizID), key).Err() != nil {
+			if redis.Client().SRem(context.Background(), setKey.listKeyWithBiz(bizID), key).Err() != nil {
 				blog.Errorf("delete invalid set %s key: %s failed,", setKey.listKeyWithBiz(bizID), key)
 			}
 			return nil, fmt.Errorf("got invalid key %s", key)
@@ -607,7 +607,7 @@ func (c *Client) getCustomLevelBaseFromMongodb(objID string, bizID int64) ([]Cus
 
 func (c *Client) getCustomLevelBaseList(objectID string, bizID int64) ([]CustomInstanceBase, error) {
 	// get all keys which contains the biz id.
-	keys, err := redis.Client().SMembers(customKey.objListKeyWithBiz(objectID, bizID)).Result()
+	keys, err := redis.Client().SMembers(context.Background(), customKey.objListKeyWithBiz(objectID, bizID)).Result()
 	if err != nil {
 		return nil, fmt.Errorf("get custom level keys %s falied. err: %v", customKey.objListKeyWithBiz(objectID, bizID), err)
 	}
@@ -617,7 +617,7 @@ func (c *Client) getCustomLevelBaseList(objectID string, bizID int64) ([]CustomI
 		instID, parentID, name, err := customKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
-			if redis.Client().SRem(customKey.objListKeyWithBiz(objectID, bizID), key).Err() != nil {
+			if redis.Client().SRem(context.Background(), customKey.objListKeyWithBiz(objectID, bizID), key).Err() != nil {
 				blog.Errorf("delete invalid custom level %s key: %s failed,", customKey.objListKeyWithBiz(objectID, bizID), key)
 			}
 			return nil, fmt.Errorf("got invalid key %s", key)
