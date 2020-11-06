@@ -21,7 +21,7 @@ import (
 
 	"configcenter/src/common/json"
 	"configcenter/src/common/watch"
-	"configcenter/src/source_controller/coreservice/event"
+	"configcenter/src/source_controller/cacheservice/event"
 )
 
 const (

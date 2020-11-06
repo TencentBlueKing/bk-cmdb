@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/source_controller/coreservice/cache/topo_tree"
+	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 )
 
 func (s *Service) SearchTopologyTree(ctx *rest.Contexts) {
@@ -26,7 +26,7 @@ func (s *Service) SearchTopologyTree(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	topo, err := s.Engine.CoreAPI.CoreService().Cache().SearchTopologyTree(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	topo, err := s.Engine.CoreAPI.CacheService().Cache().Topology().SearchTopologyTree(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -60,7 +60,7 @@ func (s *Service) SearchTopologyNodePath(ctx *rest.Contexts) {
 
 	opt.Business = appID
 
-	paths, err := s.Engine.CoreAPI.CoreService().Cache().SearchTopologyNodePath(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	paths, err := s.Engine.CoreAPI.CacheService().Cache().Topology().SearchTopologyNodePath(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

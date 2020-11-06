@@ -342,7 +342,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 				IDs:    hostIDs[offset:limit],
 				Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 			}
-			hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithHostID(kit.Ctx, kit.Header, listHostParam)
+			hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithHostID(kit.Ctx, kit.Header, listHostParam)
 			if err != nil {
 				blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
 				return nil, err
@@ -366,7 +366,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 			},
 		}
 
-		cnt, hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithPage(kit.Ctx, kit.Header, listHostParam)
+		cnt, hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithPage(kit.Ctx, kit.Header, listHostParam)
 		if err != nil {
 			blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
 			return nil, err

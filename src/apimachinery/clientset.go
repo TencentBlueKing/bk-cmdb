@@ -16,6 +16,7 @@ import (
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/apimachinery/authserver"
+	"configcenter/src/apimachinery/cacheservice"
 	"configcenter/src/apimachinery/cloudserver"
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/apimachinery/discovery"
@@ -41,6 +42,8 @@ type ClientSetInterface interface {
 	TaskServer() taskserver.TaskServerClientInterface
 	CloudServer() cloudserver.CloudServerClientInterface
 	AuthServer() authserver.AuthServerClientInterface
+
+	CacheService() cacheservice.CacheServiceClientInterface
 
 	Healthz() healthz.HealthzInterface
 }
@@ -191,4 +194,14 @@ func (cs *ClientSet) AuthServer() authserver.AuthServerClientInterface {
 		Mock:     cs.Mock,
 	}
 	return authserver.NewAuthServerClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) CacheService() cacheservice.CacheServiceClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.CacheService(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return cacheservice.NewCacheServiceClient(c, cs.version)
 }
