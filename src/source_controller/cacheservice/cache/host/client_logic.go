@@ -25,7 +25,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 
-	rawRedis "gopkg.in/redis.v5"
+	rawRedis "github.com/go-redis/redis/v7"
 )
 
 func (c *Client) tryRefreshHostDetail(hostID int64, ips string, cloudID int64, detail []byte) {
@@ -58,9 +58,9 @@ func (c *Client) tryRefreshHostIDList(ctx context.Context) {
 	c.lock.SetRefreshing(hostKey.HostIDListLockKey())
 	defer c.lock.SetUnRefreshing(hostKey.HostIDListLockKey())
 
-	expire, err := redis.Client().Get(hostKey.HostIDListExpireKey()).Result()
+	expire, err := redis.Client().Get(context.Background(), hostKey.HostIDListExpireKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			blog.Errorf("get host id list expire key failed, err: %v, rid :%v", err, rid)
 			return
 		} else {
@@ -84,7 +84,7 @@ func (c *Client) tryRefreshHostIDList(ctx context.Context) {
 	blog.V(4).Infof("host id list key: %s is expired, refresh it now. rid: %v", hostKey.HostIDListKey(), rid)
 
 	// then get distribute lock.
-	locked, err := redis.Client().SetNX(hostKey.HostIDListLockKey(), true, time.Duration(hostKey.HostIDListKeyExpireSeconds())*
+	locked, err := redis.Client().SetNX(context.Background(), hostKey.HostIDListLockKey(), true, time.Duration(hostKey.HostIDListKeyExpireSeconds())*
 		time.Second).Result()
 
 	if err != nil {
@@ -101,7 +101,7 @@ func (c *Client) tryRefreshHostIDList(ctx context.Context) {
 		// already get lock, force refresh host id list now.
 		c.refreshHostIDListCache(ctx)
 
-		if err := redis.Client().Del(hostKey.HostIDListLockKey()).Err(); err != nil {
+		if err := redis.Client().Del(context.Background(), hostKey.HostIDListLockKey()).Err(); err != nil {
 			blog.Errorf("delete host id list lock key: %s failed, err: %v, rid: %v", hostKey.HostIDListLockKey(),
 				err, rid)
 		}
@@ -122,7 +122,7 @@ func (c *Client) forceRefreshHostIDList(ctx context.Context) {
 	defer c.lock.SetUnRefreshing(hostKey.HostIDListLockKey())
 
 	// then get distribute lock.
-	locked, err := redis.Client().SetNX(hostKey.HostIDListLockKey(), true, time.Duration(hostKey.HostIDListKeyExpireSeconds())*
+	locked, err := redis.Client().SetNX(context.Background(), hostKey.HostIDListLockKey(), true, time.Duration(hostKey.HostIDListKeyExpireSeconds())*
 		time.Second).Result()
 
 	if err != nil {
@@ -140,7 +140,7 @@ func (c *Client) forceRefreshHostIDList(ctx context.Context) {
 		// already get lock, force refresh host id list now.
 		c.refreshHostIDListCache(ctx)
 
-		if err := redis.Client().Del(hostKey.HostIDListLockKey()).Err(); err != nil {
+		if err := redis.Client().Del(context.Background(), hostKey.HostIDListLockKey()).Err(); err != nil {
 			blog.Errorf("delete host id list lock key: %s failed, err: %v, rid: %v", hostKey.HostIDListLockKey(),
 				err, rid)
 		}
@@ -188,9 +188,9 @@ func (c *Client) refreshHostIDListCache(ctx context.Context) error {
 			end = count
 		}
 
-		keys := make([]rawRedis.Z, end-start)
+		keys := make([]*rawRedis.Z, end-start)
 		for idx := 0; idx < end-start; idx++ {
-			keys[idx] = rawRedis.Z{
+			keys[idx] = &rawRedis.Z{
 				// set zset score with host id, so we can sort with host id
 				Score: float64(allID[idx+start].ID),
 				// set zset member with host id, so that we can get host id with score directly.

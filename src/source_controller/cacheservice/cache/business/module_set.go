@@ -44,9 +44,9 @@ func (ms *moduleSet) Run() error {
 		Collection:  ms.collection,
 	}
 
-	_, err := redis.Client().Get(ms.key.listDoneKey()).Result()
+	_, err := redis.Client().Get(context.Background(), ms.key.listDoneKey()).Result()
 	if err != nil {
-		if err != redis.Nil {
+		if !redis.IsNilErr(err) {
 			blog.Errorf("get  %s list done redis key failed, err: %v", ms.collection, err)
 			return fmt.Errorf("get %s list done redis key failed, err: %v", ms.collection, err)
 		}
@@ -179,7 +179,7 @@ func (ms *moduleSet) onDelete(e *types.Event) {
 }
 
 func (ms *moduleSet) onListDone() {
-	if err := redis.Client().Set(ms.key.listDoneKey(), "done", 0).Err(); err != nil {
+	if err := redis.Client().Set(context.Background(), ms.key.listDoneKey(), "done", 0).Err(); err != nil {
 		blog.Errorf("list %s cache done, but set list done key failed, err: %v", ms.key.listDoneKey(), err)
 		return
 	}
@@ -188,11 +188,11 @@ func (ms *moduleSet) onListDone() {
 
 func (ms *moduleSet) setOidRelation(oid string, instID int64) error {
 
-	return redis.Client().HSet(ms.key.objectIDKey(), oid, instID).Err()
+	return redis.Client().HSet(context.Background(), ms.key.objectIDKey(), oid, instID).Err()
 }
 
 func (ms *moduleSet) getInstIDWithOid(oid string) (int64, error) {
-	id, err := redis.Client().HGet(ms.key.objectIDKey(), oid).Result()
+	id, err := redis.Client().HGet(context.Background(), ms.key.objectIDKey(), oid).Result()
 	if err != nil {
 		return 0, err
 	}

@@ -31,7 +31,7 @@ type CacheServiceClientInterface interface {
 }
 
 func NewCacheServiceClient(c *util.Capability, version string) CacheServiceClientInterface {
-	base := fmt.Sprintf("/api/%s", version)
+	base := fmt.Sprintf("/cache/%s", version)
 	return &cacheService{
 		restCli: rest.NewRESTClient(c, base),
 	}
@@ -42,10 +42,6 @@ type cacheService struct {
 }
 
 type cache struct {
-	restCli rest.ClientInterface
-}
-
-type event struct {
 	restCli rest.ClientInterface
 }
 
