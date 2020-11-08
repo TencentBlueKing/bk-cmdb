@@ -14,7 +14,6 @@ package rest
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,15 +29,6 @@ import (
 
 	"github.com/emicklei/go-restful"
 )
-
-type Kit struct {
-	Rid             string
-	Header          http.Header
-	Ctx             context.Context
-	CCError         errors.DefaultCCErrorIf
-	User            string
-	SupplierAccount string
-}
 
 type Contexts struct {
 	Kit            *Kit
@@ -239,7 +229,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "rid: %s, %s, err: %v", c.Kit.Rid, fmt.Sprintf(format, args), err)
+	blog.ErrorfDepthf(1, "rid: %s, %s, err: %v", c.Kit.Rid, fmt.Sprintf(format, args...), err)
 
 	var code int
 	var errMsg string
@@ -337,7 +327,7 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "%s, rid: %s", fmt.Sprintf(format, args), c.Kit.Rid)
+	blog.ErrorfDepthf(1, "%s, rid: %s", fmt.Sprintf(format, args...), c.Kit.Rid)
 
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
@@ -419,17 +409,4 @@ func (c *Contexts) NewHeader() http.Header {
 
 func (c *Contexts) SetReadPreference(mode common.ReadPreferenceMode) {
 	c.Kit.Ctx, c.Kit.Header = util.SetReadPreference(c.Kit.Ctx, c.Kit.Header, mode)
-}
-
-// NewKit 产生一个新的kit， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
-func (kit *Kit) NewKit() *Kit {
-	newHeader := util.CCHeader(kit.Header)
-	newKit := *kit
-	newKit.Header = newHeader
-	return &newKit
-}
-
-// NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
-func (kit *Kit) NewHeader() http.Header {
-	return util.CCHeader(kit.Header)
 }

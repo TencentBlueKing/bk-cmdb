@@ -14,10 +14,11 @@ package glog
 
 import (
 	"strconv"
+	"sync/atomic"
 )
 
 func GetV() Level {
-	return logging.verbosity
+	return Level(atomic.LoadInt32((*int32)(&logging.verbosity)))
 }
 
 func SetV(level Level) {
