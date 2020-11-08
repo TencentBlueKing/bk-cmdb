@@ -24,6 +24,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	dbType "configcenter/src/storage/dal/types"
 )
 
 /*
@@ -40,6 +41,11 @@ var (
 // Client  get default error
 func Client() dal.RDB {
 	return db
+}
+
+// Table 获取操作db table的对象
+func Table(name string) dbType.Table {
+	return db.Table(name)
 }
 
 func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, errors.CCErrorCoder) {
