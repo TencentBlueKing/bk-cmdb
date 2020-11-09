@@ -305,44 +305,25 @@ func (e *Engine) Ping() error {
 	return e.SvcDisc.Ping()
 }
 
-var (
-	redisConf = make(map[string]redis.Config, 0)
-)
-
 func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	// use default prefix if no prefix is specified, or use the first prefix
 	var prefix string
-	var  err error
 	if len(prefixes) == 0 {
 		prefix = "redis"
 	} else {
 		prefix = prefixes[0]
 	}
-	// only initialize once, not allow hot update
-	if conf, exist := redisConf[prefix]; exist {
-		return conf, nil
-	}
 
-	redisConf[prefix], err = cc.Redis(prefix)
-	return redisConf[prefix], err
+	return cc.Redis(prefix)
 }
-
-var (
-	mongoConf = make(map[string]mongo.Config, 0)
-)
 
 func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	var prefix string
-	var  err error
 	if len(prefixes) == 0 {
 		prefix = "mongodb"
 	} else {
 		prefix = prefixes[0]
 	}
-	if conf, exist := mongoConf[prefix]; exist {
-		return conf, nil
-	}
 
-	mongoConf[prefix], err = cc.Mongo(prefix)
-	return mongoConf[prefix], err
+	return cc.Mongo(prefix)
 }
