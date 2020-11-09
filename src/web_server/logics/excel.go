@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/host_server/logics"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rentiansheng/xlsx"
@@ -92,8 +93,10 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		return err
 	}
 	extFieldsTopoID := "cc_ext_field_topo"
+	extFieldsBizID := "cc_ext_biz"
 	extFields := map[string]string{
 		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
+		extFieldsBizID:  ccLang.Language("object_biz"),
 	}
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
@@ -114,7 +117,9 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
 			topo := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
+			biz := strings.Split(topo[0], logics.SplitFlag)
 			rowMap[extFieldsTopoID] = strings.Join(topo, "\n")
+			rowMap[extFieldsBizID] = strings.Join(biz[:1], "\n")
 		}
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
