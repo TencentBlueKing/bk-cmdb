@@ -346,95 +346,129 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 	createInstCountMap := make(map[string]int64, 0)
 	deleteInstCountMap := make(map[string]int64, 0)
 	updateInstCountMap := make(map[string]map[int64]int64, 0)
-	// 查询模型实例创建操作审记，并根据 bk_obj_id 分类统计数量
-	createCond := mapstr.MapStr{
-		common.BKAuditTypeField:    metadata.ModelInstanceType,
-		common.BKResourceTypeField: metadata.ModelInstanceRes,
-		common.BKActionField:       metadata.AuditCreate,
-		common.BKOperationTimeField: M{
-			common.BKDBGTE: old1Time,
-			common.BKDBLT:  zeroTime,
-		},
-	}
-	fields := []string{AuditLog_InstanceOpDetail_ModelID_Field}
-	// 查询操作审计
-	createAuditLogs := []map[string]interface{}{}
-	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(createCond).Fields(fields...).All(kit.Ctx, &createAuditLogs); err != nil {
-		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, createCond: %+v, err: %v, rid: %s", createCond, err, kit.Rid)
-		return nil, err
-	}
+	// 用于判断当前类型是否统计完毕
+	createInstEnd := false
+	deleteInstEnd := false
+	updateInstEnd := false
+	limit := 1000
+	for start := 0; !createInstEnd || !deleteInstEnd || !updateInstEnd; start = start + limit {
 
-	for _, adtlog := range createAuditLogs {
-		detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
-		moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
-		if _, ok := createInstCountMap[moduleID]; ok {
-			createInstCountMap[moduleID] = createInstCountMap[moduleID] + 1
-		} else {
-			createInstCountMap[moduleID] = 1
+		if !createInstEnd {
+			// 查询模型实例创建操作审记，并根据 bk_obj_id 分类统计数量
+			createCond := mapstr.MapStr{
+				common.BKAuditTypeField:    metadata.ModelInstanceType,
+				common.BKResourceTypeField: metadata.ModelInstanceRes,
+				common.BKActionField:       metadata.AuditCreate,
+				common.BKOperationTimeField: M{
+					common.BKDBGTE: old1Time,
+					common.BKDBLT:  zeroTime,
+				},
+			}
+			fields := []string{AuditLog_InstanceOpDetail_ModelID_Field}
+			// 查询操作审计
+			createAuditLogs := []map[string]interface{}{}
+			if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(createCond).Fields(fields...).Start(uint64(start)).
+				Limit(uint64(limit)).All(kit.Ctx, &createAuditLogs); err != nil {
+				blog.Errorf("ModelInstanceAuditLogCount: query auditLog, createCond: %+v, err: %v, rid: %s", createCond, err, kit.Rid)
+				return nil, err
+			}
+			// 判断当前类型是否查完
+			if len(createAuditLogs) == 0 {
+				createInstEnd = true
+				continue
+			}
+
+			for _, adtlog := range createAuditLogs {
+				detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
+				moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
+				if _, ok := createInstCountMap[moduleID]; ok {
+					createInstCountMap[moduleID] = createInstCountMap[moduleID] + 1
+				} else {
+					createInstCountMap[moduleID] = 1
+				}
+			}
 		}
-	}
 
-	// 查询模型实例删除操作审记，并根据 bk_obj_id 分类统计数量
-	deleteCond := mapstr.MapStr{
-		common.BKAuditTypeField:    metadata.ModelInstanceType,
-		common.BKResourceTypeField: metadata.ModelInstanceRes,
-		common.BKActionField:       metadata.AuditDelete,
-		common.BKOperationTimeField: M{
-			common.BKDBGTE: old1Time,
-			common.BKDBLT:  zeroTime,
-		},
-	}
-	fields = []string{AuditLog_InstanceOpDetail_ModelID_Field}
-	// 查询操作审计
-	deleteAuditLogs := []map[string]interface{}{}
-	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(deleteCond).Fields(fields...).All(kit.Ctx, &deleteAuditLogs); err != nil {
-		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, deleteCond: %+v, err: %v, rid: %s", deleteCond, err, kit.Rid)
-		return nil, err
-	}
+		if !deleteInstEnd {
+			// 查询模型实例删除操作审记，并根据 bk_obj_id 分类统计数量
+			deleteCond := mapstr.MapStr{
+				common.BKAuditTypeField:    metadata.ModelInstanceType,
+				common.BKResourceTypeField: metadata.ModelInstanceRes,
+				common.BKActionField:       metadata.AuditDelete,
+				common.BKOperationTimeField: M{
+					common.BKDBGTE: old1Time,
+					common.BKDBLT:  zeroTime,
+				},
+			}
+			fields := []string{AuditLog_InstanceOpDetail_ModelID_Field}
+			// 查询操作审计
+			deleteAuditLogs := []map[string]interface{}{}
+			if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(deleteCond).Fields(fields...).Start(uint64(start)).
+				Limit(uint64(limit)).All(kit.Ctx, &deleteAuditLogs); err != nil {
+				blog.Errorf("ModelInstanceAuditLogCount: query auditLog, deleteCond: %+v, err: %v, rid: %s", deleteCond, err, kit.Rid)
+				return nil, err
+			}
 
-	for _, adtlog := range deleteAuditLogs {
-		detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
-		moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
-		if _, ok := deleteInstCountMap[moduleID]; ok {
-			deleteInstCountMap[moduleID] = deleteInstCountMap[moduleID] + 1
-		} else {
-			deleteInstCountMap[moduleID] = 1
+			// 判断当前类型是否查完
+			if len(deleteAuditLogs) == 0 {
+				deleteInstEnd = true
+				continue
+			}
+
+			for _, adtlog := range deleteAuditLogs {
+				detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
+				moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
+				if _, ok := deleteInstCountMap[moduleID]; ok {
+					deleteInstCountMap[moduleID] = deleteInstCountMap[moduleID] + 1
+				} else {
+					deleteInstCountMap[moduleID] = 1
+				}
+			}
 		}
-	}
 
-	// 查询模型实例更新操作审记，并根据 bk_obj_id， 分类统计数量
-	updateCond := mapstr.MapStr{
-		common.BKAuditTypeField:    metadata.ModelInstanceType,
-		common.BKResourceTypeField: metadata.ModelInstanceRes,
-		common.BKActionField:       metadata.AuditUpdate,
-		common.BKOperationTimeField: M{
-			common.BKDBGTE: old1Time,
-			common.BKDBLT:  zeroTime,
-		},
-	}
-	fields = []string{AuditLog_InstanceOpDetail_ModelID_Field, AuditLog_ResourceID_Field}
-	// 查询操作审计
-	updateAuditLogs := []map[string]interface{}{}
-	if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(updateCond).Fields(fields...).All(kit.Ctx, &updateAuditLogs); err != nil {
-		blog.Errorf("ModelInstanceAuditLogCount: query auditLog, updateCond: %+v, err: %v, rid: %s", updateCond, err, kit.Rid)
-		return nil, err
-	}
+		if !updateInstEnd {
+			// 查询模型实例更新操作审记，并根据 bk_obj_id， 分类统计数量
+			updateCond := mapstr.MapStr{
+				common.BKAuditTypeField:    metadata.ModelInstanceType,
+				common.BKResourceTypeField: metadata.ModelInstanceRes,
+				common.BKActionField:       metadata.AuditUpdate,
+				common.BKOperationTimeField: M{
+					common.BKDBGTE: old1Time,
+					common.BKDBLT:  zeroTime,
+				},
+			}
+			fields := []string{AuditLog_InstanceOpDetail_ModelID_Field, AuditLog_ResourceID_Field}
+			// 查询操作审计
+			updateAuditLogs := []map[string]interface{}{}
+			if err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(updateCond).Fields(fields...).Start(uint64(start)).
+				Limit(uint64(limit)).All(kit.Ctx, &updateAuditLogs); err != nil {
+				blog.Errorf("ModelInstanceAuditLogCount: query auditLog, updateCond: %+v, err: %v, rid: %s", updateCond, err, kit.Rid)
+				return nil, err
+			}
 
-	for _, adtlog := range updateAuditLogs {
-		detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
+			// 判断当前类型是否查完
+			if len(updateAuditLogs) == 0 {
+				updateInstEnd = true
+				continue
+			}
 
-		moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
-		instID, err := util.GetInt64ByInterface(adtlog[AuditLog_ResourceID_Field])
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := updateInstCountMap[moduleID]; !ok {
-			updateInstCountMap[moduleID] = make(map[int64]int64, 0)
-		}
-		if _, ok := updateInstCountMap[moduleID][instID]; !ok {
-			updateInstCountMap[moduleID][instID] = updateInstCountMap[moduleID][instID] + 1
-		} else {
-			updateInstCountMap[moduleID][instID] = 1
+			for _, adtlog := range updateAuditLogs {
+				detail := adtlog[common.BKOperationDetailField].(map[string]interface{})
+
+				moduleID := util.GetStrByInterface(detail[common.BKObjIDField])
+				instID, err := util.GetInt64ByInterface(adtlog[AuditLog_ResourceID_Field])
+				if err != nil {
+					return nil, err
+				}
+				if _, ok := updateInstCountMap[moduleID]; !ok {
+					updateInstCountMap[moduleID] = make(map[int64]int64, 0)
+				}
+				if _, ok := updateInstCountMap[moduleID][instID]; !ok {
+					updateInstCountMap[moduleID][instID] = updateInstCountMap[moduleID][instID] + 1
+				} else {
+					updateInstCountMap[moduleID][instID] = 1
+				}
+			}
 		}
 	}
 
