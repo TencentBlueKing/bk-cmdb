@@ -50,21 +50,28 @@ func Table(name string) dbType.Table {
 
 func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
-	config := cc.Mongo(prefix)
+	config, err := cc.Mongo(prefix)
+	if err != nil {
+		return nil, errors.NewCCError(common.CCErrCommConfMissItem, "can't find mongo configuration")
+	}
 	if config.Address == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".host] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".host] configuration item")
 		return nil, lastConfigErr
 	}
 	if config.User == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".usr] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".usr] configuration item")
 		return nil, lastConfigErr
 	}
 	if config.Password == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".pwd] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".pwd] configuration item")
 		return nil, lastConfigErr
 	}
 	if config.Database == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".database] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".database] configuration item")
 		return nil, lastConfigErr
 	}
 

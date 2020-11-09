@@ -14,9 +14,7 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
@@ -55,10 +53,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
-	}
-
-	if err := apiSvr.CheckForReadiness(); err != nil {
-		return err
 	}
 
 	redisConf, err := engine.WithRedis()
@@ -109,14 +103,3 @@ func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) 
 
 const waitForSeconds = 180
 
-func (h *APIServer) CheckForReadiness() error {
-	for i := 1; i < waitForSeconds; i++ {
-		if !h.configReady {
-			blog.Info("waiting for api server configuration ready.")
-			time.Sleep(time.Second)
-			continue
-		}
-		return nil
-	}
-	return errors.New("wait for api server configuration timeout")
-}
