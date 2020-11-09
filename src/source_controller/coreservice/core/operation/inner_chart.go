@@ -336,9 +336,12 @@ func (m *operationManager) UpdateInnerChartData(kit *rest.Kit, reportType string
 	return nil
 }
 
-// StatisticOperationLog 根据 bk_obj_id 分类统计模型实例操作次数, 因操作审计记录太多，采用分批查询统计
+// StatisticOperationLog
+// Note: 根据 bk_obj_id 分类统计模型实例操作次数，统计时间为前一天零点，到当天零点
 func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.StatisticInstOperation, error) {
-	lastTime := time.Now().AddDate(0, 0, -1)
+	zeroTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
+		0, 0, 0, 0, time.Now().Location())
+	old1Time := zeroTime.AddDate(0, 0, -1)
 
 	createInstCountMap := make(map[string]int64, 0)
 	deleteInstCountMap := make(map[string]int64, 0)
@@ -349,7 +352,8 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 		common.BKResourceTypeField: metadata.ModelInstanceRes,
 		common.BKActionField:       metadata.AuditCreate,
 		common.BKOperationTimeField: M{
-			common.BKDBGTE: lastTime,
+			common.BKDBGTE: old1Time,
+			common.BKDBLT:  zeroTime,
 		},
 	}
 	fields := []string{AuditLog_InstanceOpDetail_ModelID_Field}
@@ -376,7 +380,8 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 		common.BKResourceTypeField: metadata.ModelInstanceRes,
 		common.BKActionField:       metadata.AuditDelete,
 		common.BKOperationTimeField: M{
-			common.BKDBGTE: lastTime,
+			common.BKDBGTE: old1Time,
+			common.BKDBLT:  zeroTime,
 		},
 	}
 	fields = []string{AuditLog_InstanceOpDetail_ModelID_Field}
@@ -403,7 +408,8 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 		common.BKResourceTypeField: metadata.ModelInstanceRes,
 		common.BKActionField:       metadata.AuditUpdate,
 		common.BKOperationTimeField: M{
-			common.BKDBGTE: lastTime,
+			common.BKDBGTE: old1Time,
+			common.BKDBLT:  zeroTime,
 		},
 	}
 	fields = []string{AuditLog_InstanceOpDetail_ModelID_Field, AuditLog_ResourceID_Field}
