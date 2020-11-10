@@ -122,6 +122,50 @@ type DiffOneModuleWithTemplateOption struct {
 	ModuleID int64 `json:"bk_module_id"`
 }
 
+type UpdateServiceInstanceOption struct {
+	Data []OneUpdatedSrvInst `json:"data"`
+}
+
+type OneUpdatedSrvInst struct {
+	ServiceInstanceID int64                  `json:"service_instance_id"`
+	Update            map[string]interface{} `json:"update"`
+}
+
+func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
+	if len(o.Data) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	for _, inst := range o.Data {
+		if inst.ServiceInstanceID <= 0 {
+			return cErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"data.service_instance_id must bigger than 0"},
+			}
+		}
+
+		// so far, only allow to update service instance name
+		if len(inst.Update) == 0 || len(inst.Update) > 1 {
+			return cErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"can only update service instance name"},
+			}
+		}
+
+		if _, ok := inst.Update[common.BKFieldName]; !ok {
+			return cErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"can only update service instance name"},
+			}
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 type DeleteServiceInstanceOption struct {
 	BizID              int64   `json:"bk_biz_id"`
 	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
