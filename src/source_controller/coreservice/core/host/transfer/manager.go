@@ -248,13 +248,6 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 		return err
 	}
 
-	// attributes in new business
-	newAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost, input.DstApplicationID)
-	if err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %s, err:%s, rid:%s", input.DstApplicationID, err.Error(), kit.Rid)
-		return err
-	}
-
 	err = transfer.Transfer(kit, input.HostIDArr)
 	if err != nil {
 		blog.ErrorJSON("transfer to another business failed, transfer module host relation error. err: %s, input: %s, rid: %s", err.Error(), input, kit.Rid)
@@ -265,12 +258,6 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 	if err := manager.clearLegacyPrivateField(kit, legacyAttributes, input.HostIDArr...); err != nil {
 		blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", input.HostIDArr, legacyAttributes, err.Error(), kit.Rid)
 		// we should go on setting default value for new private field
-	}
-
-	// set default value for private field in new business
-	if err := manager.setDefaultPrivateField(kit, newAttributes, input.HostIDArr...); err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, setDefaultPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", input.HostIDArr, newAttributes, err.Error(), kit.Rid)
-		return err
 	}
 
 	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
