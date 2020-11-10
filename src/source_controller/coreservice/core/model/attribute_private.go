@@ -34,7 +34,6 @@ func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, model
 	util.AddModelBizIDConditon(filter, modelBizID)
 	oneAttribute = &metadata.Attribute{}
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).One(kit.Ctx, oneAttribute)
-	blog.V(5).Infof("isExists cond:%#v, rid:%s", filter, kit.Rid)
 	if nil != err && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("request(%s): database findOne operation is failed, error info is %s", kit.Rid, err.Error())
 		return oneAttribute, false, err
