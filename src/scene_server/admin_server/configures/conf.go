@@ -178,6 +178,12 @@ func (cc *ConfCenter) writeConfigure(confFilePath, key string) error {
 		return err
 	}
 
+	// check the configuration in the file
+	if err := cc.checkFile(confFilePath); err != nil {
+		blog.Errorf("There is a problem in configuration file %s, err:%s", confFilePath, err)
+		os.Exit(1)
+	}
+
 	blog.V(3).Infof("write configure(%s), key(%s), data(%s)", confFilePath, key, data)
 	if err := cc.confRegDiscv.Write(key, data); err != nil {
 		blog.Errorf("fail to write configure(%s) data into center. err:%s", key, err.Error())

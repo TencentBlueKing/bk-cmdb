@@ -160,9 +160,16 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
 			Expect(len(rsp.Data.Module)).To(Equal(3))
-			idleModuleId = rsp.Data.Module[0].ModuleID
-			faultModuleId = rsp.Data.Module[1].ModuleID
-			recycleModuleId = rsp.Data.Module[1].ModuleID
+			for _, module := range rsp.Data.Module {
+				switch module.ModuleName {
+				case "空闲机":
+					idleModuleId = module.ModuleID
+				case "故障机":
+					faultModuleId = module.ModuleID
+				case "待回收":
+					recycleModuleId = module.ModuleID
+				}
+			}
 		})
 
 		// 云区域ID不存在新加主机报错
@@ -638,7 +645,7 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -926,7 +933,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -971,7 +978,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1014,7 +1021,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1202,7 +1209,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1260,7 +1267,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1372,7 +1379,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1408,7 +1415,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: -1,
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "biz",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1655,7 +1662,7 @@ var _ = Describe("host abnormal test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId1),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -1701,7 +1708,7 @@ var _ = Describe("host abnormal test", func() {
 			input1 := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Condition: []params.SearchCondition{
-					params.SearchCondition{
+					{
 						ObjectID: "module",
 						Condition: []interface{}{
 							map[string]interface{}{
@@ -2068,7 +2075,7 @@ func prepareData() {
 	input5 := &params.HostCommonSearch{
 		AppID: -1,
 		Condition: []params.SearchCondition{
-			params.SearchCondition{
+			{
 				ObjectID: "biz",
 				Condition: []interface{}{
 					map[string]interface{}{

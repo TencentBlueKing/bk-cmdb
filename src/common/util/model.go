@@ -15,7 +15,7 @@ package util
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	)
+)
 
 // AddModelBizIDConditon add model bizID condition according to bizID value
 func AddModelBizIDConditon(cond mapstr.MapStr, modelBizID int64) {
@@ -29,7 +29,7 @@ func AddModelBizIDConditon(cond mapstr.MapStr, modelBizID int64) {
 	} else {
 		// global shared model
 		cond[common.BKDBOR] = []mapstr.MapStr{
-			{common.BKAppIDField: modelBizID},
+			{common.BKAppIDField: 0},
 			{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
 		}
 	}

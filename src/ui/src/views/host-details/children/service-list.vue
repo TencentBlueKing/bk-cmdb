@@ -35,27 +35,14 @@
                         @change="handleSearch">
                     </bk-search-select>
                 </div>
-                <bk-popover
-                    ref="popoverCheckView"
-                    :always="true"
-                    :width="224"
-                    :z-index="999"
-                    theme="check-view-color"
-                    placement="bottom-end">
-                    <div slot="content" class="popover-main">
-                        <span>{{$t('标签或路径切换')}}</span>
-                        <i class="bk-icon icon-close" @click="handleCheckViewStatus"></i>
-                    </div>
-                    <div class="options-check-view">
-                        <i :class="['icon-cc-label', 'view-btn', 'pr10', { 'active': currentView === 'label' }]"
-                            :title="$t('显示标签')"
-                            @click="checkView('label')"></i>
-                        <span class="dividing-line"></span>
-                        <i :class="['icon-cc-instance-path', 'view-btn', 'pl10', { 'active': currentView === 'path' }]"
-                            :title="$t('显示拓扑')"
-                            @click="checkView('path')"></i>
-                    </div>
-                </bk-popover>
+                <cmdb-switcher-group v-model="currentView" tips-key="host_service_list_view_tips" :tips="$t('标签或路径切换')">
+                    <cmdb-switcher-item name="path" :tips="$t('显示拓扑')">
+                        <i class="icon-cc-instance-path"></i>
+                    </cmdb-switcher-item>
+                    <cmdb-switcher-item name="label" :tips="$t('显示标签')">
+                        <i class="icon-cc-label"></i>
+                    </cmdb-switcher-item>
+                </cmdb-switcher-group>
             </div>
         </div>
         <div class="tables">
@@ -66,7 +53,6 @@
                 :instance="instance"
                 :expanded="index === 0"
                 :current-view="currentView"
-                @show-process-details="handleShowProcessDetails"
                 @delete-instance="handleDeleteInstance"
                 @check-change="handleCheckChange">
             </service-instance-table>
@@ -90,21 +76,6 @@
             @change="handlePageChange"
             @limit-change="handleSizeChange">
         </bk-pagination>
-
-        <bk-sideslider
-            v-transfer-dom
-            :width="800"
-            :title="$t('进程详情')"
-            :is-show.sync="showDetails">
-            <cmdb-details slot="content" v-if="showDetails"
-                :show-options="false"
-                :inst="processInst"
-                :properties="properties"
-                :property-groups="propertyGroups"
-                :invisible-name-properties="invisibleNameProperties"
-                :flex-properties="flexProperties">
-            </cmdb-details>
-        </bk-sideslider>
     </div>
 </template>
 
@@ -116,13 +87,16 @@
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
     import authMixin from '../mixin-auth'
+    import CmdbSwitcherGroup from '@/components/switcher/switcher-group'
+    import CmdbSwitcherItem from '@/components/switcher/switcher-item'
     export default {
         components: {
-            serviceInstanceTable
+            serviceInstanceTable,
+            CmdbSwitcherGroup,
+            CmdbSwitcherItem
         },
         mixins: [authMixin],
         data () {
-            const serverSwitchViewTips = window.localStorage.getItem('serverSwitchViewTips')
             return {
                 searchSelect: [
                     {
@@ -158,15 +132,8 @@
                 isCheckAll: false,
                 filter: [],
                 instances: [],
-                currentView: 'label',
-                checkViewTipsStatus: serverSwitchViewTips === null,
-                historyLabels: {},
-                propertyGroups: [],
-                properties: [],
-                showDetails: false,
-                processInst: {},
-                invisibleNameProperties: ['bind_info'],
-                flexProperties: ['bind_info']
+                currentView: 'path',
+                historyLabels: {}
             }
         },
         computed: {
@@ -187,53 +154,10 @@
             }
         },
         created () {
-            this.getProcessProperties()
-            this.getProcessPropertyGroups()
             this.getHostSeriveInstances()
             this.getHistoryLabel()
         },
-        mounted () {
-            if (this.checkViewTipsStatus) {
-                this.$refs.popoverCheckView.instance.show()
-            } else {
-                this.$refs.popoverCheckView.instance.destroy()
-            }
-        },
         methods: {
-            async getProcessProperties () {
-                try {
-                    const action = 'objectModelProperty/searchObjectAttribute'
-                    this.properties = await this.$store.dispatch(action, {
-                        params: {
-                            bk_obj_id: 'process',
-                            bk_supplier_account: this.$store.getters.supplierAccount
-                        },
-                        config: {
-                            requestId: 'get_service_process_properties',
-                            fromCache: true
-                        }
-                    })
-                } catch (e) {
-                    console.error(e)
-                    this.properties = []
-                }
-            },
-            async getProcessPropertyGroups () {
-                try {
-                    const action = 'objectModelFieldGroup/searchGroup'
-                    this.propertyGroups = await this.$store.dispatch(action, {
-                        objId: 'process',
-                        params: {},
-                        config: {
-                            requestId: 'get_service_process_property_groups',
-                            fromCache: true
-                        }
-                    })
-                } catch (e) {
-                    this.propertyGroups = []
-                    console.error(e)
-                }
-            },
             async getHostSeriveInstances () {
                 try {
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
@@ -411,13 +335,6 @@
                 this.pagination.size = size
                 this.getHostSeriveInstances()
             },
-            checkView (value) {
-                this.currentView = value
-            },
-            handleCheckViewStatus () {
-                window.localStorage.setItem('serverSwitchViewTips', false)
-                this.$refs.popoverCheckView.instance.hide()
-            },
             handleConditionSelect (cur, index) {
                 const values = this.historyLabels[cur.id]
                 const children = values.map(item => {
@@ -432,13 +349,17 @@
                 el.showChildMenu(children)
             },
             handleGoAddInstance () {
+                const [biz] = this.info.biz
                 this.$routerActions.redirect({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    params: {
+                        bizId: biz.bk_biz_id
+                    },
+                    query: {
+                        node: `biz-${biz.bk_biz_id}`,
+                        ip: this.info.host.bk_host_innerip
+                    }
                 })
-            },
-            handleShowProcessDetails ({ property }) {
-                this.showDetails = true
-                this.processInst = property
             }
         }
     }

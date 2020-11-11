@@ -473,6 +473,45 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Data)
 }
 
+func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
+	request := &metadata.DeleteAssociationInstBatchRequest{}
+	result := &metadata.DeleteAssociationInstBatchResult{}
+	if err := ctx.DecodeInto(request); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+	if len(request.ID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommHTTPInputInvalid))
+		return
+	}
+	if len(request.ID) > common.BKMaxInstanceLimit {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded, "The number of ID should be less than 500."))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		for _, id := range request.ID {
+			var ret *metadata.DeleteAssociationInstResult
+			var err error
+			ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
+			if err != nil {
+				return err
+			}
+			if err = ret.CCError(); err != nil {
+				return err
+			}
+			result.Data++
+		}
+		return nil
+	})
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(result.Data)
+}
+
 func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 

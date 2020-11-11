@@ -13,6 +13,7 @@
 package instances
 
 import (
+	stderr "errors"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -156,6 +157,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
+	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
+		return err
+	}
+
 	// module instance's name must coincide with template
 	if objID == common.BKInnerObjIDModule {
 		if err := m.validateModuleCreate(kit, instanceData, valid); err != nil {
@@ -296,6 +302,11 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
+	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
+		return err
+	}
+
 	for key, val := range instanceData {
 		updateData[key] = val
 	}
@@ -358,5 +369,27 @@ func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, BKInnerObjID
 		}
 	}
 
+	return nil
+}
+
+func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []metadata.Attribute) error {
+	for _, field := range propertys {
+		if field.PropertyType != common.FieldTypeTime {
+			continue
+		}
+		val, ok := valData[field.PropertyID]
+		if ok == false || val == nil {
+			continue
+		}
+		valStr, ok := val.(string)
+		if ok == false {
+			return stderr.New("it is not a string of time type")
+		}
+		if util.IsTime(valStr) {
+			valData[field.PropertyID] = util.Str2Time(valStr)
+			continue
+		}
+		return stderr.New("can not convert value from string type to time type")
+	}
 	return nil
 }

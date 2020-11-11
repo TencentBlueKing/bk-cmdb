@@ -73,9 +73,16 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.Create,
@@ -99,9 +106,15 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelUnique,
 					Action:     meta.Update,
@@ -126,6 +139,12 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -134,7 +153,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					InstanceID: uniqueID,
 				},
 				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -147,6 +166,13 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -154,7 +180,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Action: meta.FindMany,
 				},
 				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -278,11 +304,25 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// create object association operation
 	if ps.hitPattern(createObjectAssociationLatestPattern, http.MethodPost) {
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objID := val.Value()
+
+		val, err = ps.RequestCtx.getValueFromBody(common.BKAsstObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		asstObjID := val.Value()
+
 		filter := mapstr.MapStr{
 			common.BKObjIDField: mapstr.MapStr{
 				common.BKDBIN: []interface{}{
-					gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value(),
-					gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstObjIDField).Value(),
+					objID,
+					asstObjID,
 				},
 			},
 		}
@@ -292,10 +332,16 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		for _, model := range models {
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 					Basic: meta.Basic{
 						Type:       meta.Model,
 						Action:     meta.Update,
@@ -339,6 +385,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		for _, model := range models {
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
@@ -347,7 +399,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: model.ID,
 					},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				})
 		}
 
@@ -382,6 +434,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		for _, model := range models {
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
@@ -390,7 +448,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: model.ID,
 					},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				})
 		}
 		return ps
@@ -398,9 +456,15 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// find object association with a association kind list.
 	if ps.hitPattern(findObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
@@ -420,9 +484,10 @@ const (
 )
 
 var (
-	deleteObjectInstanceAssociationLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/[0-9]+/?$")
-	findObjectInstanceTopologyUILatestRegexp    = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
-	findInstAssociationObjInstInfoLatestRegexp  = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
+	deleteObjectInstanceAssociationLatestRegexp      = regexp.MustCompile("^/api/v3/delete/instassociation/[0-9]+/?$")
+	deleteObjectInstanceAssociationBatchLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/batch")
+	findObjectInstanceTopologyUILatestRegexp         = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
+	findInstAssociationObjInstInfoLatestRegexp       = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -432,9 +497,15 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -446,9 +517,15 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationRelatedLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -460,7 +537,12 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// create instance association operation.
 	if ps.hitPattern(createObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		associationObjAsstID := gjson.GetBytes(ps.RequestCtx.Body, common.AssociationObjAsstIDField).String()
+		val, err := ps.RequestCtx.getValueFromBody(common.AssociationObjAsstIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		associationObjAsstID := val.String()
 		filter := mapstr.MapStr{
 			common.AssociationObjAsstIDField: associationObjAsstID,
 		}
@@ -484,6 +566,33 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		val, err = ps.RequestCtx.getValueFromBody(common.BKInstIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		instanceID := val.Int()
+		if instanceID <= 0 {
+			ps.err = errors.New("invalid bk_inst_id value")
+			return ps
+		}
+
+		val, err = ps.RequestCtx.getValueFromBody(common.BKAsstInstIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		asstInstID := val.Int()
+		if asstInstID <= 0 {
+			ps.err = errors.New("invalid bk_asst_inst_id value")
+			return ps
+		}
 		// 处理模型自关联的情况
 		if len(models) == 1 {
 			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
@@ -497,19 +606,19 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 					Basic: meta.Basic{
 						Type:       instanceType,
 						Action:     meta.Update,
-						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int(),
+						InstanceID: instanceID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				},
 				{
 					Basic: meta.Basic{
 						Type:       instanceType,
 						Action:     meta.Update,
-						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int(),
+						InstanceID: asstInstID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				},
 			}
 			return ps
@@ -518,9 +627,9 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		for _, model := range models {
 			var instID int64
 			if model.ObjectID == asst[0].ObjectID {
-				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int()
+				instID = instanceID
 			} else {
-				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
+				instID = asstInstID
 			}
 			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
 			if err != nil {
@@ -536,7 +645,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 						InstanceID: instID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				})
 		}
 		return ps
@@ -564,6 +673,12 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		// 处理模型自关联的情况
 		if len(models) == 1 {
 			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
@@ -580,7 +695,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 						InstanceID: asst.InstID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				},
 				{
 					Basic: meta.Basic{
@@ -589,7 +704,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 						InstanceID: asst.AsstInstID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				},
 			}
 			return ps
@@ -616,18 +731,43 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 						InstanceID: instID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				})
 		}
 
 		return ps
 	}
 
-	// find object instance's association operation.
-	if ps.hitRegexp(findObjectInstanceTopologyUILatestRegexp, http.MethodPost) {
+	// delete object instance's association batch operation.
+	if ps.hitRegexp(deleteObjectInstanceAssociationBatchLatestRegexp, http.MethodDelete) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.DeleteMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find object instance's association operation.
+	if ps.hitRegexp(findObjectInstanceTopologyUILatestRegexp, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -639,9 +779,15 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find object instance's association object instance info operation.
 	if ps.hitRegexp(findInstAssociationObjInstInfoLatestRegexp, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -687,17 +833,20 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		if isMainline {
-			if ps.RequestCtx.BizID == 0 {
-				ps.err = errors.New("create mainline instance must have biz id")
-				return ps
-			}
 			modelType = meta.MainlineInstance
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   modelType,
 					Action: meta.Create,
@@ -757,9 +906,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			modelType = meta.MainlineInstance
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       modelType,
 					Action:     meta.Update,
@@ -786,15 +941,26 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		ids := make([]int64, 0)
-		gjson.GetBytes(ps.RequestCtx.Body, "update.#.inst_id").ForEach(
+		val, err := ps.RequestCtx.getValueFromBody("update.#.inst_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		val.ForEach(
 			func(key, value gjson.Result) bool {
 				ids = append(ids, value.Int())
 				return true
 			})
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		for _, id := range ids {
 			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.UpdateMany,
@@ -852,18 +1018,21 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		if isMainline {
 			// special logic for mainline object's instance authorization.
-			if ps.RequestCtx.BizID == 0 {
-				ps.err = errors.New("delete mainline instance must have biz id")
-				return ps
-			}
 			modelType = meta.MainlineInstance
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       modelType,
 					Action:     meta.Delete,
@@ -970,7 +1139,12 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// create common object operation.
 	if ps.hitPattern(createObjectLatestPattern, http.MethodPost) {
-		classID := gjson.GetBytes(ps.RequestCtx.Body, common.BKClassificationIDField).String()
+		val, err := ps.RequestCtx.getValueFromBody(common.BKClassificationIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		classID := val.String()
 		filter := map[string]interface{}{
 			common.BKClassificationIDField: classID,
 		}
@@ -981,9 +1155,15 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.Create,
@@ -1007,9 +1187,15 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
 					Action:     meta.Delete,
@@ -1033,9 +1219,15 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
 					Action:     meta.Update,
@@ -1048,9 +1240,15 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// get object operation.
 	if ps.hitPattern(findObjectsLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.FindMany,
@@ -1062,9 +1260,15 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// find object's topology operation.
 	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
 					Action: meta.Find,
@@ -1076,9 +1280,15 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// find object's topology graphic operation.
 	if ps.hitRegexp(findObjectTopologyGraphicLatestRegexp, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type: meta.ModelTopology,
 					// Action: meta.Find,
@@ -1125,9 +1335,15 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 
 	// create object's classification operation.
 	if ps.hitPattern(createObjectClassificationLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
 					Action: meta.Create,
@@ -1150,9 +1366,15 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
 					Action:     meta.Delete,
@@ -1176,9 +1398,15 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
 					Action:     meta.Update,
@@ -1191,9 +1419,15 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 
 	// find object's classification list operation.
 	if ps.hitPattern(findObjectClassificationListLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
 					Action: meta.FindMany,
@@ -1204,9 +1438,15 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 	}
 	// find all the objects belongs to a classification
 	if ps.hitPattern(findObjectsBelongsToClassificationLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.FindMany,
@@ -1235,10 +1475,21 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 	}
 	// create object's attribute group operation.
 	if ps.hitPattern(createObjectAttributeGroupLatestPattern, http.MethodPost) {
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		filter := mapstr.MapStr{
-			common.BKObjIDField: gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value(),
+			common.BKObjIDField: val.Value(),
 		}
 		model, err := ps.getOneModel(filter)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1249,7 +1500,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 				// 业务ID的解释
 				// case  0: 创建公共的属性分组
 				// case ~0: 创建业务私有的属性分组
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Create,
@@ -1273,12 +1524,18 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				// 业务ID的解释
 				// case  0: 仅查询公共的属性分组
 				// case ~0: 查询业务私有的属性分组 + 公用属性分组
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.FindMany,
@@ -1291,7 +1548,12 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 
 	// update object's attribute group operation.
 	if ps.hitPattern(updateObjectAttributeGroupLatestPattern, http.MethodPut) {
-		groups, err := ps.getAttributeGroup(gjson.GetBytes(ps.RequestCtx.Body, "condition").Value())
+		val, err := ps.RequestCtx.getValueFromBody("condition")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		groups, err := ps.getAttributeGroup(val.Value())
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1382,8 +1644,19 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 	// create object's attribute operation.
 	if ps.hitPattern(createObjectAttributeLatestPattern, http.MethodPost) {
-		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelEn := val.String()
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: modelEn})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1394,7 +1667,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 				// 注意业务ID是否为0表示创建两种不同的属性
 				// case 0: 创建公共属性，这种属性相比业务私有属性，所有业务都可见
 				// case ~0: 创建业务私有属性，业务私有属性，其它业务不可见
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
@@ -1543,19 +1816,31 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 	// get object's attribute operation.
 	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) {
-		modelCond := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
+		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		modelCond := val.Value()
 		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: modelCond})
 		if err != nil {
 			ps.err = err
 			return ps
 		}
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		for _, model := range models {
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					// 注意：业务ID是否为0表示两种不同的操作
 					// case 0: 读取模型的公有属性
 					// case ~0: 读取业务私有属性+公有属性
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 					Basic: meta.Basic{
 						Type:   meta.ModelAttribute,
 						Action: meta.FindMany,
@@ -1573,12 +1858,18 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = append(ps.Attribute.Resources,
 			meta.ResourceAttribute{
 				// 注意：业务ID是否为0表示两种不同的操作
 				// case 0: 读取模型的公有属性
 				// case ~0: 读取业务私有属性+公有属性
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.FindMany,
@@ -1685,9 +1976,15 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// create mainline object operation.
 	if ps.hitPattern(createMainlineObjectLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
 					Action: meta.Create,
@@ -1699,9 +1996,15 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// delete mainline object operation
 	if ps.hitRegexp(deleteMainlineObjectLatestRegexp, http.MethodDelete) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
 					Action: meta.Delete,
@@ -1714,9 +2017,15 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// get mainline object operation
 	if ps.hitPattern(findMainlineObjectTopoLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type: meta.MainlineModelTopology,
 					// Action: meta.Find,
@@ -1763,9 +2072,15 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
 					Action: meta.Find,

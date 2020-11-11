@@ -100,11 +100,6 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 	}
 	transferResult := make([]HostTransferResult, 0)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.removeServiceInstanceRelatedResource(ctx, transferPlans, bizID)
-		if err != nil {
-			blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, delete service instance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), ctx.Kit.Rid)
-			return err
-		}
 
 		// get service instance modules
 		moduleIDs := make([]int64, 0)
@@ -127,6 +122,37 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 			return err
 		}
 
+		var transferHostResult *metadata.OperaterException
+		var transferOpt interface{}
+		var transferErr error
+		if transferPlans[0].IsTransferToInnerModule == true {
+			transferOption := &metadata.TransferHostToInnerModule{
+				ApplicationID: bizID,
+				HostID:        option.HostIDs,
+				ModuleID:      transferPlans[0].FinalModules[0],
+			}
+			transferOpt = transferOption
+			transferHostResult, transferErr = s.CoreAPI.CoreService().Host().TransferToInnerModule(ctx.Kit.Ctx, ctx.Kit.Header, transferOption)
+		} else {
+			transferOption := &metadata.HostsModuleRelation{
+				ApplicationID: bizID,
+				HostID:        option.HostIDs,
+				ModuleID:      transferPlans[0].FinalModules,
+				IsIncrement:   false,
+			}
+			transferOpt = transferOption
+			transferHostResult, transferErr = s.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header, transferOption)
+		}
+
+		if transferErr != nil {
+			blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, err: %s, rid: %s", transferOpt, transferErr.Error(), ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if err := transferHostResult.Error(); err != nil {
+			blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, result: %s, rid: %s", transferOpt, transferHostResult, ctx.Kit.Rid)
+			return err
+		}
+
 		var firstErr errors.CCErrorCoder
 		pipeline := make(chan bool, 300)
 		wg := sync.WaitGroup{}
@@ -134,25 +160,16 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 			pipeline <- true
 			wg.Add(1)
 			go func(plan metadata.HostTransferPlan) {
-				ccErr := s.runTransferPlans(ctx, bizID, plan)
-				hostTransferResult := HostTransferResult{
-					HostID: plan.HostID,
-				}
+				var ccErr errors.CCErrorCoder
 				defer func() {
 					if ccErr != nil {
-						hostTransferResult.Code = ccErr.GetCode()
-						hostTransferResult.Message = ccErr.Error()
 						if firstErr == nil {
 							firstErr = ccErr
 						}
 					}
-					transferResult = append(transferResult, hostTransferResult)
 					<-pipeline
 					wg.Done()
 				}()
-				if ccErr != nil {
-					return
-				}
 
 				// create or update related service instance
 				for _, item := range option.Options.ServiceInstanceOptions {
@@ -173,61 +190,6 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 					}
 				}
 
-				// update host by host apply rule conflict resolvers
-				attributeIDs := make([]int64, 0)
-				for _, rule := range option.Options.HostApplyConflictResolvers {
-					attributeIDs = append(attributeIDs, rule.AttributeID)
-				}
-				attrCond := &metadata.QueryCondition{
-					Fields: []string{common.BKFieldID, common.BKPropertyIDField},
-					Page:   metadata.BasePage{Limit: common.BKNoLimit},
-					Condition: map[string]interface{}{
-						common.BKFieldID: map[string]interface{}{
-							common.BKDBIN: attributeIDs,
-						},
-					},
-				}
-				attrRes, err := s.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, attrCond)
-				if err != nil {
-					blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", err.Error(), attrCond, ctx.Kit.Rid)
-					ccErr = ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
-				if ccErr = attrRes.CCError(); ccErr != nil {
-					blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", ccErr.Error(), attrCond, ctx.Kit.Rid)
-					return
-				}
-				attrMap := make(map[int64]string)
-				for _, attr := range attrRes.Data.Info {
-					attrMap[attr.ID] = attr.PropertyID
-				}
-
-				hostAttrMap := make(map[int64]map[string]interface{})
-				for _, rule := range option.Options.HostApplyConflictResolvers {
-					if hostAttrMap[rule.HostID] == nil {
-						hostAttrMap[rule.HostID] = make(map[string]interface{})
-					}
-					hostAttrMap[rule.HostID][attrMap[rule.AttributeID]] = rule.PropertyValue
-				}
-
-				for hostID, hostData := range hostAttrMap {
-					updateOption := &metadata.UpdateOption{
-						Data: hostData,
-						Condition: map[string]interface{}{
-							common.BKHostIDField: hostID,
-						},
-					}
-					updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, updateOption)
-					if err != nil {
-						blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), ctx.Kit.Rid)
-						ccErr = ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-						return
-					}
-					if ccErr = updateResult.CCError(); ccErr != nil {
-						blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, ctx.Kit.Rid)
-						return
-					}
-				}
 			}(plan)
 		}
 		wg.Wait()
@@ -235,9 +197,64 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 		if firstErr != nil {
 			return firstErr
 		}
+
+		// update host by host apply rule conflict resolvers
+		attributeIDs := make([]int64, 0)
+		for _, rule := range option.Options.HostApplyConflictResolvers {
+			attributeIDs = append(attributeIDs, rule.AttributeID)
+		}
+		attrCond := &metadata.QueryCondition{
+			Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+			Page:   metadata.BasePage{Limit: common.BKNoLimit},
+			Condition: map[string]interface{}{
+				common.BKFieldID: map[string]interface{}{
+					common.BKDBIN: attributeIDs,
+				},
+			},
+		}
+		attrRes, ccErr := s.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, attrCond)
+		if ccErr != nil {
+			blog.ErrorJSON("ReadModelAttr failed, err: %v, attrCond: %s, rid: %s", ccErr, attrCond, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if ccErr = attrRes.CCError(); ccErr != nil {
+			blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", ccErr.Error(), attrCond, ctx.Kit.Rid)
+			return ccErr
+		}
+		attrMap := make(map[int64]string)
+		for _, attr := range attrRes.Data.Info {
+			attrMap[attr.ID] = attr.PropertyID
+		}
+
 		if err := audit.SaveAudit(ctx.Kit); err != nil {
 			blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, ctx.Kit.Rid)
 			return err
+		}
+
+		hostAttrMap := make(map[int64]map[string]interface{})
+		for _, rule := range option.Options.HostApplyConflictResolvers {
+			if hostAttrMap[rule.HostID] == nil {
+				hostAttrMap[rule.HostID] = make(map[string]interface{})
+			}
+			hostAttrMap[rule.HostID][attrMap[rule.AttributeID]] = rule.PropertyValue
+		}
+
+		for hostID, hostData := range hostAttrMap {
+			updateOption := &metadata.UpdateOption{
+				Data: hostData,
+				Condition: map[string]interface{}{
+					common.BKHostIDField: hostID,
+				},
+			}
+			updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, updateOption)
+			if err != nil {
+				blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %v, rid: %s", updateOption, err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			}
+			if ccErr = updateResult.CCError(); ccErr != nil {
+				blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, ctx.Kit.Rid)
+				return ccErr
+			}
 		}
 
 		return nil
@@ -710,11 +727,19 @@ func (s *Service) validateModules(ctx *rest.Contexts, bizID int64, moduleIDs []i
 		return nil
 	}
 	moduleIDs = util.IntArrayUnique(moduleIDs)
-	modules, err := s.getModules(ctx, bizID, moduleIDs)
+	filter := []map[string]interface{}{{
+		common.BKAppIDField: bizID,
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
+	}}
+
+	moduleCounts, err := s.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameBaseModule, filter)
 	if err != nil {
 		return err
 	}
-	if len(modules) != len(moduleIDs) {
+
+	if len(moduleCounts) == 0 || moduleCounts[0] != int64(len(moduleIDs)) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 	}
 	return nil

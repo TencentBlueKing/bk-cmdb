@@ -67,14 +67,14 @@ func (t *instanceClient) SearchAuditList(ctx context.Context, h http.Header, inp
 	return resp, nil
 }
 
-func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header, id int64) (*metadata.Response, error) {
+func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header, input *metadata.AuditDetailQueryInput) (*metadata.Response, error) {
 	resp := new(metadata.Response)
-	subPath := "/find/audit/%d"
+	subPath := "/find/audit"
 
-	err := t.client.Get().
+	err := t.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, id).
+		Body(input).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

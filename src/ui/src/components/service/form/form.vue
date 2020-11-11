@@ -64,6 +64,7 @@
             },
             title: String,
             hostId: Number,
+            bizId: Number,
             submitHandler: Function,
             invisibleProperties: {
                 type: Array,
@@ -92,7 +93,6 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
-            ...mapGetters('objectBiz', ['bizId']),
             bindInfoProperty () {
                 return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
             },
@@ -283,7 +283,11 @@
             },
             renderTips (h, { property, type }) {
                 if (this.bindedProperties.includes(property.bk_property_id)) {
-                    return RenderTips(h, { serviceTemplateId: this.serviceTemplateId })
+                    return RenderTips(h, {
+                        serviceTemplateId: this.serviceTemplateId,
+                        property: property,
+                        bizId: this.bizId
+                    })
                 }
                 return ''
             },

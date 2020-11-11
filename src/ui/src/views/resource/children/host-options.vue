@@ -27,7 +27,7 @@
                     @selected="handleAssignHosts">
                     <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
                     <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
-                    <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
+                    <bk-option id="toDirs" :name="$t('主机池其他目录')"></bk-option>
                 </bk-select>
             </template>
             <cmdb-transfer-menu class="mr10"
@@ -378,7 +378,7 @@
                 } else {
                     this.assign.placeholder = this.$t('请选择xx', { name: this.$t('目录') })
                     this.assign.label = this.$t('目录列表')
-                    this.assign.title = this.$t('分配到资源池其他目录')
+                    this.assign.title = this.$t('分配到主机池其他目录')
                 }
                 this.setAssignOptions()
                 this.assign.show = true
@@ -391,7 +391,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
-                            relation: [[this.directoryId || '*'], [item.bk_biz_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_biz_id]]]
                         }
                     }))
                 } else {
@@ -401,7 +401,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
-                            relation: [[this.directoryId] || '*', [item.bk_module_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_module_id]]]
                         }
                     }))
                 }

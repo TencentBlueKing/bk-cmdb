@@ -478,8 +478,7 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 		innerIPArr := strings.Split(innerIP, ",")
 		ipCond[index] = map[string]interface{}{
 			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBAll:  innerIPArr,
-				common.BKDBSize: len(innerIPArr),
+				common.BKDBIN:   innerIPArr,
 			},
 		}
 	}

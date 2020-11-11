@@ -133,35 +133,35 @@ func (s *coreService) ListServiceInstanceDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-func (s *coreService) UpdateServiceInstance(ctx *rest.Contexts) {
-	serviceInstanceIDStr := ctx.Request.PathParameter(common.BKServiceInstanceIDField)
-	if len(serviceInstanceIDStr) == 0 {
-		blog.Errorf("UpdateServiceInstance failed, path parameter `%s` empty, rid: %s", common.BKServiceInstanceIDField, ctx.Kit.Rid)
+func (s *coreService) UpdateServiceInstances(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	if len(bizIDStr) == 0 {
+		blog.Errorf("UpdateServiceInstances failed, path parameter `%s` empty, rid: %s", common.BKServiceInstanceIDField, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField))
 		return
 	}
 
-	serviceInstanceID, err := strconv.ParseInt(serviceInstanceIDStr, 10, 64)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceInstanceIDField, serviceInstanceIDStr, err, ctx.Kit.Rid)
+		blog.Errorf("UpdateServiceInstances failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s",
+			common.BKServiceInstanceIDField, bizIDStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField))
 		return
 	}
 
-	instance := metadata.ServiceInstance{}
-	if err := ctx.DecodeInto(&instance); err != nil {
+	option := new(metadata.UpdateServiceInstanceOption)
+	if err := ctx.DecodeInto(option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := s.core.ProcessOperation().UpdateServiceInstance(ctx.Kit, serviceInstanceID, instance)
-	if err != nil {
-		blog.Errorf("UpdateServiceInstance failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+	if err := s.core.ProcessOperation().UpdateServiceInstances(ctx.Kit, bizID, option); err != nil {
+		blog.Errorf("UpdateServiceInstances failed, err: %+v, option:%#v, rid: %s", err, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(result)
+	ctx.RespEntity(nil)
 }
 
 func (s *coreService) DeleteServiceInstance(ctx *rest.Contexts) {
@@ -204,13 +204,13 @@ func (s *coreService) GetBusinessDefaultSetModuleInfo(ctx *rest.Contexts) {
 }
 
 // AutoCreateServiceInstanceModuleHost is dependence for host
-func (s *coreService) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
-	serviceInstance, err := s.core.ProcessOperation().AutoCreateServiceInstanceModuleHost(kit, hostID, moduleID)
+func (s *coreService) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder {
+	err := s.core.ProcessOperation().AutoCreateServiceInstanceModuleHost(kit, hostIDs, moduleIDs)
 	if err != nil {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, hostID: %d, moduleID: %d, err: %+v, rid: %s", hostID, moduleID, err, kit.Rid)
-		return nil, err
+		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, hostID: %+v, moduleID: %+v, err: %+v, rid: %s", hostIDs, moduleIDs, err, kit.Rid)
+		return err
 	}
-	return serviceInstance, nil
+	return nil
 }
 
 func (s *coreService) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {

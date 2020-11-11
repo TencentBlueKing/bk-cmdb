@@ -18,6 +18,10 @@ import (
 )
 
 func InArray(obj interface{}, target interface{}) bool {
+	if target == nil {
+		return false
+	}
+
 	targetValue := reflect.ValueOf(target)
 	switch reflect.TypeOf(target).Kind() {
 	case reflect.Slice, reflect.Array:

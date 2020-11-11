@@ -39,6 +39,7 @@ const (
 	LabelHTTPStatus  = "status_code"
 	LabelOrigin      = "origin"
 	LabelProcessName = "process_name"
+	LabelAppCode     = "app_code"
 	LabelHost        = "host"
 )
 
@@ -75,7 +76,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin},
+		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode},
 	)
 	register.MustRegister(srv.requestTotal)
 
@@ -84,7 +85,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_duration_millisecond",
 			Help: "Histogram of latencies for HTTP requests.",
 		},
-		[]string{LabelHandler},
+		[]string{LabelHandler, LabelAppCode},
 	)
 	register.MustRegister(srv.requestDuration)
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -145,11 +146,13 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		s.requestDuration.With(s.label(LabelHandler, uri)).Observe(duration)
+		s.requestDuration.With(s.label(LabelHandler, uri,
+			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode))).Observe(duration)
 		s.requestTotal.With(s.label(
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
+			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
 		)).Inc()
 	})
 }

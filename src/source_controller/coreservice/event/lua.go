@@ -80,6 +80,10 @@ func (f *Flow) runScriptsWithArrayChainNode(script string, keys []string, args .
 		return nil, err
 	}
 
+	if result == nil {
+		return nil, fmt.Errorf("unsupported redis eval result value: %v", result)
+	}
+
 	switch reflect.TypeOf(result).Kind() {
 	case reflect.String:
 		err := result.(string)

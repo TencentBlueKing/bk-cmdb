@@ -11,6 +11,8 @@ export const IAM_VIEWS = {
     CUSTOM_QUERY: 'biz_custom_query',
     // 业务列表
     BIZ: 'biz',
+    // 跨业务转主机选择的主机所属业务的列表
+    BIZ_FOR_HOST_TRANS: 'biz_for_host_trans',
     // 主机列表
     HOST: 'host',
     // 主机池目录列表(作为源目录时使用的视图)
@@ -40,6 +42,7 @@ export const IAM_VIEWS_NAME = {
     [IAM_VIEWS.INSTANCE_MODEL]: ['实例模型', 'Instance Model'],
     [IAM_VIEWS.CUSTOM_QUERY]: ['动态分组', 'Custom Query'],
     [IAM_VIEWS.BIZ]: ['业务', 'Business'],
+    [IAM_VIEWS.BIZ_FOR_HOST_TRANS]: ['业务', 'Business'],
     [IAM_VIEWS.HOST]: ['主机', 'Host'],
     [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
     [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
@@ -415,8 +418,33 @@ export const IAM_ACTIONS = {
             return [hostVerifyMeta, directoryVerifyMeta]
         }
     },
+    // 跨业务转主机
+    HOST_TRANSFER_ACROSS_BIZ: {
+        id: 'host_transfer_across_business',
+        name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
+        cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
+        relation: [{
+            view: IAM_VIEWS.BIZ_FOR_HOST_TRANS,
+            instances: [IAM_VIEWS.BIZ_FOR_HOST_TRANS]
+        }, {
+            view: IAM_VIEWS.BIZ,
+            instances: [IAM_VIEWS.BIZ]
+        }],
+        transform: (cmdbAction, relationIds) => {
+            const [[[currentBizId], [targetBizId]]] = relationIds
+            const verifyMeta = basicTransform(cmdbAction)
+            verifyMeta.parent_layers = [{
+                resource_id: currentBizId,
+                resource_type: 'biz'
+            }, {
+                resource_id: targetBizId,
+                resource_type: 'biz'
+            }]
+            return verifyMeta
+        }
+    },
 
-    // 资源池主机
+    // 主机池主机
     C_RESOURCE_HOST: {
         id: 'create_resource_pool_host',
         name: ['主机池主机创建', 'Create Resource Pool Host'],
@@ -534,7 +562,7 @@ export const IAM_ACTIONS = {
         }
     },
 
-    // 资源池目录
+    // 主机池目录
     C_RESOURCE_DIRECTORY: {
         id: 'create_resource_pool_directory',
         name: ['主机池目录创建', 'Create Resource Pool Directory'],

@@ -162,13 +162,15 @@
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
                         node: `module-${this.moduleIds[0]}`
-                    }
+                    },
+                    history: true
                 })
             },
             handleViewFailed () {
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_FAILED,
-                    query: this.$route.query
+                    query: this.$route.query,
+                    history: true
                 })
             }
         }

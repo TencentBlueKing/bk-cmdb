@@ -1119,7 +1119,12 @@ func (ps *parseStream) object() *parseStream {
 
 	// batch create/update common object operation
 	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
-		data := gjson.ParseBytes(ps.RequestCtx.Body).Map()
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		data := gjson.ParseBytes(body).Map()
 		objIDs := make([]string, len(data))
 		index := 0
 
@@ -1134,6 +1139,12 @@ func (ps *parseStream) object() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		for _, model := range models {
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
@@ -1142,7 +1153,7 @@ func (ps *parseStream) object() *parseStream {
 						Action:     meta.Update,
 						InstanceID: model.ID,
 					},
-					BusinessID: ps.RequestCtx.BizID,
+					BusinessID: bizID,
 				})
 		}
 		return ps
@@ -1470,13 +1481,17 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	//}
 
 	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
-
-		if !gjson.GetBytes(ps.RequestCtx.Body, "data").Exists() {
+		val, err := ps.RequestCtx.getValueFromBody("data")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if !val.Exists() {
 			ps.err = errors.New("invalid request format")
 			return ps
 		}
 
-		data := gjson.GetBytes(ps.RequestCtx.Body, "data").String()
+		data := val.String()
 		groups := make([]metadata.PropertyGroupObjectAtt, 0)
 		if err := json.Unmarshal([]byte(data), &groups); err != nil {
 			ps.err = err
@@ -1544,9 +1559,15 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Delete,
@@ -2325,7 +2346,7 @@ func (ps *parseStream) objectSet() *parseStream {
 var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
 	searchAuditList   = `/api/v3/findmany/audit_list`
-	searchAuditDetail = regexp.MustCompile(`^/api/v3/find/audit/[0-9]+/?$`)
+	searchAuditDetail = `/api/v3/find/audit`
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -2357,7 +2378,7 @@ func (ps *parseStream) audit() *parseStream {
 		return ps
 	}
 
-	if ps.hitRegexp(searchAuditDetail, http.MethodGet) {
+	if ps.hitPattern(searchAuditDetail, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

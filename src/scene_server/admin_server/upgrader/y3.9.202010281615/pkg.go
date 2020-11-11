@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x19_08_26_01
+package y3_9_202010281615
 
 import (
 	"context"
@@ -21,14 +21,13 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_08_26_01", upgrade)
+	upgrader.RegistUpgrader("y3.9.202010281615", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Info("change set 集成平台 to PaaS平台 in blueking business")
-	if err := changeIntegrationPlatToPaasPlat(ctx, db, conf); err != nil {
+	if err := updateInstTimeVal(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202010281615] update instance time type field value error %s", err.Error())
 		return err
 	}
-
 	return nil
 }

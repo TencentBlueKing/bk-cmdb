@@ -590,6 +590,16 @@ type MultipleSyncRegionResult struct {
 	Data     []*Region `json:"data"`
 }
 
+type SubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     Subscription `json:"data"`
+}
+
+type MultipleSubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     RspSubscriptionSearch `json:"data"`
+}
+
 type DistinctFieldOption struct {
 	TableName string                 `json:"table_name"`
 	Field     string                 `json:"field"`

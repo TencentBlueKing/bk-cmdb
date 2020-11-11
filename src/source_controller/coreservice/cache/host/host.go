@@ -293,7 +293,6 @@ func getHostDetailsFromMongoWithIP(innerIP string, cloudID int64) (hostID int64,
 	filter := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
 			common.BKDBAll:  innerIPArr,
-			common.BKDBSize: len(innerIPArr),
 		},
 		common.BKCloudIDField: cloudID,
 	}

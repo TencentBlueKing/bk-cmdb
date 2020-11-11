@@ -100,7 +100,11 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 }
 
 func DefaultBizIDGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
-	return request.BizID, nil
+	bizID, err = request.getBizIDFromBody()
+	if err != nil {
+		return
+	}
+	return
 }
 
 func BizIDFromURLGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {

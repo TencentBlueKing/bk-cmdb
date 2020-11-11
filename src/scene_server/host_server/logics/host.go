@@ -102,8 +102,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	ipArr := strings.Split(ip, ",")
 	conds := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBAll:  ipArr,
-			common.BKDBSize: len(ipArr),
+			common.BKDBIN: ipArr,
 		},
 		common.BKCloudIDField: cloudID,
 	}
@@ -198,7 +197,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	}
 	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(kit.Ctx, kit.Header, params)
 	if ccErr != nil {
-		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, err.Error(), kit.Rid)
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, ccErr.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hmResult.Result {
@@ -636,7 +635,6 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 	condition := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
 			common.BKDBAll:  ipArr,
-			common.BKDBSize: len(ipArr),
 		},
 		common.BKCloudIDField: cloudID,
 	}

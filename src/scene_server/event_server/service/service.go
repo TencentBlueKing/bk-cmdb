@@ -14,11 +14,13 @@ package service
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
@@ -85,14 +87,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
 	api.Produces(restful.MIME_JSON)
 
-	api.Route(api.POST("/subscribe/search/{ownerID}/{appID}").To(s.ListSubscriptions))
-	api.Route(api.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
-	api.Route(api.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
-	api.Route(api.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UpdateSubscription))
-
-	api.Route(api.POST("/subscribe/ping").To(s.Ping))
-	api.Route(api.POST("/subscribe/telnet").To(s.Telnet))
-	api.Route(api.POST("/watch/resource/{resource}").To(s.WatchEvent))
+	s.initService(api)
 
 	container.Add(api)
 
@@ -101,6 +96,25 @@ func (s *Service) WebService() *restful.Container {
 	container.Add(healthzAPI)
 
 	return container
+}
+
+func (s *Service) initService(web *restful.WebService) {
+
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/search/{ownerID}/{appID}", Handler: s.ListSubscriptions})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/{ownerID}/{appID}", Handler: s.Subscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UnSubscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UpdateSubscription})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/ping", Handler: s.Ping})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/telnet", Handler: s.Telnet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
+
+	utility.AddToRestfulWebService(web)
+
 }
 
 // Healthz is a HTTP restful interface for health check.

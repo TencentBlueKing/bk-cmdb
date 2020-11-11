@@ -108,6 +108,11 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/netproperty/export", s.ExportNetProperty)
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 
+	// if no route, redirect to 404 page
+	ws.NoRoute(func(c *gin.Context) {
+		c.Redirect(302, "/#/404")
+	})
+
 	return ws
 }
 

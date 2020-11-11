@@ -14,6 +14,7 @@ package parser
 
 import (
 	"net/http"
+	"regexp"
 
 	"configcenter/src/ac/meta"
 )
@@ -78,8 +79,17 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
 	}, {
+		Name:           "listProcessInstancesDetails",
+		Description:    "查询某业务下进程ID对应的进程详情",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/process_instance/detail/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Find,
+	}, {
 		Name:           "listProcessInstancesDetailsByIDs",
-		Description:    "根据进程ID列表批量查询这些进程的详情",
+		Description:    "根据进程ID列表批量查询这些进程的详情及关系",
 		Pattern:        "/api/v3/findmany/proc/process_instance/detail/by_ids",
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
