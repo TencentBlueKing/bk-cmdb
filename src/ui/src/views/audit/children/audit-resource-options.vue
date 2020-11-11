@@ -7,6 +7,7 @@
             <col width="28%">
             <col width="6%">
             <col width="28%">
+            <col width="10%" v-if="isModelInstance">
         </colgroup>
         <tr>
             <td align="right"><label class="option-label">{{$t('操作对象')}}</label></td>
@@ -18,6 +19,16 @@
                     v-model="condition.resource_type">
                 </audit-target-selector>
             </td>
+            <template v-if="isModelInstance">
+                <td align="right"><label class="option-label">{{$t('模型')}}</label></td>
+                <td>
+                    <audit-model-selector class="option-value"
+                        searchable
+                        :placeholder="$t('请选择xx', { name: $t('模型') })"
+                        v-model="condition.bk_obj_id">
+                    </audit-model-selector>
+                </td>
+            </template>
             <td align="right"><label class="option-label">{{$t('动作')}}</label></td>
             <td>
                 <audit-action-selector class="option-value"
@@ -27,16 +38,28 @@
                     v-model="condition.action">
                 </audit-action-selector>
             </td>
-            <td align="right"><label class="option-label">{{$t('时间')}}</label></td>
-            <td>
-                <cmdb-form-date-range class="option-value"
-                    font-size="medium"
-                    :placeholder="$t('请选择xx', { name: $t('时间') })"
-                    v-model="condition.operation_time">
-                </cmdb-form-date-range>
-            </td>
+            <template v-if="!isModelInstance">
+                <td align="right"><label class="option-label">{{$t('时间')}}</label></td>
+                <td>
+                    <cmdb-form-date-range class="option-value"
+                        font-size="medium"
+                        :placeholder="$t('请选择xx', { name: $t('时间') })"
+                        v-model="condition.operation_time">
+                    </cmdb-form-date-range>
+                </td>
+            </template>
         </tr>
         <tr>
+            <template v-if="isModelInstance">
+                <td align="right"><label class="option-label">{{$t('时间')}}</label></td>
+                <td>
+                    <cmdb-form-date-range class="option-value"
+                        font-size="medium"
+                        :placeholder="$t('请选择xx', { name: $t('时间') })"
+                        v-model="condition.operation_time">
+                    </cmdb-form-date-range>
+                </td>
+            </template>
             <td align="right"><label class="option-label">{{$t('账号')}}</label></td>
             <td>
                 <cmdb-form-objuser class="option-value"
@@ -73,27 +96,31 @@
 <script>
     import AuditTargetSelector from './audit-target-selector'
     import AuditActionSelector from './audit-action-selector'
+    import AuditModelSelector from './audit-model-selector'
     import RouterQuery from '@/router/query'
+    const defaultCondition = {
+        bk_biz_id: '',
+        resource_type: '',
+        action: [],
+        operation_time: [],
+        user: '',
+        resource_id: '',
+        resource_name: '',
+        category: 'resource',
+        bk_obj_id: ''
+    }
     export default {
         name: 'audit-resource-options',
         components: {
             AuditTargetSelector,
-            AuditActionSelector
+            AuditActionSelector,
+            AuditModelSelector
         },
         data () {
             const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
             return {
                 instanceType: 'resource_name',
-                condition: {
-                    bk_biz_id: '',
-                    resource_type: '',
-                    action: [],
-                    operation_time: [today, today],
-                    user: '',
-                    resource_id: '',
-                    resource_name: '',
-                    category: 'resource'
-                }
+                condition: { ...defaultCondition, operation_time: [today, today] }
             }
         },
         computed: {
@@ -104,6 +131,9 @@
                 set (value) {
                     this.condition[this.instanceType] = value
                 }
+            },
+            isModelInstance () {
+                return this.condition.resource_type === 'model_instance'
             }
         },
         watch: {
@@ -125,16 +155,7 @@
                 })
             },
             handleReset () {
-                this.condition = {
-                    bk_biz_id: '',
-                    resource_type: '',
-                    action: [],
-                    operation_time: [],
-                    user: '',
-                    resource_id: '',
-                    resource_name: '',
-                    category: 'resource'
-                }
+                this.condition = { ...defaultCondition }
                 this.handleSearch()
             }
         }
