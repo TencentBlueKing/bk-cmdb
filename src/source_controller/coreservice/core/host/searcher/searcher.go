@@ -72,7 +72,10 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 			return nil, err
 		}
 		if len(hostIDs) == 0 {
-			return new(metadata.ListHostResult), nil
+			return &metadata.ListHostResult{
+				Count: 0,
+				Info:  []map[string]interface{}{},
+			}, nil
 		}
 
 		hostIDFilter = map[string]interface{}{
@@ -192,7 +195,10 @@ func (s *Searcher) listAllBizHostsPage(ctx context.Context, fields []string, pag
 	cnt := len(allBizHostIDs)
 	start := page.Start
 	if start > cnt {
-		return new(metadata.ListHostResult), nil
+		return &metadata.ListHostResult{
+			Count: 0,
+			Info:  []map[string]interface{}{},
+		}, nil
 	}
 	if start < 0 {
 		start = 0
