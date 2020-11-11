@@ -28,7 +28,6 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/stream/types"
-
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
@@ -38,6 +37,7 @@ func newFlow(ctx context.Context, opts FlowOptions) error {
 	flow := Flow{
 		FlowOptions: opts,
 		retrySignal: make(chan struct{}),
+		metrics:     initialMetrics(opts.Collection),
 	}
 	flow.cleanExpiredEvents()
 	flow.cleanDelArchiveData()
@@ -48,6 +48,7 @@ func newFlow(ctx context.Context, opts FlowOptions) error {
 type Flow struct {
 	FlowOptions
 	retrySignal chan struct{}
+	metrics     *eventMetrics
 }
 
 func (f *Flow) RunFlow(ctx context.Context) error {
@@ -96,6 +97,9 @@ func (f *Flow) tryLoopFlow(ctx context.Context, opts *types.WatchOptions) error 
 			select {
 			// wait for another retry
 			case <-f.retrySignal:
+				// collect retry error metrics
+				f.metrics.collectRetryError()
+
 				// wait for a second and then do the retry work.
 				time.Sleep(1 * time.Second)
 
@@ -171,6 +175,9 @@ func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
 				blog.Infof("event doc details: %s, oid: %s", e.Oid)
 			}
 
+			// collect event's basic metrics
+			f.metrics.collectBasic(e)
+
 			switch e.OperationType {
 			case types.Insert, types.Update, types.Replace:
 				if retry, err := f.doUpsert(e); err != nil {
@@ -219,7 +226,15 @@ func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
 // if an error occurred, then the caller should check the retry is true or not, if true, then this event
 // need to be retry later.
 func (f *Flow) doUpsert(e *types.Event) (retry bool, err error) {
-	return f.do(e)
+	start := time.Now()
+	retry, err = f.do(e)
+	if err != nil {
+		return retry, err
+	}
+
+	f.metrics.collectCycleDuration(time.Since(start))
+
+	return
 }
 
 func (f *Flow) do(e *types.Event) (retry bool, err error) {
@@ -235,6 +250,7 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 
 	keys, err := redis.Client().HMGet(context.Background(), f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
 	if err != nil {
+		f.metrics.collectRedisError()
 		return true, err
 	}
 
@@ -289,6 +305,7 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 			return false, err
 		}
 
+		f.metrics.collectRedisError()
 		blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
 		return true, err
 	}
@@ -384,6 +401,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 	pipe.HMSet(f.key.MainHashKey(), val)
 	pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
+		f.metrics.collectRedisError()
 		releaseLock()
 		blog.Errorf("run flow, set head and tail key failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
 		return true, err
@@ -395,6 +413,15 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 	blog.Infof("received delete %s event, oid: %s", f.Collection, e.Oid)
+
+	start := time.Now()
+	defer func() {
+		if err != nil {
+			return
+		}
+		f.metrics.collectCycleDuration(time.Since(start))
+	}()
+
 	filter := mapstr.MapStr{
 		"oid": e.Oid,
 	}
@@ -403,6 +430,7 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 		doc := new(hostArchive)
 		err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), doc)
 		if err != nil {
+			f.metrics.collectMongoError()
 			blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
 				f.Collection, e.Oid, err)
 			if strings.Contains(err.Error(), "document not found") {
@@ -423,6 +451,8 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 		doc := bsonx.Doc{}
 		err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
 		if err != nil {
+			f.metrics.collectMongoError()
+
 			blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
 				f.Collection, e.Oid, err)
 			if strings.Contains(err.Error(), "document not found") {
@@ -433,6 +463,8 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 
 		byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
 		if err != nil {
+			f.metrics.collectMongoError()
+
 			blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v", f.Collection, e.Oid, err)
 			return false, err
 		}
@@ -448,6 +480,7 @@ func (f *Flow) getStartToken() (token string, err error) {
 	tail, err := redis.Client().HGet(context.Background(), f.key.MainHashKey(), f.key.TailKey()).Result()
 	if err != nil {
 		if !redis.IsNilErr(err) {
+			f.metrics.collectRedisError()
 			return "", err
 		}
 		// the tail key is not exist.
@@ -537,6 +570,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 	// already get the lock. prepare to release the lock.
 	releaseLock := func() {
 		if err := redis.Client().Del(context.Background(), f.key.LockKey()).Err(); err != nil {
+			f.metrics.collectLockError()
 			blog.ErrorfDepthf(1, "run flow, insert node, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		}
 	}
@@ -545,6 +579,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 	pipe.HMSet(f.key.MainHashKey(), values)
 	pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
+		f.metrics.collectRedisError()
 		releaseLock()
 		blog.Errorf("run flow, but insert node failed, name: %s, op: %s, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		return true, err
@@ -563,6 +598,7 @@ func (f *Flow) getLockWithRetry(name string, oid string) bool {
 		// get operate lock to avoid concurrent revise the chain
 		success, err := redis.Client().SetNX(context.Background(), f.key.LockKey(), "lock", 5*time.Second).Result()
 		if err != nil {
+			f.metrics.collectLockError()
 			blog.Errorf("get lock failed, err: %v, oid: %s", name, err, oid)
 			time.Sleep(500 * time.Millisecond)
 			continue
