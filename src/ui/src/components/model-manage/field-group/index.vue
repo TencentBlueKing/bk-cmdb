@@ -2,6 +2,11 @@
     <div class="group-layout" v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }">
         <div class="layout-header">
             <bk-button @click="previewShow = true" :disabled="!properties.length">{{$t('字段预览')}}</bk-button>
+            <bk-input class="filter-input" clearable
+                right-icon="icon-search"
+                :placeholder="$t('请输入关键字')"
+                v-model.trim="keyword">
+            </bk-input>
             <bk-button text class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
                 <i class="icon-cc-setting"></i>
                 {{$t('表格排序设置')}}
@@ -9,7 +14,7 @@
         </div>
         <div class="layout-content">
             <div class="group"
-                v-for="(group, index) in groupedProperties"
+                v-for="(group, index) in displayGroupedProperties"
                 :key="index">
                 <cmdb-collapse
                     :collapse.sync="groupState[group.info['bk_group_id']]">
@@ -26,7 +31,7 @@
                                         :text="true"
                                         :disabled="disabled || !isEditable(group.info)"
                                         @click.stop="handleEditGroup(group)">
-                                        <i class="title-icon icon icon-cc-edit"></i>
+                                        <i class="title-icon icon icon-cc-edit-shape"></i>
                                     </bk-button>
                                 </cmdb-auth>
                                 <cmdb-auth class="ml5" :auth="authResources">
@@ -85,7 +90,10 @@
                                         <span :title="property.bk_property_name">{{property.bk_property_name}}</span>
                                         <i v-if="property.isrequired">*</i>
                                     </div>
-                                    <p>{{fieldTypeMap[property.bk_property_type]}}</p>
+                                    <p>
+                                        {{fieldTypeMap[property.bk_property_type]}}
+                                        <span class="field-id">{{property.bk_property_id}}</span>
+                                    </p>
                                 </div>
                                 <template v-if="isGlobalView || isBizCustomData(property)">
                                     <cmdb-auth class="mr10" :auth="authResources" @click.native.stop>
@@ -131,7 +139,7 @@
                             :text="true"
                             :disabled="disabled || activeModel.bk_ispaused"
                             @click.stop="handleAddGroup">
-                            <i class="bk-icon icon-plus-circle"></i>
+                            <i class="bk-icon icon-cc-plus"></i>
                             {{customObjId ? $t('新建业务分组') : $t('添加分组')}}
                         </bk-button>
                     </cmdb-auth>
@@ -276,6 +284,7 @@
 
 <script>
     import vueDraggable from 'vuedraggable'
+    import debounce from 'lodash.debounce'
     import theFieldDetail from './field-detail'
     import previewField from './preview-field'
     import fieldDetailsView from './field-view'
@@ -299,7 +308,9 @@
                 properties: [],
                 groups: [],
                 groupedProperties: [],
+                displayGroupedProperties: [],
                 previewShow: false,
+                keyword: '',
                 groupState: {},
                 initGroupState: {},
                 fieldTypeMap: {
@@ -428,7 +439,19 @@
                 return !this.customObjId && this.curModel['bk_classification_id'] !== 'bk_biz_topo'
             }
         },
+        watch: {
+            groupedProperties: {
+                handler (groupedProperties) {
+                    this.filterField()
+                },
+                deep: true
+            },
+            keyword () {
+                this.handleFilter()
+            }
+        },
         async created () {
+            this.handleFilter = debounce(this.filterField, 300)
             const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
             this.properties = properties
             this.groups = groups
@@ -535,6 +558,32 @@
                 this.initGroupState = this.$tools.clone(groupState)
                 this.groupState = Object.assign({}, groupState, this.groupState)
                 this.groupedProperties = groupedProperties
+            },
+            filterField () {
+                if (this.keyword) {
+                    const reg = new RegExp(this.keyword, 'i')
+                    const displayGroupedProperties = []
+                    this.groupedProperties.forEach(group => {
+                        const matchedProperties = []
+                        group.properties.forEach(property => {
+                            if (reg.test(property.bk_property_name) || reg.test(property.bk_property_id)) {
+                                matchedProperties.push(property)
+                            }
+                        })
+                        if (matchedProperties.length) {
+                            displayGroupedProperties.push({
+                                ...group,
+                                properties: matchedProperties
+                            })
+                        }
+                    })
+                    displayGroupedProperties.forEach(group => {
+                        this.groupState[group.info['bk_group_id']] = false
+                    })
+                    this.displayGroupedProperties = displayGroupedProperties
+                } else {
+                    this.displayGroupedProperties = this.groupedProperties
+                }
             },
             getPropertyGroups () {
                 return this.searchGroup({
@@ -869,7 +918,7 @@
                         }).then(res => {
                             this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                             if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
-                                this.groupedProperties[index].properties.splice(fieldIndex, 1)
+                                this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
                                 this.handleSliderHidden()
                             }
                         })
@@ -966,6 +1015,10 @@
                 vertical-align: unset;
             }
         }
+        .filter-input {
+            width: 240px;
+            margin-left: 4px;
+        }
     }
     .group {
         margin-bottom: 19px;
@@ -1009,8 +1062,8 @@
             .group-name {
                 flex: none;
                 max-width: 500px;
-                font-size: 16px;
-                font-weight: normal;
+                font-size: 14px;
+                font-weight: 700;
                 @include ellipsis;
                 span {
                     @include inlineBlock;
@@ -1151,6 +1204,9 @@
                     color: #c4c6cc;
                     @include ellipsis;
                 }
+                .field-id {
+                    margin-left: 4px;
+                }
             }
             .property-icon-btn {
                 font-size: 0;
@@ -1174,7 +1230,6 @@
                 line-height: 59px;
                 text-align: center;
                 border: 1px dashed #dcdee5;
-                color: #979ba5;
                 background-color: #ffffff;
                 &:not(.is-disabled):hover {
                     color: #3a84ff;
@@ -1183,7 +1238,8 @@
             }
             .icon-plus {
                 font-weight: bold;
-                margin-top: -2px;
+                margin-top: -4px;
+                font-size: 16px;
             }
         }
         .property-empty {
@@ -1199,21 +1255,29 @@
     }
     .add-group {
         margin: 20px 0 0 0;
-        line-height: 29px;
         font-size: 0;
         .add-group-trigger {
-            color: #3a84ff;
-            font-size: 16px;
+            color: #979BA5;
+            font-size: 14px;
+            height: 30px;
+            width: 146px;
+            line-height: 30px;
+            text-align: left;
+            padding-left: 2px;
             &.is-disabled {
                 color: #C4C6CC;
                 .icon {
                     color: #63656E;
                 }
             }
-            .icon-plus-circle {
+            .icon-cc-plus {
                 margin: -4px 2px 0 0;
                 display: inline-block;
                 vertical-align: middle;
+                font-size: 18px;
+            }
+            &:not(.is-disabled):hover {
+                background-color: #F0F1F5;
             }
         }
     }
