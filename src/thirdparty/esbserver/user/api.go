@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 // Deprecated

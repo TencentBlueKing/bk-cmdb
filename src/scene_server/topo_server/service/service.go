@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/thirdpartyclient/elasticsearch"
+	"configcenter/src/thirdparty/elasticsearch"
 
 	"github.com/emicklei/go-restful"
 )

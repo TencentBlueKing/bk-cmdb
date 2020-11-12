@@ -28,8 +28,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 
 	"github.com/emicklei/go-restful"
 )

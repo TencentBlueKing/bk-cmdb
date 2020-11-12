@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdpartyclient/elasticsearch"
+	"configcenter/src/thirdparty/elasticsearch"
 
 	"github.com/spf13/pflag"
 )
