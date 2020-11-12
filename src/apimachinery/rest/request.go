@@ -236,7 +236,8 @@ func (r *Request) Do() *Result {
 	if r.parent.requestDuration != nil {
 		before := time.Now()
 		defer func() {
-			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(
+				float64(time.Since(before) / time.Millisecond))
 		}()
 	}
 
