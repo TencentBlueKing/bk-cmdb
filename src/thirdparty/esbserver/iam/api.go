@@ -17,7 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 // returns the url which can helps to launch the bk-iam when user do not have the authority to access resource(s).

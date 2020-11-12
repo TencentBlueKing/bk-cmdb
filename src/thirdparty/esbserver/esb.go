@@ -19,11 +19,11 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-	"configcenter/src/thirdpartyclient/esbserver/gse"
-	"configcenter/src/thirdpartyclient/esbserver/iam"
-	"configcenter/src/thirdpartyclient/esbserver/nodeman"
-	"configcenter/src/thirdpartyclient/esbserver/user"
+	"configcenter/src/thirdparty/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver/gse"
+	"configcenter/src/thirdparty/esbserver/iam"
+	"configcenter/src/thirdparty/esbserver/nodeman"
+	"configcenter/src/thirdparty/esbserver/user"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

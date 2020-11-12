@@ -29,7 +29,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/driver/redis"
-	"configcenter/src/thirdpartyclient/elasticsearch"
+	"configcenter/src/thirdparty/elasticsearch"
 )
 
 // TopoServer the topo server

@@ -31,7 +31,7 @@ import (
 	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"configcenter/src/scene_server/cloud_server/logics"
 	svc "configcenter/src/scene_server/cloud_server/service"
-	"configcenter/src/thirdpartyclient/secrets"
+	"configcenter/src/thirdparty/secrets"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {

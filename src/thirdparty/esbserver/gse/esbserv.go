@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 type GseClientInterface interface {

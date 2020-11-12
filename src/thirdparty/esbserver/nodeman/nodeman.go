@@ -15,7 +15,7 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 func (p *nodeman) SearchPackage(ctx context.Context, h http.Header, processname string) (resp *SearchPluginPackageResult, err error) {
