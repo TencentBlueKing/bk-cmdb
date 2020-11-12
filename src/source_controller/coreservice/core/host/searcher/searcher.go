@@ -21,17 +21,17 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/cache"
+	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 type Searcher struct {
-	CacheSet *cache.ClientSet
+	CacheHost *host.Client
 }
 
-func New(CacheSet *cache.ClientSet) Searcher {
+func New() Searcher {
 	return Searcher{
-		CacheSet: CacheSet,
+		CacheHost: host.NewClient(),
 	}
 }
 
@@ -169,7 +169,7 @@ func (s *Searcher) ListHostsWithCache(ctx context.Context, fields []string, page
 		Fields: fields,
 		Page:   page,
 	}
-	total, infos, err := s.CacheSet.Host.ListHostsWithPage(ctx, opt)
+	total, infos, err := s.CacheHost.ListHostsWithPage(ctx, opt)
 	if err != nil {
 		blog.ErrorJSON("list host from redis error, filter: %s, err: %s, rid: %s", opt, err.Error(), rid)
 		// HOOK: 缓存出现错误从db中获取数据

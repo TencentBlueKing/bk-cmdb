@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/watch"
 	ewatcher "configcenter/src/scene_server/event_server/watcher"
-	"configcenter/src/source_controller/coreservice/event"
+	"configcenter/src/source_controller/cacheservice/event"
 )
 
 func (s *Service) WatchEvent(ctx *rest.Contexts) {
