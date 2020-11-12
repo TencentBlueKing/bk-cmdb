@@ -332,4 +332,28 @@ var _ = Describe("business test", func() {
 		Expect(rsp.Data.Count).To(Equal(1))
 		Expect(rsp.Data.Info).To(ContainElement(ContainElement(ContainSubstring("mmrmm"))))
 	})
+
+	It("get brief biz topo", func() {
+		input := map[string]interface{}{
+			"set_fields": []string{
+				"bk_set_id",
+				"bk_set_name",
+				"bk_set_env",
+			},
+			"module_fields": []string{
+				"bk_module_id",
+				"bk_module_name",
+			},
+			"host_fields": []string{
+				"bk_host_id",
+				"bk_host_innerip",
+				"bk_host_name",
+			},
+		}
+		rsp, err := instClient.SearchBriefBizTopo(context.Background(), header, bizIdInt, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(len(rsp.Data)).To(Equal(1))
+	})
 })
