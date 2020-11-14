@@ -20,7 +20,7 @@
 <script>
     import activeMixin from './mixin-active'
     export default {
-        name: 'cmdb-search-longchar',
+        name: 'cmdb-search-table',
         mixins: [activeMixin],
         props: {
             value: {

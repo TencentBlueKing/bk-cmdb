@@ -1,19 +1,30 @@
 <template>
     <span class="search-input-wrapper" v-if="multiple">
-        <bk-input class="search-input" type="number" v-model="start"></bk-input>
+        <bk-input class="search-input" type="number" v-model="start" v-on="listeners">
+        </bk-input>
         <span class="search-input-grep">-</span>
-        <bk-input class="search-input" type="number" v-model="end"></bk-input>
+        <bk-input class="search-input" type="number" v-model="end" v-on="listeners"></bk-input>
     </span>
-    <bk-input class="search-input" type="number" v-model="localValue" v-else></bk-input>
+    <bk-input class="search-input" type="number" v-model="localValue" v-on="listeners" v-else></bk-input>
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     export default {
         name: 'cmdb-search-float',
+        mixins: [activeMixin],
         props: {
             value: {
                 type: [Number, String, Array],
                 default: ''
+            }
+        },
+        data () {
+            return {
+                listeners: {
+                    focus: () => this.handleToggle(true),
+                    blur: () => this.handleToggle(false)
+                }
             }
         },
         computed: {

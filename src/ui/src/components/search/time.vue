@@ -2,13 +2,16 @@
     <bk-date-picker
         type="datetimerange"
         v-model="localValue"
-        v-bind="$attrs">
+        v-bind="$attrs"
+        @open-change="handleToggle">
     </bk-date-picker>
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     export default {
         name: 'cmdb-search-time',
+        mixins: [activeMixin],
         props: {
             value: {
                 type: Array,

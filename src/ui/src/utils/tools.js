@@ -367,6 +367,38 @@ export function createTopologyProperty () {
     }
 }
 
+export function getPropertyCopyValue (originalValue, propertyType) {
+    if (
+        originalValue === ''
+        || originalValue === null
+        || originalValue === undefined
+        || (Array.isArray(originalValue) && originalValue.length === 0)
+    ) {
+        return '--'
+    }
+    const type = typeof propertyType === 'string' ? propertyType : propertyType.bk_property_type
+    let value
+    switch (type) {
+        case 'date':
+            value = formatTime(originalValue, 'YYYY-MM-DD')
+            break
+        case 'time':
+            value = formatTime(originalValue, 'YYYY-MM-DD HH:mm:ss')
+            break
+        case 'foreignkey':
+            value = (originalValue || []).map(cloud => cloud.bk_inst_id).join(',')
+            break
+        case 'list':
+        case 'objuser':
+        case 'organization':
+            value = originalValue.toString()
+            break
+        default:
+            value = originalValue
+    }
+    return value
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -387,5 +419,6 @@ export default {
     getDefaultPaginationConfig,
     getPageParams,
     localSort,
-    createTopologyProperty
+    createTopologyProperty,
+    getPropertyCopyValue
 }

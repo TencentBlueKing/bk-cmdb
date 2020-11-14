@@ -4,7 +4,8 @@
         searchable
         display-tag
         v-bind="$attrs"
-        v-model="localValue">
+        v-model="localValue"
+        @toggle="handleToggle">
         <bk-option
             v-for="template in list"
             :key="template.id"
@@ -15,9 +16,11 @@
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     import { mapGetters } from 'vuex'
     export default {
         name: 'cmdb-search-service-template',
+        mixins: [activeMixin],
         props: {
             value: {
                 type: Array,
