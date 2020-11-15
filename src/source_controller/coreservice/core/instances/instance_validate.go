@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 )
 
 var updateIgnoreKeys = []string{
@@ -142,8 +143,6 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		if !ok {
 			delete(instanceData, key)
 			continue
-			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, kit.Rid)
-			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
@@ -155,6 +154,16 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
+	}
+
+	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
+	if err != nil {
+		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+
+	if skip {
+		return nil
 	}
 
 	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
@@ -321,6 +330,16 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			blog.Errorf("valid biz id error %v, rid: %s", err, kit.Rid)
 			return err
 		}
+	}
+
+	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
+	if err != nil {
+		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+
+	if skip {
+		return nil
 	}
 
 	return valid.validUpdateUnique(kit, updateData, instID, m)
