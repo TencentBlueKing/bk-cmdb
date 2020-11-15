@@ -1103,6 +1103,32 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interfa
 		}
 	}
 
+	if IsAsDefaultValue(t.PidFile.AsDefaultValue) {
+		if t.PidFile.Value == nil && i.PidFile != nil {
+			process["pid_file"] = nil
+			changed = true
+		} else if t.PidFile.Value != nil && i.PidFile == nil {
+			process["pid_file"] = *t.PidFile.Value
+			changed = true
+		} else if t.PidFile.Value != nil && i.PidFile != nil && *t.PidFile.Value != *i.PidFile {
+			process["pid_file"] = *t.PidFile.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Priority.AsDefaultValue) {
+		if t.Priority.Value == nil && i.Priority != nil {
+			process["priority"] = nil
+			changed = true
+		} else if t.Priority.Value != nil && i.Priority == nil {
+			process["priority"] = *t.Priority.Value
+			changed = true
+		} else if t.Priority.Value != nil && i.Priority != nil && *t.Priority.Value != *i.Priority {
+			process["priority"] = *t.Priority.Value
+			changed = true
+		}
+	}
+
 	bindInfo, bindInfoChanged, bindInfoIsNamePortChanged := t.BindInfo.ExtractChangeInfoBindInfo(i, host)
 	process[common.BKProcBindInfo] = bindInfo
 	if bindInfoChanged {
