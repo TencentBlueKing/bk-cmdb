@@ -174,27 +174,6 @@ type ModuleHostConfigParams struct {
 	OwnerID       string  `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-type UserConfig struct {
-	Info       string    `json:"info" bson:"info"`
-	Name       string    `json:"name" bson:"name"`
-	ID         string    `json:"id" bson:"id"`
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	UpdateTime time.Time `json:"last_time" bson:"last_time"`
-	AppID      int64     `json:"bk_biz_id" bson:"bk_biz_id"`
-	CreateUser string    `json:"create_user" bson:"create_user"`
-	ModifyUser string    `json:"modify_user" bson:"modify_user"`
-}
-
-type UserConfigResult struct {
-	Count uint64        `json:"count"`
-	Info  []interface{} `json:"info"`
-}
-
-type GetUserConfigResult struct {
-	BaseResp `json:",inline"`
-	Data     UserConfigResult `json:"data"`
-}
-
 type GetUserCustomResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]interface{} `json:"data"`
@@ -221,30 +200,6 @@ type FavouriteMeta struct {
 	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
 	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
 	UpdateTime  time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
-}
-
-type GetUserConfigDetailResult struct {
-	BaseResp `json:",inline"`
-	Data     UserConfigMeta `json:"data"`
-}
-
-type UserConfigMeta struct {
-	AppID      int64     `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
-	Info       string    `json:"info,omitempty" bson:"info,omitempty"`
-	Name       string    `json:"name,omitempty" bson:"name,omitempty"`
-	ID         string    `json:"id,omitempty" bson:"id,omitempty"`
-	CreateTime time.Time `json:"create_time" bson:"create_time,omitempty"`
-	CreateUser string    `json:"create_user" bson:"create_user,omitempty"`
-	ModifyUser string    `json:"modify_user" bson:"modify_user,omitempty"`
-	UpdateTime time.Time `json:"last_time" bson:"last_time,omitempty"`
-	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type AddConfigQuery struct {
-	AppID      int64  `json:"bk_biz_id,omitempty"`
-	Info       string `json:"info,omitempty"`
-	Name       string `json:"name,omitempty"`
-	CreateUser string `json:"create_user,omitempty"`
 }
 
 // TransferHostToInnerModule transfer host to inner module eg:idle module ,fault module

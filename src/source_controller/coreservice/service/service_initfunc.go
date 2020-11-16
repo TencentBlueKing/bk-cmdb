@@ -190,12 +190,6 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host/lock", Handler: s.UnlockHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host/lock/search", Handler: s.QueryLockHost})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/userapi", Handler: s.AddUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/userapi/{bk_biz_id}/{id}", Handler: s.UpdateUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/userapi/{bk_biz_id}/{id}", Handler: s.DeleteUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/userapi/search", Handler: s.GetUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/userapi/detail/{bk_biz_id}/{id}", Handler: s.UserConfigDetail})
-
 	// dynamic grouping handlers.
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
