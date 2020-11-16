@@ -14,17 +14,18 @@ package logics
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/host_server/logics"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rentiansheng/xlsx"
@@ -91,8 +92,10 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		return err
 	}
 	extFieldsTopoID := "cc_ext_field_topo"
+	extFieldsBizID := "cc_ext_biz"
 	extFields := map[string]string{
 		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
+		extFieldsBizID:  ccLang.Language("object_biz"),
 	}
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
@@ -108,12 +111,14 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		if err != nil {
 			blog.ErrorJSON("BuildHostExcelFromData failed, hostData: %s, err: %s, rid: %s", hostData, err.Error(), rid)
 			msg := fmt.Sprintf("data format error:%v", hostData)
-			return errors.New(msg)
+			return ccErr.Errorf(common.CCErrCommReplyDataFormatError, msg)
 		}
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
 			topo := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
+			biz := strings.Split(topo[0], logics.SplitFlag)
 			rowMap[extFieldsTopoID] = strings.Join(topo, "\n")
+			rowMap[extFieldsBizID] = strings.Join(biz[:1], "\n")
 		}
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
@@ -135,6 +140,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 }
 
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
+	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	rid := util.ExtractRequestIDFromContext(ctx)
 	var instIDArr []int64
 	for instID := range instPrimaryInfo {
@@ -154,13 +160,39 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		blog.Errorf("setExcelRowDataByIndex add excel  assocation sheet error. err:%s, rid:%s", err.Error(), rid)
 		return err
 	}
-	productExcelAssociationHealer(ctx, sheet, lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header)))
+
+	cond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			condition.BKDBOR: []mapstr.MapStr{
+				{
+					common.BKObjIDField: objID,
+				},
+				{
+					common.BKAsstObjIDField: objID,
+				},
+			},
+		},
+	}
+
+	////确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	resp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, cond)
+	if err != nil {
+		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, rid)
+		return err
+	}
+	if err := resp.CCError(); err != nil {
+		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", resp.ErrMsg, rid)
+		return err
+	}
+	asstList := resp.Data.Info
+	productExcelAssociationHealer(ctx, sheet, defLang, len(instAsst), asstList)
 
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset
+
 	for _, inst := range instAsst {
-		sheet.Cell(rowIndex, 0).SetString(inst.ObjectAsstID)
-		sheet.Cell(rowIndex, 1).SetString("")
-		srcInst, ok := instPrimaryInfo[inst.InstID]
+		sheet.Cell(rowIndex, 1).SetString(inst.ObjectAsstID)
+		sheet.Cell(rowIndex, 2).SetString("")
+		srcInst, ok := asstData[inst.ObjectID][inst.InstID]
 		if !ok {
 			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, objID, rid)
 			// return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", objID, inst.InstID))
@@ -171,11 +203,11 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, inst.AsstObjectID, rid)
 			continue
 		}
-		sheet.Cell(rowIndex, 2).SetString(buildEexcelPrimaryKey(srcInst))
-		sheet.Cell(rowIndex, 3).SetString(buildEexcelPrimaryKey(dstInst))
-		style := sheet.Cell(rowIndex, 2).GetStyle()
+		sheet.Cell(rowIndex, 3).SetString(buildEexcelPrimaryKey(srcInst))
+		sheet.Cell(rowIndex, 4).SetString(buildEexcelPrimaryKey(dstInst))
+		style := sheet.Cell(rowIndex, 3).GetStyle()
 		style.Alignment.WrapText = true
-		style = sheet.Cell(rowIndex, 3).GetStyle()
+		style = sheet.Cell(rowIndex, 4).GetStyle()
 		style.Alignment.WrapText = true
 		rowIndex++
 	}

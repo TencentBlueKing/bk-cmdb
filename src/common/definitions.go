@@ -798,7 +798,7 @@ const (
 	HostAddMethodExcelIndexOffset = 3
 
 	// HostAddMethodExcelAssociationIndexOffset
-	HostAddMethodExcelAssociationIndexOffset = 1
+	HostAddMethodExcelAssociationIndexOffset = 2
 
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
@@ -845,6 +845,9 @@ const (
 	ExcelFirstColumnFieldType = "field_type"
 	ExcelFirstColumnFieldID   = "field_id"
 	ExcelFirstColumnInstData  = "inst_data"
+
+	ExcelFirstColumnAssociationAttribute = "excel_association_attribute"
+	ExcelFirstColumnFieldDescription     = "excel_field_description"
 )
 
 const (
