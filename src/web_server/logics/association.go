@@ -34,6 +34,11 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 			asstObjIDIDArr[instAsst.AsstObjectID] = make([]int64, 0)
 		}
 		asstObjIDIDArr[instAsst.AsstObjectID] = append(asstObjIDIDArr[instAsst.AsstObjectID], instAsst.AsstInstID)
+		_, ok = asstObjIDIDArr[instAsst.ObjectID]
+		if !ok {
+			asstObjIDIDArr[instAsst.ObjectID] = make([]int64, 0)
+		}
+		asstObjIDIDArr[instAsst.ObjectID] = append(asstObjIDIDArr[instAsst.ObjectID], instAsst.InstID)
 	}
 
 	// map[objID]map[inst_id][]Property
@@ -45,7 +50,6 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 		}
 		retAsstObjIDInstInfoMap[itemObjID] = objPrimaryInfo
 	}
-
 	return retAsstObjIDInstInfoMap, nil
 }
 
@@ -54,6 +58,8 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	input := &metadata.SearchAssociationInstRequest{}
+
+	//实例作为关联关系源模型
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).In(instIDArr)
@@ -61,19 +67,33 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	if modelBizID > 0 {
 		input.Condition.Set(common.BKAppIDField, modelBizID)
 	}
-
-	result, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
+	bkObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
 		blog.Errorf("GetAssocationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-
-	if !result.Result {
-		blog.Errorf("GetAssocationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, result.Code, result.ErrMsg, input, rid)
-		return nil, ccErr.New(result.Code, result.ErrMsg)
+	if !bkObjRst.Result {
+		blog.Errorf("GetAssocationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkObjRst.Code, bkObjRst.ErrMsg, input, rid)
+		return nil, ccErr.New(bkObjRst.Code, bkObjRst.ErrMsg)
 	}
 
-	return result.Data, nil
+	//实例作为关联关系目标模型
+	cond = condition.CreateCondition()
+	cond.Field(common.BKAsstObjIDField).Eq(objID)
+	cond.Field(common.BKAsstInstIDField).In(instIDArr)
+	input.Condition = cond.ToMapStr()
+	bkAsstObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
+	if err != nil {
+		blog.Errorf("GetAssocationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
+		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !bkAsstObjRst.Result {
+		blog.Errorf("GetAssocationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkAsstObjRst.Code, bkAsstObjRst.ErrMsg, input, rid)
+		return nil, ccErr.New(bkAsstObjRst.Code, bkAsstObjRst.ErrMsg)
+	}
+	result := append(bkObjRst.Data[:], bkAsstObjRst.Data...)
+
+	return result, nil
 }
 
 func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) (map[int64][]PropertyPrimaryVal, error) {

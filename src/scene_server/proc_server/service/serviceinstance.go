@@ -155,11 +155,6 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 			}
 		}
 
-		if err = ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstance.ID); err != nil {
-			blog.ErrorJSON("createServiceInstances failed, reconstruct service instance name failed, instanceID: %d, err: %s, rid:  %s", serviceInstance.ID, err.Error(), rid)
-			return nil, err
-		}
-
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
 	}
 
@@ -594,6 +589,45 @@ func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(instances)
+}
+
+// UpdateServiceInstances update instances in one biz
+func (ps *ProcServer) UpdateServiceInstances(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("UpdateServiceInstances failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	option := new(metadata.UpdateServiceInstanceOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		if err := ps.CoreAPI.CoreService().Process().UpdateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
+			blog.Errorf("UpdateServiceInstances failed, err:%s, bizID:%d, option:%#v, rid:%s",
+				err, bizID, *option, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }
 
 func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
@@ -1183,8 +1217,6 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 	serviceInstanceWithTemplateMap := make(map[int64]map[int64]bool)
 	// {ServiceInstanceID: HostID}
 	serviceInstance2HostMap := make(map[int64]int64)
-	// {ServiceInstanceID: isNameChanged}
-	serviceInstanceNameChangedMap := make(map[int64]bool)
 	// {ServiceInstanceID: ServiceTemplateID}
 	serviceInstanceTemplateMap := make(map[int64]int64)
 	for _, serviceInstance := range serviceInstanceResult.Info {
@@ -1225,18 +1257,14 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 				// this process template has already removed form the service template,
 				// which means this process instance need to be removed from this service instance
 				removedProcessIDs = append(removedProcessIDs, process.ProcessID)
-				serviceInstanceNameChangedMap[serviceInstanceID] = true
 				continue
 			}
 
 			// this process's bounded is still exist, need to check whether this process instance
 			// need to be updated or not.
-			proc, changed, isNamePortChanged := template.ExtractChangeInfo(process, hostMap[serviceInstance2HostMap[serviceInstanceID]])
+			proc, changed := template.ExtractChangeInfo(process, hostMap[serviceInstance2HostMap[serviceInstanceID]])
 			if !changed {
 				continue
-			}
-			if !serviceInstanceNameChangedMap[serviceInstanceID] {
-				serviceInstanceNameChangedMap[serviceInstanceID] = isNamePortChanged
 			}
 			if err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, proc); err != nil {
 				blog.Errorf("syncServiceInstanceByTemplate failed, UpdateProcessInstance failed, processID:%d, err: %s, rid:%s", process.ProcessID, err.Error(), rid)
@@ -1295,17 +1323,6 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 				blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstanceRelation failed, relation: %s, err: %s, rid: %s", relation, err.Error(), rid)
 				return err
 			}
-		}
-	}
-
-	// reconstruct service instance's name as it's dependence(first process's name + first process's port) changed
-	for _, svcInstanceID := range serviceInstanceIDs {
-		if !serviceInstanceNameChangedMap[svcInstanceID] {
-			continue
-		}
-		if err := ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, svcInstanceID); err != nil {
-			blog.ErrorJSON("syncServiceInstanceByTemplate failed, ReconstructServiceInstanceName failed, instanceID:%d, err:%s, rid:%s", svcInstanceID, err.Error(), rid)
-			return err
 		}
 	}
 

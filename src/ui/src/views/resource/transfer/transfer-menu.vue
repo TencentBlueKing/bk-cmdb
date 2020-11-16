@@ -13,7 +13,7 @@
             <ul class="bk-dropdown-list" slot="dropdown-content">
                 <li><a href="javascript:;" @click="transferToIdleModule">{{$t('空闲模块')}}</a></li>
                 <li><a href="javascript:;" @click="transferToBizModule">{{$t('业务模块')}}</a></li>
-                <li><a href="javascript:;" @click="transferToResourcePool">{{$t('资源池')}}</a></li>
+                <li><a href="javascript:;" @click="transferToResourcePool">{{$t('主机池')}}</a></li>
             </ul>
         </bk-dropdown-menu>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
@@ -126,7 +126,7 @@
                     return false
                 }
                 if (HostStore.isAllResourceHost) {
-                    this.$error('所选主机已在资源池中')
+                    this.$error('所选主机已在主机池中')
                     return false
                 }
                 const isAllIdleModule = HostStore.isAllIdleModule

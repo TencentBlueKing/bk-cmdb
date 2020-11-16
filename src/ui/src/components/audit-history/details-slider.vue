@@ -1,6 +1,6 @@
 <template>
     <bk-sideslider
-        :width="800"
+        :width="760"
         :title="$t('操作详情')"
         :is-show.sync="isShow"
         @hidden="handleHidden">
@@ -70,6 +70,6 @@
 <style lang="scss" scoped>
     .details-content {
         height: calc(100vh - 60px);
-        padding: 20px 40px;
+        padding: 20px;
     }
 </style>

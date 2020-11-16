@@ -51,10 +51,10 @@
                         ignore
                         :auth="{ type: $OPERATION.HOST_TO_RESOURCE, relation: [bizId] }">
                         <span href="javascript:void(0)" slot-scope="{ disabled }"
-                            v-bk-tooltips="isIdleModule ? '' : $t('仅空闲机模块才能转移到资源池')"
+                            v-bk-tooltips="isIdleModule ? '' : $t('仅空闲机模块才能转移到主机池')"
                             :class="{ disabled: !isIdleModule || disabled }"
                             @click="handleTransfer($event, 'resource', !isIdleModule)">
-                            {{$t('资源池')}}
+                            {{$t('主机池')}}
                         </span>
                     </cmdb-auth>
                 </ul>

@@ -85,6 +85,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
 	}, {
+		Name:           "updateServiceInstances",
+		Description:    "更新某业务下的服务实例",
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_instance/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.UpdateMany,
+	}, {
 		Name:           "deleteServiceInstancePattern",
 		Description:    "删除服务实例",
 		Pattern:        "/api/v3/deletemany/proc/service_instance",

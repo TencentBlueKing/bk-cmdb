@@ -171,7 +171,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 			IDs:    hostIDs[offset:limit],
 			Fields: attrs,
 		}
-		hostArrStr, err := lgc.CoreAPI.CoreService().Cache().ListHostWithHostID(kit.Ctx, kit.Header, hostParam)
+		hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithHostID(kit.Ctx, kit.Header, hostParam)
 		if err != nil {
 			blog.Errorf("get hosts from cache failed, err: %v, hostIDs: %+v", err, hostIDs)
 			return nil, err

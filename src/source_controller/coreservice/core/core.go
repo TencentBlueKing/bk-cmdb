@@ -237,7 +237,7 @@ type ProcessOperation interface {
 	// service instance
 	CreateServiceInstance(kit *rest.Kit, template metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	GetServiceInstance(kit *rest.Kit, templateID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
-	UpdateServiceInstance(kit *rest.Kit, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	UpdateServiceInstances(kit *rest.Kit, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder
 	ListServiceInstance(kit *rest.Kit, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
 	ListServiceInstanceDetail(kit *rest.Kit, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 	DeleteServiceInstance(kit *rest.Kit, serviceInstanceIDs []int64) errors.CCErrorCoder

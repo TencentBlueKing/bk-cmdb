@@ -295,15 +295,24 @@ func SetMigrateFromFile(target string) error {
 }
 
 // Redis return redis configuration information according to the prefix.
-func Redis(prefix string) redis.Config {
+func Redis(prefix string) (redis.Config, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	parser := getRedisParser()
-	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
-	for parser == nil {
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getRedisParser()
+		if parser != nil {
+			break
+		}
 		blog.Warn("the configuration of redis is not ready yet")
 		time.Sleep(time.Duration(1) * time.Second)
 	}
+
+	if parser == nil {
+		blog.Errorf("can't find redis configuration")
+		return redis.Config{}, err.New("can't find redis configuration")
+	}
+
 	return redis.Config{
 		Address:          parser.getString(prefix + ".host"),
 		Password:         parser.getString(prefix + ".pwd"),
@@ -312,19 +321,28 @@ func Redis(prefix string) redis.Config {
 		SentinelPassword: parser.getString(prefix + ".sentinelPwd"),
 		Enable:           parser.getString(prefix + ".enable"),
 		MaxOpenConns:     parser.getInt(prefix + ".maxOpenConns"),
-	}
+	}, nil
 }
 
 // Mongo return mongo configuration information according to the prefix.
-func Mongo(prefix string) mongo.Config {
+func Mongo(prefix string) (mongo.Config, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	parser := getMongodbParser()
-	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
-	for parser == nil {
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getMongodbParser()
+		if parser != nil {
+			break
+		}
 		blog.Warn("the configuration of mongo is not ready yet")
 		time.Sleep(time.Duration(1) * time.Second)
 	}
+
+	if parser == nil {
+		blog.Errorf("can't find mongo configuration")
+		return mongo.Config{}, err.New("can't find mongo configuration")
+	}
+
 	c := mongo.Config{
 		Address:   parser.getString(prefix + ".host"),
 		Port:      parser.getString(prefix + ".port"),
@@ -356,7 +374,7 @@ func Mongo(prefix string) mongo.Config {
 	if !parser.isSet(prefix + ".socketTimeoutSeconds") {
 		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d", mongo.DefaultSocketTimeout)
 		c.SocketTimeout = mongo.DefaultSocketTimeout
-		return c
+		return c, nil
 	}
 
 	c.SocketTimeout = parser.getInt(prefix + ".socketTimeoutSeconds")
@@ -370,7 +388,7 @@ func Mongo(prefix string) mongo.Config {
 		c.SocketTimeout = mongo.MinimumSocketTimeout
 	}
 
-	return c
+	return c, nil
 }
 
 // String return the string value of the configuration information according to the key.

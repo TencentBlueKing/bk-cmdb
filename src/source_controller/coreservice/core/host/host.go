@@ -13,7 +13,6 @@
 package host
 
 import (
-	"configcenter/src/source_controller/coreservice/cache"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/host/searcher"
 	"configcenter/src/source_controller/coreservice/core/host/transfer"
@@ -28,12 +27,12 @@ type hostManager struct {
 }
 
 // New create a new model manager instance
-func New(dependent transfer.OperationDependence, hostApplyDependence transfer.HostApplyRuleDependence, cacheSet *cache.ClientSet) core.HostOperation {
+func New(dependent transfer.OperationDependence, hostApplyDependence transfer.HostApplyRuleDependence) core.HostOperation {
 
 	coreMgr := &hostManager{
 		dependent: dependent,
 	}
 	coreMgr.hostTransfer = transfer.New(dependent, hostApplyDependence)
-	coreMgr.hostSearcher = searcher.New(cacheSet)
+	coreMgr.hostSearcher = searcher.New()
 	return coreMgr
 }

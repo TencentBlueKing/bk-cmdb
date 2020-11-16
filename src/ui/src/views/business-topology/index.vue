@@ -31,8 +31,12 @@
                 <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
                     <div class="default-node-info" v-if="!showNodeInfo">
                         <div class="info-item">
+                            <label class="name">{{$t('ID')}}:</label>
+                            <span class="value">{{nodeId}}</span>
+                        </div>
+                        <div class="info-item">
                             <label class="name">{{$t('节点名称')}}</label>
-                            <span class="value">{{`[${nodeId}] ${nodeName}`}}</span>
+                            <span class="value">{{nodeName}}</span>
                         </div>
                     </div>
                     <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo"></service-node-info>
@@ -211,7 +215,10 @@
     }
     .default-node-info {
         padding: 20px 0 20px 36px;
+        display: flex;
         .info-item {
+            flex: auto;
+            max-width: 400px;
             font-size: 14px;
             .name {
                 color: #63656e;
