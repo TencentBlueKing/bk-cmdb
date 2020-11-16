@@ -180,9 +180,11 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 		}
 	}
 
-	if err := p.ReconstructServiceInstanceName(kit, instance.ID); err != nil {
-		blog.Errorf("CreateServiceInstance failed, reconstruct instance name failed, instance: %+v, err: %s, rid: %s", instance, err.Error(), kit.Rid)
-		return nil, err
+	if instance.Name == "" {
+		if err := p.ReconstructServiceInstanceName(kit, instance.ID); err != nil {
+			blog.Errorf("CreateServiceInstance failed, reconstruct instance name failed, instance: %+v, err: %s, rid: %s", instance, err.Error(), kit.Rid)
+			return nil, err
+		}
 	}
 
 	// transfer host to target module
