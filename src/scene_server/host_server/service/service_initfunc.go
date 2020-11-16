@@ -19,7 +19,6 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initModule(web)
 	s.initSpecial(web)
 	s.initTransfer(web)
-	s.initUserapi(web)
 	s.initDynamicGroup(web)
 	s.initUsercustom(web)
 
@@ -198,24 +197,6 @@ func (s *Service) initTransfer(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/", Handler: s.TransferHostWithAutoClearServiceInstancePreview})
 
 	utility.AddToRestfulWebService(web)
-}
-
-func (s *Service) initUserapi(web *restful.WebService) {
-
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.Engine.CCErr,
-		Language: s.Engine.Language,
-	})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/userapi", Handler: s.AddUserCustomQuery})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/userapi/{bk_biz_id}/{id}", Handler: s.UpdateUserCustomQuery})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/userapi/{bk_biz_id}/{id}", Handler: s.DeleteUserCustomQuery})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/userapi/search/{bk_biz_id}", Handler: s.GetUserCustomQuery})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/userapi/detail/{bk_biz_id}/{id}", Handler: s.GetUserCustomQueryDetail})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/userapi/data/{bk_biz_id}/{id}/{start}/{limit}", Handler: s.GetUserCustomQueryResult})
-
-	utility.AddToRestfulWebService(web)
-
 }
 
 // initDynamicGroup initializes dynamic grouping HTTP handlers.
