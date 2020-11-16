@@ -224,7 +224,6 @@
 
 <style lang="scss" scoped>
     .details-layout{
-        padding: 32px 50px;
         height: 100%;
     }
     .details-info {
@@ -241,7 +240,7 @@
                 display: inline-block;
                 width: 100px;
                 padding-right: 10px;
-                text-align: right;
+                color: #63656e;
                 &:after {
                     content: ":";
                     padding: 0 2px;
@@ -250,6 +249,7 @@
             .info-content {
                 display: inline-block;
                 width: calc(100% - 100px);
+                color: #313237;
                 @include ellipsis;
             }
         }
