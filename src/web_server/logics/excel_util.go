@@ -309,11 +309,17 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 func productExcelHealer(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
-
+	//橙棕色
 	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
+	//粉色
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 
 	sheet.Col(0).Width = 18
+	//字典中的值为国际化之后的"业务拓扑"和"业务"，用来做判断，命中即变化相应的cell颜色。
+	bizTopoMap := map[string]int{
+		defLang.Language("web_ext_field_topo"): 1,
+		defLang.Language("object_biz"):         1,
+	}
 	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
@@ -323,7 +329,7 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 	}
 
 	// 给第一列剩下的空格设置颜色
-	for i := 3; i < 10000; i++ {
+	for i := 3; i < 1000; i++ {
 		cellName := sheet.Cell(i, 0)
 		cellName.SetStyle(colStyle)
 	}
@@ -385,12 +391,31 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 			}
 			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 			sheet.Col(index).SetType(xlsx.CellTypeString)
+
 		default:
+			if _, ok := bizTopoMap[field.Name]; ok {
+				cellName := sheet.Cell(0, index)
+				cellName.Value = field.Name + isRequire
+				cellName.SetStyle(cellStyle)
+
+				cellType := sheet.Cell(1, index)
+				cellType.Value = "--"
+				cellType.SetStyle(cellStyle)
+
+				cellEnName := sheet.Cell(2, index)
+				cellEnName.Value = "--"
+				cellEnName.SetStyle(cellStyle)
+
+				// 给业务拓扑和业务列剩下的空格设置颜色
+				for i := 3; i < 1000; i++ {
+					cellName := sheet.Cell(i, index)
+					cellName.SetStyle(colStyle)
+				}
+				sheet.Col(index).SetType(xlsx.CellTypeString)
+			}
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 		}
-
 	}
-
 }
 
 // ProductExcelHeader Excel文件头部，
@@ -409,7 +434,8 @@ func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLa
 	firstColFields := []string{
 		common.ExcelFirstColumnAssociationAttribute,
 		common.ExcelFirstColumnFieldDescription,
-		common.ExcelFirstColumnInstData}
+		common.ExcelFirstColumnInstData,
+	}
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
 		cellName.SetString(defLang.Language(field))

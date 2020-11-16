@@ -21,11 +21,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/host_server/logics"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rentiansheng/xlsx"
@@ -92,8 +92,10 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		return err
 	}
 	extFieldsTopoID := "cc_ext_field_topo"
+	extFieldsBizID := "cc_ext_biz"
 	extFields := map[string]string{
 		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
+		extFieldsBizID:  ccLang.Language("object_biz"),
 	}
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
@@ -114,7 +116,9 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
 			topo := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
+			biz := strings.Split(topo[0], logics.SplitFlag)
 			rowMap[extFieldsTopoID] = strings.Join(topo, "\n")
+			rowMap[extFieldsBizID] = strings.Join(biz[:1], "\n")
 		}
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
@@ -157,8 +161,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 
-	////确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
-	resp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, &metadata.QueryCondition{
+	cond := &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			condition.BKDBOR: []mapstr.MapStr{
 				{
@@ -167,14 +170,19 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 				{
 					common.BKAsstObjIDField: objID,
 				},
-			}}})
+			},
+		},
+	}
+
+	////确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	resp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, cond)
 	if err != nil {
-		blog.Errorf("get object association list failed, err: %v, rid: %s", err, rid)
+		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, rid)
 		return err
 	}
-	if !resp.Result {
-		blog.Errorf("get object association list failed, err: %v, rid: %s", resp.ErrMsg, rid)
-		return errors.New(resp.Code, resp.ErrMsg)
+	if err := resp.CCError(); err != nil {
+		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", resp.ErrMsg, rid)
+		return err
 	}
 	asstList := resp.Data.Info
 	productExcelAssociationHealer(ctx, sheet, defLang, len(instAsst), asstList)
