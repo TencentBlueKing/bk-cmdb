@@ -975,6 +975,17 @@ func validHostType(collection string, projection map[string]int, result interfac
 	return nil
 }
 
+const (
+	// reference doc:
+	// https://docs.mongodb.com/manual/core/read-preference-staleness/#replica-set-read-preference-max-staleness
+	// this is the minimum value of maxStalenessSeconds allowed.
+	// specifying a smaller maxStalenessSeconds value will raise an error. Clients estimate secondaries’ staleness
+	// by periodically checking the latest write date of each replica set member. Since these checks are infrequent,
+	// the staleness estimate is coarse. Thus, clients cannot enforce a maxStalenessSeconds value of less than
+	// 90 seconds.
+	maxStalenessSeconds = 90 * time.Second
+)
+
 func getCollectionOption(ctx context.Context) *options.CollectionOptions {
 	var opt *options.CollectionOptions
 	switch util.GetDBReadPreference(ctx) {
@@ -987,19 +998,19 @@ func getCollectionOption(ctx context.Context) *options.CollectionOptions {
 		}
 	case common.PrimaryPreferredMode:
 		opt = &options.CollectionOptions{
-			ReadPreference: readpref.PrimaryPreferred(),
+			ReadPreference: readpref.PrimaryPreferred(readpref.WithMaxStaleness(maxStalenessSeconds)),
 		}
 	case common.SecondaryMode:
 		opt = &options.CollectionOptions{
-			ReadPreference: readpref.Secondary(),
+			ReadPreference: readpref.Secondary(readpref.WithMaxStaleness(maxStalenessSeconds)),
 		}
 	case common.SecondaryPreferredMode:
 		opt = &options.CollectionOptions{
-			ReadPreference: readpref.SecondaryPreferred(),
+			ReadPreference: readpref.SecondaryPreferred(readpref.WithMaxStaleness(maxStalenessSeconds)),
 		}
 	case common.NearestMode:
 		opt = &options.CollectionOptions{
-			ReadPreference: readpref.Nearest(),
+			ReadPreference: readpref.Nearest(readpref.WithMaxStaleness(maxStalenessSeconds)),
 		}
 	}
 

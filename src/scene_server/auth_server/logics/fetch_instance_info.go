@@ -120,7 +120,9 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 }
 
 // fetch hosts' specified attributes info using host ids
-func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+	[]map[string]interface{}, error) {
+
 	if resourceType != iam.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
@@ -187,30 +189,56 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 		hosts = append(hosts, hostArr...)
 	}
 
-	// get cloud area for display name use
-	var cloudMap map[int64]string
-	var err error
-	if hasName {
-		cloudIDs := make([]int64, len(hosts))
-		for index, host := range hosts {
+	if len(hosts) == 0 {
+		return hosts, nil
+	}
+
+	cnt := len(hosts)
+	cloudIDList := make([]int64, cnt)
+	hostIDList := make([]int64, cnt)
+
+	for index, host := range hosts {
+		if hasName {
 			cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 			if err != nil {
 				blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
 				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 			}
-
-			cloudIDs[index] = cloudID
+			cloudIDList[index] = cloudID
 		}
 
-		cloudMap, err = lgc.getCloudNameMapByIDs(kit, cloudIDs)
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("parse host id failed, err: %v, host: %+v", err, host)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+		}
+		hostIDList[index] = hostID
+	}
+
+	// get cloud area for display name use
+	var cloudMap map[int64]string
+	var err error
+	if hasName {
+		cloudMap, err = lgc.getCloudNameMapByIDs(kit, cloudIDList)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	hostPathMap, err := lgc.getHostIamPath(kit, resourceType, hostIDList)
+	if err != nil {
+		return nil, err
+	}
+
 	// covert id and display_name field
 	for _, host := range hosts {
-		host[types.IDField] = util.GetStrByInterface(host[common.BKHostIDField])
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("parse host id failed, err: %v, host: %+v", err, host)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+		}
+		// add id field
+		host[types.IDField] = strconv.FormatInt(hostID, 10)
 
 		if hasName {
 			cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
@@ -218,18 +246,15 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 				blog.Errorf("parse cloud area id failed, err: %v, host: %+v", err, host)
 				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 			}
-
-			host[types.NameField] = getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]), cloudMap[cloudID])
+			ip := util.GetStrByInterface(host[common.BKHostInnerIPField])
+			host[types.NameField] = getHostDisplayName(ip, cloudMap[cloudID])
 		}
 
 		if needPath {
-			host[sdktypes.IamPathKey], err = lgc.getHostIamPath(kit, resourceType, host)
-			if err != nil {
-				blog.ErrorJSON("getResourceIamPath failed, error: %s, instance: %s, rid: %s", err.Error(), host, kit.Rid)
-				return nil, err
-			}
+			host[sdktypes.IamPathKey] = hostPathMap[hostID]
 		}
 	}
+
 	return hosts, nil
 }
 
@@ -261,15 +286,9 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 	return iamPath, nil
 }
 
-func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, host map[string]interface{}) ([]string, error) {
+func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostList []int64) (map[int64][]string, error) {
 	if resourceType != iam.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
-	}
-
-	hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-	if err != nil {
-		blog.Errorf("hostID %v parse int failed, error: %s, rid: %s", host[common.BKHostIDField], err.Error(), kit.Rid)
-		return nil, err
 	}
 
 	// get host iam path, either in resource pool directory or in business TODO: support host in business module when topology is supported
@@ -279,7 +298,7 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, host m
 	}
 
 	req := &metadata.HostModuleRelationRequest{
-		HostIDArr: []int64{hostID},
+		HostIDArr: hostList,
 		Fields:    []string{common.BKHostIDField, common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField},
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
@@ -287,19 +306,21 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, host m
 	}
 	res, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, req)
 	if err != nil {
-		blog.Errorf("GetHostModuleRelation by host id %d failed, error: %s, rid: %s", hostID, err.Error(), kit.Rid)
+		blog.Errorf("GetHostModuleRelation by host id %v failed, err: %s, rid: %s", hostList, err, kit.Rid)
 		return nil, err
 	}
+
 	if !res.Result {
-		blog.Errorf("GetHostModuleRelation by host id %d failed, error code: %d, error message: %s, rid: %s", hostID, res.Code, res.ErrMsg, kit.Rid)
+		blog.Errorf("GetHostModuleRelation by host id %v failed, err: %v, rid: %s", hostList,
+			res.Code, res.ErrMsg, kit.Rid)
 		return nil, res.CCError()
 	}
+
 	if len(res.Data.Info) == 0 {
-		return nil, nil
+		return make(map[int64][]string), nil
 	}
 
-	relationDistinctMap := make(map[string]bool)
-	iamPath := make([]string, 0)
+	relationMap := make(map[int64][]string)
 	for _, relation := range res.Data.Info {
 		var path string
 		if relation.AppID == defaultBizID {
@@ -307,10 +328,14 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, host m
 		} else {
 			path = "/" + string(iam.Business) + "," + strconv.FormatInt(relation.AppID, 10) + "/"
 		}
-		if !relationDistinctMap[path] {
-			relationDistinctMap[path] = true
-			iamPath = append(iamPath, path)
+
+		if _, exist := relationMap[relation.HostID]; !exist {
+			relationMap[relation.HostID] = make([]string, 0)
 		}
+
+		relationMap[relation.HostID] = append(relationMap[relation.HostID], path)
+
 	}
-	return iamPath, nil
+
+	return relationMap, nil
 }
