@@ -176,7 +176,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 	flag := "updateflag"
 	for _, asst := range assts {
-		if asst.ObjectAttID == common.BKChildStr {
+		if asst.ObjectAttID == "bk_childid" {
 			asst.AsstKindID = common.AssociationKindMainline
 			asst.AssociationName = buildObjAsstID(asst)
 			asst.Mapping = metadata.OneToOneMapping

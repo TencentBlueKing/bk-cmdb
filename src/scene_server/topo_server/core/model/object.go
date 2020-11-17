@@ -118,13 +118,23 @@ func (o *object) IsCommon() bool {
 }
 
 func (o *object) IsMainlineObject() (bool, error) {
-	attrs, err := o.GetAttributes()
-	if nil != err {
+	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
+	asst, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.kit.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
 		return false, err
 	}
 
-	for _, att := range attrs {
-		if att.IsMainlineField() {
+	if !asst.Result {
+		return false, asst.CCError()
+	}
+
+	if len(asst.Data.Info) <= 0 {
+		return false, fmt.Errorf("model association [%+v] not found", cond)
+	}
+
+	for _, mainline := range asst.Data.Info {
+		if mainline.ObjectID == o.GetObjectID() || mainline.AsstObjID == o.GetObjectID() {
 			return true, nil
 		}
 	}

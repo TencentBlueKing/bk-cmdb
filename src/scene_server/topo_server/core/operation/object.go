@@ -142,7 +142,7 @@ func (o *object) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]Import
 			targetAttr.OwnerID = kit.SupplierAccount
 			targetAttr.ObjectID = objID
 
-			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
+			if targetAttr.PropertyID == common.BKInstParentStr {
 				continue
 			}
 
