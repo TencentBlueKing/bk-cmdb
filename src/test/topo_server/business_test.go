@@ -355,5 +355,15 @@ var _ = Describe("business test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(len(rsp.Data)).To(Equal(1))
+		Expect(rsp.Data[0].Set["bk_set_name"]).To(Equal("空闲机池"))
+		Expect(len(rsp.Data[0].ModuleTopos)).To(Equal(3))
+		modulesMap := map[string]bool{
+			"空闲机": true,
+			"故障机": true,
+			"待回收": true,
+		}
+		Expect(modulesMap[rsp.Data[0].ModuleTopos[0].Module["bk_module_name"].(string)]).To(Equal(true))
+		Expect(modulesMap[rsp.Data[0].ModuleTopos[1].Module["bk_module_name"].(string)]).To(Equal(true))
+		Expect(modulesMap[rsp.Data[0].ModuleTopos[2].Module["bk_module_name"].(string)]).To(Equal(true))
 	})
 })
