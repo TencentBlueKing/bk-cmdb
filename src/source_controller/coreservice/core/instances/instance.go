@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 )
 
 var _ core.InstanceOperation = (*instanceManager)(nil)
@@ -344,6 +345,11 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 			return nil, countErr
 		}
 		finalCount = count
+	}
+
+	instItems, instErr = hooks.SetVIPInfoForProcess(kit, instItems, inputParam.Fields, tableName, mongodb.Client())
+	if instErr != nil {
+		return nil, instErr
 	}
 
 	dataResult := &metadata.QueryResult{
