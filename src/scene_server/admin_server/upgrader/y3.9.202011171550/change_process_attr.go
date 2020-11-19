@@ -13,7 +13,6 @@
 package y3_9_202011171550
 
 import (
-	"configcenter/src/storage/dal/mongo/local"
 	"context"
 	"fmt"
 	"time"
@@ -24,6 +23,7 @@ import (
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 func changeProcessAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -98,8 +98,8 @@ func addProcessAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		ObjectID:          common.BKInnerObjIDProc,
 		PropertyID:        "bk_start_check_secs",
 		PropertyName:      "启动等待时长",
-		PropertyGroup:     mCommon.BaseInfo,
-		PropertyGroupName: "",
+		PropertyGroup:     mCommon.ProcMgrGroupID,
+		PropertyGroupName: mCommon.ProcMgrGroupName,
 		PropertyIndex:     0,
 		Unit:              "s",
 		Placeholder:       "在执行启动命令后，等待多久检查PID存活的状态",
@@ -160,19 +160,24 @@ func deleteProcessInstsFields(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		return fmt.Errorf("db is not *local.Mongo type")
 	}
 
-	cnt := 0
-	for _, processID := range processIDs {
+	pageSize := 1000
+	length := len(processIDs)
+	for startIdx := 0; startIdx < length; startIdx += pageSize {
+		endIdx := startIdx + pageSize
+		if endIdx > length {
+			endIdx = length
+		}
+
 		filter := map[string]interface{}{
-			common.BKProcessIDField: processID,
+			common.BKProcessIDField: map[string]interface{}{
+				"$in": processIDs[startIdx:endIdx],
+			},
 		}
 		if _, err := mongo.GetDBClient().Database(mongo.GetDBName()).Collection(common.BKTableNameBaseProcess).UpdateMany(ctx, filter, doc); err != nil {
-			blog.Infof("update process instance count:%d", cnt)
 			blog.Errorf("update process fields failed, filter:%#v, doc:%#v, err:%v", filter, doc, err)
 			return err
 		}
-		cnt++
 	}
-	blog.Infof("update process instance count:%d", cnt)
 
 	return nil
 }
@@ -211,19 +216,24 @@ func deleteProcessTemplateInstsFields(ctx context.Context, db dal.RDB, conf *upg
 		return fmt.Errorf("db is not *local.Mongo type")
 	}
 
-	cnt := 0
-	for _, templateID := range templateIDs {
+	pageSize := 1000
+	length := len(templateIDs)
+	for startIdx := 0; startIdx < length; startIdx += pageSize {
+		endIdx := startIdx + pageSize
+		if endIdx > length {
+			endIdx = length
+		}
+
 		filter := map[string]interface{}{
-			common.BKFieldID: templateID,
+			common.BKFieldID: map[string]interface{}{
+				"$in": templateIDs[startIdx:endIdx],
+			},
 		}
 		if _, err := mongo.GetDBClient().Database(mongo.GetDBName()).Collection(common.BKTableNameProcessTemplate).UpdateMany(ctx, filter, doc); err != nil {
-			blog.Infof("update process template instance count:%d", cnt)
 			blog.Errorf("update process template fields failed, filter:%#v, doc:%#v, err:%v", filter, doc, err)
 			return err
 		}
-		cnt++
 	}
-	blog.Infof("update process template instance count:%d", cnt)
 
 	return nil
 }
