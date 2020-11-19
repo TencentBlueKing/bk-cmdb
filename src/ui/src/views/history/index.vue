@@ -42,12 +42,13 @@
     import AuditDetails from '@/components/audit-history/details.js'
     export default {
         data () {
+            const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
             return {
                 dictionary: [],
                 history: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 condition: {
-                    operation_time: [],
+                    operation_time: [today, today],
                     resource_name: '',
                     action: ['delete']
                 },
