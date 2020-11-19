@@ -665,6 +665,7 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	createIndexOpt := &options.IndexOptions{
 		Background: &index.Background,
 		Unique:     &index.Unique,
+		Sparse:     &index.Sparse,
 	}
 	if index.Name != "" {
 		createIndexOpt.Name = &index.Name

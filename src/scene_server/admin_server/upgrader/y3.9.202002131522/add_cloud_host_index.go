@@ -30,6 +30,7 @@ func addCloudHostIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		Name:       "cloudInstID",
 		Unique:     false,
 		Background: true,
+		Sparse:     true,
 	}
 
 	existIndexes, err := db.Table(tableName).Indexes(ctx)

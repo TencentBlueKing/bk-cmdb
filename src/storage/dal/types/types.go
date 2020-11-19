@@ -72,7 +72,7 @@ type Table interface {
 	// Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
 	// field the field for which to return distinct values.
 	// filter query that specifies the documents from which to retrieve the distinct values.
-	Distinct(ctx context.Context, field string, filter Filter) ([]interface{},error)
+	Distinct(ctx context.Context, field string, filter Filter) ([]interface{}, error)
 }
 
 // Find find operation interface
@@ -105,4 +105,5 @@ type Index struct {
 	Name       string           `json:"name" bson:"name"`
 	Unique     bool             `json:"unique" bson:"unique"`
 	Background bool             `json:"background" bson:"background"`
+	Sparse     bool             `json:"sparse" bson:"sparse"`
 }
