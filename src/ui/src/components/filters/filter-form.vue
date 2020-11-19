@@ -235,7 +235,9 @@
                 this.condition[property.id].value = effectValue
             },
             handleRemove (property) {
-                FilterStore.removeSelected(property)
+                const index = this.selected.indexOf(property)
+                index > -1 && this.selected.splice(index, 1)
+                this.$delete(this.condition, property.id)
                 if (!this.collection) {
                     this.$nextTick(() => {
                         FilterStore.updateUserBehavior(this.selected)

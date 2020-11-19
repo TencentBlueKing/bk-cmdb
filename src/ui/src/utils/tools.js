@@ -342,7 +342,10 @@ export function getPageParams (pagination) {
 
 export function localSort (data, compareKey) {
     return data.sort((A, B) => {
-        return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
+        if (A.hasOwnProperty(compareKey) && B.hasOwnProperty(compareKey)) {
+            return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
+        }
+        return 0
     })
 }
 
