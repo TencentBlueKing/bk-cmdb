@@ -1259,7 +1259,7 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 
 	// set detail
 	setParam := &metadata.QueryCondition{
-		Fields: []string{common.BKSetIDField, common.BKSetNameField},
+		Fields: []string{common.BKSetIDField, common.BKSetNameField, common.BKSetEnvField},
 		Condition: map[string]interface{}{
 			common.BKAppIDField: bizID,
 			common.BKSetIDField: map[string]interface{}{
@@ -1282,9 +1282,11 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 	for _, set := range setResult.Data.Info {
 		setID, _ := set.Int64(common.BKSetIDField)
 		setName, _ := set.String(common.BKSetNameField)
+		setEnv, _ := set.String(common.BKSetEnvField)
 		setDetailMap[setID] = metadata.SetDetailOfP{
 			SetID:   setID,
 			SetName: setName,
+			SetEnv:  setEnv,
 		}
 	}
 

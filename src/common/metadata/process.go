@@ -397,6 +397,7 @@ type ListProcessRelatedInfoResult struct {
 type SetDetailOfP struct {
 	SetID   int64  `json:"bk_set_id"`
 	SetName string `json:"bk_set_name"`
+	SetEnv  string `json:"bk_set_env"`
 }
 
 type ModuleDetailOfP struct {
