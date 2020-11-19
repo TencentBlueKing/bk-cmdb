@@ -20,9 +20,12 @@ import (
 )
 
 const (
-	// 循环检查任务列表的间隔
-	checkInterval time.Duration = 5 * time.Minute
+	// 同步周期最小值
+	SyncPeriodMinutesMin = 5
 )
+
+// 同步周期，单位为分钟
+var SyncPeriodMinutes int
 
 // 任务处理器
 type taskProcessor struct {
@@ -40,13 +43,13 @@ func (t *taskProcessor) TaskChanLoop(taskChan chan *metadata.CloudSyncTask) {
 			tasks, err := t.scheduler.GetTaskList()
 			if err != nil {
 				blog.Errorf("scheduler GetTaskList err:%s", err.Error())
-				time.Sleep(checkInterval)
+				time.Sleep(time.Duration(SyncPeriodMinutes) * time.Second)
 				continue
 			}
 			for i := range tasks {
 				taskChan <- tasks[i]
 			}
-			time.Sleep(checkInterval)
+			time.Sleep(time.Duration(SyncPeriodMinutes) * time.Second)
 		}
 	}()
 }
