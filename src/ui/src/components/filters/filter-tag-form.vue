@@ -1,6 +1,10 @@
 <template>
     <bk-form form-type="vertical">
-        <bk-form-item :label="label">
+        <bk-form-item>
+            <label class="form-label">
+                {{property.bk_property_name}}
+                <span class="form-label-suffix">({{labelSuffix}})</span>
+            </label>
             <div class="form-wrapper">
                 <operator-selector class="form-operator"
                     v-if="!withoutOperator.includes(property.bk_property_type)"
@@ -29,6 +33,7 @@
     import OperatorSelector from './operator-selector'
     import FilterStore from './store'
     import Utils from './utils'
+    import { mapGetters } from 'vuex'
     export default {
         components: {
             OperatorSelector
@@ -48,8 +53,10 @@
             }
         },
         computed: {
-            label () {
-                return Utils.getLabel(this.property)
+            ...mapGetters('objectModelClassify', ['getModelById']),
+            labelSuffix () {
+                const model = this.getModelById(this.property.bk_obj_id)
+                return model ? model.bk_obj_name : this.property.bk_obj_id
             },
             operator: {
                 get () {
@@ -109,6 +116,17 @@
 </script>
 
 <style lang="scss" scoped>
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 32px;
+        @include ellipsis;
+        .form-label-suffix {
+            font-size: 12px;
+            color: #979ba5;
+        }
+    }
     .form-wrapper {
         width: 380px;
         display: flex;

@@ -137,7 +137,7 @@ const FilterStore = new Vue({
                 ['bk_bak_operator', 'host'],
                 ['bk_cloud_id', 'host']
             ]
-            this.createOrUpdateCondition(normal.map(([field, model]) => ({ field, model, operator: '$in', value: [] })), true)
+            this.createOrUpdateCondition(normal.map(([field, model]) => ({ field, model })), { createOnly: true, useDefaultData: true })
         },
         setupIPQuery () {
             const query = QS.parse(RouterQuery.get('ip'))
@@ -176,22 +176,25 @@ const FilterStore = new Vue({
             }
             this.throttleSearch()
         },
-        createOrUpdateCondition (data, createOnly = false) {
+        createOrUpdateCondition (data, options = {}) {
+            const { createOnly = false, useDefaultData = false } = options
             data.forEach(({ field, model, operator, value }) => {
                 const existProperty = this.selected.find(property => property.bk_property_id === field && property.bk_obj_id === model)
                 if (!existProperty) {
                     const property = Utils.findPropertyByPropertyId(field, this.getModelProperties(model))
                     if (property) {
+                        const defaultData = Utils.getDefaultData(property)
                         this.selected.push(property)
                         this.$set(this.condition, property.id, {
-                            operator,
-                            value
+                            operator: useDefaultData ? defaultData.operator : operator,
+                            value: useDefaultData ? defaultData.value : value
                         })
                     }
                 } else if (!createOnly) {
+                    const defaultData = Utils.getDefaultData(existProperty)
                     const condition = this.condition[existProperty.id]
-                    condition.operator = operator
-                    condition.value = value
+                    condition.operator = useDefaultData ? defaultData.operator : operator
+                    condition.value = useDefaultData ? defaultData.value : value
                 }
             })
             this.throttleSearch()

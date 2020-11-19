@@ -111,7 +111,6 @@
                         trigger: 'manual',
                         interactive: true,
                         arrow: true,
-                        maxWidth: this.property.bk_property_type === 'bool' ? 200 : 'none',
                         zIndex: window.__bk_zIndex_manager.nextZIndex(),
                         onHide: () => {
                             return !this.tagFormViewModel.$refs.filterTagForm.active

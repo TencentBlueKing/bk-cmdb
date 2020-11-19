@@ -1,9 +1,11 @@
 <template>
-    <bk-switcher class="cmdb-search-bool"
-        size="small"
+    <bk-select
+        v-model="localValue"
         v-bind="$attrs"
-        v-model="localValue">
-    </bk-switcher>
+        @toggle="handleToggle">
+        <bk-option id="true" name="true"></bk-option>
+        <bk-option id="false" name="false"></bk-option>
+    </bk-select>
 </template>
 
 <script>
@@ -12,23 +14,22 @@
         name: 'cmdb-search-bool',
         mixins: [activeMixin],
         props: {
-            value: [String, Boolean]
+            value: {
+                type: [String, Boolean],
+                default: ''
+            }
         },
         computed: {
             localValue: {
                 get () {
-                    return !!this.value
+                    return this.value.toString()
                 },
                 set (value) {
-                    this.$emit('input', value)
-                    this.$emit('change', value)
+                    const realValue = value && value === 'true'
+                    this.$emit('input', realValue)
+                    this.$emit('change', realValue)
                 }
             }
         }
     }
 </script>
-<style lang="scss" scoped>
-    .cmdb-search-bool {
-        flex: 28px 0 0 !important;
-    }
-</style>

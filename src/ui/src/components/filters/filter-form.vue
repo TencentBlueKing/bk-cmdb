@@ -39,20 +39,25 @@
                 <bk-form-item class="filter-item"
                     v-for="property in selected"
                     :key="property.id"
-                    :label="getLabel(property)"
                     :class="`filter-item-${property.bk_property_type}`">
-                    <operator-selector class="item-operator"
-                        v-if="!withoutOperator.includes(property.bk_property_type)"
-                        :type="property.bk_property_type"
-                        v-model="condition[property.id].operator"
-                        @change="handleOperatorChange(property, ...arguments)">
-                    </operator-selector>
-                    <component class="item-value"
-                        :is="`cmdb-search-${property.bk_property_type}`"
-                        :placeholder="getPlaceholder(property)"
-                        v-bind="getBindProps(property)"
-                        v-model.trim="condition[property.id].value">
-                    </component>
+                    <label class="item-label">
+                        {{property.bk_property_name}}
+                        <span class="item-label-suffix">({{getLabelSuffix(property)}})</span>
+                    </label>
+                    <div class="item-content-wrapper">
+                        <operator-selector class="item-operator"
+                            v-if="!withoutOperator.includes(property.bk_property_type)"
+                            :type="property.bk_property_type"
+                            v-model="condition[property.id].operator"
+                            @change="handleOperatorChange(property, ...arguments)">
+                        </operator-selector>
+                        <component class="item-value"
+                            :is="`cmdb-search-${property.bk_property_type}`"
+                            :placeholder="getPlaceholder(property)"
+                            v-bind="getBindProps(property)"
+                            v-model.trim="condition[property.id].value">
+                        </component>
+                    </div>
                     <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
                 </bk-form-item>
                 <bk-form-item>
@@ -65,7 +70,7 @@
                 :class="{ 'is-sticky': sticky }">
                 <bk-button class="option-search mr10" theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
                 <template v-if="collectable">
-                    <span v-if="collection"
+                    <span class="option-collect-wrapper" v-if="collection"
                         v-bk-tooltips="{
                             disabled: allowCollect,
                             content: $t('请先填写筛选条件')
@@ -209,8 +214,9 @@
             }
         },
         methods: {
-            getLabel (property) {
-                return Utils.getLabel(property)
+            getLabelSuffix (property) {
+                const model = this.getModelById(property.bk_obj_id)
+                return model ? model.bk_obj_name : model.bk_obj_id
             },
             getBindProps (property) {
                 return Utils.getBindProps(property)
@@ -387,29 +393,26 @@
     .filter-item {
         padding: 2px 10px 10px;
         margin-top: 5px !important;
-        &.filter-item-bool {
-            padding-bottom: 0;
-        }
         &:hover {
             background: #f5f6fa;
             .item-remove {
                 opacity: 1;
             }
         }
-        /deep/ {
-            .bk-label {
-                width: 100% !important;
-                min-height: auto;
-                line-height: initial;
-                .bk-label-text {
-                    max-width: 100%;
-                    @include ellipsis;
-                }
+        .item-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 24px;
+            @include ellipsis;
+            .item-label-suffix {
+                font-size: 12px;
+                color: #979ba5;
             }
-            .bk-form-content {
-                display: flex;
-                align-items: center;
-            }
+        }
+        .item-content-wrapper {
+            display: flex;
+            align-items: center;
         }
         .item-operator {
             flex: 110px 0 0;
@@ -429,7 +432,7 @@
             justify-content: center;
             align-items: center;
             right: -10px;
-            bottom: 100%;
+            top: 3px;
             font-size: 20px;
             opacity: 0;
             cursor: pointer;
@@ -447,8 +450,11 @@
             border-top: 1px solid $borderColor;
             background-color: #fff;
         }
-        .option-collect ~ .option-reset {
-            margin-left: auto;
+        .option-collect,
+        .option-collect-wrapper {
+            & ~ .option-reset {
+                margin-left: auto;
+            }
         }
     }
     .collection-form {
