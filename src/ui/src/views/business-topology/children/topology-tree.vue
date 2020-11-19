@@ -339,7 +339,7 @@
                     this.$routerActions.redirect({
                         name: 'setTemplateConfig',
                         params: {
-                            mode: 'edit',
+                            mode: 'view',
                             templateId: node.data.set_template_id
                         },
                         history: true
