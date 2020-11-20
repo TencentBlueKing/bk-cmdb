@@ -73,7 +73,6 @@ type ProcessInst struct {
 	BindIP          string `json:"bind_ip" bson:"bind_ip"`                           // 绑定IP, 枚举: [{ID: "1", Name: "127.0.0.1"}, {ID: "2", Name: "0.0.0.0"}, {ID: "3", Name: "第一内网IP"}, {ID: "4", Name: "第一外网IP"}]
 	PORT            string `json:"port" bson:"port"`                                 // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
 	PROTOCOL        string `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
-	FuncID          string `json:"bk_func_id" bson:"bk_func_id"`                     // 功能ID
 	FuncName        string `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 }
@@ -109,7 +108,6 @@ type HostIdentProcess struct {
 	Port string `json:"port" bson:"port"` // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
 	// deprecated  后续的版本会被废弃掉
 	Protocol        string  `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
-	FuncID          string  `json:"bk_func_id" bson:"bk_func_id"`                     // 功能ID
 	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组

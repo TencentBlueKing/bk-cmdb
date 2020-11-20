@@ -488,7 +488,7 @@ const (
 	CCErrObjectSelectIdentifierFailed = 1102008
 
 	// CCErrObjectDBOpErrno failed to operation database
-	CCErrObjectDBOpErrno = 1102004
+	CCErrObjectDBOpErrno = 1102020
 
 	// event_server 1103XXX
 	// CCErrEventSubscribeInsertFailed failed to save the Subscribe

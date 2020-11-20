@@ -7,5 +7,8 @@
 	"1102005": "Failed to update instance",
 	"1102006": "Delete Instance Failed",
 	"1102007": "Query instance failed",
+	"1102008": "Query identifier failed",
+
+	"1102020": "object DB operation failed",
 	"": ""
 }

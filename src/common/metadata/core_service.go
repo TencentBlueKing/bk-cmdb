@@ -617,7 +617,7 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 	if d.Field == "" {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"Field"},
+			Args:    []interface{}{"field"},
 		}
 	}
 

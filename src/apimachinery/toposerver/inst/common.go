@@ -103,3 +103,17 @@ func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID s
 		Into(resp)
 	return
 }
+
+func (t *instanceClient) SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64, input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error) {
+	resp = new(metadata.SearchBriefBizTopoResult)
+	subPath := "/find/topo/tree/brief/biz/%d"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

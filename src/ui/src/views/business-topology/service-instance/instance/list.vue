@@ -16,8 +16,12 @@
                 <expand-list :service-instance="row" @update-list="handleExpandResolved(row, ...arguments)"></expand-list>
             </div>
         </bk-table-column>
-        <bk-table-column :label="$t('实例名称')" prop="name" width="280">
-            <list-cell-name slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-name>
+        <bk-table-column :label="$t('实例名称')" prop="name" width="340">
+            <list-cell-name slot-scope="{ row }" :row="row"
+                @edit="handleEditName(row)"
+                @success="handleEditNameSuccess(row, ...arguments)"
+                @cancel="handleCancelEditName(row)">
+            </list-cell-name>
         </bk-table-column>
         <bk-table-column :label="$t('进程数量')" prop="process_count" width="240" :resizable="false">
             <list-cell-count slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-count>
@@ -149,7 +153,7 @@
                             cancelPrevious: true
                         }
                     })
-                    this.list = info.map(data => ({ ...data, pending: true }))
+                    this.list = info.map(data => ({ ...data, pending: true, editing: { name: false } }))
                     this.pagination.count = count
                 } catch (error) {
                     this.list = []
@@ -303,6 +307,17 @@
                         })
                     }
                 })
+            },
+            handleEditName (row) {
+                this.list.forEach(row => (row.editing.name = false))
+                row.editing.name = true
+            },
+            handleEditNameSuccess (row, value) {
+                row.name = value
+                row.editing.name = false
+            },
+            handleCancelEditName (row) {
+                row.editing.name = false
             }
         }
     }
@@ -331,6 +346,11 @@
                     }
                     .tag-empty {
                         display: none;
+                    }
+                    .instance-name:not(.disabled) {
+                        .name-edit {
+                            visibility: visible;
+                        }
                     }
                 }
                 &.disabled {
