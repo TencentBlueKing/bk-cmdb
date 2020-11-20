@@ -50,17 +50,6 @@ const (
 	// BKAuditLogPageLimit the audit log page limit
 	BKAuditLogPageLimit = 200
 
-	// BKParent the parent code
-	BKParent = 1
-	// BKChild the child code
-	BKChild = 2
-
-	// BKParentStr the parent name
-	BKParentStr = "bk_parentid"
-
-	// BKChildStr the child name
-	BKChildStr = "bk_childid"
-
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 

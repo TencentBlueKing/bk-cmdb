@@ -56,7 +56,7 @@ func (a *attribute) SetAttribute(attr metadata.Attribute) {
 }
 
 func (a *attribute) IsMainlineField() bool {
-	return a.attr.PropertyID == common.BKInstParentStr || a.attr.PropertyID == common.BKChildStr
+	return a.attr.PropertyID == common.BKInstParentStr
 }
 
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
@@ -114,7 +114,7 @@ func (a *attribute) ToMapStr() (mapstr.MapStr, error) {
 
 func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
-	if a.attr.PropertyID == common.BKChildStr || a.attr.PropertyID == common.BKInstParentStr {
+	if a.attr.PropertyID == common.BKInstParentStr {
 		return nil
 	}
 

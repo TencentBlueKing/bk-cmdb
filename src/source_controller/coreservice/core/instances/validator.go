@@ -13,7 +13,6 @@
 package instances
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
@@ -46,9 +45,6 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 		return valid, err
 	}
 	for _, attr := range result {
-		if attr.PropertyID == common.BKChildStr || attr.PropertyID == common.BKParentStr {
-			continue
-		}
 		valid.properties[attr.PropertyID] = attr
 		valid.idToProperty[attr.ID] = attr
 		valid.propertySlice = append(valid.propertySlice, attr)
