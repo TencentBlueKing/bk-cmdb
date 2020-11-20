@@ -814,6 +814,27 @@ var _ = Describe("no service template test", func() {
 			Expect(resMap["process_instance"]).To(Equal(j))
 		})
 
+		It("list process related info", func() {
+			input := metadata.ListProcessRelatedInfoOption{
+				Set:    metadata.SetCondOfP{},
+				Module: metadata.ModuleCondOfP{},
+				ServiceInstance: metadata.ServiceInstanceCondOfP{
+					IDs: []int64{serviceId},
+				},
+				Process: metadata.ProcessCondOfP{},
+				Fields:  []string{},
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 100,
+				},
+			}
+			rsp, err := processClient.ListProcessRelatedInfo(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			Expect(rsp.Data.Count).To(Not(Equal(0)))
+		})
+
 		It("list process instance names with their ids in one module", func() {
 			input := map[string]interface{}{
 				"bk_module_id":      moduleId,

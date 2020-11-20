@@ -324,3 +324,11 @@ type TemplateVersion struct {
 	Status      string `json:"status" field:"status"`
 	Description string `json:"description" field:"description"`
 }
+
+type ListProcessRelatedInfoResponse struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int                            `json:"count"`
+		Info  []ListProcessRelatedInfoResult `json:"info"`
+	} `json:"data"`
+}

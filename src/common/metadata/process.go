@@ -402,6 +402,82 @@ func (o *ListProcessInstancesNameIDsOption) Validate() (rawError cErr.RawErrorIn
 	return cErr.RawErrorInfo{}
 }
 
+// ListProcessRelatedInfoOption is the input param for api ListProcessRelatedInfo
+type ListProcessRelatedInfoOption struct {
+	Set             SetCondOfP             `json:"set"`
+	Module          ModuleCondOfP          `json:"module"`
+	ServiceInstance ServiceInstanceCondOfP `json:"service_instance"`
+	Process         ProcessCondOfP         `json:"process"`
+	Fields          []string               `json:"fields"`
+	Page            BasePage               `json:"page"`
+}
+
+type SetCondOfP struct {
+	SetIDs []int64 `json:"bk_set_ids"`
+}
+
+type ModuleCondOfP struct {
+	ModuleIDs []int64 `json:"bk_module_ids"`
+}
+
+type ServiceInstanceCondOfP struct {
+	IDs []int64 `json:"ids"`
+}
+
+type ProcessCondOfP struct {
+	ProcessNames []string `json:"bk_process_names"`
+	FuncIDs      []string `json:"bk_func_ids"`
+	ProcessIDs   []int64  `json:"bk_process_ids"`
+}
+
+// Validate validates the input param
+func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
+	if o.Page.IsIllegal() {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
+// ListProcessRelatedInfoResult is the result for api ListProcessRelatedInfo
+type ListProcessRelatedInfoResult struct {
+	Set             SetDetailOfP             `json:"set"`
+	Module          ModuleDetailOfP          `json:"module"`
+	Host            HostDetailOfP            `json:"host"`
+	ServiceInstance ServiceInstanceDetailOfP `json:"service_instance"`
+	ProcessTemplate ProcessTemplateDetailOfP `json:"process_template"`
+	Process         interface{}              `json:"process"`
+}
+
+type SetDetailOfP struct {
+	SetID   int64  `json:"bk_set_id"`
+	SetName string `json:"bk_set_name"`
+	SetEnv  string `json:"bk_set_env"`
+}
+
+type ModuleDetailOfP struct {
+	ModuleID   int64  `json:"bk_module_id"`
+	ModuleName string `json:"bk_module_name"`
+}
+
+type HostDetailOfP struct {
+	HostID  int64  `json:"bk_host_id"`
+	CloudID int64  `json:"bk_cloud_id"`
+	InnerIP string `json:"bk_host_innerip"`
+}
+
+type ServiceInstanceDetailOfP struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type ProcessTemplateDetailOfP struct {
+	ID int64 `json:"id"`
+}
+
 type ListProcessInstancesDetailsOption struct {
 	ProcessIDs []int64  `json:"bk_process_ids"`
 	Fields     []string `json:"fields"`
