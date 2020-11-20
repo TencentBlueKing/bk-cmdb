@@ -289,13 +289,15 @@ func buildModelIndex(indexes map[string][]types.Index) {
 	indexes[common.BKTableNamePropertyGroup] = []types.Index{
 		idUniqueIndex,
 		{
-			Keys:       map[string]int32{common.BKObjIDField: sortFlag, common.BKPropertyGroupNameField: sortFlag},
+			Keys: map[string]int32{common.BKObjIDField: sortFlag, common.BKAppIDField: sortFlag,
+				common.BKPropertyGroupNameField: sortFlag},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_objID_groupName",
 		},
 		{
-			Keys:       map[string]int32{common.BKObjIDField: sortFlag, common.BKPropertyGroupIndexField: sortFlag},
+			Keys: map[string]int32{common.BKObjIDField: sortFlag, common.BKAppIDField: sortFlag,
+				common.BKPropertyGroupIndexField: sortFlag},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_objID_groupIdx",
