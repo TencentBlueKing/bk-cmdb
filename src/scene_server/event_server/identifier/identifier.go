@@ -52,7 +52,6 @@ var hostIndentDiffFields = map[string][]string{
 	},
 	common.BKInnerObjIDProc: {
 		common.BKProcessNameField,
-		common.BKFuncIDField,
 		common.BKFuncName,
 		common.BKBindIP,
 		common.BKProtocol,
@@ -425,8 +424,6 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 					switch field {
 					case common.BKProcessNameField:
 						process.ProcessName = getString(curData[field])
-					case common.BKFuncIDField:
-						process.FuncID = getString(curData[field])
 					case common.BKFuncName:
 						process.FuncName = getString(curData[field])
 					case common.BKStartParamRegex:

@@ -587,12 +587,11 @@ type Process struct {
 	ProcessName     *string        `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name" mapstructure:"bk_process_name"`
 	PidFile         *string        `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file" mapstructure:"pid_file"`
 	AutoStart       *bool          `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start" mapstructure:"auto_start"`
-	AutoTimeGap     *int64         `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" structs:"auto_time_gap" mapstructure:"auto_time_gap"`
+	StartCheckSecs  *int64         `field:"bk_start_check_secs" json:"bk_start_check_secs" bson:"bk_start_check_secs" structs:"bk_start_check_secs" mapstructure:"bk_start_check_secs"`
 	LastTime        time.Time      `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time" mapstructure:"last_time"`
 	CreateTime      time.Time      `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time" mapstructure:"create_time"`
 	BusinessID      int64          `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id" mapstructure:"bk_biz_id"`
 	StartCmd        *string        `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd" mapstructure:"start_cmd"`
-	FuncID          *string        `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id" structs:"bk_func_id" mapstructure:"bk_func_id"`
 	User            *string        `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
 	TimeoutSeconds  *int64         `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
 	Description     *string        `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
@@ -619,10 +618,9 @@ func (p *Process) Map() map[string]interface{} {
 		common.BKProcessNameField: p.ProcessName,
 		common.BKProcPidFile:      p.PidFile,
 		"auto_start":              p.AutoStart,
-		"AutoTimeGap":             p.AutoTimeGap,
+		"bk_start_check_secs":     p.StartCheckSecs,
 		common.BKAppIDField:       p.BusinessID,
 		common.BKProcStartCmd:     p.StartCmd,
-		common.BKFuncIDField:      p.FuncID,
 		common.BKUser:             p.User,
 		common.BKProcTimeOut:      p.TimeoutSeconds,
 		common.BKDescriptionField: p.Description,
@@ -816,19 +814,14 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host 
 		processInstance.AutoStart = property.AutoStart.Value
 	}
 
-	processInstance.AutoTimeGap = nil
-	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) {
-		processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
+	processInstance.StartCheckSecs = nil
+	if IsAsDefaultValue(property.StartCheckSecs.AsDefaultValue) {
+		processInstance.StartCheckSecs = property.StartCheckSecs.Value
 	}
 
 	processInstance.StartCmd = nil
 	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {
 		processInstance.StartCmd = property.StartCmd.Value
-	}
-
-	processInstance.FuncID = nil
-	if IsAsDefaultValue(property.FuncID.AsDefaultValue) {
-		processInstance.FuncID = property.FuncID.Value
 	}
 
 	processInstance.User = nil
@@ -872,9 +865,8 @@ func GetAllProcessPropertyFields() []string {
 	fields := make([]string, 0)
 	fields = append(fields, "bk_func_name")
 	fields = append(fields, "bk_process_name")
-	fields = append(fields, "bk_func_id")
 	fields = append(fields, "bk_start_param_regex")
-	fields = append(fields, "auto_time_gap")
+	fields = append(fields, "bk_start_check_secs")
 	fields = append(fields, "user")
 	fields = append(fields, "stop_cmd")
 	fields = append(fields, "proc_num")
@@ -1026,15 +1018,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interfa
 		}
 	}
 
-	if IsAsDefaultValue(t.AutoTimeGapSeconds.AsDefaultValue) {
-		if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap == nil {
-			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+	if IsAsDefaultValue(t.StartCheckSecs.AsDefaultValue) {
+		if t.StartCheckSecs.Value != nil && i.StartCheckSecs == nil {
+			process["bk_start_check_secs"] = *t.StartCheckSecs.Value
 			changed = true
-		} else if t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil {
-			process["auto_time_gap"] = nil
+		} else if t.StartCheckSecs.Value == nil && i.StartCheckSecs != nil {
+			process["bk_start_check_secs"] = nil
 			changed = true
-		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
-			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+		} else if t.StartCheckSecs.Value != nil && i.StartCheckSecs != nil && *t.StartCheckSecs.Value != *i.StartCheckSecs {
+			process["bk_start_check_secs"] = *t.StartCheckSecs.Value
 			changed = true
 		}
 	}
@@ -1048,19 +1040,6 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interfa
 			changed = true
 		} else if t.StartCmd.Value != nil && i.StartCmd != nil && *t.StartCmd.Value != *i.StartCmd {
 			process["start_cmd"] = *t.StartCmd.Value
-			changed = true
-		}
-	}
-
-	if IsAsDefaultValue(t.FuncID.AsDefaultValue) {
-		if t.FuncID.Value == nil && i.FuncID != nil {
-			process["bk_func_id"] = nil
-			changed = true
-		} else if t.FuncID.Value != nil && i.FuncID == nil {
-			process["bk_func_id"] = *t.FuncID.Value
-			changed = true
-		} else if t.FuncID.Value != nil && i.FuncID != nil && *t.FuncID.Value != *i.FuncID {
-			process["bk_func_id"] = *t.FuncID.Value
 			changed = true
 		}
 	}
@@ -1178,14 +1157,11 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) == false {
 		editableFields = append(editableFields, "bk_process_name")
 	}
-	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == false {
-		editableFields = append(editableFields, "bk_func_id")
-	}
 	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == false {
 		editableFields = append(editableFields, "bk_start_param_regex")
 	}
-	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == false {
-		editableFields = append(editableFields, "auto_time_gap")
+	if IsAsDefaultValue(property.StartCheckSecs.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_start_check_secs")
 	}
 	if IsAsDefaultValue(property.User.AsDefaultValue) == false {
 		editableFields = append(editableFields, "user")
@@ -1249,19 +1225,14 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[st
 			data["bk_process_name"] = *input.ProcessName
 		}
 	}
-	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == false {
-		if input.FuncID != nil {
-			data["bk_func_id"] = *input.FuncID
-		}
-	}
 	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == false {
 		if input.StartParamRegex != nil {
 			data["bk_start_param_regex"] = *input.StartParamRegex
 		}
 	}
-	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == false {
-		if input.AutoTimeGap != nil {
-			data["auto_time_gap"] = *input.AutoTimeGap
+	if IsAsDefaultValue(property.StartCheckSecs.AsDefaultValue) == false {
+		if input.StartCheckSecs != nil {
+			data["bk_start_check_secs"] = *input.StartCheckSecs
 		}
 	}
 	if IsAsDefaultValue(property.User.AsDefaultValue) == false {
@@ -1351,13 +1322,12 @@ type ProcessProperty struct {
 	ReloadCmd   PropertyString `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd"`
 	ProcessName PropertyString `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" validate:"required"`
 	//Port               PropertyPort     `field:"port" json:"port" bson:"port"`
-	PidFile            PropertyString `field:"pid_file" json:"pid_file" bson:"pid_file"`
-	AutoStart          PropertyBool   `field:"auto_start" json:"auto_start" bson:"auto_start"`
-	AutoTimeGapSeconds PropertyInt64  `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" validate:"max=10000,min=1"`
-	StartCmd           PropertyString `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
-	FuncID             PropertyString `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id"`
-	User               PropertyString `field:"user" json:"user" bson:"user"`
-	TimeoutSeconds     PropertyInt64  `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
+	PidFile        PropertyString `field:"pid_file" json:"pid_file" bson:"pid_file"`
+	AutoStart      PropertyBool   `field:"auto_start" json:"auto_start" bson:"auto_start"`
+	StartCheckSecs PropertyInt64  `field:"bk_start_check_secs" json:"bk_start_check_secs" bson:"bk_start_check_secs" validate:"max=600,min=1"`
+	StartCmd       PropertyString `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
+	User           PropertyString `field:"user" json:"user" bson:"user"`
+	TimeoutSeconds PropertyInt64  `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
 	//Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
 	Description     PropertyString `field:"description" json:"description" bson:"description"`
 	StartParamRegex PropertyString `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
@@ -1412,9 +1382,9 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 	if pt.FuncName.Value == nil || len(*pt.FuncName.Value) == 0 {
 		return "bk_func_name", fmt.Errorf("field [%s] is required", "bk_func_name")
 	}
-	if pt.AutoTimeGapSeconds.Value != nil {
-		if *pt.AutoTimeGapSeconds.Value < 1 || *pt.AutoTimeGapSeconds.Value > 10000 {
-			return "auto_time_gap", fmt.Errorf("field %s value must in range [1, 10000]", "auto_time_gap")
+	if pt.StartCheckSecs.Value != nil {
+		if *pt.StartCheckSecs.Value < 1 || *pt.StartCheckSecs.Value > 10000 {
+			return "bk_start_check_secs", fmt.Errorf("field %s value must in range [1, 600]", "bk_start_check_secs")
 		}
 	}
 	if pt.TimeoutSeconds.Value != nil {

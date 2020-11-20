@@ -346,16 +346,16 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.AutoTimeGapSeconds.AsDefaultValue) {
-		if (t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil) ||
-			(t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap == nil) ||
-			(t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap) {
+	if metadata.IsAsDefaultValue(t.StartCheckSecs.AsDefaultValue) {
+		if (t.StartCheckSecs.Value == nil && i.StartCheckSecs != nil) ||
+			(t.StartCheckSecs.Value != nil && i.StartCheckSecs == nil) ||
+			(t.StartCheckSecs.Value != nil && i.StartCheckSecs != nil && *t.StartCheckSecs.Value != *i.StartCheckSecs) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["auto_time_gap"].ID,
-				PropertyID:            "auto_time_gap",
-				PropertyName:          attrMap["auto_time_gap"].PropertyName,
-				PropertyValue:         i.AutoTimeGap,
-				TemplatePropertyValue: t.AutoTimeGapSeconds,
+				ID:                    attrMap["bk_start_check_secs"].ID,
+				PropertyID:            "bk_start_check_secs",
+				PropertyName:          attrMap["bk_start_check_secs"].PropertyName,
+				PropertyValue:         i.StartCheckSecs,
+				TemplatePropertyValue: t.StartCheckSecs,
 			})
 		}
 	}
@@ -370,20 +370,6 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 				PropertyName:          attrMap["start_cmd"].PropertyName,
 				PropertyValue:         i.StartCmd,
 				TemplatePropertyValue: t.StartCmd,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.FuncID.AsDefaultValue) {
-		if (t.FuncID.Value == nil && i.FuncID != nil) ||
-			(t.FuncID.Value != nil && i.FuncID == nil) ||
-			(t.FuncID.Value != nil && i.FuncID != nil && *t.FuncID.Value != *i.FuncID) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["bk_func_id"].ID,
-				PropertyID:            "bk_func_id",
-				PropertyName:          attrMap["bk_func_id"].PropertyName,
-				PropertyValue:         i.FuncID,
-				TemplatePropertyValue: t.FuncID,
 			})
 		}
 	}
