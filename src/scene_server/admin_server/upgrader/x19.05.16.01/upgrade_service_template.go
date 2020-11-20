@@ -188,7 +188,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: moduleName}
 			processMappingInModule := make([]metadata.ProcessModule, 0)
-			if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
+			if err = db.Table("cc_Proc2Module").Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
 				return err
 			}
 			if len(processMappingInModule) <= 0 {

@@ -59,7 +59,7 @@ func GetInstIDField(objType string) string {
 		return BKFieldID
 	case BKTableNameServiceTemplate:
 		return BKFieldID
-	case BKTableNameProcTemplate:
+	case BKTableNameProcessTemplate:
 		return BKFieldID
 	case BKTableNameProcessInstanceRelation:
 		return BKProcessIDField

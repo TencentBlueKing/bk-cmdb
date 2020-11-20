@@ -254,7 +254,6 @@ type ProcessOperation interface {
 	DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	GetBusinessDefaultSetModuleInfo(kit *rest.Kit, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
-	GetProc2Module(kit *rest.Kit, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder)
 }
 
 type LabelOperation interface {

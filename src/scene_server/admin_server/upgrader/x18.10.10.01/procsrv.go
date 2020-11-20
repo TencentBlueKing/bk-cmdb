@@ -27,7 +27,7 @@ import (
 )
 
 func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameProcOperateTask
+	tableName := "cc_ProcOpTask"
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	return nil
 }
 func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameProcInstanceModel
+	tableName := "cc_ProcInstanceModel"
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return err
@@ -73,7 +73,7 @@ func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.C
 	return nil
 }
 func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameProcInstanceDetail
+	tableName := "cc_ProcInstanceDetail"
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return err
