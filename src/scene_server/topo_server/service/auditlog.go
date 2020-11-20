@@ -78,7 +78,7 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	if condition.ObjID != "" {
-		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = condition.User
+		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = condition.ObjID
 	}
 
 	// parse operation start time and end time from string to time condition

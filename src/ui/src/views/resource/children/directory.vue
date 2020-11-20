@@ -21,7 +21,7 @@
                     'selected': acitveDirId === null
                 }"
                 @click="handleResourceClick">
-                <span class="dir-name" :title="$t('资源池')">{{$t('资源池')}}</span>
+                <span class="dir-name" :title="$t('主机池')">{{$t('主机池')}}</span>
                 <span class="host-count">{{totalCount}}</span>
             </li>
             <li class="dir-item edit-status" v-if="createInfo.active" ref="createDirItem">

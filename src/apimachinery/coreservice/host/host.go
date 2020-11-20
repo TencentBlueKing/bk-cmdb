@@ -40,13 +40,6 @@ type HostClientInterface interface {
 	UnlockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error)
 	QueryHostLock(ctx context.Context, header http.Header, input *metadata.QueryHostLockRequest) (resp *metadata.HostLockQueryResponse, err error)
 
-	// host user
-	AddUserConfig(ctx context.Context, h http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error)
-	UpdateUserConfig(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error)
-	DeleteUserConfig(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.BaseResp, err error)
-	GetUserConfig(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetUserConfigResult, err error)
-	GetUserConfigDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.GetUserConfigDetailResult, err error)
-
 	// dynamic grouping interfaces.
 	CreateDynamicGroup(ctx context.Context, header http.Header, data *metadata.DynamicGroup) (resp *metadata.IDResult, err error)
 	UpdateDynamicGroup(ctx context.Context, bizID, id string, header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error)

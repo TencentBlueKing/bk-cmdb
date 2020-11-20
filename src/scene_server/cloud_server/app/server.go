@@ -31,7 +31,7 @@ import (
 	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"configcenter/src/scene_server/cloud_server/logics"
 	svc "configcenter/src/scene_server/cloud_server/service"
-	"configcenter/src/thirdpartyclient/secrets"
+	"configcenter/src/thirdparty/secrets"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -101,6 +101,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	process.Service.Logics = logics.NewLogics(service.Engine, accountCryptor, authorizer)
 
+	process.setSyncPeriod()
 	syncConf := cloudsync.SyncConf{
 		ZKClient:  service.Engine.ServiceManageClient().Client(),
 		Logics:    process.Service.Logics,
@@ -141,6 +142,7 @@ func (c *CloudServer) onCloudConfigUpdate(previous, current cc.ProcessConfig) {
 	c.Config.SecretsToken, _ = cc.String("cloudServer.cryptor.secretsToken")
 	c.Config.SecretsProject, _ = cc.String("cloudServer.cryptor.secretsProject")
 	c.Config.SecretsEnv, _ = cc.String("cloudServer.cryptor.secretsEnv")
+	c.Config.SyncPeriodMinutes, _ = cc.Int("cloudServer.syncTask.syncPeriodMinutes")
 }
 
 // getSecretKey get the secret key from bk-secrets service
@@ -181,4 +183,13 @@ func (c *CloudServer) getSecretKey() (string, error) {
 
 	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	return secretsClient.GetCloudAccountSecretKey(context.Background(), header)
+}
+
+// getSyncPeriod get the sync period
+func (c *CloudServer) setSyncPeriod() {
+	cloudsync.SyncPeriodMinutes = c.Config.SyncPeriodMinutes
+	if cloudsync.SyncPeriodMinutes < cloudsync.SyncPeriodMinutesMin {
+		cloudsync.SyncPeriodMinutes = cloudsync.SyncPeriodMinutesMin
+	}
+	blog.Infof("sync period is %d minutes", cloudsync.SyncPeriodMinutes)
 }

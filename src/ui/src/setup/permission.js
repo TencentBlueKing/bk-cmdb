@@ -16,12 +16,12 @@ function convertRelation (relation = [], type) {
     if (!relation.length) return relation
     try {
         const [levelOne] = relation
-        if (!Array.isArray(levelOne)) {
+        if (!Array.isArray(levelOne)) { // [1, 2, ...]的场景
             return [[relation]]
         }
         const [levelTwo] = levelOne
         if (!Array.isArray(levelTwo)) {
-            return [relation]
+            return relation.map(data => [data])
         }
         return relation
     } catch (error) {
@@ -77,29 +77,21 @@ export const translateAuth = auth => {
         if (!definition.relation) {
             return action
         }
-        definition.relation.forEach(viewDefinition => {
+        definition.relation.forEach((viewDefinition, viewDefinitionIndex) => { // 第m个视图的定义n
             const { view, instances } = viewDefinition
             const relatedResource = {
                 type: view,
                 instances: []
             }
-            if (relation.length) {
-                relation.forEach(levelOneData => { // convert后的第一层数据[[1, 2], [3, 4]]
-                    levelOneData.forEach(levelTwoData => { // convert后的第二层数据[1, 2]
-                        const childInstances = []
-                        levelTwoData.forEach((levelThreeData, levelThreeIndex) => { // convert后的第三层数据 1
-                            childInstances.push({
-                                type: instances[levelThreeIndex],
-                                id: String(levelThreeData)
-                            })
-                        })
-                        relatedResource.instances.push(childInstances)
-                    })
-                    action.related_resource_types.push(relatedResource)
-                })
-            } else {
-                action.related_resource_types.push(relatedResource)
-            }
+            relation.forEach(resourceViewPaths => { // 第x个资源对应的视图数组
+                const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
+                const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
+                    type: instances[pathIndex],
+                    id: String(path)
+                }))
+                relatedResource.instances.push(viewFullPath)
+            })
+            action.related_resource_types.push(relatedResource)
         })
         return action
     })

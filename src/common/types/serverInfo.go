@@ -52,6 +52,8 @@ const (
 	CC_MODULE_TASK             = "task"
 	CC_MODULE_CLOUD            = "cloud"
 	CC_MODULE_AUTH             = "auth"
+	// CC_MODULE_CACHE 缓存服务
+	CC_MODULE_CACHESERVICE = "cacheservice"
 )
 
 // AllModule all cc module
@@ -70,6 +72,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_TASK:      true,
 	CC_MODULE_CLOUD:     true,
 	CC_MODULE_AUTH:      true,
+	CC_MODULE_CACHESERVICE: true,
 }
 
 // cc functionality define

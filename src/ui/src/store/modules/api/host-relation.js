@@ -44,7 +44,7 @@ const actions = {
     },
 
     /**
-     * 资源池主机分配至业务的空闲机模块
+     * 主机池主机分配至业务的空闲机模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
@@ -80,7 +80,7 @@ const actions = {
     },
 
     /**
-     * 主机回收至资源池
+     * 主机回收至主机池
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander

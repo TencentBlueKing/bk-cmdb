@@ -45,7 +45,12 @@
                                 :source-processes="getSourceProcesses(instance)"
                                 :templates="getServiceTemplates(instance)"
                                 :addible="!withTemplate"
-                                @delete-instance="handleDeleteInstance">
+                                :editing="getEditState(instance)"
+                                :instance="instance"
+                                @delete-instance="handleDeleteInstance"
+                                @edit-name="handleEditName(instance)"
+                                @confirm-edit-name="handleConfirmEditName(instance, ...arguments)"
+                                @cancel-edit-name="handleCancelEditName(instance)">
                             </service-instance-table>
                         </transition-group>
                     </div>
@@ -268,6 +273,8 @@
                     item.to_add_to_modules.forEach(moduleInfo => {
                         instanceInfo.push({
                             bk_host_id: item.bk_host_id,
+                            name: '',
+                            editing: { name: false },
                             ...moduleInfo
                         })
                     })
@@ -283,6 +290,9 @@
                 tab.props.count = this.conflictList.length
             },
             getName (instance) {
+                if (instance.name) {
+                    return instance.name
+                }
                 const data = this.hosts.find(data => data.host.bk_host_id === instance.bk_host_id)
                 if (data) {
                     return data.host.bk_host_innerip
@@ -328,6 +338,9 @@
                     return value
                 })
             },
+            getEditState (instance) {
+                return instance.editing
+            },
             handleSelectHost () {
                 this.dialog.componentProps.exist = this.hosts
                 this.dialog.component = HostSelector.name
@@ -365,8 +378,10 @@
                     }
                     if (serviceInstanceTables) {
                         params.instances = serviceInstanceTables.map(table => {
+                            const instance = this.instances.find(instance => instance.bk_host_id === table.id) || {}
                             return {
                                 bk_host_id: table.id,
+                                service_instance_name: instance.name || '',
                                 processes: table.processList.map((item, index) => {
                                     const process = { process_info: item }
                                     if (withTemplate) {
@@ -405,6 +420,17 @@
                     })
                 })
                 return conflictResolvers
+            },
+            handleEditName (instance) {
+                this.instances.forEach(instance => (instance.editing.name = false))
+                instance.editing.name = true
+            },
+            handleConfirmEditName (instance, name) {
+                instance.name = name
+                instance.editing.name = false
+            },
+            handleCancelEditName (instance) {
+                instance.editing.name = false
             },
             handleBackToModule () {
                 this.$routerActions.back()

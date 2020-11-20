@@ -128,7 +128,10 @@ func (s *snapshotCheckService) checkConf() error {
 
 func (s *snapshotCheckService) checkCCHostSnaphot() error {
 
-	redisConfig := cc.Redis("redis")
+	redisConfig, err := cc.Redis("redis")
+	if err != nil {
+		return err
+	}
 	client, err := ccRedis.NewFromConfig(redisConfig)
 	if err != nil {
 		return fmt.Errorf("connect redis [%s] failed: %s", redisConfig.Address, err.Error())
@@ -146,7 +149,10 @@ func (s *snapshotCheckService) checkCCHostSnaphot() error {
 
 func (s *snapshotCheckService) checkHostSnapshot() error {
 
-	redisConfig := cc.Redis("redis.snap")
+	redisConfig, err := cc.Redis("redis.snap")
+	if err != nil {
+		return err
+	}
 	client, err := ccRedis.NewFromConfig(redisConfig)
 	if err != nil {
 		return fmt.Errorf("connect redis [%s] failed: %s", redisConfig.Address, err.Error())

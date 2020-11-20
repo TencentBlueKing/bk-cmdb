@@ -27,7 +27,7 @@ import (
 func migrateHistory(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// query history dynamic group data that storaged in "UserAPI" mode.
 	opt := mapstr.MapStr{}
-	userConfigs := make([]metadata.UserConfig, 0)
+	userConfigs := make([]UserConfig, 0)
 
 	if err := db.Table(common.BKTableNameUserAPI).Find(opt).All(ctx, &userConfigs); err != nil {
 		return err

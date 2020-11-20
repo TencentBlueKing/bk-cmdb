@@ -32,12 +32,19 @@ import (
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
+	"configcenter/src/thirdparty/hooks"
 )
 
 // CreateBusiness create a new business
 func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	data := mapstr.MapStr{}
 	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := hooks.ValidateCreateBusinessHook(ctx.Kit, s.Engine.CoreAPI, data); err != nil {
+		blog.Errorf("validate create business hook failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

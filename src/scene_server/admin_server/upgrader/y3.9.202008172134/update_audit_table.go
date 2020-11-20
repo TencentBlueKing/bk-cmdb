@@ -30,10 +30,11 @@ func reconcileAuditTableIndexes(ctx context.Context, db dal.RDB, conf *upgrader.
 		{Name: "index_user", Keys: map[string]int32{common.BKUser: 1}, Background: true},
 		{Name: "index_resourceName", Keys: map[string]int32{common.BKResourceNameField: 1}, Background: true},
 		{Name: "index_operationTime_auditType_resourceType_action", Keys: map[string]int32{
-			common.BKOperationTimeField: 1,
-			common.BKAuditTypeField:     1,
-			common.BKResourceTypeField:  1,
-			common.BKActionField:        1,
+			common.BKOperationTimeField:                               1,
+			common.BKAuditTypeField:                                   1,
+			common.BKResourceTypeField:                                1,
+			common.BKOperationDetailField + "." + common.BKObjIDField: 1,
+			common.BKActionField:                                      1,
 		}, Background: true},
 	}
 

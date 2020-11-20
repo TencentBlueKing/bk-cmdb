@@ -91,13 +91,14 @@
             AuditBusinessSelector
         },
         data () {
+            const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
             return {
                 instanceType: 'resource_name',
                 condition: {
                     bk_biz_id: '',
                     resource_type: '',
                     action: [],
-                    operation_time: [],
+                    operation_time: [today, today],
                     user: '',
                     resource_id: '',
                     resource_name: '',

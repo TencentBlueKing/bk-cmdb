@@ -18,8 +18,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 var (
@@ -37,14 +37,14 @@ func EsbClient() esbserver.EsbClientInterface {
 
 func ParseEsbConfig(prefix string) (*esbutil.EsbConfig, errors.CCErrorCoder) {
 	var err error
-	esbAddr, err := cc.String(prefix+".esb.addr")
+	esbAddr, err := cc.String(prefix + ".esb.addr")
 	if err != nil {
 		blog.Infof("esb addr not found, unable to call esb service")
 		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.addr] configuration item")
 		return nil, lastConfigErr
 	}
 
-	esbAppCode, err := cc.String(prefix+".esb.appCode")
+	esbAppCode, err := cc.String(prefix + ".esb.appCode")
 	if err != nil {
 		blog.Errorf("esb appCode not found, unable to call esb service")
 		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.esbAppCode] configuration item")

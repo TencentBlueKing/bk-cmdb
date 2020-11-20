@@ -86,6 +86,10 @@ func (d *MockDiscovery) AuthServer() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) CacheService() Interface {
+	return &mockServer{}
+}
+
 func (d *MockDiscovery) IsMaster() bool {
 	return true
 }

@@ -26,7 +26,7 @@ import (
 	"configcenter/src/scene_server/datacollection/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdparty/esbserver"
 
 	"github.com/emicklei/go-restful"
 )

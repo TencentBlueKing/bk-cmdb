@@ -41,9 +41,15 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-	mongoConf := cc.Mongo("mongodb")
+	mongoConf, err := cc.Mongo("mongodb")
+	if err != nil {
+		return err
+	}
 	process.Config.MongoDB = mongoConf
-	redisConf := cc.Redis("redis")
+	redisConf, err := cc.Redis("redis")
+	if err != nil {
+		return err
+	}
 	process.Config.Redis = redisConf
 	process.Config.Errors.Res, _ = cc.String("errors.res")
 	process.Config.Language.Res, _ = cc.String("language.res")

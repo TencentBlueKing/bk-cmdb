@@ -30,7 +30,6 @@ import (
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/types"
-
 	"github.com/emicklei/go-restful"
 )
 
@@ -144,7 +143,6 @@ func setSupplierID(req *http.Request) {
 		}
 		req.Header.Set(common.BKHTTPOwnerID, sID)
 	}
-	blog.V(4).Infof("final supplierID:%s", req.Header.Get(common.BKHTTPOwnerID))
 }
 
 func (s *AuthService) WebService() *restful.Container {

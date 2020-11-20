@@ -190,12 +190,6 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host/lock", Handler: s.UnlockHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host/lock/search", Handler: s.QueryLockHost})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/userapi", Handler: s.AddUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/userapi/{bk_biz_id}/{id}", Handler: s.UpdateUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/userapi/{bk_biz_id}/{id}", Handler: s.DeleteUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/userapi/search", Handler: s.GetUserConfig})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/userapi/detail/{bk_biz_id}/{id}", Handler: s.UserConfigDetail})
-
 	// dynamic grouping handlers.
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
@@ -328,29 +322,6 @@ func (s *coreService) transaction(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initCache(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topotree", Handler: s.SearchTopologyTreeInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_inner_ip", Handler: s.SearchHostWithInnerIPInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_host_id", Handler: s.SearchHostWithHostIDInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/host/with_host_id", Handler: s.ListHostWithHostIDInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/host/with_page", Handler: s.ListHostWithPageInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/biz/{bk_biz_id}", Handler: s.SearchBusinessInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/biz", Handler: s.ListBusinessInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/set/{bk_set_id}", Handler: s.SearchSetInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/set", Handler: s.ListSetsInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/module/{bk_module_id}", Handler: s.SearchModuleInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cache/module", Handler: s.ListModulesInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/{bk_obj_id}/{bk_inst_id}", Handler: s.SearchCustomLayerInCache})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topo/node_path",
-		Handler: s.SearchTopologyNodePath})
-
-	utility.AddToRestfulWebService(web)
-}
-
 func (s *coreService) initCount(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -442,7 +413,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initHostApplyRule(web)
 	s.transaction(web)
 	s.initCount(web)
-	s.initCache(web)
 	s.initCloudSync(web)
 	s.initAuth(web)
 	s.initEvent(web)

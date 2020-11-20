@@ -180,9 +180,11 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 		}
 	}
 
-	if err := p.ReconstructServiceInstanceName(kit, instance.ID); err != nil {
-		blog.Errorf("CreateServiceInstance failed, reconstruct instance name failed, instance: %+v, err: %s, rid: %s", instance, err.Error(), kit.Rid)
-		return nil, err
+	if instance.Name == "" {
+		if err := p.ReconstructServiceInstanceName(kit, instance.ID); err != nil {
+			blog.Errorf("CreateServiceInstance failed, reconstruct instance name failed, instance: %+v, err: %s, rid: %s", instance, err.Error(), kit.Rid)
+			return nil, err
+		}
 	}
 
 	// transfer host to target module
@@ -215,28 +217,24 @@ func (p *processOperation) GetServiceInstance(kit *rest.Kit, instanceID int64) (
 	return &instance, nil
 }
 
-func (p *processOperation) UpdateServiceInstance(kit *rest.Kit, instanceID int64, input metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
-	instance, err := p.GetServiceInstance(kit, instanceID)
-	if err != nil {
-		return nil, err
+func (p *processOperation) UpdateServiceInstances(kit *rest.Kit, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder {
+	for _, data := range option.Data {
+		needUpdate := data.Update
+		needUpdate[common.LastTimeField] = time.Now()
+		needUpdate[common.ModifierField] = kit.User
+
+		filter := map[string]int64{
+			common.BKAppIDField: bizID,
+			common.BKFieldID:    data.ServiceInstanceID,
+		}
+		if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Update(kit.Ctx, filter, needUpdate); nil != err {
+			blog.Errorf("UpdateServiceTemplate failed, table: %s, err: %+v, filter:%#v, needUpdate:%#v, rid: %s",
+				common.BKTableNameServiceInstance, filter, needUpdate, err, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
+		}
 	}
 
-	if field, err := input.Validate(); err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
-		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
-		return nil, err
-	}
-
-	// update fields to original object
-	instance.Name = input.Name
-
-	// do update
-	filter := map[string]int64{common.BKFieldID: instanceID}
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Update(kit.Ctx, filter, instance); nil != err {
-		blog.Errorf("UpdateServiceTemplate failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
-	}
-	return instance, nil
+	return nil
 }
 
 func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
@@ -634,6 +632,9 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			common.BKDBIN: moduleIDs,
 		},
 		common.BKDefaultField: common.NormalModuleFlag,
+		common.BKServiceTemplateIDField: map[string]interface{}{
+			common.BKDBNE: common.ServiceTemplateIDNotSet,
+		},
 	}
 
 	modules := make([]metadata.ModuleInst, 0)
@@ -657,9 +658,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 
 	serviceTemplateIDs := make([]int64, 0)
 	for _, module := range modules {
-		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-			serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
-		}
+		serviceTemplateIDs = append(serviceTemplateIDs, module.ServiceTemplateID)
 	}
 
 	serviceProcessTemplateMap := make(map[int64][]metadata.ProcessTemplate)

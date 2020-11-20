@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
 	"github.com/rentiansheng/xlsx"
@@ -308,11 +309,17 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 func productExcelHealer(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
-
+	//橙棕色
 	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
+	//粉色
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 
 	sheet.Col(0).Width = 18
+	//字典中的值为国际化之后的"业务拓扑"和"业务"，用来做判断，命中即变化相应的cell颜色。
+	bizTopoMap := map[string]int{
+		defLang.Language("web_ext_field_topo"): 1,
+		defLang.Language("object_biz"):         1,
+	}
 	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
@@ -322,7 +329,7 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 	}
 
 	// 给第一列剩下的空格设置颜色
-	for i := 3; i < 10000; i++ {
+	for i := 3; i < 1000; i++ {
 		cellName := sheet.Cell(i, 0)
 		cellName.SetStyle(colStyle)
 	}
@@ -384,21 +391,79 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 			}
 			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 			sheet.Col(index).SetType(xlsx.CellTypeString)
+
 		default:
+			if _, ok := bizTopoMap[field.Name]; ok {
+				cellName := sheet.Cell(0, index)
+				cellName.Value = field.Name + isRequire
+				cellName.SetStyle(cellStyle)
+
+				cellType := sheet.Cell(1, index)
+				cellType.Value = "--"
+				cellType.SetStyle(cellStyle)
+
+				cellEnName := sheet.Cell(2, index)
+				cellEnName.Value = "--"
+				cellEnName.SetStyle(cellStyle)
+
+				// 给业务拓扑和业务列剩下的空格设置颜色
+				for i := 3; i < 1000; i++ {
+					cellName := sheet.Cell(i, index)
+					cellName.SetStyle(colStyle)
+				}
+				sheet.Col(index).SetType(xlsx.CellTypeString)
+			}
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 		}
-
 	}
-
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, instNum int, asstList []metadata.Association) {
 	rid := util.ExtractRequestIDFromContext(ctx)
+
+	//第一列(指标说明，橙色)
+	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
+	//第一列(其余格，粉色)
+	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
+	//【2-5】列【二】排，(背景色，蓝色)
+	backStyle := getCellStyle(common.ExcelHeaderOtherRowColor, common.ExcelHeaderFirstRowFontColor)
+
+	sheet.Col(0).Width = 18
+	sheet.Col(1).Width = 30
+	firstColFields := []string{
+		common.ExcelFirstColumnAssociationAttribute,
+		common.ExcelFirstColumnFieldDescription,
+		common.ExcelFirstColumnInstData,
+	}
+	for index, field := range firstColFields {
+		cellName := sheet.Cell(index, 0)
+		cellName.SetString(defLang.Language(field))
+		cellName.SetStyle(cellStyle)
+	}
+
+	// 给第一列除前两行外的格子设置颜色(粉色)
+	for i := 2; i < instNum+2; i++ {
+		cellName := sheet.Cell(i, 0)
+		cellName.SetStyle(colStyle)
+	}
+	sheet.Col(3).Width = 60
+	sheet.Col(4).Width = 60
 
 	cellAsstID := sheet.Cell(0, assciationAsstObjIDIndex)
 	cellAsstID.SetString(defLang.Language("excel_association_object_id"))
 	cellAsstID.SetStyle(getHeaderFirstRowCellStyle(false))
+	choiceCell := xlsx.NewXlsxCellDataValidation(true, true, true)
+	//确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	pureAsstList := []string{}
+	for _, asst := range asstList {
+		pureAsstList = append(pureAsstList, asst.AssociationName)
+	}
+	pureAsstList = util.RemoveDuplicatesAndEmpty(pureAsstList)
+	if err := choiceCell.SetDropList(pureAsstList); err != nil {
+		blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+	}
+	sheet.Col(1).SetDataValidationWithStart(choiceCell, associationOPColIndex)
 
 	cellOpID := sheet.Cell(0, associationOPColIndex)
 	cellOpID.SetString(defLang.Language("excel_association_op"))
@@ -407,7 +472,7 @@ func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLa
 	if err := dd.SetDropList([]string{associationOPAdd, associationOPDelete}); err != nil {
 		blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
 	}
-	sheet.Col(associationOPColIndex).SetDataValidationWithStart(dd, 1)
+	sheet.Col(2).SetDataValidationWithStart(dd, associationOPColIndex)
 
 	cellSrcID := sheet.Cell(0, assciationSrcInstIndex)
 	cellSrcID.SetString(defLang.Language("excel_association_src_inst"))
@@ -420,15 +485,26 @@ func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLa
 	style = getHeaderFirstRowCellStyle(false)
 	style.Alignment.WrapText = true
 	cellDstID.SetStyle(style)
-	sheet.Col(2).Width = 60
-	sheet.Col(3).Width = 60
+
+	cell := sheet.Cell(1, assciationAsstObjIDIndex)
+	cell.SetString(defLang.Language("excel_example_association"))
+	cell.SetStyle(backStyle)
+	cell = sheet.Cell(1, associationOPColIndex)
+	cell.SetString(defLang.Language("excel_example_op"))
+	cell.SetStyle(backStyle)
+	cell = sheet.Cell(1, assciationSrcInstIndex)
+	cell.SetString(defLang.Language("excel_example_association_src_inst"))
+	cell.SetStyle(backStyle)
+	cell = sheet.Cell(1, assciationDstInstIndex)
+	cell.SetString(defLang.Language("excel_example_association_dst_inst"))
+	cell.SetStyle(backStyle)
 }
 
 const (
-	associationOPColIndex    = 1
-	assciationAsstObjIDIndex = 0
-	assciationSrcInstIndex   = 2
-	assciationDstInstIndex   = 3
+	associationOPColIndex    = 2
+	assciationAsstObjIDIndex = 1
+	assciationSrcInstIndex   = 3
+	assciationDstInstIndex   = 4
 
 	associationOPAdd = "add"
 	//associationOPUpdate = "update"

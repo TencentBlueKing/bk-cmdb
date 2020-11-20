@@ -42,6 +42,7 @@ export const IAM_VIEWS_NAME = {
     [IAM_VIEWS.INSTANCE_MODEL]: ['实例模型', 'Instance Model'],
     [IAM_VIEWS.CUSTOM_QUERY]: ['动态分组', 'Custom Query'],
     [IAM_VIEWS.BIZ]: ['业务', 'Business'],
+    [IAM_VIEWS.BIZ_FOR_HOST_TRANS]: ['业务', 'Business'],
     [IAM_VIEWS.HOST]: ['主机', 'Host'],
     [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
     [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
@@ -430,7 +431,7 @@ export const IAM_ACTIONS = {
             instances: [IAM_VIEWS.BIZ]
         }],
         transform: (cmdbAction, relationIds) => {
-            const [currentBizId, targetBizId] = relationIds
+            const [[[currentBizId], [targetBizId]]] = relationIds
             const verifyMeta = basicTransform(cmdbAction)
             verifyMeta.parent_layers = [{
                 resource_id: currentBizId,
@@ -443,7 +444,7 @@ export const IAM_ACTIONS = {
         }
     },
 
-    // 资源池主机
+    // 主机池主机
     C_RESOURCE_HOST: {
         id: 'create_resource_pool_host',
         name: ['主机池主机创建', 'Create Resource Pool Host'],
@@ -561,7 +562,7 @@ export const IAM_ACTIONS = {
         }
     },
 
-    // 资源池目录
+    // 主机池目录
     C_RESOURCE_DIRECTORY: {
         id: 'create_resource_pool_directory',
         name: ['主机池目录创建', 'Create Resource Pool Directory'],

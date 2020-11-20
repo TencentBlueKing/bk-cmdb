@@ -68,7 +68,10 @@ func Parse(args []string) error {
     if err := cc.SetMigrateFromFile(configPosition); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-	mongoConfig := cc.Mongo("mongodb")
+	mongoConfig, err := cc.Mongo("mongodb")
+	if err != nil {
+		return err
+	}
 
 	// connect to mongo db
 	db, err := local.NewMgo(mongoConfig.GetMongoConf(), 0)

@@ -21,7 +21,6 @@ func (ps *parseStream) hostRelated() *parseStream {
 
 	ps.host().
 		hostTransfer().
-		userAPI().
 		dynamicGrouping().
 		userCustom().
 		hostFavorite().
@@ -30,15 +29,6 @@ func (ps *parseStream) hostRelated() *parseStream {
 		HostApply()
 	return ps
 }
-
-var (
-	createUserAPIPattern     = "/api/v3/userapi"
-	updateUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
-	deleteUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
-	findUserAPIRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+/?$`)
-	findUserAPIDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[^\s/]+/?$`)
-	findWithUserAPIRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
-)
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
 	val, err := ps.RequestCtx.getValueFromBody(common.BKAppIDField)
@@ -53,159 +43,6 @@ func (ps *parseStream) parseBusinessID() (int64, error) {
 		return 0, errors.New("invalid bk_biz_id value")
 	}
 	return bizID, nil
-}
-
-func (ps *parseStream) userAPI() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	// create user custom query operation.
-	if ps.hitPattern(createUserAPIPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Create,
-				},
-			},
-		}
-		return ps
-	}
-
-	// update host user custom query operation.
-	if ps.hitRegexp(updateUserAPIRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("update host user custom query, but got invalid uri")
-			return ps
-		}
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:         meta.DynamicGrouping,
-					Action:       meta.Update,
-					InstanceIDEx: ps.RequestCtx.Elements[4],
-				},
-			},
-		}
-		return ps
-
-	}
-
-	// delete host user custom query operation.
-	if ps.hitRegexp(deleteUserAPIRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("delete host user custom query operation, but got invalid uri")
-			return ps
-		}
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:         meta.DynamicGrouping,
-					Action:       meta.Delete,
-					InstanceIDEx: ps.RequestCtx.Elements[4],
-				},
-			},
-		}
-		return ps
-
-	}
-
-	// find host user custom query operation
-	if ps.hitRegexp(findUserAPIRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("find host usr custom query, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host user custom query failed, err: %v", err)
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.FindMany,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find host user custom query details operation.
-	if ps.hitRegexp(findUserAPIDetailsRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find host user custom details query, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host user custom query details failed, err: %v", err)
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:         meta.DynamicGrouping,
-					Action:       meta.Find,
-					InstanceIDEx: ps.RequestCtx.Elements[5],
-				},
-			},
-		}
-		return ps
-	}
-
-	// get data with user custom query api.
-	if ps.hitRegexp(findWithUserAPIRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("find host user custom details query, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host user custom query details failed, err: %v", err)
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Execute,
-					Name:   ps.RequestCtx.Elements[5],
-				},
-			},
-		}
-		return ps
-	}
-
-	return ps
 }
 
 var (

@@ -49,7 +49,8 @@
                 }">
                 <i class="question-icon icon-cc-default"></i>
                 <template slot="content">
-                    <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('帮助文档')}}</a>
+                    <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
+                    <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
                     <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
                 </template>
             </bk-popover>

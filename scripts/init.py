@@ -253,6 +253,7 @@ authServer:
   appSecret: $auth_app_secret
 #cloudServer专属配置
 cloudServer:
+  # 加密服务使用
   cryptor:
     enableCryptor: ${enable_cryptor}
     secretKeyUrl: ${secret_key_url}
@@ -260,6 +261,10 @@ cloudServer:
     secretsToken: ${secrets_token}
     secretsProject: ${secrets_project}
     secretsEnv: ${secrets_env}
+  # 云同步任务
+  syncTask:
+    # 同步周期,最小为5分钟
+    syncPeriodMinutes: 5
 #datacollection专属配置
 datacollection:
   hostsnap:
@@ -474,7 +479,8 @@ def main(argv):
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
         "cmdb_cloudserver": 60013,
-        "cmdb_authserver": 60014
+        "cmdb_authserver": 60014,
+        "cmdb_cacheservice": 50010
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",

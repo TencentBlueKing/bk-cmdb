@@ -62,13 +62,18 @@ func ClientInstance(prefix string) redis.Client {
 
 func ParseConfig(prefix string, configMap map[string]string) (*redis.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
-	config := cc.Redis(prefix)
+	config, err := cc.Redis(prefix)
+	if err != nil {
+		return nil, errors.NewCCError(common.CCErrCommConfMissItem, "can't find redis configuration")
+	}
 	if config.Address == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".Address] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".Address] configuration item")
 		return nil, lastConfigErr
 	}
 	if config.Password == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".pwd] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".pwd] configuration item")
 		return nil, lastConfigErr
 	}
 

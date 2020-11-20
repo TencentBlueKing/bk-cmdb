@@ -25,8 +25,8 @@ import (
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/service"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/thirdparty/esbserver"
+	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {

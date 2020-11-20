@@ -270,6 +270,7 @@ var (
 	findMainlineSubInstanceTopoRegexp               = regexp.MustCompile(`^/api/v3/topo/inst/child/[^\s/]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findMainlineIdleFaultModuleRegexp               = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/?$`)
 	findMainlineIdleFaultModuleWithStatisticsRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/with_statistics/?$`)
+	findBriefBizTopoRegexp                          = regexp.MustCompile(`^/api/v3/find/topo/tree/brief/biz/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainline() *parseStream {
@@ -419,6 +420,32 @@ func (ps *parseStream) mainline() *parseStream {
 
 		return ps
 	}
+
+	// find brief biz topo
+	if ps.hitRegexp(findBriefBizTopoRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("find brief biz topo, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find brief biz topo, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstance,
+					Action: meta.Find,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	return ps
 }
 
@@ -2346,7 +2373,7 @@ func (ps *parseStream) objectSet() *parseStream {
 var (
 	searchAuditDict   = `/api/v3/find/audit_dict`
 	searchAuditList   = `/api/v3/findmany/audit_list`
-	searchAuditDetail = regexp.MustCompile(`^/api/v3/find/audit/[0-9]+/?$`)
+	searchAuditDetail = `/api/v3/find/audit`
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -2378,7 +2405,7 @@ func (ps *parseStream) audit() *parseStream {
 		return ps
 	}
 
-	if ps.hitRegexp(searchAuditDetail, http.MethodGet) {
+	if ps.hitPattern(searchAuditDetail, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
