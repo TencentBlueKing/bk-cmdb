@@ -155,10 +155,23 @@ func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
 			}
 		}
 
-		if _, ok := inst.Update[common.BKFieldName]; !ok {
+		instName, ok := inst.Update[common.BKFieldName].(string)
+		if !ok {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{"can only update service instance name"},
+			}
+		}
+		if len(instName) == 0 {
+			return cErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"service instance name can't be empty"},
+			}
+		}
+		if len(instName) > common.NameFieldMaxLength {
+			return cErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"service instance name is too long"},
 			}
 		}
 	}
@@ -261,7 +274,8 @@ type ProcessCreateOrUpdateInfo struct {
 }
 
 type CreateServiceInstanceDetail struct {
-	HostID int64 `json:"bk_host_id"`
+	HostID              int64  `json:"bk_host_id"`
+	ServiceInstanceName string `json:"service_instance_name"`
 	// Processes parameter usable only when create instance with raw
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
