@@ -37,6 +37,11 @@ type identifier struct {
 }
 
 func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error) {
+	if len(param.IP.Data) == 0 {
+		blog.Errorf("host ip can't be empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "ip.data")
+	}
+
 	cond := condition.CreateCondition()
 
 	or := []mapstr.MapStr{
@@ -74,7 +79,7 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostRet.Result {
-		blog.ErrorJSON("query host failed, input:%s, condition:%s, rid:%s", hostRet, kit, hostQuery, kit.Rid)
+		blog.ErrorJSON("query host failed, output:%s, condition:%s, rid:%s", hostRet, hostQuery, kit.Rid)
 		return nil, kit.CCError.New(hostRet.Code, hostRet.ErrMsg)
 	}
 
