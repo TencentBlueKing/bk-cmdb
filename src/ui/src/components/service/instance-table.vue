@@ -2,9 +2,20 @@
     <div class="service-table-layout">
         <div class="title" @click="localExpanded = !localExpanded">
             <div class="fl">
-                <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
-                <i class="bk-icon icon-right-shape" v-else></i>
-                {{name}}
+                <template v-if="!editing.name">
+                    <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
+                    <i class="bk-icon icon-right-shape" v-else></i>
+                    {{name}}
+                    <span class="empty-process-tips" v-if="addible && !processList.length">（{{$t('未添加进程')}}）</span>
+                    <i class="name-edit icon-cc-edit-shape" v-if="editable" @click.stop="handleEditName" />
+                </template>
+                <service-instance-name-edit-form v-else ref="nameEditForm"
+                    :value="instance.name"
+                    :width="350"
+                    :placeholder="$t('默认名称为：IP_首进程名称_端口')"
+                    @click.native.stop
+                    @confirm="handleConfirmEditName"
+                    @cancel="handleCancelEditName" />
             </div>
             <div class="fr right-content">
                 <span v-if="topology" class="service-topology" :title="topology">{{topology}}</span>
@@ -67,13 +78,21 @@
     } from './form/symbol'
     import Form from './form/form.js'
     import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
+    import ServiceInstanceNameEditForm from '@/components/service/instance-name-edit-form'
     export default {
         components: {
-            ProcessBindInfoValue
+            ProcessBindInfoValue,
+            ServiceInstanceNameEditForm
         },
         props: {
             deletable: Boolean,
             expanded: Boolean,
+            instance: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            },
             id: {
                 type: Number,
                 required: true
@@ -102,6 +121,10 @@
                 type: Boolean,
                 default: true
             },
+            editable: {
+                type: Boolean,
+                default: true
+            },
             topology: {
                 type: String,
                 default: ''
@@ -109,6 +132,12 @@
             showOperation: {
                 type: Boolean,
                 default: true
+            },
+            editing: {
+                type: Object,
+                default () {
+                    return {}
+                }
             }
         },
         data () {
@@ -204,6 +233,18 @@
             },
             handleDeleteProcess (rowIndex) {
                 this.processList.splice(rowIndex, 1)
+            },
+            handleEditName () {
+                this.$emit('edit-name')
+                this.$nextTick(() => {
+                    this.$refs.nameEditForm.focus()
+                })
+            },
+            handleConfirmEditName (name) {
+                this.$emit('confirm-edit-name', name)
+            },
+            handleCancelEditName () {
+                this.$emit('cancel-edit-name')
             }
         }
     }
@@ -217,6 +258,10 @@
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;
         cursor: pointer;
+        .fl {
+            display: flex;
+            align-items: center;
+        }
         .bk-icon {
             font-size: 12px;
             font-weight: bold;
@@ -247,6 +292,30 @@
             font-size: 12px;
             color: $textColor;
             cursor: default;
+        }
+        .name-edit {
+            visibility: hidden;
+            font-size: 14px;
+            height: 24px;
+            width: 24px;
+            text-align: center;
+            line-height: 24px;
+            color: $primaryColor;
+            cursor: pointer;
+            &:hover {
+                opacity: .8;
+            }
+            &.disabled {
+                color: $textDisabledColor;
+            }
+        }
+        &:hover {
+            .name-edit {
+                visibility: visible;
+            }
+        }
+        .empty-process-tips {
+            color: #979BA5;
         }
     }
     .add-process-options {

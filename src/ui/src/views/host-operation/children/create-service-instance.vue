@@ -32,10 +32,16 @@
             :id="instance.bk_host_id"
             :name="getName(instance)"
             :deletable="false"
+            :editable="false"
+            :editing="getEditState(instance)"
             :topology="$parent.getModulePath(instance.bk_module_id)"
             :templates="getServiceTemplates(instance)"
             :source-processes="getSourceProcesses(instance)"
-            :class="{ 'is-first': index === 0 }">
+            :class="{ 'is-first': index === 0 }"
+            :instance="instance"
+            @edit-name="handleEditName(instance)"
+            @confirm-edit-name="handleConfirmEditName(instance, ...arguments)"
+            @cancel-edit-name="handleCancelEditName(instance)">
         </service-instance-table>
     </section>
 </template>
@@ -69,23 +75,31 @@
         },
         methods: {
             sortInfo () {
+                let instances = []
                 if (this.sort === 'module') {
                     const order = this.$parent.targetModules
-                    this.instances = [...this.info].sort((A, B) => {
+                    instances = [...this.info].sort((A, B) => {
                         return order.indexOf(A.bk_module_id) - order.indexOf(B.bk_module_id)
                     })
                 } else {
-                    this.instances = [...this.info].sort((A, B) => {
+                    instances = [...this.info].sort((A, B) => {
                         return this.getName(A).localeCompare(this.getName(B))
                     })
                 }
+                this.instances = instances.map(instance => ({ ...instance, name: '', editing: { name: false } }))
             },
             getName (instance) {
+                if (instance.name) {
+                    return instance.name
+                }
                 const data = this.$parent.hostInfo.find(data => data.host.bk_host_id === instance.bk_host_id)
                 if (data) {
                     return data.host.bk_host_innerip
                 }
                 return '--'
+            },
+            getEditState (instance) {
+                return instance.editing
             },
             getServiceTemplates (instance) {
                 if (instance.service_template) {
@@ -130,12 +144,24 @@
                     return {
                         bk_module_id: instance.bk_module_id,
                         bk_host_id: instance.bk_host_id,
+                        service_instance_name: instance.name,
                         processes: component.processList.map((process, listIndex) => ({
                             process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
                             process_info: process
                         }))
                     }
                 })
+            },
+            handleEditName (instance) {
+                this.instances.forEach(instance => (instance.editing.name = false))
+                instance.editing.name = true
+            },
+            handleConfirmEditName (instance, name) {
+                instance.name = name
+                instance.editing.name = false
+            },
+            handleCancelEditName (instance) {
+                instance.editing.name = false
             }
         }
     }

@@ -1345,5 +1345,7 @@
     "结果预览": "Results preview",
     "移除所有": "Remove all",
     "静态拓扑": "Static topology",
-    "自定义输入": "Custom input"
+    "自定义输入": "Custom input",
+    "请输入实例名称": "Please enter the instance name",
+    "默认名称为：IP_首进程名称_端口": "The default name is: IP_first process name_port"
 }
