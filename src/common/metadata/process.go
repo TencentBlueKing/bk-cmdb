@@ -1784,11 +1784,6 @@ type ProcessInstanceNG struct {
 	Relation ProcessInstanceRelation `json:"relation"`
 }
 
-type GetProc2ModuleOption struct {
-	ProcessID int64 `json:"bk_process_id"`
-	BizID     int64 `json:"bk_biz_id"`
-}
-
 type Proc2Module struct {
 	BizID           int64  `json:"bk_biz_id"`
 	ModuleName      string `json:"bk_module_name"`
