@@ -110,6 +110,9 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	default:
 		name := string(kind)
 		if name != "" {
+			// 需要去 apiserver/app/discovery.go 新加需要发现的服务
+			// 非bk-cmdb标准服务可以cp apiserver/app/discovery.go  apiserver/app/discovery_me.go,
+			// 然后在 apiserver/app/discovery_me.go 新加服务即可
 			servers, err = s.discovery.Server(name).GetServers()
 		}
 	}

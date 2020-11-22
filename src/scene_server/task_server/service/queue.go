@@ -360,6 +360,7 @@ func (s *Service) initCodeTaskConfig() map[string]TaskInfo {
 	taskInfoMap := make(map[string]TaskInfo, 0)
 	codeTaskConfigArr := taskconfig.GetCodeTaskConfig()
 
+	// 新加服务的时候，需要去配置服务发现 task_server/app/discovery.go
 	for _, codeTaskConfig := range codeTaskConfigArr {
 		ti := TaskInfo{
 			Name:  codeTaskConfig.Name,
