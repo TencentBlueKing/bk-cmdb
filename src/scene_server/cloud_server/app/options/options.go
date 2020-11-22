@@ -53,4 +53,6 @@ type Config struct {
 	SecretsToken   string
 	SecretsProject string
 	SecretsEnv     string
+	// sync period of cloud sync task, unit is second
+	SyncPeriodMinutes int
 }

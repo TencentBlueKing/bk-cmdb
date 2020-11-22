@@ -29,17 +29,21 @@
                     <template v-else>
                         <div class="category-name">
                             <template v-if="mainCategory['is_built_in']">
-                                <div class="category-name-text is-built-in" :title="mainCategory.name">
-                                    <span class="text-inner">{{mainCategory.name}}</span>
+                                <div class="category-name-text is-built-in">
+                                    <div class="text-inner">
+                                        <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
+                                        <span class="main-id">{{mainCategory.id}}</span>
+                                    </div>
                                 </div>
                                 <span class="built-in-sign">{{$t('内置')}}</span>
                             </template>
                             <cmdb-auth v-else
                                 :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
-                                <div slot-scope="{ disabled }" :class="['category-name-text', { disabled }]" :title="mainCategory.name">
-                                    <span class="text-inner" @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
-                                        {{mainCategory.name}}
-                                    </span>
+                                <div slot-scope="{ disabled }" :class="['category-name-text', { disabled }]">
+                                    <div class="text-inner" @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
+                                        <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
+                                        <span class="main-id">{{mainCategory.id}}</span>
+                                    </div>
                                 </div>
                             </cmdb-auth>
                         </div>
@@ -267,7 +271,7 @@
                 if (this.keyword) {
                     const reg = new RegExp(this.keyword, 'i')
                     this.displayList = this.list.filter(mainCategory => {
-                        if (reg.test(mainCategory.name)) {
+                        if (reg.test(mainCategory.name) || reg.test(mainCategory.id)) {
                             return true
                         }
                         return mainCategory.child_category_list.findIndex(subCategory => {
@@ -499,8 +503,7 @@
             @include space-between;
             background-color: #fafbfd;
             padding: 0 12px 0 12px;
-            height: 42px;
-            line-height: 42px;
+            height: 52px;
             font-size: 14px;
             color: #63656e;
             font-weight: bold;
@@ -524,27 +527,43 @@
                 display: flex;
                 flex: 1;
                 width: 100%;
-                padding-right: 20px;
                 align-items: center;
                 overflow: hidden;
                 .auth-box {
                     width: 100%;
                 }
                 .category-name-text {
-                    @include ellipsis;
+                    max-width: 100%;
                     &.disabled {
                         color: #dcdee5;
                     }
                     .text-inner {
+                        max-width: 100%;
+                        display: inline-flex;
+                        flex-direction: column;
                         padding: 2px 6px;
-                        border: 2px;
+                        line-height: normal;
                         cursor: pointer;
                         &:hover {
                             background: #f0f1f5;
                         }
+                        .main-id {
+                            font-size: 12px;
+                            font-weight: 400;
+                            color: #C4C6CC;
+                            &::before {
+                                content: "#";
+                            }
+                        }
+                        .main-id,
+                        .main-name {
+                            @include ellipsis;
+                        }
                     }
                     &.is-built-in {
+                        max-width: calc(100% - 40px);
                         .text-inner {
+                            cursor: initial;
                             &:hover {
                                 background: transparent;
                             }
@@ -605,11 +624,14 @@
                         background-color: #fafbfd;
                         color: #3a84ff;
                     }
-                    >span {
+                    > span {
                         display: none;
                     }
                     .child-edit {
-                        opacity: 1;
+                        display: block;
+                    }
+                    .child-id {
+                        display: none;
                     }
                 }
                 &:first-child {
@@ -637,30 +659,31 @@
                     color: #63656e;
                     font-size: 14px;
                     flex: 1;
-                    padding-right: 12px;
+                    padding-right: 8px;
                     padding-left: 8px;
                     margin-left: 10px;
-                    justify-content: normal;
-                    >span {
+                    > span {
                         @include ellipsis;
                         padding-right: 10px;
                     }
 
                     .child-id {
                         min-width: 42px;
+                        font-size: 12px;
                         color: #C4C6CC;
                         padding-right: 6px;
+                        text-align: right;
                         &::before {
                             content: "#";
                         }
                     }
                 }
-                >span {
+                > span {
                     color: #c4c6cc;
                     padding-right: 18px;
                 }
                 .child-edit {
-                    opacity: 0;
+                    display: none;
                     margin-left: auto;
                     &.tips-active {
                         opacity: 1;

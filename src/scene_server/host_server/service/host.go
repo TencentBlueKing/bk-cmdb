@@ -287,9 +287,6 @@ func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 
 	result := make([]meta.HostInstanceProperties, 0)
 	for _, attr := range attribute {
-		if attr.PropertyID == common.BKChildStr {
-			continue
-		}
 		result = append(result, meta.HostInstanceProperties{
 			PropertyID:    attr.PropertyID,
 			PropertyName:  attr.PropertyName,

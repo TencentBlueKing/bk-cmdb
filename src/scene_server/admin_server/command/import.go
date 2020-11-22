@@ -687,14 +687,14 @@ func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) 
 			if err := processProperty.AutoStart.Validate(); err != nil {
 				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
 			}
-		case "auto_time_gap":
-			autoTimeGap, err := util.GetInt64ByInterface(val)
+		case "bk_start_check_secs":
+			startCheckSecs, err := util.GetInt64ByInterface(val)
 			if err != nil {
 				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
 			}
-			processProperty.AutoTimeGapSeconds.Value = &autoTimeGap
-			processProperty.AutoTimeGapSeconds.AsDefaultValue = &blTrue
-			if err := processProperty.AutoTimeGapSeconds.Validate(); err != nil {
+			processProperty.StartCheckSecs.Value = &startCheckSecs
+			processProperty.StartCheckSecs.AsDefaultValue = &blTrue
+			if err := processProperty.StartCheckSecs.Validate(); err != nil {
 				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
 			}
 		case "start_cmd":
@@ -705,16 +705,6 @@ func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) 
 			processProperty.StartCmd.Value = &startCmd
 			processProperty.StartCmd.AsDefaultValue = &blTrue
 			if err := processProperty.StartCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_func_id":
-			funcID, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.FuncID.Value = &funcID
-			processProperty.FuncID.AsDefaultValue = &blTrue
-			if err := processProperty.FuncID.Validate(); err != nil {
 				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
 			}
 		case "user":

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -181,6 +182,280 @@ func SortTopoInst(instData []*metadata.TopoInstRst) {
 	for idx := range instData {
 		SortTopoInst(instData[idx].Child)
 	}
+}
+
+// SearchBriefBizTopo search brief topo
+func (s *Service) SearchBriefBizTopo(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("SearchBriefBizTopo failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	input := new(metadata.SearchBriefBizTopoOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	setDetail, err := s.getSetDetailOfTopo(ctx, bizID, input)
+	if err != nil {
+		blog.Errorf("SearchBriefBizTopo failed, getSetDetailOfTopo err: %v, rid:%s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(setDetail) == 0 {
+		ctx.RespEntity([]interface{}{})
+		return
+	}
+
+	moduleDetail, setModuleMap, err := s.getModuleInfoOfTopo(ctx, bizID, input)
+	if err != nil {
+		blog.Errorf("SearchBriefBizTopo failed, getModuleInfoOfTopo err: %v, rid:%s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	hostDetail, moduleHostMap, err := s.getHostInfoOfTopo(ctx, bizID, input)
+	if err != nil {
+		blog.Errorf("SearchBriefBizTopo failed, getHostInfoOfTopo err: %v, rid:%s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// construct the final result
+	bizTopo := s.constructBizTopo(setDetail, moduleDetail, hostDetail, setModuleMap, moduleHostMap)
+
+	ctx.RespEntity(bizTopo)
+}
+
+// getSetDetailOfTopo get set detail of topo
+func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (map[int64]map[string]interface{}, errors.CCErrorCoder) {
+	setDetail := make(map[int64]map[string]interface{})
+	originSetFields := make(map[string]bool)
+	for _, field := range input.SetFields {
+		originSetFields[field] = true
+	}
+	input.SetFields = append(input.SetFields, common.BKSetIDField)
+
+	pageSize := 2000
+	start := 0
+	hasNext := true
+	param := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+		},
+		Fields: input.SetFields,
+		Page: metadata.BasePage{
+			Start: start,
+			Limit: pageSize,
+		},
+	}
+
+	for hasNext {
+		param.Page.Start = start
+		setResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, param)
+		if nil != err {
+			blog.Errorf("getSetDetailOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !setResult.Result {
+			blog.Errorf("getSetDetailOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+			return nil, setResult.CCError()
+		}
+
+		if len(setResult.Data.Info) == 0 {
+			break
+		}
+
+		for _, info := range setResult.Data.Info {
+			setID, _ := info.Int64(common.BKSetIDField)
+			if !originSetFields[common.BKDefaultField] {
+				info.Remove(common.BKDefaultField)
+			}
+			setDetail[setID] = info
+		}
+
+		start += pageSize
+		if len(setResult.Data.Info) < pageSize {
+			hasNext = false
+		}
+	}
+
+	return setDetail, nil
+}
+
+// getModuleInfoOfTopo get module info of topo
+func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (
+	map[int64]map[string]interface{}, map[int64][]int64, errors.CCErrorCoder) {
+	//  get moduleDetail, setModuleMap
+	moduleDetail := make(map[int64]map[string]interface{})
+	setModuleMap := make(map[int64][]int64)
+
+	originModuleFields := make(map[string]bool)
+	for _, field := range input.ModuleFields {
+		originModuleFields[field] = true
+	}
+	input.ModuleFields = append(input.ModuleFields, common.BKModuleIDField, common.BKSetIDField)
+
+	pageSize := 2000
+	start := 0
+	hasNext := true
+	param := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+		},
+		Fields: input.ModuleFields,
+		Page: metadata.BasePage{
+			Start: start,
+			Limit: pageSize,
+		},
+	}
+
+	for hasNext {
+		param.Page.Start = start
+		moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, param)
+		if nil != err {
+			blog.Errorf("getModuleInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+			return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !moduleResult.Result {
+			blog.Errorf("getModuleInfoOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+			return nil, nil, moduleResult.CCError()
+		}
+
+		if len(moduleResult.Data.Info) == 0 {
+			break
+		}
+
+		for _, info := range moduleResult.Data.Info {
+			setID, _ := info.Int64(common.BKSetIDField)
+			moduleID, _ := info.Int64(common.BKModuleIDField)
+			setModuleMap[setID] = append(setModuleMap[setID], moduleID)
+
+			if !originModuleFields[common.BKDefaultField] {
+				info.Remove(common.BKDefaultField)
+			}
+			if !originModuleFields[common.BKSetIDField] {
+				info.Remove(common.BKSetIDField)
+			}
+			moduleDetail[moduleID] = info
+		}
+
+		start += pageSize
+		if len(moduleResult.Data.Info) < pageSize {
+			hasNext = false
+		}
+	}
+
+	return moduleDetail, setModuleMap, nil
+}
+
+// getHostInfoOfTopo get host info of topo
+func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (
+	map[int64]map[string]interface{}, map[int64][]int64, errors.CCErrorCoder) {
+	hostDetail := make(map[int64]map[string]interface{})
+	moduleHostMap := make(map[int64][]int64)
+
+	// get hostIDArr, moduleHostMap
+	hostIDArr := make([]int64, 0)
+	relationOption := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+	hostModuleRelations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
+	if err != nil {
+		blog.Errorf("getHostInfoOfTopo failed, option: %+v, err: %s, rid: %s", relationOption, err.Error(), ctx.Kit.Rid)
+		return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	for _, relation := range hostModuleRelations.Data.Info {
+		hostIDArr = append(hostIDArr, relation.HostID)
+		moduleHostMap[relation.ModuleID] = append(moduleHostMap[relation.ModuleID], relation.HostID)
+	}
+
+	// get hostDetail
+	if len(hostIDArr) > 0 {
+		pageSize := 2000
+		start := 0
+		hasNext := true
+		input.HostFields = append(input.HostFields, common.BKHostIDField)
+		param := &metadata.QueryCondition{
+			Condition: map[string]interface{}{
+				common.BKHostIDField: map[string]interface{}{
+					common.BKDBIN: hostIDArr,
+				},
+			},
+			Fields: input.HostFields,
+			Page: metadata.BasePage{
+				Start: start,
+				Limit: pageSize,
+			},
+		}
+
+		for hasNext {
+			param.Page.Start = start
+			hostResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, param)
+			if nil != err {
+				blog.Errorf("getHostInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+				return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			}
+			if !hostResult.Result {
+				blog.Errorf("getHostInfoOfTopo failed, param: %v, err: %v, rid:%s", param, err, ctx.Kit.Rid)
+				return nil, nil, hostResult.CCError()
+			}
+
+			if len(hostResult.Data.Info) == 0 {
+				break
+			}
+
+			for _, info := range hostResult.Data.Info {
+				hostID, _ := info.Int64(common.BKHostIDField)
+				hostDetail[hostID] = info
+			}
+
+			start += pageSize
+			if len(hostResult.Data.Info) < pageSize {
+				hasNext = false
+			}
+		}
+	}
+
+	return hostDetail, moduleHostMap, nil
+}
+
+// constructBizTopo construct biz topo
+func (s *Service) constructBizTopo(setDetail, moduleDetail, hostDetail map[int64]map[string]interface{}, setModuleMap,
+	moduleHostMap map[int64][]int64) []*metadata.SetTopo {
+	bizTopo := make([]*metadata.SetTopo, 0)
+	for setID, set := range setDetail {
+		setTopo := new(metadata.SetTopo)
+		setTopo.Set = set
+		moduleTopos := make([]*metadata.ModuleTopo, 0)
+		for _, moduleID := range setModuleMap[setID] {
+			moduleTopo := new(metadata.ModuleTopo)
+			moduleTopo.Module = moduleDetail[moduleID]
+			hosts := make([]map[string]interface{}, 0)
+			for _, hostID := range moduleHostMap[moduleID] {
+				hosts = append(hosts, hostDetail[hostID])
+			}
+			moduleTopo.Hosts = hosts
+			moduleTopos = append(moduleTopos, moduleTopo)
+		}
+		setTopo.ModuleTopos = moduleTopos
+		bizTopo = append(bizTopo, setTopo)
+	}
+	return bizTopo
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst

@@ -36,6 +36,9 @@ const actions = {
     },
     batchUpdateProcess (context, { params, config }) {
         return $http.put('update/proc/process_instance/by_ids', params, config)
+    },
+    updateServiceInstance (context, { bizId, params, config }) {
+        return $http.put(`updatemany/proc/service_instance/biz/${bizId}`, params, config)
     }
 }
 
