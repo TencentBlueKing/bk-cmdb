@@ -95,7 +95,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	extFieldsBizID := "cc_ext_biz"
 	extFields := map[string]string{
 		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
-		extFieldsBizID:  ccLang.Language("object_biz"),
+		extFieldsBizID:  ccLang.Language("biz_property_bk_biz_name"),
 	}
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)

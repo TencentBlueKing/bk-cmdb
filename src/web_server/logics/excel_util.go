@@ -315,10 +315,10 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 
 	sheet.Col(0).Width = 18
-	//字典中的值为国际化之后的"业务拓扑"和"业务"，用来做判断，命中即变化相应的cell颜色。
+	//字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
 	bizTopoMap := map[string]int{
-		defLang.Language("web_ext_field_topo"): 1,
-		defLang.Language("object_biz"):         1,
+		defLang.Language("web_ext_field_topo"):       1,
+		defLang.Language("biz_property_bk_biz_name"): 1,
 	}
 	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
 	for index, field := range firstColFields {
