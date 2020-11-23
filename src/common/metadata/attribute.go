@@ -1065,8 +1065,6 @@ var HostApplyFieldMap = map[string]bool{
 	"bk_disk":                           false,
 	"bk_mac":                            false,
 	"bk_outer_mac":                      false,
-	common.HostFieldDockerClientVersion: false,
-	common.HostFieldDockerServerVersion: false,
 	common.CreateTimeField:              false,
 	common.LastTimeField:                false,
 	common.BKImportFrom:                 false,

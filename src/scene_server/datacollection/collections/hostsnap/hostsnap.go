@@ -43,7 +43,7 @@ const (
 	// defaultChangeRangePercent is the value of the default percentage of data fluctuation
 	defaultChangeRangePercent = 10
 	// minChangeRangePercent is the value of the minimum percentage of data fluctuation
-	minChangeRangePercent            = 1
+	minChangeRangePercent = 1
 	// defaultRateLimiterQPS is the default value of rateLimiter qps
 	defaultRateLimiterQPS = 40
 	// defaultRateLimiterBurst is the default value of rateLimiter burst
@@ -53,8 +53,7 @@ const (
 var (
 	// 需要参与变化对比的字段
 	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
-		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
-		common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
+		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit"}
 	reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
 
 	// notice: 为了对应不同版本和环境差异，再当前版本中设置compareFields中不参加对比的字段
@@ -65,11 +64,11 @@ type HostSnap struct {
 	redisCli    redis.Client
 	authManager *extensions.AuthManager
 	*backbone.Engine
-	rateLimit   flowctrl.RateLimiter
-	filter *filter
-	ctx    context.Context
-	db     dal.RDB
-	window *Window
+	rateLimit flowctrl.RateLimiter
+	filter    *filter
+	ctx       context.Context
+	db        dal.RDB
+	window    *Window
 }
 
 func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
@@ -90,12 +89,12 @@ func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine 
 func getRateLimiterConfig() (int, int) {
 	qps, err := cc.Int("datacollection.hostsnap.rateLimiter.qps")
 	if err != nil {
-		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s",defaultRateLimiterQPS)
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s", defaultRateLimiterQPS)
 		qps = defaultRateLimiterQPS
 	}
 	burst, err := cc.Int("datacollection.hostsnap.rateLimiter.burst")
 	if err != nil {
-		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s",defaultRateLimiterBurst)
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s", defaultRateLimiterBurst)
 		burst = defaultRateLimiterBurst
 	}
 	return qps, burst
@@ -278,7 +277,7 @@ func needToUpdate(src, toCompare string) bool {
 			compareField := compareFields[idx]
 			// tolerate bk_cpu, bk_cpu_mhz, bk_disk, bk_mem changes less than the set value
 			if compareField == "bk_cpu" || compareField == "bk_cpu_mhz" || compareField == "bk_disk" || compareField == "bk_mem" {
-				val := compareElements[idx].Float() * (float64(changeRangePercent)/100.0)
+				val := compareElements[idx].Float() * (float64(changeRangePercent) / 100.0)
 				diff := srcElements[idx].Float() - compareElements[idx].Float()
 				if -val < diff && diff < val {
 					continue
@@ -346,26 +345,20 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 
 	osbit := val.Get("data.system.info.systemtype").String()
 	osbit = strings.TrimSpace(osbit)
-	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
-	dockerClientVersion = strings.TrimSpace(dockerClientVersion)
-	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
-	dockerServerVersion = strings.TrimSpace(dockerServerVersion)
 	mem = mem >> 10 >> 10
 	setter := map[string]interface{}{
-		"bk_cpu":                            cpunum,
-		"bk_cpu_module":                     cpumodule,
-		"bk_cpu_mhz":                        CPUMhz,
-		"bk_disk":                           disk,
-		"bk_mem":                            mem,
-		"bk_os_type":                        ostype,
-		"bk_os_name":                        osname,
-		"bk_os_version":                     version,
-		"bk_host_name":                      hostname,
-		"bk_outer_mac":                      OuterMAC,
-		"bk_mac":                            InnerMAC,
-		"bk_os_bit":                         osbit,
-		common.HostFieldDockerClientVersion: dockerClientVersion,
-		common.HostFieldDockerServerVersion: dockerServerVersion,
+		"bk_cpu":        cpunum,
+		"bk_cpu_module": cpumodule,
+		"bk_cpu_mhz":    CPUMhz,
+		"bk_disk":       disk,
+		"bk_mem":        mem,
+		"bk_os_type":    ostype,
+		"bk_os_name":    osname,
+		"bk_os_version": version,
+		"bk_host_name":  hostname,
+		"bk_outer_mac":  OuterMAC,
+		"bk_mac":        InnerMAC,
+		"bk_os_bit":     osbit,
 	}
 
 	raw := strings.Builder{}
@@ -405,12 +398,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	raw.WriteString(",")
 	raw.WriteString("\"bk_os_bit\":")
 	raw.Write([]byte("\"" + osbit + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"docker_client_version\":")
-	raw.Write([]byte("\"" + dockerClientVersion + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"docker_server_version\":")
-	raw.Write([]byte("\"" + dockerServerVersion + "\""))
 	raw.WriteByte('}')
 
 	if cpunum <= 0 {
