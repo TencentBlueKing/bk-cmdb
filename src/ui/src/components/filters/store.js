@@ -388,14 +388,19 @@ const FilterStore = new Vue({
             return this.collections
         },
         async createCollection (data) {
-            const { id } = await api.post('hosts/favorites', data, {
-                requestId: this.request.createCollection
+            const response = await api.post('hosts/favorites', data, {
+                requestId: this.request.createCollection,
+                globalError: false,
+                transformData: false
             })
-            const collection = { id, ...data }
-            this.collections.unshift(collection)
-            this.activeCollection = collection
-            this.dispatchSearch()
-            return Promise.resolve()
+            if (response.result) {
+                const collection = { id: response.data.id, ...data }
+                this.collections.unshift(collection)
+                this.activeCollection = collection
+                this.dispatchSearch()
+                return Promise.resolve()
+            }
+            return Promise.reject(response)
         },
         async removeCollection ({ id }) {
             await api.delete(`hosts/favorites/${id}`, {
