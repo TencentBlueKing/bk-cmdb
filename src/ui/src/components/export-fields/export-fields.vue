@@ -6,7 +6,7 @@
         @after-leave="handleClosed">
         <div class="title" slot="tools">
             <span>{{$t('选择导出字段')}}</span>
-            <bk-input class="filter-input" v-model.trim="filter" :placeholder="$t('请输入关键字搜索')"></bk-input>
+            <bk-input class="filter-input" v-model.trim="filter" clearable :placeholder="$t('请输入关键字搜索')"></bk-input>
         </div>
         <section class="property-selector">
             <ul class="property-list property-list-independent clearfix" v-if="independentProperties.length">
@@ -188,7 +188,7 @@
     }
     .property-selector {
         margin: 0 -24px -24px 0;
-        height: calc((100vh * 0.3) + 0px);
+        height: 350px;
         @include scrollbar-y;
     }
     .group {
