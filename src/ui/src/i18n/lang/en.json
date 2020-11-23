@@ -1347,5 +1347,6 @@
     "静态拓扑": "Static topology",
     "自定义输入": "Custom input",
     "请输入实例名称": "Please enter the instance name",
-    "默认名称为：IP_首进程名称_端口": "The default name is: IP_first process name_port"
+    "默认名称为：IP_首进程名称_端口": "The default name is: IP_first process name_port",
+    "该集群尚未创建模块": "The set has not yet created a module, {link}"
 }

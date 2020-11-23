@@ -1,7 +1,7 @@
 <template>
     <div class="list-layout">
         <host-list-options @transfer="handleTransfer"></host-list-options>
-        <bk-table class="host-table"
+        <bk-table class="host-table" ref="hostTable"
             v-bkloading="{ isLoading: $loading(Object.values(request)) || !commonRequestFinished }"
             :data="table.data"
             :pagination="table.pagination"
@@ -399,6 +399,9 @@
                     _t: Date.now(),
                     page: 1
                 })
+            },
+            doLayoutTable () {
+                this.$refs.hostTable.doLayout()
             }
         }
     }
