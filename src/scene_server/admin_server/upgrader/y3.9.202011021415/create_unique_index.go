@@ -75,7 +75,11 @@ func buildTopoIndex(indexes map[string][]types.Index) {
 	indexes[common.BKTableNameHostApplyRule] = []types.Index{
 		idUniqueIndex,
 		{
-			Keys:       map[string]int32{common.BKAppIDField: sortFlag, common.BKModuleIDField: sortFlag, common.BKAttributeIDField: sortFlag},
+			Keys: map[string]int32{
+				common.BKAppIDField:       sortFlag,
+				common.BKModuleIDField:    sortFlag,
+				common.BKAttributeIDField: sortFlag,
+			},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_bizID_moduleID_attrID",
@@ -104,7 +108,11 @@ func buildTopoIndex(indexes map[string][]types.Index) {
 			Name:       "idx_unique_moduleID",
 		},
 		{
-			Keys:       map[string]int32{common.BKAppIDField: sortFlag, common.BKSetIDField: sortFlag, common.BKModuleNameField: sortFlag},
+			Keys: map[string]int32{
+				common.BKAppIDField:      sortFlag,
+				common.BKSetIDField:      sortFlag,
+				common.BKModuleNameField: sortFlag,
+			},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_bizID_setID_moduleName",
@@ -198,7 +206,10 @@ func buildTopoTemplateIndex(indexes map[string][]types.Index) {
 	}
 	indexes[common.BKTableNameSetServiceTemplateRelation] = []types.Index{
 		{
-			Keys:       map[string]int32{common.BKSetTemplateIDField: sortFlag, common.BKServiceTemplateIDField: sortFlag},
+			Keys: map[string]int32{
+				common.BKSetTemplateIDField:     sortFlag,
+				common.BKServiceTemplateIDField: sortFlag,
+			},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_setTemplateID_serviceTemplateID",
@@ -221,6 +232,11 @@ func buildModelIndex(indexes map[string][]types.Index) {
 
 	indexes[common.BKTableNameAsstDes] = []types.Index{
 		idUniqueIndex,
+		{
+			Keys:       map[string]int32{common.AssociationKindIDField: sortFlag},
+			Background: true,
+			Name:       "idx_unique_asstID",
+		},
 	}
 
 	indexes[common.BKTableNameInstAsst] = []types.Index{
@@ -234,13 +250,21 @@ func buildModelIndex(indexes map[string][]types.Index) {
 	indexes[common.BKTableNameObjAttDes] = []types.Index{
 		idUniqueIndex,
 		{
-			Keys:       map[string]int32{common.BKObjIDField: sortFlag, common.BKPropertyIDField: sortFlag, common.BKAppIDField: sortFlag},
+			Keys: map[string]int32{
+				common.BKObjIDField:      sortFlag,
+				common.BKPropertyIDField: sortFlag,
+				common.BKAppIDField:      sortFlag,
+			},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_objID_propertyID_bizID",
 		},
 		{
-			Keys:       map[string]int32{common.BKObjIDField: sortFlag, common.BKPropertyNameField: sortFlag, common.BKAppIDField: sortFlag},
+			Keys: map[string]int32{
+				common.BKObjIDField:        sortFlag,
+				common.BKPropertyNameField: sortFlag,
+				common.BKAppIDField:        sortFlag,
+			},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_objID_propertyName_bizID",
@@ -309,7 +333,8 @@ func buildExtIndex(indexes map[string][]types.Index) {
 	indexes[common.BKTableNameServiceCategory] = []types.Index{
 		idUniqueIndex,
 		{
-			Keys:       map[string]int32{common.BKFieldName: sortFlag, common.BKParentIDField: sortFlag, common.BKAppIDField: sortFlag},
+			Keys: map[string]int32{common.BKFieldName: sortFlag,
+				common.BKParentIDField: sortFlag, common.BKAppIDField: sortFlag},
 			Unique:     true,
 			Background: true,
 			Name:       "idx_unique_Name_parentID_bizID",
