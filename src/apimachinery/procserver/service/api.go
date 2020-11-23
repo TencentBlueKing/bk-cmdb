@@ -28,6 +28,7 @@ type ServiceClientInterface interface {
 	CreateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
 	SearchServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
+	FindServiceTemplateCountInfo(ctx context.Context, h http.Header, bizID int64, data map[string]interface{}) (resp *metadata.ArrayResponse, err error)
 	UpdateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
 	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
 }

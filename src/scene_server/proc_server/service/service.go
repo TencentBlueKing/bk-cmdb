@@ -91,6 +91,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template", Handler: ps.ListServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/with_detail", Handler: ps.ListServiceTemplatesWithDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: ps.DeleteServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/count_info/biz/{bk_biz_id}", Handler: ps.FindServiceTemplateCountInfo})
 
 	// process template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template", Handler: ps.CreateProcessTemplateBatch})
