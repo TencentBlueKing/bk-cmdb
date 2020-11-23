@@ -26,4 +26,6 @@ func init() {
 	types.AddDiscoveryService(types.CC_MODULE_DATACOLLECTION)
 	types.AddDiscoveryService(types.CC_MODULE_OPERATION)
 	types.AddDiscoveryService(types.CC_MODULE_MIGRATE)
+	types.AddDiscoveryService(types.CC_MODULE_AUTH)
+	types.AddDiscoveryService(types.CC_MODULE_CORESERVICE)
 }

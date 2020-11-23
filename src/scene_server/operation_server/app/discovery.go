@@ -18,4 +18,5 @@ import (
 
 func init() {
 	types.AddDiscoveryService(types.CC_MODULE_CORESERVICE)
+	types.AddDiscoveryService(types.CC_MODULE_AUTH)
 }

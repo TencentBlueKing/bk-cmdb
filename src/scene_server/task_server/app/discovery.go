@@ -21,5 +21,5 @@ func init() {
 	types.AddDiscoveryService(types.CC_MODULE_HOST)
 	types.AddDiscoveryService(types.CC_MODULE_PROC)
 	types.AddDiscoveryService(types.CC_MODULE_TOPO)
-
+	//types.AddDiscoveryService(types.CC_MODULE_AUTH)
 }

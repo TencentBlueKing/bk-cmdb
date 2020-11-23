@@ -19,4 +19,5 @@ import (
 func init() {
 	// 不依cc其他组件，只发自己即可, 默认会自动加上发现发下相同的服务。这里是为了避免为空的时候发现全部服务
 	types.AddDiscoveryService(types.CC_MODULE_MIGRATE)
+	types.AddDiscoveryService(types.CC_MODULE_AUTH)
 }

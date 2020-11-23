@@ -18,6 +18,7 @@ import (
 
 func init() {
 	types.AddDiscoveryService(types.CC_MODULE_CORESERVICE)
+	types.AddDiscoveryService(types.CC_MODULE_AUTH)
 	// 暂时 host 还未使用
 	types.AddDiscoveryService(types.CC_MODULE_CACHESERVICE)
 }
