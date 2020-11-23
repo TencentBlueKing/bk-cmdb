@@ -5,14 +5,19 @@
             <span class="label-text">{{$t('检索项')}}</span>
             <span class="label-colon">:</span>
         </label>
-        <div class="filter-list">
+        <div class="filter-list" ref="filterList">
             <filter-tag-ip v-if="showIPTag"></filter-tag-ip>
-            <filter-tag-item class="filter-item"
+            <filter-tag-item
                 v-for="property in selected"
                 :key="property.id"
                 :property="property"
                 v-bind="condition[property.id]">
             </filter-tag-item>
+            <bk-button class="filter-clear" text
+                v-if="showClear"
+                @click="handleResetAll">
+                {{$t('清空条件')}}
+            </bk-button>
         </div>
     </section>
 </template>
@@ -40,6 +45,15 @@
                     const value = this.condition[property.id].value
                     return value !== null && !!value.toString().length
                 })
+            },
+            showClear () {
+                const count = this.selected.length + (this.showIPTag ? 1 : 0)
+                return count > 1
+            }
+        },
+        methods: {
+            handleResetAll () {
+                FilterStore.resetAll()
             }
         }
     }
@@ -69,6 +83,10 @@
             display: flex;
             flex-wrap: wrap;
             flex: 1;
+        }
+        .filter-clear {
+            line-height: initial;
+            margin-left: 10px;
         }
     }
 </style>

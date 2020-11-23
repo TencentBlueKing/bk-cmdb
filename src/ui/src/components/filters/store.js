@@ -242,7 +242,7 @@ const FilterStore = new Vue({
             })
             RouterQuery.set({
                 filter: QS.stringify(query, { encode: false }),
-                ip: QS.stringify(this.IP, { encode: false }),
+                ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, { encode: false }),
                 _t: Date.now()
             })
         },

@@ -75,6 +75,9 @@
         background: #f0f1f5;
         line-height: 22px;
         cursor: pointer;
+        &:hover {
+            background-color: #DCDEE5;
+        }
         .tag-name {
             max-width: 150px;
             padding-right: 5px;

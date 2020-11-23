@@ -13,7 +13,7 @@
             slot="trigger"
             slot-scope="scopeProps"
             :value="scopeProps.value">
-            <icon-button icon="bk-icon icon-star"></icon-button>
+            <icon-button class="filter-trigger" icon="icon-cc-star"></icon-button>
         </cmdb-loading>
         <bk-option v-for="collection in collections"
             :key="collection.id"
@@ -242,6 +242,16 @@
         height: 32px;
         border: 1px solid #c4c6cc;
         border-radius: 2px;
+    }
+    .filter-trigger.icon-button {
+        &:hover {
+            color: $primaryColor;
+        }
+        /deep/ {
+            .icon-wrapper:before {
+                font-size: 18px;
+            }
+        }
     }
     .collection-item {
         display: flex;
