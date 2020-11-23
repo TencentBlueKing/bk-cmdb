@@ -71,8 +71,8 @@
                     [NE]: this.$t('不等于'),
                     [LT]: this.$t('小于'),
                     [GT]: this.$t('大于'),
-                    [IN]: this.$t('属于'),
-                    [NIN]: this.$t('不属于'),
+                    [IN]: this.$t('包含'),
+                    [NIN]: this.$t('不包含'),
                     [RANGE]: this.$t('数值范围'),
                     [LTE]: this.$t('小于等于'),
                     [GTE]: this.$t('大于等于')
