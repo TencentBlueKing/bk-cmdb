@@ -13,7 +13,7 @@
             slot="trigger"
             slot-scope="scopeProps"
             :value="scopeProps.value">
-            <icon-button class="filter-trigger" icon="icon-cc-star"></icon-button>
+            <icon-button class="filter-trigger" icon="icon-cc-star" :class="{ 'is-selected': !!storageCollection }"></icon-button>
         </cmdb-loading>
         <bk-option v-for="collection in collections"
             :key="collection.id"
@@ -211,6 +211,7 @@
                 }
             },
             handleCreate () {
+                FilterStore.setActiveCollection(null)
                 FilterForm.show()
             }
         }
@@ -244,7 +245,8 @@
         border-radius: 2px;
     }
     .filter-trigger.icon-button {
-        &:hover {
+        &:hover,
+        &.is-selected {
             color: $primaryColor;
         }
         /deep/ {
