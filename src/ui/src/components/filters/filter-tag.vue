@@ -86,7 +86,7 @@
         }
         .filter-clear {
             line-height: initial;
-            margin-left: 10px;
+            margin: 0 0 10px 10px;
         }
     }
 </style>
