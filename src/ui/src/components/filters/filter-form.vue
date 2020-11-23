@@ -25,7 +25,9 @@
                         v-focus
                         v-model.trim="IPCondition.text">
                     </bk-input>
-                    <p class="filter-ip-error" v-if="errors.has('ip')">{{errors.first('ip')}}</p>
+                    <p class="filter-ip-error" v-if="errors.has('ip')">
+                        {{errors.first('ip')}}
+                    </p>
                     <div>
                         <bk-checkbox class="mr20" v-model="IPCondition.inner" @change="handleIPOptionChange('outer', ...arguments)">
                             {{$t('内网IP')}}
@@ -54,8 +56,10 @@
                         <component class="item-value"
                             :is="`cmdb-search-${property.bk_property_type}`"
                             :placeholder="getPlaceholder(property)"
+                            :ref="`component-${property.id}`"
                             v-bind="getBindProps(property)"
-                            v-model.trim="condition[property.id].value">
+                            v-model.trim="condition[property.id].value"
+                            @active-change="handleComponentActiveChange(property, ...arguments)">
                         </component>
                     </div>
                     <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
@@ -109,9 +113,12 @@
                                 data-vv-name="collectionName"
                                 v-model="collectionForm.name"
                                 v-validate="'required|length:256'"
+                                @focus="handleCollectionFormFocus"
                                 @enter="handleSaveCollection">
                             </bk-input>
-                            <p class="collection-error" v-if="errors.has('collectionName')">{{errors.first('collectionName')}}</p>
+                            <p class="collection-error" v-if="collectionForm.error || errors.has('collectionName')">
+                                {{collectionForm.error || errors.first('collectionName')}}
+                            </p>
                             <div class="collection-options">
                                 <bk-button class="mr10"
                                     theme="primary"
@@ -163,7 +170,8 @@
                 condition: {},
                 selected: [],
                 collectionForm: {
-                    name: ''
+                    name: '',
+                    error: ''
                 }
             }
         },
@@ -234,6 +242,27 @@
                 const effectValue = Utils.getOperatorSideEffect(property, operator, value)
                 this.condition[property.id].value = effectValue
             },
+            // 人员选择器参考定位空间不足，备选面板左移了，此处将其通过offset配置移到最右边
+            handleComponentActiveChange (property, active) {
+                if (!active) {
+                    return false
+                }
+                const { id, bk_property_type: type } = property
+                if (type !== 'objuser') {
+                    return false
+                }
+                const [component] = this.$refs[`component-${id}`]
+                try {
+                    this.$nextTick(() => {
+                        const reference = component.$el.querySelector('.user-selector-input')
+                        reference._tippy.setProps({
+                            offset: [240, 5]
+                        })
+                    })
+                } catch (error) {
+                    console.error(error)
+                }
+            },
             handleRemove (property) {
                 const index = this.selected.indexOf(property)
                 index > -1 && this.selected.splice(index, 1)
@@ -272,6 +301,9 @@
                 const instance = this.$refs.collectionPopover.instance
                 instance.hide()
             },
+            handleCollectionFormFocus () {
+                this.collectionForm.error = null
+            },
             async handleSaveCollection () {
                 try {
                     const isValid = await this.$validator.validate('collectionName')
@@ -287,6 +319,7 @@
                     this.$success(this.$t('收藏成功'))
                     this.closeCollectionForm()
                 } catch (error) {
+                    this.collectionForm.error = error.bk_error_msg
                     console.error(error)
                 }
             },
@@ -319,16 +352,13 @@
                     const defaultValue = Utils.getOperatorSideEffect(property, propertyCondititon.operator, null)
                     propertyCondititon.value = defaultValue
                 })
-                FilterStore.setCondition({
-                    condition: this.condition,
-                    IP: this.IPCondition
-                })
             },
             focusCollectionName () {
                 this.$refs.collectionName.$refs.input.focus()
             },
             clearCollectionName () {
                 this.collectionForm.name = ''
+                this.closeCollectionForm.error = ''
             },
             handleClosed () {
                 this.$emit('closed')
@@ -365,7 +395,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        text-indent: -30px;
+        margin-left: -30px;
         .icon-close {
             font-size: 32px;
             margin-right: 6px;
@@ -471,6 +501,7 @@
         }
         .collection-error {
             color: $dangerColor;
+            position: absolute;
         }
         .collection-options {
             display: flex;
