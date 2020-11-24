@@ -14,7 +14,6 @@ package service
 
 import (
 	"configcenter/src/common/mapstr"
-	"context"
 	"strconv"
 
 	"configcenter/src/common"
@@ -185,7 +184,7 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 	var ret metadata.ResponeImportAssociationData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().ImportInstAssociation(context.Background(), ctx.Kit, objID, request.AssociationInfoMap, s.Language)
+		ret, err = s.Core.AssociationOperation().ImportInstAssociation(ctx.Kit.Ctx, ctx.Kit, objID, request.AssociationInfoMap, s.Language)
 		if err != nil {
 			return err
 		}
