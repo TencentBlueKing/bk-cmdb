@@ -193,17 +193,28 @@ func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 }
 
 func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
+
 	input := new(metadata.ListProcessTemplateWithServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	option := &metadata.ListProcessTemplatesOption{
-		BusinessID:         input.BizID,
-		ServiceTemplateIDs: []int64{input.ServiceTemplateID},
-		Page:               input.Page,
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
 	}
+
+	option := &metadata.ListProcessTemplatesOption{
+		BusinessID: input.BizID,
+		Page:       input.Page,
+	}
+
+	if input.ServiceTemplateID > 0 {
+		option.ServiceTemplateIDs = []int64{input.ServiceTemplateID}
+	}
+
 	if input.ProcessTemplatesIDs != nil {
 		option.ProcessTemplateIDs = input.ProcessTemplatesIDs
 	}
