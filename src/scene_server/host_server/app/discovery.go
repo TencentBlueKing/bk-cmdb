@@ -19,6 +19,8 @@ import (
 func init() {
 	types.AddDiscoveryService(types.CC_MODULE_CORESERVICE)
 	types.AddDiscoveryService(types.CC_MODULE_AUTH)
+	// 不规范调用，等待处理
+	types.AddDiscoveryService(types.CC_MODULE_PROC)
 	// 暂时 host 还未使用
 	types.AddDiscoveryService(types.CC_MODULE_CACHESERVICE)
 }
