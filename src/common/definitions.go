@@ -959,11 +959,6 @@ const (
 	LogoutHTTPSchemeHTTPS     = "https"
 )
 
-const (
-	HostFieldDockerClientVersion = "docker_client_version"
-	HostFieldDockerServerVersion = "docker_server_version"
-)
-
 const TemplateStatusField = "status"
 const BKStatusField = "status"
 
