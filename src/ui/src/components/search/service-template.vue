@@ -1,10 +1,12 @@
 <template>
     <bk-select
+        v-if="displayType === 'selector'"
         multiple
         searchable
         display-tag
         v-bind="$attrs"
-        v-model="localValue">
+        v-model="localValue"
+        @toggle="handleToggle">
         <bk-option
             v-for="template in list"
             :key="template.id"
@@ -12,16 +14,29 @@
             :name="template.name">
         </bk-option>
     </bk-select>
+    <span v-else>
+        <slot name="info-prepend"></slot>
+        {{info}}
+    </span>
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     import { mapGetters } from 'vuex'
     export default {
         name: 'cmdb-search-service-template',
+        mixins: [activeMixin],
         props: {
             value: {
                 type: Array,
                 default: () => ([])
+            },
+            displayType: {
+                type: String,
+                default: 'selector',
+                validator (type) {
+                    return ['selector', 'info'].includes(type)
+                }
             }
         },
         data () {
@@ -40,6 +55,14 @@
                     this.$emit('input', value)
                     this.$emit('change', value)
                 }
+            },
+            info () {
+                const info = []
+                this.value.forEach(id => {
+                    const data = this.list.find(data => data.id === id)
+                    data && info.push(data.name)
+                })
+                return info.join(' | ')
             }
         },
         created () {
@@ -57,7 +80,7 @@
                             fromCache: true
                         }
                     })
-                    this.list = info
+                    this.list = this.$tools.localSort(info, 'name')
                 } catch (error) {
                     console.error(error)
                     this.list = []

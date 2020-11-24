@@ -40,14 +40,10 @@
     import ListCellName from './list-cell-name'
     import ListCellCount from './list-cell-count'
     import ListCellTag from './list-cell-tag'
-    import ListStickyRow from './list-sticky-row'
     import ListCellOperation from './list-cell-operation'
     import ExpandList from './expand-list'
     import RouterQuery from '@/router/query'
     import Bus from '../common/bus'
-    import Vue from 'vue'
-    import store from '@/store'
-    import i18n from '@/i18n'
     import LabelBatchDialog from './dialog/label-batch-dialog.js'
     export default {
         components: {
@@ -125,7 +121,6 @@
             Bus.$off('filter-change', this.handleFilterChange)
             Bus.$off('batch-edit-labels', this.handleBatchEditLabels)
             this.unwatch()
-            // this.removeIntersectionObserver()
         },
         methods: {
             handleFilterChange (filters) {
@@ -137,8 +132,6 @@
             },
             async getList () {
                 try {
-                    // this.removeIntersectionObserver()
-                    // this.removeStickyRow()
                     const { count, info } = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: {
                             bk_biz_id: this.bizId,
@@ -159,88 +152,7 @@
                     this.list = []
                     this.pagination.count = 0
                     console.error(error)
-                } finally {
-                    this.$nextTick(() => {
-                        // this.initIntersectionObserver()
-                        // this.injectStickyRow()
-                    })
                 }
-            },
-            initIntersectionObserver () {
-                if (!this.list.length) return false
-                const bodyWrapper = this.$refs.instanceTable.$refs.bodyWrapper
-                const rows = Array.from(bodyWrapper.querySelectorAll('.instance-table-row'))
-                this.referenceObserver = this.createIntersectionObserver(entry => {
-                    const index = rows.indexOf(entry.target)
-                    this.stickyRow.row = this.list[index] || {}
-                    this.stickyRow.updateScrollPosition = false
-                }, { root: bodyWrapper, threshold: [0, 1] })
-                // this.positionObserver = this.createIntersectionObserver(entry => {
-                //     this.stickyRow.updateScrollPosition = true
-                //     console.log(entry.target)
-                // }, { root: bodyWrapper, rootMargin: '-42px 0px 0px 0px', threshold: [0, 1] })
-                rows.forEach(row => {
-                    this.referenceObserver.observe(row)
-                    // this.positionObserver.observe(row)
-                })
-            },
-            createIntersectionObserver (callback, options = {}) {
-                return new IntersectionObserver(entries => {
-                    const referenceEntry = entries.find(entry => {
-                        const { isIntersecting, rootBounds, boundingClientRect } = entry
-                        return isIntersecting && rootBounds.top > boundingClientRect.top
-                    })
-                    referenceEntry && callback(referenceEntry)
-                }, options)
-            },
-            updateIntersectionObserver (row) {
-                const bodyWrapper = this.$refs.instanceTable.$refs.bodyWrapper
-                const tableRows = Array.from(bodyWrapper.querySelectorAll('.instance-table-row'))
-                const index = this.list.indexOf(row)
-                const tableRow = tableRows[index]
-                const willExpand = !tableRow.classList.contains('expanded')
-                if (willExpand) {
-                    setTimeout(() => {
-                        this.referenceObserver.observe(tableRow)
-                        this.referenceObserver.observe(tableRow.nextElementSibling)
-                    }, 0)
-                } else {
-                    this.referenceObserver.unobserve(tableRow)
-                    this.referenceObserver.unobserve(tableRow.nextElementSibling)
-                }
-            },
-            removeIntersectionObserver () {
-                this.referenceObserver && this.referenceObserver.disconnect()
-                this.positionObserver && this.positionObserver.disconnect()
-                this.referenceObserver = null
-                this.positionObserver = null
-            },
-            injectStickyRow () {
-                if (!this.list.length) return false
-                const bodyWrapper = this.$refs.instanceTable.$refs.bodyWrapper
-                if (!this.stickyRow) {
-                    const StickyRow = Vue.extend(ListStickyRow)
-                    this.stickyRow = new StickyRow({
-                        store,
-                        i18n,
-                        propsData: {
-                            table: this.$refs.instanceTable
-                        }
-                    })
-                    this.stickyRow.$mount()
-                }
-                this.stickyRow.row = this.list[0]
-                bodyWrapper.insertBefore(this.stickyRow.$el, bodyWrapper.firstElementChild)
-            },
-            removeStickyRow () {
-                if (!this.stickyRow) return false
-                try {
-                    const bodyWrapper = this.$refs.instanceTable.$refs.bodyWrapper
-                    bodyWrapper.scrollTop = 0
-                    bodyWrapper.removeChild(this.stickyRow.$el) // may be not child, catch error
-                    this.stickyRow.row = {}
-                    this.stickyRow.updateScrollPosition = false
-                } catch (error) {}
             },
             getRowClassName ({ row }) {
                 const className = ['instance-table-row']

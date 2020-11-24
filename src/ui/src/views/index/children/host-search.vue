@@ -17,13 +17,15 @@
                 <i class="bk-icon icon-search"></i>
                 {{$t('搜索')}}
             </bk-button>
-            <span v-if="showEllipsis" class="search-text" @click="handleSearchInput">{{searchText}}</span>
         </div>
     </div>
 </template>
 
 <script>
     import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
+    import QS from 'qs'
+    import IS_IP from 'validator/es/lib/isIP'
+    import IS_INT from 'validator/es/lib/isInt'
     export default {
         data () {
             return {
@@ -31,7 +33,6 @@
                 searchText: '',
                 searchContent: '',
                 textarea: '',
-                showEllipsis: false,
                 textareaDom: null,
                 request: {
                     search: Symbol('search')
@@ -66,19 +67,11 @@
                 this.setRows()
             },
             handleBlur () {
-                this.textareaDom && this.textareaDom.blur()
-                this.$emit('focus', false)
-                const data = this.getSearchList()
-                if (data.length) {
-                    this.showEllipsis = true
-                    this.searchText = data.join(',')
-                } else {
+                if (!this.searchContent.trim().length) {
                     this.searchContent = ''
                 }
-                this.$nextTick(() => {
-                    this.rows = 1
-                    this.textareaDom && (this.textareaDom.scrollTop = 0)
-                })
+                this.textareaDom && this.textareaDom.blur()
+                this.$emit('focus', false)
             },
             handleKeydown (content, event) {
                 const agent = window.navigator.userAgent.toLowerCase()
@@ -88,49 +81,111 @@
                     this.handleSearch()
                 }
             },
-            handleSearchInput () {
-                this.showEllipsis = false
-                this.textareaDom && this.textareaDom.focus()
-            },
             async handleSearch () {
                 const searchList = this.getSearchList()
                 if (searchList.length > 500) {
                     this.$warn(this.$t('最多支持搜索500条数据'))
                 } else if (searchList.length) {
-                    try {
-                        const validateQueue = searchList.map(text => this.$validator.verify(text, 'ip'))
-                        const results = await Promise.all(validateQueue)
-                        const ipList = []
-                        const asstList = []
-                        results.forEach((result, index) => {
-                            (result.valid ? ipList : asstList).push(searchList[index])
-                        })
-                        if (ipList.length && asstList.length) {
-                            this.$warn(this.$t('不支持混合搜索'))
-                            return
-                        } else if (ipList.length) {
-                            this.navigateToResource(ipList, 'ip')
+                    const IPList = []
+                    const IPWithCloudList = []
+                    const assetList = []
+                    const cloudIdSet = new Set()
+                    searchList.forEach(text => {
+                        if (IS_IP(text, 4)) {
+                            IPList.push(text)
                         } else {
-                            this.navigateToResource(asstList, 'bk_asset_id')
+                            const splitData = text.split(':')
+                            const [cloudId, ip] = splitData
+                            if (splitData.length === 2 && IS_INT(cloudId) && IS_IP(ip)) {
+                                IPWithCloudList.push(text)
+                                cloudIdSet.add(parseInt(cloudId, 10))
+                            } else {
+                                assetList.push(text)
+                            }
                         }
-                    } catch (e) {
-                        console.error(e)
+                    })
+                    // 判断是否存在IP、固资编号混合搜搜
+                    if ((IPList.length || IPWithCloudList.length) && assetList.length) {
+                        return this.$warn(this.$t('不支持混合搜索'))
                     }
+                    // 纯固资编号搜索
+                    if (assetList.length) {
+                        return this.handleAssetSearch(assetList)
+                    }
+                    // 无云区域与有云区域的混合搜索
+                    if (IPList.length && IPWithCloudList.length) {
+                        return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
+                    }
+                    // 纯IP搜索
+                    if (IPList.length) {
+                        return this.handleIPSearch(IPList)
+                    }
+                    // 不同云区域+IP的混合搜索
+                    if (cloudIdSet.length > 1) {
+                        return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
+                    }
+                    this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)
                 } else {
                     this.searchContent = ''
                     this.textareaDom && this.textareaDom.focus()
                 }
             },
-            navigateToResource (list, field) {
+            handleIPSearch (list) {
+                const ip = {
+                    text: list.join('\n'),
+                    inner: true,
+                    outer: true,
+                    exact: true
+                }
                 this.$routerActions.redirect({
                     name: MENU_RESOURCE_HOST,
                     query: {
-                        [field]: list.join(','),
                         scope: 'all',
-                        exact: 1
+                        ip: QS.stringify(ip, { encode: false })
                     },
                     history: true
                 })
+            },
+            handleIPWithCloudSearch (list, cloudSet) {
+                const IPList = list.map(text => {
+                    const [, ip] = text.split(':')
+                    return ip
+                })
+                const ip = {
+                    text: IPList.join('\n'),
+                    inner: true,
+                    outer: true,
+                    exact: true
+                }
+                const filter = {
+                    'bk_cloud_id.$in': [cloudSet.values().next().value].join(',')
+                }
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_HOST,
+                    query: {
+                        scope: 'all',
+                        ip: QS.stringify(ip, { encode: false }),
+                        filter: QS.stringify(filter, { encode: false })
+                    },
+                    history: true
+                })
+            },
+            async handleAssetSearch (list) {
+                try {
+                    const filter = {
+                        'bk_asset_id.in': list.join(',')
+                    }
+                    this.$routerActions.redirect({
+                        name: MENU_RESOURCE_HOST,
+                        query: {
+                            scope: 'all',
+                            filter: QS.stringify(filter, { encode: false })
+                        },
+                        history: true
+                    })
+                } catch (error) {
+                    console.error(true)
+                }
             }
         }
     }

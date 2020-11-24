@@ -1,24 +1,27 @@
 <template>
     <div class="list-layout">
         <host-list-options @transfer="handleTransfer"></host-list-options>
-        <bk-table class="host-table" ref="hostTable"
-            v-bkloading="{ isLoading: $loading(Object.values(request)) || !commonRequestFinished }"
+        <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
+        <bk-table class="host-table"
+            ref="table"
+            v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="table.data"
             :pagination="table.pagination"
-            :max-height="$APP.height - 250"
+            :max-height="$APP.height - filtersTagHeight - 250"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @sort-change="handleSortChange"
-            @selection-change="handleSelectionChange">
+            @selection-change="handleSelectionChange"
+            @header-click="handleHeaderClick">
             <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
-            <bk-table-column v-for="column in table.header"
+            <bk-table-column v-for="column in tableHeader"
                 show-overflow-tooltip
                 :min-width="column.bk_property_id === 'bk_host_id' ? 80 : 120"
                 :key="column.bk_property_id"
-                :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
                 :prop="column.bk_property_id"
-                :fixed="column.bk_property_id === 'bk_host_id'">
+                :fixed="column.bk_property_id === 'bk_host_id'"
+                :render-header="() => renderHeader(column)">
                 <template slot-scope="{ row }">
                     <cmdb-property-value
                         :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
@@ -29,6 +32,7 @@
                     </cmdb-property-value>
                 </template>
             </bk-table-column>
+            <bk-table-column type="setting"></bk-table-column>
         </bk-table>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
             <component
@@ -47,17 +51,21 @@
     import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
-    import { mapGetters, mapState } from 'vuex'
+    import { mapGetters } from 'vuex'
     import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
         MENU_BUSINESS_HOST_DETAILS,
         MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
-    import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
+    import HostFilterTag from '@/components/filters/filter-tag'
+    import FilterStore, { setupFilterStore } from '@/components/filters/store'
+    import ColumnsConfig from '@/components/columns-config/columns-config.js'
     export default {
         components: {
             HostListOptions,
+            HostFilterTag,
             [ModuleSelector.name]: ModuleSelector,
             [AcrossBusinessModuleSelector.name]: AcrossBusinessModuleSelector,
             [MoveToResourceConfirm.name]: MoveToResourceConfirm
@@ -73,14 +81,9 @@
                 commonRequestFinished: false,
                 table: {
                     data: [],
-                    header: [],
                     selection: [],
                     sort: 'bk_host_id',
                     pagination: this.$tools.getDefaultPaginationConfig()
-                },
-                columnsConfig: {
-                    selected: [],
-                    fixedColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 dialog: {
                     width: 720,
@@ -93,71 +96,94 @@
                     table: Symbol('table'),
                     moveToResource: Symbol('moveToResource'),
                     moveToIdleModule: Symbol('moveToIdleModule')
-                }
+                },
+                filtersTagHeight: 0
             }
         },
         computed: {
-            ...mapState('userCustom', ['globalUsercustom']),
-            ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
+            ...mapGetters('objectModelClassify', ['getModelById']),
             ...mapGetters('businessHost', [
                 'columnsConfigProperties',
                 'selectedNode',
                 'commonRequest'
             ]),
-            ...mapGetters('hosts', ['condition']),
-            customColumns () {
-                return this.usercustom[this.$route.meta.customInstanceColumn] || []
-            },
-            globalCustomColumns () {
-                return this.globalUsercustom['host_global_custom_table_columns'] || []
-            }
-        },
-        watch: {
-            customColumns () {
-                this.setTableHeader()
-            },
-            columnsConfigProperties () {
-                this.setTableHeader()
+            tableHeader () {
+                return FilterStore.header
             }
         },
         created () {
-            this.unwatch = RouterQuery.watch('*', ({
+            setupFilterStore({
+                bk_biz_id: this.bizId,
+                header: {
+                    custom: this.$route.meta.customInstanceColumn,
+                    global: 'host_global_custom_table_columns'
+                }
+            })
+            this.unwatchRouter = RouterQuery.watch('*', ({
                 tab = 'hostList',
                 node,
                 page = 1,
                 limit = this.table.pagination.limit
             }) => {
+                if (this.$route.name !== MENU_BUSINESS_HOST_AND_SERVICE) {
+                    return false
+                }
                 this.table.pagination.current = parseInt(page)
                 this.table.pagination.limit = parseInt(limit)
                 tab === 'hostList' && node && this.selectedNode && this.getHostList()
-            }, { throttle: 16, immediate: true, ignore: ['keyword'] })
+            }, { throttle: 16, ignore: ['keyword'] })
+        },
+        mounted () {
+            this.unwatchFilter = this.$watch(() => {
+                return [FilterStore.condition, FilterStore.IP]
+            }, () => {
+                const el = this.$refs.filterTag.$el
+                if (el.getBoundingClientRect) {
+                    this.filtersTagHeight = el.getBoundingClientRect().height
+                } else {
+                    this.filtersTagHeight = 0
+                }
+            }, { immediate: true, deep: true })
+            this.disabledTableSettingDefaultBehavior()
         },
         beforeDestroy () {
-            this.unwatch()
+            this.unwatchRouter()
+            this.unwatchFilter()
         },
         methods: {
-            setTableHeader () {
-                const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
-                const properties = this.$tools.getHeaderProperties(
-                    this.columnsConfigProperties,
-                    customColumns,
-                    this.columnsConfig.fixedColumns
-                )
-                this.table.header = properties
+            disabledTableSettingDefaultBehavior () {
+                setTimeout(() => {
+                    const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
+                    settingReference && settingReference._tippy && settingReference._tippy.disable()
+                }, 1000)
             },
             getColumnSortable (column) {
                 const isHostProperty = column.bk_obj_id === 'host'
                 const isForeignKey = column.bk_property_type === 'foreignkey'
                 return (isHostProperty && !isForeignKey) ? 'custom' : false
             },
-            handlePageChange (current) {
-                RouterQuery.set('page', current)
+            renderHeader (property) {
+                const content = [this.$tools.getHeaderPropertyName(property)]
+                const modelId = property.bk_obj_id
+                if (modelId !== 'host') {
+                    const model = this.getModelById(modelId)
+                    const suffix = this.$createElement('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
+                    content.push(suffix)
+                }
+                return this.$createElement('span', {}, content)
+            },
+            handlePageChange (current = 1) {
+                RouterQuery.set({
+                    page: current,
+                    _t: Date.now()
+                })
             },
             handleLimitChange (limit) {
                 RouterQuery.set({
                     limit: limit,
-                    page: 1
+                    page: 1,
+                    _t: Date.now()
                 })
             },
             handleSortChange (sort) {
@@ -180,6 +206,39 @@
             handleSelectionChange (selection) {
                 this.table.selection = selection
             },
+            handleHeaderClick (column) {
+                if (column.type !== 'setting') {
+                    return false
+                }
+                ColumnsConfig.open({
+                    props: {
+                        properties: FilterStore.properties.filter(property => {
+                            return property.bk_obj_id === 'host'
+                                || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
+                                || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')
+                        }),
+                        selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
+                        disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
+                    },
+                    handler: {
+                        apply: async properties => {
+                            await this.handleApplyColumnsConfig(properties)
+                            FilterStore.setHeader(properties)
+                            FilterStore.dispatchSearch()
+                        },
+                        reset: async () => {
+                            await this.handleApplyColumnsConfig()
+                            FilterStore.setHeader(FilterStore.defaultHeader)
+                            FilterStore.dispatchSearch()
+                        }
+                    }
+                })
+            },
+            handleApplyColumnsConfig (properties = []) {
+                return this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.$route.meta.customInstanceColumn]: properties.map(property => property.bk_property_id)
+                })
+            },
             async getHostList () {
                 try {
                     await this.commonRequest
@@ -201,37 +260,26 @@
             },
             getParams () {
                 const params = {
-                    bk_biz_id: this.bizId,
-                    ip: getIPPayload(),
+                    ...FilterStore.getSearchParams(),
                     page: {
                         ...this.$tools.getPageParams(this.table.pagination),
                         sort: this.table.sort
-                    },
-                    condition: this.$tools.clone(this.condition)
+                    }
                 }
-                const idMap = {
-                    host: 'bk_host_id',
-                    set: 'bk_set_id',
-                    module: 'bk_module_id',
-                    biz: 'bk_biz_id',
-                    object: 'bk_inst_id'
+                const topoNodeData = this.selectedNode.data
+                const fieldMap = {
+                    'biz': 'bk_biz_id',
+                    'set': 'bk_set_id',
+                    'module': 'bk_module_id'
                 }
-                const nodeData = this.selectedNode.data
-                const conditionObjectId = Object.keys(idMap).includes(nodeData.bk_obj_id) ? nodeData.bk_obj_id : 'object'
-                const selectedNodeCondition = params.condition.find(target => target.bk_obj_id === conditionObjectId)
-                const existCondition = selectedNodeCondition.condition.find(({ field }) => field === idMap[conditionObjectId])
-                if (existCondition) {
-                    existCondition.operator = '$eq'
-                    existCondition.value = nodeData.bk_inst_id
-                } else {
-                    selectedNodeCondition.condition.push({
-                        field: idMap[conditionObjectId],
-                        operator: '$eq',
-                        value: nodeData.bk_inst_id
-                    })
+                const topoCondition = {
+                    field: fieldMap[topoNodeData.bk_obj_id] || 'bk_inst_id',
+                    operator: '$eq',
+                    value: topoNodeData.bk_inst_id
                 }
-                injectFields(params, this.table.header)
-                injectAsset(params, RouterQuery.get('bk_asset_id'))
+                const modelConditionId = fieldMap.hasOwnProperty(topoNodeData.bk_obj_id) ? topoNodeData.bk_obj_id : 'object'
+                const modelCondition = params.condition.find(modelCondition => modelCondition.bk_obj_id === modelConditionId)
+                modelCondition.condition.push(topoCondition)
                 return params
             },
             handleTransfer (type) {
@@ -401,7 +449,7 @@
                 })
             },
             doLayoutTable () {
-                this.$refs.hostTable.doLayout()
+                this.$refs.table.doLayout()
             }
         }
     }
@@ -411,7 +459,10 @@
     .list-layout {
         overflow: hidden;
     }
+    .filter-tag ~ .host-table {
+        margin-top: 0;
+    }
     .host-table {
-        margin-top: 12px;
+        margin-top: 10px;
     }
 </style>

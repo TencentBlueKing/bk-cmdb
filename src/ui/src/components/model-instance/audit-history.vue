@@ -50,11 +50,12 @@
             }
         },
         data () {
+            const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
             return {
                 history: [],
                 dictionary: [],
                 condition: {
-                    operation_time: [],
+                    operation_time: [today, today],
                     user: '',
                     category: this.category,
                     resource_id: this.resourceId,
