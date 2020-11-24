@@ -55,13 +55,6 @@ type ListServiceTemplateInput struct {
 	Search            string   `json:"search"`
 }
 
-type ListServiceTemplateWithDetailResult struct {
-	ServiceTemplate      ServiceTemplate `json:"service_template"`
-	ProcessTemplateCount int64           `json:"process_template_count"`
-	ServiceInstanceCount int64           `json:"service_instance_count"`
-	ModuleCount          int64           `json:"module_count"`
-}
-
 type DeleteServiceTemplatesInput struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ServiceTemplateID int64 `json:"service_template_id"`
