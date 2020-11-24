@@ -13,7 +13,6 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
@@ -66,7 +65,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldObjCls).Eq(cli.cls.ClassificationID)
 
-	rsp, err := cli.clientSet.CoreService().Model().ReadModel(context.Background(), cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Model().ReadModel(cli.kit.Ctx, cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -126,7 +125,7 @@ func (cli *classification) Create() error {
 	}
 
 	input := metadata.CreateOneModelClassification{Data: cli.cls}
-	rsp, err := cli.clientSet.CoreService().Model().CreateModelClassification(context.Background(), cli.kit.Header, &input)
+	rsp, err := cli.clientSet.CoreService().Model().CreateModelClassification(cli.kit.Ctx, cli.kit.Header, &input)
 	if nil != err {
 		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return err
@@ -178,7 +177,7 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 			Condition: cond.ToMapStr(),
 			Data:      data,
 		}
-		rsp, err := cli.clientSet.CoreService().Model().UpdateModelClassification(context.Background(), cli.kit.Header, &input)
+		rsp, err := cli.clientSet.CoreService().Model().UpdateModelClassification(cli.kit.Ctx, cli.kit.Header, &input)
 		if nil != err {
 			blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 			return err
@@ -196,7 +195,7 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 }
 
 func (cli *classification) search(cond condition.Condition) ([]metadata.Classification, error) {
-	rsp, err := cli.clientSet.CoreService().Model().ReadModelClassification(context.Background(), cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Model().ReadModelClassification(cli.kit.Ctx, cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return nil, err

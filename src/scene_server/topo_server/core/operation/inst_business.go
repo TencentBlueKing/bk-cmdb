@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -74,7 +73,7 @@ func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 		Fields:        []string{common.BKHostIDField},
 		Page:          metadata.BasePage{Limit: 1},
 	}
-	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
+	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, option)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to request the object controller, error info is %s", err.Error())
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -103,7 +102,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		defaultOwnerHeader := util.CloneHeader(kit.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
+		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -114,7 +113,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 		expectAssts := asstRsp.Data.Info
 		blog.Infof("copy asst for %s, %+v, rid: %s", kit.SupplierAccount, expectAssts, kit.Rid)
 
-		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: asstQuery})
+		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("create business failed to get default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -140,9 +139,9 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 			if asst.AsstKindID == common.AssociationKindMainline {
 				// bk_mainline is a inner association type that can only create in special case,
 				// so we separate bk_mainline association type creation with a independent method,
-				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), kit.Header, &metadata.CreateModelAssociation{Spec: asst})
+				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: asst})
 			} else {
-				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), kit.Header, &metadata.CreateModelAssociation{Spec: asst})
+				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(kit.Ctx, kit.Header, &metadata.CreateModelAssociation{Spec: asst})
 			}
 			if nil != err {
 				blog.Errorf("create business failed to copy default assoc, error info is %s, rid: %s", err.Error(), kit.Rid)
