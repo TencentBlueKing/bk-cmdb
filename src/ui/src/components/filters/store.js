@@ -211,18 +211,18 @@ const FilterStore = new Vue({
             index > -1 && this.selected.splice(index, 1)
             this.throttleSearch()
         },
-        resetValue (property) {
+        resetValue (property, silent = false) {
             const properties = Array.isArray(property) ? property : [property]
             properties.forEach(target => {
                 const operator = this.condition[target.id].operator
                 const value = Utils.getOperatorSideEffect(target, operator, [])
                 this.condition[target.id].value = value
             })
-            this.throttleSearch()
+            !silent && this.throttleSearch()
         },
-        resetAll () {
+        resetAll (silent) {
             this.IP = Utils.getDefaultIP()
-            this.resetValue(this.selected)
+            this.resetValue(this.selected, silent)
         },
         resetIP () {
             this.IP = Utils.getDefaultIP()
@@ -254,10 +254,10 @@ const FilterStore = new Vue({
             })
             this.header = Utils.getUniqueProperties(presetProperty, newHeader)
         },
-        setActiveCollection (collection) {
+        setActiveCollection (collection, silent) {
             if (!collection) {
                 this.activeCollection = null
-                this.resetAll()
+                this.resetAll(silent)
                 return
             }
             try {
@@ -439,6 +439,7 @@ export async function setupFilterStore (config = {}) {
     FilterStore.selected = []
     FilterStore.condition = {}
     FilterStore.components = {}
+    FilterStore.activeCollection = null
     await Promise.all([
         FilterStore.getProperties(),
         FilterStore.getPropertyGroups()

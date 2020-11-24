@@ -4,7 +4,7 @@
         <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
         <bk-table class="host-table"
             ref="table"
-            v-bkloading="{ isLoading: $loading(Object.values(request)) || !commonRequestFinished }"
+            v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="table.data"
             :pagination="table.pagination"
             :max-height="$APP.height - filtersTagHeight - 250"
@@ -133,7 +133,6 @@
                 this.table.pagination.limit = parseInt(limit)
                 tab === 'hostList' && node && this.selectedNode && this.getHostList()
             }, { throttle: 16, ignore: ['keyword'] })
-            this.unwatchNode = RouterQuery.watch('node', FilterStore.resetAll)
         },
         mounted () {
             this.unwatchFilter = this.$watch(() => {
@@ -151,7 +150,6 @@
         beforeDestroy () {
             this.unwatchRouter()
             this.unwatchFilter()
-            this.unwatchNode()
         },
         methods: {
             disabledTableSettingDefaultBehavior () {
