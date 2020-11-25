@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -136,6 +137,10 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	c := cron.New()
 	spec := lgc.timerSpec // 从配置文件读取的时间
 	_, err := c.AddFunc(spec, func() {
+		disableOperationStatistic, err := cc.Bool("operationServer.disableOperationStatistic")
+		if err == nil && disableOperationStatistic {
+			return
+		}
 		blog.V(3).Infof("begin statistic chart data, time: %v", time.Now())
 		// 主服务器跑定时
 		opt := mapstr.MapStr{}

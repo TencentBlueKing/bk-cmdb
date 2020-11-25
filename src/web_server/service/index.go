@@ -40,6 +40,7 @@ func (s *Service) Index(c *gin.Context) {
 		"agentAppUrl":    s.Config.AgentAppUrl,
 		"authCenter":     s.Config.AuthCenter,
 		"helpDocUrl":     s.Config.Site.HelpDocUrl,
+		"disableOperationStatistic": s.Config.DisableOperationStatistic,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {

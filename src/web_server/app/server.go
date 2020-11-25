@@ -161,6 +161,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	if esbConfig, err := esb.ParseEsbConfig("webServer"); err == nil {
 		esb.UpdateEsbConfig(*esbConfig)
 	}
+	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")
 
 }
 
