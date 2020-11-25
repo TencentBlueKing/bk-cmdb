@@ -53,6 +53,13 @@ func (input *AuditQueryInput) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if len(input.Condition.OperationTime.Start) == 0 && len(input.Condition.OperationTime.End) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKOperationTimeField},
+		}
+	}
+
 	return errors.RawErrorInfo{}
 }
 
