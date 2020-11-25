@@ -138,7 +138,12 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	spec := lgc.timerSpec // 从配置文件读取的时间
 	_, err := c.AddFunc(spec, func() {
 		disableOperationStatistic, err := cc.Bool("operationServer.disableOperationStatistic")
-		if err == nil && disableOperationStatistic {
+		if err != nil {
+			blog.Error("can not find config operationServer.disableOperationStatistic, err: %v", err)
+			return
+		}
+		if disableOperationStatistic {
+			blog.Warn("disable operation statistics function")
 			return
 		}
 		blog.V(3).Infof("begin statistic chart data, time: %v", time.Now())
