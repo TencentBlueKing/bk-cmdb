@@ -36,6 +36,9 @@
                     <span class="name-text" slot-scope="{ row }">{{row.name}}</span>
                 </bk-table-column>
                 <bk-table-column prop="id" label="ID" show-overflow-tooltip></bk-table-column>
+                <bk-table-column prop="bk_obj_id" :label="$t('查询对象')" sortable="custom">
+                    <span slot-scope="{ row }">{{getModelName(row)}}</span>
+                </bk-table-column>
                 <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom" show-overflow-tooltip>
                     <template slot-scope="{ row }">
                         <cmdb-form-objuser :value="row.create_user" type="info"></cmdb-form-objuser>
@@ -56,7 +59,7 @@
                         {{row.last_time | formatter('time')}}
                     </template>
                 </bk-table-column>
-                <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
+                <bk-table-column prop="operation" :label="$t('操作')" fixed="right" :min-width="$i18n.local === 'en' ? 110 : 90">
                     <template slot-scope="{ row }">
                         <bk-button class="mr10"
                             :text="true"
@@ -71,7 +74,7 @@
                                 {{$t('编辑')}}
                             </bk-button>
                         </cmdb-auth>
-                        <cmdb-auth class="mr10" :auth="{ type: $OPERATION.D_CUSTOM_QUERY, relation: [bizId, row.id] }">
+                        <cmdb-auth :auth="{ type: $OPERATION.D_CUSTOM_QUERY, relation: [bizId, row.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 :disabled="disabled"
                                 :text="true"
@@ -119,7 +122,8 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['bizId'])
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectModelClassify', ['getModelById'])
         },
         created () {
             this.unwatchQuery = RouterQuery.watch('*', ({ page, limit, sort, filter }) => {
@@ -189,6 +193,10 @@
                 if (clickTarget.classList && clickTarget.classList.contains('name-text')) {
                     this.handleEdit(row)
                 }
+            },
+            getModelName (row) {
+                const model = this.getModelById(row.bk_obj_id)
+                return model ? model.bk_obj_name : row.bk_obj_id
             },
             handleEdit (row) {
                 DynamicGroupForm.show({

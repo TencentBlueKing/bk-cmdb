@@ -1,17 +1,23 @@
 <template>
     <bk-select
         v-model="localValue"
-        v-bind="$attrs">
+        v-bind="$attrs"
+        @toggle="handleToggle">
         <bk-option id="true" name="true"></bk-option>
         <bk-option id="false" name="false"></bk-option>
     </bk-select>
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     export default {
         name: 'cmdb-search-bool',
+        mixins: [activeMixin],
         props: {
-            value: [String, Boolean]
+            value: {
+                type: [String, Boolean],
+                default: ''
+            }
         },
         computed: {
             localValue: {
@@ -19,12 +25,9 @@
                     return this.value.toString()
                 },
                 set (value) {
-                    let newValue = value
-                    if (value.length) {
-                        newValue = value === 'true'
-                    }
-                    this.$emit('input', newValue)
-                    this.$emit('change', newValue)
+                    const realValue = value && value === 'true'
+                    this.$emit('input', realValue)
+                    this.$emit('change', realValue)
                 }
             }
         }

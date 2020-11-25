@@ -23,10 +23,10 @@
                 return null
             },
             from () {
-                const queryStr = this.$route.query._f
-                if (queryStr) {
+                const record = this.$route.query.hasOwnProperty('_f') && window.sessionStorage.getItem('history')
+                if (record) {
                     try {
-                        return JSON.parse(Base64.decode(queryStr))
+                        return JSON.parse(Base64.decode(record))
                     } catch (error) {
                         return this.defaultFrom
                     }

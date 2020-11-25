@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"context"
 	"strconv"
 
 	"configcenter/src/ac/extensions"
@@ -56,7 +55,7 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	graphCondition.SetScopeType(scopeType)
 	graphCondition.SetScopeID(scopeID)
 
-	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(context.Background(), kit.Header, graphCondition)
+	rsp, err := g.clientSet.CoreService().TopoGraphics().SearchTopoGraphics(kit.Ctx, kit.Header, graphCondition)
 	if nil != err {
 		return nil, err
 	}
@@ -160,7 +159,7 @@ func (g *graphics) UpdateObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 		datas[index].SetScopeID(scopeID)
 	}
 
-	rsp, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(context.Background(), kit.Header, datas)
+	rsp, err := g.clientSet.CoreService().TopoGraphics().UpdateTopoGraphics(kit.Ctx, kit.Header, datas)
 	if err != nil {
 		blog.Errorf("UpdateGraphics failed %v, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrTopoGraphicsUpdateFailed, err.Error())

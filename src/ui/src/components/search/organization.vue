@@ -1,13 +1,16 @@
 <template>
     <cmdb-form-organization
         v-model="localValue"
-        v-bind="$attrs">
+        v-bind="$attrs"
+        @toggle="handleToggle">
     </cmdb-form-organization>
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     export default {
         name: 'cmdb-search-organization',
+        mixins: [activeMixin],
         props: {
             value: {
                 type: Array,

@@ -1,5 +1,9 @@
 <template>
     <div>
+        <cmdb-tips style="margin: 10px 20px"
+            v-if="site.disableOperationStatistic">
+            {{$t('运营统计停止统计提示')}}
+        </cmdb-tips>
         <div class="operate-menus">
             <div class="menu-items menu-items-blue" @click="goRouter(MENU_RESOURCE_BUSINESS)">
                 <div class="item-left">
@@ -181,7 +185,7 @@
         MENU_RESOURCE_HOST,
         MENU_MODEL_MANAGEMENT
     } from '@/dictionary/menu-symbol'
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import vDetail from './chart-detail'
     let Plotly
     let PlotlyCN
@@ -231,6 +235,9 @@
                 existedCharts: [],
                 updateAuth: false
             }
+        },
+        computed: {
+            ...mapGetters(['site'])
         },
         async created () {
             const [plotly, plotlyCn] = await Promise.all([

@@ -18,5 +18,8 @@
         height: 16px;
         background-color: transparent;
         background-image: url("../../assets/images/icon/loading.svg");
+        background-position: center center;
+        background-size: 16px;
+        background-repeat: no-repeat;
     }
 </style>

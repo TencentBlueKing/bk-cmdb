@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_8_202005201015
+package y3_9_202011251014
 
 import (
 	"context"
@@ -21,15 +21,30 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202005201015", upgrade)
+	upgrader.RegistUpgrader("y3.9.202011251014", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.8.202005201015")
+	blog.Infof("start execute y3.9.202011251014")
 
-	err = addHostAttr(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.8.202005201015] addHostAttr failed, error  %s", err.Error())
+	if err = addProcBindInfo(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202011251014] change process bind attr, error  %s", err.Error())
+		return err
+	}
+
+	if err = migrateProcTempBindInfo(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202011251014] migrate process template bind info, error  %s", err.Error())
+		return err
+	}
+
+	if err = migrateProcBindInfo(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202011251014] migrate process bind info, error  %s", err.Error())
+		return err
+	}
+
+	// upgrate data 之后才可以删除
+	if err = clearProcAttrAndGroup(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202011251014] clean process bind attr, error  %s", err.Error())
 		return err
 	}
 

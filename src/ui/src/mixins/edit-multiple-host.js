@@ -18,6 +18,10 @@ export default {
                 title: '',
                 component: null,
                 props: {}
+            },
+            request: {
+                objectUnique: Symbol('objectUnique'),
+                propertyGroups: Symbol('propertyGroups')
             }
         }
     },
@@ -45,17 +49,19 @@ export default {
     methods: {
         async handleMultipleEdit () {
             try {
+                this.slider.show = true
+                this.slider.title = this.$t('主机属性')
                 const [objectUnique, groups] = await Promise.all([
                     this.getObjectUnique(),
                     this.getPropertyGroups()
                 ])
-                this.slider.props.objectUnique = objectUnique
-                this.slider.props.propertyGroups = groups
-                this.slider.props.properties = this.properties
-                this.slider.props.saveAuth = this.saveAuth
-                this.slider.title = this.$t('主机属性')
-                this.slider.component = 'cmdb-form-multiple'
-                this.slider.show = true
+                setTimeout(() => {
+                    this.slider.component = 'cmdb-form-multiple'
+                    this.slider.props.objectUnique = objectUnique
+                    this.slider.props.propertyGroups = groups
+                    this.slider.props.properties = this.properties
+                    this.slider.props.saveAuth = this.saveAuth
+                }, 200)
             } catch (e) {
                 console.error(e)
             }
@@ -87,6 +93,7 @@ export default {
                         extCls: 'bk-dialog-sub-header-center',
                         confirmFn: () => {
                             this.slider.show = false
+                            this.slider.component = null
                             resolve(true)
                         },
                         cancelFn: () => {
@@ -94,20 +101,26 @@ export default {
                         }
                     })
                 })
-            } else {
-                this.slider.show = false
             }
+            this.slider.component = null
+            this.slider.show = false
         },
         getObjectUnique () {
             return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
                 objId: 'host',
-                params: {}
+                params: {},
+                config: {
+                    requestId: this.request.objectUnique
+                }
             })
         },
         getPropertyGroups () {
             return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
                 objId: 'host',
-                params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId) }
+                params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId) },
+                config: {
+                    requestId: this.request.propertyGroups
+                }
             })
         }
     }

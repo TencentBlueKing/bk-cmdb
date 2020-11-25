@@ -113,6 +113,9 @@
                 this.$emit('input', checked)
                 this.$emit('on-checked', checked)
                 this.setDisplayName()
+            },
+            focused (focused) {
+                this.$emit('toggle', focused)
             }
         },
         created () {

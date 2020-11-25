@@ -30,7 +30,7 @@
 </template>
 
 <script>
-    import FormOperatorSelector from './form-operator-selector.vue'
+    import FormOperatorSelector from '@/components/filters/operator-selector.vue'
     export default {
         components: {
             FormOperatorSelector

@@ -6,6 +6,8 @@ import StatusError from './StatusError.js'
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
 import { setupValidator } from '@/setup/validate'
+import { $error } from '@/magicbox'
+import i18n from '@/i18n'
 
 import {
     before as businessBeforeInterceptor
@@ -213,6 +215,12 @@ router.afterEach(async (to, from) => {
     } catch (e) {
         setupStatus.afterload = true
         console.error(e)
+    }
+})
+
+router.onError(error => {
+    if (/Loading chunk (\d*) failed/.test(error.message)) {
+        $error(i18n.t('静态资源加载失败提示'))
     }
 })
 

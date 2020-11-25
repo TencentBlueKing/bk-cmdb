@@ -293,6 +293,34 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
 
+// Validate validates the input param
+func (o *ListProcessTemplateWithServiceTemplateInput) Validate() (rawError cErr.RawErrorInfo) {
+
+	if o.BizID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	pageLimit := 200
+	if len(o.ProcessTemplatesIDs) > pageLimit {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_process_ids", pageLimit},
+		}
+	}
+
+	if o.ServiceTemplateID == 0 && len(o.ProcessTemplatesIDs) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"service_template_id and process_template_ids can't be empty at the same time"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 type UpdateProcessByIDsInput struct {
 	BizID      int64                  `json:"bk_biz_id"`
 	ProcessIDs []int64                `json:"process_ids"`
