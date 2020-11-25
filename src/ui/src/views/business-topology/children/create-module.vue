@@ -186,7 +186,7 @@
                     this.templateList = this.serviceTemplateMap[this.business]
                 } else {
                     try {
-                        const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
+                        const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
                             params: {
                                 bk_biz_id: this.business,
                                 page: {
@@ -197,7 +197,6 @@
                                 requestId: this.request.serviceTemplate
                             }
                         })
-                        const templates = data.info.map(item => item.service_template)
                         this.templateList = templates
                         this.$store.commit('businessHost/setServiceTemplate', {
                             id: this.business,
