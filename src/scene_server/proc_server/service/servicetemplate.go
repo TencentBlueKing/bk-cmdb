@@ -162,6 +162,85 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	ctx.RespEntity(temp)
 }
 
+// FindServiceTemplateCountInfo find count info of service templates
+func (ps *ProcServer) FindServiceTemplateCountInfo(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("FindServiceTemplateCountInfo failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	input := new(metadata.FindServiceTemplateCountInfoOption)
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// generate count conditions
+	filters := make([]map[string]interface{}, len(input.ServiceTemplateIDs))
+	for idx, serviceTemplateID := range input.ServiceTemplateIDs {
+		filters[idx] = map[string]interface{}{
+			common.BKAppIDField:             bizID,
+			common.BKServiceTemplateIDField: serviceTemplateID,
+		}
+	}
+
+	// process templates reference count
+	processTemplateCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameProcessTemplate, filters)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed, "count process template by filters: %+v failed.", filters)
+		return
+	}
+	if len(processTemplateCounts) != len(input.ServiceTemplateIDs) {
+		ctx.RespWithError(ctx.Kit.CCError.CCError(common.CCErrProcGetProcessTemplatesFailed), common.CCErrProcGetProcessTemplatesFailed,
+			"the count of process must be equal with the count of service templates, filters:%#v", filters)
+		return
+	}
+
+	// module reference count
+	moduleCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameBaseModule, filters)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrTopoModuleSelectFailed, "count process template by filters: %+v failed.", filters)
+		return
+	}
+	if len(moduleCounts) != len(input.ServiceTemplateIDs) {
+		ctx.RespWithError(ctx.Kit.CCError.CCError(common.CCErrTopoModuleSelectFailed), common.CCErrTopoModuleSelectFailed,
+			"the count of modules must be equal with the count of service templates, filters:%#v", filters)
+		return
+	}
+
+	// service instance reference count
+	serviceInstanceCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, filters)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "count process template by filters: %+v failed.", filters)
+		return
+	}
+	if len(serviceInstanceCounts) != len(input.ServiceTemplateIDs) {
+		ctx.RespWithError(ctx.Kit.CCError.CCError(common.CCErrProcGetServiceInstancesFailed), common.CCErrProcGetServiceInstancesFailed,
+			"the count of service instance must be equal with the count of service templates, filters:%#v", filters)
+		return
+	}
+
+	result := make([]metadata.FindServiceTemplateCountInfoResult, 0)
+	for idx, serviceTemplateID := range input.ServiceTemplateIDs {
+		result = append(result, metadata.FindServiceTemplateCountInfoResult{
+			ServiceTemplateID:    serviceTemplateID,
+			ProcessTemplateCount: processTemplateCounts[idx],
+			ServiceInstanceCount: serviceInstanceCounts[idx],
+			ModuleCount:          moduleCounts[idx],
+		})
+	}
+
+	ctx.RespEntity(result)
+}
+
 func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {

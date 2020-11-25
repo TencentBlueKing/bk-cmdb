@@ -144,6 +144,15 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			}
 			return []int64{templateID}, nil
 		},
+	}, {
+		Name:           "FindServiceTemplateCountInfo",
+		Description:    "查询服务模版的计数信息",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/service_template/count_info/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 
