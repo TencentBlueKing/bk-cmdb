@@ -3,6 +3,7 @@
         <div class="history-options">
             <cmdb-form-date-range class="history-date-range"
                 v-model="condition.operation_time"
+                :clearable="false"
                 @change="handlePageChange(1)">
             </cmdb-form-date-range>
             <bk-input class="history-host-filter ml10"
