@@ -71,7 +71,7 @@
         methods: {
             async getServiceTemplate () {
                 try {
-                    const { info } = await this.$store.dispatch('serviceTemplate/searchServiceTemplateWithoutDetails', {
+                    const { info } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
                         params: {
                             bk_biz_id: this.bizId
                         },
