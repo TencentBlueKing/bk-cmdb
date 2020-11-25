@@ -384,6 +384,7 @@
     "编辑关联": "Modify association",
     "确定删除关联类型？": "Confirm delete this association type",
     "确定删除字段？": "Confirm delete field",
+    "删除模型字段提示": "Confirm to delete property \"{property}\" of \"{model}\". The corresponding attribute data in the instance will be cleared at the same time. The number of existing instances will affect the time consuming of the operation. Whether to continue ?",
     "使用数": "Amount used",
     "确定删除关联关系?": "Confirm delete this association?",
     "确定移除模型?": "Confirm remove this model?",
