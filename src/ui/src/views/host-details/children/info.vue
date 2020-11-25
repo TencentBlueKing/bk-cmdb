@@ -14,10 +14,8 @@
             </div>
             <ul class="topology-list"
                 :class="{ 'is-single-column': isSingleColumn }"
-                :style="{
-                    height: getListHeight(topologyList) + 'px'
-                }">
-                <li class="topology-item"
+                :style="getListStyle(topologyList)">
+                <li :class="['topology-item', { 'is-internal': item.isInternal }]"
                     v-for="(item, index) in topologyList"
                     :key="index">
                     <span class="topology-path" v-bk-overflow-tips @click="handlePathClick(item)">{{item.path}}</span>
@@ -28,12 +26,17 @@
                     </i>
                 </li>
             </ul>
-            <a class="view-all"
+            <a class="action-btn view-all"
                 href="javascript:void(0)"
                 v-if="showMore"
                 @click="viewAll">
                 {{$t('更多信息')}}
                 <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
+            </a>
+            <a class="action-btn change-topology"
+                href="javascript:void(0)">
+                {{$t('修改')}}
+                <i class="icon-cc-edit-shape"></i>
             </a>
         </div>
     </div>
@@ -123,11 +126,14 @@
                 this.showAll = !this.showAll
                 this.$emit('info-toggle')
             },
-            getListHeight (items) {
+            getListStyle (items) {
                 const itemHeight = 21
                 const itemMargin = 9
-                const length = this.isSingleColumn ? items.length : (items.length / 2)
-                return (this.showAll ? length : 1) * (itemHeight + itemMargin)
+                const length = this.isSingleColumn ? items.length : Math.ceil(items.length / 2)
+                return {
+                    height: (this.showAll ? length : 1) * (itemHeight + itemMargin) + 'px',
+                    flex: (!this.isSingleColumn && items.length === 1) ? 'none' : ''
+                }
             },
             toggleDisplayType () {
                 this.displayType = this.displayType === 'single' ? 'double' : 'single'
@@ -230,10 +236,13 @@
         .topology-list {
             flex: 1;
         }
-        .view-all {
+        .action-btn {
+            align-self: flex-start;
             margin: 0 14px;
             font-size: 12px;
             color: #007eff;
+        }
+        .view-all {
             .bk-icon {
                 display: inline-block;
                 vertical-align: -1px;
@@ -243,6 +252,11 @@
                 &.is-all-show {
                     transform: rotate(-180deg);
                 }
+            }
+        }
+        .change-topology {
+            .icon-cc-edit-shape {
+                font-size: 14px;
             }
         }
     }
@@ -263,18 +277,15 @@
             }
         }
         .topology-item {
+            flex: 0 1 50%;
             width: 50%;
             height: 20px;
             font-size: 0px;
             margin: 0 0 9px 0;
             padding: 0 15px 0 0;
             line-height: 20px;
-            &:before {
-                content: "";
-                height: 100%;
-                width: 0;
-                display: inline-block;
-                vertical-align: middle;
+            &:only-child {
+                flex: 1 1 50%;
             }
             &:hover {
                 .topology-remove-trigger {
@@ -301,6 +312,11 @@
                 transform: scale(.5);
                 &:hover {
                     color: $primaryColor;
+                }
+            }
+            &.is-internal {
+                .topology-path {
+                    max-width: 100%;
                 }
             }
         }
