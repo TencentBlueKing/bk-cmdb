@@ -24,3 +24,9 @@ func SetVIPInfoForProcess(kit *rest.Kit, processes []mapstr.MapStr, fields []str
 
 	return processes, nil
 }
+
+// ParseVIPFieldsForProcess parse process vip fields for process
+func ParseVIPFieldsForProcess(fields []string, table string) ([]string, []string) {
+
+	return fields, make([]string,0)
+}

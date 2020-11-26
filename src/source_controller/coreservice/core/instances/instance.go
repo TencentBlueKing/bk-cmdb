@@ -316,11 +316,14 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	}
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
+	// parse vip fields for processes
+	fields, vipFields := hooks.ParseVIPFieldsForProcess(inputParam.Fields, tableName)
+
 	instItems := make([]mapstr.MapStr, 0)
 	query := mongodb.Client().Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
 		Limit(uint64(inputParam.Page.Limit)).
 		Sort(inputParam.Page.Sort).
-		Fields(inputParam.Fields...)
+		Fields(fields...)
 	var instErr error
 	if objID == common.BKInnerObjIDHost {
 		hosts := make([]metadata.HostMapStr, 0)
@@ -347,7 +350,8 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 		finalCount = count
 	}
 
-	instItems, instErr = hooks.SetVIPInfoForProcess(kit, instItems, inputParam.Fields, tableName, mongodb.Client())
+	// set vip info for processes
+	instItems, instErr = hooks.SetVIPInfoForProcess(kit, instItems, vipFields, tableName, mongodb.Client())
 	if instErr != nil {
 		return nil, instErr
 	}
