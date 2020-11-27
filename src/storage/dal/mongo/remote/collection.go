@@ -311,6 +311,42 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	return nil
 }
 
+// DropDocsColumn 根据条件移除字段
+func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter dal.Filter) error {
+	// build msg
+	msg := types.OPUpdateOperation{}
+	msg.OPCode = types.OPUpdateUnsetCode
+	msg.Collection = c.collection
+	unsetField := map[string]interface{}{field: ""}
+	if err := msg.DOC.Encode(unsetField); err != nil {
+		return err
+	}
+	if err := msg.Selector.Encode(filter); err != nil {
+		return err
+	}
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
+}
+
 // AggregateOne 聚合查询
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
 	// build msg

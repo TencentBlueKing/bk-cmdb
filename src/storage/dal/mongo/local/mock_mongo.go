@@ -456,6 +456,18 @@ func (c *MockCollection) DropColumn(ctx context.Context, field string) error {
 	return nil
 }
 
+// DropDocsColumn 根据条件移除字段
+func (c *MockCollection) DropDocsColumn(ctx context.Context, field string, filter dal.Filter) error {
+	key := "DROP_DOCS_COLUMN:" + c.collName + ":" + field
+	if retval, ok := c.cache[key]; ok {
+		return retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+
+	return nil
+}
+
 func (c *MockCollection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	out, err := json.Marshal(pipeline)
 	if err != nil {
