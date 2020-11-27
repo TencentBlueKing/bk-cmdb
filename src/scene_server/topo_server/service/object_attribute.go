@@ -33,6 +33,9 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	data := dataWithModelBizID.Data
 	modelBizID := dataWithModelBizID.ModelBizID
 
+	// do not support adding preset attribute by api
+	data.Set(common.BKIsPre, false)
+
 	isBizCustomField := false
 	// adapt input path param with bk_biz_id
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
