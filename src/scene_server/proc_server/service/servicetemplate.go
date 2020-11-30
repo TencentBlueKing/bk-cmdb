@@ -152,6 +152,7 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		BusinessID:        input.BizID,
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
+		Search:            input.Search,
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
