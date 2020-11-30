@@ -100,8 +100,8 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 
 	input := &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.BKDefaultField: common.DefaultAppFlag},
-		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKAppIDField},
-		Fields:    []string{common.BKAppIDField},
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKAppIDField},
+		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
 	}
 
 	bizResp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, input)
@@ -120,7 +120,15 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	resourcePoolBizID, err = util.GetInt64ByInterface(bizResp.Data.Info[0][common.BKAppIDField])
+	rawBizID := bizResp.Data.Info[0][common.BKAppIDField]
+	for _, biz := range bizResp.Data.Info {
+		if util.GetStrByInterface(biz[common.BkSupplierAccount]) == kit.SupplierAccount {
+			rawBizID = biz[common.BKAppIDField]
+			break
+		}
+	}
+
+	resourcePoolBizID, err = util.GetInt64ByInterface(rawBizID)
 	if nil != err {
 		blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", bizResp.Data.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
