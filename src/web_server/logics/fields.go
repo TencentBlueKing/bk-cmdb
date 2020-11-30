@@ -56,7 +56,7 @@ type PropertyPrimaryVal struct {
 
 // GetObjFieldIDs get object fields
 func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, modelBizID int64) (map[string]Property, error) {
-	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID)
+	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields)
 	if nil != err {
 		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
@@ -122,12 +122,17 @@ func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header
 
 }
 
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
 
+	customFieldsCond := make(map[string]interface{})
+	if len(customFields) > 0 {
+		customFieldsCond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBIN: customFields}
+	}
+
 	// sortedFields 模型字段已经根据bk_property_index排序好了
-	sortedFields, err := lgc.getObjFieldIDsBySort(objID, sort, header, nil, modelBizID)
+	sortedFields, err := lgc.getObjFieldIDsBySort(objID, sort, header, customFieldsCond, modelBizID)
 	if err != nil {
 		blog.Errorf("getObjFieldIDs, getObjFieldIDsBySort failed, sort: %s, rid: %s, err: %v", sort, rid, err)
 		return nil, err
