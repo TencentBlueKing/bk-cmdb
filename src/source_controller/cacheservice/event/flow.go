@@ -599,13 +599,13 @@ func (f *Flow) getLockWithRetry(name string, oid string) bool {
 		success, err := redis.Client().SetNX(context.Background(), f.key.LockKey(), "lock", 5*time.Second).Result()
 		if err != nil {
 			f.metrics.collectLockError()
-			blog.Errorf("get lock failed, err: %v, oid: %s", name, err, oid)
+			blog.Errorf("get lock failed, name: %s, err: %v, oid: %s", name, err, oid)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
 		if !success {
-			blog.Warnf("do not get lock, oid: %s", name, oid)
+			blog.Warnf("do not get lock, name: %s, oid: %s", name, oid)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}

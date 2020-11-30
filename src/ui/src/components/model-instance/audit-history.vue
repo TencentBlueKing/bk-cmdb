@@ -3,6 +3,7 @@
         <div class="history-filter">
             <cmdb-form-date-range class="filter-item filter-range"
                 v-model="condition.operation_time"
+                :clearable="false"
                 @input="handlePageChange(1)">
             </cmdb-form-date-range>
             <cmdb-form-objuser class="filter-item filter-user"

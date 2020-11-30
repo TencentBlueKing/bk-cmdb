@@ -49,6 +49,20 @@ func (s *service) SearchServiceTemplate(ctx context.Context, h http.Header, data
 	return
 }
 
+func (s *service) FindServiceTemplateCountInfo(ctx context.Context, h http.Header, bizID int64, data map[string]interface{}) (resp *metadata.ArrayResponse, err error) {
+	resp = new(metadata.ArrayResponse)
+	subPath := "/findmany/proc/service_template/count_info/biz/%d"
+
+	err = s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (s *service) UpdateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "/update/proc/service_template"

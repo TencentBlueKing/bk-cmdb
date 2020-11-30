@@ -609,69 +609,11 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	bizID := input.BizID
 
-	if input.ServiceInstanceID == 0 {
-		err := ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
+	processInstanceList, err := ps.Logic.ListProcessInstances(ctx.Kit, input.BizID, input.ServiceInstanceID, nil)
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
-	}
-	// list process instance relation
-	relationOption := metadata.ListProcessInstanceRelationOption{
-		BusinessID:         bizID,
-		ServiceInstanceIDs: []int64{input.ServiceInstanceID},
-	}
-	relationsResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &relationOption)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list process instance relation failed, bizID: %d, serviceInstanceID: %d, err: %+v",
-			bizID, input.ServiceInstanceID, err)
-		return
-	}
-
-	processIDs := make([]int64, 0)
-	for _, relation := range relationsResult.Info {
-		processIDs = append(processIDs, relation.ProcessID)
-	}
-	filter := map[string]interface{}{
-		common.BKProcessIDField: map[string]interface{}{
-			common.BKDBIN: processIDs,
-		},
-	}
-	reqParam := &metadata.QueryCondition{
-		Condition: filter,
-	}
-	processResult, ccErr := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, reqParam)
-	if nil != ccErr {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list process instance property failed, bizID: %d, processIDs: %+v, err: %+v", bizID, processIDs, ccErr)
-		return
-	}
-
-	processIDPropertyMap := map[int64]mapstr.MapStr{}
-	for _, process := range processResult.Data.Info {
-		processIDVal, exist := process.Get(common.BKProcessIDField)
-		if !exist {
-			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "list process instance failed, parse bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID, processIDs)
-			return
-		}
-		processID, err := util.GetInt64ByInterface(processIDVal)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "list process instance failed, parse bk_process_id from process property failed, parse field to int64 failed, bizID: %d, processIDs: %+v, process: %+v, err: %+v", bizID, processIDs, process, err)
-			return
-		}
-		processIDPropertyMap[processID] = process
-	}
-
-	processInstanceList := make([]metadata.ProcessInstance, 0)
-	for _, relation := range relationsResult.Info {
-		processInstance := metadata.ProcessInstance{
-			Property: nil,
-			Relation: relation,
-		}
-		process, exist := processIDPropertyMap[relation.ProcessID]
-		if exist {
-			processInstance.Property = process
-		}
-		processInstanceList = append(processInstanceList, processInstance)
 	}
 
 	ctx.RespEntity(processInstanceList)

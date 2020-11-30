@@ -16,7 +16,10 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelInstance) (resp *metadata.CreatedOneOptionResult, err error) {
@@ -115,4 +118,27 @@ func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, 
 		Do().
 		Into(resp)
 	return
+}
+
+//  ReadInstanceStruct 按照结构体返回实例数据
+func (inst *instance) ReadInstanceStruct(ctx context.Context, h http.Header, objID string,
+	input *metadata.QueryCondition, result interface{}) errors.CCErrorCoder {
+
+	rid := util.GetHTTPCCRequestID(h)
+	subPath := "/read/model/%s/instances"
+
+	err := inst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(result)
+
+	if err != nil {
+		blog.ErrorJSON("ReadInstanceStruct failed, http request failed, err: %s, filter: %s, rid: %s", err, input, rid)
+		return errors.CCHttpError
+	}
+
+	return nil
 }

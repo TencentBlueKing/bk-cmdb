@@ -13,6 +13,7 @@
 package auditlog
 
 import (
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -76,7 +77,7 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryConditi
 		timeCond, err := condition.MapStr(common.BKOperationTimeField)
 		if err != nil {
 			blog.Errorf("parse operation time condition failed, error: %s, rid: %s", err, kit.Rid)
-			return nil, 0, err
+			return nil, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
 		}
 
 		for key, value := range timeCond {
@@ -101,14 +102,16 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryConditi
 	err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(condition).Sort(param.Page.Sort).Fields(param.
 		Fields...).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(kit.Ctx, &rows)
 	if nil != err {
-
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
+		if strings.Contains(err.Error(), "timeout") {
+			return nil, 0, kit.CCError.CCError(common.CCErrAuditSelectTimeout)
+		}
 		return nil, 0, err
 	}
 	cnt, err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(condition).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
-		return nil, 0, err
+		return nil, 0, kit.CCError.CCError(common.CCErrAuditSelectFailed)
 	}
 
 	return rows, cnt, nil

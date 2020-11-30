@@ -336,6 +336,29 @@ type ListServiceTemplateOption struct {
 	Search             string   `json:"search"`
 }
 
+type FindServiceTemplateCountInfoOption struct {
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
+}
+
+func (o *FindServiceTemplateCountInfoOption) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 500
+	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"service_template_ids", maxLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindServiceTemplateCountInfoResult struct {
+	ServiceTemplateID    int64 `json:"service_template_id"`
+	ProcessTemplateCount int64 `json:"process_template_count"`
+	ServiceInstanceCount int64 `json:"service_instance_count"`
+	ModuleCount          int64 `json:"module_count"`
+}
+
 type OneServiceTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceTemplate `json:"data"`

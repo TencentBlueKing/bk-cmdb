@@ -42,8 +42,9 @@ func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
 
 	if c.Reg != nil {
 		client.requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Name: "cmdb_apimachinary_requests_duration_millisecond",
-			Help: "third party api request duration millisecond.",
+			Name:    "cmdb_apimachinary_requests_duration_millisecond",
+			Help:    "third party api request duration millisecond.",
+			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000},
 		}, []string{"handler", "status_code"})
 		if err := c.Reg.Register(client.requestDuration); err != nil {
 			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {

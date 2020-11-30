@@ -92,6 +92,9 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	// 	return nil, err
 	// }
 
+	// initialize mongodb related metrics
+	initMongoMetric()
+
 	return &Mongo{
 		dbc:    client,
 		dbname: connStr.Database,
@@ -291,10 +294,12 @@ var hostSpecialFieldMap = map[string]bool{
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	mtc.collectOperCount(f.collName, findOper)
+
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo find-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(f.collName, findOper, time.Since(start))
 	}()
 
 	err := validHostType(f.collName, f.projection, result, rid)
@@ -325,6 +330,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
 		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
+			mtc.collectErrorCount(f.collName, findOper)
 			return err
 		}
 		return cursor.All(ctx, result)
@@ -333,10 +339,12 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
+	mtc.collectOperCount(f.collName, findOper)
+
 	start := time.Now()
 	rid := ctx.Value(common.ContextRequestIDField)
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo find-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(f.collName, findOper, time.Since(start))
 	}()
 
 	err := validHostType(f.collName, f.projection, result, rid)
@@ -366,6 +374,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
 		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
+			mtc.collectErrorCount(f.collName, findOper)
 			return err
 		}
 
@@ -380,10 +389,11 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(f.collName, countOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(f.collName, countOper, time.Since(start))
 	}()
 
 	if f.filter == nil {
@@ -399,6 +409,11 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 	if !useTxn {
 		// not use transaction.
 		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(ctx, f.filter)
+		if err != nil {
+			mtc.collectErrorCount(f.collName, countOper)
+			return 0, err
+		}
+
 		return uint64(cnt), err
 	} else {
 		// use transaction
@@ -408,6 +423,7 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 		// automatically and do read/write retry if policy is set.
 		// mongo.CmdbReleaseSession(ctx, session)
 		if err != nil {
+			mtc.collectErrorCount(f.collName, countOper)
 			return 0, err
 		}
 		return uint64(cnt), nil
@@ -416,26 +432,32 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, insertOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo insert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, insertOper, time.Since(start))
 	}()
 
 	rows := util.ConverToInterfaceSlice(docs)
 
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, insertOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // Update 更新数据
 func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, updateOper)
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo update cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, updateOper, time.Since(start))
 	}()
 
 	if filter == nil {
@@ -445,37 +467,48 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	data := bson.M{"$set": doc}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, updateOper)
+			return err
+		}
+		return nil
 	})
 }
 
-// Upsert 数据存在更新数据，否则新加数据
+// Upsert 数据存在更新数据，否则新加数据。
+// 注意：该接口非原子操作，可能存在插入多条相同数据的风险。
 func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, upsertOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo upsert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, upsertOper, time.Since(start))
 	}()
 
 	// set upsert option
-	upsert := true
+	doUpsert := true
 	replaceOpt := &options.UpdateOptions{
-		Upsert: &upsert,
+		Upsert: &doUpsert,
 	}
 	data := bson.M{"$set": doc}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateOne(ctx, filter, data, replaceOpt)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, upsertOper)
+			return err
+		}
+		return nil
 	})
 
 }
 
 // UpdateMultiModel 根据不同的操作符去更新数据
 func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, updateModel ...types.ModeUpdate) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, updateOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo update-multi-model cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, updateOper, time.Since(start))
 	}()
 
 	data := bson.M{}
@@ -488,24 +521,36 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, updateOper)
+			return err
+		}
+		return nil
 	})
 
 }
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, deleteOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, deleteOper, time.Since(start))
 	}()
+
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
+			mtc.collectErrorCount(c.collName, deleteOper)
 			return err
 		}
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, deleteOper)
+			return err
+		}
+
+		return nil
 	})
 
 }
@@ -714,70 +759,102 @@ func (c *Collection) Indexes(ctx context.Context) ([]types.Index, error) {
 
 // AddColumn add a new column for the collection
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
 
 	selector := dtype.Document{column: dtype.Document{"$exists": false}}
 	datac := dtype.Document{"$set": dtype.Document{column: value}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+		return nil
 	})
 }
 
 // RenameColumn rename a column for the collection
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo rename-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
 
 	datac := dtype.Document{"$rename": dtype.Document{oldName: newColumn}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // DropColumn remove a column by the name
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo drop-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
 
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // DropColumns remove many columns by the name
 func (c *Collection) DropColumns(ctx context.Context, filter types.Filter, fields []string) error {
+	mtc.collectOperCount(c.collName, columnOper)
+
+	start := time.Now()
+	defer func() {
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
+	}()
+
 	unsetFields := make(map[string]interface{})
 	for _, field := range fields {
 		unsetFields[field] = ""
 	}
+
 	datac := dtype.Document{"$unset": unsetFields}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // DropDocsColumn remove a column by the name for doc use filter
 func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter types.Filter) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, columnOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo drop-docs-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
+
 	// 查询条件为空时候，mongodb 不返回数据
 	if filter == nil {
 		filter = bson.M{}
@@ -786,16 +863,22 @@ func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter ty
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, columnOper)
+			return err
+		}
+
+		return nil
 	})
 }
 
 // AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, aggregateOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, aggregateOper, time.Since(start))
 	}()
 
 	opt := getCollectionOption(ctx)
@@ -803,6 +886,7 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
 		if err != nil {
+			mtc.collectErrorCount(c.collName, aggregateOper)
 			return err
 		}
 		defer cursor.Close(ctx)
@@ -813,10 +897,11 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 
 // AggregateOne aggregate one operation
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, aggregateOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, aggregateOper, time.Since(start))
 	}()
 
 	opt := getCollectionOption(ctx)
@@ -824,8 +909,10 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
 		if err != nil {
+			mtc.collectErrorCount(c.collName, aggregateOper)
 			return err
 		}
+
 		defer cursor.Close(ctx)
 		for cursor.Next(ctx) {
 			return cursor.Decode(result)
@@ -839,26 +926,32 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 // field the field for which to return distinct values.
 // filter query that specifies the documents from which to retrieve the distinct values.
 func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter) ([]interface{}, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	mtc.collectOperCount(c.collName, distinctOper)
+
 	start := time.Now()
 	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo distinct cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+		mtc.collectOperDuration(c.collName, distinctOper, time.Since(start))
 	}()
 
 	if filter == nil {
 		filter = bson.M{}
 	}
+
 	opt := getCollectionOption(ctx)
-
 	var results []interface{} = nil
-
 	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		var err error
 		results, err = c.dbc.Database(c.dbname).Collection(c.collName, opt).Distinct(ctx, field, filter)
-		return err
+		if err != nil {
+			mtc.collectErrorCount(c.collName, distinctOper)
+			return err
+		}
+
+		return nil
 	})
 	return results, err
 }
+
 func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
 	resultv := reflect.ValueOf(result)
 	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {

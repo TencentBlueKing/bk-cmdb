@@ -46,7 +46,7 @@ func (s *coreService) SearchAuditLog(ctx *rest.Contexts) {
 	auditLogs, count, err := s.core.AuditOperation().SearchAuditLog(ctx.Kit, inputData)
 	if err != nil {
 		blog.Errorf("SearchAuditLog err:%v, rid:%s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSelectFailed))
+		ctx.RespAutoError(err)
 		return
 	}
 
