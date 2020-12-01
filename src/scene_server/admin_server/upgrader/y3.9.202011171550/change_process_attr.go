@@ -111,7 +111,7 @@ func addProcessAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		IsSystem:          false,
 		IsAPI:             false,
 		PropertyType:      common.FieldTypeInt,
-		Option:            metadata.IntOption{Min: "1", Max: "600"},
+		Option:            metadata.IntOption{Min: "0", Max: "600"},
 		Description:       common.CCSystemOperatorUserName,
 		Creator:           common.CCSystemOperatorUserName,
 		LastEditor:        common.CCSystemOperatorUserName,
