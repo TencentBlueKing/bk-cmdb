@@ -171,7 +171,7 @@
     import { translateAuth } from '@/setup/permission'
     import { mapState, mapGetters, mapActions } from 'vuex'
     import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
-    import cmdbColumnsConfig from '@/components/columns-config/columns-config'
+    import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
     import cmdbPropertySelector from '@/components/property-selector'
     export default {
         components: {
