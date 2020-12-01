@@ -158,7 +158,7 @@
                     exact: true
                 }
                 const filter = {
-                    'bk_cloud_id.$in': [cloudSet.values().next().value].join(',')
+                    'bk_cloud_id.in': [cloudSet.values().next().value].join(',')
                 }
                 this.$routerActions.redirect({
                     name: MENU_RESOURCE_HOST,
