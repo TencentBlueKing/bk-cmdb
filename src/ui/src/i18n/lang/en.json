@@ -1366,5 +1366,7 @@
     "静态资源加载失败提示": "Failed to load resources, please refresh and retry",
     "请输入关键字搜索": "Please enter keyword to filter",
     "请先填写筛选条件": "Please enter filter condition",
-    "运营统计停止统计提示": "The administrator has temporarily stopped the cycle statistics of operation data. The current statistics may not be up to date"
+    "运营统计停止统计提示": "The administrator has temporarily stopped the cycle statistics of operation data. The current statistics may not be up to date",
+    "切换单列显示": "Toggle single column display",
+    "切换双列显示": "Toggle dual column display"
 }

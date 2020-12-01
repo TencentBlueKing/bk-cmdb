@@ -8,8 +8,13 @@
         <div class="info-topology">
             <div class="topology-label">
                 <span>{{$t('所属拓扑')}}</span>
-                <i class="topology-toggle icon-cc-single-column" v-if="isSingleColumn" @click="toggleDisplayType"></i>
-                <i class="topology-toggle icon-cc-double-column" v-else @click="toggleDisplayType"></i>
+                <span v-if="topologyList.length > 1" v-bk-tooltips="{
+                    content: $t(isSingleColumn ? '切换双列显示' : '切换单列显示'),
+                    interactive: false
+                }">
+                    <i class="topology-toggle icon-cc-single-column" v-if="isSingleColumn" @click="toggleDisplayType"></i>
+                    <i class="topology-toggle icon-cc-double-column" v-else @click="toggleDisplayType"></i>
+                </span>
                 <span v-pre style="padding: 0 5px;">:</span>
             </div>
             <ul class="topology-list"
@@ -32,11 +37,6 @@
                 @click="viewAll">
                 {{$t('更多信息')}}
                 <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
-            </a>
-            <a class="action-btn change-topology"
-                href="javascript:void(0)">
-                {{$t('修改')}}
-                <i class="icon-cc-edit-shape"></i>
             </a>
         </div>
     </div>
