@@ -10,26 +10,35 @@
             </bk-checkbox>
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
-            <span class="title-label">{{instance.name}}</span>
-            <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
-                <ul class="menu-list"
-                    @mouseenter="handleShowDotMenu"
-                    @mouseleave="handleHideDotMenu">
-                    <li class="menu-item"
-                        v-for="(menu, index) in instanceMenu"
-                        :key="index">
-                        <cmdb-auth class="menu-span" :auth="HOST_AUTH[menu.auth]">
-                            <bk-button slot-scope="{ disabled }"
-                                class="menu-button"
-                                :text="true"
-                                :disabled="disabled"
-                                @click="menu.handler">
-                                {{menu.name}}
-                            </bk-button>
-                        </cmdb-auth>
-                    </li>
-                </ul>
-            </cmdb-dot-menu>
+            <template v-if="!instance.editing.name">
+                <span class="title-label">{{instance.name}}</span>
+                <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
+                    <ul class="menu-list"
+                        @mouseenter="handleShowDotMenu"
+                        @mouseleave="handleHideDotMenu">
+                        <li class="menu-item"
+                            v-for="(menu, index) in instanceMenu"
+                            :key="index">
+                            <cmdb-auth class="menu-span" :auth="HOST_AUTH[menu.auth]">
+                                <bk-button slot-scope="{ disabled }"
+                                    class="menu-button"
+                                    :text="true"
+                                    :disabled="disabled"
+                                    @click="menu.handler">
+                                    {{menu.name}}
+                                </bk-button>
+                            </cmdb-auth>
+                        </li>
+                    </ul>
+                </cmdb-dot-menu>
+            </template>
+            <div class="edit-form" v-else>
+                <service-instance-name-edit-form ref="nameEditForm"
+                    :value="instance.name"
+                    @click.native.stop
+                    @confirm="handleConfirmEditName"
+                    @cancel="handleCancelEditName" />
+            </div>
             <div class="right-content fr">
                 <div class="instance-label clearfix" @click.stop v-if="currentView === 'label'">
                     <div class="label-list fl">
@@ -140,12 +149,14 @@
     } from '@/dictionary/menu-symbol'
     import { processTableHeader } from '@/dictionary/table-header'
     import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
+    import ServiceInstanceNameEditForm from '@/components/service/instance-name-edit-form'
     import { mapState } from 'vuex'
     import authMixin from '../mixin-auth'
     import Form from '@/components/service/form/form.js'
     export default {
         components: {
-            ProcessBindInfoValue
+            ProcessBindInfoValue,
+            ServiceInstanceNameEditForm
         },
         mixins: [authMixin],
         props: {
@@ -187,6 +198,10 @@
                     name: this.$t('删除'),
                     handler: this.handleDeleteInstance,
                     auth: 'D_SERVICE_INSTANCE'
+                }, {
+                    name: this.$t('编辑'),
+                    handler: this.handleEditInstance,
+                    auth: 'U_SERVICE_INSTANCE'
                 }]
                 return menu
             },
@@ -289,6 +304,33 @@
                     history: true
                 })
             },
+            handleEditInstance () {
+                this.$emit('edit-name')
+                this.$nextTick(() => {
+                    this.$refs.nameEditForm.focus()
+                })
+            },
+            async handleConfirmEditName (value) {
+                try {
+                    await this.$store.dispatch('serviceInstance/updateServiceInstance', {
+                        bizId: this.bizId,
+                        params: {
+                            data: [{
+                                service_instance_id: this.instance.id,
+                                update: {
+                                    name: value
+                                }
+                            }]
+                        }
+                    })
+                    this.$emit('edit-name-success', value)
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            handleCancelEditName () {
+                this.$emit('cancel-edit-name')
+            },
             goTopologyInstance () {
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
@@ -301,10 +343,14 @@
                 })
             },
             handleShowDotMenu () {
-                this.$refs.dotMenu.$el.style.opacity = 1
+                if (this.$refs.dotMenu) {
+                    this.$refs.dotMenu.$el.style.opacity = 1
+                }
             },
             handleHideDotMenu () {
-                this.$refs.dotMenu.$el.style.opacity = 0
+                if (this.$refs.dotMenu) {
+                    this.$refs.dotMenu.$el.style.opacity = 0
+                }
             },
             handleAddProcess () {
                 Form.show({
@@ -453,6 +499,10 @@
             &:hover {
                 color: #3a84ff;
             }
+        }
+        .edit-form {
+            width: 420px;
+            @include inlineBlock;
         }
     }
     .instance-menu {

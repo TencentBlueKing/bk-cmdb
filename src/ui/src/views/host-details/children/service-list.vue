@@ -54,7 +54,10 @@
                 :expanded="index === 0"
                 :current-view="currentView"
                 @delete-instance="handleDeleteInstance"
-                @check-change="handleCheckChange">
+                @check-change="handleCheckChange"
+                @edit-name="handleEditName(instance)"
+                @edit-name-success="handleEditNameSuccess(instance, ...arguments)"
+                @cancel-edit-name="handleCancelEditName(instance)">
             </service-instance-table>
         </div>
         <bk-table v-if="!instances.length" :data="[]" class="mb10">
@@ -184,7 +187,7 @@
                     this.isCheckAll = false
                     this.isExpandAll = false
                     this.pagination.count = data.count
-                    this.instances = data.info
+                    this.instances = data.info.map(instance => ({ ...instance, editing: { name: false } }))
                 } catch (e) {
                     console.error(e)
                     this.instances = []
@@ -268,6 +271,17 @@
             },
             handleDeleteInstance (id) {
                 this.getHostSeriveInstances()
+            },
+            handleEditName (instance) {
+                this.instances.forEach(instance => (instance.editing.name = false))
+                instance.editing.name = true
+            },
+            handleEditNameSuccess (instance, value) {
+                instance.name = value
+                instance.editing.name = false
+            },
+            handleCancelEditName (instance) {
+                instance.editing.name = false
             },
             handleCheckALL (checked) {
                 this.searchSelectData = []
