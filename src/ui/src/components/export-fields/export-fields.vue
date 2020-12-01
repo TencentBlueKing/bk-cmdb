@@ -65,6 +65,13 @@
                 type: Array,
                 default: () => ([])
             },
+            invisibleProperties: {
+                type: Array,
+                default: () => ([
+                    'bk_cloud_id',
+                    'bk_host_innerip'
+                ])
+            },
             handler: {
                 type: Function,
                 default: () => {}
@@ -80,16 +87,19 @@
             }
         },
         computed: {
+            availableProperties () {
+                return this.properties.filter(property => !this.invisibleProperties.includes(property.bk_property_id))
+            },
             isAllChecked () {
-                return !!this.selected.length && this.selected.length === this.properties.length
+                return !!this.selected.length && this.selected.length === this.availableProperties.length
             },
             sortedProperties () {
-                return [...this.properties].sort((propertyA, propertyB) => {
-                    
+                return [...this.availableProperties].sort((propertyA, propertyB) => {
+
                 })
             },
             independentProperties () {
-                return this.properties.filter(property => {
+                return this.availableProperties.filter(property => {
                     return !this.propertyGroups.some(group => {
                         return group.bk_group_id === property.bk_property_group
                             && group.bk_obj_id === property.bk_obj_id
@@ -104,7 +114,7 @@
                     return {
                         id: group.bk_group_id,
                         name: group.bk_group_name,
-                        properties: this.properties.filter(property => property.bk_property_group === group.bk_group_id)
+                        properties: this.availableProperties.filter(property => property.bk_property_group === group.bk_group_id)
                     }
                 })
                 return groups.filter(group => group.properties.length)
@@ -152,7 +162,7 @@
                 }
             },
             handleToggleAll () {
-                this.selected = this.isAllChecked ? [] : [...this.properties]
+                this.selected = this.isAllChecked ? [] : [...this.availableProperties]
             },
             confirm () {
                 this.handler(this.selected)
