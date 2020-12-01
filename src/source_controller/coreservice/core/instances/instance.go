@@ -317,7 +317,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	// parse vip fields for processes
-	fields, vipFields := hooks.ParseVIPFieldsForProcess(inputParam.Fields, tableName)
+	fields, vipFields := hooks.ParseVIPFieldsForProcessHook(inputParam.Fields, tableName)
 
 	instItems := make([]mapstr.MapStr, 0)
 	query := mongodb.Client().Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
@@ -351,7 +351,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	}
 
 	// set vip info for processes
-	instItems, instErr = hooks.SetVIPInfoForProcess(kit, instItems, vipFields, tableName, mongodb.Client())
+	instItems, instErr = hooks.SetVIPInfoForProcessHook(kit, instItems, vipFields, tableName, mongodb.Client())
 	if instErr != nil {
 		return nil, instErr
 	}
