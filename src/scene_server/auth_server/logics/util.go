@@ -120,21 +120,18 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	rawBizID := bizResp.Data.Info[0][common.BKAppIDField]
 	for _, biz := range bizResp.Data.Info {
 		if util.GetStrByInterface(biz[common.BkSupplierAccount]) == kit.SupplierAccount {
-			rawBizID = biz[common.BKAppIDField]
-			break
+			resourcePoolBizID, err = util.GetInt64ByInterface(biz[common.BKAppIDField])
+			if nil != err {
+				blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", bizResp.Data.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
+				return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
+			}
+			return resourcePoolBizID, nil
 		}
 	}
 
-	resourcePoolBizID, err = util.GetInt64ByInterface(rawBizID)
-	if nil != err {
-		blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", bizResp.Data.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
-		return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
-	}
-
-	return resourcePoolBizID, nil
+	return 0, kit.CCError.CCError(common.CCErrCommNotFound)
 }
 
 // GetCloudMapByIDs get cloud area ID to name map by ID to generate host display name
