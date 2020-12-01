@@ -32,7 +32,6 @@ func removeRedundantItems(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		blog.Errorf("remove redundant subscription failed, err: %v", err)
 		return err
 	}
-	blog.ErrorJSON("xxx %s", subscriptionFilter)
 
 	if err := db.DropTable(ctx, "cc_Proc2Module"); err != nil {
 		blog.Errorf("drop table cc_Proc2Module failed, err: %v", err)
