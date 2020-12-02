@@ -235,6 +235,7 @@ type BkHostInfo struct {
 type DefaultModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostIDs       []int64 `json:"bk_host_id"`
+	ModuleID      int64   `json:"bk_module_id"`
 }
 
 // common search struct
