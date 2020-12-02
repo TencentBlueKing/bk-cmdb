@@ -216,7 +216,7 @@
                         return template
                     })
                     this.table.stuff.type = this.hasFilter ? 'search' : 'default'
-                    this.getTemplateCount()
+                    this.table.list.length && this.getTemplateCount()
                 } catch ({ permission }) {
                     if (permission) {
                         this.table.stuff = {
@@ -249,6 +249,10 @@
                     })
                 } catch (error) {
                     console.error(error)
+                    this.table.list.forEach(row => {
+                        this.$set(row, 'module_count', '--')
+                        this.$set(row, 'process_template_count', '--')
+                    })
                 }
             },
             getTemplateData () {

@@ -19,7 +19,7 @@ import (
 )
 
 var _ = Describe("host test", func() {
-	var bizId, setId, moduleId, idleModuleId, faultModuleId int64
+	var bizId, setId, moduleId, idleModuleId, faultModuleId, dirID int64
 	var hostId, hostId1, hostId2, hostId3 int64
 
 	Describe("test preparation", func() {
@@ -88,6 +88,18 @@ var _ = Describe("host test", func() {
 			Expect(parentIdRes).To(Equal(setId))
 			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("create resource pool directory", func() {
+			dir := map[string]interface{}{
+				"bk_module_name": "test",
+			}
+			rsp, err := dirClient.CreateResourceDirectory(context.Background(), header, dir)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+
+			dirID = int64(rsp.Data.Created.ID)
 		})
 	})
 
@@ -358,6 +370,7 @@ var _ = Describe("host test", func() {
 				HostIDs: []int64{
 					hostId1,
 				},
+				ModuleID: dirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -804,6 +817,7 @@ var _ = Describe("host test", func() {
 				HostIDs: []int64{
 					hostId2,
 				},
+				ModuleID: dirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
