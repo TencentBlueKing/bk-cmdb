@@ -13,7 +13,6 @@
 package configures
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"strconv"
@@ -36,7 +35,7 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 	err := v.ReadInConfig()
 	if err != nil {
 		blog.Errorf("fail to read configure from %s ", file)
-		return errors.New("fail to read configure from file.")
+		return err
 	}
 
 	switch fileName {
@@ -73,19 +72,19 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 	return nil
 }
 
-func (cc *ConfCenter) isRedisConfigOK(prefix, fileName string, v *viper.Viper)  error {
+func (cc *ConfCenter) isRedisConfigOK(prefix, fileName string, v *viper.Viper) error {
 	if err := cc.isConfigEmpty(prefix+".host", fileName, v); err != nil {
 		return err
 	}
 	if err := cc.isConfigNotIntVal(prefix+".database", fileName, v); err != nil {
 		return err
 	}
-	if v.IsSet(prefix+".maxOpenConns") {
-		if err :=cc.isConfigNotIntVal(prefix+".maxOpenConns", fileName, v); err != nil {
+	if v.IsSet(prefix + ".maxOpenConns") {
+		if err := cc.isConfigNotIntVal(prefix+".maxOpenConns", fileName, v); err != nil {
 			return err
 		}
 	}
-	if v.IsSet(prefix+".maxIDleConns") {
+	if v.IsSet(prefix + ".maxIDleConns") {
 		if err := cc.isConfigNotIntVal(prefix+".maxIDleConns", fileName, v); err != nil {
 			return err
 		}
@@ -139,7 +138,7 @@ func (cc *ConfCenter) isEsConfigOK(v *viper.Viper, fileName string) error {
 
 func (cc *ConfCenter) isDatacollectionConfigOK(v *viper.Viper, fileName string) error {
 	if v.IsSet("datacollection.hostsnap.changeRangePercent") {
-		if err:= cc.isConfigNotIntVal("datacollection.hostsnap.changeRangePercent", fileName, v); err != nil {
+		if err := cc.isConfigNotIntVal("datacollection.hostsnap.changeRangePercent", fileName, v); err != nil {
 			return err
 		}
 	}
@@ -174,7 +173,7 @@ func (cc *ConfCenter) isDatacollectionConfigOK(v *viper.Viper, fileName string) 
 
 func (cc *ConfCenter) isTimeFormat(configName, fileName string, v *viper.Viper) error {
 	atTime := v.GetString(configName)
-	timeVal := strings.Split(atTime,":")
+	timeVal := strings.Split(atTime, ":")
 	if len(timeVal) != 2 {
 		blog.Errorf("The configuration file is %s, the format of %s is wrong !", fileName, configName)
 		return fmt.Errorf("The configuration file is %s, the format of %s is wrong !", fileName, configName)

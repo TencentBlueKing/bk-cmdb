@@ -104,7 +104,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	users := make([]*metadata.LoginSystemUserInfo, 0)
 	userInfo, err := cc.String("webServer.session.userInfo")
 	if err != nil {
-		blog.Errorf("User name and password can't be found at webServer.session.userInfo in config file common.yaml, rid:%s", rid)
+		blog.Errorf("User name and password can't be found at webServer.session.userInfo in config file common, rid:%s", rid)
 		return nil, &errors.RawErrorInfo{
 			ErrCode: common.CCErrWebNoUsernamePasswd,
 		}
@@ -113,7 +113,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	for _, userInfo := range userInfos {
 		userPasswd := strings.Split(userInfo, ":")
 		if len(userPasswd) != 2 {
-			blog.Errorf("The format of user name and password are wrong, please check webServer.session.userInfo in config file common.yaml, rid:%s", rid)
+			blog.Errorf("The format of user name and password are wrong, please check webServer.session.userInfo in config file common, rid:%s", rid)
 			return nil, &errors.RawErrorInfo{
 				ErrCode: common.CCErrWebUserinfoFormatWrong,
 			}

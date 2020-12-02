@@ -138,8 +138,16 @@ func (s *Service) ExportInst(c *gin.Context) {
 		c.Writer.Write([]byte(reply))
 		return
 	}
+	//此函数如果执行报错,会影响excel生成中文名,无其它影响,暂定不强制中断逻辑。
+	usernameMap, propertyList, err := s.getUserMapFromESBNew(c, objID, instInfo)
+	if nil != err {
+		blog.Errorf("ExportInst failed, get usernameMap from ESB failed, err: %+v, rid: %s", err, rid)
+		usernameMap = map[string]string{}
+		propertyList = []string{}
+	}
+	blog.Infof("ExportInst, got usernameMap from ESB, usernameMap: %v, propertyList: %v", usernameMap, propertyList)
 
-	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID)
+	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap, propertyList)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

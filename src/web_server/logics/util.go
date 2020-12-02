@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 
 	"github.com/rentiansheng/xlsx"
 )
@@ -172,4 +173,23 @@ func addExtFields(fields map[string]Property, extFields map[string]string) map[s
 		excelColIndex++
 	}
 	return fields
+}
+
+func replaceEnName(rowMap mapstr.MapStr, usernameMap map[string]string, propertyList []string) mapstr.MapStr {
+	for _, property := range propertyList { //这是用户自定义的objuser型的attr名列表。
+		if rowMap[property] == nil {
+			continue
+		}
+		newUserList := []string{}
+		for enName, enCnName := range usernameMap { //这是依照英文名对照中英文名的对照字典。
+			enNameList := strings.Split(rowMap[property].(string), ",") //rowMap包含了即将写入excel的信息。我们要替换其中的objuser类型的attr内容。
+			for _, enNameSingle := range enNameList {
+				if enNameSingle == enName {
+					newUserList = append(newUserList, enCnName)
+				}
+			}
+		}
+		rowMap[property] = strings.Join(newUserList, ",")
+	}
+	return rowMap
 }
