@@ -83,24 +83,31 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 			},
 		}),
 	}
-	setInstResult, e := st.client.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, setFilter)
-	if e != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, list sets failed, bizID: %d, setTemplateID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, e.Error(), rid)
-		return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
+	coresvcInst := st.client.CoreService().Instance()
+
+	setInstResult := metadata.ResponseSetInstance{}
+	if err := coresvcInst.
+		ReadInstanceStruct(ctx, header, common.BKInnerObjIDSet, setFilter, &setInstResult); err != nil {
+		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list sets http do failed, bizID: %s, "+
+			"setTemplateID: %s, setIDs: %s, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, err.Error(), rid)
+		return nil, err
 	}
+	if err := setInstResult.CCError(); err != nil {
+		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list sets http reply failed, bizID: %s, "+
+			"setTemplateID: %s, setIDs: %s, filter: %s, reply: %s, rid: %s", bizID,
+			setTemplateID, option.SetIDs, setFilter, setInstResult, rid)
+		return nil, err
+	}
+
 	if len(setInstResult.Data.Info) != len(setIDs) {
 		blog.Errorf("DiffSetTemplateWithInstances failed, some setID invalid, input IDs: %+v, valid IDs: %+v, rid: %s", setIDs, setInstResult.Data.Info, rid)
 		return nil, ccError.CCErrorf(common.CCErrCommParamsInvalid, "bk_set_ids")
 	}
 	setMap := make(map[int64]metadata.SetInst)
-	for _, setInstance := range setInstResult.Data.Info {
-		set := metadata.SetInst{}
-		if err := mapstruct.Decode2StructWithHook(setInstance, &set); err != nil {
-			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance failed, set: %+v, err: %s, rid: %s", setInstance, err.Error(), rid)
-			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
-		}
+	for _, set := range setInstResult.Data.Info {
 		if set.SetID == 0 {
-			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance result setID=0, data: %+v, rid: %s", setInstance, rid)
+			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance result setID=0, data: %+v, rid: %s",
+				set, rid)
 			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
 		}
 		setMap[set.SetID] = set
@@ -117,10 +124,18 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 			},
 		}),
 	}
-	modulesInstResult, e := st.client.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, moduleFilter)
-	if e != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, list modules failed, bizID: %d, setTemplateID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, e.Error(), rid)
-		return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
+	modulesInstResult := metadata.ResponseModuleInstance{}
+	if err := coresvcInst.
+		ReadInstanceStruct(ctx, header, common.BKInnerObjIDModule, moduleFilter, &modulesInstResult); err != nil {
+		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list modules failed, bizID: %s, setTemplateID: %s,"+
+			" setIDs: %s, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, err, rid)
+		return nil, err
+	}
+	if err := modulesInstResult.CCError(); err != nil {
+		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list module http reply failed, bizID: %s, "+
+			"setTemplateID: %s, setIDs: %s, filter: %s, reply: %s, rid: %s", bizID,
+			setTemplateID, option.SetIDs, moduleFilter, modulesInstResult, rid)
+		return nil, err
 	}
 
 	setModules := make(map[int64][]metadata.ModuleInst)
@@ -128,12 +143,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	for _, setID := range option.SetIDs {
 		setModules[setID] = make([]metadata.ModuleInst, 0)
 	}
-	for _, moduleInstance := range modulesInstResult.Data.Info {
-		module := metadata.ModuleInst{}
-		if err := mapstruct.Decode2Struct(moduleInstance, &module); err != nil {
-			blog.Errorf("DiffSetTemplateWithInstances failed, decode module instance failed, module: %+v, err: %s, rid: %s", moduleInstance, err.Error(), rid)
-			return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
-		}
+	for _, module := range modulesInstResult.Data.Info {
 		if _, exist := setModules[module.ParentID]; !exist {
 			setModules[module.ParentID] = make([]metadata.ModuleInst, 0)
 		}
@@ -275,8 +285,8 @@ func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, header http.
 
 // DiffServiceTemplateWithModules diff modules with template in one set
 func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate, modules []metadata.ModuleInst) []metadata.SetModuleDiff {
-	svcTplMap := make(map[int64]metadata.ServiceTemplate)
-	svcTplHitMap := make(map[int64]bool)
+	svcTplMap := make(map[int64]metadata.ServiceTemplate, len(serviceTemplates))
+	svcTplHitMap := make(map[int64]bool, len(serviceTemplates))
 	for _, svcTpl := range serviceTemplates {
 		svcTplMap[svcTpl.ID] = svcTpl
 		svcTplHitMap[svcTpl.ID] = false
