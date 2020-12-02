@@ -23,12 +23,13 @@
 <script>
     import activeMixin from './mixin-active'
     import { mapGetters } from 'vuex'
+    const requestId = Symbol('serviceTemplate')
     export default {
         name: 'cmdb-search-service-template',
         mixins: [activeMixin],
         props: {
             value: {
-                type: Array,
+                type: [Array, String],
                 default: () => ([])
             },
             displayType: {
@@ -42,14 +43,18 @@
         data () {
             return {
                 list: [],
-                requestId: Symbol('serviceTemplate')
+                requestId: requestId
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             localValue: {
                 get () {
-                    return this.value
+                    const value = this.value
+                    if (Array.isArray(value)) {
+                        return value
+                    }
+                    return value.split(',').map(id => parseInt(id, 10))
                 },
                 set (value) {
                     this.$emit('input', value)
@@ -58,11 +63,11 @@
             },
             info () {
                 const info = []
-                this.value.forEach(id => {
+                this.localValue.forEach(id => {
                     const data = this.list.find(data => data.id === id)
                     data && info.push(data.name)
                 })
-                return info.join(' | ')
+                return info.join(' | ') || '--'
             }
         },
         created () {

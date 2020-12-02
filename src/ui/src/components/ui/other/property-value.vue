@@ -7,18 +7,25 @@
         :property="property"
         v-else-if="isTable">
     </table-value>
+    <service-template-value
+        v-else-if="isServiceTemplate"
+        :value="value"
+        display-type="info">
+    </service-template-value>
     <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`" v-else>{{displayValue}}</compmoent>
 </template>
 
 <script>
     import UserValue from './user-value'
     import TableValue from './table-value'
+    import ServiceTemplateValue from '@/components/search/service-template'
     const ORG_CACHES = {}
     export default {
         name: 'cmdb-property-value',
         components: {
             UserValue,
-            TableValue
+            TableValue,
+            ServiceTemplateValue
         },
         props: {
             value: {
@@ -80,6 +87,9 @@
             },
             isTable () {
                 return this.property.bk_property_type === 'table'
+            },
+            isServiceTemplate () {
+                return this.property.bk_property_type === 'service-template'
             }
         },
         watch: {

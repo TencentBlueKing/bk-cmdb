@@ -97,6 +97,12 @@ const FilterStore = new Vue({
                 map[modelId] = modelProperties
             })
             return map
+        },
+        hasCondition () {
+            return Object.keys(this.condition).some(id => {
+                const value = this.condition[id].value
+                return !!String(value).trim().length
+            })
         }
     },
     watch: {
@@ -150,7 +156,7 @@ const FilterStore = new Vue({
             }
         },
         setupHeader () {
-            this.selected.length ? this.setHeader(this.selected) : this.setHeader(this.defaultHeader)
+            (this.selected.length && this.hasCondition) ? this.setHeader(this.selected) : this.setHeader(this.defaultHeader)
         },
         initCondition () {
             const newConditon = {}
@@ -336,7 +342,7 @@ const FilterStore = new Vue({
                 fromCache: true
             })
             const hostIdProperty = Utils.defineProperty({
-                id: Date.now(),
+                id: 'bk_host_id',
                 bk_obj_id: 'host',
                 bk_property_id: 'bk_host_id',
                 bk_property_name: 'ID',
@@ -344,7 +350,7 @@ const FilterStore = new Vue({
                 bk_property_type: 'int'
             })
             const serviceTemplateProperty = Utils.defineProperty({
-                id: Date.now() + 1,
+                id: 'service_template_id',
                 bk_obj_id: 'module',
                 bk_property_id: 'service_template_id',
                 bk_property_name: i18n.t('服务模板'),
@@ -451,5 +457,7 @@ export async function setupFilterStore (config = {}) {
     FilterStore.throttleSearch()
     return FilterStore
 }
+
+window.FilterStore = FilterStore
 
 export default FilterStore

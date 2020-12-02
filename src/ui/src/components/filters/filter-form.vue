@@ -21,9 +21,11 @@
                         :rows="4"
                         :placeholder="$t('主机搜索提示语')"
                         data-vv-name="ip"
+                        data-vv-validate-on="blur"
                         v-validate="'ipSearchRuls'"
                         v-focus
-                        v-model.trim="IPCondition.text">
+                        v-model.trim="IPCondition.text"
+                        @focus="errors.remove('ip')">
                     </bk-input>
                     <p class="filter-ip-error" v-if="errors.has('ip')">
                         {{errors.first('ip')}}
@@ -72,7 +74,7 @@
                 slot="footer"
                 slot-scope="{ sticky }"
                 :class="{ 'is-sticky': sticky }">
-                <bk-button class="option-search mr10" theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
+                <bk-button class="option-search mr10" theme="primary" :disabled="errors.any()" @click="handleSearch">{{$t('查询')}}</bk-button>
                 <template v-if="collectable">
                     <span class="option-collect-wrapper" v-if="collection"
                         v-bk-tooltips="{
@@ -352,6 +354,7 @@
                     const defaultValue = Utils.getOperatorSideEffect(property, propertyCondititon.operator, null)
                     propertyCondititon.value = defaultValue
                 })
+                this.errors.clear()
             },
             focusCollectionName () {
                 this.$refs.collectionName.$refs.input.focus()
