@@ -40,11 +40,11 @@ func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, 
 	instResult, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, qc)
 	if err != nil {
 		blog.ErrorJSON("GetOneSet failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
-		return set, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		return set, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !instResult.Result || instResult.Code != 0 {
+	if ccErr := instResult.CCError(); ccErr != nil {
 		blog.ErrorJSON("GetOneSet failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
-		return set, errors.NewCCError(instResult.Code, instResult.ErrMsg)
+		return set, ccErr
 	}
 	if len(instResult.Data.Info) == 0 {
 		blog.ErrorJSON("GetOneSet failed, not found, filter: %s, instResult: %s, rid: %s", filter, instResult, kit.Rid)
