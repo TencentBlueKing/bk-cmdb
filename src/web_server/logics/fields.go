@@ -128,7 +128,8 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 
 	customFieldsCond := make(map[string]interface{})
 	if len(customFields) > 0 {
-		customFieldsCond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBIN: customFields}
+		fields := append(customFields, common.BKHostInnerIPField, common.BKCloudIDField)
+		customFieldsCond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBIN: fields}
 	}
 
 	// sortedFields 模型字段已经根据bk_property_index排序好了

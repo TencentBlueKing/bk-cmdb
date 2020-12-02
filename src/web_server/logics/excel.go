@@ -113,6 +113,23 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			msg := fmt.Sprintf("data format error:%v", hostData)
 			return ccErr.Errorf(common.CCErrCommReplyDataFormatError, msg)
 		}
+
+		if _, exist := fields[common.BKCloudIDField]; exist {
+			cloudAreaArr, err := rowMap.MapStrArray(common.BKCloudIDField)
+			if err != nil {
+				blog.ErrorJSON("build host excel failed, cloud area not array, host: %s, err: %s, rid: %s", hostData, err, rid)
+				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
+			}
+
+			if len(cloudAreaArr) != 1 {
+				blog.ErrorJSON("build host excel failed, host has many cloud areas, host: %s, err: %s, rid: %s", hostData, err, rid)
+				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
+			}
+
+			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField], cloudAreaArr[0][common.BKInstIDField])
+			rowMap.Set(common.BKCloudIDField, cloudArea)
+		}
+
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
 			topo := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
