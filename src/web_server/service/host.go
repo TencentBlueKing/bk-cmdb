@@ -136,7 +136,16 @@ func (s *Service) ExportHost(c *gin.Context) {
 	var file *xlsx.File
 	file = xlsx.NewFile()
 
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0)
+	//此函数如果执行报错,会影响excel生成中文名,无其它影响,暂定不强制中断逻辑。
+	usernameMap, propertyList, err := s.getUserMapFromESBNew(c, objID, hostInfo)
+	if nil != err {
+		blog.Errorf("ExportInst failed, get usernameMap from ESB failed, err: %+v, rid: %s", err, rid)
+		usernameMap = map[string]string{}
+		propertyList = []string{}
+	}
+	blog.Infof("ExportInst, got usernameMap from ESB, usernameMap: %v, propertyList: %v", usernameMap, propertyList)
+
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0, usernameMap, propertyList)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
