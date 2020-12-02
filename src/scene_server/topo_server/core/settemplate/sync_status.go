@@ -98,7 +98,7 @@ func (st *setTemplate) UpdateSetSyncStatus(kit *rest.Kit, setID int64) (metadata
 	option := metadata.DiffSetTplWithInstOption{
 		SetIDs: []int64{set.SetID},
 	}
-	diff, err := st.DiffSetTplWithInst(kit.Ctx, kit.Header, set.BizID, set.SetTemplateID, option)
+	diff, err := st.DiffSetTplWithInst(kit, set.BizID, set.SetTemplateID, option)
 	if err != nil {
 		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst failed, setID: %d, err: %s, rid: %s", setID, err.Error(), kit.Rid)
 		return setSyncStatus, err

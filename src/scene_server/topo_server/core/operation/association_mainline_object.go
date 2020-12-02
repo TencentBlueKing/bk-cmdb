@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
@@ -146,12 +145,12 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 
 	if data.AsstObjID == "" {
-		blog.Errorf("[operation-asst] bk_asst_obj_id empty,rid:%s, rid: %s", util.GetHTTPCCRequestID(kit.Header), kit.Rid)
+		blog.Errorf("[operation-asst] bk_asst_obj_id empty, input: %s, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
 	}
 
 	if data.ClassificationID == "" {
-		blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s, rid: %s", util.GetHTTPCCRequestID(kit.Header), kit.Rid)
+		blog.Errorf("[operation-asst] bk_classification_id empty, input: %s, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
 	items, err := assoc.SearchMainlineAssociationTopo(kit, bizObj)
