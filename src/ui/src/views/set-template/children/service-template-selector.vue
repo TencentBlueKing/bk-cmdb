@@ -125,15 +125,18 @@
         methods: {
             async getTemplates () {
                 try {
-                    const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-                        params: { bk_biz_id: this.bizId },
+                    const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
+                        params: {
+                            bk_biz_id: this.bizId,
+                            page: {
+                                sort: 'name'
+                            }
+                        },
                         config: {
                             requestId: 'getServiceTemplate'
                         }
                     })
-                    this.templates = data.info.map(datum => datum.service_template).sort((A, B) => {
-                        return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' })
-                    }).sort((A, B) => {
+                    this.templates = templates.sort((A, B) => {
                         const weightA = this.selected.includes(A.id) ? 1 : 0
                         const weightB = this.selected.includes(B.id) ? 1 : 0
                         return weightB - weightA

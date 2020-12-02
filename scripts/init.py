@@ -241,8 +241,10 @@ webServer:
 # operation_server专属配置
 operationServer:
   timer:
-    #00:00-23:59,operation_server从配置文件读取的时间,默认是为00:30
+    # 00:00-23:59,运营统计定时收集数据时间点,默认是为00:30
     spec: 00:30  # 00:00 - 23:59
+  # 禁用运营统计数据统计功能，默认false
+  disableOperationStatistic: false
 #auth_server专属配置
 authServer:
   #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
@@ -253,6 +255,7 @@ authServer:
   appSecret: $auth_app_secret
 #cloudServer专属配置
 cloudServer:
+  # 加密服务使用
   cryptor:
     enableCryptor: ${enable_cryptor}
     secretKeyUrl: ${secret_key_url}
@@ -260,6 +263,10 @@ cloudServer:
     secretsToken: ${secrets_token}
     secretsProject: ${secrets_project}
     secretsEnv: ${secrets_env}
+  # 云同步任务
+  syncTask:
+    # 同步周期,最小为5分钟
+    syncPeriodMinutes: 5
 #datacollection专属配置
 datacollection:
   hostsnap:

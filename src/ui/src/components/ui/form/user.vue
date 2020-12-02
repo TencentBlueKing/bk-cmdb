@@ -3,7 +3,9 @@
         ref="userSelector"
         display-list-tips
         v-bind="props"
-        v-model="localValue">
+        v-model="localValue"
+        @focus="$emit('focus')"
+        @blur="$emit('blur')">
     </blueking-user-selector>
 </template>
 

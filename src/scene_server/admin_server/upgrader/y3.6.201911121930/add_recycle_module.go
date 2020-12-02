@@ -115,7 +115,7 @@ func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.C
 		common.BkSupplierAccount:        conf.OwnerID,
 		common.CreateTimeField:          now,
 		common.LastTimeField:            now,
-		common.BKChildStr:               nil,
+		"bk_childid":                    nil,
 		common.BKModuleTypeField:        common.DefaultModuleType,
 		common.BKOperatorField:          "",
 		common.BKAppIDField:             biz.BKAppIDField,

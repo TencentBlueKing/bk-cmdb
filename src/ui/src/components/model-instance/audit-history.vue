@@ -3,6 +3,7 @@
         <div class="history-filter">
             <cmdb-form-date-range class="filter-item filter-range"
                 v-model="condition.operation_time"
+                :clearable="false"
                 @input="handlePageChange(1)">
             </cmdb-form-date-range>
             <cmdb-form-objuser class="filter-item filter-user"
@@ -50,11 +51,12 @@
             }
         },
         data () {
+            const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
             return {
                 history: [],
                 dictionary: [],
                 condition: {
-                    operation_time: [],
+                    operation_time: [today, today],
                     user: '',
                     category: this.category,
                     resource_id: this.resourceId,

@@ -39,11 +39,12 @@ func init() {
 	globalRegister = prometheus.DefaultRegisterer
 }
 
+// Register must only be called after backbone engine is started.
 func Register() prometheus.Registerer {
 	return globalRegister
 }
 
-const Namespace = "cmdb_"
+const Namespace = "cmdb"
 
 // labels
 const (
@@ -100,7 +101,7 @@ func NewService(conf Config) *Service {
 		prometheus.HistogramOpts{
 			Name:    Namespace + "http_request_duration_millisecond",
 			Help:    "Histogram of latencies for HTTP requests.",
-			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000},
+			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000},
 		},
 		[]string{LabelHandler, LabelAppCode},
 	)

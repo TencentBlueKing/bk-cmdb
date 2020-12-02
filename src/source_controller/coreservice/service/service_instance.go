@@ -229,19 +229,3 @@ func (s *coreService) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
-
-func (s *coreService) GetProc2Module(ctx *rest.Contexts) {
-	option := metadata.GetProc2ModuleOption{}
-	if err := ctx.DecodeInto(&option); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	result, err := s.core.ProcessOperation().GetProc2Module(ctx.Kit, &option)
-	if err != nil {
-		blog.Errorf("RemoveTemplateBindingOnModule failed, option: %+v, err: %+v, rid: %s", option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(result)
-}

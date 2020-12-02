@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
@@ -34,7 +35,7 @@ var (
 	noExistID1   int64  = 99998
 	noExistIDStr string = "99999"
 )
-var bizId, bizId1, setId, setId1, moduleId, moduleId1, moduleId2, idleModuleId, faultModuleId, recycleModuleId int64
+var bizId, bizId1, setId, setId1, moduleId, moduleId1, moduleId2, idleModuleId, faultModuleId, defaultDirID int64
 var hostId, hostId1, hostId2, hostId3, hostId4 int64
 
 var _ = Describe("host abnormal test", func() {
@@ -161,13 +162,11 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
 			Expect(len(rsp.Data.Module)).To(Equal(3))
 			for _, module := range rsp.Data.Module {
-				switch module.ModuleName {
-				case "空闲机":
+				switch int(module.Default) {
+				case common.DefaultResModuleFlag:
 					idleModuleId = module.ModuleID
-				case "故障机":
+				case common.DefaultFaultModuleFlag:
 					faultModuleId = module.ModuleID
-				case "待回收":
-					recycleModuleId = module.ModuleID
 				}
 			}
 		})
@@ -187,6 +186,20 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+		})
+
+		It("get resource pool default module id", func() {
+			cond := map[string]interface{}{
+				common.BKDefaultField: common.DefaultResModuleFlag,
+			}
+			dirRsp, err := dirClient.SearchResourceDirectory(context.Background(), header, cond)
+			util.RegisterResponse(dirRsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dirRsp.Result).To(Equal(true))
+			Expect(len(dirRsp.Data.Info)).To(Equal(1))
+
+			defaultDirID, err = commonutil.GetInt64ByInterface(dirRsp.Data.Info[0][common.BKModuleIDField])
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
@@ -1294,6 +1307,7 @@ var _ = Describe("host abnormal test", func() {
 				HostIDs: []int64{
 					hostId1,
 				},
+				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1307,6 +1321,7 @@ var _ = Describe("host abnormal test", func() {
 				HostIDs: []int64{
 					hostId,
 				},
+				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1321,6 +1336,7 @@ var _ = Describe("host abnormal test", func() {
 					hostId,
 					noExistID,
 				},
+				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1334,6 +1350,7 @@ var _ = Describe("host abnormal test", func() {
 				HostIDs: []int64{
 					hostId1,
 				},
+				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1344,6 +1361,7 @@ var _ = Describe("host abnormal test", func() {
 		It("transfer host to resourcemodule less hostid", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
+				ModuleID:      defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1353,6 +1371,20 @@ var _ = Describe("host abnormal test", func() {
 
 		It("transfer host to resourcemodule less bizid", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
+				HostIDs: []int64{
+					hostId1,
+				},
+				ModuleID: defaultDirID,
+			}
+			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		It("transfer host to resource pool without biz id", func() {
+			input := &metadata.DefaultModuleHostConfigParams{
+				ApplicationID: bizId1,
 				HostIDs: []int64{
 					hostId1,
 				},
@@ -1406,6 +1438,7 @@ var _ = Describe("host abnormal test", func() {
 					hostId1,
 					hostId3,
 				},
+				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -2142,6 +2175,7 @@ func clearData() {
 				input2 := &metadata.DefaultModuleHostConfigParams{
 					ApplicationID: bizId,
 					HostIDs:       hostIds,
+					ModuleID:      defaultDirID,
 				}
 				rsp2, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input2)
 				util.RegisterResponse(rsp2)

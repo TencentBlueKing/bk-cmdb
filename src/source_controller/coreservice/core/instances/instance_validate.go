@@ -332,7 +332,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
-	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
+	skip, err := hooks.IsSkipValidateHook(kit, objID, updateData)
 	if err != nil {
 		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return err

@@ -10,28 +10,20 @@
  * limitations under the License.
  */
 
-package y3_8_202005201015
+package y3_9_202011192014
 
 import (
 	"context"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202005201015", upgrade)
+	upgrader.RegistUpgrader("y3.9.202011192014", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.8.202005201015")
 
-	err = addHostAttr(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.8.202005201015] addHostAttr failed, error  %s", err.Error())
-		return err
-	}
-
-	return nil
+	return changeUniqueIndex(ctx, db, conf)
 }

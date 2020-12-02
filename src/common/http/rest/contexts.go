@@ -45,6 +45,7 @@ type Contexts struct {
 	Request        *restful.Request
 	resp           *restful.Response
 	respStatusCode int
+	uri            string
 }
 
 func (c *Contexts) DecodeInto(to interface{}) error {
@@ -160,6 +161,8 @@ func (c *Contexts) RespCountInfoString(count int64, infoArray []string) {
 }
 
 func (c *Contexts) RespEntityWithError(data interface{}, err error) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -236,6 +239,8 @@ func (c *Contexts) WithStatusCode(statusCode int) *Contexts {
 // CCSystemBusy code.
 // This function will also write a log when it's called which contains the request id field.
 func (c *Contexts) RespWithError(err error, errCode int, format string, args ...interface{}) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -279,6 +284,8 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 }
 
 func (c *Contexts) RespAutoError(err error) {
+	c.collectErrorMetric()
+
 	blog.ErrorfDepthf(1, "rid: %s, err: %v", c.Kit.Rid, err)
 	var code int
 	var errMsg string
@@ -315,6 +322,8 @@ func (c *Contexts) RespAutoError(err error) {
 // errorf is used to format multiple-language error message.
 // it will also will log the error at the same time with logMsg.
 func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interface{}) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -334,6 +343,8 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 }
 
 func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interface{}) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -373,6 +384,8 @@ func (c *Contexts) RespBkEntity(data interface{}) {
 }
 
 func (c *Contexts) RespBkError(errCode int, errMsg string) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}

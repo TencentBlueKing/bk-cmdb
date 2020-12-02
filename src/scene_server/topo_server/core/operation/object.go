@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"context"
 	"fmt"
 
 	"configcenter/src/ac/extensions"
@@ -142,7 +141,7 @@ func (o *object) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]Import
 			targetAttr.OwnerID = kit.SupplierAccount
 			targetAttr.ObjectID = objID
 
-			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
+			if targetAttr.PropertyID == common.BKInstParentStr {
 				continue
 			}
 
@@ -715,7 +714,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond condition.Condition) ([]meta
 func (o *object) FindObject(kit *rest.Kit, cond condition.Condition) ([]model.Object, error) {
 	fCond := cond.ToMapStr()
 
-	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-obj] find object failed, cond: %+v, err: %s, rid: %s", fCond, err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

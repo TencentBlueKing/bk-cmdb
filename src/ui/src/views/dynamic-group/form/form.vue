@@ -226,7 +226,7 @@
                                 }
                             } else if (current.operator === '$eq') {
                                 // 将老数据的eq转换为当前支持的数据格式
-                                const transformType = ['singlechar', 'longchar', 'enum']
+                                const transformType = ['singlechar', 'longchar', 'enum', 'objuser']
                                 const property = this.getConditionProperty(data.bk_obj_id, current.field)
                                 if (property && transformType.includes(property.bk_property_type)) {
                                     accumulator.push({

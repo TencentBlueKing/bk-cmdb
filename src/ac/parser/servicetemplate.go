@@ -108,14 +108,6 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
-		Name:           "listServiceTemplateDetailPattern",
-		Description:    "查询服务模板详情",
-		Pattern:        "/api/v3/findmany/proc/service_template/with_detail",
-		HTTPMethod:     http.MethodPost,
-		BizIDGetter:    DefaultBizIDGetter,
-		ResourceType:   meta.ProcessServiceTemplate,
-		ResourceAction: meta.FindMany,
-	}, {
 		Name:         "unbindServiceTemplateOnModule",
 		Description:  "解绑模块的服务模板",
 		Pattern:      "/api/v3/delete/proc/template_binding_on_module",
@@ -144,6 +136,15 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			}
 			return []int64{templateID}, nil
 		},
+	}, {
+		Name:           "FindServiceTemplateCountInfo",
+		Description:    "查询服务模版的计数信息",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/service_template/count_info/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 

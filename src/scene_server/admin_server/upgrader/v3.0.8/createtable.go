@@ -104,7 +104,7 @@ var tables = map[string][]types.Index{
 	common.BKTableNameBasePlat: {
 		types.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
 	},
-	common.BKTableNameProcModule: {
+	"cc_Proc2Module": {
 		types.Index{Name: "", Keys: map[string]int32{common.BKAppIDField: 1}, Background: true},
 		types.Index{Name: "", Keys: map[string]int32{common.BKProcIDField: 1}, Background: true},
 	},

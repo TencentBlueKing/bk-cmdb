@@ -3,6 +3,7 @@
         <div class="history-options">
             <cmdb-form-date-range class="history-date-range"
                 v-model="condition.operation_time"
+                :clearable="false"
                 @change="handlePageChange(1)">
             </cmdb-form-date-range>
             <bk-input class="history-host-filter ml10"
@@ -42,12 +43,13 @@
     import AuditDetails from '@/components/audit-history/details.js'
     export default {
         data () {
+            const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
             return {
                 dictionary: [],
                 history: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 condition: {
-                    operation_time: [],
+                    operation_time: [today, today],
                     resource_name: '',
                     action: ['delete']
                 },

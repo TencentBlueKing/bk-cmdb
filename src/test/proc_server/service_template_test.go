@@ -83,6 +83,21 @@ var _ = Describe("service template test", func() {
 			resMap["service_template"] = j
 		})
 
+		It("find service template count info", func() {
+			input := map[string]interface{}{
+				"service_template_ids": []int64{serviceTemplateId},
+			}
+			rsp, err := serviceClient.FindServiceTemplateCountInfo(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(len(rsp.Data)).To(Equal(1))
+			Expect(rsp.Data[0].(map[string]interface{})["service_template_id"].(json.Number).Int64()).To(Equal(serviceTemplateId))
+			Expect(rsp.Data[0].(map[string]interface{})["process_template_count"].(json.Number).Int64()).To(Equal(int64(0)))
+			Expect(rsp.Data[0].(map[string]interface{})["service_instance_count"].(json.Number).Int64()).To(Equal(int64(0)))
+			Expect(rsp.Data[0].(map[string]interface{})["module_count"].(json.Number).Int64()).To(Equal(int64(0)))
+		})
+
 		It("create service template with empty name", func() {
 			input := map[string]interface{}{
 				"service_category_id": categoryId,

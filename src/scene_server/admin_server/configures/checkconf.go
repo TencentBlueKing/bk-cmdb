@@ -68,6 +68,11 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 		if err := cc.isDatacollectionConfigOK(v, file); err != nil {
 			return err
 		}
+
+		// check operation server config
+		if err := cc.isOperationConfigOK(v, file); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -171,6 +176,16 @@ func (cc *ConfCenter) isDatacollectionConfigOK(v *viper.Viper, fileName string) 
 	return nil
 }
 
+func (cc *ConfCenter) isOperationConfigOK(v *viper.Viper, fileName string) error {
+	if !v.IsSet("operationServer.disableOperationStatistic") {
+		return nil
+	}
+	if err := cc.isConfigNotBoolVal("operationServer.disableOperationStatistic", fileName, v); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (cc *ConfCenter) isTimeFormat(configName, fileName string, v *viper.Viper) error {
 	atTime := v.GetString(configName)
 	timeVal := strings.Split(atTime, ":")
@@ -209,6 +224,15 @@ func (cc *ConfCenter) isConfigNotIntVal(configName, fileName string, v *viper.Vi
 	if err != nil {
 		blog.Errorf("The configuration file is %s, the %s should be a string of numbers !", fileName, configName)
 		return fmt.Errorf("The configuration file is %s, the %s should be a string of numbers !", fileName, configName)
+	}
+	return nil
+}
+
+func (cc *ConfCenter) isConfigNotBoolVal(configName, fileName string, v *viper.Viper) error {
+	val := v.GetString(configName)
+	if val != "true" && val != "false" {
+		blog.Errorf("The configuration file is %s, the %s should be true or false !", fileName, configName)
+		return fmt.Errorf("The configuration file is %s, the %s should be true or false !", fileName, configName)
 	}
 	return nil
 }

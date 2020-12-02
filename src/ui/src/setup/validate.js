@@ -157,6 +157,26 @@ const customRules = {
         validate: value => {
             return /^(?!bk_).*/.test(value)
         }
+    },
+    ipSearchRuls: {
+        validate: (value) => {
+            const list = []
+            value.trim().split(/\n|;|；|,|，/).forEach(text => {
+                const ip = text.trim()
+                ip.length && list.push(ip)
+            })
+            let isValid = true
+            let currentCloudId = null
+            list.forEach(text => {
+                let [, cloudId = ''] = text.split(':').reverse()
+                cloudId = cloudId || null
+                if (currentCloudId && currentCloudId !== cloudId) {
+                    isValid = false
+                }
+                currentCloudId = cloudId
+            })
+            return isValid
+        }
     }
 }
 
@@ -197,7 +217,8 @@ const dictionary = {
             instanceTagKey: () => '请输入英文开头数字的组合',
             setNameLen: () => '请输入256个字符以内的内容',
             businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|',
-            reservedWord: () => '不能以"bk_"开头'
+            reservedWord: () => '不能以"bk_"开头',
+            ipSearchRuls: () => '暂不支持不同云区域的混合搜索'
         },
         custom: {
             asst: {
@@ -241,7 +262,8 @@ const dictionary = {
             repeatTagKey: () => 'Label key cannot be repeated',
             setNameLen: () => 'Content length max than 256',
             businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|',
-            reservedWord: () => 'Can not start with "bk_"'
+            reservedWord: () => 'Can not start with "bk_"',
+            ipSearchRuls: () => 'Hybrid search of different cloud regions is not supported at the moment'
         },
         custom: {
             asst: {

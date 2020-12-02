@@ -52,7 +52,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	}
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
-	productExcelHealer(ctx, fields, filter, sheet, ccLang)
+	productExcelHeader(ctx, fields, filter, sheet, ccLang)
 	// indexID := getFieldsIDIndexMap(fields)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
@@ -98,12 +98,12 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	extFieldsBizID := "cc_ext_biz"
 	extFields := map[string]string{
 		extFieldsTopoID: ccLang.Language("web_ext_field_topo"),
-		extFieldsBizID:  ccLang.Language("object_biz"),
+		extFieldsBizID:  ccLang.Language("biz_property_bk_biz_name"),
 	}
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
 
-	productExcelHealer(ctx, fields, filter, sheet, ccLang)
+	productExcelHeader(ctx, fields, filter, sheet, ccLang)
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
 	// indexID := getFieldsIDIndexMap(fields)
@@ -116,6 +116,23 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			msg := fmt.Sprintf("data format error:%v", hostData)
 			return ccErr.Errorf(common.CCErrCommReplyDataFormatError, msg)
 		}
+
+		if _, exist := fields[common.BKCloudIDField]; exist {
+			cloudAreaArr, err := rowMap.MapStrArray(common.BKCloudIDField)
+			if err != nil {
+				blog.ErrorJSON("build host excel failed, cloud area not array, host: %s, err: %s, rid: %s", hostData, err, rid)
+				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
+			}
+
+			if len(cloudAreaArr) != 1 {
+				blog.ErrorJSON("build host excel failed, host has many cloud areas, host: %s, err: %s, rid: %s", hostData, err, rid)
+				return ccErr.CCError(common.CCErrCommReplyDataFormatError)
+			}
+
+			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField], cloudAreaArr[0][common.BKInstIDField])
+			rowMap.Set(common.BKCloudIDField, cloudArea)
+		}
+
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
 			topo := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
@@ -192,7 +209,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 	asstList := resp.Data.Info
-	productExcelAssociationHealer(ctx, sheet, defLang, len(instAsst), asstList)
+	productExcelAssociationHeader(ctx, sheet, defLang, len(instAsst), asstList)
 
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset
 
@@ -253,7 +270,7 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 		return err
 	}
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d, rid: %s", fields, rid)
-	productExcelHealer(ctx, fields, filterFields, sheet, defLang)
+	productExcelHeader(ctx, fields, filterFields, sheet, defLang)
 	ProductExcelCommentSheet(ctx, file, defLang)
 
 	if err = file.Save(filename); nil != err {
@@ -281,7 +298,7 @@ func AddDownExcelHttpHeader(c *gin.Context, name string) {
 func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap, isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
 
 	var err error
-	nameIndexMap, err := checkExcelHealer(ctx, sheet, fields, isCheckHeader, defLang)
+	nameIndexMap, err := checkExcelHeader(ctx, sheet, fields, isCheckHeader, defLang)
 	if nil != err {
 		return nil, nil, err
 	}
@@ -315,7 +332,7 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.KvMap, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
 
 	var err error
-	nameIndexMap, err := checkExcelHealer(ctx, sheet, nil, false, defLang)
+	nameIndexMap, err := checkExcelHeader(ctx, sheet, nil, false, defLang)
 	if nil != err {
 		return nil, nil, err
 	}

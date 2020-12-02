@@ -806,26 +806,3 @@ func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Hea
 
 	return nil
 }
-
-func (p *process) GetProc2Module(ctx context.Context, h http.Header, option metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
-	ret := new(metadata.GetProc2ModuleResult)
-	subPath := "/findmany/process/proc2module"
-
-	err := p.client.Post().
-		Body(option).
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("GetProc2Module failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
-	}
-
-	return ret.Data, nil
-}

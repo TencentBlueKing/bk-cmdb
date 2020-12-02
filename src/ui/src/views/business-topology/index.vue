@@ -17,7 +17,19 @@
                 :validate-active="false"
                 :before-toggle="handleTabToggle">
                 <bk-tab-panel name="hostList" :label="$t('主机列表')">
-                    <host-list :active="activeTab === 'hostList'" ref="hostList"></host-list>
+                    <bk-exception class="empty-set" type="empty" scene="part" v-if="emptySet">
+                        <i18n path="该集群尚未创建模块">
+                            <cmdb-auth place="link" :auth="{ type: $OPERATION.C_TOPO, relation: [bizId] }">
+                                <bk-button text slot-scope="{ disabled }"
+                                    theme="primary"
+                                    :disabled="disabled"
+                                    @click="handleCreateModule">
+                                    {{$t('立即创建')}}
+                                </bk-button>
+                            </cmdb-auth>
+                        </i18n>
+                    </bk-exception>
+                    <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList"></host-list>
                 </bk-tab-panel>
                 <bk-tab-panel name="serviceInstance" :label="$t('服务实例')">
                     <div class="non-business-module" v-if="!showServiceInstance">
@@ -89,6 +101,10 @@
             },
             nodeName () {
                 return this.selectedNode && this.selectedNode.data.bk_inst_name
+            },
+            emptySet () {
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
+                    && this.selectedNode.children && !this.selectedNode.children.length
             }
         },
         watch: {
@@ -101,6 +117,13 @@
                         limit: ''
                     })
                 })
+            },
+            emptySet (value) {
+                if (!value) {
+                    this.$nextTick(() => {
+                        this.$refs.hostList.doLayoutTable()
+                    })
+                }
             }
         },
         async created () {
@@ -125,6 +148,9 @@
             handleTabToggle () {
                 Bus.$emit('toggle-host-filter', false)
                 return true
+            },
+            handleCreateModule () {
+                this.$refs.topologyTree.showCreateDialog(this.selectedNode)
             },
             getTopologyModels () {
                 return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
@@ -227,5 +253,10 @@
                 color: #313238;
             }
         }
+    }
+
+    .empty-set {
+        height: 80%;
+        justify-content: center;
     }
 </style>

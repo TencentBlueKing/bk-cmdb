@@ -102,6 +102,7 @@
     import Bus from '@/utils/bus'
     import RouterQuery from '@/router/query'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+    import FilterStore from '@/components/filters/store'
     export default {
         components: {
             CreateNode,
@@ -304,11 +305,8 @@
                     page: 1,
                     _t: Date.now()
                 }
-                if (this.initialized) {
-                    query.ip = ''
-                    query.bk_asst_id = ''
-                }
                 RouterQuery.set(query)
+                this.initialized && FilterStore.setActiveCollection(null)
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
@@ -339,7 +337,7 @@
                     this.$routerActions.redirect({
                         name: 'setTemplateConfig',
                         params: {
-                            mode: 'edit',
+                            mode: 'view',
                             templateId: node.data.set_template_id
                         },
                         history: true

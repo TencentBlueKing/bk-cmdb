@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -37,6 +35,11 @@ type identifier struct {
 }
 
 func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error) {
+	if len(param.IP.Data) == 0 {
+		blog.Errorf("host ip can't be empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "ip.data")
+	}
+
 	cond := condition.CreateCondition()
 
 	or := []mapstr.MapStr{
@@ -68,13 +71,13 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		Fields:    []string{common.BKHostIDField},
 		Page:      param.Page,
 	}
-	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, common.BKInnerObjIDHost, hostQuery)
+	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, hostQuery)
 	if nil != err {
 		blog.Errorf("query host failed. error: %v, input: %+v,  rid:%s", err, hostQuery, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostRet.Result {
-		blog.ErrorJSON("query host failed, input:%s, condition:%s, rid:%s", hostRet, kit, hostQuery, kit.Rid)
+		blog.ErrorJSON("query host failed, output:%s, condition:%s, rid:%s", hostRet, hostQuery, kit.Rid)
 		return nil, kit.CCError.New(hostRet.Code, hostRet.ErrMsg)
 	}
 
@@ -98,7 +101,7 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 	}
 
 	queryHostIdentifier := &metadata.SearchHostIdentifierParam{HostIDs: hostIDs}
-	rsp, err := g.clientSet.CoreService().Host().FindIdentifier(context.Background(), kit.Header, queryHostIdentifier)
+	rsp, err := g.clientSet.CoreService().Host().FindIdentifier(kit.Ctx, kit.Header, queryHostIdentifier)
 	if nil != err {
 		blog.Errorf("search identifier failed. err: %v, ids: %v,  rid:%s", err, hostIDs, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)

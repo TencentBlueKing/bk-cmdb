@@ -87,7 +87,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 	for _, inst := range input.Instances {
 		instance := &metadata.ServiceInstance{
 			BizID:             bizID,
-			Name:              input.Name,
+			Name:              inst.ServiceInstanceName,
 			ServiceTemplateID: module.ServiceTemplateID,
 			ModuleID:          input.ModuleID,
 			HostID:            inst.HostID,
