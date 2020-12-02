@@ -139,7 +139,7 @@ func setSupplierID(req *http.Request) {
 	if len(supplierID) == 0 {
 		sID, _ := cc.String("authServer.supplierID")
 		if len(sID) == 0 {
-			supplierID = common.BKDefaultOwnerID
+			sID = common.BKDefaultOwnerID
 		}
 		req.Header.Set(common.BKHTTPOwnerID, sID)
 	}
