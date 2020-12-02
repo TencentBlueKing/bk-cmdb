@@ -883,9 +883,14 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			return ps
 		}
 
-		dirID, err := ps.getResourcePoolDefaultDirID()
+		rawDirID, err := ps.RequestCtx.getValueFromBody(common.BKModuleIDField)
 		if err != nil {
-			ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
+			ps.err = err
+			return ps
+		}
+		dirID := rawDirID.Int()
+		if dirID == 0 {
+			ps.err = err
 			return ps
 		}
 

@@ -94,6 +94,10 @@ func (c *Client) GetBusiness(bizID int64) (string, error) {
 func (c *Client) ListBusiness(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 
+	if len(opt.IDs) == 0 {
+		return make([]string, 0), nil
+	}
+
 	keys := make([]string, len(opt.IDs))
 	for idx, bizID := range opt.IDs {
 		keys[idx] = bizKey.detailKey(bizID)
@@ -153,6 +157,10 @@ func (c *Client) ListBusiness(ctx context.Context, opt *metadata.ListWithIDOptio
 func (c *Client) ListModules(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 
+	if len(opt.IDs) == 0 {
+		return make([]string, 0), nil
+	}
+
 	keys := make([]string, len(opt.IDs))
 	for idx, id := range opt.IDs {
 		keys[idx] = moduleKey.detailKey(id)
@@ -210,6 +218,10 @@ func (c *Client) ListModules(ctx context.Context, opt *metadata.ListWithIDOption
 
 func (c *Client) ListSets(ctx context.Context, opt *metadata.ListWithIDOption) ([]string, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
+
+	if len(opt.IDs) == 0 {
+		return make([]string, 0), nil
+	}
 
 	keys := make([]string, len(opt.IDs))
 	for idx, id := range opt.IDs {

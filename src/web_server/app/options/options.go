@@ -75,6 +75,7 @@ type Config struct {
 	LoginVersion string
 	ConfigMap    map[string]string
 	AuthCenter   AppInfo
+	DisableOperationStatistic bool
 }
 
 type AppInfo struct {

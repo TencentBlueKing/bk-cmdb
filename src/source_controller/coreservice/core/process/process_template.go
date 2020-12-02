@@ -79,7 +79,6 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 	template.LastTime = time.Now()
 	template.SupplierAccount = kit.SupplierAccount
 
-
 	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Insert(kit.Ctx, &template); nil != err {
 		blog.ErrorJSON("CreateProcessTemplate failed, mongodb failed, table: %s, template: %s, err: %s, rid: %s", common.BKTableNameProcessTemplate, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
@@ -213,7 +212,7 @@ func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.L
 	}
 
 	if option.ProcessTemplateIDs != nil {
-		filter[common.BKProcessTemplateIDField] = map[string][]int64{
+		filter[common.BKFieldID] = map[string][]int64{
 			common.BKDBIN: option.ProcessTemplateIDs,
 		}
 	}

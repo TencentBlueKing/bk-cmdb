@@ -13,7 +13,6 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -119,7 +118,7 @@ func (o *object) IsCommon() bool {
 
 func (o *object) IsMainlineObject() (bool, error) {
 	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-	asst, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.kit.Header,
+	asst, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return false, err
@@ -143,7 +142,7 @@ func (o *object) IsMainlineObject() (bool, error) {
 }
 
 func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterface, error) {
-	rsp, err := o.clientSet.CoreService().Model().ReadModelAttr(context.Background(), o.kit.Header, o.obj.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttr(o.kit.Ctx, o.kit.Header, o.obj.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -172,7 +171,7 @@ func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterfac
 }
 
 func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
-	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -198,7 +197,7 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, err
@@ -251,7 +250,7 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	cond.Field(common.BKAsstObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, err
@@ -280,7 +279,7 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 }
 
 func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) ([]ObjectAssoPair, error) {
-	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, err
@@ -335,7 +334,7 @@ func (o *object) SetMainlineParentObject(relateToObjID string) error {
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	resp, err := o.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), o.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	resp, err := o.clientSet.CoreService().Association().DeleteModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("update mainline object[%s] association to %s, search object association failed, err: %v, rid: %s", o.kit.Rid,
 			o.obj.ObjectID, relateToObjID, err)
@@ -370,7 +369,7 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		IsPre:      &defined,
 	}
 
-	result, err := o.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), o.kit.Header, &metadata.CreateModelAssociation{Spec: association})
+	result, err := o.clientSet.CoreService().Association().CreateMainlineModelAssociation(o.kit.Ctx, o.kit.Header, &metadata.CreateModelAssociation{Spec: association})
 	if err != nil {
 		blog.Errorf("[model-obj] create mainline object association failed, err: %v, rid: %s", err, o.kit.Rid)
 		return err
@@ -476,7 +475,7 @@ func (o *object) Create() error {
 		return o.kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
 	}
 
-	rsp, err := o.clientSet.CoreService().Model().CreateModel(context.Background(), o.kit.Header, &metadata.CreateModel{Spec: o.obj})
+	rsp, err := o.clientSet.CoreService().Model().CreateModel(o.kit.Ctx, o.kit.Header, &metadata.CreateModel{Spec: o.obj})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -529,7 +528,7 @@ func (o *object) Update(data mapstr.MapStr) error {
 			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(item.ID).ToMapStr(),
 			Data:      data,
 		}
-		rsp, err := o.clientSet.CoreService().Model().UpdateModel(context.Background(), o.kit.Header, &input)
+		rsp, err := o.clientSet.CoreService().Model().UpdateModel(o.kit.Ctx, o.kit.Header, &input)
 		if nil != err {
 			blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 			return o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -608,7 +607,7 @@ func (o *object) CreateUnique() Unique {
 
 func (o *object) GetUniques() ([]Unique, error) {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(o.obj.ObjectID)
-	rsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), o.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(o.kit.Ctx, o.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -663,7 +662,7 @@ func (o *object) GetGroups() ([]GroupInterface, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.GroupFieldObjectID).Eq(o.obj.ObjectID)
 
-	rsp, err := o.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), o.kit.Header, o.obj.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadAttributeGroup(o.kit.Ctx, o.kit.Header, o.obj.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -693,7 +692,7 @@ func (o *object) GetClassification() (Classification, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.ClassFieldClassificationID).Eq(o.obj.ObjCls)
 
-	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(context.Background(), o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(o.kit.Ctx, o.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s, rid: %s", err.Error(), o.kit.Rid)
 		return nil, o.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

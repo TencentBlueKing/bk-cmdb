@@ -1,26 +1,28 @@
 <template>
     <div class="resource-layout">
         <host-list-options></host-list-options>
+        <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
         <bk-table class="hosts-table"
-            ref="tableVM"
+            ref="table"
             v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 230"
+            :max-height="$APP.height - filtersTagHeight - 230"
             @selection-change="handleSelectionChange"
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
-            @page-limit-change="handleSizeChange">
+            @page-limit-change="handleSizeChange"
+            @header-click="handleHeaderClick">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
-            <bk-table-column v-for="property in table.header"
+            <bk-table-column v-for="property in tableHeader"
                 :show-overflow-tooltip="property.bk_property_type !== 'topology'"
                 :min-width="getColumnMinWidth(property)"
                 :key="property.bk_property_id"
-                :label="$tools.getHeaderPropertyName(property)"
                 :sortable="isPropertySortable(property) ? 'custom' : false"
                 :prop="property.bk_property_id"
                 :fixed="['bk_host_id'].includes(property.bk_property_id)"
-                :class-name="['bk_host_id'].includes(property.bk_property_id) ? 'is-highlight' : ''">
+                :class-name="['bk_host_id'].includes(property.bk_property_id) ? 'is-highlight' : ''"
+                :render-header="() => renderHeader(property)">
                 <template slot-scope="{ row }">
                     <cmdb-host-topo-path
                         v-if="property.bk_property_type === 'topology'"
@@ -37,6 +39,7 @@
                     </cmdb-property-value>
                 </template>
             </bk-table-column>
+            <bk-table-column type="setting"></bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
     </div>
@@ -47,37 +50,32 @@
     import hostListOptions from './host-options.vue'
     import hostValueFilter from '@/filters/host'
     import {
+        MENU_RESOURCE_HOST,
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
-    import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
     import RouterQuery from '@/router/query'
     import CmdbHostTopoPath from '@/components/host-topo-path/host-topo-path.vue'
     import HostStore from '../transfer/host-store'
+    import HostFilterTag from '@/components/filters/filter-tag'
+    import FilterStore, { setupFilterStore } from '@/components/filters/store'
+    import ColumnsConfig from '@/components/columns-config/columns-config.js'
     export default {
         components: {
             hostListOptions,
-            CmdbHostTopoPath
+            CmdbHostTopoPath,
+            HostFilterTag
         },
         filters: {
             hostValueFilter
         },
         data () {
             return {
-                properties: {
-                    biz: [],
-                    host: [],
-                    set: [],
-                    module: []
-                },
-                propertyGroups: [],
                 directory: null,
                 scope: 1,
-                topologyProperty: Object.freeze(this.$tools.createTopologyProperty()),
                 table: {
                     checked: [],
                     selection: [],
-                    header: Array(8).fill({}),
                     list: [],
                     pagination: {
                         current: 1,
@@ -93,105 +91,86 @@
                         }
                     }
                 },
-                columnsConfig: {
-                    selected: []
-                },
-                columnsConfigDisabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id'],
                 request: {
-                    property: Symbol('property'),
-                    propertyGroup: Symbol('propertyGroup'),
                     list: Symbol('list')
-                }
+                },
+                filtersTagHeight: 0
             }
         },
         computed: {
             ...mapGetters(['userName']),
-            ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('hosts', ['condition']),
             ...mapGetters('resourceHost', ['activeDirectory']),
-            customColumns () {
-                return this.usercustom[this.$route.meta.customInstanceColumn] || []
+            ...mapGetters('objectModelClassify', ['getModelById']),
+            moduleProperties () {
+                return FilterStore.getModelProperties('module')
             },
-            columnsConfigProperties () {
-                const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
-                const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
-                const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
-                const hostProperties = this.properties.host.concat([this.topologyProperty])
-                return [...hostProperties, ...businessProperties, ...moduleProperties, ...setProperties]
+            tableHeader () {
+                return FilterStore.header
             }
         },
         watch: {
-            customColumns () {
-                this.setTableHeader()
-            },
-            columnsConfigProperties () {
-                this.setTableHeader()
-            },
             scope () {
                 this.setModuleNamePropertyState()
             }
         },
         async created () {
             try {
-                await Promise.all([
-                    this.getProperties(),
-                    this.getHostPropertyGroups()
-                ])
+                setupFilterStore({
+                    header: {
+                        custom: this.$route.meta.customInstanceColumn,
+                        global: 'host_global_custom_table_columns'
+                    }
+                })
                 this.setModuleNamePropertyState()
-                this.unwatch = RouterQuery.watch('*', ({
+                this.unwatchRouter = RouterQuery.watch('*', ({
                     scope = 1,
                     page = 1,
                     sort = 'bk_host_id',
                     limit = this.table.pagination.limit,
                     directory = null
                 }) => {
+                    if (this.$route.name !== MENU_RESOURCE_HOST) {
+                        return false
+                    }
                     this.table.pagination.current = parseInt(page)
                     this.table.pagination.limit = parseInt(limit)
                     this.table.sort = sort
                     this.directory = parseInt(directory) || null
                     this.scope = isNaN(scope) ? 'all' : parseInt(scope)
                     this.getHostList()
-                }, { immediate: true, throttle: 100 })
+                }, { throttle: 100 })
+                this.unwatchScopeAndDirectory = RouterQuery.watch(['scope', 'directory'], FilterStore.resetAll)
             } catch (error) {
                 console.error(error)
             }
         },
+        mounted () {
+            this.unwatchFilter = this.$watch(() => {
+                return [FilterStore.condition, FilterStore.IP]
+            }, () => {
+                const el = this.$refs.filterTag.$el
+                if (el.getBoundingClientRect) {
+                    this.filtersTagHeight = el.getBoundingClientRect().height
+                } else {
+                    this.filtersTagHeight = 0
+                }
+            }, { immediate: true, deep: true })
+            this.disabledTableSettingDefaultBehavior()
+        },
         beforeDestroy () {
-            this.unwatch()
+            this.unwatchRouter()
+            this.unwatchFilter()
+            this.unwatchScopeAndDirectory()
         },
         methods: {
-            async getProperties () {
-                try {
-                    const propertyMap = await this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
-                        injectId: 'host',
-                        params: {
-                            bk_obj_id: { '$in': Object.keys(this.properties) },
-                            bk_supplier_account: this.supplierAccount
-                        },
-                        config: {
-                            requestId: this.request.property
-                        }
-                    })
-                    this.properties = propertyMap
-                } catch (error) {
-                    console.error(error)
-                }
-            },
-            async getHostPropertyGroups () {
-                try {
-                    this.propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
-                        objId: 'host',
-                        params: {},
-                        config: {
-                            requestId: this.request.propertyGroup
-                        }
-                    })
-                } catch (error) {
-                    console.error(error)
-                }
+            disabledTableSettingDefaultBehavior () {
+                setTimeout(() => {
+                    const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
+                    settingReference && settingReference._tippy && settingReference._tippy.disable()
+                }, 1000)
             },
             setModuleNamePropertyState () {
-                const property = this.properties.module.find(property => property.bk_property_id === 'bk_module_name')
+                const property = this.moduleProperties.find(property => property.bk_property_id === 'bk_module_name')
                 if (property) {
                     const normalName = this.$t('模块名')
                     const directoryName = this.$t('目录名')
@@ -203,11 +182,6 @@
                     property.bk_property_name = scopeModuleName[this.scope]
                 }
             },
-            setTableHeader () {
-                const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
-                this.table.header = this.$tools.getHeaderProperties(this.columnsConfigProperties, customColumns, this.columnsConfigDisabledColumns)
-                this.columnsConfig.selected = this.table.header.map(property => property['bk_property_id'])
-            },
             getColumnMinWidth (property) {
                 if (property.bk_property_type === 'topology') {
                     return 200
@@ -216,6 +190,16 @@
             },
             isPropertySortable (property) {
                 return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)
+            },
+            renderHeader (property) {
+                const content = [this.$tools.getHeaderPropertyName(property)]
+                const modelId = property.bk_obj_id
+                if (modelId !== 'host') {
+                    const model = this.getModelById(modelId)
+                    const suffix = this.$createElement('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
+                    content.push(suffix)
+                }
+                return this.$createElement('span', {}, content)
             },
             async getHostList (event) {
                 try {
@@ -238,16 +222,12 @@
             },
             getParams () {
                 const params = {
-                    bk_biz_id: -1,
-                    ip: getIPPayload(),
+                    ...FilterStore.getSearchParams(),
                     page: {
                         ...this.$tools.getPageParams(this.table.pagination),
                         sort: this.table.sort
-                    },
-                    condition: this.$tools.clone(this.condition)
+                    }
                 }
-                injectFields(params, this.table.header)
-                injectAsset(params, RouterQuery.get('bk_asset_id'))
                 this.injectScope(params)
                 this.scope === 1 && this.injectDirectory(params)
                 return params
@@ -344,10 +324,49 @@
             },
             handlePathReady (row, paths) {
                 row.__bk_host_topology__ = paths
+            },
+            handleHeaderClick (column) {
+                if (column.type !== 'setting') {
+                    return false
+                }
+                ColumnsConfig.open({
+                    props: {
+                        properties: FilterStore.properties.filter(property => {
+                            return property.bk_obj_id === 'host'
+                                || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
+                                || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')
+                        }),
+                        selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
+                        disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
+                    },
+                    handler: {
+                        apply: async properties => {
+                            await this.handleApplyColumnsConfig(properties)
+                            FilterStore.setHeader(properties)
+                            FilterStore.dispatchSearch()
+                        },
+                        reset: async () => {
+                            await this.handleApplyColumnsConfig()
+                            FilterStore.setHeader(FilterStore.defaultHeader)
+                            FilterStore.dispatchSearch()
+                        }
+                    }
+                })
+            },
+            handleApplyColumnsConfig (properties = []) {
+                return this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.$route.meta.customInstanceColumn]: properties.map(property => property.bk_property_id)
+                })
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .filter-tag ~ .hosts-table {
+        margin-top: 0;
+    }
+    .hosts-table {
+        margin-top: 10px;
+    }
 </style>

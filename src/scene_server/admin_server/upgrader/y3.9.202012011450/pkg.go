@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_8_202005201015
+package y3_9_202012011450
 
 import (
 	"context"
@@ -21,15 +21,21 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202005201015", upgrade)
+	upgrader.RegistUpgrader("y3.9.202012011450", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.8.202005201015")
+	blog.Infof("start execute y3.9.202012011450")
 
-	err = addHostAttr(ctx, db, conf)
+	err = changeProcAttrIndex(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.8.202005201015] addHostAttr failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202012011450] changeProcAttrIndex failed, error  %s", err.Error())
+		return err
+	}
+
+	err = changeProcAttrOption(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202012011450] changeProcAttrOption failed, error  %s", err.Error())
 		return err
 	}
 

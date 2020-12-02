@@ -176,11 +176,14 @@
                 } else if (this.localSelected.length < this.min) {
                     this.$info(this.$t('至少选择N项', { n: this.min }))
                 } else {
-                    this.$emit('on-apply', [...this.undragbbleProperties, ...this.drabbleProperties])
+                    const properties = [...this.undragbbleProperties, ...this.drabbleProperties]
+                    this.$emit('on-apply', properties)
+                    this.$emit('apply', properties)
                 }
             },
             handleCancel () {
                 this.$emit('on-cancel')
+                this.$emit('cancel')
             },
             handleReset () {
                 this.$bkInfo({
@@ -189,6 +192,7 @@
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: () => {
                         this.$emit('on-reset')
+                        this.$emit('reset')
                     }
                 })
             }
