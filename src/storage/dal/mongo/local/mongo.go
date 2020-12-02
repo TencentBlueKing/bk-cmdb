@@ -559,6 +559,26 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	return err
 }
 
+// DropDocsColumn remove a column by the name for doc use filter
+func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter dal.Filter) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo drop-docs-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
+
+	sess := c.dbc.Clone()
+	// 查询条件为空时候，mongodb 不返回数据
+	if filter == nil {
+		filter = bson.M{}
+	}
+	datac := types.Document{"$unset": types.Document{field: ""}}
+	_, err := sess.DB(c.dbname).C(c.collName).UpdateAll(filter, datac)
+	sess.Close()
+	blog.V(4).InfoDepthf(1, "mongo drop-docs-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	return err
+}
+
 // AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)

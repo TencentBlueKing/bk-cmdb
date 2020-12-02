@@ -110,6 +110,8 @@ type Table interface {
 	RenameColumn(ctx context.Context, oldName, newColumn string) error
 	// DropColumn 移除字段
 	DropColumn(ctx context.Context, field string) error
+	// DropDocsColumn 根据条件移除字段
+	DropDocsColumn(ctx context.Context, field string, filter Filter) error
 
 	// Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
 	// field the field for which to return distinct values.
