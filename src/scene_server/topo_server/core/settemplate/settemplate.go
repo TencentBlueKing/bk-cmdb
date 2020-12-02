@@ -58,13 +58,13 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	setTemplate, err := st.client.CoreService().SetTemplate().GetSetTemplate(ctx, header, bizID, setTemplateID)
 	if err != nil {
 		blog.Errorf("DiffSetTemplateWithInstances failed, GetSetTemplate failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), rid)
-		return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
+		return nil, err
 	}
 
 	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(ctx, header, bizID, setTemplateID)
 	if err != nil {
 		blog.Errorf("DiffSetTemplateWithInstances failed, ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), rid)
-		return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
+		return nil, err
 	}
 	serviceTemplateMap := make(map[int64]metadata.ServiceTemplate)
 	for _, svcTpl := range serviceTemplates {
