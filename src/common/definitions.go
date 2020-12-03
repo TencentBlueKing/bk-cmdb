@@ -883,8 +883,8 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey             = BKCacheKeyV3Prefix + "event:inst_id"
-	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
+	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
 )
 
 // api cache keys
@@ -1035,6 +1035,10 @@ const (
 	BKBluekingLoginPluginVersion   = "blueking"
 	BKOpenSourceLoginPluginVersion = "opensource"
 	BKSkipLoginPluginVersion       = "skip-login"
+
+	// monitor plugin type
+	BKNoopMonitorPlugin     = "noop"
+	BKBluekingMonitorPlugin = "blueking"
 
 	HTTPCookieBKToken = "bk_token"
 
@@ -1237,4 +1241,3 @@ const (
 const (
 	BKDefaultConfigCenter = "zookeeper"
 )
-

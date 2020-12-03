@@ -33,6 +33,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/monitor"
 
 	"github.com/rs/xid"
 )
@@ -188,6 +189,8 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("handle notice failed, err: %v", err)
 	}
 
+	go monitor.InitMonitorCfg()
+
 	return engine, nil
 }
 
@@ -208,13 +211,12 @@ func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTP
 	// to avoid registering an invalid server address on zk
 	time.Sleep(time.Second)
 
-	return e.SvcDisc.Register(e.RegisterPath, e.ServerInfo)
+	return e.SvcDisc.Register(e.RegisterPath, *e.srvInfo)
 }
 
 func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
 	return &Engine{
 		RegisterPath: c.RegisterPath,
-		ServerInfo:   c.RegisterInfo,
 		CoreAPI:      c.CoreAPI,
 		SvcDisc:      disc,
 		Language:     language.NewFromCtx(language.EmptyLanguageSetting),
@@ -236,7 +238,6 @@ type Engine struct {
 	sync.Mutex
 
 	RegisterPath string
-	ServerInfo   types.ServerInfo
 	server       Server
 	srvInfo      *types.ServerInfo
 

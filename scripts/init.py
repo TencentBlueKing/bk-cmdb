@@ -278,6 +278,20 @@ datacollection:
     rateLimiter:
       qps: 40
       burst: 100
+# 监控配置
+monitor:
+    # 监控插件名称, 有noop，blueking， 默认为noop
+    pluginName: noop
+    # 是否开启监控
+    enableMonitor: false
+    # 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+    dataID: 0
+    # 采集数据后能够缓存的队列长度，默认100条数据
+    queueSize: 100
+    # 用于对数据上报进行频率控制和限流
+    rateLimiter:
+      qps: 10
+      burst: 20
     '''
 
     template = FileTemplate(common_file_template_str)
