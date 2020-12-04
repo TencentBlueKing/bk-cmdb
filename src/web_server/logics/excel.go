@@ -191,7 +191,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		},
 	}
 
-	////确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	//确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
 	resp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, cond)
 	if err != nil {
 		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, rid)
@@ -202,6 +202,14 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 	asstList := resp.Data.Info
+
+	//excel中不应该出现主线模型关联的选项。
+	for i, item := range asstList {
+		if item.AsstKindID == common.AssociationKindMainline {
+			asstList = append(asstList[:i], asstList[i+1:]...)
+		}
+	}
+
 	productExcelAssociationHeader(ctx, sheet, defLang, len(instAsst), asstList)
 
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset
