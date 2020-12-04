@@ -65,7 +65,12 @@
             <bk-table-column prop="service_category" :label="$t('服务分类')" show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="process_template_count" :label="$t('进程数量')">
                 <template slot-scope="{ row }">
-                    <cmdb-loading :loading="$loading(request.count)">{{row.process_template_count}}</cmdb-loading>
+                    <cmdb-loading :loading="$loading(request.count)">
+                        <template v-if="row.process_template_count > 0">
+                            {{row.process_template_count}}
+                        </template>
+                        <span style="color: #ff9c01" v-else>{{row.process_template_count}}（{{$t('未配置')}}）</span>
+                    </cmdb-loading>
                 </template>
             </bk-table-column>
             <bk-table-column prop="module_count" :label="$t('已应用模块数')">
@@ -299,7 +304,6 @@
             deleteTemplate (template) {
                 this.$bkInfo({
                     title: this.$t('确认删除模板'),
-                    subTitle: this.$tc('即将删除服务模板', name, { name: template.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({

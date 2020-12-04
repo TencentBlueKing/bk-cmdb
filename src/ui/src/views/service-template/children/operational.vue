@@ -19,7 +19,7 @@
                     <template v-else>
                         <div class="cmdb-form-item clearfix fl" :class="{ 'is-error': errors.has('templateName') }">
                             <template v-if="isCreateMode || isEditName">
-                                <bk-input type="text" class="cmdb-form-input fl" id="templateName"
+                                <bk-input type="text" class="cmdb-form-input fl" ref="templateNameInput" id="templateName"
                                     name="templateName"
                                     :placeholder="$t('请输入模板名称')"
                                     :class="{ 'is-edit-name': isEditName }"
@@ -29,7 +29,7 @@
                                 <p class="form-error">{{errors.first('templateName')}}</p>
                             </template>
                             <template v-if="isEditName">
-                                <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleSaveName"></i>
+                                <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleConfirmSaveName"></i>
                                 <i class="form-cancel edit-icon bk-icon icon-close fl" @click="handleCancelEditName"></i>
                             </template>
                             <template v-else-if="!isCreateMode">
@@ -197,17 +197,22 @@
                 </process-form>
             </template>
         </bk-sideslider>
-        <bk-dialog v-model="showUpdateInfo"
+        <bk-dialog v-model="dialog.success.show"
+            width="520"
             :esc-close="false"
             :mask-close="false"
             :show-footer="false"
             :close-icon="false">
             <div class="update-alert-layout">
                 <i class="bk-icon icon-check-1"></i>
-                <h3>{{$t('修改成功')}}</h3>
+                <h3 class="title">{{$t('创建成功')}}</h3>
+                <i18n path="服务模板创建成功，您可以在XXX" tag="p" class="next-content">
+                    <bk-link place="link1" theme="primary" @click="handleToSetTemplate">集群模板</bk-link>
+                    <bk-link place="link2" theme="primary" @click="handleToBusinessTopo">业务拓扑</bk-link>
+                </i18n>
                 <div class="btns">
-                    <bk-button class="mr10" theme="primary" @click="handleToSyncInstance">{{$t('同步实例')}}</bk-button>
-                    <bk-button theme="default" @click="handleCancelOperation">{{$t('返回列表')}}</bk-button>
+                    <bk-button class="btn mr10" theme="primary" @click="handleContinueCreating">{{$t('继续创建')}}</bk-button>
+                    <bk-button class="btn" theme="default" @click="handleSuccessDialogClose">{{$t('关闭')}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -220,7 +225,8 @@
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     import {
         MENU_BUSINESS_SERVICE_TEMPLATE,
-        MENU_BUSINESS_HOST_AND_SERVICE
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_SET_TEMPLATE
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus'
     export default {
@@ -251,6 +257,12 @@
                     show: false,
                     title: ''
                 },
+                dialog: {
+                    success: {
+                        show: false,
+                        templateId: ''
+                    }
+                },
                 formData: {
                     mainClassification: '',
                     originMainClassification: '',
@@ -265,7 +277,6 @@
                 isEditName: false,
                 isEditNameLoading: false,
                 deletable: false,
-                showUpdateInfo: false,
                 request: {
                     template: Symbol('template'),
                     category: Symbol('category'),
@@ -535,7 +546,7 @@
                         }
                     }).then(() => {
                         this.getProcessList()
-                        this.handleCancelProcess()
+                        this.handleSaveProcessAfter()
                     })
                 } else {
                     this.updateProcessTemplate({
@@ -546,12 +557,21 @@
                         }
                     }).then(() => {
                         this.getProcessList()
-                        this.handleCancelProcess()
+                        this.handleSaveProcessAfter()
                     })
                 }
             },
             handleCancelProcess () {
                 this.slider.show = false
+            },
+            handleSaveProcessAfter () {
+                this.slider.show = false
+                const message = () => (
+                    <i18n path="成功更新模板进程，您可以通过XXX" tag="div" class="process-success-message">
+                        <bk-link place="link" theme="primary" onClick={this.handleToSyncInstance}>{this.$t('同步功能')}</bk-link>
+                    </i18n>
+                )
+                this.$success(message())
             },
             handleCreateProcess () {
                 this.slider.show = true
@@ -605,9 +625,8 @@
                             }
                         })
                     }
-                }).then(() => {
-                    this.$success(this.$t('创建成功'))
-                    this.handleCancelOperation()
+                }).then((data) => {
+                    this.handleCreateSuccess()
                 }).catch(async e => {
                     // 新建进程失败静默删除服务模板
                     await this.deleteServiceTemplate({
@@ -627,35 +646,18 @@
                     return false
                 }
                 if (!await this.$validator.validateAll()) return
-                if (this.formData.templateId) {
-                    this.updateServiceTemplate({
-                        params: {
-                            bk_biz_id: this.bizId,
-                            id: this.formData.templateId,
-                            name: this.formData.templateName,
-                            service_category_id: this.formData.secondaryClassification
-                        }
-                    }).then(() => {
-                        if (this.isCreateMode) {
-                            this.handleSubmitProcessList()
-                        } else {
-                            this.showUpdateInfo = true
+                if (!this.processList.length) {
+                    this.$bkInfo({
+                        title: this.$t('确认提交'),
+                        subTitle: this.$t('服务模板创建没进程提示'),
+                        extCls: 'bk-dialog-sub-header-center',
+                        confirmFn: () => {
+                            this.handleCreateTemplate()
                         }
                     })
-                } else {
-                    if (!this.processList.length) {
-                        this.$bkInfo({
-                            title: this.$t('确认提交'),
-                            subTitle: this.$t('服务模板创建没进程提示'),
-                            extCls: 'bk-dialog-sub-header-center',
-                            confirmFn: () => {
-                                this.handleCreateTemplate()
-                            }
-                        })
-                        return
-                    }
-                    this.handleCreateTemplate()
+                    return
                 }
+                this.handleCreateTemplate()
             },
             handleCreateTemplate () {
                 this.createServiceTemplate({
@@ -665,12 +667,12 @@
                         service_category_id: this.formData.secondaryClassification
                     }
                 }).then(data => {
+                    this.dialog.success.templateId = data.id
                     if (this.processList.length) {
                         this.formData.templateId = data.id
                         this.handleSubmitProcessList()
                     } else {
-                        this.$success(this.$t('创建成功'))
-                        this.handleCancelOperation()
+                        this.handleCreateSuccess()
                     }
                 })
             },
@@ -693,7 +695,6 @@
                 }
             },
             handleCancelOperation () {
-                this.showUpdateInfo = false
                 this.$routerActions.redirect({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             },
             handleSliderBeforeClose () {
@@ -715,6 +716,9 @@
                 }
                 return true
             },
+            handleCreateSuccess () {
+                this.dialog.success.show = true
+            },
             getServiceCategory () {
                 const first = this.mainList.find(first => first.id === this.formData.mainClassification) || {}
                 const second = this.allSecondaryList.find(second => second.id === this.formData.secondaryClassification) || {}
@@ -730,14 +734,27 @@
             },
             handleToSyncInstance () {
                 Bus.$emit('active-change', 'instance')
-                this.showUpdateInfo = false
             },
             handleEditName () {
                 this.isEditName = true
+                this.$nextTick(() => {
+                    this.$refs.templateNameInput && this.$refs.templateNameInput.focus()
+                })
             },
             handleCancelEditName () {
                 this.formData.templateName = this.originTemplateValues.name
                 this.isEditName = false
+            },
+            async handleConfirmSaveName () {
+                this.$bkInfo({
+                    title: this.$t('确认修改名称'),
+                    subTitle: this.$t('确认修改名称提示'),
+                    width: 520,
+                    extCls: 'confirm-edit-service-template-name-infobox',
+                    confirmFn: () => {
+                        this.handleSaveName()
+                    }
+                })
             },
             async handleSaveName () {
                 try {
@@ -788,6 +805,29 @@
             },
             handleEditCategory () {
                 this.isEditCategory = true
+            },
+            handleContinueCreating () {
+                this.dialog.success.show = false
+                this.$routerActions.redirect({
+                    name: 'operationalTemplate',
+                    reload: true
+                })
+            },
+            handleSuccessDialogClose () {
+                this.dialog.success.show = false
+                this.$routerActions.redirect({
+                    name: 'operationalTemplate',
+                    params: {
+                        templateId: this.dialog.success.templateId
+                    },
+                    reload: true
+                })
+            },
+            handleToSetTemplate () {
+                this.$routerActions.redirect({ name: MENU_BUSINESS_SET_TEMPLATE })
+            },
+            handleToBusinessTopo () {
+                this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             }
         }
     }
@@ -1004,15 +1044,24 @@
             background-color: #2dcb56;
             margin: 8px 0 15px;
         }
-        h3 {
+        .title {
             font-size: 24px;
             color: #313238;
             font-weight: normal;
-            padding-bottom: 32px;
+            padding-bottom: 16px;
         }
         .btns {
             font-size: 0;
             padding-bottom: 20px;
+            .btn {
+                min-width: 86px;
+            }
+        }
+        .next-content {
+            padding-bottom: 24px;
+            .bk-link {
+                vertical-align: baseline;
+            }
         }
     }
     .cmdb-form-input.is-edit-name {
@@ -1021,6 +1070,20 @@
     .bk-option-name {
         .category-id {
             color: #c4c6cc;
+        }
+    }
+    .process-success-message {
+        .bk-link {
+            vertical-align: baseline;
+        }
+    }
+</style>
+<style lang="scss">
+    .confirm-edit-service-template-name-infobox {
+        .bk-dialog-sub-header {
+            .bk-dialog-header-inner {
+                text-align: left !important;
+            }
         }
     }
 </style>
