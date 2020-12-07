@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/thirdparty/hooks"
 )
 
 // ModuleOperationInterface module operation methods
@@ -234,6 +235,10 @@ func (m *module) CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int6
 			return inst, kit.CCError.CCError(common.CCErrorTopoModuleNameDuplicated)
 		}
 		return inst, createErr
+	}
+
+	if err := hooks.AddModuleHook(kit, inst.ToMapStr(), m.clientSet); err != nil {
+		return inst, err
 	}
 
 	return inst, nil
