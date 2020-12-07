@@ -1375,5 +1375,7 @@
     "同步功能": "Synchronization function",
     "确认修改名称": "Confirm to modify the name",
     "确认修改名称提示": "Modifying the service template name will immediately apply to all module instances. If you configure filter conditions based on the name, it may affect the query results. Do you want to confirm the modification?",
-    "未配置": "Not configured"
+    "未配置": "Not configured",
+    "创建集群模板成功提示": "Create a set template successfully, you can jump to the business topology to create a set instance",
+    "集群模板修改成功提示": "The set template is successfully modified, you can synchronize this configuration to an existing set instance or use the current configuration to create a new set"
 }
