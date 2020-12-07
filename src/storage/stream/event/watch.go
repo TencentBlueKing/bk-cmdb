@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/storage/stream/types"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -101,6 +102,13 @@ func (e *Event) loopWatch(ctx context.Context,
 						opts.Collection, err)
 					// reset the resume token, because we can not use the former resume token to watch success for now.
 					streamOptions.StartAfter = nil
+					// cause we have already got a fatal error, we can not try to watch from where we lost.
+					// so re-watch from 1 minutes ago to avoid lost events.
+					// Note: apparently, we may got duplicate events with this re-watch
+					streamOptions.StartAtOperationTime = &primitive.Timestamp{
+						T: uint32(time.Now().Unix()) - 60,
+						I: 0,
+					}
 					currentToken.Data = ""
 				}
 
@@ -109,6 +117,9 @@ func (e *Event) loopWatch(ctx context.Context,
 				retry = true
 				continue
 			}
+
+			// re-watch success, now we clean start at operation time options
+			streamOptions.StartAtOperationTime = nil
 		}
 
 		for stream.Next(ctx) {
@@ -142,6 +153,13 @@ func (e *Event) loopWatch(ctx context.Context,
 				// clean the last resume token to force the next try watch from the beginning. otherwise we will
 				// receive the invalid event again.
 				streamOptions.StartAfter = nil
+				// cause we have already got a fatal error, we can not try to watch from where we lost.
+				// so re-watch from 1 minutes ago to avoid lost events.
+				// Note: apparently, we may got duplicate events with this re-watch
+				streamOptions.StartAtOperationTime = &primitive.Timestamp{
+					T: uint32(time.Now().Unix()) - 60,
+					I: 0,
+				}
 				currentToken.Data = ""
 
 				stream.Close(ctx)
@@ -213,6 +231,10 @@ func isFatalError(err error) bool {
 	}
 
 	if strings.Contains(err.Error(), "the resume point may no longer be in the oplog") {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "the resume token was not found") {
 		return true
 	}
 
