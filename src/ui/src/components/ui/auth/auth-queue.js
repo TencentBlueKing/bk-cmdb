@@ -1,5 +1,4 @@
 import Vue from 'vue'
-import equal from 'deep-equal'
 import debounce from 'lodash.debounce'
 import $http from '@/api'
 import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
@@ -11,6 +10,49 @@ function filterUselssKey (data, uselessKeys) {
         return value
     })
 }
+
+function equal (source, target) {
+    const {
+        resource_type: SResourceType,
+        resource_id: SResourceId,
+        action: SAction,
+        bk_biz_id: SBizId,
+        parent_layers: SParentLayers = []
+    } = source
+    const {
+        resource_type: TResourceType,
+        resource_id: TResourceId,
+        action: TAction,
+        bk_biz_id: TBizId,
+        parent_layers: TParentLayers = []
+    } = target
+    if (
+        SResourceType !== TResourceType ||
+        SResourceId !== TResourceId ||
+        SAction !== TAction ||
+        SBizId !== TBizId ||
+        SParentLayers.length !== TParentLayers.length
+    ) {
+        return false
+    }
+    return SParentLayers.every((_, index) => {
+        const SParentLayersMeta = SParentLayers[index]
+        const TParentLayersMeta = TParentLayers[index]
+        return Object.keys(SParentLayersMeta).every(key => SParentLayersMeta[key] === TParentLayersMeta[key])
+    })
+}
+
+function unique (data) {
+    return data.reduce((queue, meta) => {
+        const exist = queue.some(exist => equal(exist, meta))
+        if (!exist) {
+            queue.push(meta)
+        }
+        return queue
+    }, [])
+}
+
+export const Auth_Request_Id = Symbol('auth_request_id')
 
 export default new Vue({
     data () {
@@ -29,23 +71,19 @@ export default new Vue({
         add ({ component, data }) {
             this.authComponents.push(component)
             const authMetas = TRANSFORM_TO_INTERNAL(data)
-            authMetas.forEach(meta => {
-                const exist = this.queue.some(exist => equal(meta, exist))
-                if (!exist) {
-                    this.queue.push(meta)
-                }
-            })
+            this.queue.push(...authMetas)
         },
         async getAuth () {
             if (!this.queue.length) return
-            const queue = this.queue.splice(0)
+            const queue = unique(this.queue.splice(0))
             const authComponents = this.authComponents.splice(0)
             let authData = []
             try {
-                authData = await $http.post('auth/verify', { resources: queue })
+                authData = await $http.post('auth/verify', { resources: queue }, { requestId: Auth_Request_Id })
             } catch (error) {
                 console.error(error)
             } finally {
+                authData = filterUselssKey(authData, ['resource_id_ex'])
                 authComponents.forEach(component => {
                     const authMetas = TRANSFORM_TO_INTERNAL(component.auth)
                     const authResults = []
@@ -55,11 +93,7 @@ export default new Vue({
                             const target = {}
                             Object.keys(meta).forEach(key => {
                                 source[key] = meta[key]
-                                if (key === 'parent_layers') {
-                                    target[key] = filterUselssKey(result[key], ['resource_id_ex'])
-                                } else {
-                                    target[key] = result[key]
-                                }
+                                target[key] = result[key]
                             })
                             return equal(source, target)
                         })

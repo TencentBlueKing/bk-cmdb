@@ -85,6 +85,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import { Auth_Request_Id } from '@/components/ui/auth/auth-queue.js'
     export default {
         name: 'cmdb-across-business-module-selector',
         data () {
@@ -93,8 +94,9 @@
                 targetBizId: '',
                 checked: [],
                 request: {
+                    auth: Auth_Request_Id,
                     internal: Symbol('internal'),
-                    business: Symbol('business')
+                    list: Symbol('list')
                 },
                 nodeIconMap: {
                     1: 'icon-cc-host-free-pool',
@@ -116,7 +118,7 @@
         methods: {
             async getFullAmountBusiness () {
                 try {
-                    const data = await this.$http.get('biz/simplify?sort=bk_biz_id')
+                    const data = await this.$http.get('biz/simplify?sort=bk_biz_id', { requestId: this.request.list })
                     const availableBusiness = (data.info || []).filter(business => business.bk_biz_id !== this.bizId)
                     this.businessList = Object.freeze(availableBusiness)
                 } catch (e) {
