@@ -16,22 +16,22 @@ function equal (source, target) {
         resource_type: SResourceType,
         resource_id: SResourceId,
         action: SAction,
-        bk_biz_id: SBizId,
-        parent_layers: SParentLayers = []
+        bk_biz_id: SBizId
     } = source
     const {
         resource_type: TResourceType,
         resource_id: TResourceId,
         action: TAction,
-        bk_biz_id: TBizId,
-        parent_layers: TParentLayers = []
+        bk_biz_id: TBizId
     } = target
+    const SParentLayers = source.parent_layers || []
+    const TParentLayers = target.parent_layers || []
     if (
-        SResourceType !== TResourceType ||
-        SResourceId !== TResourceId ||
-        SAction !== TAction ||
-        SBizId !== TBizId ||
-        SParentLayers.length !== TParentLayers.length
+        SResourceType !== TResourceType
+        || SResourceId !== TResourceId
+        || SAction !== TAction
+        || SBizId !== TBizId
+        || SParentLayers.length !== TParentLayers.length
     ) {
         return false
     }
@@ -52,7 +52,7 @@ function unique (data) {
     }, [])
 }
 
-export const Auth_Request_Id = Symbol('auth_request_id')
+export const AuthRequestId = Symbol('auth_request_id')
 
 export default new Vue({
     data () {
@@ -79,7 +79,7 @@ export default new Vue({
             const authComponents = this.authComponents.splice(0)
             let authData = []
             try {
-                authData = await $http.post('auth/verify', { resources: queue }, { requestId: Auth_Request_Id })
+                authData = await $http.post('auth/verify', { resources: queue }, { requestId: AuthRequestId })
             } catch (error) {
                 console.error(error)
             } finally {

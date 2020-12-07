@@ -85,7 +85,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { Auth_Request_Id } from '@/components/ui/auth/auth-queue.js'
+    import { AuthRequestId } from '@/components/ui/auth/auth-queue.js'
     export default {
         name: 'cmdb-across-business-module-selector',
         data () {
@@ -94,7 +94,7 @@
                 targetBizId: '',
                 checked: [],
                 request: {
-                    auth: Auth_Request_Id,
+                    auth: AuthRequestId,
                     internal: Symbol('internal'),
                     list: Symbol('list')
                 },
