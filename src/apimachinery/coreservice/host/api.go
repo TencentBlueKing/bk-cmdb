@@ -159,33 +159,6 @@ func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.Q
 	return resp, err
 }
 
-func (h *host) GetHostSnap(ctx context.Context, header http.Header, hostID string) (resp *metadata.GetHostSnapResult, err error) {
-	resp = new(metadata.GetHostSnapResult)
-	subPath := "/find/host/snapshot/%s"
-
-	err = h.client.Get().
-		WithContext(ctx).
-		SubResourcef(subPath, hostID).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return resp, err
-}
-
-func (h *host) GetHostSnapBatch(ctx context.Context, header http.Header, input metadata.HostSnapBatchInput) (resp *metadata.GetHostSnapBatchResult, err error) {
-	resp = new(metadata.GetHostSnapBatchResult)
-	subPath := "/find/host/snapshot/batch"
-
-	err = h.client.Post().
-		Body(input).
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return resp, err
-}
-
 func (h *host) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
 	resp = new(metadata.HostLockResponse)
 	subPath := "/find/host/lock"

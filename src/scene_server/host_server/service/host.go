@@ -318,7 +318,7 @@ func (s *Service) HostSnapInfo(ctx *rest.Contexts) {
 	}
 
 	// get snapshot
-	result, err := s.CoreAPI.CoreService().Host().GetHostSnap(ctx.Kit.Ctx, ctx.Kit.Header, hostID)
+	result, err := s.CoreAPI.CacheService().Cache().Host().GetHostSnap(ctx.Kit.Ctx, ctx.Kit.Header, hostID)
 
 	if err != nil {
 		blog.Errorf("HostSnapInfo, http do error, err: %v ,input:%#v, rid:%s", err, hostID, ctx.Kit.Rid)
@@ -376,7 +376,7 @@ func (s *Service) HostSnapInfoBatch(ctx *rest.Contexts) {
 
 	input := meta.HostSnapBatchInput{HostIDs: hostIDs}
 	// get snapshot
-	result, err := s.CoreAPI.CoreService().Host().GetHostSnapBatch(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	result, err := s.CoreAPI.CacheService().Cache().Host().GetHostSnapBatch(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		blog.Errorf("HostSnapInfoBatch failed, http do error, err: %v ,input:%#v, rid:%s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPReadBodyFailed))
