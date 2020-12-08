@@ -167,6 +167,7 @@
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="disabled"
+                    :loading="submitting"
                     @click="handleSubmit">
                     {{getButtonText()}}
                 </bk-button>
@@ -271,7 +272,10 @@
                     category: Symbol('category'),
                     properties: Symbol('properties'),
                     propertyGroups: Symbol('propertiyGroups'),
-                    processList: Symbol('processList')
+                    processList: Symbol('processList'),
+                    createProcessTemplate: Symbol('createProcessTemplate'),
+                    createServiceTemplate: Symbol('createServiceTemplate'),
+                    updateServiceTemplate: Symbol('updateServiceTemplate')
                 }
             }
         },
@@ -302,6 +306,10 @@
             },
             setActive () {
                 return this.$route.params.active
+            },
+            submitting () {
+                const { createProcessTemplate, createServiceTemplate, updateServiceTemplate } = this.request
+                return this.$loading([createProcessTemplate, createServiceTemplate, updateServiceTemplate])
             }
         },
         created () {
@@ -604,6 +612,9 @@
                                 spec: this.formatSubmitData(process)
                             }
                         })
+                    },
+                    config: {
+                        requestId: this.request.createProcessTemplate
                     }
                 }).then(() => {
                     this.$success(this.$t('创建成功'))
@@ -634,6 +645,9 @@
                             id: this.formData.templateId,
                             name: this.formData.templateName,
                             service_category_id: this.formData.secondaryClassification
+                        },
+                        config: {
+                            requestId: this.request.updateServiceTemplate
                         }
                     }).then(() => {
                         if (this.isCreateMode) {
@@ -663,6 +677,9 @@
                         name: this.formData.templateName,
                         bk_biz_id: this.bizId,
                         service_category_id: this.formData.secondaryClassification
+                    },
+                    config: {
+                        requestId: this.request.createServiceTemplate
                     }
                 }).then(data => {
                     if (this.processList.length) {
