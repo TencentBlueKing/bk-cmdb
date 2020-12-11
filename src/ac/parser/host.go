@@ -889,9 +889,14 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			return ps
 		}
 		dirID := rawDirID.Int()
+
+		// if directory id is not specified, transfer host to the default directory, use it to authorize
 		if dirID == 0 {
-			ps.err = err
-			return ps
+			dirID, err = ps.getResourcePoolDefaultDirID()
+			if err != nil {
+				ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
+				return ps
+			}
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
