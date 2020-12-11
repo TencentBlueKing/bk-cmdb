@@ -3,7 +3,8 @@
         <div v-bkloading="{ isLoading: loading }" style="height: 100%;">
             <cmdb-host-info
                 ref="info"
-                @info-toggle="setInfoHeight">
+                @info-toggle="setInfoHeight"
+                @change="handleInfoChange">
             </cmdb-host-info>
             <bk-tab class="details-tab" v-if="!loading"
                 type="unborder-card"
@@ -68,7 +69,7 @@
                 return parseInt(this.$route.params.id)
             },
             business () {
-                const business = parseInt(this.$route.params.bizId)
+                const business = parseInt(this.$route.params.bizId || this.$route.params.business)
                 if (isNaN(business)) {
                     return -1
                 }
@@ -185,6 +186,9 @@
                 this.infoTimer = setTimeout(() => {
                     this.infoHeight = this.$refs.info.$el.offsetHeight + 'px'
                 }, 250)
+            },
+            handleInfoChange () {
+                this.getHostInfo()
             }
         }
     }

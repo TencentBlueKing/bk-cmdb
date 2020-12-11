@@ -1,54 +1,36 @@
 <template>
-    <bk-dialog
-        ext-cls="permission-dialog"
-        v-model="isModalShow"
-        width="740"
-        :z-index="2400"
-        :close-icon="false"
-        :mask-close="false"
-        :show-footer="false"
-        @cancel="onCloseDialog">
-        <permission-main ref="main" :list="list" :applied="applied"
-            @close="onCloseDialog"
-            @apply="handleApply"
-            @refresh="handleRefresh" />
-    </bk-dialog>
+    <permission-main class="no-permission" ref="main" :list="list" :applied="applied"
+        @close="handleClose"
+        @apply="handleApply"
+        @refresh="handleRefresh" />
 </template>
 <script>
     import permissionMixins from '@/mixins/permission'
     import { IAM_ACTIONS, IAM_VIEWS_NAME } from '@/dictionary/iam-auth'
-    import PermissionMain from './permission-main.vue'
+    import PermissionMain from '@/components/modal/permission-main'
     export default {
-        name: 'permissionModal',
         components: {
             PermissionMain
         },
         mixins: [permissionMixins],
-        props: {},
+        props: {
+            permission: Object
+        },
         data () {
             return {
-                applied: false,
-                isModalShow: false,
-                permission: [],
-                list: []
+                list: [],
+                applied: false
             }
         },
         watch: {
-            isModalShow (val) {
-                if (val) {
-                    setTimeout(() => {
-                        this.$refs.main.doTableLayout()
-                    }, 0)
-                }
+            permission () {
+                this.setList()
             }
         },
+        created () {
+            this.setList()
+        },
         methods: {
-            show (permission) {
-                this.permission = permission
-                this.setList()
-                this.applied = false
-                this.isModalShow = true
-            },
             setList () {
                 const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
                 this.list = this.permission.actions.map(action => {
@@ -73,8 +55,8 @@
                     }
                 })
             },
-            onCloseDialog () {
-                this.isModalShow = false
+            handleClose () {
+                this.$emit('cancel')
             },
             async handleApply () {
                 try {
@@ -89,9 +71,27 @@
     }
 </script>
 <style lang="scss" scoped>
-    /deep/ .permission-dialog {
-        .bk-dialog-body {
-            padding: 0;
+    .no-permission {
+        height: var(--height, 600px);
+        padding: 0 0 50px;
+        position: relative;
+        /deep/ .permission-content {
+            padding: 16px 24px 0;
+            margin: 0;
+            height: 100%;
+        }
+        /deep/ .permission-footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            padding: 8px 20px;
+            border-top: 1px solid $borderColor;
+            background-color: #FAFBFD;
+            text-align: right;
+            font-size: 0;
+            z-index: 100;
         }
     }
 </style>
