@@ -11,6 +11,7 @@
     "1111010": "Failed to get add net property result, error: %s",
     "1111011": "Failed to get net device data, error: %s",
     "1111012": "Failed to get net property data, error: %s",
+    "1111013": "Failed to get the EN/CN-username map of instance objuser attribute, error: %s",
      
     "": ""	   
 }

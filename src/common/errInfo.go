@@ -666,6 +666,7 @@ const (
 	CCErrWebGetAddNetPropertyResultFail = 1111010
 	CCErrWebGetNetDeviceFail            = 1111011
 	CCErrWebGetNetPropertyFail          = 1111012
+	CCErrWebGetUsernameMapFail          = 1111013
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000
