@@ -145,12 +145,12 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 	}
 
 	if data.AsstObjID == "" {
-		blog.Errorf("[operation-asst] bk_asst_obj_id empty, input: %s, rid: %s", data, kit.Rid)
+		blog.ErrorJSON("[operation-asst] bk_asst_obj_id empty, input: %s, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
 	}
 
 	if data.ClassificationID == "" {
-		blog.Errorf("[operation-asst] bk_classification_id empty, input: %s, rid: %s", data, kit.Rid)
+		blog.ErrorJSON("[operation-asst] bk_classification_id empty, input: %s, rid: %s", data, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
 	items, err := assoc.SearchMainlineAssociationTopo(kit, bizObj)
