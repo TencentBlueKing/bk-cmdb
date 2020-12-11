@@ -55,11 +55,23 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
 	inputParam.Data.Set(common.BKOwnerIDField, kit.SupplierAccount)
-	err := m.validCreateInstanceData(kit, objID, inputParam.Data)
+	bizID, err := m.getBizIDFromInstance(kit, objID, inputParam.Data, common.ValidCreate, 0)
+	if err != nil {
+		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	validator, err := m.newValidator(kit, objID, bizID)
+	if err != nil {
+		blog.Errorf("CreateModelInstance failed, newValidator err:%v, objID: %s, bizID:%d, rid:%s", err, objID, bizID, kit.Rid)
+		return nil, err
+	}
+
+	err = m.validCreateInstanceData(kit, objID, inputParam.Data, validator)
 	if nil != err {
 		blog.Errorf("CreateModelInstance failed, valid error: %+v, rid: %s", err, rid)
 		return nil, err
 	}
+
 	id, err := m.save(kit, objID, inputParam.Data)
 	if err != nil {
 		blog.ErrorJSON("CreateModelInstance create objID(%s) instance error. err:%s, data:%s, rid:%s", objID, err.Error(), inputParam.Data, kit.Rid)
@@ -72,9 +84,24 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 	var newIDs []uint64
 	dataResult := &metadata.CreateManyDataResult{}
+	allValidators := make(map[int64]*validator)
 	for itemIdx, item := range inputParam.Datas {
 		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
-		err := m.validCreateInstanceData(kit, objID, item)
+		bizID, err := m.getBizIDFromInstance(kit, objID, item, common.ValidCreate, 0)
+		if err != nil {
+			blog.Errorf("CreateManyModelInstance failed, getBizIDFromInstance err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+		if allValidators[bizID] == nil {
+			validator, err := m.newValidator(kit, objID, bizID)
+			if err != nil {
+				blog.Errorf("CreateManyModelInstance failed, newValidator err:%v, objID: %s, bizID:%d, rid:%s", err, objID, bizID, kit.Rid)
+				return nil, err
+			}
+			allValidators[bizID] = validator
+		}
+
+		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
@@ -84,7 +111,7 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 			})
 			continue
 		}
-		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
+
 		id, err := m.save(kit, objID, item)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -120,10 +147,35 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 		return nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
-	for _, origin := range origins {
+	allValidators := make(map[int64]*validator)
+	for idx, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, uint64(instID), inputParam.CanEditAll)
+		bizID, err := m.getBizIDFromInstance(kit, objID, origin, common.ValidCreate, 0)
+		if err != nil {
+			blog.Errorf("UpdateModelInstance failed, getBizIDFromInstance err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+		if allValidators[bizID] == nil {
+			validator, err := m.newValidator(kit, objID, bizID)
+			if err != nil {
+				blog.Errorf("UpdateModelInstance failed, newValidator err:%v, objID: %s, bizID:%d, rid:%s", err, objID, bizID, kit.Rid)
+				return nil, err
+			}
+			allValidators[bizID] = validator
+		}
+
+		// it is not allowed to update multiple records if the updateData has a unique field
+		if idx == 0 && len(origins) > 1 {
+			valid := allValidators[bizID]
+			if err := valid.validUpdateUniqFieldInMulti(kit, inputParam.Data, origin, m); err != nil {
+				blog.Errorf("UpdateModelInstance failed, validUpdateUniqFieldInMulti error %v, updateData: %#v, instData:%#v, rid: %s",
+					err, inputParam.Data, origin, kit.Rid)
+				return nil, err
+			}
+		}
+
+		err = m.validUpdateInstanceData(kit, objID, inputParam.Data, origin, allValidators[bizID], instID, inputParam.CanEditAll)
 		if nil != err {
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
