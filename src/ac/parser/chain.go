@@ -92,6 +92,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		validateVersion().
 		validateResourceAction().
 		validateUserAndSupplier().
+		cacheRelated().
 		adminRelated().
 		hostRelated().
 		topology().

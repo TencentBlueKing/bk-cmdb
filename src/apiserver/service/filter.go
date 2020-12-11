@@ -43,6 +43,7 @@ const (
 	TaskType        RequestType = "task"
 	AdminType       RequestType = "admin"
 	CloudType       RequestType = "cloud"
+	CacheType       RequestType = "cache"
 )
 
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
@@ -107,6 +108,10 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 	case CloudType:
 		servers, err = s.discovery.CloudServer().GetServers()
+
+	case CacheType:
+		servers, err = s.discovery.CacheService().GetServers()
+
 	default:
 		name := string(kind)
 		if name != "" {

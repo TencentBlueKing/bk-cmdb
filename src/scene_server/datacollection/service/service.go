@@ -190,6 +190,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	healthResp.SetCommonResponse()
 
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(healthResp)

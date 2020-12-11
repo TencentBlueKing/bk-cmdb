@@ -61,6 +61,7 @@ func (s *AuthService) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	answer.SetCommonResponse()
 	resp.Header().Set("Content-Type", "application/json")
 	_ = resp.WriteEntity(answer)
 }

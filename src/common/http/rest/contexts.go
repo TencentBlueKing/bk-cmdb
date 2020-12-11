@@ -77,7 +77,7 @@ func (c *Contexts) RespEntity(data interface{}) {
 
 // RespString response the data format to a json string.
 // the data is a string, and do not need marshal, can return directly.
-func (c *Contexts) RespString(data string) {
+func (c *Contexts) RespString(data *string) {
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -85,7 +85,11 @@ func (c *Contexts) RespString(data string) {
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
 	jsonBuffer := bytes.Buffer{}
 	jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": ")
-	jsonBuffer.WriteString(data)
+	if data == nil {
+		jsonBuffer.WriteString("")
+	} else {
+		jsonBuffer.WriteString(*data)
+	}
 	jsonBuffer.WriteByte('}')
 	c.resp.Write(jsonBuffer.Bytes())
 }

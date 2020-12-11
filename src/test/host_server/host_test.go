@@ -811,13 +811,12 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(2))
 		})
 
-		It("transfer host to resourcemodule", func() {
+		It("transfer host to resource pool default directory", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
 				HostIDs: []int64{
 					hostId2,
 				},
-				ModuleID: dirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)

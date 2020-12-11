@@ -322,7 +322,7 @@
                     count: this.table.selection.length
                 }
                 this.dialog.width = 400
-                this.dialog.height = 231
+                this.dialog.height = 250
                 this.dialog.component = MoveToResourceConfirm.name
                 this.dialog.show = true
             },
@@ -353,7 +353,7 @@
                         this.gotoTransferPage(...arguments)
                     }
                 } else if (this.dialog.component === MoveToResourceConfirm.name) {
-                    this.moveHostToResource()
+                    this.moveHostToResource(...arguments)
                 } else if (this.dialog.component === AcrossBusinessModuleSelector.name) {
                     this.moveHostToOtherBusiness(...arguments)
                 }
@@ -406,12 +406,13 @@
                     history: true
                 })
             },
-            async moveHostToResource () {
+            async moveHostToResource (directoryId) {
                 try {
                     await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
                         params: {
                             bk_biz_id: this.bizId,
-                            bk_host_id: this.table.selection.map(item => item.host.bk_host_id)
+                            bk_host_id: this.table.selection.map(item => item.host.bk_host_id),
+                            bk_module_id: directoryId
                         },
                         config: {
                             requestId: this.request.moveToResource

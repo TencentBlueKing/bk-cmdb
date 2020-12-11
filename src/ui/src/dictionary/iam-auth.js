@@ -410,12 +410,18 @@ export const IAM_ACTIONS = {
             instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds) => {
-            const [bizId] = relationIds
-            const hostVerifyMeta = basicTransform(cmdbAction, {
+            const [[[bizId], [directoryId]]] = relationIds
+            const verifyMeta = basicTransform(cmdbAction, {
                 bk_biz_id: bizId
             })
-            const directoryVerifyMeta = IAM_ACTIONS.C_RESOURCE_HOST.transform(IAM_ACTIONS.C_RESOURCE_HOST.cmdb_action, [1]) // 主机池空闲机ID为1，交互待调整
-            return [hostVerifyMeta, directoryVerifyMeta]
+            verifyMeta.parent_layers = [{
+                resource_type: 'biz',
+                resource_id: bizId
+            }, {
+                resource_type: 'ResourcePoolDirectory',
+                resource_id: directoryId
+            }]
+            return verifyMeta
         }
     },
     // 跨业务转主机
