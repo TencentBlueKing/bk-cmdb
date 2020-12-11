@@ -146,3 +146,14 @@ func PrettyIPStr(ips []string) string {
 	}
 	return strings.Join(ips, ",")
 }
+
+// ReverseArrayString reverse the slice's element from tail to head.
+func ReverseArrayString(t []string) []string {
+	if len(t) == 0 {
+		return t
+	}
+	for i, j := 0, len(t)-1; i < j; i, j = i+1, j-1 {
+		t[i], t[j] = t[j], t[i]
+	}
+	return t
+}
