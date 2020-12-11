@@ -101,7 +101,7 @@ func NewImportAssociation(ctx context.Context, cli *association, kit *rest.Kit, 
 		queryInstConds:      make(map[string][]mapstr.MapStr),
 		instIDAttrKeyValMap: make(map[string]map[string][]*importAssociationInst),
 
-		rid: util.GetHTTPCCRequestID(kit.Header),
+		rid: kit.Rid,
 
 		authManager: authManager,
 	}
