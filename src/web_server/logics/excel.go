@@ -32,7 +32,7 @@ import (
 )
 
 // BuildExcelFromData product excel from data
-func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
+func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string, propertyList []string) error {
 	rid := util.GetHTTPCCRequestID(header)
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -65,6 +65,8 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
+		//使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
+		rowMap = replaceEnName(rowMap, usernameMap, propertyList)
 
 		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 
@@ -81,7 +83,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 }
 
 // BuildHostExcelFromData product excel from data
-func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
+func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string, propertyList []string) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -144,6 +146,10 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
+
+		//使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
+		rowMap = replaceEnName(rowMap, usernameMap, propertyList)
+
 		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 		instPrimaryKeyValMap[instID] = primaryKeyArr
 		rowIndex++
