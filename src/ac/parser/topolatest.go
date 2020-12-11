@@ -47,8 +47,7 @@ func (ps *parseStream) topologyLatest() *parseStream {
 		objectAttributeGroupLatest().
 		objectAttributeLatest().
 		mainlineLatest().
-		setTemplate().
-		cache()
+		setTemplate()
 
 	return ps
 }
@@ -2084,47 +2083,6 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
 					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	return ps
-}
-
-const (
-	searchTopologyTreePattern = "/api/v3/find/cache/topotree"
-)
-
-var (
-	findBusinessTopoNodePathRegexp = regexp.MustCompile(`^/api/v3/find/topo/cache/topo/node_path/biz/[0-9]+/?$`)
-)
-
-func (ps *parseStream) cache() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	// search object association operation
-	if ps.hitPattern(searchTopologyTreePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.BizTopology,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findBusinessTopoNodePathRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.BizTopology,
-					Action: meta.SkipAction,
 				},
 			},
 		}

@@ -90,6 +90,11 @@ func (s *cacheService) initCache(web *restful.WebService) {
 		Path:    "/find/cache/topo/node_path",
 		Handler: s.SearchTopologyNodePath,
 	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodGet,
+		Path:    "/find/cache/topo/brief/biz/{biz}",
+		Handler: s.SearchBusinessBriefTopology,
+	})
 
 	utility.AddToRestfulWebService(web)
 }
