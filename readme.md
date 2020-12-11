@@ -23,7 +23,7 @@
 * [架构设计](docs/overview/architecture.md)
 * [代码目录](docs/overview/code_framework.md)
 
-![front-page](docs/resource/img/frontpage.jpg)
+![front-page](docs/resource/img/frontpage.png)
 
 ## Features
 * 拓扑化的主机管理：主机基础属性、主机快照数据、主机归属关系管理
