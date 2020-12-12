@@ -119,6 +119,7 @@ func (s *service) healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	answer.SetCommonResponse()
 	resp.WriteJson(answer, "application/json")
 }
 

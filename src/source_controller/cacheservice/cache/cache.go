@@ -15,13 +15,18 @@ package cache
 import (
 	"fmt"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/source_controller/cacheservice/cache/business"
 	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
+	"configcenter/src/source_controller/cacheservice/cache/topology"
 	"configcenter/src/storage/reflector"
+	"configcenter/src/storage/stream"
 )
 
-func NewCache(event reflector.Interface) (*ClientSet, error) {
+func NewCache(event reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface) (
+	*ClientSet, error) {
+
 	if err := business.NewCache(event); err != nil {
 		return nil, fmt.Errorf("new business cache failed, err: %v", err)
 	}
@@ -30,19 +35,26 @@ func NewCache(event reflector.Interface) (*ClientSet, error) {
 		return nil, fmt.Errorf("new host cache failed, err: %v", err)
 	}
 
+	topo, err := topology.NewTopology(isMaster, loopW)
+	if err != nil {
+		return nil, err
+	}
+
 	bizClient := business.NewClient()
 	hostClient := host.NewClient()
 
 	cache := &ClientSet{
-		Topology: topo_tree.NewTopologyTree(bizClient),
+		Tree:     topo_tree.NewTopologyTree(bizClient),
 		Host:     hostClient,
 		Business: bizClient,
+		Topology: topo,
 	}
 	return cache, nil
 }
 
 type ClientSet struct {
-	Topology *topo_tree.TopologyTree
+	Tree     *topo_tree.TopologyTree
+	Topology *topology.Topology
 	Host     *host.Client
 	Business *business.Client
 }

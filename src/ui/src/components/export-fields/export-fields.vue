@@ -68,8 +68,10 @@
             invisibleProperties: {
                 type: Array,
                 default: () => ([
+                    'bk_host_id',
                     'bk_cloud_id',
-                    'bk_host_innerip'
+                    'bk_host_innerip',
+                    '__bk_host_topology__'
                 ])
             },
             handler: {

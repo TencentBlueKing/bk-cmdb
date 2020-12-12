@@ -165,5 +165,6 @@ func (s *Service) Healthz(c *gin.Context) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	answer.SetCommonResponse()
 	c.JSON(200, answer)
 }

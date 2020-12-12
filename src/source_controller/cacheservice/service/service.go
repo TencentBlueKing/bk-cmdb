@@ -69,13 +69,19 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
+	loopW, loopErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
+	if loopErr != nil {
+		blog.Errorf("new loop stream failed, err: %v", loopErr)
+		return loopErr
+	}
+
 	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
 	if eventErr != nil {
 		blog.Errorf("new reflector failed, err: %v", eventErr)
 		return eventErr
 	}
 
-	c, cacheErr := cacheop.NewCache(event)
+	c, cacheErr := cacheop.NewCache(event, loopW, engine.ServiceManageInterface)
 	if cacheErr != nil {
 		blog.Errorf("new cache instance failed, err: %v", cacheErr)
 		return cacheErr

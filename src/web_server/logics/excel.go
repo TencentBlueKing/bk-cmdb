@@ -178,7 +178,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 
-	cond := &metadata.QueryCondition{
+	cond := &metadata.SearchAssociationObjectRequest{
 		Condition: map[string]interface{}{
 			condition.BKDBOR: []mapstr.MapStr{
 				{
@@ -190,9 +190,8 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 			},
 		},
 	}
-
-	////确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
-	resp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, cond)
+	//确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	resp, err := lgc.CoreAPI.TopoServer().Association().SearchObject(ctx, header, cond)
 	if err != nil {
 		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, rid)
 		return err
@@ -201,7 +200,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", resp.ErrMsg, rid)
 		return err
 	}
-	asstList := resp.Data.Info
+	asstList := resp.Data
 	productExcelAssociationHeader(ctx, sheet, defLang, len(instAsst), asstList)
 
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset

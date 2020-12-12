@@ -565,7 +565,7 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 		return
 	}
 
-	setDiffs, err := s.Core.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit.Ctx, ctx.Kit.Header, bizID, setTemplateID, option)
+	setDiffs, err := s.Core.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option)
 	if err != nil {
 		blog.Errorf("DiffSetTplWithInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

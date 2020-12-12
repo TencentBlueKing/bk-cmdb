@@ -123,7 +123,7 @@ func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
 
 // SearchBusinessTopoWithStatistics calculate how many service instances on each topo instance node
 func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, true)
+	resp, err := s.searchBusinessTopo(ctx, true, true)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -132,7 +132,7 @@ func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
 }
 
 func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, false)
+	resp, err := s.searchBusinessTopo(ctx, false, false)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -141,7 +141,9 @@ func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
 }
 
 // SearchBusinessTopo search the business topo
-func (s *Service) searchBusinessTopo(ctx *rest.Contexts, withStatistics bool) ([]*metadata.TopoInstRst, error) {
+// withSortName 按拼音对名字排序，ui 专用
+func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
+	withStatistics, withSortName bool) ([]*metadata.TopoInstRst, error) {
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("app_id"), err.Error(), ctx.Kit.Rid)
@@ -158,8 +160,10 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts, withStatistics bool) ([
 		return nil, err
 	}
 
-	// sort before response
-	SortTopoInst(topoInstRst)
+	if withSortName {
+		// sort before response,
+		SortTopoInst(topoInstRst)
+	}
 
 	return topoInstRst, nil
 }
