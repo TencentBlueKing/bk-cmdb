@@ -125,7 +125,7 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 
 var allConfigNames = map[string]bool{
 	"redis":    true,
-	"mongo":    true,
+	"mongodb":  true,
 	"common":   true,
 	"extra":    true,
 	"error":    true,
@@ -133,7 +133,7 @@ var allConfigNames = map[string]bool{
 	"all":      true,
 }
 
-var configHelpInfo = fmt.Sprintf("config_name must be one of the [redis, mongo, common, extra, error, language, all]")
+var configHelpInfo = fmt.Sprintf("config_name must be one of the [redis, mongodb, common, extra, error, language, all]")
 
 func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
@@ -164,16 +164,17 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	case "redis", "mongodb", "common", "extra":
 		filePath := filepath.Join(s.Config.Configures.Dir, configName+".yaml")
 		key := types.CC_SERVCONF_BASEPATH + "/" + configName
-		s.ConfigCenter.WriteConfigure(filePath, key)
+		err = s.ConfigCenter.WriteConfigure(filePath, key)
 	case "error":
-		s.ConfigCenter.WriteErrorRes2Center(s.Config.Errors.Res)
+		err = s.ConfigCenter.WriteErrorRes2Center(s.Config.Errors.Res)
 	case "language":
-		s.ConfigCenter.WriteLanguageRes2Center(s.Config.Language.Res)
+		err = s.ConfigCenter.WriteLanguageRes2Center(s.Config.Language.Res)
 	case "all":
-		s.ConfigCenter.WriteAllConfs2Center(s.Config.Configures.Dir, s.Config.Errors.Res, s.Config.Language.Res)
+		err = s.ConfigCenter.WriteAllConfs2Center(s.Config.Configures.Dir, s.Config.Errors.Res, s.Config.Language.Res)
 	default:
 		blog.Errorf("refreshConfig failed, config_name is wrong, %s, input:%#v, rid:%s", configHelpInfo, input, rid)
 		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, configHelpInfo)})
+		return
 	}
 
 	if err != nil {
