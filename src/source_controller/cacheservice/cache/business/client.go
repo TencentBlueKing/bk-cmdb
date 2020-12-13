@@ -567,7 +567,8 @@ func (c *Client) GetTopology() ([]string, error) {
 	key := customKey.topologyKey()
 	rank, err := redis.Client().Get(context.Background(), key).Result()
 	if err != nil {
-		return nil, err
+		blog.Errorf("get mainline topology from cache failed, get from db directly. err: %v", err)
+		return c.refreshAndGetTopologyRank()
 	}
 	return strings.Split(rank, ","), nil
 }

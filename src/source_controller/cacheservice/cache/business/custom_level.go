@@ -108,13 +108,13 @@ func (m *customLevel) runMainlineTopology() error {
 // to watch each custom level object instance's change for cache update.
 func (m *customLevel) runCustomLevelInstance() error {
 
-	relations, err := m.getMainlineTopology()
+	relations, err := getMainlineTopology()
 	if err != nil {
 		blog.Errorf("received mainline topology change event, but get it from mongodb failed, err: %v", err)
 		return err
 	}
 	// rank start from biz to host
-	rank := m.rankMainlineTopology(relations)
+	rank := rankMainlineTopology(relations)
 
 	// reconcile the custom watch
 	m.reconcileCustomWatch(rank)
@@ -246,13 +246,13 @@ func (m *customLevel) reconcileCustomWatch(rank []string) {
 // delete operation.
 func (m *customLevel) onChange(_ *types.Event) {
 	// read information from mongodb
-	relations, err := m.getMainlineTopology()
+	relations, err := getMainlineTopology()
 	if err != nil {
 		blog.Errorf("received mainline topology change event, but get it from mongodb failed, err: %v", err)
 		return
 	}
 	// rank start from biz to host
-	rank := m.rankMainlineTopology(relations)
+	rank := rankMainlineTopology(relations)
 
 	// reconcile the custom watch
 	m.reconcileCustomWatch(rank)
@@ -361,7 +361,7 @@ func (m *customLevel) onDeleteCustomInstance(e *types.Event) {
 	blog.V(4).Infof("received biz custom level instance delete event, detail: %s, delete related caches success", e.String())
 }
 
-func (m *customLevel) getMainlineTopology() ([]MainlineTopoAssociation, error) {
+func getMainlineTopology() ([]MainlineTopoAssociation, error) {
 	relations := make([]MainlineTopoAssociation, 0)
 	filter := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
@@ -375,7 +375,7 @@ func (m *customLevel) getMainlineTopology() ([]MainlineTopoAssociation, error) {
 }
 
 // rankTopology is to rank the biz topology to a array, start from biz to host
-func (m *customLevel) rankMainlineTopology(relations []MainlineTopoAssociation) []string {
+func rankMainlineTopology(relations []MainlineTopoAssociation) []string {
 	rank := make([]string, 0)
 	next := "biz"
 	rank = append(rank, next)
