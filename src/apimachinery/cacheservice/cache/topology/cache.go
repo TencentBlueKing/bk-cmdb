@@ -22,33 +22,6 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 )
 
-func (b *baseCache) SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error) {
-	type Topo struct {
-		metadata.BaseResp `json:",inline"`
-		Data              []topo_tree.Topology `json:"data"`
-	}
-
-	resp := new(Topo)
-
-	err := b.client.Post().
-		WithContext(ctx).
-		Body(opt).
-		SubResourcef("/find/cache/topotree").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if !resp.Result {
-		return nil, errors.New(resp.Code, resp.ErrMsg)
-	}
-
-	return resp.Data, nil
-}
-
 // ListBusiness list business with id list and return with a json array string which is []string json.
 func (b *baseCache) ListBusiness(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (
 	jsonArray string, err error) {

@@ -687,3 +687,22 @@ func (c *Client) listCustomLevelDetail(objID string, instIDs []int64) ([]string,
 
 	return all, nil
 }
+
+func (c *Client) refreshAndGetTopologyRank() ([]string, error) {
+	// read information from mongodb
+	relations, err := getMainlineTopology()
+	if err != nil {
+		blog.Errorf("refresh mainline topology rank, but get it from mongodb failed, err: %v", err)
+		return nil, err
+	}
+	// rank start from biz to host
+	rank := rankMainlineTopology(relations)
+
+	// then set the rank to cache
+	err = redis.Client().Set(context.Background(), customKey.topologyKey(), customKey.topologyValue(rank), 0).Err()
+	if err != nil {
+		blog.Errorf("refresh mainline topology rank, but update to cache failed, err: %v", err)
+		// do not return
+	}
+	return rank, nil
+}
