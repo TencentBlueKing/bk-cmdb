@@ -16,6 +16,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"reflect"
 	"time"
 
@@ -163,13 +166,28 @@ func (opts *Options) CheckSetDefault() error {
 
 type TimeStamp struct {
 	// the most significant 32 bits are a time_t value (seconds since the Unix epoch)
-	Sec uint32 `json:"sec"`
+	Sec uint32 `json:"sec",bson:"sec"`
 	// the least significant 32 bits are an incrementing ordinal for operations within a given second.
-	Nano uint32 `json:"nano"`
+	Nano uint32 `json:"nano",bson:"nano"`
 }
 
 func (t TimeStamp) String() string {
 	return time.Unix(int64(t.Sec), int64(t.Nano)).Format("2006-01-02/15:04:05")
+}
+
+func (t *TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bsonx.Time(time.Unix(int64(t.Sec), int64(t.Nano))).MarshalBSONValue()
+}
+
+func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
+	if typo == bsontype.DateTime {
+		rv := bson.RawValue{Type: bsontype.DateTime, Value: raw}
+		t.Sec = uint32(rv.Time().Second())
+		t.Nano = uint32(rv.Time().Nanosecond())
+		return nil
+	}
+
+	return bson.Unmarshal(raw, t)
 }
 
 type WatchOptions struct {

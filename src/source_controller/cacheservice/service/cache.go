@@ -318,3 +318,51 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 
 	ctx.RespString(topo)
 }
+
+func (s *cacheService) SearchEventChainNode(ctx *rest.Contexts) {
+	opt := new(metadata.SearchEventNodeOption)
+	if err := ctx.DecodeInto(opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	node, err := s.cacheSet.Event.SearchEventChainNode(ctx.Kit, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(node)
+}
+
+func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
+	opt := new(metadata.SearchFollowingEventNodesOption)
+	if err := ctx.DecodeInto(opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	nodes, err := s.cacheSet.Event.SearchFollowingEventChainNodes(ctx.Kit, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nodes)
+}
+
+func (s *cacheService) SearchEventDetails(ctx *rest.Contexts) {
+	opt := new(metadata.SearchEventDetailsOption)
+	if err := ctx.DecodeInto(opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	details, err := s.cacheSet.Event.SearchEventDetails(ctx.Kit, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(details)
+}

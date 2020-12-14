@@ -50,7 +50,7 @@ func (s *Service) WatchEvent(ctx *rest.Contexts) {
 	}
 
 	// build a resource watcher.
-	watcher := ewatcher.NewWatcher(s.ctx, s.cache)
+	watcher := ewatcher.NewWatcher(s.ctx,ctx.Kit.Header, s.cache,s.engine.CoreAPI.CacheService().Cache())
 
 	// watch with cursor
 	if len(options.Cursor) != 0 {

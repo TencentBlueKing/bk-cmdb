@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/stream/types"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -134,9 +135,11 @@ type Cursor struct {
 	ClusterTime types.TimeStamp
 	// a random hex string to avoid the caller to generated a self-defined cursor.
 	Oid string
+	// the self-increasing db event id.
+	EventID uint64
 }
 
-const cursorVersion = "1"
+const cursorVersion = "2"
 
 func (c Cursor) Encode() (string, error) {
 	if c.Type == "" {
@@ -176,6 +179,11 @@ func (c Cursor) Encode() (string, error) {
 
 	// cluster time nano field
 	pool.WriteString(nano)
+	pool.WriteByte('\r')
+
+	// db event ID field.
+	eventID := strconv.FormatUint(c.EventID, 10)
+	pool.WriteString(eventID)
 
 	return base64.StdEncoding.EncodeToString(pool.Bytes()), nil
 }
@@ -208,7 +216,7 @@ func (c *Cursor) Decode(cur string) error {
 		}
 	}
 
-	if len(elements) != 5 {
+	if len(elements) != 6 {
 		return errors.New("invalid cursor string")
 	}
 
@@ -242,10 +250,16 @@ func (c *Cursor) Decode(cur string) error {
 	}
 	c.ClusterTime.Nano = uint32(nano)
 
+	eventID, err := strconv.ParseUint(elements[5], 10, 64)
+	if err != nil {
+		return fmt.Errorf("got invalid event ID field %s, err: %v", elements[5], err)
+	}
+	c.EventID = eventID
+
 	return nil
 }
 
-func GetEventCursor(coll string, e *types.Event) (string, error) {
+func GetEventCursor(coll string, e *types.Event, eventID uint64) (string, error) {
 	curType := UnknownType
 	switch coll {
 	case common.BKTableNameBaseHost:
@@ -275,6 +289,7 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		Type:        curType,
 		ClusterTime: e.ClusterTime,
 		Oid:         e.Oid,
+		EventID:     eventID,
 	}
 
 	hCursorEncode, err := hCursor.Encode()

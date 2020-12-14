@@ -14,8 +14,6 @@ package event
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -25,587 +23,337 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
+	"configcenter/src/storage/dal"
+	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/stream/types"
-	"github.com/tidwall/gjson"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
+// dbChainTTLTime the ttl time seconds of the db event chain, used to set the ttl index of mongodb
+const dbChainTTLTime = 48 * 60 * 60
+
 func newFlow(ctx context.Context, opts FlowOptions) error {
 	flow := Flow{
 		FlowOptions: opts,
-		retrySignal: make(chan struct{}),
-		metrics:     initialMetrics(opts.Collection),
+		metrics:     initialMetrics(opts.key.Collection()),
 	}
-	flow.cleanExpiredEvents()
-	flow.cleanDelArchiveData()
+
+	if err := flow.createDBChainCollection(ctx); err != nil {
+		return err
+	}
+
+	flow.cleanDelArchiveData(ctx)
 
 	return flow.RunFlow(ctx)
 }
 
+func (f *Flow) createDBChainCollection(ctx context.Context) error {
+	exists, err := f.watchDB.HasTable(ctx, f.key.ChainCollection())
+	if err != nil {
+		blog.Errorf("check if table %s exists failed, err: %v", f.key.ChainCollection(), err)
+		return err
+	}
+
+	if !exists {
+		if err = f.watchDB.CreateTable(ctx, f.key.ChainCollection()); err != nil && !f.watchDB.IsDuplicatedError(err) {
+			blog.Errorf("create table %s failed, err: %v", f.key.ChainCollection(), err)
+			return err
+		}
+	}
+
+	indexes := []daltypes.Index{
+		{Name: "index_id", Keys: map[string]int32{common.BKFieldID: -1}, Background: true},
+		{Name: "index_cursor", Keys: map[string]int32{common.BKCursorField: -1}, Background: true, Unique: true},
+		{Name: "index_cluster_time", Keys: map[string]int32{common.BKClusterTimeField: -1}, Background: true,
+			ExpireAfterSeconds: dbChainTTLTime},
+	}
+
+	existIndexArr, err := f.watchDB.Table(f.key.ChainCollection()).Indexes(ctx)
+	if err != nil {
+		blog.Errorf("get exist indexes for event chain table %s failed, err: %v", f.key.ChainCollection(), err)
+		return err
+	}
+
+	existIdxMap := make(map[string]bool)
+	for _, index := range existIndexArr {
+		existIdxMap[index.Name] = true
+	}
+
+	for _, index := range indexes {
+		if _, exist := existIdxMap[index.Name]; exist {
+			continue
+		}
+
+		err = f.watchDB.Table(f.key.ChainCollection()).CreateIndex(ctx, index)
+		if err != nil && !f.watchDB.IsDuplicatedError(err) {
+			blog.Errorf("create indexes for event chain table %s failed, err: %v", f.key.ChainCollection(), err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 type Flow struct {
 	FlowOptions
-	retrySignal chan struct{}
-	metrics     *eventMetrics
+	metrics *eventMetrics
 }
+
+const batchSize = 200
 
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 
-	startToken, err := f.getStartToken()
-	if err != nil {
-		blog.Errorf("run flow, but get start token failed, err: %v", err)
-		return err
-	}
-
-	blog.Infof("start run flow for key: %s with token: %s.", f.key.Namespace(), startToken)
 	event := make(map[string]interface{})
 	watchOpts := &types.WatchOptions{
 		Options: types.Options{
 			EventStruct:     &event,
-			Collection:      f.Collection,
+			Collection:      f.key.Collection(),
 			StartAfterToken: nil,
 		},
 	}
-	if f.Collection == common.BKTableNameBaseHost {
+	if f.key.Collection() == common.BKTableNameBaseHost {
 		watchOpts.EventStruct = &metadata.HostMapStr{}
 	}
 
-	if len(startToken) != 0 {
-		blog.Warnf("run flow, we got a start token: %s, and we start watch from here.", startToken)
-		watchOpts.StartAfterToken = &types.EventToken{
-			Data: startToken,
-		}
+	opts := &types.LoopBatchOptions{
+		LoopOptions: types.LoopOptions{
+			Name:         f.key.Namespace(),
+			WatchOpt:     watchOpts,
+			TokenHandler: NewFlowTokenHandler(f.key, f.watchDB, f.metrics),
+			RetryOptions: nil,
+		},
+		EventHandler: &types.BatchHandler{
+			DoBatch: f.doBatch,
+		},
+		BatchSize: batchSize,
 	}
 
-	return f.tryLoopFlow(ctx, watchOpts)
-}
-
-func (f *Flow) tryLoopFlow(ctx context.Context, opts *types.WatchOptions) error {
-	var cancel func()
-	var cancelCtx context.Context
-	cancelCtx, cancel = context.WithCancel(ctx)
-	if err := f.loopFlow(cancelCtx, opts); err != nil {
-		cancel()
+	if err := f.watch.WithBatch(opts); err != nil {
+		blog.Errorf("run flow, but watch batch failed, err: %v", err)
 		return err
 	}
-
-	go func() {
-		for {
-			select {
-			// wait for another retry
-			case <-f.retrySignal:
-				// collect retry error metrics
-				f.metrics.collectRetryError()
-
-				// wait for a second and then do the retry work.
-				time.Sleep(1 * time.Second)
-
-				// initialize a new retry signal immediately for next usage.
-				f.retrySignal = make(chan struct{})
-
-				// cancel the former watch
-				cancel()
-
-				// use the last token to resume so that we can start again from where we stopped.
-				lastToken, err := f.getStartToken()
-				if err != nil {
-					blog.Errorf("run flow, but get last event token failed, err: %v", err)
-					// notify retry signal
-					close(f.retrySignal)
-					continue
-				}
-				blog.Warnf("the former loop flow: %s failed, start retry again from token: %s.", f.Collection, lastToken)
-
-				// set start after token if needed.
-				if lastToken != "" {
-					// we have already received the new event and handle it success,
-					// so we need to use this token. otherwise, we should still use the opts.StartAfterToken
-					opts.StartAfterToken = &types.EventToken{Data: lastToken}
-				}
-
-				cancelCtx, cancel = context.WithCancel(ctx)
-				if err := f.loopFlow(cancelCtx, opts); err != nil {
-					cancel()
-					// notify retry signal
-					close(f.retrySignal)
-
-					blog.Errorf("loop flow %s failed, err: %v", f.Collection, err)
-					continue
-				}
-
-				blog.Warnf("retry loop flow: %s from token: %s success.", f.Collection, lastToken)
-			}
-		}
-
-	}()
 
 	return nil
 }
 
-func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
+func (f *Flow) doBatch(es []*types.Event) (retry bool) {
+	eventLen := len(es)
+	chainNodes := make([]watch.ChainNode, eventLen)
+	oids := make([]string, eventLen)
+	hasError := true
 
-	watcher, err := f.watch.Watch(ctx, opts)
-	if err != nil {
-		blog.Errorf("run flow, but watch failed, err: %v", err)
-		return err
-	}
-
-	go func() {
-		for e := range watcher.EventChan {
-
-			select {
-			case <-ctx.Done():
-				blog.Warnf("received stop watch flow collection: %s, err: %v", opts.Collection, ctx.Err())
-				return
-			default:
-
-			}
-
-			if !f.isMaster.IsMaster() {
-				blog.V(4).Infof("run flow, received collection %s event, type: %s, oid: %s, but not master, skip.", f.Collection,
-					e.OperationType, e.Oid)
-				continue
-			}
-
-			blog.V(4).Infof("run flow, received collection %s event, type: %s, oid :%s", f.Collection, e.OperationType, e.Oid)
-			if blog.V(5) {
-				blog.Infof("event doc details: %s, oid: %s", e.Oid)
-			}
-
-			// collect event's basic metrics
-			f.metrics.collectBasic(e)
-
-			switch e.OperationType {
-			case types.Insert, types.Update, types.Replace:
-				if retry, err := f.doUpsert(e); err != nil {
-					blog.Errorf("run flow, but do upsert failed, operation type: %s, doc: %s, err: %v, oid: %s", e.OperationType,
-						e.DocBytes, err, e.Oid)
-
-					if !retry {
-						// an error and do not need to retry do update.
-						continue
-					}
-					// an error occurred, we need to retry do upsert later.
-					// tell the schedule to re-watch again.
-					close(f.retrySignal)
-					// exist this goroutine.
-					return
-				}
-
-			case types.Delete:
-				if retry, err := f.doDelete(e); err != nil {
-					blog.Errorf("run flow, but do delete failed, doc: %s, err: %v, oid: %s", e.DocBytes, err, e.Oid)
-
-					if !retry {
-						// an error and do not need to retry do update.
-						continue
-					}
-
-					// tell the schedule to re-watch again.
-					close(f.retrySignal)
-					// exist this goroutine.
-					return
-				}
-
-			case types.Invalidate:
-				blog.Errorf("loop flow, received invalid event operation type, doc: %s", e.DocBytes)
-				continue
-			default:
-				blog.Errorf("loop flow, received unsupported event operation type, doc: %s", e.DocBytes)
-				continue
-			}
-		}
-	}()
-
-	return nil
-}
-
-// if an error occurred, then the caller should check the retry is true or not, if true, then this event
-// need to be retry later.
-func (f *Flow) doUpsert(e *types.Event) (retry bool, err error) {
-	start := time.Now()
-	retry, err = f.do(e)
-	if err != nil {
-		return retry, err
-	}
-
-	f.metrics.collectCycleDuration(time.Since(start))
-
-	return
-}
-
-func (f *Flow) do(e *types.Event) (retry bool, err error) {
-	blog.Infof("run flow, received %s %s event, oid: %s", f.Collection, e.OperationType, e.Oid)
-	blog.V(5).Infof("event doc detail: %s, oid: %s", e.DocBytes, e.Oid)
-
-	// validate the event is valid or not.
-	// the invalid event will be dropped.
-	if err := f.key.Validate(e.DocBytes); err != nil {
-		blog.Errorf("run flow, received %s event, but got invalid event, doc: %s err: %v, oid: %s", f.Collection, e.DocBytes, err, e.Oid)
-		return false, err
-	}
-
-	keys, err := redis.Client().HMGet(context.Background(), f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
-	if err != nil {
-		f.metrics.collectRedisError()
-		return true, err
-	}
-
-	var head, tail string
-	var ok bool
-
-	if keys[0] != nil {
-		head, ok = keys[0].(string)
-		if !ok {
-			return false, fmt.Errorf("got invalid head value: %v", keys[0])
-		}
-	}
-
-	if keys[1] != nil {
-		tail, ok = keys[1].(string)
-		if !ok {
-			return false, fmt.Errorf("got invalid tail value: %v", keys[1])
-		}
-	}
-
-	switch {
-	case head == "" && tail == "":
-		// this is ok, we initialize the head and tail.
-		return f.initializeHeadTailNode(e)
-
-	case head == "" && tail != "":
-		// the event hashmap chain has broken, this should not happen.
-		// we need to repair the hashmap now.
-		// TODO: repair the hashmap chain.
-
-	case head != "" && tail == "":
-		// the event hashmap chain has broken, this should not happen.
-		// we need to repair the hashmap now.
-		// TODO: repair the hashmap chain.
-	}
-
-	// head and tail is all not empty, it's good.
-	// now it's time to insert the event node.
-
-	// get the previous node from the tail node's next cursor
-	prevCursor := gjson.Get(tail, "next_cursor").String()
-	if prevCursor == "" {
-		blog.Errorf("get previous cursor from tail node, but next_cursor is empty, tail: %s, oid: %s", tail, e.Oid)
-		return false, errors.New("next_cursor is empty in tail node")
-	}
-
-	// get previous node with previous cursor
-	prev, err := redis.Client().HGet(context.Background(), f.key.MainHashKey(), prevCursor).Result()
-	if err != nil {
-		if redis.IsNilErr(err) {
-			blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
-			return false, err
-		}
-
-		f.metrics.collectRedisError()
-		blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
-		return true, err
-	}
-
-	prevNode := new(watch.ChainNode)
-	if err := json.Unmarshal([]byte(prev), prevNode); err != nil {
-		blog.Errorf("run flow, unmarshal previous node failed, node: %s, err: %v, oid: %s", prev, err, e.Oid)
-		return false, err
-	}
-
-	// insert a node and update the tail node.
-	return f.insertNewNode(prevCursor, prevNode, e)
-}
-
-func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
-	name := f.key.Name(e.DocBytes)
-
-	currentCursor, err := watch.GetEventCursor(f.Collection, e)
-	if err != nil {
-		blog.Errorf("initialize head tail node, but get cursor failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
-		return false, err
-	}
-
-	newNode := &watch.ChainNode{
-		ClusterTime: e.ClusterTime,
-		Oid:         e.Oid,
-		EventType:   watch.ConvertOperateType(e.OperationType),
-		Token:       e.Token.Data,
-		Cursor:      currentCursor,
-		NextCursor:  f.key.TailKey(),
-	}
-
-	nByte, err := json.Marshal(newNode)
-	if err != nil {
-		blog.Errorf("run flow, marshal new node failed, node: %v, name: %s, err: %v oid: %s", *newNode, name, err, e.Oid)
-		return false, err
-	}
-
-	headNode := &watch.ChainNode{
-		Cursor:     f.key.HeadKey(),
-		NextCursor: currentCursor,
-	}
-	hByte, err := json.Marshal(headNode)
-	if err != nil {
-		blog.Errorf("run flow, marshal head node failed, node: %v, name: %s, err: %v, oid: %s", *headNode, name, err, e.Oid)
-		return false, err
-	}
-
-	// when tail node is all empty, then the head node is must next to the tail node
-	tailNode := &watch.ChainNode{
-		Token:      e.Token.Data,
-		Cursor:     f.key.TailKey(),
-		NextCursor: currentCursor,
-	}
-
-	tByte, err := json.Marshal(tailNode)
-	if err != nil {
-		blog.Errorf("run flow, marshal tail node failed, node: %v, name: %s, err: %v, oid: %s", *tailNode, name, err, e.Oid)
-		return false, err
-	}
-
-	val := map[string]interface{}{
-		currentCursor:   string(nByte),
-		f.key.HeadKey(): string(hByte),
-		f.key.TailKey(): string(tByte),
-	}
-
-	detail := types.EventDetail{
-		Detail:        types.JsonString(e.DocBytes),
-		UpdatedFields: e.ChangeDesc.UpdatedFields,
-		RemovedFields: e.ChangeDesc.RemovedFields,
-	}
-	detailBytes, err := json.Marshal(detail)
-	if err != nil {
-		blog.Errorf("run flow, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s", name, detail, err, e.Oid)
-		return false, err
-	}
-
-	getLock := f.getLockWithRetry(f.key.LockKey(), e.Oid)
-	if !getLock {
-		blog.Errorf("run flow, set head and tail key, name: %s, op: %s, do not get lock and return, oid: %s", name, e.OperationType, e.Oid)
-		return true, errors.New("get lock failed")
-	}
-
-	// already get the lock. prepare to release the lock.
-	releaseLock := func() {
-		if err := redis.Client().Del(context.Background(), f.key.LockKey()).Err(); err != nil {
-			blog.ErrorfDepthf(1, "run flow, set head and tail key, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
-		}
-	}
-
-	pipe := redis.Client().Pipeline()
-	pipe.HMSet(f.key.MainHashKey(), val)
-	pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), 0)
-	if _, err := pipe.Exec(); err != nil {
-		f.metrics.collectRedisError()
-		releaseLock()
-		blog.Errorf("run flow, set head and tail key failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
-		return true, err
-	}
-	releaseLock()
-	blog.Infof("insert watch event for %s success, name: %s, cursor: %s, oid: %s", f.Collection, name, currentCursor, e.Oid)
-	return false, nil
-}
-
-func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
-	blog.Infof("received delete %s event, oid: %s", f.Collection, e.Oid)
-
+	// collect event related metrics
 	start := time.Now()
 	defer func() {
-		if err != nil {
+		if retry {
+			f.metrics.collectRetryError()
+		}
+		if hasError {
 			return
 		}
-		f.metrics.collectCycleDuration(time.Since(start))
+		f.metrics.collectCycleDuration(time.Since(start) / time.Duration(eventLen))
 	}()
 
-	filter := mapstr.MapStr{
-		"oid": e.Oid,
+	ids, err := f.watchDB.NextSequences(context.Background(), f.key.ChainCollection(), eventLen)
+	if err != nil {
+		blog.Errorf("get event ids for collection: %s failed, err: %v", f.key.ChainCollection(), err)
+		return true
 	}
 
-	if f.Collection == common.BKTableNameBaseHost {
-		doc := new(hostArchive)
-		err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), doc)
+	// process events into db chain nodes to store in db and details to store in redis
+	pipe := redis.Client().Pipeline()
+	for index, e := range es {
+		// collect event's basic metrics
+		f.metrics.collectBasic(e)
+
+		oids[index] = e.Oid
+		id := ids[index]
+		name := f.key.Name(e.DocBytes)
+		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e, id)
 		if err != nil {
-			f.metrics.collectMongoError()
-			blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
-				f.Collection, e.Oid, err)
-			if strings.Contains(err.Error(), "document not found") {
-				return false, err
+			blog.Errorf("get event cursor failed, name: %s, err: %v, oid: %s ", name, err, e.Oid)
+			return false
+		}
+
+		chainNode := watch.ChainNode{
+			ID:          id,
+			ClusterTime: e.ClusterTime,
+			Oid:         e.Oid,
+			EventType:   watch.ConvertOperateType(e.OperationType),
+			Token:       e.Token.Data,
+			Cursor:      currentCursor,
+		}
+
+		if instanceID := f.key.InstanceID(e.DocBytes); instanceID > 0 {
+			chainNode.InstanceID = instanceID
+		}
+		chainNodes[index] = chainNode
+
+		// get delete event related detail from cmdb
+		if e.OperationType == types.Delete {
+			filter := mapstr.MapStr{
+				"oid": e.Oid,
 			}
-			return true, err
-		}
 
-		byt, err := json.Marshal(doc.Detail)
-		if err != nil {
-			blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v", f.Collection, e.Oid, err)
-			return false, err
-		}
-		e.DocBytes = byt
+			if f.key.Collection() == common.BKTableNameBaseHost {
+				doc := new(hostArchive)
+				err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), doc)
+				if err != nil {
+					f.metrics.collectMongoError()
+					blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, "+
+						"oid: %s, err: %v", f.key.Collection(), e.Oid, err)
+					if strings.Contains(err.Error(), "document not found") {
+						return false
+					}
+					return true
+				}
 
-	} else {
+				byt, err := json.Marshal(doc.Detail)
+				if err != nil {
+					blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
+						f.key.Collection(), e.Oid, err)
+					return false
+				}
+				e.DocBytes = byt
+			} else {
+				doc := bsonx.Doc{}
+				err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
+				if err != nil {
+					f.metrics.collectMongoError()
 
-		doc := bsonx.Doc{}
-		err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
-		if err != nil {
-			f.metrics.collectMongoError()
+					blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, "+
+						"oid: %s, err: %v", f.key.Collection(), e.Oid, err)
+					if strings.Contains(err.Error(), "document not found") {
+						return false
+					}
+					return true
+				}
 
-			blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
-				f.Collection, e.Oid, err)
-			if strings.Contains(err.Error(), "document not found") {
-				return false, err
+				byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+				if err != nil {
+					f.metrics.collectMongoError()
+
+					blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
+						f.key.Collection(), e.Oid, err)
+					return false
+				}
+				e.DocBytes = byt
 			}
-			return true, err
 		}
 
-		byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+		detail := types.EventDetail{
+			Detail:        types.JsonString(e.DocBytes),
+			UpdatedFields: e.ChangeDesc.UpdatedFields,
+			RemovedFields: e.ChangeDesc.RemovedFields,
+		}
+		detailBytes, err := json.Marshal(detail)
 		if err != nil {
-			f.metrics.collectMongoError()
-
-			blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v", f.Collection, e.Oid, err)
-			return false, err
+			blog.Errorf("run flow, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s", name,
+				detail, err, e.Oid)
+			return false
 		}
-		e.DocBytes = byt
+		pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), time.Duration(f.key.TTLSeconds())*time.Second)
 	}
 
-	return f.do(e)
-}
-
-// getStartToken get the started token when the system is started.
-// if this token is empty, then system need to watch from now on.
-func (f *Flow) getStartToken() (token string, err error) {
-	tail, err := redis.Client().HGet(context.Background(), f.key.MainHashKey(), f.key.TailKey()).Result()
-	if err != nil {
-		if !redis.IsNilErr(err) {
-			f.metrics.collectRedisError()
-			return "", err
-		}
-		// the tail key is not exist.
-		return "", nil
-	}
-
-	tailNode := new(watch.ChainNode)
-	if err := json.Unmarshal([]byte(tail), tailNode); err != nil {
-		return "", err
-	}
-
-	return tailNode.Token, nil
-}
-
-// insertNewNode insert the new event to hashmap's node chain list.
-// update the previous node to link the new node.
-// set the tail node line to the new node.
-// if an error occurred, then the caller should check the retry is true or not, if true, then this event
-// need to be retry later.
-func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *types.Event) (retry bool, err error) {
-	name := f.key.Name(e.DocBytes)
-
-	currentCursor, err := watch.GetEventCursor(f.Collection, e)
-	if err != nil {
-		blog.Errorf("get event cursor failed, name: %s, err: %v, oid: %s ", name, err, e.Oid)
-		return false, err
-	}
-	prevNode.NextCursor = currentCursor
-
-	// create a new node
-	newNode := &watch.ChainNode{
-		ClusterTime: e.ClusterTime,
-		Oid:         e.Oid,
-		EventType:   watch.ConvertOperateType(e.OperationType),
-		Token:       e.Token.Data,
-		Cursor:      currentCursor,
-		NextCursor:  f.key.TailKey(),
-	}
-
-	nBytes, err := json.Marshal(newNode)
-	if err != nil {
-		blog.Errorf("run flow, marshal new node failed, name: %s, node: %+v err: %v, oid: %s", name, *newNode, err, e.Oid)
-		return false, err
-	}
-
-	// new tail node
-	tailNode := &watch.ChainNode{
-		Token:      e.Token.Data,
-		Cursor:     f.key.TailKey(),
-		NextCursor: currentCursor,
-	}
-	tBytes, err := json.Marshal(tailNode)
-	if err != nil {
-		blog.Errorf("run flow, marshal tail node failed, name: %s, node: %+v, err: %v, oid: %s", name, *tailNode, err, e.Oid)
-		return false, err
-	}
-
-	pBytes, err := json.Marshal(prevNode)
-	if err != nil {
-		blog.Errorf("run flow, marshal previous node failed, name: %s, node： %+v err: %v, oid: %s", name, *prevNode, err, e.Oid)
-		return false, err
-	}
-
-	values := map[string]interface{}{
-		prevCursor:      string(pBytes),
-		currentCursor:   string(nBytes),
-		f.key.TailKey(): string(tBytes),
-	}
-
-	detail := types.EventDetail{
-		Detail:        types.JsonString(e.DocBytes),
-		UpdatedFields: e.ChangeDesc.UpdatedFields,
-		RemovedFields: e.ChangeDesc.RemovedFields,
-	}
-	detailBytes, err := json.Marshal(detail)
-	if err != nil {
-		blog.Errorf("run flow, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s", name, detail, err, e.Oid)
-		return false, err
-	}
-
-	getLock := f.getLockWithRetry(f.key.LockKey(), e.Oid)
+	getLock := f.getLockWithRetry(f.key.LockKey(), oids)
 	if !getLock {
-		blog.Errorf("run flow, insert node, name: %s, op: %s, do not get lock and return, oid: %s", name, e.OperationType, e.Oid)
-		return true, errors.New("get lock failed")
+		blog.Errorf("run flow, insert nodes, do not get lock and return, oids: %+v", oids)
+		return true
 	}
 
 	// already get the lock. prepare to release the lock.
-	releaseLock := func() {
+	defer func() {
 		if err := redis.Client().Del(context.Background(), f.key.LockKey()).Err(); err != nil {
 			f.metrics.collectLockError()
-			blog.ErrorfDepthf(1, "run flow, insert node, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
+			blog.ErrorJSON("run flow, insert nodes, release lock failed, err: %s, oids: %+v", err, oids)
+		}
+	}()
+
+	// store details at first, in case those watching cmdb events read chain when details are not inserted yet
+	if _, err := pipe.Exec(); err != nil {
+		f.metrics.collectRedisError()
+		blog.Errorf("run flow, but insert details failed, err: %v, oids: %+v", err, oids)
+		return true
+	}
+
+	// store chain node to db, if has duplicate events, update their ids, then insert the new events
+	if err := f.watchDB.Table(f.key.ChainCollection()).Insert(context.Background(), chainNodes); err != nil {
+		if !strings.Contains(err.Error(), "duplicate key error") {
+			f.metrics.collectMongoError()
+			blog.Errorf("run flow, but insert chain nodes failed, err: %v, oids: %+v", err, oids)
+			return true
+		}
+
+		cursors := make([]string, eventLen)
+		chainNodeMap := make(map[string]watch.ChainNode)
+		for index, chainNode := range chainNodes {
+			cursors[index] = chainNode.Cursor
+			chainNodeMap[chainNode.Cursor] = chainNode
+		}
+		filter := map[string]interface{}{
+			common.BKCursorField: map[string]interface{}{common.BKDBIN: cursors},
+		}
+
+		existNodes := make([]watch.ChainNode, 0)
+		if err := f.watchDB.Table(f.key.ChainCollection()).Find(filter).All(context.Background(), &existNodes); err != nil {
+			f.metrics.collectMongoError()
+			blog.Errorf("run flow, but get chain nodes failed, err: %v, oids: %+v", err, oids)
+			return true
+		}
+
+		for _, existNode := range existNodes {
+			updateFilter := map[string]interface{}{
+				common.BKCursorField: existNode.Cursor,
+			}
+			updateData := map[string]interface{}{
+				common.BKFieldID: chainNodeMap[existNode.Cursor].ID,
+			}
+
+			if err := f.watchDB.Table(f.key.ChainCollection()).Update(context.Background(), updateFilter, updateData); err != nil {
+				f.metrics.collectMongoError()
+				blog.Errorf("run flow, but update exist chain node(%s) failed, err: %s", existNode, err)
+				return true
+			}
+
+			delete(chainNodeMap, existNode.Cursor)
+		}
+
+		insertNodes := make([]watch.ChainNode, 0)
+		for _, chainNode := range chainNodeMap {
+			insertNodes = append(insertNodes, chainNode)
+		}
+
+		if err := f.watchDB.Table(f.key.ChainCollection()).Insert(context.Background(), chainNodes); err != nil {
+			f.metrics.collectMongoError()
+			blog.Errorf("run flow, but insert chain nodes failed, err: %v, oids: %+v", err, oids)
+			return true
 		}
 	}
 
-	pipe := redis.Client().Pipeline()
-	pipe.HMSet(f.key.MainHashKey(), values)
-	pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), 0)
-	if _, err := pipe.Exec(); err != nil {
-		f.metrics.collectRedisError()
-		releaseLock()
-		blog.Errorf("run flow, but insert node failed, name: %s, op: %s, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
-		return true, err
-	}
-
-	// release the lock immediately.
-	releaseLock()
-	blog.Infof("insert watch event for %s success, op: %s cursor: %s, name: %s, oid: %s",
-		f.Collection, e.OperationType, currentCursor, name, e.Oid)
-	return false, nil
+	blog.Infof("insert watch event for %s success, oids: %+v", f.key.Collection(), oids)
+	hasError = false
+	return false
 }
 
-func (f *Flow) getLockWithRetry(name string, oid string) bool {
+func (f *Flow) getLockWithRetry(name string, oids []string) bool {
 	getLock := false
 	for retry := 0; retry < 10; retry++ {
 		// get operate lock to avoid concurrent revise the chain
 		success, err := redis.Client().SetNX(context.Background(), f.key.LockKey(), "lock", 5*time.Second).Result()
 		if err != nil {
 			f.metrics.collectLockError()
-			blog.Errorf("get lock failed, name: %s, err: %v, oid: %s", name, err, oid)
+			blog.Errorf("get lock failed, name: %s, err: %v, oids: %+v", name, err, oids)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
 		if !success {
-			blog.Warnf("do not get lock, name: %s, oid: %s", name, oid)
+			blog.Warnf("do not get lock, name: %s, oids: %+v", name, oids)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
@@ -613,4 +361,68 @@ func (f *Flow) getLockWithRetry(name string, oid string) bool {
 		break
 	}
 	return getLock
+}
+
+type flowTokenHandler struct {
+	key     Key
+	watchDB dal.DB
+	metrics *eventMetrics
+}
+
+func NewFlowTokenHandler(key Key, watchDB dal.DB, metrics *eventMetrics) types.TokenHandler {
+	return &flowTokenHandler{
+		key:     key,
+		watchDB: watchDB,
+		metrics: metrics,
+	}
+}
+
+// SetLastWatchToken set start watch token to redis
+func (f *flowTokenHandler) SetLastWatchToken(ctx context.Context, token string) error {
+	lastTokenKey := f.key.LastTokenKey()
+
+	err := redis.Client().Set(ctx, lastTokenKey, token, time.Duration(f.key.TTLSeconds())*time.Second).Err()
+	if err != nil {
+		f.metrics.collectRedisError()
+		blog.Errorf("set last watch token failed, key: %s, token: %s, err: %v", lastTokenKey, token, err)
+		return err
+	}
+
+	return nil
+}
+
+// GetStartWatchToken get start watch token from redis first, if an error occurred, get from db and set redis
+func (f *flowTokenHandler) GetStartWatchToken(ctx context.Context) (token string, err error) {
+	lastTokenKey := f.key.LastTokenKey()
+
+	token, err = redis.Client().Get(context.Background(), lastTokenKey).Result()
+	if err != nil {
+		blog.Errorf("get last watch token from redis failed, key: %s, err: %v", lastTokenKey, err)
+		if !redis.IsNilErr(err) {
+			f.metrics.collectRedisError()
+		}
+
+		tailNode := new(watch.ChainNode)
+		if err := f.watchDB.Table(f.key.ChainCollection()).Find(map[string]interface{}{}).Fields(common.BKTokenField).
+			Sort(common.BKFieldID+":-1").One(context.Background(), tailNode); err != nil {
+
+			if !f.watchDB.IsNotFoundError(err) {
+				f.metrics.collectMongoError()
+				blog.Errorf("get last watch token from mongo failed,err: %v", err)
+				return "", err
+			}
+			// the tail node is not exist.
+			return "", nil
+		}
+
+		err := redis.Client().Set(ctx, lastTokenKey, token, time.Duration(f.key.TTLSeconds())*time.Second).Err()
+		if err != nil {
+			f.metrics.collectRedisError()
+			blog.Errorf("set last watch token failed, key: %s, token: %s, err: %v", lastTokenKey, token, err)
+		}
+
+		return tailNode.Token, nil
+	}
+
+	return token, nil
 }

@@ -27,8 +27,9 @@ type ServerOption struct {
 
 // Config export
 type Config struct {
-	Mongo mongo.Config
-	Redis redis.Config
+	Mongo      mongo.Config
+	WatchMongo mongo.Config
+	Redis      redis.Config
 }
 
 //NewServerOption create a ServerOption object

@@ -590,6 +590,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		archives[idx] = metadata.DeleteArchive{
 			Oid:    doc.Lookup("_id").ObjectID().Hex(),
 			Detail: doc.Delete("_id"),
+			Coll:   c.collName,
 		}
 	}
 
@@ -713,6 +714,10 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	}
 	if index.Name != "" {
 		createIndexOpt.Name = &index.Name
+	}
+
+	if index.ExpireAfterSeconds != 0 {
+		createIndexOpt.SetExpireAfterSeconds(index.ExpireAfterSeconds)
 	}
 
 	createIndexInfo := mongo.IndexModel{

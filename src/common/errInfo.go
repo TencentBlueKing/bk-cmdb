@@ -510,6 +510,9 @@ const (
 	// CCErrEventOperateSuccessBUtSentEventFailed failed to sent event
 	CCErrEventPushEventFailed = 1103006
 
+	CCErrEventChainNodeNotExist = 1103007
+	CCErrEventDetailNotExist    = 1103008
+
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000
 

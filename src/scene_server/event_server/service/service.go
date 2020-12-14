@@ -40,6 +40,9 @@ type Service struct {
 	// db is cc main database.
 	db dal.RDB
 
+	// watchDB is cc event watch database.
+	watchDB dal.DB
+
 	// cache is cc redis client.
 	cache redis.Client
 
@@ -57,6 +60,11 @@ func NewService(ctx context.Context, engine *backbone.Engine) *Service {
 // SetDB setups database.
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
+}
+
+// SetWatchDB setups event watch database.
+func (s *Service) SetWatchDB(watchDB dal.DB) {
+	s.watchDB = watchDB
 }
 
 // SetCache setups cc main redis.
@@ -135,6 +143,9 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// mongodb health status info.
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
+
+	// event watch mongodb health status info.
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo+":watch", s.watchDB.Ping()))
 
 	// cc main redis health status info.
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err()))

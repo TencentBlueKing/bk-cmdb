@@ -18,7 +18,7 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
-const cursorSample = "MQ0yDTVlYjM4NTk3NDc3MGExMThmNDkyMmFiZQ0xNTg4ODUzNjUyDTA="
+const cursorSample = "Mg0yDTVlYjM4NTk3NDc3MGExMThmNDkyMmFiZQ0xNTg4ODUzNjUyDTANMQ=="
 
 func TestCursorEncode(t *testing.T) {
 	cursor := Cursor{
@@ -26,8 +26,9 @@ func TestCursorEncode(t *testing.T) {
 			Sec:  uint32(1588853652),
 			Nano: 0,
 		},
-		Oid:  "5eb385974770a118f4922abe",
-		Type: Host,
+		Oid:     "5eb385974770a118f4922abe",
+		Type:    Host,
+		EventID: uint64(1),
 	}
 	encode, err := cursor.Encode()
 	if err != nil {
@@ -65,6 +66,11 @@ func TestCursorDecode(t *testing.T) {
 
 	if cursor.Type != Host {
 		t.Errorf("decode cursor, got invalid cursor type: %s", cursor.Type)
+		return
+	}
+
+	if cursor.EventID != uint64(1) {
+		t.Errorf("decode cursor, got invalid cursor event id: %d", cursor.EventID)
 		return
 	}
 

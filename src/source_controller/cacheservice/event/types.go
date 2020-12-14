@@ -18,6 +18,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream"
 )
 
@@ -50,10 +51,10 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 }
 
 type FlowOptions struct {
-	Collection string
-	key        Key
-	watch      stream.Interface
-	isMaster   discovery.ServiceManageInterface
+	key      Key
+	watch    stream.LoopInterface
+	isMaster discovery.ServiceManageInterface
+	watchDB  dal.DB
 }
 
 type hostArchive struct {

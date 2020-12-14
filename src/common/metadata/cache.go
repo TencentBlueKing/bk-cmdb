@@ -12,6 +12,8 @@
 
 package metadata
 
+import "configcenter/src/common/watch"
+
 type SearchHostWithInnerIPOption struct {
 	InnerIP string `json:"bk_host_innerip"`
 	CloudID int64  `json:"bk_cloud_id"`
@@ -34,6 +36,7 @@ type ListWithIDOption struct {
 
 type DeleteArchive struct {
 	Oid    string      `json:"oid" bson:"oid"`
+	Coll   string      `json:"coll" bson:"coll"`
 	Detail interface{} `json:"detail" bson:"detail"`
 }
 
@@ -47,4 +50,43 @@ type ListHostWithPage struct {
 	// sort field is not used.
 	// max page limit is 1000
 	Page BasePage `json:"page"`
+}
+
+type SearchEventNodeOption struct {
+	Resource   watch.CursorType       `json:"bk_resource"`
+	Filter     map[string]interface{} `json:"filter"`
+	Sort       string                 `json:"sort"`
+	WithDetail bool                   `json:"with_detail"`
+}
+
+type SearchFollowingEventNodesOption struct {
+	Resource watch.CursorType       `json:"bk_resource"`
+	Filter   map[string]interface{} `json:"filter"`
+	Sort     string                 `json:"sort,omitempty"`
+	Limit    int                    `json:"limit"`
+}
+
+type SearchEventDetailsOption struct {
+	Resource watch.CursorType `json:"bk_resource"`
+	Cursors  []string         `json:"cursors"`
+}
+
+type SearchEventNodeResp struct {
+	BaseResp `json:",inline"`
+	Data     *EventNodeWithDetail `json:"data"`
+}
+
+type EventNodeWithDetail struct {
+	Node   *watch.ChainNode `json:"node"`
+	Detail string           `json:"detail"`
+}
+
+type SearchEventNodesResp struct {
+	BaseResp `json:",inline"`
+	Data     []*watch.ChainNode `json:"data"`
+}
+
+type SearchEventDetailsResp struct {
+	BaseResp `json:",inline"`
+	Data     []string `json:"data"`
 }
