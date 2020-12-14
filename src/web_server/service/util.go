@@ -11,11 +11,9 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins"
 
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 func parseModelBizID(data string) (int64, error) {
@@ -32,8 +30,8 @@ func parseModelBizID(data string) (int64, error) {
 	return model.BizID, nil
 }
 
-//应依照"bk_obj_id"和"bk_property_type":"objuser"查询"cc_ObjAttDes"集合,得到"bk_property_id"的值;
-//然后以它的值为key,取得Info中的value,然后以value作为param访问ESB,得到其中文名。
+// 依照"bk_obj_id"和"bk_property_type":"objuser"查询"cc_ObjAttDes"集合,得到"bk_property_id"的值;
+// 然后以它的值为key,取得Info中的value,然后以value作为param访问ESB,得到其中文名。
 func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, infoList []mapstr.MapStr) (map[string]string, []string, error) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	cond := metadata.QueryCondition{
@@ -57,7 +55,7 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 	propertyList := []string{}
 	ok := true
 	for _, info := range infoList {
-		//主机模型的info内容比inst模型的info内容多封装了一层，需要将内容提取出来。
+		// 主机模型的info内容比inst模型的info内容多封装了一层，需要将内容提取出来。
 		if objID == common.BKInnerObjIDHost {
 			info, ok = info[common.BKInnerObjIDHost].(map[string]interface{})
 			if !ok {
@@ -81,7 +79,7 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 	}
 	propertyList = util.RemoveDuplicatesAndEmpty(propertyList)
 	userList := util.RemoveDuplicatesAndEmpty(usernameList)
-	//get username from esb
+	// get username from esb
 	usernameMap, err := s.getUsernameFromEsb(c, userList)
 	if err != nil {
 		blog.ErrorJSON("get username map from ESB failed, err: %s, rid: %s", err.Error(), rid)
@@ -89,28 +87,6 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 	}
 
 	return usernameMap, propertyList, nil
-}
-
-func mockUserList(c *gin.Context, rid string) ([]*metadata.LoginSystemUserInfo, bool) {
-	session := sessions.Default(c)
-	skipLogin := session.Get(webCommon.IsSkipLogin)
-	skipLogins, ok := skipLogin.(string)
-	if ok && "1" == skipLogins {
-		blog.V(5).Infof("use skip login flag: %v, rid: %s", skipLogin, rid)
-		adminData := []*metadata.LoginSystemUserInfo{
-			{
-				CnName: "admin",
-				EnName: "admin",
-			},
-			{
-				CnName: "吴彦祖",
-				EnName: "Daniel-Wu",
-			},
-		}
-		return adminData, true
-	} else {
-		return nil, false
-	}
 }
 
 func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[string]string, error) {
@@ -123,16 +99,12 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		params["exact_lookups"] = userListStr
 		params["fields"] = "username,display_name"
 		user := plugins.CurrentPlugin(c, s.Config.Version)
-		//如果是skip-auth模式,这里mock一个返回值
-		userListEsb, skipLogin := mockUserList(c, rid)
-		if skipLogin != true {
-			var errNew *errors.RawErrorInfo
-			userListEsb, errNew = user.GetUserList(c, s.Config.ConfigMap)
-			if errNew != nil {
-				blog.ErrorJSON("get user list from ESB failed, err: %s, rid: %s", errNew.ToCCError(defErr).Error(), rid)
-				userListEsb = []*metadata.LoginSystemUserInfo{}
-				return nil, errNew.ToCCError(defErr)
-			}
+
+		userListEsb, errNew := user.GetUserList(c, s.Config.ConfigMap)
+		if errNew != nil {
+			blog.ErrorJSON("get user list from ESB failed, err: %s, rid: %s", errNew.ToCCError(defErr).Error(), rid)
+			userListEsb = []*metadata.LoginSystemUserInfo{}
+			return nil, errNew.ToCCError(defErr)
 		}
 
 		for _, userInfo := range userListEsb {

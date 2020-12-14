@@ -145,7 +145,6 @@ func (s *Service) ExportInst(c *gin.Context) {
 		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail, objID).Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))
 	}
-	blog.Infof("ExportInst, got usernameMap from ESB, usernameMap: %v, propertyList: %v", usernameMap, propertyList)
 
 	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap, propertyList)
 	if nil != err {
