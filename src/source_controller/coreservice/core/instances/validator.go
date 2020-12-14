@@ -67,6 +67,7 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 	}
 	if len(uniqueAttrs) == 0 {
 		blog.Errorf("[validUpdateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, kit.Rid)
+		uniqueAttrs = make([]metadata.ObjectUnique, 0)
 	}
 	valid.uniqueAttrs = uniqueAttrs
 

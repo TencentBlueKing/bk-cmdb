@@ -63,6 +63,12 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 
 // validUpdateUnique valid update unique
 func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapStr, instanceData mapstr.MapStr, instID int64, instanceManager *instanceManager) error {
+	// we need the complete updated instance data, override the db's original instance with updataData
+	// considering the following scene
+	// when updating a module's name, the whole update data is just {"bk_module_name":"new_name"}
+	// as we know, the module's unique key has 3 fields: bk_biz_id, bk_set_id and bk_module_name
+	// we can't just validate the "bk_module_name", but validate "bk_biz_id - bk_set_id - bk_module_name" as a whole
+	// we need know all of the three fields value so that we can validate if the module's name is duplicate
 	for k, v := range updateData {
 		instanceData[k] = v
 	}
@@ -73,6 +79,17 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 	}
 
 	for _, opt := range uniqueOpts {
+		needCheck := false
+		// only check the unique field which need update
+		for _, key := range opt.UniqueKeys {
+			if _, ok := updateData[key]; ok {
+				needCheck = true
+			}
+		}
+		if !needCheck {
+			continue
+		}
+
 		cond := opt.Condition
 		// only search data not in disable status
 		cond.Element(&mongo.Neq{Key: common.BKDataStatusField, Val: common.DataStatusDisabled})
@@ -172,17 +189,14 @@ func (valid *validator) hasUniqueFields(updateData mapstr.MapStr, uniqueOpts []v
 			}
 		}
 	}
-	return false, nil
+	return false, make([]string, 0)
 }
 
 // validUpdateUniqFieldInMulti validate if it update unique field in multiple records
-func (valid *validator) validUpdateUniqFieldInMulti(kit *rest.Kit, updateData mapstr.MapStr, instanceData mapstr.MapStr, instanceManager *instanceManager) error {
-	for k, v := range updateData {
-		instanceData[k] = v
-	}
-	uniqueOpts, err := valid.getValidUniqueOptions(kit, instanceData, instanceManager)
+func (valid *validator) validUpdateUniqFieldInMulti(kit *rest.Kit, updateData mapstr.MapStr, instanceManager *instanceManager) error {
+	uniqueOpts, err := valid.getValidUniqueOptions(kit, updateData, instanceManager)
 	if err != nil {
-		blog.Errorf("validUpdateUniqFieldInMulti failed, getValidUniqueOptions error %v, data: %#v, rid: %s", err, instanceData, kit.Rid)
+		blog.Errorf("validUpdateUniqFieldInMulti failed, getValidUniqueOptions error %v, updateData: %#v, rid: %s", err, updateData, kit.Rid)
 		return err
 	}
 
@@ -191,15 +205,11 @@ func (valid *validator) validUpdateUniqFieldInMulti(kit *rest.Kit, updateData ma
 		return nil
 	}
 
-	if hasUniqueField == true {
-		propertyNames := make([]string, 0)
-		lang := util.GetLanguage(kit.Header)
-		language := valid.language.CreateDefaultCCLanguageIf(lang)
-		for _, key := range uniqueFields {
-			propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key), valid.properties[key].PropertyName, key))
-		}
-		return valid.errIf.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
+	propertyNames := make([]string, 0)
+	lang := util.GetLanguage(kit.Header)
+	language := valid.language.CreateDefaultCCLanguageIf(lang)
+	for _, key := range uniqueFields {
+		propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key), valid.properties[key].PropertyName, key))
 	}
-
-	return nil
+	return valid.errIf.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 }

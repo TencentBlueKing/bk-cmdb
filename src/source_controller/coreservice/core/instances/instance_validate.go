@@ -69,7 +69,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 		if validTye == common.ValidUpdate {
 			bizID, err := m.getHostRelatedBizID(kit, instID)
 			if err != nil {
-				blog.ErrorJSON("getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, kit.Rid)
+				blog.Errorf("getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, kit.Rid)
 				return 0, kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
 			}
 			return bizID, nil
