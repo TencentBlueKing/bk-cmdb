@@ -199,6 +199,9 @@
             width: 5px;
             height: 100%;
             cursor: col-resize;
+            &:hover {
+                background-image: linear-gradient(to right, transparent, transparent 2px, $primaryColor 2px, $primaryColor 3px, transparent 3px, transparent);
+            }
         }
         &.bottom {
             top: 100%;
@@ -206,6 +209,9 @@
             width: 100%;
             height: 5px;
             cursor: row-resize;
+            &:hover {
+                background-image: linear-gradient(to bottom, transparent, transparent 2px, $primaryColor 2px, $primaryColor 3px, transparent 3px, transparent);
+            }
         }
     }
     .resize-proxy{
@@ -216,12 +222,12 @@
         &.right {
             top: 0;
             height: 100%;
-            border-left: 1px dashed #d1d5e0;
+            border-left: 1px dashed $primaryColor;
         }
         &.bottom {
             left: 0;
             width: 100%;
-            border-top: 1px dashed #d1d5e0;
+            border-top: 1px dashed $primaryColor;
         }
     }
     .resize-mask {
