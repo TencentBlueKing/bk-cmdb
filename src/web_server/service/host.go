@@ -130,7 +130,6 @@ func (s *Service) ExportHost(c *gin.Context) {
 		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail, objID).Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))
 	}
-	blog.Infof("ExportHost, got usernameMap from ESB, usernameMap: %v, propertyList: %v", usernameMap, propertyList)
 
 	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, &metadata.Metadata{}, usernameMap, propertyList)
 	if nil != err {

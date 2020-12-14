@@ -65,7 +65,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
 
-		//使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
+		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
 		rowMap = replaceEnName(rowMap, usernameMap, propertyList)
 
 		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
@@ -126,7 +126,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
 
-		//使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
+		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
 		rowMap = replaceEnName(rowMap, usernameMap, propertyList)
 
 		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
