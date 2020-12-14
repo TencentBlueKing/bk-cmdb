@@ -11,7 +11,7 @@
                 :key="head.id"
                 :prop="head.id"
                 :label="head.name"
-                show-overflow-tooltip>
+                :show-overflow-tooltip="head.id !== 'bind_info'">
                 <template slot-scope="{ row }">
                     <cmdb-property-value v-if="head.id !== 'bind_info'"
                         :value="row[head.id]"

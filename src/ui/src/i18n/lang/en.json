@@ -1381,5 +1381,14 @@
     "新增收藏条件": "New Collection",
     "立即跳转": "Redirect immediately",
     "转移主机到其他业务": "Transfer host to ohter business",
-    "请先选择业务": "Please select business"
+    "请先选择业务": "Please select business",
+    "继续创建": "Keep creating",
+    "服务模板创建成功，您可以在XXX": "The service template is created successfully, you can apply it in {link1} or use it to create a module in {link2}",
+    "成功更新模板进程，您可以通过XXX": "Successfully update the template process, you can update the service instance via {link}",
+    "同步功能": "Synchronization function",
+    "确认修改名称": "Confirm to modify the name",
+    "确认修改名称提示": "Modifying the service template name will immediately apply to all module instances. If you configure filter conditions based on the name, it may affect the query results. Do you want to confirm the modification?",
+    "未配置": "Not configured",
+    "创建集群模板成功提示": "Create a set template successfully, you can jump to the business topology to create a set instance",
+    "集群模板修改成功提示": "The set template is successfully modified, you can synchronize this configuration to an existing set instance or use the current configuration to create a new set"
 }
