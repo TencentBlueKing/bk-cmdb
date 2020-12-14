@@ -174,8 +174,11 @@
                 this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
-                        mode: 'edit',
+                        mode: 'view',
                         templateId: row.id
+                    },
+                    query: {
+                        edit: 1
                     },
                     history: true
                 })
