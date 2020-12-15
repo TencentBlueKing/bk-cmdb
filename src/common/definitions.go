@@ -848,6 +848,9 @@ const (
 
 	// BatchHostAddMaxRow batch sync add host max row
 	BatchHostAddMaxRow = 128
+
+	// ExcelImportMaxRow excel import max row
+	ExcelImportMaxRow = 1000
 )
 
 const (
@@ -883,8 +886,8 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey             = BKCacheKeyV3Prefix + "event:inst_id"
-	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
+	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
 )
 
 // api cache keys
@@ -1237,4 +1240,3 @@ const (
 const (
 	BKDefaultConfigCenter = "zookeeper"
 )
-

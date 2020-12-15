@@ -184,6 +184,21 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.Ma
 	return
 }
 
+func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+
+	resp = new(metadata.ResponseDataMapStr)
+	subPath := "hosts/excel/add"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)

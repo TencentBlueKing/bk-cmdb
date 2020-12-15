@@ -442,7 +442,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 		}
 	}
 
-	// 获取目标业务空先机模块ID
+	// get target biz's idle module ID
 	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).MapStr()
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	moduleID, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
@@ -461,6 +461,67 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 				success, updateErrRow, err, errRow, hostList, ctx.Kit.Rid)
 			retData["error"] = errRow
 			retData["update_error"] = updateErrRow
+			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
+		}
+		retData["success"] = success
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespEntityWithError(retData, txnErr)
+		return
+	}
+	ctx.RespEntity(retData)
+}
+
+// add host come from excel to host resource pool
+func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
+	hostList := new(meta.HostList)
+	if err := ctx.DecodeInto(&hostList); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if hostList.HostInfo == nil {
+		blog.Errorf("add host, but host info is nil.input:%+v,rid:%s", hostList, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsNeedSet))
+		return
+	}
+
+	appID := hostList.ApplicationID
+	if appID == 0 {
+		// get default app id
+		var err error
+		appID, err = s.Logic.GetDefaultAppIDWithSupplier(ctx.Kit)
+		if err != nil {
+			blog.Errorf("add host, but get default app id failed, err: %v,input:%+v,rid:%s", err, hostList, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	moduleID := hostList.ModuleID
+	if moduleID == 0 {
+		// get target biz's idle module ID
+		cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).MapStr()
+		cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+		var err error
+		moduleID, err = s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
+		if err != nil {
+			blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	retData := make(map[string]interface{})
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID,
+			ctx.Kit.SupplierAccount, hostList.HostInfo)
+		if err != nil {
+			blog.Errorf("add host failed, success: %v, errRow:%v, err: %v, hostList:%#v, rid:%s",
+				success, errRow, err, hostList, ctx.Kit.Rid)
+			retData["error"] = errRow
 			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
 		}
 		retData["success"] = success

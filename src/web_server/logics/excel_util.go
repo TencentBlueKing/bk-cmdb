@@ -68,6 +68,9 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	if headerRow > len(sheet.Rows) {
 		return ret, errors.New(defLang.Language("web_excel_not_data"))
 	}
+	if headerRow+common.ExcelImportMaxRow < len(sheet.Rows) {
+		return ret, errors.New(defLang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow))
+	}
 	for index, name := range sheet.Rows[headerRow-1].Cells {
 		strName := name.Value
 		field, ok := fields[strName]
