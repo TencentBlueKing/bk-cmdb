@@ -1,6 +1,6 @@
 <template>
     <div class="module-selector-layout"
-        v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        v-bkloading="{ isLoading: loading }">
         <div class="wrapper">
             <div class="wrapper-column wrapper-left">
                 <h2 class="title">{{$t('转移主机到其他业务')}}</h2>
@@ -76,7 +76,7 @@
             <bk-button class="mr10" theme="primary"
                 :disabled="!checked.length"
                 @click="handleNextStep">
-                {{$t('下一步')}}
+                {{$t('确定')}}
             </bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
@@ -85,11 +85,12 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { AuthRequestId } from '@/components/ui/auth/auth-queue.js'
+    import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
     export default {
         name: 'cmdb-across-business-module-selector',
         data () {
             return {
+                loading: true,
                 businessList: [],
                 targetBizId: '',
                 checked: [],
@@ -124,6 +125,12 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
+                } finally {
+                    setTimeout(() => {
+                        afterVerify(() => {
+                            this.loading = false
+                        })
+                    }, 0)
                 }
             },
             async getModules () {

@@ -43,8 +43,12 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_TRANSFER_HOST, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
-    import { mapState } from 'vuex'
+    import {
+        MENU_BUSINESS_TRANSFER_HOST,
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_RESOURCE_HOST
+    } from '@/dictionary/menu-symbol'
+    import { mapGetters, mapState } from 'vuex'
     export default {
         name: 'cmdb-host-info',
         data () {
@@ -56,6 +60,14 @@
         },
         computed: {
             ...mapState('hostDetails', ['info']),
+            ...mapGetters('hostDetails', ['isBusinessHost']),
+            business () {
+                const biz = this.info.biz || []
+                return biz[0]
+            },
+            bizId () {
+                return this.business.bk_biz_id
+            },
             isSingleColumn () {
                 return this.displayType === 'single'
             },
@@ -141,17 +153,35 @@
                 window.localStorage.setItem('host_topology_display_type', this.displayType)
             },
             handlePathClick (item) {
-                this.$routerActions.open({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: {
-                        node: `module-${item.id}`
-                    }
-                })
+                if (this.isBusinessHost) {
+                    this.$routerActions.open({
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
+                        params: {
+                            bizId: this.bizId
+                        },
+                        query: {
+                            node: `module-${item.id}`
+                        }
+                    })
+                } else {
+                    const modules = this.info.module || []
+                    this.$routerActions.open({
+                        name: MENU_RESOURCE_HOST,
+                        params: {
+                            bizId: this.bizId
+                        },
+                        query: {
+                            scope: '1',
+                            directory: modules[0].bk_module_id
+                        }
+                    })
+                }
             },
             handleRemove (moduleId) {
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
+                        bizId: this.bizId,
                         type: 'remove',
                         module: moduleId
                     },

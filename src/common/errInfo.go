@@ -704,6 +704,7 @@ const (
 	CCErrWebNoUsernamePasswd            = 1111015
 	CCErrWebUserinfoFormatWrong         = 1111016
 	CCErrWebUnknownLoginVersion         = 1111017
+	CCErrWebGetUsernameMapFail          = 1111018
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

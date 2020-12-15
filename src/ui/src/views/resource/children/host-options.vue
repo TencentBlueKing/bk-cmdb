@@ -16,11 +16,14 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
+            </template>
+            <span style="display: inline-block;"
+                v-bk-tooltips="{ content: this.$t('仅主机池主机可进行此操作'), disabled: isAllResourceHost }">
                 <bk-select
                     class="assign-selector mr10"
                     font-size="medium"
                     :popover-width="180"
-                    :disabled="!table.checked.length"
+                    :disabled="!table.checked.length || !isAllResourceHost"
                     :clearable="false"
                     :placeholder="$t('分配到')"
                     v-model="assign.curSelected"
@@ -29,10 +32,8 @@
                     <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
                     <bk-option id="toDirs" :name="$t('主机池其他目录')"></bk-option>
                 </bk-select>
-            </template>
-            <cmdb-transfer-menu class="mr10"
-                v-else>
-            </cmdb-transfer-menu>
+            </span>
+            <cmdb-transfer-menu class="mr10" v-if="scope !== 1" />
             <bk-button class="mr10"
                 :disabled="!table.checked.length"
                 @click="handleMultipleEdit">
@@ -234,6 +235,12 @@
             },
             table () {
                 return this.$parent.table
+            },
+            isAllResourceHost () {
+                return this.table.selection.every(({ biz }) => {
+                    const [currentBiz] = biz
+                    return currentBiz.default === 1
+                })
             },
             clipboardList () {
                 const IPWithCloud = FilterUtils.defineProperty({

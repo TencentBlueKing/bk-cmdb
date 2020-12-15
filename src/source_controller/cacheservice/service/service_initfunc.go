@@ -27,7 +27,7 @@ func (s *cacheService) initCache(web *restful.WebService) {
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
-		Path:    "/find/cache/topotree",
+		Path:    "/find/cache/topo/topotree",
 		Handler: s.SearchTopologyTreeInCache,
 	})
 	utility.AddHandler(rest.Action{
@@ -95,10 +95,16 @@ func (s *cacheService) initCache(web *restful.WebService) {
 		Path:    "/find/cache/{bk_obj_id}/{bk_inst_id}",
 		Handler: s.SearchCustomLayerInCache,
 	})
+	// TODO: remove this
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
 		Path:    "/find/cache/topo/node_path",
 		Handler: s.SearchTopologyNodePath,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "find/cache/topo/node_path/biz/{bk_biz_id}",
+		Handler: s.SearchBizTopologyNodePath,
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodGet,
