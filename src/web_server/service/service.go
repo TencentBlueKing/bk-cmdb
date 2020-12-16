@@ -60,7 +60,7 @@ func (s *Service) WebService() *gin.Engine {
 						stack = stack[:nbytes]
 					}
 					request, _ := httputil.DumpRequest(c.Request, false)
-					blog.Errorf("[Recovery] panic recovered:\n%s\n%s\n%s", string(request), err, string(stack))
+					blog.Errorf("[Recovery] recovered:\n%s\n%s\n%s", string(request), err, string(stack))
 				}
 				c.AbortWithStatus(500)
 			}
