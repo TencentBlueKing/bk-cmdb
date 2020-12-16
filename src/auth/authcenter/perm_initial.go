@@ -30,18 +30,18 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 	if err := ac.initDefaultUserRoleWithAuth(ctx); err != nil {
 		return fmt.Errorf("initail default user's role with auth failed: %v", err)
 	}
-	
+
 	// TODO: remove this operation, when it's auth is roll back.
 	// remove biz instance resource
 	if err := ac.authClient.DeleteResources(ctx, http.Header{}, ScopeTypeIDBiz, BizInstance); err != nil {
-	    blog.Errorf("delete biz instance resource from iam failed, err: %v", err)
-    }
+		blog.Errorf("delete biz instance resource from iam failed, err: %v", err)
+	}
 	// TODO: remove this operation, when it's auth is roll back
 	// remove biz audit log resource
-    if err := ac.authClient.DeleteResources(ctx, http.Header{}, ScopeTypeIDBiz, BizAuditLog); err != nil {
-        blog.Errorf("delete biz audit log resource from iam failed, err: %v", err)
-    }
-	
+	if err := ac.authClient.DeleteResources(ctx, http.Header{}, ScopeTypeIDBiz, BizAuditLog); err != nil {
+		blog.Errorf("delete biz audit log resource from iam failed, err: %v", err)
+	}
+
 	blog.Info("initial auth center success.")
 	return nil
 }
@@ -200,11 +200,6 @@ func (ac *AuthCenter) initDefaultUserRoleWithAuth(ctx context.Context) error {
 		},
 		{
 			ScopeTypeID:    ScopeTypeIDBiz,
-			ResourceTypeID: BizInstance,
-			ActionID:       Get,
-		},
-		{
-			ScopeTypeID:    ScopeTypeIDBiz,
 			ResourceTypeID: BizAuditLog,
 			ActionID:       Get,
 		},
@@ -351,27 +346,6 @@ var bizOperatorRoleAuth = RoleWithAuthResources{
 			ScopeTypeID:    ScopeTypeIDBiz,
 			ResourceTypeID: BizModel,
 			ActionID:       Delete,
-		},
-		// model instance
-		{
-			ScopeTypeID:    ScopeTypeIDBiz,
-			ResourceTypeID: BizInstance,
-			ActionID:       Create,
-		},
-		{
-			ScopeTypeID:    ScopeTypeIDBiz,
-			ResourceTypeID: BizInstance,
-			ActionID:       Edit,
-		},
-		{
-			ScopeTypeID:    ScopeTypeIDBiz,
-			ResourceTypeID: BizInstance,
-			ActionID:       Delete,
-		},
-		{
-			ScopeTypeID:    ScopeTypeIDBiz,
-			ResourceTypeID: BizInstance,
-			ActionID:       Get,
 		},
 		// audit related
 		{

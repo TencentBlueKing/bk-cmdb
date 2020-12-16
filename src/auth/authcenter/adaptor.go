@@ -85,13 +85,13 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 
 	case meta.ModelAssociation:
 		if businessID > 0 {
-			iamResourceType = BizInstance
+			iamResourceType = BizTopology
 		} else {
 			iamResourceType = SysInstance
 		}
 	case meta.ModelInstanceAssociation:
 		if businessID > 0 {
-			iamResourceType = BizInstance
+			iamResourceType = BizTopology
 		} else {
 			iamResourceType = SysInstance
 		}
@@ -102,7 +102,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		if businessID <= 0 {
 			iamResourceType = SysInstance
 		} else {
-			iamResourceType = BizInstance
+			iamResourceType = BizTopology
 		}
 
 	case meta.Plat:
@@ -468,11 +468,6 @@ var (
 	TopologyDescribe = ResourceDetail{
 		Type:    BizTopology,
 		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
-	}
-
-	AppInstanceDescribe = ResourceDetail{
-		Type:    BizInstance,
-		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	InstanceManagementDescribe = ResourceDetail{
