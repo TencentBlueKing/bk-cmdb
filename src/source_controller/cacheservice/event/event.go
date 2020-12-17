@@ -21,11 +21,12 @@ import (
 	"configcenter/src/storage/stream"
 )
 
-func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB) error {
+func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB, ccDB dal.DB) error {
 	e := Event{
 		watch:    watch,
 		isMaster: isMaster,
 		watchDB:  watchDB,
+		ccDB:     ccDB,
 	}
 
 	if err := e.runHost(context.Background()); err != nil {
@@ -79,6 +80,7 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 type Event struct {
 	watch    stream.LoopInterface
 	watchDB  dal.DB
+	ccDB     dal.DB
 	isMaster discovery.ServiceManageInterface
 }
 
@@ -87,6 +89,7 @@ func (e *Event) runHost(ctx context.Context) error {
 		key:      HostKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -98,6 +101,7 @@ func (e *Event) runModuleHostRelation(ctx context.Context) error {
 		key:      ModuleHostRelationKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -109,6 +113,7 @@ func (e *Event) runBiz(ctx context.Context) error {
 		key:      BizKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -120,6 +125,7 @@ func (e *Event) runSet(ctx context.Context) error {
 		key:      SetKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -131,6 +137,7 @@ func (e *Event) runModule(ctx context.Context) error {
 		key:      ModuleKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -142,6 +149,7 @@ func (e *Event) runSetTemplate(ctx context.Context) error {
 		key:      SetTemplateKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -153,6 +161,7 @@ func (e *Event) runObjectBase(ctx context.Context) error {
 		key:      ObjectBaseKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -164,6 +173,7 @@ func (e *Event) runProcess(ctx context.Context) error {
 		key:      ProcessKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 
@@ -175,6 +185,7 @@ func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
 		key:      ProcessInstanceRelationKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
 		isMaster: e.isMaster,
 	}
 

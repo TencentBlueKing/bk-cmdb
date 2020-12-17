@@ -22,14 +22,14 @@ import (
 	"configcenter/src/common/watch"
 )
 
-func (e *eventCache) SearchEventChainNode(ctx context.Context, h http.Header, opts *metadata.SearchEventNodeOption) (
-	*metadata.EventNodeWithDetail, errors.CCErrorCoder) {
+func (e *eventCache) GetLatestEvent(ctx context.Context, h http.Header, opts *metadata.GetLatestEventOption) (
+	*metadata.EventNode, errors.CCErrorCoder) {
 
 	resp := new(metadata.SearchEventNodeResp)
 	err := e.client.Post().
 		WithContext(ctx).
 		Body(opts).
-		SubResourcef("/find/cache/event/node").
+		SubResourcef("/find/cache/event/latest").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -45,7 +45,7 @@ func (e *eventCache) SearchEventChainNode(ctx context.Context, h http.Header, op
 }
 
 func (e *eventCache) SearchFollowingEventChainNodes(ctx context.Context, h http.Header,
-	opts *metadata.SearchFollowingEventNodesOption) ([]*watch.ChainNode, errors.CCErrorCoder) {
+	opts *metadata.SearchEventNodesOption) (bool, []*watch.ChainNode, errors.CCErrorCoder) {
 
 	resp := new(metadata.SearchEventNodesResp)
 	err := e.client.Post().
@@ -57,13 +57,13 @@ func (e *eventCache) SearchFollowingEventChainNodes(ctx context.Context, h http.
 		Into(resp)
 
 	if err != nil {
-		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		return false, nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if err := resp.CCError(); err != nil {
-		return nil, err
+		return false, nil, err
 	}
-	return resp.Data, nil
+	return resp.Data.ExistsStartNode, resp.Data.Nodes, nil
 }
 
 func (e *eventCache) SearchEventDetails(ctx context.Context, h http.Header, opts *metadata.SearchEventDetailsOption) (
@@ -86,4 +86,25 @@ func (e *eventCache) SearchEventDetails(ctx context.Context, h http.Header, opts
 		return nil, err
 	}
 	return resp.Data, nil
+}
+
+func (e *eventCache) WatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*string,
+	errors.CCErrorCoder) {
+
+	resp, err := e.client.Post().
+		WithContext(ctx).
+		Body(opts).
+		SubResourcef("/watch/cache/event").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
 }

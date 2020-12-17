@@ -52,18 +52,14 @@ type ListHostWithPage struct {
 	Page BasePage `json:"page"`
 }
 
-type SearchEventNodeOption struct {
-	Resource   watch.CursorType       `json:"bk_resource"`
-	Filter     map[string]interface{} `json:"filter"`
-	Sort       string                 `json:"sort"`
-	WithDetail bool                   `json:"with_detail"`
+type GetLatestEventOption struct {
+	Resource watch.CursorType `json:"bk_resource"`
 }
 
-type SearchFollowingEventNodesOption struct {
-	Resource watch.CursorType       `json:"bk_resource"`
-	Filter   map[string]interface{} `json:"filter"`
-	Sort     string                 `json:"sort,omitempty"`
-	Limit    int                    `json:"limit"`
+type SearchEventNodesOption struct {
+	Resource    watch.CursorType `json:"bk_resource"`
+	StartCursor string           `json:"start_cursor"`
+	Limit       int              `json:"limit"`
 }
 
 type SearchEventDetailsOption struct {
@@ -73,20 +69,30 @@ type SearchEventDetailsOption struct {
 
 type SearchEventNodeResp struct {
 	BaseResp `json:",inline"`
-	Data     *EventNodeWithDetail `json:"data"`
+	Data     *EventNode `json:"data"`
 }
 
-type EventNodeWithDetail struct {
-	Node   *watch.ChainNode `json:"node"`
-	Detail string           `json:"detail"`
+type EventNode struct {
+	Node       *watch.ChainNode `json:"node"`
+	ExistsNode bool             `json:"exists_node"`
+}
+
+type EventNodes struct {
+	Nodes           []*watch.ChainNode `json:"nodes"`
+	ExistsStartNode bool               `json:"exists_start_node"`
 }
 
 type SearchEventNodesResp struct {
 	BaseResp `json:",inline"`
-	Data     []*watch.ChainNode `json:"data"`
+	Data     *EventNodes `json:"data"`
 }
 
 type SearchEventDetailsResp struct {
 	BaseResp `json:",inline"`
 	Data     []string `json:"data"`
+}
+
+type WatchEventResp struct {
+	BaseResp `json:",inline"`
+	Data     *watch.WatchResp `json:"data"`
 }

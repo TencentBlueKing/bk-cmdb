@@ -113,8 +113,8 @@ func (s *cacheService) initCache(web *restful.WebService) {
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
-		Path:    "/find/cache/event/node",
-		Handler: s.SearchEventChainNode,
+		Path:    "/find/cache/event/latest",
+		Handler: s.GetLatestEvent,
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
@@ -125,6 +125,11 @@ func (s *cacheService) initCache(web *restful.WebService) {
 		Verb:    http.MethodPost,
 		Path:    "/findmany/cache/event/detail",
 		Handler: s.SearchEventDetails,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/watch/cache/event",
+		Handler: s.WatchEvent,
 	})
 
 	utility.AddToRestfulWebService(web)

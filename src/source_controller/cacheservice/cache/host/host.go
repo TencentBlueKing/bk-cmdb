@@ -110,7 +110,8 @@ func (h *hostCache) onDelete(e *types.Event) {
 	blog.Infof("received host delete event, oid: %s", e.Oid)
 
 	filter := mapstr.MapStr{
-		"oid": e.Oid,
+		"oid":  e.Oid,
+		"coll": common.BKTableNameBaseHost,
 	}
 	doc := bsonx.Doc{}
 	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
@@ -291,7 +292,7 @@ func getHostDetailsFromMongoWithIP(innerIP string, cloudID int64) (hostID int64,
 	innerIPArr := strings.Split(innerIP, ",")
 	filter := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBAll:  innerIPArr,
+			common.BKDBAll: innerIPArr,
 		},
 		common.BKCloudIDField: cloudID,
 	}

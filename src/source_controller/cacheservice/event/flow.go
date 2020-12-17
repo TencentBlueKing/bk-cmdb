@@ -20,12 +20,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 	"configcenter/src/storage/dal"
 	daltypes "configcenter/src/storage/dal/types"
-	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/stream/types"
 
@@ -125,7 +123,10 @@ func (f *Flow) RunFlow(ctx context.Context) error {
 			Name:         f.key.Namespace(),
 			WatchOpt:     watchOpts,
 			TokenHandler: NewFlowTokenHandler(f.key, f.watchDB, f.metrics),
-			RetryOptions: nil,
+			RetryOptions: &types.RetryOptions{
+				MaxRetryCount: 10,
+				RetryDuration: 1 * time.Second,
+			},
 		},
 		EventHandler: &types.BatchHandler{
 			DoBatch: f.doBatch,
@@ -165,6 +166,12 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		return true
 	}
 
+	oidDetailMap, retry, err := f.getDeleteEventDetails(es)
+	if err != nil {
+		blog.Errorf("get deleted event details failed, err: %v", err)
+		return retry
+	}
+
 	// process events into db chain nodes to store in db and details to store in redis
 	pipe := redis.Client().Pipeline()
 	for index, e := range es {
@@ -194,60 +201,13 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		}
 		chainNodes[index] = chainNode
 
-		// get delete event related detail from cmdb
+		docBytes := e.DocBytes
 		if e.OperationType == types.Delete {
-			filter := mapstr.MapStr{
-				"oid": e.Oid,
-			}
-
-			if f.key.Collection() == common.BKTableNameBaseHost {
-				doc := new(hostArchive)
-				err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), doc)
-				if err != nil {
-					f.metrics.collectMongoError()
-					blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, "+
-						"oid: %s, err: %v", f.key.Collection(), e.Oid, err)
-					if strings.Contains(err.Error(), "document not found") {
-						return false
-					}
-					return true
-				}
-
-				byt, err := json.Marshal(doc.Detail)
-				if err != nil {
-					blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-						f.key.Collection(), e.Oid, err)
-					return false
-				}
-				e.DocBytes = byt
-			} else {
-				doc := bsonx.Doc{}
-				err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
-				if err != nil {
-					f.metrics.collectMongoError()
-
-					blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, "+
-						"oid: %s, err: %v", f.key.Collection(), e.Oid, err)
-					if strings.Contains(err.Error(), "document not found") {
-						return false
-					}
-					return true
-				}
-
-				byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
-				if err != nil {
-					f.metrics.collectMongoError()
-
-					blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-						f.key.Collection(), e.Oid, err)
-					return false
-				}
-				e.DocBytes = byt
-			}
+			docBytes = oidDetailMap[e.Oid]
 		}
 
 		detail := types.EventDetail{
-			Detail:        types.JsonString(e.DocBytes),
+			Detail:        types.JsonString(docBytes),
 			UpdatedFields: e.ChangeDesc.UpdatedFields,
 			RemovedFields: e.ChangeDesc.RemovedFields,
 		}
@@ -289,49 +249,9 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 			return true
 		}
 
-		cursors := make([]string, eventLen)
-		chainNodeMap := make(map[string]watch.ChainNode)
-		for index, chainNode := range chainNodes {
-			cursors[index] = chainNode.Cursor
-			chainNodeMap[chainNode.Cursor] = chainNode
-		}
-		filter := map[string]interface{}{
-			common.BKCursorField: map[string]interface{}{common.BKDBIN: cursors},
-		}
-
-		existNodes := make([]watch.ChainNode, 0)
-		if err := f.watchDB.Table(f.key.ChainCollection()).Find(filter).All(context.Background(), &existNodes); err != nil {
-			f.metrics.collectMongoError()
-			blog.Errorf("run flow, but get chain nodes failed, err: %v, oids: %+v", err, oids)
-			return true
-		}
-
-		for _, existNode := range existNodes {
-			updateFilter := map[string]interface{}{
-				common.BKCursorField: existNode.Cursor,
-			}
-			updateData := map[string]interface{}{
-				common.BKFieldID: chainNodeMap[existNode.Cursor].ID,
-			}
-
-			if err := f.watchDB.Table(f.key.ChainCollection()).Update(context.Background(), updateFilter, updateData); err != nil {
-				f.metrics.collectMongoError()
-				blog.Errorf("run flow, but update exist chain node(%s) failed, err: %s", existNode, err)
-				return true
-			}
-
-			delete(chainNodeMap, existNode.Cursor)
-		}
-
-		insertNodes := make([]watch.ChainNode, 0)
-		for _, chainNode := range chainNodeMap {
-			insertNodes = append(insertNodes, chainNode)
-		}
-
-		if err := f.watchDB.Table(f.key.ChainCollection()).Insert(context.Background(), chainNodes); err != nil {
-			f.metrics.collectMongoError()
-			blog.Errorf("run flow, but insert chain nodes failed, err: %v, oids: %+v", err, oids)
-			return true
+		if retry, err := f.handleInsertChainNodeDuplicateError(chainNodes); err != nil {
+			blog.Errorf("handle insert chain node duplicated error failed, err: %v", err)
+			return retry
 		}
 	}
 
@@ -361,6 +281,125 @@ func (f *Flow) getLockWithRetry(name string, oids []string) bool {
 		break
 	}
 	return getLock
+}
+
+// getDeleteEventDetails get delete events' oid and related detail map from cmdb
+func (f *Flow) getDeleteEventDetails(es []*types.Event) (map[string][]byte, bool, error) {
+	oidDetailMap := make(map[string][]byte)
+
+	deletedEventOids := make([]string, 0)
+	for _, e := range es {
+		if e.OperationType == types.Delete {
+			deletedEventOids = append(deletedEventOids, e.Oid)
+		}
+	}
+
+	if len(deletedEventOids) == 0 {
+		return oidDetailMap, false, nil
+	}
+
+	filter := map[string]interface{}{
+		"oid":  map[string]interface{}{common.BKDBIN: deletedEventOids},
+		"coll": f.key.Collection(),
+	}
+
+	if f.key.Collection() == common.BKTableNameBaseHost {
+		docs := make([]HostArchive, 0)
+		err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
+		if err != nil {
+			f.metrics.collectMongoError()
+			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v",
+				f.key.Collection(), deletedEventOids, err)
+			return nil, true, err
+		}
+
+		for _, doc := range docs {
+			byt, err := json.Marshal(doc.Detail)
+			if err != nil {
+				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
+					f.key.Collection(), doc.Oid, err)
+				return nil, false, err
+			}
+			oidDetailMap[doc.Oid] = byt
+		}
+	} else {
+		docs := make([]bsonx.Doc, 0)
+		err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
+		if err != nil {
+			f.metrics.collectMongoError()
+			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v",
+				f.key.Collection(), deletedEventOids, err)
+			return nil, true, err
+		}
+
+		for _, doc := range docs {
+			byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
+			if err != nil {
+				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
+					f.key.Collection(), doc.Lookup("oid").String(), err)
+				return nil, false, err
+			}
+			oidDetailMap[doc.Lookup("oid").String()] = byt
+		}
+	}
+
+	return oidDetailMap, false, nil
+}
+
+/** handleInsertChainNodeDuplicateError if an duplicate error occurred when inserting chain nodes, we find all exist
+  nodes at first, update their ids to the bigger one(if several masters exists in cases like switching master & slave,
+  the fist one that gets the ids might not get the lock to insert nodes, when it gets the lock, others have already
+  inserted former nodes with a larger id, we need to update the exist nodes' ids to ensure the sequence of them), and
+  then insert the newer nodes one by one in case another duplicate error occurred.
+*/
+func (f *Flow) handleInsertChainNodeDuplicateError(chainNodes []watch.ChainNode) (bool, error) {
+	cursors := make([]string, len(chainNodes))
+	chainNodeMap := make(map[string]watch.ChainNode)
+	for index, chainNode := range chainNodes {
+		cursors[index] = chainNode.Cursor
+		chainNodeMap[chainNode.Cursor] = chainNode
+	}
+	filter := map[string]interface{}{
+		common.BKCursorField: map[string]interface{}{common.BKDBIN: cursors},
+	}
+
+	existNodes := make([]watch.ChainNode, 0)
+	if err := f.watchDB.Table(f.key.ChainCollection()).Find(filter).All(context.Background(), &existNodes); err != nil {
+		f.metrics.collectMongoError()
+		blog.Errorf("run flow, but get chain nodes failed, err: %v, cursors: %+v", err, cursors)
+		return true, err
+	}
+
+	for _, existNode := range existNodes {
+		updateFilter := map[string]interface{}{
+			common.BKCursorField: existNode.Cursor,
+		}
+		updateData := map[string]interface{}{
+			common.BKFieldID: chainNodeMap[existNode.Cursor].ID,
+		}
+
+		err := f.watchDB.Table(f.key.ChainCollection()).Update(context.Background(), updateFilter, updateData)
+		if err != nil {
+			f.metrics.collectMongoError()
+			blog.Errorf("run flow, but update exist chain node(%s) failed, err: %s", existNode, err)
+			return true, err
+		}
+
+		delete(chainNodeMap, existNode.Cursor)
+	}
+
+	for _, chainNode := range chainNodeMap {
+		if err := f.watchDB.Table(f.key.ChainCollection()).Insert(context.Background(), chainNode); err != nil {
+			if strings.Contains(err.Error(), "duplicate key error") {
+				continue
+			}
+			f.metrics.collectMongoError()
+			blog.ErrorJSON("run flow, but insert chain nodes failed, err: %v, chain node: %s", err, chainNode)
+			return true, err
+		}
+	}
+
+	return false, nil
 }
 
 type flowTokenHandler struct {

@@ -16,14 +16,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"reflect"
 	"time"
 
 	"github.com/tidwall/gjson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 type OperType string
@@ -175,14 +175,14 @@ func (t TimeStamp) String() string {
 	return time.Unix(int64(t.Sec), int64(t.Nano)).Format("2006-01-02/15:04:05")
 }
 
-func (t *TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
+func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bsonx.Time(time.Unix(int64(t.Sec), int64(t.Nano))).MarshalBSONValue()
 }
 
 func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 	if typo == bsontype.DateTime {
 		rv := bson.RawValue{Type: bsontype.DateTime, Value: raw}
-		t.Sec = uint32(rv.Time().Second())
+		t.Sec = uint32(rv.Time().Unix())
 		t.Nano = uint32(rv.Time().Nanosecond())
 		return nil
 	}

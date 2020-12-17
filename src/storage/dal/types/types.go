@@ -34,7 +34,7 @@ type Filter interface{}
 
 type Table interface {
 	// Find 查询多个并反序列化到 Result
-	Find(filter Filter) Find
+	Find(filter Filter, opts ...FindOpts) Find
 	// Aggregate 聚合查询
 	AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error
 	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error
@@ -106,4 +106,8 @@ type Index struct {
 	Unique             bool             `json:"unique" bson:"unique"`
 	Background         bool             `json:"background" bson:"background"`
 	ExpireAfterSeconds int32            `json:"expire_after_seconds" bson:"expire_after_seconds"`
+}
+
+type FindOpts struct {
+	WithObjectID bool
 }

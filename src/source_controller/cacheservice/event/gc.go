@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/driver/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -75,7 +74,7 @@ func (f *Flow) doClean(ctx context.Context, rid string) {
 			},
 		}
 
-		count, err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).Count(ctx)
+		count, err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Count(ctx)
 		if err != nil {
 			blog.Errorf("clean cc_DelArchive data, but count expired data in %s failed. rid: %s", common.BKTableNameDelArchive, rid)
 			continue
@@ -87,7 +86,7 @@ func (f *Flow) doClean(ctx context.Context, rid string) {
 		success := true
 		for start := 0; start < int(count); start += pageSize {
 			docs := make([]archived, pageSize)
-			err = mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).Fields("oid").All(ctx, &docs)
+			err = f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Fields("oid").All(ctx, &docs)
 			if err != nil {
 				blog.Errorf("clean cc_DelArchive data, but find expired data failed, err: %v, rid: %s", err, rid)
 				time.Sleep(10 * time.Second)
@@ -106,7 +105,7 @@ func (f *Flow) doClean(ctx context.Context, rid string) {
 				},
 			}
 
-			err = mongodb.Client().Table(common.BKTableNameDelArchive).Delete(ctx, delFilter)
+			err = f.ccDB.Table(common.BKTableNameDelArchive).Delete(ctx, delFilter)
 			if err != nil {
 				blog.Errorf("clean cc_DelArchive data, but delete data failed, err: %v, rid: %s", err, rid)
 				time.Sleep(10 * time.Second)

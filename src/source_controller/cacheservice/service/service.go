@@ -102,7 +102,13 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return watchErr
 	}
 
-	if err := watchEvent.NewEvent(watcher, engine.ServiceManageInterface, watchDB); err != nil {
+	ccDB, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
+	if dbErr != nil {
+		blog.Errorf("new cc mongo client failed, err: %v", dbErr)
+		return dbErr
+	}
+
+	if err := watchEvent.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
 		blog.Errorf("new watch event failed, err: %v", err)
 		return err
 	}

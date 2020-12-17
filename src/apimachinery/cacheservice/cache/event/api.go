@@ -23,12 +23,13 @@ import (
 )
 
 type Interface interface {
-	SearchEventChainNode(ctx context.Context, h http.Header, opts *metadata.SearchEventNodeOption) (
-		*metadata.EventNodeWithDetail, errors.CCErrorCoder)
-	SearchFollowingEventChainNodes(ctx context.Context, h http.Header, opts *metadata.SearchFollowingEventNodesOption) (
-		[]*watch.ChainNode, errors.CCErrorCoder)
+	GetLatestEvent(ctx context.Context, h http.Header, opts *metadata.GetLatestEventOption) (
+		*metadata.EventNode, errors.CCErrorCoder)
+	SearchFollowingEventChainNodes(ctx context.Context, h http.Header, opts *metadata.SearchEventNodesOption) (
+		bool, []*watch.ChainNode, errors.CCErrorCoder)
 	SearchEventDetails(ctx context.Context, h http.Header, opts *metadata.SearchEventDetailsOption) ([]string,
 		errors.CCErrorCoder)
+	WatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*string, errors.CCErrorCoder)
 }
 
 func NewCacheClient(client rest.ClientInterface) Interface {

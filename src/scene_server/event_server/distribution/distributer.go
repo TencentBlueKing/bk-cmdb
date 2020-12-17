@@ -360,7 +360,7 @@ func (d *Distributor) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 	// can't find target old cursor, try to watch from last event node.
 	if startCursor == watch.NoEventCursor {
-		nodeWithDetail, err := watcher.GetLatestEvent(cursorType, false)
+		node, err := watcher.GetLatestEvent(cursorType)
 		if err != nil {
 			if err != ewatcher.NoEventsError && err != ewatcher.TailNodeTargetNotExistError {
 				return err
@@ -369,7 +369,7 @@ func (d *Distributor) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 			blog.Info("watching for resource[%+v] from lastest event node, but no events now, try to watch from head node", cursorType)
 		} else {
 			// watch from latest event node.
-			startCursor = nodeWithDetail.Node.Cursor
+			startCursor = node.Cursor
 			blog.Info("watching for resource[%+v] from cursor[%+v]", cursorType, startCursor)
 		}
 	}

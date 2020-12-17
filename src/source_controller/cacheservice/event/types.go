@@ -55,9 +55,10 @@ type FlowOptions struct {
 	watch    stream.LoopInterface
 	isMaster discovery.ServiceManageInterface
 	watchDB  dal.DB
+	ccDB     dal.DB
 }
 
-type hostArchive struct {
+type HostArchive struct {
 	Oid    string              `bson:"oid"`
 	Detail metadata.HostMapStr `bson:"detail"`
 }
