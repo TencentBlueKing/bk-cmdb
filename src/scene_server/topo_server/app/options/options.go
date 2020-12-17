@@ -30,8 +30,7 @@ type Config struct {
 	Mongo                mongo.Config
 	ConfigMap            map[string]string
 	Auth                 authcenter.AuthConfig
-	FullTextSearch       string `json:"es.full_text_search"`
-	EsUrl                string `json:"es.url"`
+	FullTextSearchCfg
 }
 
 func NewServerOption() *ServerOption {
@@ -47,4 +46,11 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
+}
+
+type FullTextSearchCfg struct {
+	FullTextSearch string `json:"es.full_text_search"`
+	EsUrl          string `json:"es.url"`
+	Set            string `json:"es.set"`
+	Module         string `json:"es.module"`
 }

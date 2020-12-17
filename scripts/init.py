@@ -341,7 +341,9 @@ appSecret = $auth_app_secret
 
 [es]
 full_text_search = $full_text_search
-url=$es_url
+url = $es_url
+set = off
+module = off
 '''
 
     template = FileTemplate(topo_file_template_str)

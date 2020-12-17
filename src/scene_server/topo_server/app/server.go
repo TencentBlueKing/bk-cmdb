@@ -61,6 +61,8 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 	t.Config.FullTextSearch = current.ConfigMap["es.full_text_search"]
 	t.Config.EsUrl = current.ConfigMap["es.url"]
+	t.Config.Set = current.ConfigMap["es.set"]
+	t.Config.Module = current.ConfigMap["es.module"]
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -126,6 +128,14 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return fmt.Errorf("new es client failed, err: %v", err)
 		}
 		essrv.Client = esclient
+		if server.Config.Set == "on" {
+			common.CmdbFindTypes = append(common.CmdbFindTypes, common.BKTableNameBaseSet)
+			common.EsBucketKeys = append(common.EsBucketKeys, common.BKTableNameBaseSet)
+		}
+		if server.Config.Module == "on" {
+			common.CmdbFindTypes = append(common.CmdbFindTypes, common.BKTableNameBaseModule)
+			common.EsBucketKeys = append(common.EsBucketKeys, common.BKTableNameBaseModule)
+		}
 	}
 
 	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)

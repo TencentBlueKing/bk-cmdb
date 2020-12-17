@@ -8,6 +8,8 @@ const (
 	TypeModel       = "model"
 	TypeProcess     = "process"
 	TypeApplication = "biz"
+	TypeSet         = "set"
+	TypeModule      = "module"
 
 	TypeAggName  = "type_agg"
 	TypeAggField = "_type"
@@ -20,6 +22,7 @@ const (
 
 var (
 	CmdbFindTypes = []string{BKTableNameBaseInst, BKTableNameBaseHost, BKTableNameObjDes}
+	EsBucketKeys  = []string{BKTableNameBaseHost, BKTableNameBaseApp}
 	SpecialChar   = []string{"`", "~", "!", "@", "#", "$", "%", "^", "&", "*",
 		"(", ")", "-", "_", "=", "+", "[", "{", "]", "}",
 		"\\", "|", ";", ":", "'", "\"", ",", "<", ".", ">", "/", "?"}

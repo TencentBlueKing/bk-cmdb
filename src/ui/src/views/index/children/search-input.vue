@@ -38,6 +38,18 @@
                                     <span class="lenovo-name">{{item.source.bk_biz_name}}</span>
                                     <span>({{$t('业务')}})</span>
                                 </li>
+                                <li :key="index" v-else-if="item.type === 'set'"
+                                    :title="item.source.bk_inst_name"
+                                    @click="handleGoInstace(item.source)">
+                                    <span class="lenovo-name">{{item.source.bk_set_name}}</span>
+                                    <span>({{ $t('集群') }})</span>
+                                </li>
+                                <li :key="index" v-else-if="item.type === 'module'"
+                                    :title="item.source.bk_inst_name"
+                                    @click="handleGoInstace(item.source)">
+                                    <span class="lenovo-name">{{item.source.bk_module_name}}</span>
+                                    <span>({{ $t('模块') }})</span>
+                                </li>
                             </template>
                         </ul>
                     </div>

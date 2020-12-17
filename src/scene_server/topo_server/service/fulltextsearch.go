@@ -117,8 +117,13 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 	typeAggr, found := result.Aggregations.Terms(common.TypeAggName)
 	if found == true && typeAggr != nil {
 		for _, bucket := range typeAggr.Buckets {
-			// only cc_HostBase, cc_ApplicationBase currently
-			if bucket.Key == common.BKTableNameBaseHost || bucket.Key == common.BKTableNameBaseApp {
+			// only cc_HostBase, cc_ApplicationBase ,cc_SetBase, cc_ModuleBase currently
+			key, ok := bucket.Key.(string)
+			if !ok {
+				blog.Errorf("full_text_find failed, the bucket.Key in es search result cannot be reflected as string type, rid: %s", params.ReqID)
+				return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
+			}
+			if inTypes(key, common.EsBucketKeys) {
 				agg := Aggregation{}
 				agg.setAgg(bucket)
 				searchResults.Aggregations = append(searchResults.Aggregations, agg)
@@ -204,6 +209,15 @@ func (query Query) toEsQueryAndSearchTypes() (elastic.Query, []string) {
 		// if bk_obj_id is biz, we search only from type cc_ApplicationBase
 		indexTypes := []string{common.BKTableNameBaseApp}
 		return qBool.Must(qString), indexTypes
+	} else if query.BkObjId == common.TypeSet {
+		// if bk_obj_id is set, we search only from type cc_SetBase
+		indexTypes := []string{common.BKTableNameBaseSet}
+		return qBool.Must(qString), indexTypes
+	} else if query.BkObjId == common.TypeModule {
+		// if bk_obj_id is module, we search only from type cc_ModuleBase
+		indexTypes := []string{common.BKTableNameBaseModule}
+		return qBool.Must(qString), indexTypes
+
 	} else {
 		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
 		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
@@ -227,6 +241,10 @@ func getEsIndexTypes(typesFilter []string) []string {
 			typesMap = append(typesMap, common.BKTableNameBaseApp)
 		case common.TypeProcess:
 			typesMap = append(typesMap, common.BKTableNameBaseProcess)
+		case common.TypeSet:
+			typesMap = append(typesMap, common.BKTableNameBaseSet)
+		case common.TypeModule:
+			typesMap = append(typesMap, common.BKTableNameBaseModule)
 		}
 	}
 
@@ -254,6 +272,10 @@ func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
 		agg.Key = common.TypeHost
 	} else if bucket.Key == common.BKTableNameBaseApp {
 		agg.Key = common.TypeApplication
+	} else if bucket.Key == common.BKTableNameBaseSet {
+		agg.Key = common.TypeSet
+	} else if bucket.Key == common.BKTableNameBaseModule {
+		agg.Key = common.TypeModule
 	} else {
 		agg.Key = bucket.Key
 	}
@@ -275,6 +297,10 @@ func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit
 		sr.Type = common.TypeApplication
 	case common.BKTableNameObjDes:
 		sr.Type = common.TypeModel
+	case common.BKTableNameBaseSet:
+		sr.Type = common.TypeSet
+	case common.BKTableNameBaseModule:
+		sr.Type = common.TypeModule
 	}
 
 	// sr.Highlight = searchHit.Highlight
