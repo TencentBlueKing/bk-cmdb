@@ -11,7 +11,7 @@
                 @enter="handleFilterTemplates"
                 @clear="handleFilterTemplates">
             </bk-input>
-            <span class="select-all fr" v-if="$parent.$parent.mode !== 'edit'">
+            <span class="select-all fr">
                 <bk-checkbox :value="isSelectAll" :indeterminate="isHalfSelected" @change="handleSelectAll">全选</bk-checkbox>
             </span>
         </div>
@@ -115,6 +115,9 @@
             },
             isHalfSelected () {
                 return !this.isSelectAll && this.localSelected.length > 0
+            },
+            isEditMode () {
+                return this.$parent.$parent.mode === 'edit'
             }
         },
         watch: {
@@ -178,10 +181,15 @@
                 this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
             },
             handleSelectAll (checked) {
+                const serviceExistHost = this.$parent.$parent.serviceExistHost
                 if (checked) {
                     this.localSelected = this.templates.map(template => template.id)
                 } else {
-                    this.localSelected = []
+                    if (this.isEditMode) {
+                        this.localSelected = this.templates.filter(template => serviceExistHost(template.id)).map(template => template.id)
+                    } else {
+                        this.localSelected = []
+                    }
                 }
             },
             async handleShowDetails (template = {}, event, disabled) {
