@@ -60,9 +60,6 @@ type EventServer struct {
 	// db is cc main database.
 	db dal.RDB
 
-	// watchDB is cc event watch database.
-	watchDB dal.DB
-
 	// redisCli is cc redis client.
 	redisCli redis.Client
 
@@ -203,15 +200,6 @@ func (es *EventServer) initModules() error {
 	}
 	es.db = db
 	es.service.SetDB(db)
-	blog.Info("init modules, create mongo client success[%+v]", es.config.MongoDB.GetMongoConf())
-
-	// create event watch watch mongodb client.
-	watchDB, err := local.NewMgo(es.config.WatchMongoDB.GetMongoConf(), defaultDBConnectTimeout)
-	if err != nil {
-		return fmt.Errorf("create new event watch mongodb client, %+v", err)
-	}
-	es.watchDB = watchDB
-	es.service.SetWatchDB(watchDB)
 	blog.Info("init modules, create mongo client success[%+v]", es.config.MongoDB.GetMongoConf())
 
 	// connect to cc redis.
