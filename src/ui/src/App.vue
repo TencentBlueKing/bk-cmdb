@@ -57,12 +57,11 @@
             },
             loginUrl () {
                 const siteLoginUrl = this.site.login || ''
-                const loginStrIndex = siteLoginUrl.indexOf('login')
-                let loginModalUrl
-                if (loginStrIndex > -1) {
-                    loginModalUrl = siteLoginUrl.substring(0, loginStrIndex) + 'login/plain'
+                const loginBaseUrl = siteLoginUrl.substring(0, siteLoginUrl.indexOf('?'))
+                if (loginBaseUrl) {
+                    return loginBaseUrl + 'plain'
                 }
-                return loginModalUrl
+                return ''
             }
         },
         watch: {
