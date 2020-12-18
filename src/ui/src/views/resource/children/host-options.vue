@@ -12,7 +12,7 @@
                         theme="primary"
                         style="margin-left: 0"
                         :disabled="disabled"
-                        @click="importInst.show = true">
+                        @click="handleNewImportInst">
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
@@ -34,11 +34,12 @@
                 </bk-select>
             </span>
             <cmdb-transfer-menu class="mr10" v-if="scope !== 1" />
-            <bk-button class="mr10"
-                :disabled="!table.checked.length"
-                @click="handleMultipleEdit">
-                {{$t('编辑')}}
-            </bk-button>
+            <cmdb-button-group
+                class="mr10"
+                trigger-text="编辑"
+                :buttons="editButtonGroup"
+                :expand="false">
+            </cmdb-button-group>
             <cmdb-clipboard-selector class="mr10"
                 label-key="bk_property_name"
                 :list="clipboardList"
@@ -60,27 +61,30 @@
                 @click="routeToHistory">
             </icon-button>
         </div>
-        
+
         <bk-sideslider
             v-transfer-dom
             :is-show.sync="importInst.show"
             :width="800"
-            :title="$t('批量导入')">
-            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content" v-if="importInst.show">
-                <bk-tab-panel name="import" :label="$t('批量导入')">
+            :title="importInst.title">
+            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content"
+                v-if="importInst.show && importInst.type === 'new'">
+                <bk-tab-panel name="import" :label="$t('新增导入')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :template-url="importInst.templateUrl"
                         :import-url="importInst.importUrl"
-                        @success="$parent.getHostList(true)"
-                        @partialSuccess="$parent.getHostList(true)">
+                        :import-payload="importInst.payload"
+                        @success="handleImportSuccess"
+                        @partialSuccess="handleImportSuccess">
                         <bk-form class="import-prepend" slot="prepend">
                             <bk-form-item :label="$t('主机池目录')" required>
                                 <bk-select v-model="importInst.directory" style="display: block;">
-                                    <bk-option v-for="directory in directoryList"
+                                    <cmdb-auth-option v-for="directory in directoryList"
                                         :key="directory.bk_module_id"
                                         :id="directory.bk_module_id"
-                                        :name="directory.bk_module_name">
-                                    </bk-option>
+                                        :name="directory.bk_module_name"
+                                        :auth="{ type: $OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] }">
+                                    </cmdb-auth-option>
                                 </bk-select>
                             </bk-form-item>
                         </bk-form>
@@ -89,7 +93,7 @@
                         </span>
                     </cmdb-import>
                 </bk-tab-panel>
-                <bk-tab-panel name="agent" :label="$t('自动导入')">
+                <bk-tab-panel name="agent" :label="$t('Agent导入')">
                     <div class="automatic-import">
                         <p>{{$t("agent安装说明")}}</p>
                         <div class="back-contain">
@@ -99,8 +103,17 @@
                     </div>
                 </bk-tab-panel>
             </bk-tab>
+            <div slot="content" class="edit-import-panel" v-if="importInst.type === 'edit'">
+                <bk-alert class="alert" type="warning" title="说明：导入编辑需要先导出需要修改的主机，并完成编辑修改后才能进行导入编辑操作"></bk-alert>
+                <cmdb-import :template-url="importInst.templateUrl"
+                    :import-url="importInst.importUrl"
+                    :templdate-available="importInst.templdateAvailable"
+                    @success="handleImportSuccess"
+                    @partialSuccess="handleImportSuccess">
+                </cmdb-import>
+            </div>
         </bk-sideslider>
-        
+
         <bk-sideslider
             v-transfer-dom
             :is-show.sync="slider.show"
@@ -192,11 +205,14 @@
             return {
                 scope: '',
                 importInst: {
+                    title: '',
                     show: false,
                     active: 'import',
                     templateUrl: `${window.API_HOST}importtemplate/host`,
-                    importUrl: `${window.API_HOST}hosts/import`,
-                    directory: ''
+                    importUrl: '',
+                    templdateAvailable: true,
+                    directory: '',
+                    payload: {}
                 },
                 businessList: [],
                 objectUnique: [],
@@ -290,15 +306,37 @@
                         relation: [module[0].bk_module_id, host.bk_host_id]
                     }
                 })
+            },
+            editButtonGroup () {
+                const buttonConfig = [{
+                    id: 'batch-edit',
+                    text: this.$t('批量编辑'),
+                    handler: this.handleMultipleEdit,
+                    disabled: !this.table.checked.length,
+                    tooltips: { content: this.$t('请先勾选需要编辑的主机'), disabled: this.table.checked.length > 0 }
+                }, {
+                    id: 'import-edit',
+                    text: this.$t('导入编辑'),
+                    handler: this.handleEditImportInst,
+                    tooltips: this.$t('请先基于该列表导出并编辑后，再导入')
+                }]
+                if (this.scope !== 1) {
+                    buttonConfig.pop()
+                }
+                return buttonConfig
             }
         },
         watch: {
             'importInst.show' (show) {
                 if (!show) {
+                    this.importInst.type = 'new'
                     this.importInst.active = 'import'
                 } else {
                     this.importInst.directory = this.directoryId
                 }
+            },
+            'importInst.directory' (directory) {
+                this.importInst.payload.bk_module_id = directory
             }
         },
         async created () {
@@ -551,6 +589,24 @@
             },
             handleSetFilters () {
                 FilterForm.show()
+            },
+            handleNewImportInst () {
+                this.importInst.type = 'new'
+                this.importInst.show = true
+                this.importInst.title = this.$t('导入主机')
+                this.importInst.importUrl = `${window.API_HOST}hosts/import`
+                this.importInst.templdateAvailable = true
+            },
+            handleEditImportInst () {
+                this.importInst.type = 'edit'
+                this.importInst.show = true
+                this.importInst.title = this.$t('导入编辑')
+                this.importInst.importUrl = `${window.API_HOST}hosts/update`
+                this.importInst.templdateAvailable = false
+            },
+            handleImportSuccess () {
+                this.$parent.getHostList(true)
+                Bus.$emit('refresh-dir-count')
             }
         }
     }
@@ -637,6 +693,17 @@
             font-size: 14px;
             display: inline-block;
             vertical-align: -2px;
+        }
+    }
+
+    .edit-import-panel {
+        .alert {
+            margin: 24px 29px 0 33px
+        }
+        /deep/ {
+            .up-file {
+                margin-top: 20px;
+            }
         }
     }
 </style>

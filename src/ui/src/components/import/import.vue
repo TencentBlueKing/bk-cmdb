@@ -154,6 +154,9 @@
                     this.fileInfo.size = this.formatSize(fileInfo.size, 2)
                     const formData = new FormData()
                     formData.append('file', files[0])
+                    for (const [key, value] of Object.entries(this.importPayload)) {
+                        formData.append(key, value)
+                    }
                     this.isLoading = true
                     this.$http.post(this.importUrl, formData, { transformData: false, globalError: false }).then(res => {
                         const defaultResult = {
@@ -386,7 +389,7 @@
         }
 
         .upload-file-name {
-            width: 245px;
+            width: calc(100% - 200px);
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
