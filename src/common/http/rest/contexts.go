@@ -72,7 +72,7 @@ func (c *Contexts) RespEntity(data interface{}) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.writeAsJson(metadata.NewSuccessResp(data))
+	c.Response(metadata.NewSuccessResp(data))
 }
 
 // RespString response the data format to a json string.
@@ -206,7 +206,7 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 	} else {
 		resp.BaseResp = metadata.SuccessBaseResp
 	}
-	c.writeAsJson(&resp)
+	c.Response(&resp)
 }
 
 type CountInfo struct {
@@ -227,7 +227,7 @@ func (c *Contexts) RespEntityWithCount(count int64, info interface{}) {
 			Info:  info,
 		},
 	}
-	c.writeAsJson(&resp)
+	c.Response(&resp)
 }
 
 func (c *Contexts) WithStatusCode(statusCode int) *Contexts {
@@ -284,7 +284,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 		Data: nil,
 	}
 
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 func (c *Contexts) RespAutoError(err error) {
@@ -318,7 +318,7 @@ func (c *Contexts) RespAutoError(err error) {
 		Data: nil,
 	}
 
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 // WriteErrorf used to write a error response to the request client.
@@ -343,7 +343,7 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 		},
 		Data: nil,
 	}
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interface{}) {
@@ -365,7 +365,7 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 		Data: nil,
 	}
 
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 func (c *Contexts) RespBkEntity(data interface{}) {
@@ -405,7 +405,7 @@ func (c *Contexts) RespBkError(errCode int, errMsg string) {
 	}
 }
 
-func (c *Contexts) writeAsJson(resp *metadata.Response) {
+func (c *Contexts) Response(resp *metadata.Response) {
 	body, err := json.Marshal(resp)
 	if err != nil {
 		blog.ErrorfDepthf(2, "marshal json response failed, err: %v, rid: %s", err, c.Kit.Rid)

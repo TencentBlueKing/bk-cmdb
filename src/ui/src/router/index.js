@@ -220,7 +220,7 @@ router.afterEach(async (to, from) => {
 
 router.onError(error => {
     if (/Loading chunk (\d*) failed/.test(error.message)) {
-        $error(i18n.t('静态资源加载失败提示'))
+        $error(i18n.t('资源请求失败提示'))
     }
 })
 

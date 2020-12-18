@@ -87,7 +87,8 @@
             <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <cmdb-loading :loading="$loading(request.count)">
-                        <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
+                        <!-- 与查询详情功能重复暂去掉 -->
+                        <!-- <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
                             <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 :disabled="disabled"
@@ -95,7 +96,7 @@
                                 @click.stop="operationTemplate(row['id'], 'edit')">
                                 {{$t('编辑')}}
                             </bk-button>
-                        </cmdb-auth>
+                        </cmdb-auth> -->
                         <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
                             <template slot-scope="{ disabled }">
                                 <span class="text-primary"

@@ -1364,7 +1364,7 @@
     "主机搜索提示语": "Please input IP/ cloud id:IP, separated by a newline",
     "添加其他条件": "Select Other Condition",
     "暂不支持不同云区域的混合搜索": "Hybrid search of different cloud regions is not supported at the moment",
-    "静态资源加载失败提示": "Failed to load resources, please refresh and retry",
+    "资源请求失败提示": "Failed to load resources, please refresh and retry",
     "请输入关键字搜索": "Please enter keyword to filter",
     "请先填写筛选条件": "Please enter filter condition",
     "运营统计停止统计提示": "The administrator has temporarily stopped the cycle statistics of operation data. The current statistics may not be up to date",

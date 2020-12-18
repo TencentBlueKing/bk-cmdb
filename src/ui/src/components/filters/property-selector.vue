@@ -63,6 +63,8 @@
             ...mapGetters('objectModelClassify', ['getModelById']),
             propertyMap () {
                 let modelPropertyMap = { ...FilterStore.modelPropertyMap }
+                const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__']
+                modelPropertyMap.host = modelPropertyMap.host.filter(property => !ignoreHostProperties.includes(property.bk_property_id))
                 if (!FilterStore.bizId) {
                     return modelPropertyMap
                 }
@@ -71,8 +73,6 @@
                     module: modelPropertyMap.module || [],
                     set: modelPropertyMap.set || []
                 }
-                const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip']
-                modelPropertyMap.host = modelPropertyMap.host.filter(property => !ignoreHostProperties.includes(property.bk_property_id))
                 return modelPropertyMap
             },
             groups () {
