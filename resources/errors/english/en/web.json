@@ -17,7 +17,7 @@
     "1111016": "The format of user name and password are wrong, please check session.user_info in config file common.conf",
     "1111017": "Unknown login version %s",
     "1111018": "Failed to get the EN/CN-username map of instance objuser attribute, error: %s",
-    "1111019": "Failed to validate host",
+    "1111019": "Failed to validate host, error: %s",
      
     "": ""	   
 }
