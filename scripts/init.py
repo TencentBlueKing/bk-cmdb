@@ -278,17 +278,19 @@ datacollection:
     rateLimiter:
       qps: 40
       burst: 100
-# 监控配置
+# 监控配置， monitor配置项必须存在
 monitor:
-    # 监控插件名称, 有noop，blueking， 默认为noop
+    # 监控插件名称，有noop，blueking， 不填时默认为noop
     pluginName: noop
     # 是否开启监控
     enableMonitor: false
     # 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
     dataID: 0
-    # 采集数据后能够缓存的队列长度，默认100条数据
+    # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
     queueSize: 100
     # 用于对数据上报进行频率控制和限流
+    # qps的设置范围为1～50，默认值为10
+    # burst的设置范围为1～100，默认值为20
     rateLimiter:
       qps: 10
       burst: 20

@@ -10,26 +10,24 @@
  * limitations under the License.
  */
 
-package monitor
+package config
 
 import (
 	"net"
-	"time"
 
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 )
 
 const (
-	QueueSizeMax     = 10000
+	QueueSizeMax     = 1000
 	QueueSizeMin     = 1
 	QueueSizeDefault = 100
 
-	QPSMax     = 10000
+	QPSMax     = 50
 	QPSMin     = 1
 	QPSDefault = 10
 
-	BurstMax     = 20000
+	BurstMax     = 100
 	BurstMin     = 1
 	BurstDefault = 20
 )
@@ -40,7 +38,6 @@ var (
 
 // MonitorConfig is the config of monitor
 type MonitorConfig struct {
-	FinishInit bool
 	// PluginName current plugin name
 	PluginName string
 	// EnableMonitor enable monitor or not
@@ -57,37 +54,8 @@ type MonitorConfig struct {
 	SourceIP string
 }
 
-// InitMonitorCfg set monitor config
-func InitMonitorCfg() {
-	maxCnt := 100
-	cnt := 0
-	for MonitorCfg.PluginName == "" && cnt < maxCnt {
-		MonitorCfg.PluginName, _ = cc.String("monitor.pluginName")
-		MonitorCfg.EnableMonitor, _ = cc.Bool("monitor.enableMonitor")
-		dataID, _ := cc.Int("monitor.dataID")
-		MonitorCfg.DataID = int64(dataID)
-		queueSize, _ := cc.Int("monitor.queueSize")
-		MonitorCfg.QueueSize = int64(queueSize)
-		qps, _ := cc.Int("monitor.qps")
-		MonitorCfg.QPS = int64(qps)
-		burst, _ := cc.Int("monitor.burst")
-		MonitorCfg.Burst = int64(burst)
-		cnt++
-		blog.Infof("waiting monitor config to be init")
-		time.Sleep(time.Second)
-	}
-	MonitorCfg.FinishInit = true
-	if cnt == maxCnt {
-		blog.Infof("InitMonitorCfg failed, no monitor config is found")
-		return
-	}
-	checkAndCorrectCfg()
-	setMonitorSourceIP()
-	blog.Infof("InitMonitorCfg successfully, cfg: %#v", MonitorCfg)
-}
-
-// setMonitorSourceIP set monitor source ip
-func setMonitorSourceIP() {
+// SetMonitorSourceIP set monitor source ip
+func SetMonitorSourceIP() {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		blog.Errorf("get addrs err:%v", err)
@@ -106,8 +74,8 @@ func setMonitorSourceIP() {
 	}
 }
 
-// checkAndCorrectCfg check the config, correct it if config is wrong
-func checkAndCorrectCfg() {
+// CheckAndCorrectCfg check the config, correct it if config is wrong
+func CheckAndCorrectCfg() {
 	if MonitorCfg.QueueSize < QueueSizeMin || MonitorCfg.QueueSize > QueueSizeMax {
 		MonitorCfg.QueueSize = QueueSizeDefault
 	}

@@ -189,7 +189,9 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("handle notice failed, err: %v", err)
 	}
 
-	go monitor.InitMonitorCfg()
+	if err := monitor.InitMonitor(); err != nil {
+		return nil, fmt.Errorf("init monitor failed, err: %v", err)
+	}
 
 	return engine, nil
 }

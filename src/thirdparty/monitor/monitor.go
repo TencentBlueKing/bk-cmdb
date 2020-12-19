@@ -12,7 +12,132 @@
 
 package monitor
 
-// Monitor is the interface for all kinds of monitors
-type Monitor interface {
-	Collect(msg interface{}) error
+import (
+	"fmt"
+	"time"
+
+	"configcenter/src/apimachinery/flowctrl"
+	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/thirdparty/monitor/config"
+	"configcenter/src/thirdparty/monitor/meta"
+	"configcenter/src/thirdparty/monitor/plugins"
+)
+
+type Monitor struct {
+	// queue is the plugin used to process the collected data
+	plugin plugins.Plugin
+	// queue used to cache the data which will be reported
+	queue chan meta.Content
+}
+
+var monitor *Monitor
+
+// Collect is the monitor entrance used by other services
+func Collect(c meta.Content) {
+	if monitor == nil {
+		return
+	}
+
+	if !config.MonitorCfg.EnableMonitor {
+		blog.V(4).InfoDepthf(1, "Collect skipped, the monitor is not enabled")
+		return
+	}
+
+	monitor.collect(c)
+}
+
+// startMonitor create monitor instance and start monitor
+func startMonitor() error {
+	plugin, err := plugins.GetPlugin(config.MonitorCfg.PluginName)
+	if err != nil {
+		blog.Errorf("start monitor failed, GetPlugin err: %s, pluginName:%s", err, config.MonitorCfg.PluginName)
+		return err
+	}
+
+	monitor = &Monitor{
+		plugin: plugin,
+		queue:  make(chan meta.Content, config.MonitorCfg.QueueSize),
+	}
+	monitor.start()
+	blog.Infof("start monitor successfully, plugin is %#v", monitor.plugin)
+	return nil
+}
+
+// collect process the content collected
+func (m *Monitor) collect(c meta.Content) {
+	m.pushToQueue(c)
+}
+
+// pushToQueue push data to queue
+// throw the data away if exceed the queue length
+func (m *Monitor) pushToQueue(c meta.Content) {
+	select {
+	case m.queue <- c:
+	default:
+	}
+}
+
+// start run the monitor framework
+func (m *Monitor) start() {
+	if !config.MonitorCfg.EnableMonitor {
+		return
+	}
+
+	go m.reportLoop()
+}
+
+// reportLoop report data continuously and control the report rate
+func (m *Monitor) reportLoop() {
+	// control the report rate
+	throttle := flowctrl.NewRateLimiter(config.MonitorCfg.QPS, config.MonitorCfg.Burst)
+	for content := range m.queue {
+		if throttle.TryAccept() {
+			m.plugin.Report(content)
+		}
+	}
+}
+
+// InitMonitor init monitor config and monitor instance
+func InitMonitor() error {
+	// no need init for adminserver
+	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
+		return nil
+	}
+
+	maxCnt := 100
+	cnt := 0
+	for !cc.IsExist("monitor") && cnt < maxCnt {
+		blog.Infof("waiting monitor config to be init")
+		cnt++
+		time.Sleep(time.Millisecond * 300)
+	}
+
+	if cnt == maxCnt {
+		blog.Infof("init monitor failed, no monitor config is found, the config 'monitor' must exist")
+		return fmt.Errorf("init monitor failed, no monitor config is found, the config 'monitor' must exist")
+	}
+
+	config.MonitorCfg.PluginName, _ = cc.String("monitor.pluginName")
+	config.MonitorCfg.EnableMonitor, _ = cc.Bool("monitor.enableMonitor")
+	dataID, _ := cc.Int("monitor.dataID")
+	config.MonitorCfg.DataID = int64(dataID)
+	queueSize, _ := cc.Int("monitor.queueSize")
+	config.MonitorCfg.QueueSize = int64(queueSize)
+	qps, _ := cc.Int("monitor.qps")
+	config.MonitorCfg.QPS = int64(qps)
+	burst, _ := cc.Int("monitor.burst")
+	config.MonitorCfg.Burst = int64(burst)
+
+	config.CheckAndCorrectCfg()
+	config.SetMonitorSourceIP()
+	if err := startMonitor(); err != nil {
+		blog.Infof("init monitor failed, startMonitor err: %v", err)
+		return err
+	}
+	blog.InfoJSON("init monitor successfully, cfg: %s", config.MonitorCfg)
+
+	return nil
 }

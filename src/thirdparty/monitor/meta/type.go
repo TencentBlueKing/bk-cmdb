@@ -10,19 +10,14 @@
  * limitations under the License.
  */
 
-package plugins
+package meta
 
-import (
-	"configcenter/src/common"
+type MonitorType string
+
+// common monitor type
+const (
+	RedisFatalError MonitorType = "redis_fatal_error"
+	MongoFatalError MonitorType = "mongo_fatal_error"
+	ZKFatalError    MonitorType = "zk_fatal_error"
+	LogicFatalError MonitorType = "logic_fatal_error"
 )
-
-func init() {
-	Register(common.BKNoopMonitorPlugin, &NoopMonitor{})
-}
-
-// NoopMonitor is a implementation of Monitor for those all operations are no-ops
-type NoopMonitor struct{}
-
-func (m *NoopMonitor) Collect(msg interface{}) error {
-	return nil
-}

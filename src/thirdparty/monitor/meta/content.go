@@ -10,28 +10,27 @@
  * limitations under the License.
  */
 
-package plugins
+package meta
 
-import (
-	"configcenter/src/common"
-	"configcenter/src/thirdparty/monitor"
-)
-
-var (
-	allMonitors = make(map[string]monitor.Monitor)
-)
-
-// Register register a monitor with its name
-func Register(name string, monitor monitor.Monitor) {
-	allMonitors[name] = monitor
+// Content is the data processed by monitor
+type Content interface {
+	ContentName() string
 }
 
-// GetMonitor get the monitor according by the configured monitor name
-// if no monitor is found by the name , use the NoopMonitor
-func GetMonitor() monitor.Monitor {
-	monitor, ok := allMonitors[monitor.MonitorCfg.PluginName]
-	if ok {
-		return monitor
-	}
-	return allMonitors[common.BKNoopMonitorPlugin]
+// Alarm a Content implement used to alarm
+type Alarm struct {
+	// RequestID used to trace the log
+	RequestID string `json:"request_id"`
+	// Type used to classify alarm
+	Type MonitorType `json:"type"`
+	// Detail is the alarm detail
+	Detail string `json:"detail"`
+	// module name, like coreservice, hostserver
+	Module string `json:"module"`
+	// Dimension is self-defined kv info
+	Dimension map[string]string `json:"dimension"`
+}
+
+func (c *Alarm) ContentName() string {
+	return "alarm"
 }

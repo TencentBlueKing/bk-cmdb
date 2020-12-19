@@ -10,16 +10,21 @@
  * limitations under the License.
  */
 
-package monitor
+package noop
 
-// MonitorData is the common monitor data struct
-type MonitorData struct {
-	// RequestID used to trace the log
-	RequestID string `json:"request_id"`
-	// RequestID used to record the event name
-	EventName string `json:"event_name"`
-	// EventContent used to record the event content
-	EventContent string `json:"event_content"`
-	// module name, like coreservice, hostserver
-	Module string `json:"module"`
+import (
+	"configcenter/src/thirdparty/monitor/meta"
+)
+
+// NewNoop new a noop instance
+func NewNoop() *noop {
+	return new(noop)
+}
+
+// noop is a implementation of Plugin for those all operations are no-ops
+type noop struct{}
+
+// Report is a interface implement for noop
+func (m *noop) Report(c meta.Content) error {
+	return nil
 }
