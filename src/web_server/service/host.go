@@ -138,7 +138,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 	var file *xlsx.File
 	file = xlsx.NewFile()
 
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0)
+	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
+	if nil != err {
+		blog.Errorf("ExportHost failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
+		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail, objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
+	}
+
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0, usernameMap, propertyList)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

@@ -574,6 +574,9 @@
             },
             handleSaveProcessAfter () {
                 this.slider.show = false
+                this.showSyncInstanceTips()
+            },
+            showSyncInstanceTips () {
                 const message = () => (
                     <i18n path="成功更新模板进程，您可以通过XXX" tag="div" class="process-success-message">
                         <bk-link place="link" theme="primary" onClick={this.handleToSyncInstance}>{this.$t('同步功能')}</bk-link>
@@ -614,7 +617,7 @@
                                     }
                                 }
                             }).then(() => {
-                                this.$success(this.$t('删除成功'))
+                                this.showSyncInstanceTips()
                                 this.getProcessList()
                             })
                         }
