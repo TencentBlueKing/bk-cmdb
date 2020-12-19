@@ -146,7 +146,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "get hosts failed").Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(),
 			},
 			Data: nil,
 		}
@@ -156,10 +156,10 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "get hosts failed").Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, errMsg[0]).Error(),
 			},
 			Data: map[string]interface{}{
-				"err": errMsg,
+				"error": errMsg,
 			},
 		}
 	}
@@ -170,8 +170,8 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,
-				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "check hosts failed").Error(),
+				Code:   common.CCErrWebHostCheckFail,
+				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, err.Error()).Error(),
 			},
 			Data: nil,
 		}
@@ -180,11 +180,11 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,
-				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "check hosts failed").Error(),
+				Code:   common.CCErrWebHostCheckFail,
+				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, errMsg[0]).Error(),
 			},
 			Data: map[string]interface{}{
-				"err": errMsg,
+				"error": errMsg,
 			},
 		}
 	}
@@ -262,7 +262,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "get hosts failed").Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(),
 			},
 			Data: nil,
 		}
@@ -272,10 +272,10 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "get hosts failed").Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, errMsg[0]).Error(),
 			},
 			Data: map[string]interface{}{
-				"err": errMsg,
+				"error": errMsg,
 			},
 		}
 	}
@@ -286,8 +286,8 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,
-				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "check hosts failed").Error(),
+				Code:   common.CCErrWebHostCheckFail,
+				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, err.Error()).Error(),
 			},
 			Data: nil,
 		}
@@ -296,11 +296,11 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		return &metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
 				Result: false,
-				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, " check hosts failed").Error(),
+				Code:   common.CCErrWebHostCheckFail,
+				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, errMsg[0]).Error(),
 			},
 			Data: map[string]interface{}{
-				"err": errMsg,
+				"error": errMsg,
 			},
 		}
 	}
@@ -359,7 +359,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 		}
 
 		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
-		if err != nil || cloudIDVal < 0 {
+		if err != nil || cloudIDVal != common.BKDefaultDirSubArea {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_invalid_row", index))
 			continue
 		}
@@ -368,7 +368,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 		// check if the host exist in db
 		key := generateHostCloudKey(innerIP, cloudIDVal)
 		if _, exist := existentHosts[key]; exist {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, key))
 			continue
 		}
 	}
@@ -387,13 +387,23 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		return nil, err
 	}
 
-	for index, hostInfo := range hostInfos {
-		if hostInfo == nil {
+	for index, host := range hostInfos {
+		if host == nil {
 			continue
 		}
-		hostID, ok := hostInfo[common.BKHostIDField]
+
+		cloudID, _ := host[common.BKCloudIDField]
+		if cloudID != nil {
+			cloudIDVal, err := util.GetInt64ByInterface(cloudID)
+			if err != nil || cloudIDVal != common.BKDefaultDirSubArea {
+				errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_invalid_row", index))
+				continue
+			}
+		}
+
+		hostID, ok := host[common.BKHostIDField]
 		if !ok {
-			blog.Errorf("CheckHostsUpdated failed, because bk_host_id field doesn't exist, innerIp: %v, rid: %v", hostInfo[common.BKHostInnerIPField], rid)
+			blog.Errorf("CheckHostsUpdated failed, because bk_host_id field doesn't exist, innerIp: %v, rid: %v", host[common.BKHostInnerIPField], rid)
 			errMsg = append(errMsg, ccLang.Languagef("import_update_host_miss_hostID", index))
 			continue
 		}
