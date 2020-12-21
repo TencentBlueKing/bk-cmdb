@@ -317,7 +317,7 @@
         methods: {
             async getFullAmountBusiness () {
                 try {
-                    const data = await this.$http.get('biz/simplify?sort=bk_biz_name')
+                    const data = await this.$http.get('biz/simplify?sort=bk_biz_id')
                     this.businessList = data.info || []
                 } catch (e) {
                     console.error(e)
@@ -360,7 +360,7 @@
                 if (this.assign.curSelected === 'toBusiness') {
                     this.assignOptions = this.businessList.map(item => ({
                         id: item.bk_biz_id,
-                        name: item.bk_biz_name,
+                        name: `[${item.bk_biz_id}] ${item.bk_biz_name}`,
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
