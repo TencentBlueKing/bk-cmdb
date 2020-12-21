@@ -23,9 +23,11 @@ import (
 type Rule interface {
 	GetDeep() int
 	Validate() (string, error)
-	ToMgo() (mgoFilter map[string]interface{}, errKey string, err error)
+	ToMgo(specialHandleFunc SpecialCondHandleFunc) (mgoFilter map[string]interface{}, errKey string, err error)
 	Match(matcher Matcher) bool
 }
+
+type SpecialCondHandleFunc func(key string, operator Operator, value interface{}) (map[string]interface{}, bool, error)
 
 // *************** define condition ************************
 type Condition string
@@ -204,9 +206,19 @@ func (r AtomRule) validateValue() error {
 }
 
 // ToMgo generate mongo filter from rule
-func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err error) {
+func (r AtomRule) ToMgo(specialHandleFunc SpecialCondHandleFunc) (mgoFiler map[string]interface{}, key string, err error) {
 	if key, err := r.Validate(); err != nil {
 		return nil, key, fmt.Errorf("validate failed, key: %s, err: %s", key, err)
+	}
+
+	if specialHandleFunc != nil {
+		mgoFiler, isHandled, err := specialHandleFunc(r.Field, r.Operator, r.Value)
+		if err != nil {
+			return nil, key, fmt.Errorf("handle special condition failed, key: %s, err: %v", r.Field, err)
+		}
+		if isHandled {
+			return mgoFiler, "", nil
+		}
 	}
 
 	filter := make(map[string]interface{})
@@ -339,7 +351,7 @@ type CombinedRule struct {
 
 var (
 	// 嵌套层级的深度按树的高度计算，查询条件最大深度为3即最多嵌套2层
-	MaxDeep           = 3
+	MaxDeep = 3
 )
 
 func (r CombinedRule) GetDeep() int {
@@ -368,7 +380,7 @@ func (r CombinedRule) Validate() (string, error) {
 	return "", nil
 }
 
-func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err error) {
+func (r CombinedRule) ToMgo(specialHandleFunc SpecialCondHandleFunc) (mgoFilter map[string]interface{}, key string, err error) {
 	if err := r.Condition.Validate(); err != nil {
 		return nil, "condition", err
 	}
@@ -377,7 +389,7 @@ func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err
 	}
 	filters := make([]map[string]interface{}, 0)
 	for idx, rule := range r.Rules {
-		filter, key, err := rule.ToMgo()
+		filter, key, err := rule.ToMgo(specialHandleFunc)
 		if err != nil {
 			return nil, fmt.Sprintf("rules[%d].%s", idx, key), err
 		}

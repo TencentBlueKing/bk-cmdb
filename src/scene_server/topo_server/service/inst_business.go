@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/thirdparty/hooks"
@@ -418,6 +419,13 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		return
 	}
 
+	// validate if condition and filter are both set, only one of them can be used
+	if len(searchCond.Condition) > 0 && searchCond.Filter != nil {
+		blog.ErrorJSON("condition and filter are both set, input: %s, rid: %s", searchCond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition & filter"))
+		return
+	}
+
 	attrCond := condition.CreateCondition()
 	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
@@ -433,7 +441,53 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		userFields = append(userFields, attribute.PropertyID)
 	}
 
-	searchCond.Condition = handleSpecialBusinessFieldSearchCond(searchCond.Condition, userFields)
+	if len(searchCond.Condition) > 0 {
+		searchCond.Condition = handleSpecialBusinessFieldSearchCond(searchCond.Condition, userFields)
+	}
+
+	if searchCond.Filter != nil {
+		if searchCond.Filter.GetDeep() > querybuilder.MaxDeep {
+			blog.ErrorJSON("filter exceeds max query condition depth: %s, input: %s, rid: %s",
+				querybuilder.MaxDeep, searchCond, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "filter"))
+			return
+		}
+
+		userCondFunc := func(key string, op querybuilder.Operator, value interface{}) (map[string]interface{}, bool, error) {
+			if util.InStrArr(userFields, key) {
+				if op != querybuilder.OperatorEqual && op != querybuilder.OperatorNotEqual {
+					return nil, false, nil
+				}
+
+				targetStr, ok := value.(string)
+				if !ok || len(targetStr) == 0 {
+					return nil, false, nil
+				}
+
+				exactAnd := make([]map[string]interface{}, 0)
+				for _, user := range strings.Split(strings.Trim(targetStr, ","), ",") {
+					like := strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", gparams.SpecialCharChange(user), -1)
+					switch op {
+					case querybuilder.OperatorEqual:
+						exactAnd = append(exactAnd, mapstr.MapStr{key: mapstr.MapStr{common.BKDBLIKE: like}})
+					case querybuilder.OperatorNotEqual:
+						exactAnd = append(exactAnd, mapstr.MapStr{key: mapstr.MapStr{common.BKDBNot: mapstr.MapStr{common.BKDBLIKE: like}}})
+					}
+				}
+
+				return map[string]interface{}{common.BKDBAND: exactAnd}, true, nil
+			}
+			return nil, false, nil
+		}
+
+		mgoFilter, key, err := searchCond.Filter.ToMgo(userCondFunc)
+		if err != nil {
+			blog.ErrorJSON("filter.%s is invalid, input: %s, rid: %s", key, searchCond, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "filter"))
+			return
+		}
+		searchCond.Condition = mgoFilter
+	}
 
 	// parse business id from user's condition for testing.
 	var bizIDs []int64

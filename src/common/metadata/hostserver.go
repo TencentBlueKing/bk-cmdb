@@ -419,7 +419,7 @@ func (option ListHosts) Validate() (errKey string, err error) {
 
 func (option ListHosts) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
 	if option.HostPropertyFilter != nil {
-		mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
+		mgoFilter, key, err := option.HostPropertyFilter.ToMgo(nil)
 		if err != nil {
 			return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
 		}
