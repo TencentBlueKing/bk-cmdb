@@ -7,7 +7,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -90,7 +89,7 @@ func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, i
 }
 
 func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[string]string, error) {
-	var defErr errors.DefaultCCErrorIf
+	defErr := s.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	userListStr := strings.Join(userList, ",")
 	usernameMap := map[string]string{}
@@ -98,7 +97,7 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		params := make(map[string]string)
 		params["exact_lookups"] = userListStr
 		params["fields"] = "username,display_name"
-		user := plugins.CurrentPlugin(c, s.Config.Version)
+		user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
 
 		userListEsb, errNew := user.GetUserList(c, s.Config.ConfigMap)
 		if errNew != nil {
