@@ -119,22 +119,24 @@ func (c *CC) run() error {
 	}
 
 	go func() {
-		select {
-		case pEvent := <-commonConfEvent:
-			c.onProcChange(pEvent)
-		case pEvent := <-extraConfEvent:
-			c.onExtraChange(pEvent)
-		case pEvent := <-mongodbConfEvent:
-			c.onMongodbChange(pEvent)
-		case pEvent := <-redisConfEvent:
-			c.onRedisChange(pEvent)
-		case eEvent := <-errEvent:
-			c.onErrorChange(eEvent)
-		case langEvent := <-langEvent:
-			c.onLanguageChange(langEvent)
-		case <-c.ctx.Done():
-			blog.Warnf("config center event watch stopped because of context done.")
-			return
+		for {
+			select {
+			case pEvent := <-commonConfEvent:
+				c.onProcChange(pEvent)
+			case pEvent := <-extraConfEvent:
+				c.onExtraChange(pEvent)
+			case pEvent := <-mongodbConfEvent:
+				c.onMongodbChange(pEvent)
+			case pEvent := <-redisConfEvent:
+				c.onRedisChange(pEvent)
+			case eEvent := <-errEvent:
+				c.onErrorChange(eEvent)
+			case langEvent := <-langEvent:
+				c.onLanguageChange(langEvent)
+			case <-c.ctx.Done():
+				blog.Warnf("config center event watch stopped because of context done.")
+				return
+			}
 		}
 	}()
 	return nil
