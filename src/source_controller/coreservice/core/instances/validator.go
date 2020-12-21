@@ -13,6 +13,7 @@
 package instances
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
@@ -26,6 +27,7 @@ type validator struct {
 	propertySlice []metadata.Attribute
 	require       map[string]bool
 	requireFields []string
+	uniqueAttrs   []metadata.ObjectUnique
 	dependent     OperationDependences
 	objID         string
 	language      language.CCLanguageIf
@@ -39,10 +41,15 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 	valid.propertySlice = make([]metadata.Attribute, 0)
 	valid.require = make(map[string]bool)
 	valid.requireFields = make([]string, 0)
+	valid.uniqueAttrs = make([]metadata.ObjectUnique, 0)
+	valid.objID = objID
 	valid.errIf = kit.CCError
+	valid.dependent = dependent
+	valid.language = language
+
 	result, err := dependent.SelectObjectAttWithParams(kit, objID, bizID)
 	if nil != err {
-		return valid, err
+		return nil, err
 	}
 	for _, attr := range result {
 		valid.properties[attr.PropertyID] = attr
@@ -53,8 +60,16 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 			valid.requireFields = append(valid.requireFields, attr.PropertyID)
 		}
 	}
-	valid.objID = objID
-	valid.dependent = dependent
-	valid.language = language
+
+	uniqueAttrs, err := valid.dependent.SearchUnique(kit, valid.objID)
+	if nil != err {
+		return nil, err
+	}
+	if len(uniqueAttrs) == 0 {
+		blog.Errorf("[validUpdateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, kit.Rid)
+		uniqueAttrs = make([]metadata.ObjectUnique, 0)
+	}
+	valid.uniqueAttrs = uniqueAttrs
+
 	return valid, nil
 }

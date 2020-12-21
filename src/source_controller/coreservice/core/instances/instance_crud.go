@@ -79,7 +79,7 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 	return origins, !mongodb.Client().IsNotFoundError(err), err
 }
 
-func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID uint64, instanceManager *instanceManager) (origin mapstr.MapStr, err error) {
+func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr, err error) {
 	tableName := common.GetInstTableName(objID)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.GetInstIDField(objID), Val: instID})
