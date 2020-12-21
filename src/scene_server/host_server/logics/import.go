@@ -209,28 +209,15 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 			continue
 		}
 
-		var iSubArea interface{}
-		iSubArea, ok := host[common.BKCloudIDField]
-		if false == ok {
-			iSubArea = host[common.BKCloudIDField]
-		}
-		if nil == iSubArea {
-			iSubArea = common.BKDefaultDirSubArea
-		}
-
-		iSubAreaVal, err := util.GetInt64ByInterface(iSubArea)
-		if err != nil || iSubAreaVal < 0 {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_invalid_row", index))
-			continue
-		}
-		host[common.BKCloudIDField] = iSubAreaVal
+		// the bk_cloud_id is directly connected area
+		host[common.BKCloudIDField] = common.BKDefaultDirSubArea
 
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
 
 		var auditLog *metadata.AuditLog
 
-		intHostID, err := instance.addHostInstance(iSubAreaVal, index, appID, []int64{moduleID}, toInternalModule, host)
+		intHostID, err := instance.addHostInstance(common.BKDefaultDirSubArea, index, appID, []int64{moduleID}, toInternalModule, host)
 		if err != nil {
 			errMsg = append(errMsg, fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
 			continue

@@ -353,20 +353,8 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 			continue
 		}
 
-		cloudID, _ := host[common.BKCloudIDField]
-		if cloudID == nil {
-			cloudID = common.BKDefaultDirSubArea
-		}
-
-		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
-		if err != nil || cloudIDVal != common.BKDefaultDirSubArea {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_invalid_row", index))
-			continue
-		}
-		host[common.BKCloudIDField] = cloudIDVal
-
 		// check if the host exist in db
-		key := generateHostCloudKey(innerIP, cloudIDVal)
+		key := generateHostCloudKey(innerIP, common.BKDefaultDirSubArea)
 		if _, exist := existentHosts[key]; exist {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, key))
 			continue
@@ -392,15 +380,6 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 			continue
 		}
 
-		cloudID, _ := host[common.BKCloudIDField]
-		if cloudID != nil {
-			cloudIDVal, err := util.GetInt64ByInterface(cloudID)
-			if err != nil || cloudIDVal != common.BKDefaultDirSubArea {
-				errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_invalid_row", index))
-				continue
-			}
-		}
-
 		hostID, ok := host[common.BKHostIDField]
 		if !ok {
 			blog.Errorf("CheckHostsUpdated failed, because bk_host_id field doesn't exist, innerIp: %v, rid: %v", host[common.BKHostInnerIPField], rid)
@@ -414,8 +393,15 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		}
 
 		// check if the host exist in db
-		if _, exist := existentHost[hostIDVal]; !exist {
+		ip, exist := existentHost[hostIDVal]
+		if !exist {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_no_exist_error", index, hostIDVal))
+			continue
+		}
+
+		excelIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
+		if ip != excelIP {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", index, excelIP, hostIDVal, ip))
 			continue
 		}
 	}
@@ -491,8 +477,8 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 }
 
 // getExistHostsByHostIDs get hosts that already in db(same bk_host_id host)
-// return: map[hostID]bool
-func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (map[int64]bool, error) {
+// return: map[hostID]innerIP
+func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (map[int64]string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
@@ -507,7 +493,7 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 	}
 
 	if len(hostIDs) == 0 {
-		return make(map[int64]bool), nil
+		return make(map[int64]string), nil
 	}
 
 	// step2. query host info by hostIDs
@@ -528,6 +514,7 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 		},
 		Fields: []string{
 			common.BKHostIDField,
+			common.BKHostInnerIPField,
 		},
 	}
 	resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
@@ -541,11 +528,11 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
-	hostMap := make(map[int64]bool, 0)
+	hostMap := make(map[int64]string, 0)
 	for _, host := range resp.Data.Info {
 		if hostID, ok := host[common.BKHostIDField]; ok {
 			if hostIDVal, err := util.GetInt64ByInterface(hostID); err == nil {
-				hostMap[hostIDVal] = true
+				hostMap[hostIDVal] = util.GetStrByInterface(host[common.BKHostInnerIPField])
 			}
 		}
 	}
