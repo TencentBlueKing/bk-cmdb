@@ -3,7 +3,7 @@
         <div class="options-left fl">
             <template v-if="scope === 1">
                 <cmdb-auth class="mr10"
-                    :ignore="!!activeDirectory"
+                    :ignore="!activeDirectory"
                     :auth="[
                         { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
                         { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
