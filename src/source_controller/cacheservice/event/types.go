@@ -15,11 +15,8 @@ package event
 import (
 	"fmt"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/stream"
 )
 
 // get resource key
@@ -48,14 +45,6 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}
 	return key, nil
-}
-
-type FlowOptions struct {
-	key      Key
-	watch    stream.LoopInterface
-	isMaster discovery.ServiceManageInterface
-	watchDB  dal.DB
-	ccDB     dal.DB
 }
 
 type HostArchive struct {

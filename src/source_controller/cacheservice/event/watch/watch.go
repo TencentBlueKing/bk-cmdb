@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package event
+package watch
 
 import (
 	"time"
@@ -18,10 +18,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/storage/stream/types"
 )
 
 /* eventserver watcher defines, just created base on old service/watch.go */
@@ -33,6 +34,7 @@ const (
 	// loopInternal watch loop internal duration
 	loopInternal = 250 * time.Millisecond
 
+	// the number of events to read in one step TODO: increase this later
 	eventStep = 200
 )
 
@@ -178,14 +180,16 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 		return make([]*watch.WatchEventDetail, 0), nil
 	}
 
-	util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
-
 	cursors := make([]string, len(hitNodes))
 	for index, node := range hitNodes {
 		cursors[index] = node.Cursor
 	}
 
-	details, errCursors, errCursorIndexMap := c.searchEventDetailsFromRedis(kit, cursors, opts.Fields, key)
+	details, errCursors, errCursorIndexMap, err := c.searchEventDetailsFromRedis(kit, cursors, key)
+	if err != nil {
+		return nil, err
+	}
+
 	if len(errCursors) == 0 {
 		resp := make([]*watch.WatchEventDetail, len(details))
 		for idx, detail := range details {
@@ -223,6 +227,9 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 		errDetail, exists := indexDetailMap[idx]
 		if exists {
 			detail = errDetail
+		} else {
+			jsonStr := types.GetEventDetail(&detail)
+			detail = *json.CutJsonDataWithFields(jsonStr, opts.Fields)
 		}
 
 		resp[idx] = &watch.WatchEventDetail{

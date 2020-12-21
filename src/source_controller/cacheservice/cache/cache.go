@@ -17,10 +17,10 @@ import (
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/source_controller/cacheservice/cache/business"
-	"configcenter/src/source_controller/cacheservice/cache/event"
 	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 	"configcenter/src/source_controller/cacheservice/cache/topology"
+	"configcenter/src/source_controller/cacheservice/event/watch"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
@@ -52,7 +52,7 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		Host:     hostClient,
 		Business: bizClient,
 		Topology: topo,
-		Event:    event.NewClient(watchDB, mongodb.Client(), redis.Client()),
+		Event:    watch.NewClient(watchDB, mongodb.Client(), redis.Client()),
 	}
 	return cache, nil
 }
@@ -62,5 +62,5 @@ type ClientSet struct {
 	Topology *topology.Topology
 	Host     *host.Client
 	Business *business.Client
-	Event    *event.Client
+	Event    *watch.Client
 }

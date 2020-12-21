@@ -314,8 +314,12 @@ func (j *JsonString) UnmarshalJSON(b []byte) error {
 }
 
 // GetEventDetail get event document detail, returns EventDetail's detail field
-func GetEventDetail(detailStr string) string {
-	return gjson.Get(detailStr, "detail").Raw
+func GetEventDetail(detailStr *string) *string {
+	if detailStr == nil {
+		return new(string)
+	}
+	detail := gjson.Get(*detailStr, "detail").Raw
+	return &detail
 }
 
 type TokenHandler interface {

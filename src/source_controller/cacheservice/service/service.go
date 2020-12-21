@@ -25,7 +25,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
 	cacheop "configcenter/src/source_controller/cacheservice/cache"
-	watchEvent "configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/source_controller/cacheservice/event/flow"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
@@ -108,7 +108,7 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return dbErr
 	}
 
-	if err := watchEvent.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
+	if err := flow.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
 		blog.Errorf("new watch event failed, err: %v", err)
 		return err
 	}

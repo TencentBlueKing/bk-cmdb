@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 	"configcenter/src/source_controller/cacheservice/event"
@@ -357,13 +358,13 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 func (s *cacheService) GetLatestEvent(ctx *rest.Contexts) {
 	opt := new(metadata.GetLatestEventOption)
 	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
 	node, err := s.cacheSet.Event.GetLatestEvent(ctx.Kit, opt)
 	if err != nil {
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
@@ -373,13 +374,13 @@ func (s *cacheService) GetLatestEvent(ctx *rest.Contexts) {
 func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
 	opt := new(metadata.SearchEventNodesOption)
 	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
 	nodes, err := s.cacheSet.Event.SearchFollowingEventChainNodes(ctx.Kit, opt)
 	if err != nil {
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
@@ -389,13 +390,13 @@ func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
 func (s *cacheService) SearchEventDetails(ctx *rest.Contexts) {
 	opt := new(metadata.SearchEventDetailsOption)
 	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
 	details, err := s.cacheSet.Event.SearchEventDetails(ctx.Kit, opt)
 	if err != nil {
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
@@ -414,29 +415,33 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	options := new(watch.WatchEventOptions)
 	if err = ctx.DecodeInto(&options); err != nil {
 		blog.Errorf("watch event, but decode request body failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
 	if err = options.Validate(); err != nil {
 		blog.Errorf("watch event, but got invalid request options, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPInputInvalid))
+
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 
 	key, err := event.GetResourceKeyWithCursorType(options.Resource)
 	if err != nil {
 		blog.Errorf("watch event, but get resource key with cursor type failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPInputInvalid))
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
+
+	// read all data from db in case secondary node's latency causes data inconsistency
+	util.SetDBReadPreference(ctx.Kit.Ctx, common.PrimaryMode)
 
 	// watch with cursor
 	if len(options.Cursor) != 0 {
 		events, err := s.cacheSet.Event.WatchWithCursor(ctx.Kit, key, options)
 		if err != nil {
 			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
+			ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 			return
 		}
 
@@ -451,7 +456,7 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("watch event with start from: %s failed, err: %v, rid: %s",
 				time.Unix(options.StartFrom, 0).Format(time.RFC3339), err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
+			ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 			return
 		}
 
@@ -463,7 +468,7 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	events, err := s.cacheSet.Event.WatchFromNow(ctx.Kit, key, options)
 	if err != nil {
 		blog.Errorf("watch event from now failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
 		return
 	}
 

@@ -10,21 +10,24 @@
  * limitations under the License.
  */
 
-package event
+package flow
 
 import (
 	"context"
 	"strings"
 	"time"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/redis"
+	"configcenter/src/storage/stream"
 	"configcenter/src/storage/stream/types"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,9 +37,17 @@ import (
 // dbChainTTLTime the ttl time seconds of the db event chain, used to set the ttl index of mongodb
 const dbChainTTLTime = 48 * 60 * 60
 
-func newFlow(ctx context.Context, opts FlowOptions) error {
+type flowOptions struct {
+	key      event.Key
+	watch    stream.LoopInterface
+	isMaster discovery.ServiceManageInterface
+	watchDB  dal.DB
+	ccDB     dal.DB
+}
+
+func newFlow(ctx context.Context, opts flowOptions) error {
 	flow := Flow{
-		FlowOptions: opts,
+		flowOptions: opts,
 		metrics:     initialMetrics(opts.key.Collection()),
 	}
 
@@ -97,7 +108,7 @@ func (f *Flow) createDBChainCollection(ctx context.Context) error {
 }
 
 type Flow struct {
-	FlowOptions
+	flowOptions
 	metrics *eventMetrics
 }
 
@@ -144,7 +155,11 @@ func (f *Flow) RunFlow(ctx context.Context) error {
 
 func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 	eventLen := len(es)
-	chainNodes := make([]watch.ChainNode, eventLen)
+	if eventLen == 0 {
+		return false
+	}
+
+	chainNodes := make([]*watch.ChainNode, eventLen)
 	oids := make([]string, eventLen)
 	hasError := true
 
@@ -178,16 +193,26 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		// collect event's basic metrics
 		f.metrics.collectBasic(e)
 
+		switch e.OperationType {
+		case types.Insert, types.Update, types.Replace, types.Delete:
+		case types.Invalidate:
+			blog.Errorf("loop flow, received invalid event operation type, doc: %s", e.DocBytes)
+			continue
+		default:
+			blog.Errorf("loop flow, received unsupported event operation type, doc: %s", e.DocBytes)
+			continue
+		}
+
 		oids[index] = e.Oid
 		id := ids[index]
 		name := f.key.Name(e.DocBytes)
-		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e, id)
+		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e)
 		if err != nil {
 			blog.Errorf("get event cursor failed, name: %s, err: %v, oid: %s ", name, err, e.Oid)
 			return false
 		}
 
-		chainNode := watch.ChainNode{
+		chainNode := &watch.ChainNode{
 			ID:          id,
 			ClusterTime: e.ClusterTime,
 			Oid:         e.Oid,
@@ -304,7 +329,7 @@ func (f *Flow) getDeleteEventDetails(es []*types.Event) (map[string][]byte, bool
 	}
 
 	if f.key.Collection() == common.BKTableNameBaseHost {
-		docs := make([]HostArchive, 0)
+		docs := make([]event.HostArchive, 0)
 		err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
 		if err != nil {
 			f.metrics.collectMongoError()
@@ -352,9 +377,9 @@ func (f *Flow) getDeleteEventDetails(es []*types.Event) (map[string][]byte, bool
   inserted former nodes with a larger id, we need to update the exist nodes' ids to ensure the sequence of them), and
   then insert the newer nodes one by one in case another duplicate error occurred.
 */
-func (f *Flow) handleInsertChainNodeDuplicateError(chainNodes []watch.ChainNode) (bool, error) {
+func (f *Flow) handleInsertChainNodeDuplicateError(chainNodes []*watch.ChainNode) (bool, error) {
 	cursors := make([]string, len(chainNodes))
-	chainNodeMap := make(map[string]watch.ChainNode)
+	chainNodeMap := make(map[string]*watch.ChainNode)
 	for index, chainNode := range chainNodes {
 		cursors[index] = chainNode.Cursor
 		chainNodeMap[chainNode.Cursor] = chainNode
@@ -403,12 +428,12 @@ func (f *Flow) handleInsertChainNodeDuplicateError(chainNodes []watch.ChainNode)
 }
 
 type flowTokenHandler struct {
-	key     Key
+	key     event.Key
 	watchDB dal.DB
 	metrics *eventMetrics
 }
 
-func NewFlowTokenHandler(key Key, watchDB dal.DB, metrics *eventMetrics) types.TokenHandler {
+func NewFlowTokenHandler(key event.Key, watchDB dal.DB, metrics *eventMetrics) types.TokenHandler {
 	return &flowTokenHandler{
 		key:     key,
 		watchDB: watchDB,

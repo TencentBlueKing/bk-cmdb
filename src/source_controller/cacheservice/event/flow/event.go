@@ -10,13 +10,14 @@
  * limitations under the License.
  */
 
-package event
+package flow
 
 import (
 	"context"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/blog"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream"
 )
@@ -85,8 +86,8 @@ type Event struct {
 }
 
 func (e *Event) runHost(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      HostKey,
+	opts := flowOptions{
+		key:      event.HostKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -97,8 +98,8 @@ func (e *Event) runHost(ctx context.Context) error {
 }
 
 func (e *Event) runModuleHostRelation(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      ModuleHostRelationKey,
+	opts := flowOptions{
+		key:      event.ModuleHostRelationKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -109,8 +110,8 @@ func (e *Event) runModuleHostRelation(ctx context.Context) error {
 }
 
 func (e *Event) runBiz(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      BizKey,
+	opts := flowOptions{
+		key:      event.BizKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -121,8 +122,8 @@ func (e *Event) runBiz(ctx context.Context) error {
 }
 
 func (e *Event) runSet(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      SetKey,
+	opts := flowOptions{
+		key:      event.SetKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -133,8 +134,8 @@ func (e *Event) runSet(ctx context.Context) error {
 }
 
 func (e *Event) runModule(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      ModuleKey,
+	opts := flowOptions{
+		key:      event.ModuleKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -145,8 +146,8 @@ func (e *Event) runModule(ctx context.Context) error {
 }
 
 func (e *Event) runSetTemplate(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      SetTemplateKey,
+	opts := flowOptions{
+		key:      event.SetTemplateKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -157,8 +158,8 @@ func (e *Event) runSetTemplate(ctx context.Context) error {
 }
 
 func (e *Event) runObjectBase(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      ObjectBaseKey,
+	opts := flowOptions{
+		key:      event.ObjectBaseKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -169,8 +170,8 @@ func (e *Event) runObjectBase(ctx context.Context) error {
 }
 
 func (e *Event) runProcess(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      ProcessKey,
+	opts := flowOptions{
+		key:      event.ProcessKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
@@ -181,8 +182,8 @@ func (e *Event) runProcess(ctx context.Context) error {
 }
 
 func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
-	opts := FlowOptions{
-		key:      ProcessInstanceRelationKey,
+	opts := flowOptions{
+		key:      event.ProcessInstanceRelationKey,
 		watch:    e.watch,
 		watchDB:  e.watchDB,
 		ccDB:     e.ccDB,
