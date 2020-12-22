@@ -513,6 +513,4 @@ type ProcessProperty struct {
 	GatewayPort        metadata.PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
 	GatewayProtocol    metadata.PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
 	GatewayCity        metadata.PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
-
-	BindInfo metadata.ProcPropertyBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
