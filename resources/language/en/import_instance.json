@@ -29,6 +29,7 @@
     "import_host_exist_error":"%d line host has already existed, the host whose [innerIP-cloudID] is [%s] already existent",
     "import_host_no_exist_error":"%d line host whose hostID is %d is not existent",
     "import_host_ip_not_consistent":"%d line host inner ip [%s] is not consistent with the existent hostID %d whose ip is [%s]",
+    "import_host_no_need_hostID": "%d line add host can not contain bk_host_id",
     "import_update_host_miss_hostID": "%d line missing hostID",
     "import_host_update_fail": "%d line update fail %s",
     "import_update_host_hostID_not_int": "%d line the value of the hostID is not a numeric type",

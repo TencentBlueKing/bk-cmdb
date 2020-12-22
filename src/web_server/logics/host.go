@@ -353,6 +353,11 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 			continue
 		}
 
+		if _, ok := host[common.BKHostIDField]; ok {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_no_need_hostID", index))
+			continue
+		}
+
 		// check if the host exist in db
 		key := generateHostCloudKey(innerIP, common.BKDefaultDirSubArea)
 		if _, exist := existentHosts[key]; exist {
