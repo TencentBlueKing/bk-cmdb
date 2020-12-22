@@ -44,7 +44,8 @@ type Service struct {
 
 func (s *Service) WebService() *gin.Engine {
 	setGinMode()
-	ws := gin.Default()
+	ws := gin.New()
+	ws.Use(gin.Logger())
 
 	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))

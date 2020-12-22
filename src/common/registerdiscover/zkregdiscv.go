@@ -55,33 +55,37 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 
 			var watchEvn <-chan gozk.Event
 			var err error
-			var nodeExist bool
 
 			if zkRD.registerPath == "" {
-				nodeExist = false
+				zkRD.registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
+				if err != nil {
+					blog.Errorf("fail to register server node(%s). CreateEphAndSeqEx err:%s", path, err.Error())
+					if err == gozk.ErrConnectionClosed {
+						blog.Error("zk is closed, try to reconnect")
+						zkRD.reconnectZk()
+						continue
+					}
+					time.Sleep(time.Second)
+				}
+				// continue retry watch node
+				continue
 			} else {
-				nodeExist, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
+				_, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
 				if err != nil {
 					blog.Errorf("fail to watch register node(%s), err:%s\n", zkRD.registerPath, err.Error())
 					switch err {
-					case gozk.ErrClosing, gozk.ErrConnectionClosed:
-						// connect has closed. retry conntect
-						if conErr := zkRD.zkcli.Connect(); conErr != nil {
-							blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n", zkRD.registerPath, conErr.Error())
-						} else {
-							// connected sucess, retry
-							continue
-						}
-						// err still exists, waiting 1s. avoid too quick retry.
-						time.Sleep(time.Second * 5)
+					case gozk.ErrConnectionClosed:
+						blog.Error("zk is closed, try to reconnect")
+						zkRD.reconnectZk()
 						continue
 					case gozk.ErrNoNode:
 						// special handle
 						// current node not exist, create node
-						nodeExist = false
+						zkRD.registerPath = ""
 					default:
 						// clear register path, so that it can register to a new path
 						zkRD.zkcli.Del(zkRD.registerPath, -1)
+						zkRD.registerPath = ""
 						// err still exists, waiting 1s. avoid too quick retry.
 						time.Sleep(time.Second * 1)
 						continue
@@ -89,14 +93,6 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 				}
 			}
 
-			if !nodeExist {
-				zkRD.registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
-				if err != nil {
-					blog.Errorf("fail to register server node(%s). err:%s", path, err.Error())
-				}
-				// contune retry watch node
-				continue
-			}
 			select {
 			case <-watchCtx.Done():
 				blog.Infof("watch register node(%s) done, now exist service register.\n", path)
@@ -173,6 +169,11 @@ func (zkRD *ZkRegDiscv) loopDiscover(discvCtx context.Context, path string, env 
 				time.Sleep(5 * time.Second)
 				continue
 			}
+			if err == zkclient.ErrConnectionClosed {
+				blog.Error("zk is closed, try to reconnect")
+				zkRD.reconnectZk()
+				continue
+			}
 
 			fmt.Printf("unknow err accur when watch children:%v,will watch after 10s", err)
 			time.Sleep(10 * time.Second)
@@ -206,12 +207,11 @@ func (zkRD *ZkRegDiscv) getServerInfoByPath(path string) *DiscoverEvent {
 				continue
 			}
 			if err == zkclient.ErrConnectionClosed {
-				err = zkRD.zkcli.ConnectEx(zkRD.sessionTimeOut)
-				fmt.Printf("connect zookeeper error:%v,will try connect after 10s", err)
-				time.Sleep(10 * time.Second)
+				blog.Error("zk is closed, try to reconnect")
+				zkRD.reconnectZk()
 				continue
 			}
-			fmt.Printf("get children node(%s) error:%v,will watch after 10s", path, err)
+			fmt.Printf("get children node(%s) error:%v,will watch after 10s\n", path, err)
 			time.Sleep(10 * time.Second)
 			continue
 		}
@@ -229,9 +229,8 @@ func (zkRD *ZkRegDiscv) getServerInfoByPath(path string) *DiscoverEvent {
 					continue
 				}
 				if err == zkclient.ErrConnectionClosed {
-					err = zkRD.zkcli.ConnectEx(zkRD.sessionTimeOut)
-					fmt.Printf("connect zookeeper error:%v,will try connect after 5s", err)
-					time.Sleep(5 * time.Second)
+					blog.Error("zk is closed, try to reconnect")
+					zkRD.reconnectZk()
 					isGetNodeInfoErr = true
 					break
 				}
@@ -249,6 +248,19 @@ func (zkRD *ZkRegDiscv) getServerInfoByPath(path string) *DiscoverEvent {
 		return discvEnv
 	}
 
+}
+
+// reconnectZk try to reconnect zookeeper until success
+func (zkRD *ZkRegDiscv) reconnectZk() {
+	for {
+		if err := zkRD.zkcli.ConnectEx(zkRD.sessionTimeOut); err != nil {
+			fmt.Printf("reconnect zookeeper error:%v, will try connect after 5s\n", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		fmt.Println("reconnect zookeeper success")
+		return
+	}
 }
 
 func (zkRD *ZkRegDiscv) sortNode(nodes []string) []string {
