@@ -100,7 +100,7 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		params := make(map[string]string)
 		params["exact_lookups"] = userListStr
 		params["fields"] = "username,display_name"
-		user := plugins.CurrentPlugin(c, s.Config.Version)
+		user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
 
 		userListEsb, err := user.GetUserList(c, s.Config.ConfigMap)
 		if err != nil {
