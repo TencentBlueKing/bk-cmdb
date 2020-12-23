@@ -81,7 +81,8 @@
                             {{$t('移除')}}
                         </span>
                     </cmdb-auth>
-                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出')}}</li>
+                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出选中')}}</li>
+                    <li :class="['bk-dropdown-item', { disabled: !count }]" @click="handleBatchExport($event)">{{$t('导出全部')}}</li>
                     <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
                         :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
                         <span href="javascript:void(0)"
@@ -139,6 +140,7 @@
     import FilterStore from '@/components/filters/store'
     import ExportFields from '@/components/export-fields/export-fields.js'
     import FilterUtils from '@/components/filters/utils'
+    import BatchExport from '@/components/batch-export/index.js'
     export default {
         components: {
             FilterCollection,
@@ -178,6 +180,9 @@
             ]),
             hostProperties () {
                 return FilterStore.getModelProperties('host')
+            },
+            count () {
+                return this.$parent.table.pagination.count
             },
             selection () {
                 return this.$parent.table.selection
@@ -254,12 +259,13 @@
                     history: true
                 })
             },
-            async handleExport (event) {
+            handleExport (event) {
                 if (!this.hasSelection) {
                     event.stopPropagation()
                     return false
                 }
                 ExportFields.show({
+                    title: this.$t('导出选中'),
                     properties: FilterStore.getModelProperties('host'),
                     propertyGroups: FilterStore.propertyGroups,
                     handler: this.exportHanlder
@@ -282,6 +288,42 @@
                 } finally {
                     this.$store.commit('setGlobalLoading', false)
                 }
+            },
+            async handleBatchExport (event) {
+                if (!this.count) {
+                    event.stopPropagation()
+                    return false
+                }
+                ExportFields.show({
+                    title: this.$t('导出全部'),
+                    properties: FilterStore.getModelProperties('host'),
+                    propertyGroups: FilterStore.propertyGroups,
+                    handler: this.batchExportHandler
+                })
+            },
+            batchExportHandler (properties) {
+                BatchExport({
+                    name: 'host',
+                    count: this.count,
+                    options: page => {
+                        const condition = this.$parent.getParams()
+                        const formData = new FormData()
+                        formData.append('bk_biz_id', this.bizId)
+                        formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
+                        formData.append('export_condition', JSON.stringify({
+                            ...condition,
+                            page: {
+                                ...page,
+                                sort: 'bk_host_id'
+                            }
+                        }))
+                        return {
+                            url: `${window.API_HOST}hosts/export`,
+                            method: 'post',
+                            data: formData
+                        }
+                    }
+                })
             },
             handleExcelUpdate (event) {
                 this.sideslider.component = CmdbImport.name

@@ -244,15 +244,16 @@ function getCancelToken () {
 }
 
 async function download (options = {}) {
-    const { url, method = 'post', data } = options
+    const { url, method = 'post', data, name } = options
     const config = Object.assign({
         globalError: false,
         originalResponse: true,
         responseType: 'blob'
     }, options.config)
     if (!url) {
-        $error('Empty download url')
-        return false
+        const error = new Error('Empty download url')
+        $error(error.message)
+        return Promise.reject(error)
     }
     let promise
     if (methodsWithData.includes(method)) {
@@ -263,7 +264,7 @@ async function download (options = {}) {
     try {
         const response = await promise
         const disposition = response.headers['content-disposition']
-        const fileName = disposition.substring(disposition.indexOf('filename') + 9)
+        const fileName = name || disposition.substring(disposition.indexOf('filename') + 9)
         const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
             type: response.headers['content-type']
         }))
@@ -275,10 +276,12 @@ async function download (options = {}) {
         link.click()
         document.body.removeChild(link)
         return Promise.resolve(response)
-    } catch (e) {
+    } catch (error) {
+        if (Axios.isCancel(error)) {
+            return Promise.reject(error)
+        }
         $error('Download failure')
-        console.error(e)
-        return Promise.reject(e)
+        return Promise.reject(error)
     }
 }
 
