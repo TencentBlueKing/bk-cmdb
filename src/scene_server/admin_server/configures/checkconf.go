@@ -74,23 +74,29 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 		if err := cc.isOperationConfigOK(v, file); err != nil {
 			return err
 		}
+
+		// check monitor config
+		if err := cc.isMonitorConfigOK(v, file); err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
 
-func (cc *ConfCenter) isRedisConfigOK(prefix, fileName string, v *viper.Viper)  error {
+func (cc *ConfCenter) isRedisConfigOK(prefix, fileName string, v *viper.Viper) error {
 	if err := cc.isConfigEmpty(prefix+".host", fileName, v); err != nil {
 		return err
 	}
 	if err := cc.isConfigNotIntVal(prefix+".database", fileName, v); err != nil {
 		return err
 	}
-	if v.IsSet(prefix+".maxOpenConns") {
-		if err :=cc.isConfigNotIntVal(prefix+".maxOpenConns", fileName, v); err != nil {
+	if v.IsSet(prefix + ".maxOpenConns") {
+		if err := cc.isConfigNotIntVal(prefix+".maxOpenConns", fileName, v); err != nil {
 			return err
 		}
 	}
-	if v.IsSet(prefix+".maxIDleConns") {
+	if v.IsSet(prefix + ".maxIDleConns") {
 		if err := cc.isConfigNotIntVal(prefix+".maxIDleConns", fileName, v); err != nil {
 			return err
 		}
@@ -144,7 +150,7 @@ func (cc *ConfCenter) isEsConfigOK(v *viper.Viper, fileName string) error {
 
 func (cc *ConfCenter) isDatacollectionConfigOK(v *viper.Viper, fileName string) error {
 	if v.IsSet("datacollection.hostsnap.changeRangePercent") {
-		if err:= cc.isConfigNotIntVal("datacollection.hostsnap.changeRangePercent", fileName, v); err != nil {
+		if err := cc.isConfigNotIntVal("datacollection.hostsnap.changeRangePercent", fileName, v); err != nil {
 			return err
 		}
 	}
@@ -187,9 +193,36 @@ func (cc *ConfCenter) isOperationConfigOK(v *viper.Viper, fileName string) error
 	return nil
 }
 
+func (cc *ConfCenter) isMonitorConfigOK(v *viper.Viper, fileName string) error {
+	if err := cc.isConfigKeyExist("monitor", fileName, v); err != nil {
+		return err
+	}
+
+	if v.IsSet("monitor.enableMonitor") {
+		if err := cc.isConfigNotBoolVal("monitor.enableMonitor", fileName, v); err != nil {
+			return err
+		}
+	}
+
+	if v.IsSet("monitor.pluginName") {
+		pluginName := v.GetString("monitor.pluginName")
+		if pluginName == "blueking" {
+			if err := cc.isConfigEmpty("monitor.dataID", fileName, v); err != nil {
+				return err
+			}
+			if dataID := v.GetInt64("monitor.dataID"); dataID <= 0 {
+				blog.Errorf("The configuration file is %s, the %s must be an integer >0 when plugin name is blueking !", fileName, "monitor.dataID")
+				return fmt.Errorf("The configuration file is %s, the %s must be an integer >0 when plugin name is blueking !", fileName, "monitor.dataID")
+			}
+		}
+	}
+
+	return nil
+}
+
 func (cc *ConfCenter) isTimeFormat(configName, fileName string, v *viper.Viper) error {
 	atTime := v.GetString(configName)
-	timeVal := strings.Split(atTime,":")
+	timeVal := strings.Split(atTime, ":")
 	if len(timeVal) != 2 {
 		blog.Errorf("The configuration file is %s, the format of %s is wrong !", fileName, configName)
 		return fmt.Errorf("The configuration file is %s, the format of %s is wrong !", fileName, configName)
@@ -207,6 +240,14 @@ func (cc *ConfCenter) isTimeFormat(configName, fileName string, v *viper.Viper) 
 	if min > 0 && hour == 24 {
 		blog.Errorf("The configuration file is %s, the format of %s is wrong !", fileName, configName)
 		return fmt.Errorf("The configuration file is %s, the format of %s is wrong !", fileName, configName)
+	}
+	return nil
+}
+
+func (cc *ConfCenter) isConfigKeyExist(configName, fileName string, v *viper.Viper) error {
+	if !v.InConfig(configName) {
+		blog.Errorf("The configuration file is %s, the %s must exist !", fileName, configName)
+		return fmt.Errorf("The configuration file is %s, the %s must exist !", fileName, configName)
 	}
 	return nil
 }

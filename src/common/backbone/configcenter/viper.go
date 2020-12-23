@@ -79,23 +79,17 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 }
 
 func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
-
-	// if it is admin_server, skip the loading of other files,load only error and language.
-	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
-		errorres, _ := String("errors.res")
-		languageres, _ := String("language.res")
-		return loadErrorAndLanguage(errorres, languageres, handler)
-	}
+	cnfDir, _ := String("confs.dir")
 
 	// load local error and language
-	errorres := confPath + "/errors"
-	languageres := confPath + "/language"
+	errorres, _ := String("errors.res")
+	languageres, _ := String("language.res")
 	if err := loadErrorAndLanguage(errorres, languageres, handler); err != nil {
 		return err
 	}
 
 	// load local common
-	commonPath := confPath + "/" + types.CCConfigureCommon
+	commonPath := cnfDir + "/" + types.CCConfigureCommon
 	if err := SetCommonFromFile(commonPath); err != nil {
 		blog.Errorf("load config from file[%s], but can not found common config", commonPath)
 		return err
@@ -104,8 +98,13 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 		handler.OnProcessUpdate(ProcessConfig{}, ProcessConfig{})
 	}
 
+	// if it is admin_server, skip the loading of other files,load only error, language and common
+	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
+		return nil
+	}
+
 	// load local extra
-	extraPath := confPath + "/" + types.CCConfigureExtra
+	extraPath := cnfDir + "/" + types.CCConfigureExtra
 	if err := SetExtraFromFile(extraPath); err != nil {
 		blog.Errorf("load config from file[%s], but can not found extra config", extraPath)
 		return err
@@ -115,13 +114,13 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 	}
 
 	// load local redis
-	redisPath := confPath + "/" + types.CCConfigureRedis
+	redisPath := cnfDir + "/" + types.CCConfigureRedis
 	if err := SetRedisFromFile(redisPath); err != nil {
 		return err
 	}
 
 	// load local mongodb
-	mongodbPath := confPath + "/" + types.CCConfigureMongo
+	mongodbPath := cnfDir + "/" + types.CCConfigureMongo
 	if err := SetMongodbFromFile(mongodbPath); err != nil {
 		return err
 	}
