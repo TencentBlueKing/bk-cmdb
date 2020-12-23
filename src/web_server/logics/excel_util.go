@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -30,8 +31,13 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
+const (
+	userAliasPattern = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
+)
+
 var (
-	headerRow = common.HostAddMethodExcelIndexOffset
+	headerRow       = common.HostAddMethodExcelIndexOffset
+	userAliasRegexp = regexp.MustCompile(userAliasPattern)
 )
 
 // getFilterFields 不需要展示字段
@@ -283,6 +289,12 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			} else {
 				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], "not a valid organization type", rid)
 			}
+		case common.FieldTypeUser:
+			// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
+			userNames := util.GetStrByInterface(host[fieldName])
+			userNames = userAliasRegexp.ReplaceAllString(userNames, "")
+			userNames = strings.Trim(strings.Trim(userNames, " "), ",")
+			host[fieldName] = userNames
 		default:
 			if util.IsStrProperty(field.PropertyType) {
 				host[fieldName] = strings.TrimSpace(cell.Value)
