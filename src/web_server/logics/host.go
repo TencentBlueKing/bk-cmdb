@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -30,70 +31,100 @@ import (
 )
 
 // GetHostData get host data from excel
-func (lgc *Logics) GetHostData(appID int64, hostIDStr string, hostFields []string, header http.Header) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetHostData(appID int64, hostIDStr string, hostFields []string, exportCondStr string,
+	header http.Header, defLang lang.DefaultCCLanguageIf) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	if hostIDStr == "" && exportCondStr == "" {
+		return nil, errors.New(defLang.Language("both_hostid_exportcond_empty"))
+	}
+
 	hostInfo := make([]mapstr.MapStr, 0)
 	sHostCond := make(map[string]interface{})
-
-	hostIDArr := strings.Split(hostIDStr, ",")
-	iHostIDArr := make([]int64, 0)
-	for _, j := range hostIDArr {
-		hostID, err := strconv.ParseInt(j, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		iHostIDArr = append(iHostIDArr, hostID)
-	}
-	if -1 != appID {
-		sHostCond[common.BKAppIDField] = appID
-		sHostCond["ip"] = make(map[string]interface{})
-		sHostCond["condition"] = make([]interface{}, 0)
-		sHostCond["page"] = make(map[string]interface{})
-	} else {
-		sHostCond[common.BKAppIDField] = -1
-		sHostCond["ip"] = make(map[string]interface{})
-	}
-	condArr := make([]interface{}, 0)
-
-	// host condition
-	condition := make(map[string]interface{})
-	hostCondArr := make([]interface{}, 0)
-	hostCond := make(map[string]interface{})
-	hostCond["field"] = common.BKHostIDField
-	hostCond["operator"] = common.BKDBIN
-	hostCond["value"] = iHostIDArr
-	hostCondArr = append(hostCondArr, hostCond)
-	condition[common.BKObjIDField] = common.BKInnerObjIDHost
-	condition["fields"] = make([]string, 0)
-	if len(hostFields) > 0 {
-		condition["fields"] = hostFields
-	}
-	condition["condition"] = hostCondArr
-	condArr = append(condArr, condition)
-
-	// biz condition
-	condition = make(map[string]interface{})
-	condition[common.BKObjIDField] = common.BKInnerObjIDApp
-	condition["fields"] = make([]interface{}, 0)
-	condition["condition"] = make([]interface{}, 0)
-	condArr = append(condArr, condition)
-
-	// set condition
-	condition = make(map[string]interface{})
-	condition[common.BKObjIDField] = common.BKInnerObjIDSet
-	condition["fields"] = make([]interface{}, 0)
-	condition["condition"] = make([]interface{}, 0)
-	condArr = append(condArr, condition)
-
-	// module condition
-	condition = make(map[string]interface{})
-	condition[common.BKObjIDField] = common.BKInnerObjIDModule
-	condition["fields"] = make([]interface{}, 0)
-	condition["condition"] = make([]interface{}, 0)
-	condArr = append(condArr, condition)
-
-	sHostCond["condition"] = condArr
+	sHostCond["ip"] = make(map[string]interface{})
+	sHostCond["condition"] = make([]interface{}, 0)
 	sHostCond["page"] = make(map[string]interface{})
+	sHostCond[common.BKAppIDField] = appID
+
+	// hostIDStr has the higher priority
+	if hostIDStr != "" {
+		hostIDArr := strings.Split(hostIDStr, ",")
+		iHostIDArr := make([]int64, 0)
+		for _, j := range hostIDArr {
+			hostID, err := strconv.ParseInt(j, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			iHostIDArr = append(iHostIDArr, hostID)
+		}
+		if len(iHostIDArr) > common.BKMaxExportLimit {
+			return nil, errors.New(defLang.Languagef("host_id_len_err", common.BKMaxExportLimit))
+		}
+
+		condArr := make([]interface{}, 0)
+
+		// host condition
+		condition := make(map[string]interface{})
+		hostCondArr := make([]interface{}, 0)
+		hostCond := make(map[string]interface{})
+		hostCond["field"] = common.BKHostIDField
+		hostCond["operator"] = common.BKDBIN
+		hostCond["value"] = iHostIDArr
+		hostCondArr = append(hostCondArr, hostCond)
+		condition[common.BKObjIDField] = common.BKInnerObjIDHost
+		condition["fields"] = make([]string, 0)
+		if len(hostFields) > 0 {
+			condition["fields"] = hostFields
+		}
+		condition["condition"] = hostCondArr
+		condArr = append(condArr, condition)
+
+		// biz condition
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDApp
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
+		// set condition
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDSet
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
+		// module condition
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDModule
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
+		sHostCond["condition"] = condArr
+	} else {
+		exportCond := new(metadata.HostCommonSearch)
+		err := json.Unmarshal([]byte(exportCondStr), &exportCond)
+		if err != nil {
+			blog.Errorf("unmarshal err:%v, exportCondStr:%s", err, exportCondStr)
+			return nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKMaxExportLimit {
+			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxExportLimit))
+		}
+		sHostCond["ip"] = exportCond.Ip
+		sHostCond["page"] = exportCond.Page
+
+		// set host fields
+		if len(hostFields) > 0 {
+			for idx, cond := range exportCond.Condition {
+				if cond.ObjectID == common.BKInnerObjIDHost {
+					exportCond.Condition[idx].Fields = hostFields
+				}
+			}
+		}
+		sHostCond["condition"] = exportCond.Condition
+	}
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetHostData(context.Background(), header, sHostCond)
 	if nil != err {

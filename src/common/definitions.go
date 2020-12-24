@@ -50,6 +50,9 @@ const (
 	// BKAuditLogPageLimit the audit log page limit
 	BKAuditLogPageLimit = 200
 
+	// BKMaxExportRecord the limit to export
+	BKMaxExportLimit = 10000
+
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 
