@@ -24,6 +24,7 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/healthz"
 	"configcenter/src/apimachinery/hostserver"
+	"configcenter/src/apimachinery/operationserver"
 	"configcenter/src/apimachinery/procserver"
 	"configcenter/src/apimachinery/taskserver"
 	"configcenter/src/apimachinery/toposerver"
@@ -37,6 +38,7 @@ type ClientSetInterface interface {
 	AdminServer() adminserver.AdminServerClientInterface
 	ApiServer() apiserver.ApiServerClientInterface
 	EventServer() eventserver.EventServerClientInterface
+	OperationServer() operationserver.OperationServerClientInterface
 
 	CoreService() coreservice.CoreServiceClientInterface
 	TaskServer() taskserver.TaskServerClientInterface
@@ -146,6 +148,17 @@ func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 	}
 	cs.Mock.SetMockData = false
 	return eventserver.NewEventServerClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) OperationServer() operationserver.OperationServerClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.OperationServer(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	cs.Mock.SetMockData = false
+	return operationserver.NewOperationServerClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) Healthz() healthz.HealthzInterface {

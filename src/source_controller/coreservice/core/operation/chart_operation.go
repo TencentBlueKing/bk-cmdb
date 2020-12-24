@@ -24,7 +24,7 @@ func (m *operationManager) SearchOperationChart(kit *rest.Kit, inputParam interf
 	opt := map[string]interface{}{}
 	chartConfig := make([]metadata.ChartConfig, 0)
 
-	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).All(kit.Ctx, &chartConfig); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(inputParam).All(kit.Ctx, &chartConfig); err != nil {
 		blog.Errorf("SearchOperationChart fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrOperationSearchChartFail)
 	}

@@ -30,6 +30,45 @@ func parseModelBizID(data string) (int64, error) {
 	return model.BizID, nil
 }
 
+func parseConfigID(data []byte) (uint64, error) {
+	model := &struct {
+		ConfigID uint64 `json:"config_id"`
+	}{}
+
+	if len(data) != 0 {
+		if err := json.Unmarshal(data, model); nil != err {
+			return 0, err
+		}
+	}
+
+	return model.ConfigID, nil
+}
+
+func parseOperationChartData(chartType string, instInfo interface{}) (interface{}, error) {
+	var chartData interface{}
+	// chartData 的数据结构按report_type分三类
+	// 1.report_type 属于 ["host_change_biz_chart"]
+	// 2.report_type 属于 ["model_inst_change_chart"]
+	// 3.report_type 属于 ["custom","model_inst_chart","host_cloud_chart","host_biz_chart","host_os_chart","model_and_inst_count"]
+	switch chartType {
+	case common.HostChangeBizChart:
+		chartData = &map[string][]metadata.StringIDCount{}
+	case common.ModelInstChangeChart:
+		chartData = &metadata.ModelInstChange{}
+	default:
+		chartData = &[]metadata.StringIDCount{}
+	}
+	jsonInstInfo, err := json.Marshal(instInfo)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(jsonInstInfo, chartData)
+	if err != nil {
+		return nil, err
+	}
+	return chartData, nil
+}
+
 // 依照"bk_obj_id"和"bk_property_type":"objuser"查询"cc_ObjAttDes"集合,得到"bk_property_id"的值;
 // 然后以它的值为key,取得Info中的value,然后以value作为param访问ESB,得到其中文名。
 func (s *Service) getUsernameMapWithPropertyList(c *gin.Context, objID string, infoList []mapstr.MapStr) (map[string]string, []string, error) {

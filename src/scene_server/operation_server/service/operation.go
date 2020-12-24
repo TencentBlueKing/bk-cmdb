@@ -93,6 +93,10 @@ func (o *OperationServer) DeleteOperationChart(ctx *rest.Contexts) {
 
 func (o *OperationServer) SearchOperationChart(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
+	if err := ctx.DecodeInto(&opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	result, err := o.Engine.CoreAPI.CoreService().Operation().SearchOperationCharts(ctx.Kit.Ctx, ctx.Kit.Header, opt)
