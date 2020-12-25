@@ -119,10 +119,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	domainUrl, _ := cc.String("webServer.site.domainUrl")
 	w.Config.Site.DomainUrl = domainUrl + "/"
-	w.Config.Site.HtmlRoot, _  = cc.String("webServer.site.htmlRoot")
+	w.Config.Site.HtmlRoot, _ = cc.String("webServer.site.htmlRoot")
 	w.Config.Site.ResourcesPath, _ = cc.String("webServer.site.resourcesPath")
-	w.Config.Site.BkLoginUrl, _  = cc.String("webServer.site.bkLoginUrl")
-	w.Config.Site.AppCode, _  = cc.String("webServer.site.appCode")
+	w.Config.Site.BkLoginUrl, _ = cc.String("webServer.site.bkLoginUrl")
+	w.Config.Site.AppCode, _ = cc.String("webServer.site.appCode")
 	w.Config.Site.CheckUrl, _ = cc.String("webServer.site.checkUrl")
 
 	authscheme, err := cc.String("webServer.site.authscheme")
@@ -140,14 +140,15 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	}
 
 	w.Config.Site.AccountUrl, _ = cc.String("webServer.site.bkAccountUrl")
-	w.Config.Site.BkHttpsLoginUrl, _  = cc.String("webServer.site.bkHttpsLoginUrl")
-	w.Config.Site.HttpsDomainUrl, _  = cc.String("webServer.site.httpsDomainUrl")
-	w.Config.Site.PaasDomainUrl, _  = cc.String("webServer.site.paasDomainUrl")
+	w.Config.Site.BkHttpsLoginUrl, _ = cc.String("webServer.site.bkHttpsLoginUrl")
+	w.Config.Site.HttpsDomainUrl, _ = cc.String("webServer.site.httpsDomainUrl")
+	w.Config.Site.PaasDomainUrl, _ = cc.String("webServer.site.paasDomainUrl")
+	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
 
-	w.Config.Session.Name, _  = cc.String("webServer.session.name")
-	w.Config.Session.MultipleOwner, _  = cc.String("webServer.session.multipleOwner")
-	w.Config.Session.DefaultLanguage, _  = cc.String("webServer.session.defaultlanguage")
-	w.Config.LoginVersion, _  = cc.String("webServer.login.version")
+	w.Config.Session.Name, _ = cc.String("webServer.session.name")
+	w.Config.Session.MultipleOwner, _ = cc.String("webServer.session.multipleOwner")
+	w.Config.Session.DefaultLanguage, _ = cc.String("webServer.session.defaultlanguage")
+	w.Config.LoginVersion, _ = cc.String("webServer.login.version")
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
@@ -160,6 +161,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	if esbConfig, err := esb.ParseEsbConfig("webServer"); err == nil {
 		esb.UpdateEsbConfig(*esbConfig)
 	}
+	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")
 
 }
 

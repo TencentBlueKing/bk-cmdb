@@ -51,8 +51,8 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	createIdxArr := []types.Index{
-		types.Index{Name: "idx_id", Keys: map[string]int32{"id": -1}, Background: true, Unique: true},
-		types.Index{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
+		{Name: "idx_id", Keys: map[string]int32{"id": -1}, Background: true, Unique: true},
+		{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
 	}
 	for _, idx := range createIdxArr {
 		exist := false
@@ -176,7 +176,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 	flag := "updateflag"
 	for _, asst := range assts {
-		if asst.ObjectAttID == common.BKChildStr {
+		if asst.ObjectAttID == "bk_childid" {
 			asst.AsstKindID = common.AssociationKindMainline
 			asst.AssociationName = buildObjAsstID(asst)
 			asst.Mapping = metadata.OneToOneMapping
@@ -279,7 +279,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		}
 	}
 	blog.InfoJSON("start drop column cond:%s", flag)
-	if err = db.Table(common.BKTableNameInstAsst).DropColumn(ctx, flag); err != nil {
+	if err = dropFlagColumn(ctx, db, conf); err != nil {
 		return err
 	}
 
@@ -326,6 +326,50 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	if err = db.Table(common.BKTableNameObjAsst).Delete(ctx, delCond.ToMapStr()); err != nil {
 		return err
 	}
+	return nil
+}
+
+func dropFlagColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	flag := "updateflag"
+	flagFilter := map[string]interface{}{
+		flag: map[string]interface{}{
+			"$exists": true,
+		},
+	}
+	cnt, err := db.Table(common.BKTableNameInstAsst).Find(flagFilter).Count(ctx)
+	if err != nil {
+		blog.ErrorJSON("dropFlagColumn failed, Find err: %s, filter: %#v, ", err, flagFilter)
+		return err
+	}
+
+	if cnt == 0 {
+		return nil
+	}
+
+	pageSize := uint64(2000)
+	for startIdx := uint64(0); startIdx < cnt; startIdx += pageSize {
+		insts := make([]map[string]int64, 0)
+		if err := db.Table(common.BKTableNameInstAsst).Find(flagFilter).Fields(common.BKFieldID).Start(startIdx).Limit(pageSize).All(ctx, &insts); err != nil {
+			blog.Errorf("find insts failed, Find err: %s", err.Error())
+			return err
+		}
+		instIDs := make([]int64, len(insts))
+		for i, inst := range insts {
+			instIDs[i] = inst[common.BKFieldID]
+		}
+
+		filter := map[string]interface{}{
+			common.BKFieldID: map[string]interface{}{
+				"$in": instIDs,
+			},
+		}
+		if err := db.Table(common.BKTableNameInstAsst).DropDocsColumn(ctx, flag, filter); err != nil {
+			blog.Errorf("dropFlagColumn failed, filter:%#v, DropDocsColumn err:%v", filter, err)
+			return err
+		}
+	}
+	blog.Infof("drop flag count:%d successfully", cnt)
+
 	return nil
 }
 

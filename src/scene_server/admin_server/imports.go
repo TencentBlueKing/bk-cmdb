@@ -46,7 +46,6 @@ import (
 
 	// v3.5.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.08.20.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x19.08.26.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.08.26.02"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.09.03.02"
@@ -86,7 +85,6 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202004151435"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202004241035"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202004291536"
-	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202005201015"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202006021120"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202006092135"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202006231730"
@@ -106,4 +104,16 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010131456"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010151455"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010151650"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010211805"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202010281615"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011021415"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011021501"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011171550"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011172152"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011192014"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011201146"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011241510"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011251014"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202011301723"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202012011450"
 )

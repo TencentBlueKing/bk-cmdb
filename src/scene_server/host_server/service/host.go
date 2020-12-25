@@ -287,9 +287,6 @@ func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 
 	result := make([]meta.HostInstanceProperties, 0)
 	for _, attr := range attribute {
-		if attr.PropertyID == common.BKChildStr {
-			continue
-		}
 		result = append(result, meta.HostInstanceProperties{
 			PropertyID:    attr.PropertyID,
 			PropertyName:  attr.PropertyName,
@@ -321,7 +318,7 @@ func (s *Service) HostSnapInfo(ctx *rest.Contexts) {
 	}
 
 	// get snapshot
-	result, err := s.CoreAPI.CoreService().Host().GetHostSnap(ctx.Kit.Ctx, ctx.Kit.Header, hostID)
+	result, err := s.CoreAPI.CacheService().Cache().Host().GetHostSnap(ctx.Kit.Ctx, ctx.Kit.Header, hostID)
 
 	if err != nil {
 		blog.Errorf("HostSnapInfo, http do error, err: %v ,input:%#v, rid:%s", err, hostID, ctx.Kit.Rid)
@@ -379,7 +376,7 @@ func (s *Service) HostSnapInfoBatch(ctx *rest.Contexts) {
 
 	input := meta.HostSnapBatchInput{HostIDs: hostIDs}
 	// get snapshot
-	result, err := s.CoreAPI.CoreService().Host().GetHostSnapBatch(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	result, err := s.CoreAPI.CacheService().Cache().Host().GetHostSnapBatch(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		blog.Errorf("HostSnapInfoBatch failed, http do error, err: %v ,input:%#v, rid:%s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPReadBodyFailed))
@@ -935,7 +932,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 
 		// save audit log.
 		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -1377,6 +1374,15 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		hosts[index] = hostInfo
 		indexHostIDMap[index] = intHostID
 	}
+
+	if len(hostIDArr) == 0 {
+		ctx.RespEntity(map[string]interface{}{
+			"error":   errMsg,
+			"success": []string{},
+		})
+		return
+	}
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)

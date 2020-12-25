@@ -210,7 +210,7 @@
 
 <script>
     import { mapState, mapGetters, mapActions } from 'vuex'
-    import cmdbColumnsConfig from '@/components/columns-config/columns-config'
+    import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
     import cmdbImport from '@/components/import/import'
     import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
     import cmdbPropertySelector from '@/components/property-selector'

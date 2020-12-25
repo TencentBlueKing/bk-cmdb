@@ -508,27 +508,27 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
+func (p *process) UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceInstanceResult)
-	subPath := "/update/process/service_instance/%d"
+	subPath := "/updatemany/process/service_instance/biz/%d"
 
 	err := p.client.Put().
 		WithContext(ctx).
-		Body(instance).
-		SubResourcef(subPath, instanceID).
+		Body(option).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("UpdateServiceInstance failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
+		blog.Errorf("UpdateServiceInstances failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
-	return &ret.Data, nil
+	return nil
 }
 
 func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.CoreDeleteServiceInstanceOption) errors.CCErrorCoder {
@@ -805,27 +805,4 @@ func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Hea
 	}
 
 	return nil
-}
-
-func (p *process) GetProc2Module(ctx context.Context, h http.Header, option metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
-	ret := new(metadata.GetProc2ModuleResult)
-	subPath := "/findmany/process/proc2module"
-
-	err := p.client.Post().
-		Body(option).
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("GetProc2Module failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
-	}
-
-	return ret.Data, nil
 }

@@ -17,9 +17,14 @@
                         :key="data.host.bk_host_id"
                         :index="index"
                         :id="data.host.bk_host_id"
-                        :name="data.host.bk_host_innerip"
+                        :name="getName(data)"
                         :source-processes="sourceProcesses"
-                        @delete-instance="handleDeleteInstance">
+                        :editing="getEditState(data.instance)"
+                        :instance="data.instance"
+                        @delete-instance="handleDeleteInstance"
+                        @edit-name="handleEditName(data.instance)"
+                        @confirm-edit-name="handleConfirmEditName(data.instance, ...arguments)"
+                        @cancel-edit-name="handleCancelEditName(data.instance)">
                     </service-instance-table>
                 </transition-group>
             </div>
@@ -35,7 +40,7 @@
             </cmdb-auth>
             <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
         </div>
-        <cmdb-dialog v-model="dialog.show" :width="850" :height="460" :show-close-icon="false">
+        <cmdb-dialog v-model="dialog.show" :width="1110" :height="650" :show-close-icon="false">
             <component
                 :is="dialog.component"
                 v-bind="dialog.props"
@@ -48,7 +53,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import HostSelector from '@/views/business-topology/host/host-selector'
+    import HostSelector from '@/views/business-topology/host/host-selector-new'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
@@ -110,7 +115,15 @@
                 this.dialog.show = true
             },
             handleDialogConfirm (selected) {
-                this.hosts = selected
+                this.hosts = selected.map(item => {
+                    return {
+                        ...item,
+                        instance: {
+                            name: '',
+                            editing: { name: false }
+                        }
+                    }
+                })
                 this.dialog.show = false
             },
             handleDialogCancel () {
@@ -128,8 +141,10 @@
                             bk_biz_id: this.bizId,
                             bk_module_id: this.moduleId,
                             instances: serviceInstanceTables.map(table => {
+                                const instance = this.hosts.find(data => data.host.bk_host_id === table.id).instance
                                 return {
                                     bk_host_id: table.id,
+                                    service_instance_name: instance.name || '',
                                     processes: table.processList.map(item => {
                                         return {
                                             process_info: item
@@ -144,6 +159,26 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            getName (data) {
+                if (data.instance.name) {
+                    return data.instance.name
+                }
+                return data.host.bk_host_innerip || '--'
+            },
+            getEditState (instance) {
+                return instance.editing
+            },
+            handleEditName (instance) {
+                this.hosts.forEach(data => (data.instance.editing.name = false))
+                instance.editing.name = true
+            },
+            handleConfirmEditName (instance, name) {
+                instance.name = name
+                instance.editing.name = false
+            },
+            handleCancelEditName (instance) {
+                instance.editing.name = false
             },
             handleBackToModule () {
                 this.$routerActions.back()

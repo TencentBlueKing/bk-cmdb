@@ -193,10 +193,21 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 	if ownerAppID == conf.ApplicationID {
 		return nil, kit.CCError.Errorf(common.CCErrHostBelongResourceFail)
 	}
-	owenerModuleIDconds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
-	ownerModuleID, err := lgc.GetResourcePoolModuleID(kit, owenerModuleIDconds.MapStr())
+
+	ownerModuleIDCond := map[string]interface{}{
+		common.BKAppIDField: ownerAppID,
+	}
+
+	// if directory id is specified, transfer to it, if not, transfer host to the default directory
+	if conf.ModuleID == 0 {
+		ownerModuleIDCond[common.BKDefaultField] = common.DefaultResModuleFlag
+	} else {
+		ownerModuleIDCond[common.BKModuleIDField] = conf.ModuleID
+	}
+
+	ownerModuleID, err := lgc.GetResourcePoolModuleID(kit, ownerModuleIDCond)
 	if err != nil {
-		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, owenerModuleIDconds.Data(), kit.Rid)
+		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, ownerModuleIDCond, kit.Rid)
 		return nil, err
 	}
 

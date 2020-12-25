@@ -93,37 +93,58 @@ func (s *Service) ImportHost(c *gin.Context) {
 func (s *Service) ExportHost(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
-
-	appIDStr := c.PostForm("bk_biz_id")
-	hostIDStr := c.PostForm("bk_host_id")
-
 	webCommon.SetProxyHeader(c)
 	header := c.Request.Header
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
-	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, header)
+	hostIDStr := c.PostForm("bk_host_id")
+	appIDStr := c.PostForm("bk_biz_id")
+	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("ExportHost failed, get hosts by id [%+v] failed, err: %v, rid: %s", hostIDStr, err, rid)
-		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg)
-		return
+		blog.Errorf("ExportHost failed, bk_biz_id not integer. err: %+v, biz id: %s,  rid: %s", err, appIDStr, rid)
+		err := defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+		reply := getReturnStr(err.GetCode(), err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 	}
-	var file *xlsx.File
-	file = xlsx.NewFile()
 
 	objID := common.BKInnerObjIDHost
 	filterFields := logics.GetFilterFields(objID)
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
-	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, 0)
+	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, appID)
 	if nil != err {
 		blog.Errorf("ExportHost failed, get host model fields failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0)
+
+	var hostFields []string
+	for _, property := range fields {
+		hostFields = append(hostFields, property.ID)
+	}
+
+	hostInfo, err := s.Logics.GetHostData(appID, hostIDStr, hostFields, header)
+	if err != nil {
+		blog.Errorf("ExportHost failed, get hosts by id [%+v] failed, err: %v, rid: %s", hostIDStr, err, rid)
+		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
+		c.String(http.StatusInternalServerError, msg)
+		return
+	}
+
+	var file *xlsx.File
+	file = xlsx.NewFile()
+
+	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
+	if nil != err {
+		blog.Errorf("ExportHost failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
+		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail, objID).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
+		return
+	}
+
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0, usernameMap, propertyList)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

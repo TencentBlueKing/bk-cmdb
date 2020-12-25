@@ -61,10 +61,12 @@ func (l *Limiter) SyncLimiterRules() error {
 }
 
 func (l *Limiter) syncLimiterRules(path string) error {
+	blog.V(5).Infof("syncing limiter rules for path:%s", path)
 	children, err := l.zkCli.GetChildren(path)
 	if err != nil {
-		if strings.Contains(err.Error(), "node does not exist") {
-			// user not defined rules, which is ok. skip these annoy error.
+		if err == zkclient.ErrNoNode {
+			// if no rules, set rules to be empty
+			l.setRules(make(map[string]*metadata.LimiterRule))
 			return nil
 		}
 		blog.Errorf("fail to GetChildren for path:%s, err:%s", path, err.Error())
@@ -95,16 +97,20 @@ func (l *Limiter) syncLimiterRules(path string) error {
 		rules[rule.RuleName] = rule
 	}
 
+	l.setRules(rules)
+	return nil
+}
+
+func (l *Limiter) setRules(rules map[string]*metadata.LimiterRule) {
 	l.lock.Lock()
 	if reflect.DeepEqual(rules, l.rules) {
-		blog.V(5).Info("syncLimiterRules, nothing is changed")
+		blog.V(5).Info("setRules skip, nothing is changed")
 		l.lock.Unlock()
-		return nil
+		return
 	}
 	l.rules = rules
 	l.lock.Unlock()
-	blog.InfoJSON("syncLimiterRules, current rules is %s", rules)
-	return nil
+	blog.InfoJSON("setRules success, current rules is %s", rules)
 }
 
 // GetRules get all rules of limiter

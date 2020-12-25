@@ -11,7 +11,8 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
             query: { ...currentRoute.query }
         }
         const base64 = Base64.encode(JSON.stringify(data))
-        queryBackup['_f'] = base64
+        queryBackup['_f'] = '1'
+        window.sessionStorage.setItem('history', base64)
     }
     const to = {
         name,
@@ -34,10 +35,10 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
 }
 
 export const back = function () {
-    const queryStr = router.app.$route.query._f
-    if (queryStr) {
+    const record = router.app.$route.query.hasOwnProperty('_f') && window.sessionStorage.getItem('history')
+    if (record) {
         try {
-            const route = JSON.parse(Base64.decode(queryStr))
+            const route = JSON.parse(Base64.decode(record))
             redirect(route)
         } catch (error) {
             router.go(-1)
@@ -47,7 +48,13 @@ export const back = function () {
     }
 }
 
+export const open = function (to) {
+    const href = router.resolve(to).href
+    window.open(href)
+}
+
 export default {
     redirect,
-    back
+    back,
+    open
 }

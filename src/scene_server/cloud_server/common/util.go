@@ -72,3 +72,30 @@ func NewKit() *rest.Kit {
 		SupplierAccount: supplierAccount,
 	}
 }
+
+// NewReadwKit 创建专用于读操作的kit
+// SupplierAccount为superadmin
+func NewReadwKit() *rest.Kit {
+	return NewKit()
+}
+
+// NewWriteKit 创建专用于写操作的kit
+// SupplierAccount为与当前环境匹配的开发商
+func NewWriteKit(supplierAccount string) *rest.Kit {
+	kit := NewKit()
+	kit.Header.Set(common.BKHTTPOwnerID, supplierAccount)
+	kit.SupplierAccount = supplierAccount
+	return kit
+}
+
+// CopyHeaderTxnInfo copy transaction info from src to dst
+func CopyHeaderTxnInfo(src http.Header, dst http.Header) {
+	dst.Set(common.TransactionIdHeader, src.Get(common.TransactionIdHeader))
+	dst.Set(common.TransactionTimeoutHeader, src.Get(common.TransactionTimeoutHeader))
+}
+
+// DelHeaderTxnInfo delete transaction info from header
+func DelHeaderTxnInfo(header http.Header) {
+	header.Del(common.TransactionIdHeader)
+	header.Del(common.TransactionTimeoutHeader)
+}

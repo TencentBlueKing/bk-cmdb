@@ -336,6 +336,29 @@ type ListServiceTemplateOption struct {
 	Search             string   `json:"search"`
 }
 
+type FindServiceTemplateCountInfoOption struct {
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
+}
+
+func (o *FindServiceTemplateCountInfoOption) Validate() (rawError errors.RawErrorInfo) {
+	maxLimit := 500
+	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > maxLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"service_template_ids", maxLimit},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindServiceTemplateCountInfoResult struct {
+	ServiceTemplateID    int64 `json:"service_template_id"`
+	ProcessTemplateCount int64 `json:"process_template_count"`
+	ServiceInstanceCount int64 `json:"service_instance_count"`
+	ModuleCount          int64 `json:"module_count"`
+}
+
 type OneServiceTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceTemplate `json:"data"`
@@ -509,11 +532,6 @@ type RemoveTemplateBoundOnModuleResult struct {
 	} `json:"data"`
 }
 
-type GetProc2ModuleResult struct {
-	BaseResp `json:",inline"`
-	Data     []Proc2Module `json:"data"`
-}
-
 type MultipleMap struct {
 	Count uint64                   `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
@@ -590,6 +608,16 @@ type MultipleSyncRegionResult struct {
 	Data     []*Region `json:"data"`
 }
 
+type SubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     Subscription `json:"data"`
+}
+
+type MultipleSubscriptionResult struct {
+	BaseResp `json:",inline"`
+	Data     RspSubscriptionSearch `json:"data"`
+}
+
 type DistinctFieldOption struct {
 	TableName string                 `json:"table_name"`
 	Field     string                 `json:"field"`
@@ -607,7 +635,7 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 	if d.Field == "" {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"Field"},
+			Args:    []interface{}{"field"},
 		}
 	}
 

@@ -28,7 +28,9 @@ const dev = {
         USER_ROLE: JSON.stringify(1),
         USER_NAME: JSON.stringify('admin'),
         FULL_TEXT_SEARCH: JSON.stringify('off'),
-        USER_MANAGE: JSON.stringify('')
+        USER_MANAGE: JSON.stringify(''),
+        HELP_DOC_URL: JSON.stringify(''),
+        DISABLE_OPERATION_STATISTIC: false
     }),
 
     // Paths
@@ -97,7 +99,9 @@ module.exports = {
             USER_ROLE: '{{.role}}',
             USER_NAME: '{{.userName}}',
             FULL_TEXT_SEARCH: '{{.fullTextSearch}}',
-            USER_MANAGE: '{{.userManage}}'
+            USER_MANAGE: '{{.userManage}}',
+            HELP_DOC_URL: '{{.helpDocUrl}}',
+            DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}'
         }),
 
         // Template for index.html

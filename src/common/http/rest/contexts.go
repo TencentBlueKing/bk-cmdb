@@ -45,6 +45,7 @@ type Contexts struct {
 	Request        *restful.Request
 	resp           *restful.Response
 	respStatusCode int
+	uri            string
 }
 
 func (c *Contexts) DecodeInto(to interface{}) error {
@@ -71,12 +72,12 @@ func (c *Contexts) RespEntity(data interface{}) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.writeAsJson(metadata.NewSuccessResp(data))
+	c.Response(metadata.NewSuccessResp(data))
 }
 
 // RespString response the data format to a json string.
 // the data is a string, and do not need marshal, can return directly.
-func (c *Contexts) RespString(data string) {
+func (c *Contexts) RespString(data *string) {
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -84,7 +85,11 @@ func (c *Contexts) RespString(data string) {
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
 	jsonBuffer := bytes.Buffer{}
 	jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": ")
-	jsonBuffer.WriteString(data)
+	if data == nil {
+		jsonBuffer.WriteString("")
+	} else {
+		jsonBuffer.WriteString(*data)
+	}
 	jsonBuffer.WriteByte('}')
 	c.resp.Write(jsonBuffer.Bytes())
 }
@@ -160,6 +165,8 @@ func (c *Contexts) RespCountInfoString(count int64, infoArray []string) {
 }
 
 func (c *Contexts) RespEntityWithError(data interface{}, err error) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -199,7 +206,7 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 	} else {
 		resp.BaseResp = metadata.SuccessBaseResp
 	}
-	c.writeAsJson(&resp)
+	c.Response(&resp)
 }
 
 type CountInfo struct {
@@ -220,7 +227,7 @@ func (c *Contexts) RespEntityWithCount(count int64, info interface{}) {
 			Info:  info,
 		},
 	}
-	c.writeAsJson(&resp)
+	c.Response(&resp)
 }
 
 func (c *Contexts) WithStatusCode(statusCode int) *Contexts {
@@ -236,6 +243,8 @@ func (c *Contexts) WithStatusCode(statusCode int) *Contexts {
 // CCSystemBusy code.
 // This function will also write a log when it's called which contains the request id field.
 func (c *Contexts) RespWithError(err error, errCode int, format string, args ...interface{}) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -275,10 +284,12 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 		Data: nil,
 	}
 
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 func (c *Contexts) RespAutoError(err error) {
+	c.collectErrorMetric()
+
 	blog.ErrorfDepthf(1, "rid: %s, err: %v", c.Kit.Rid, err)
 	var code int
 	var errMsg string
@@ -307,7 +318,7 @@ func (c *Contexts) RespAutoError(err error) {
 		Data: nil,
 	}
 
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 // WriteErrorf used to write a error response to the request client.
@@ -315,6 +326,8 @@ func (c *Contexts) RespAutoError(err error) {
 // errorf is used to format multiple-language error message.
 // it will also will log the error at the same time with logMsg.
 func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interface{}) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -330,10 +343,12 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 		},
 		Data: nil,
 	}
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interface{}) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -350,7 +365,7 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 		Data: nil,
 	}
 
-	c.writeAsJson(&body)
+	c.Response(&body)
 }
 
 func (c *Contexts) RespBkEntity(data interface{}) {
@@ -373,6 +388,8 @@ func (c *Contexts) RespBkEntity(data interface{}) {
 }
 
 func (c *Contexts) RespBkError(errCode int, errMsg string) {
+	c.collectErrorMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
@@ -388,7 +405,7 @@ func (c *Contexts) RespBkError(errCode int, errMsg string) {
 	}
 }
 
-func (c *Contexts) writeAsJson(resp *metadata.Response) {
+func (c *Contexts) Response(resp *metadata.Response) {
 	body, err := json.Marshal(resp)
 	if err != nil {
 		blog.ErrorfDepthf(2, "marshal json response failed, err: %v, rid: %s", err, c.Kit.Rid)

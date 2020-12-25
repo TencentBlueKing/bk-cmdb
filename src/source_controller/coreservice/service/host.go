@@ -22,8 +22,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/driver/redis"
-
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -33,10 +31,10 @@ func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToInnerModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToInnerModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToDefaultModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.Errorf("transfer host to default module failed. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -48,10 +46,10 @@ func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToNormalModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.Errorf("transfer host to normal module failed. err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -64,10 +62,10 @@ func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
+	err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("transfer host across business failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -79,10 +77,10 @@ func (s *coreService) RemoveFromModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	exceptionArr, err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
+	err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("RemoveFromModule error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
-		ctx.RespEntityWithError(exceptionArr, err)
+		blog.ErrorJSON("remove host from module failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -137,13 +135,13 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 }
 
 // TransferHostModuleDep is a TransferHostModule dependence
-func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(kit, input)
+func (s *coreService) TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) error {
+	err := s.core.HostOperation().TransferToNormalModule(kit, input)
 	if err != nil {
-		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, kit.Rid)
-		return exceptionArr, err
+		blog.Errorf("transfer host to normal module failed. err: %s, rid: %s", err.Error(), kit.Rid)
+		return err
 	}
-	return nil, nil
+	return nil
 }
 
 func (s *coreService) GetHostByID(ctx *rest.Contexts) {
@@ -228,67 +226,6 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		Count: int(finalCount),
 		Info:  info,
 	})
-}
-
-func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
-	hostID := ctx.Request.PathParameter(common.BKHostIDField)
-	key := common.RedisSnapKeyPrefix + hostID
-	result, err := redis.Client().Get(ctx.Kit.Ctx, key).Result()
-	if nil != err && !redis.IsNilErr(err) {
-		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
-		return
-	}
-
-	ctx.RespEntity(metadata.HostSnap{
-		Data: result,
-	})
-}
-
-func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
-	input := metadata.HostSnapBatchInput{}
-	if err := ctx.DecodeInto(&input); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(input.HostIDs) == 0 {
-		ctx.RespEntity(map[int64]string{})
-		return
-	}
-
-	keys := []string{}
-	for _, id := range input.HostIDs {
-		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
-	}
-
-	res, err := redis.Client().MGet(ctx.Kit.Ctx, keys...).Result()
-	if err != nil {
-		if redis.IsNilErr(err) {
-			ctx.RespEntity(map[int64]string{})
-			return
-		}
-		blog.Errorf("get host snapshot failed, keys: %#v, err: %v, rid: %s", keys, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
-		return
-	}
-
-	ret := make(map[int64]string)
-	for i, hostID := range input.HostIDs {
-		if res[i] == nil {
-			ret[hostID] = ""
-			continue
-		}
-		value, ok := res[i].(string)
-		if !ok {
-			blog.Errorf("GetHostSnapBatch failed, hostID: %d, value in redis is not type string, but tyep: %T, value:%#v, rid: %s", hostID, res[i], res[i], ctx.Kit.Rid)
-			ret[hostID] = ""
-			continue
-		}
-		ret[hostID] = value
-	}
-
-	ctx.RespEntity(ret)
 }
 
 // GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition

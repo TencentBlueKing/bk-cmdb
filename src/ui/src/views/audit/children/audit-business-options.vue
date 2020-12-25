@@ -43,6 +43,7 @@
                 <cmdb-form-date-range class="option-value"
                     font-size="medium"
                     :placeholder="$t('请选择xx', { name: $t('时间') })"
+                    :clearable="false"
                     v-model="condition.operation_time">
                 </cmdb-form-date-range>
             </td>
@@ -91,17 +92,22 @@
             AuditBusinessSelector
         },
         data () {
+            const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
+            const defaultCondition = {
+                bk_biz_id: '',
+                resource_type: '',
+                action: [],
+                operation_time: [today, today],
+                user: '',
+                resource_id: '',
+                resource_name: '',
+                category: 'business'
+            }
             return {
                 instanceType: 'resource_name',
+                defaultCondition,
                 condition: {
-                    bk_biz_id: '',
-                    resource_type: '',
-                    action: [],
-                    operation_time: [],
-                    user: '',
-                    resource_id: '',
-                    resource_name: '',
-                    category: 'business'
+                    ...defaultCondition
                 }
             }
         },
@@ -134,16 +140,7 @@
                 })
             },
             handleReset () {
-                this.condition = {
-                    bk_biz_id: '',
-                    resource_type: '',
-                    action: [],
-                    operation_time: [],
-                    user: '',
-                    resource_id: '',
-                    resource_name: '',
-                    category: 'business'
-                }
+                this.condition = { ...this.defaultCondition }
                 this.handleSearch()
             }
         }

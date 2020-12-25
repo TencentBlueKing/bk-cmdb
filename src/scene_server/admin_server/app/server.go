@@ -41,9 +41,15 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-	mongoConf := cc.Mongo("mongodb")
+	mongoConf, err := cc.Mongo("mongodb")
+	if err != nil {
+		return err
+	}
 	process.Config.MongoDB = mongoConf
-	redisConf := cc.Redis("redis")
+	redisConf, err := cc.Redis("redis")
+	if err != nil {
+		return err
+	}
 	process.Config.Redis = redisConf
 	process.Config.Errors.Res, _ = cc.String("errors.res")
 	process.Config.Language.Res, _ = cc.String("language.res")
@@ -55,7 +61,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
 	}
-	service := svc.NewService(ctx)
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onHostConfigUpdate,
@@ -68,10 +73,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
-	service.Engine = engine
-	service.Config = *process.Config
 	process.Core = engine
-	process.Service = service
 	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
 
 	// adminserver conf not depend discovery
@@ -84,6 +86,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return err
 	}
+
+	service := svc.NewService(ctx)
+	service.Engine = engine
+	service.Config = *process.Config
+	service.ConfigCenter = process.ConfigCenter
+	process.Service = service
 
 	for {
 		if process.Config == nil {

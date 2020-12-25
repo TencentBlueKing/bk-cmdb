@@ -14,7 +14,7 @@
             <component :is="optionsComponent" @condition-change="handleConditionChange"></component>
         </div>
         <bk-table
-            v-bkloading="{ isLoading: $loading('getOperationLog') }"
+            v-bkloading="{ isLoading: $loading(request.list) }"
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 310"
@@ -114,6 +114,9 @@
                             emptyText: this.$t('bk.table.emptyText')
                         }
                     }
+                },
+                request: {
+                    list: Symbol('list')
                 }
             }
         },
@@ -195,7 +198,7 @@
                             sort: this.table.sort
                         }
                     }
-                    const { info, count } = await this.$store.dispatch('audit/getList', { params })
+                    const { info, count } = await this.$store.dispatch('audit/getList', { params, config: { requestId: this.request.list } })
                     this.table.pagination.count = count
                     this.table.list = info
                 } catch (error) {

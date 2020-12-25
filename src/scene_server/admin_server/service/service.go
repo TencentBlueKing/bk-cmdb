@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
+	"configcenter/src/scene_server/admin_server/configures"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 
@@ -38,6 +39,7 @@ type Service struct {
 	ctx          context.Context
 	Config       options.Config
 	iam          *iam.Iam
+	ConfigCenter *configures.ConfCenter
 }
 
 func NewService(ctx context.Context) *Service {
@@ -80,6 +82,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
 	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
 	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
+	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
+	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
 	api.Route(api.GET("/healthz").To(s.Healthz))
 
 	container.Add(api)
@@ -131,6 +135,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	answer.SetCommonResponse()
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
 }

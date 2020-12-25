@@ -3,7 +3,8 @@
         <bk-input type="text"
             :ref="inputRef"
             :placeholder="placeholder"
-            v-model="localValue">
+            v-model="localValue"
+            @enter="handleConfirm">
         </bk-input>
         <div class="operation">
             <span class="text-primary btn-confirm"
@@ -77,7 +78,7 @@
         .text-primary {
             display: inline-block;
             line-height: normal;
-            font-size: 14px;
+            font-size: 12px;
             &.btn-confirm {
                 position: relative;
                 margin-right: 6px;

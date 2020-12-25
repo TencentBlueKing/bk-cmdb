@@ -6,6 +6,8 @@ import StatusError from './StatusError.js'
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
 import { setupValidator } from '@/setup/validate'
+import { $error } from '@/magicbox'
+import i18n from '@/i18n'
 
 import {
     before as businessBeforeInterceptor
@@ -158,7 +160,7 @@ router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
             cancelRequest(router.app)
-            router.app.$store.commit('setTitle', '')
+            to.name !== from.name && router.app.$store.commit('setTitle', '')
             if (to.meta.view !== 'permission') {
                 Vue.set(to.meta, 'view', 'default')
             }
@@ -213,6 +215,12 @@ router.afterEach(async (to, from) => {
     } catch (e) {
         setupStatus.afterload = true
         console.error(e)
+    }
+})
+
+router.onError(error => {
+    if (/Loading chunk (\d*) failed/.test(error.message)) {
+        $error(i18n.t('资源请求失败提示'))
     }
 })
 

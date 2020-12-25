@@ -49,6 +49,8 @@ type Commands interface {
 	MSet(ctx context.Context, values ...interface{}) StatusResult
 	Ping(ctx context.Context) StatusResult
 	Publish(ctx context.Context, channel string, message interface{}) IntResult
+	Rename(ctx context.Context, key, newkey string) StatusResult
+	RenameNX(ctx context.Context, key, newkey string) BoolResult
 	RPop(ctx context.Context, key string) StringResult
 	RPopLPush(ctx context.Context, source, destination string) StringResult
 	RPush(ctx context.Context, key string, values ...interface{}) IntResult

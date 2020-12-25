@@ -50,7 +50,7 @@ type ProcessInterface interface {
 	// service instance
 	CreateServiceInstance(ctx context.Context, h http.Header, template *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	GetServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
-	UpdateServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64, template *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder
 	ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
 	DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.CoreDeleteServiceInstanceOption) errors.CCErrorCoder
 	GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
@@ -66,7 +66,6 @@ type ProcessInterface interface {
 
 	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder)
 	ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder
-	GetProc2Module(ctx context.Context, h http.Header, option metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder)
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {

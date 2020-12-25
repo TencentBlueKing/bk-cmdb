@@ -10,26 +10,35 @@
             </bk-checkbox>
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
-            <span class="title-label">{{instance.name}}</span>
-            <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
-                <ul class="menu-list"
-                    @mouseenter="handleShowDotMenu"
-                    @mouseleave="handleHideDotMenu">
-                    <li class="menu-item"
-                        v-for="(menu, index) in instanceMenu"
-                        :key="index">
-                        <cmdb-auth class="menu-span" :auth="HOST_AUTH[menu.auth]">
-                            <bk-button slot-scope="{ disabled }"
-                                class="menu-button"
-                                :text="true"
-                                :disabled="disabled"
-                                @click="menu.handler">
-                                {{menu.name}}
-                            </bk-button>
-                        </cmdb-auth>
-                    </li>
-                </ul>
-            </cmdb-dot-menu>
+            <template v-if="!instance.editing.name">
+                <span class="title-label">{{instance.name}}</span>
+                <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
+                    <ul class="menu-list"
+                        @mouseenter="handleShowDotMenu"
+                        @mouseleave="handleHideDotMenu">
+                        <li class="menu-item"
+                            v-for="(menu, index) in instanceMenu"
+                            :key="index">
+                            <cmdb-auth class="menu-span" :auth="HOST_AUTH[menu.auth]">
+                                <bk-button slot-scope="{ disabled }"
+                                    class="menu-button"
+                                    :text="true"
+                                    :disabled="disabled"
+                                    @click="menu.handler">
+                                    {{menu.name}}
+                                </bk-button>
+                            </cmdb-auth>
+                        </li>
+                    </ul>
+                </cmdb-dot-menu>
+            </template>
+            <div class="edit-form" v-else>
+                <service-instance-name-edit-form ref="nameEditForm"
+                    :value="instance.name"
+                    @click.native.stop
+                    @confirm="handleConfirmEditName"
+                    @cancel="handleCancelEditName" />
+            </div>
             <div class="right-content fr">
                 <div class="instance-label clearfix" @click.stop v-if="currentView === 'label'">
                     <div class="label-list fl">
@@ -55,13 +64,12 @@
                     </div>
                 </div>
                 <span class="topology-path" v-else
-                    v-bk-tooltips="pathToolTips"
                     @click.stop="goTopologyInstance">
                     {{topologyPath}}
                 </span>
             </div>
         </div>
-        <bk-table
+        <bk-table class="process-list-table"
             v-show="localExpanded"
             v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
             :data="list"
@@ -72,7 +80,7 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                show-overflow-tooltip>
+                :show-overflow-tooltip="column.id !== 'bind_info'">
                 <template slot-scope="{ row }">
                     <cmdb-property-value v-if="column.id !== 'bind_info'"
                         :value="(row.property || {})[column.id]"
@@ -86,6 +94,50 @@
                     </process-bind-info-value>
                 </template>
             </bk-table-column>
+            <bk-table-column width="150" :resizable="false" :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary" text
+                            :disabled="disabled"
+                            @click.native.stop
+                            @click="handleEdit(row)">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }" v-if="!instance.service_template_id">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary" text
+                            :disabled="disabled"
+                            @click.native.stop
+                            @click="handleDelete(row)">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </cmdb-auth>
+                </template>
+            </bk-table-column>
+            <template slot="empty">
+                <span class="process-count-tips" v-if="instance.service_template_id">
+                    <i class="tips-icon bk-icon icon-exclamation-circle"></i>
+                    <i18n class="tips-content" path="模板服务实例无进程提示">
+                        <cmdb-auth class="tips-link" place="link"
+                            :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+                            @click="redirectToTemplate">
+                            {{$t('跳转添加并同步')}}
+                        </cmdb-auth>
+                    </i18n>
+                </span>
+                <span class="process-count-tips" v-else>
+                    <i class="tips-icon bk-icon icon-exclamation-circle"></i>
+                    <i18n class="tips-content" path="普通服务实例无进程提示">
+                        <cmdb-auth class="tips-link" place="link"
+                            :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+                            @click="handleAddProcess">
+                            {{$t('立即添加')}}
+                        </cmdb-auth>
+                    </i18n>
+                </span>
+            </template>
         </bk-table>
     </div>
 </template>
@@ -97,11 +149,14 @@
     } from '@/dictionary/menu-symbol'
     import { processTableHeader } from '@/dictionary/table-header'
     import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
+    import ServiceInstanceNameEditForm from '@/components/service/instance-name-edit-form'
     import { mapState } from 'vuex'
     import authMixin from '../mixin-auth'
+    import Form from '@/components/service/form/form.js'
     export default {
         components: {
-            ProcessBindInfoValue
+            ProcessBindInfoValue,
+            ServiceInstanceNameEditForm
         },
         mixins: [authMixin],
         props: {
@@ -126,15 +181,15 @@
                 localExpanded: this.expanded,
                 properties: [],
                 header: [],
-                list: [],
-                pathToolTips: {
-                    content: this.$t('去业务拓扑添加'),
-                    placement: 'top'
-                }
+                list: []
             }
         },
         computed: {
             ...mapState('hostDetails', ['info']),
+            bizId () {
+                const [biz] = this.info.biz || []
+                return biz ? biz.bk_biz_id : null
+            },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
             },
@@ -143,6 +198,10 @@
                     name: this.$t('删除'),
                     handler: this.handleDeleteInstance,
                     auth: 'D_SERVICE_INSTANCE'
+                }, {
+                    name: this.$t('编辑'),
+                    handler: this.handleEditInstance,
+                    auth: 'U_SERVICE_INSTANCE'
                 }]
                 return menu
             },
@@ -245,6 +304,33 @@
                     history: true
                 })
             },
+            handleEditInstance () {
+                this.$emit('edit-name')
+                this.$nextTick(() => {
+                    this.$refs.nameEditForm.focus()
+                })
+            },
+            async handleConfirmEditName (value) {
+                try {
+                    await this.$store.dispatch('serviceInstance/updateServiceInstance', {
+                        bizId: this.bizId,
+                        params: {
+                            data: [{
+                                service_instance_id: this.instance.id,
+                                update: {
+                                    name: value
+                                }
+                            }]
+                        }
+                    })
+                    this.$emit('edit-name-success', value)
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            handleCancelEditName () {
+                this.$emit('cancel-edit-name')
+            },
             goTopologyInstance () {
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
@@ -252,17 +338,118 @@
                         tab: 'serviceInstance',
                         node: 'module-' + this.instance.bk_module_id,
                         instanceName: this.instance.name
-                    }
+                    },
+                    history: true
                 })
             },
             handleShowDotMenu () {
-                this.$refs.dotMenu.$el.style.opacity = 1
+                if (this.$refs.dotMenu) {
+                    this.$refs.dotMenu.$el.style.opacity = 1
+                }
             },
             handleHideDotMenu () {
-                this.$refs.dotMenu.$el.style.opacity = 0
+                if (this.$refs.dotMenu) {
+                    this.$refs.dotMenu.$el.style.opacity = 0
+                }
+            },
+            handleAddProcess () {
+                Form.show({
+                    type: 'create',
+                    title: `${this.$t('添加进程')}(${this.instance.name})`,
+                    hostId: this.instance.bk_host_id,
+                    bizId: this.bizId,
+                    submitHandler: this.createSubmitHandler
+                })
+            },
+            async createSubmitHandler (values) {
+                try {
+                    await this.$store.dispatch('processInstance/createServiceInstanceProcess', {
+                        params: {
+                            bk_biz_id: this.bizId,
+                            service_instance_id: this.instance.id,
+                            processes: [{
+                                process_info: values
+                            }]
+                        }
+                    })
+                    this.getServiceProcessList()
+                    this.updateInstanceInfo()
+                } catch (error) {
+                    console.error(error)
+                }
             },
             showProcessDetails (row) {
-                this.$emit('show-process-details', row)
+                Form.show({
+                    type: 'view',
+                    title: this.$t('查看进程'),
+                    instance: row.property,
+                    hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
+                    serviceTemplateId: this.instance.service_template_id,
+                    processTemplateId: row.relation.process_template_id,
+                    submitHandler: this.editSubmitHandler
+                })
+            },
+            handleEdit (row) {
+                Form.show({
+                    type: 'update',
+                    title: this.$t('编辑进程'),
+                    instance: row.property,
+                    hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
+                    serviceTemplateId: this.instance.service_template_id,
+                    processTemplateId: row.relation.process_template_id,
+                    submitHandler: this.editSubmitHandler
+                })
+            },
+            async editSubmitHandler (values, changedValues, instance) {
+                try {
+                    await this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
+                        params: {
+                            bk_biz_id: this.bizId,
+                            processes: [{ ...instance, ...values }]
+                        }
+                    })
+                    this.getServiceProcessList()
+                    this.updateInstanceInfo()
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            handleDelete (row) {
+                this.$bkInfo({
+                    title: this.$t('确定删除该进程'),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
+                                config: {
+                                    data: {
+                                        bk_biz_id: this.bizId,
+                                        process_instance_ids: [row.property.bk_process_id]
+                                    },
+                                    requestId: this.requestId.deleteProcess
+                                }
+                            })
+                            this.getServiceProcessList()
+                            this.updateInstanceInfo()
+                        } catch (error) {
+                            console.error(error)
+                        }
+                    }
+                })
+            },
+            redirectToTemplate () {
+                this.$routerActions.redirect({
+                    name: 'operationalTemplate',
+                    params: {
+                        bizId: this.bizId,
+                        templateId: this.instance.service_template_id
+                    },
+                    history: true
+                })
+            },
+            updateInstanceInfo () {
+                // todo 需要后端提供接口查询数据变更后的服务实例信息，用于更新服务实例名
             }
         }
     }
@@ -312,6 +499,10 @@
             &:hover {
                 color: #3a84ff;
             }
+        }
+        .edit-form {
+            width: 420px;
+            @include inlineBlock;
         }
     }
     .instance-menu {
@@ -389,6 +580,36 @@
                 }
                 &:hover {
                     background-color: #e1ecff;
+                }
+            }
+        }
+    }
+    .process-list-table {
+        /deep/ {
+            .bk-table-empty-block {
+                min-height: 42px;
+                .bk-table-empty-text {
+                    width: auto;
+                    padding: 0;
+                }
+            }
+        }
+    }
+    .process-count-tips {
+        display: flex;
+        align-items: center;
+        .tips-icon {
+            color: $warningColor;
+            font-size: 14px;
+        }
+        .tips-content {
+            padding: 0 4px;
+            color: $textDisabledColor;
+            .tips-link {
+                color: $primaryColor;
+                cursor: pointer;
+                &.disabled {
+                    color: $textDisabledColor;
                 }
             }
         }

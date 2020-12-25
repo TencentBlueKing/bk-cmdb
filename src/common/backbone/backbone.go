@@ -33,6 +33,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/monitor"
 
 	"github.com/rs/xid"
 )
@@ -164,14 +165,14 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		OnLanguageUpdate: engine.onLanguageUpdate,
 		OnErrorUpdate:    engine.onErrorUpdate,
 		OnMongodbUpdate:  engine.onMongodbUpdate,
-		OnRedisUpdate:	  engine.onRedisUpdate,
+		OnRedisUpdate:    engine.onRedisUpdate,
 	}
 
 	// add default configcenter
 	zkdisc := crd.NewZkRegDiscover(client)
 	configCenter := &cc.ConfigCenter{
-		Type:       common.BKDefaultConfigCenter,
-		ConfigCenterDetail:    zkdisc,
+		Type:               common.BKDefaultConfigCenter,
+		ConfigCenterDetail: zkdisc,
 	}
 	cc.AddConfigCenter(configCenter)
 
@@ -188,6 +189,10 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("handle notice failed, err: %v", err)
 	}
 
+	if err := monitor.InitMonitor(); err != nil {
+		return nil, fmt.Errorf("init monitor failed, err: %v", err)
+	}
+
 	return engine, nil
 }
 
@@ -200,21 +205,25 @@ func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTP
 		PProfEnabled: pprofEnabled,
 	}
 
-	return ListenAndServe(e.server, e.SvcDisc, cancel)
+	if err := ListenAndServe(e.server, e.SvcDisc, cancel); err != nil {
+		return err
+	}
+
+	// wait for a while to see if ListenAndServe in goroutine is successful
+	// to avoid registering an invalid server address on zk
+	time.Sleep(time.Second)
+
+	return e.SvcDisc.Register(e.RegisterPath, *e.srvInfo)
 }
 
 func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
-	if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
-		return nil, err
-	}
-
 	return &Engine{
-		ServerInfo: c.RegisterInfo,
-		CoreAPI:    c.CoreAPI,
-		SvcDisc:    disc,
-		Language:   language.NewFromCtx(language.EmptyLanguageSetting),
-		CCErr:      errors.NewFromCtx(errors.EmptyErrorsSetting),
-		CCCtx:      newCCContext(),
+		RegisterPath: c.RegisterPath,
+		CoreAPI:      c.CoreAPI,
+		SvcDisc:      disc,
+		Language:     language.NewFromCtx(language.EmptyLanguageSetting),
+		CCErr:        errors.NewFromCtx(errors.EmptyErrorsSetting),
+		CCCtx:        newCCContext(),
 	}, nil
 }
 
@@ -230,9 +239,9 @@ type Engine struct {
 
 	sync.Mutex
 
-	ServerInfo types.ServerInfo
-	server     Server
-	srvInfo    *types.ServerInfo
+	RegisterPath string
+	server       Server
+	srvInfo      *types.ServerInfo
 
 	Language language.CCLanguageIf
 	CCErr    errors.CCErrorIf
@@ -299,10 +308,6 @@ func (e *Engine) Ping() error {
 	return e.SvcDisc.Ping()
 }
 
-var (
-	redisConf = make(map[string]redis.Config, 0)
-)
-
 func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	// use default prefix if no prefix is specified, or use the first prefix
 	var prefix string
@@ -311,18 +316,9 @@ func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	} else {
 		prefix = prefixes[0]
 	}
-	// only initialize once, not allow hot update
-	if conf, exist := redisConf[prefix]; exist {
-		return conf, nil
-	}
 
-	redisConf[prefix] = cc.Redis(prefix)
-	return redisConf[prefix], nil
+	return cc.Redis(prefix)
 }
-
-var (
-	mongoConf = make(map[string]mongo.Config, 0)
-)
 
 func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	var prefix string
@@ -331,10 +327,6 @@ func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	} else {
 		prefix = prefixes[0]
 	}
-	if conf, exist := mongoConf[prefix]; exist {
-		return conf, nil
-	}
 
-	mongoConf[prefix] = cc.Mongo(prefix)
-	return mongoConf[prefix], nil
+	return cc.Mongo(prefix)
 }

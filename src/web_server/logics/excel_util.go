@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -30,15 +31,20 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
+const (
+	userAliasPattern = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
+)
+
 var (
-	headerRow = common.HostAddMethodExcelIndexOffset
+	headerRow       = common.HostAddMethodExcelIndexOffset
+	userAliasRegexp = regexp.MustCompile(userAliasPattern)
 )
 
 // getFilterFields 不需要展示字段
 func getFilterFields(objID string) []string {
 	switch objID {
 	case common.BKInnerObjIDHost:
-		return []string{"create_time", "import_from", "bk_cloud_id", "bk_agent_status", "bk_agent_version", "bk_set_name", "bk_module_name", "bk_biz_name"}
+		return []string{"create_time", "import_from", "bk_agent_status", "bk_agent_version", "bk_set_name", "bk_module_name", "bk_biz_name"}
 	default:
 		return []string{"create_time"}
 	}
@@ -58,8 +64,8 @@ func getCustomFields(filterFields []string, customFieldsStr string) []string {
 	return customFieldsList
 }
 
-// checkExcelHealer check whether invalid fields exists in header and return headers
-func checkExcelHealer(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
+// checkExcelHeader check whether invalid fields exists in header and return headers
+func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// rowLen := len(sheet.Rows[headerRow-1].Cells)
@@ -283,6 +289,12 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			} else {
 				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], "not a valid organization type", rid)
 			}
+		case common.FieldTypeUser:
+			// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
+			userNames := util.GetStrByInterface(host[fieldName])
+			userNames = userAliasRegexp.ReplaceAllString(userNames, "")
+			userNames = strings.Trim(strings.Trim(userNames, " "), ",")
+			host[fieldName] = userNames
 		default:
 			if util.IsStrProperty(field.PropertyType) {
 				host[fieldName] = strings.TrimSpace(cell.Value)
@@ -306,7 +318,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelHealer(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 	//橙棕色
@@ -315,12 +327,11 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 
 	sheet.Col(0).Width = 18
-	//字典中的值为国际化之后的"业务拓扑"和"业务"，用来做判断，命中即变化相应的cell颜色。
+	//字典中的值为国际化之后的"业务拓扑"和"业务名"，用来做判断，命中即变化相应的cell颜色。
 	bizTopoMap := map[string]int{
-		"business topology": 1,
-		"业务拓扑":              1,
-		"business":          1,
-		"业务":                1}
+		defLang.Language("web_ext_field_topo"):       1,
+		defLang.Language("biz_property_bk_biz_name"): 1,
+	}
 	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
@@ -420,7 +431,7 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 }
 
 // ProductExcelHeader Excel文件头部，
-func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, instNum int, asstList []metadata.Association) {
+func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, instNum int, asstList []*metadata.Association) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	//第一列(指标说明，橙色)
@@ -435,7 +446,8 @@ func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLa
 	firstColFields := []string{
 		common.ExcelFirstColumnAssociationAttribute,
 		common.ExcelFirstColumnFieldDescription,
-		common.ExcelFirstColumnInstData}
+		common.ExcelFirstColumnInstData,
+	}
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
 		cellName.SetString(defLang.Language(field))

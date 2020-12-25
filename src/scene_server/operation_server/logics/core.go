@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
-	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdparty/esbserver"
 )
 
 type Logics struct {

@@ -7,6 +7,7 @@ export default {
                 type: 'create',
                 title: `${this.$t('添加进程')}(${this.row.name})`,
                 hostId: this.row.bk_host_id,
+                bizId: this.bizId,
                 submitHandler: this.createSubmitHandler
             })
         },

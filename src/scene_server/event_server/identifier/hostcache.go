@@ -69,7 +69,6 @@ func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache 
 
 	ip, port, protocol, enable, bindInfoArr := getBindInfo(proc.data[common.BKProcBindInfo])
 	process.ProcessName = getString(proc.data[common.BKProcessNameField])
-	process.FuncID = getString(proc.data[common.BKFuncIDField])
 	process.FuncName = getString(proc.data[common.BKFuncName])
 	process.BindIP = ip         //getString(proc.data[common.BKBindIP])
 	process.Protocol = protocol // getString(proc.data[common.BKProtocol])

@@ -20,7 +20,7 @@ import (
 
 // TransferHostToInnerModule transfer host to inner module
 // 转移到空闲机/故障机模块
-func (hm *hostManager) TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
+func (hm *hostManager) TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) error {
 	return hm.hostTransfer.TransferToInnerModule(kit, input)
 }
 
@@ -28,12 +28,12 @@ func (hm *hostManager) TransferToInnerModule(kit *rest.Kit, input *metadata.Tran
 // 业务内主机转移
 // 将主机转移到 input 表示的目标模块中
 // IsIncrement 控制增量更新还是覆盖更新
-func (hm *hostManager) TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+func (hm *hostManager) TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) error {
 	return hm.hostTransfer.TransferToNormalModule(kit, input)
 }
 
 // TransferToAnotherBusiness transfer host to another business module
-func (hm *hostManager) TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
+func (hm *hostManager) TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) error {
 	return hm.hostTransfer.TransferToAnotherBusiness(kit, input)
 }
 
@@ -43,7 +43,7 @@ func (hm *hostManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHos
 }
 
 // RemoveFromModule remove from one of original modules
-func (hm *hostManager) RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
+func (hm *hostManager) RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) error {
 	return hm.hostTransfer.RemoveFromModule(kit, input)
 }
 

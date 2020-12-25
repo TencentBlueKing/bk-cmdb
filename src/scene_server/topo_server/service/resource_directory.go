@@ -53,7 +53,6 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	data[common.BKSetTemplateIDField] = 0
 	data.Set(common.BKOperatorField, "")
 	data.Set(common.BKBakOperatorField, "")
-	data[common.BKChildStr] = nil
 
 	// 设置资源池自定义目录的default值
 	data[common.BKDefaultField] = common.DefaultResSelfDefinedModuleFlag

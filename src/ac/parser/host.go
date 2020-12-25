@@ -12,7 +12,6 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) hostRelated() *parseStream {
@@ -22,7 +21,6 @@ func (ps *parseStream) hostRelated() *parseStream {
 
 	ps.host().
 		hostTransfer().
-		userAPI().
 		dynamicGrouping().
 		userCustom().
 		hostFavorite().
@@ -32,177 +30,19 @@ func (ps *parseStream) hostRelated() *parseStream {
 	return ps
 }
 
-var (
-	createUserAPIPattern     = "/api/v3/userapi"
-	updateUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
-	deleteUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
-	findUserAPIRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+/?$`)
-	findUserAPIDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[^\s/]+/?$`)
-	findWithUserAPIRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
-)
-
 func (ps *parseStream) parseBusinessID() (int64, error) {
-	if !gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Exists() {
+	val, err := ps.RequestCtx.getValueFromBody(common.BKAppIDField)
+	if err != nil {
+		return 0, err
+	}
+	if !val.Exists() {
 		return 0, nil
 	}
-	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+	bizID := val.Int()
 	if bizID == 0 {
 		return 0, errors.New("invalid bk_biz_id value")
 	}
 	return bizID, nil
-}
-
-func (ps *parseStream) userAPI() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	// create user custom query operation.
-	if ps.hitPattern(createUserAPIPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Create,
-				},
-			},
-		}
-		return ps
-	}
-
-	// update host user custom query operation.
-	if ps.hitRegexp(updateUserAPIRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("update host user custom query, but got invalid uri")
-			return ps
-		}
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:         meta.DynamicGrouping,
-					Action:       meta.Update,
-					InstanceIDEx: ps.RequestCtx.Elements[4],
-				},
-			},
-		}
-		return ps
-
-	}
-
-	// delete host user custom query operation.
-	if ps.hitRegexp(deleteUserAPIRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("delete host user custom query operation, but got invalid uri")
-			return ps
-		}
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[3], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:         meta.DynamicGrouping,
-					Action:       meta.Delete,
-					InstanceIDEx: ps.RequestCtx.Elements[4],
-				},
-			},
-		}
-		return ps
-
-	}
-
-	// find host user custom query operation
-	if ps.hitRegexp(findUserAPIRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("find host usr custom query, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host user custom query failed, err: %v", err)
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.FindMany,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find host user custom query details operation.
-	if ps.hitRegexp(findUserAPIDetailsRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find host user custom details query, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host user custom query details failed, err: %v", err)
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:         meta.DynamicGrouping,
-					Action:       meta.Find,
-					InstanceIDEx: ps.RequestCtx.Elements[5],
-				},
-			},
-		}
-		return ps
-	}
-
-	// get data with user custom query api.
-	if ps.hitRegexp(findWithUserAPIRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("find host user custom details query, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host user custom query details failed, err: %v", err)
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Execute,
-					Name:   ps.RequestCtx.Elements[5],
-				},
-			},
-		}
-		return ps
-	}
-
-	return ps
 }
 
 var (
@@ -426,9 +266,15 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.UserCustom,
 					Action: meta.Create,
@@ -436,7 +282,7 @@ func (ps *parseStream) userCustom() *parseStream {
 				},
 			},
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
@@ -524,9 +370,16 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
+
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -665,7 +518,12 @@ func (ps *parseStream) host() *parseStream {
 
 	if ps.hitPattern(updateHostCloudAreaFieldPattern, http.MethodPut) {
 		input := metadata.UpdateHostCloudAreaFieldOption{}
-		if err := json.Unmarshal(ps.RequestCtx.Body, &input); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, &input); err != nil {
 			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
 			return ps
 		}
@@ -985,7 +843,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// add hosts to resource pool
 	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
-		dirID := gjson.GetBytes(ps.RequestCtx.Body, "directory").Int()
+		val, err := ps.RequestCtx.getValueFromBody("directory")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dirID := val.Int()
 		if dirID == 0 {
 			var err error
 			dirID, err = ps.getResourcePoolDefaultDirID()
@@ -1020,10 +883,20 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			return ps
 		}
 
-		dirID, err := ps.getResourcePoolDefaultDirID()
+		rawDirID, err := ps.RequestCtx.getValueFromBody(common.BKModuleIDField)
 		if err != nil {
-			ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
+			ps.err = err
 			return ps
+		}
+		dirID := rawDirID.Int()
+
+		// if directory id is not specified, transfer host to the default directory, use it to authorize
+		if dirID == 0 {
+			dirID, err = ps.getResourcePoolDefaultDirID()
+			if err != nil {
+				ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
+				return ps
+			}
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1072,7 +945,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	// move resource pool hosts to a business idle module operation.
 	if ps.hitPattern(moveResPoolHostToBizIdleModulePattern, http.MethodPost) {
 		opt := new(hostPool)
-		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, opt); err != nil {
 			ps.err = err
 			return ps
 		}
@@ -1169,12 +1047,22 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// transfer host to another business
 	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
-		srcBizID := gjson.GetBytes(ps.RequestCtx.Body, "src_bk_biz_id").Int()
+		val, err := ps.RequestCtx.getValueFromBody("src_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		srcBizID := val.Int()
 		if srcBizID == 0 {
 			ps.err = errors.New("src_bk_biz_id invalid")
 			return ps
 		}
-		dstBizID := gjson.GetBytes(ps.RequestCtx.Body, "dst_bk_biz_id").Int()
+		val, err = ps.RequestCtx.getValueFromBody("dst_bk_biz_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dstBizID := val.Int()
 		if dstBizID == 0 {
 			ps.err = errors.New("dst_bk_biz_id invalid")
 			return ps
@@ -1261,7 +1149,12 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	// move the resource pool host to another dir in resource pool
 	if ps.hitPattern(moveRscPoolHostToRscPoolDir, http.MethodPost) {
 		opt := new(metadata.TransferHostResourceDirectory)
-		if err := json.Unmarshal(ps.RequestCtx.Body, opt); err != nil {
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if err := json.Unmarshal(body, opt); err != nil {
 			ps.err = err
 			return ps
 		}

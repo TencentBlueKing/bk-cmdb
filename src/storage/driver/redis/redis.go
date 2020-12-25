@@ -32,8 +32,9 @@ import (
 var (
 	defaultPrefix string = "redis"
 	// redis is default
-	cacheMap = make(map[string]redis.Client, 0)
-	lock     = &sync.RWMutex{}
+	cacheMap      = make(map[string]redis.Client, 0)
+	defaultClient redis.Client
+	lock          = &sync.RWMutex{}
 
 	// 在并发的情况下，这里存在panic的问题
 	lastInitErr   errors.CCErrorCoder
@@ -46,10 +47,7 @@ var (
 func Client() redis.Client {
 	lock.RLock()
 	defer lock.RUnlock()
-	if db, ok := cacheMap[defaultPrefix]; ok {
-		return db
-	}
-	return nil
+	return defaultClient
 }
 
 // ClientInstance  获取指定的redis
@@ -64,13 +62,18 @@ func ClientInstance(prefix string) redis.Client {
 
 func ParseConfig(prefix string, configMap map[string]string) (*redis.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
-	config := cc.Redis(prefix)
+	config, err := cc.Redis(prefix)
+	if err != nil {
+		return nil, errors.NewCCError(common.CCErrCommConfMissItem, "can't find redis configuration")
+	}
 	if config.Address == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".Address] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".Address] configuration item")
 		return nil, lastConfigErr
 	}
 	if config.Password == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing ["+prefix+".pwd] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing ["+prefix+".pwd] configuration item")
 		return nil, lastConfigErr
 	}
 
@@ -92,8 +95,8 @@ func InitClient(prefix string, config *redis.Config) errors.CCErrorCoder {
 		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'"+prefix+" redis' initialization failed")
 		return lastInitErr
 	}
-	if len(cacheMap) == 0 {
-		cacheMap[defaultPrefix] = db
+	if defaultClient == nil || prefix == defaultPrefix {
+		defaultClient = db
 	}
 	cacheMap[prefix] = db
 	return nil

@@ -17,7 +17,7 @@
             :key="property.bk_property_id"
             :label="property.bk_property_name"
             :prop="property.bk_property_id"
-            show-overflow-tooltip>
+            :show-overflow-tooltip="property.bk_property_id !== 'bind_info'">
             <template slot-scope="{ row }">
                 <cmdb-property-value v-if="property.bk_property_id !== 'bind_info'"
                     :value="row.property[property.bk_property_id]"
@@ -201,6 +201,7 @@
                     serviceTemplateId: this.selectedNode.data.service_template_id,
                     processTemplateId: row.relation.process_template_id,
                     hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
                     submitHandler: this.editSubmitHandler
                 })
             },
@@ -212,6 +213,7 @@
                     serviceTemplateId: this.selectedNode.data.service_template_id,
                     processTemplateId: row.relation.process_template_id,
                     hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
                     submitHandler: this.editSubmitHandler
                 })
             },

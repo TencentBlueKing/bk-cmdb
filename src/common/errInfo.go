@@ -488,7 +488,7 @@ const (
 	CCErrObjectSelectIdentifierFailed = 1102008
 
 	// CCErrObjectDBOpErrno failed to operation database
-	CCErrObjectDBOpErrno = 1102004
+	CCErrObjectDBOpErrno = 1102020
 
 	// event_server 1103XXX
 	// CCErrEventSubscribeInsertFailed failed to save the Subscribe
@@ -612,6 +612,7 @@ const (
 	CCErrAuditSaveLogFailed      = 1109001
 	CCErrAuditTakeSnapshotFailed = 1109002
 	CCErrAuditSelectFailed       = 1109003
+	CCErrAuditSelectTimeout      = 1109004
 
 	// host server
 	CCErrHostGetFail              = 1110001
@@ -700,6 +701,7 @@ const (
 	CCErrWebNoUsernamePasswd            = 1111015
 	CCErrWebUserinfoFormatWrong         = 1111016
 	CCErrWebUnknownLoginVersion         = 1111017
+	CCErrWebGetUsernameMapFail          = 1111018
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

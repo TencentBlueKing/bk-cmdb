@@ -19,7 +19,7 @@ import (
 )
 
 var _ = Describe("host test", func() {
-	var bizId, setId, moduleId, idleModuleId, faultModuleId int64
+	var bizId, setId, moduleId, idleModuleId, faultModuleId, dirID int64
 	var hostId, hostId1, hostId2, hostId3 int64
 
 	Describe("test preparation", func() {
@@ -88,6 +88,18 @@ var _ = Describe("host test", func() {
 			Expect(parentIdRes).To(Equal(setId))
 			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("create resource pool directory", func() {
+			dir := map[string]interface{}{
+				"bk_module_name": "test",
+			}
+			rsp, err := dirClient.CreateResourceDirectory(context.Background(), header, dir)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+
+			dirID = int64(rsp.Data.Created.ID)
 		})
 	})
 
@@ -358,6 +370,7 @@ var _ = Describe("host test", func() {
 				HostIDs: []int64{
 					hostId1,
 				},
+				ModuleID: dirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -523,8 +536,14 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
 			Expect(len(rsp.Data.Module)).To(Equal(3))
-			idleModuleId = rsp.Data.Module[0].ModuleID
-			faultModuleId = rsp.Data.Module[1].ModuleID
+			for _, module := range rsp.Data.Module {
+				switch module.ModuleName {
+				case "空闲机":
+					idleModuleId = module.ModuleID
+				case "故障机":
+					faultModuleId = module.ModuleID
+				}
+			}
 		})
 
 		It("search fault host", func() {
@@ -792,7 +811,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(2))
 		})
 
-		It("transfer host to resourcemodule", func() {
+		It("transfer host to resource pool default directory", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId,
 				HostIDs: []int64{
@@ -1371,17 +1390,14 @@ var _ = Describe("multiple ip host validation test", func() {
 	It("multiple ip host validation", func() {
 		test.ClearDatabase()
 
-		By("add hosts with one same ip using api")
+		By("add hosts with different ip using api")
 		hostInput := map[string]interface{}{
 			"host_info": map[string]interface{}{
 				"1": map[string]interface{}{
 					"bk_host_innerip": "1.0.0.1,1.0.0.2",
 				},
 				"2": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.1",
-				},
-				"3": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.1,1.0.0.2,1.0.0.3",
+					"bk_host_innerip": "1.0.0.3",
 				},
 			},
 		}
@@ -1400,7 +1416,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
-		Expect(searchRsp.Data.Count).To(Equal(3))
+		Expect(searchRsp.Data.Count).To(Equal(2))
 
 		By("add same multiple ip host using api")
 		input := &metadata.CreateModelInstance{
@@ -1410,6 +1426,18 @@ var _ = Describe("multiple ip host validation test", func() {
 			},
 		}
 		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		util.RegisterResponse(addHostResult)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
+
+		By("add hosts with one same ip using api")
+		input = &metadata.CreateModelInstance{
+			Data: map[string]interface{}{
+				"bk_host_innerip": "1.0.0.1",
+				"bk_cloud_id":     0,
+			},
+		}
+		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())

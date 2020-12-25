@@ -49,7 +49,8 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" width="180">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="{ type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, row.id] }">
+                    <!-- 与查询详情编辑有重合暂去掉 -->
+                    <!-- <cmdb-auth :auth="{ type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, row.id] }">
                         <bk-button slot-scope="{ disabled }"
                             text
                             :disabled="disabled"
@@ -57,8 +58,8 @@
                         >
                             {{$t('编辑')}}
                         </bk-button>
-                    </cmdb-auth>
-                    <span class="text-primary ml15"
+                    </cmdb-auth> -->
+                    <span class="text-primary"
                         style="color: #dcdee5 !important; cursor: not-allowed;"
                         v-if="row.set_instance_count"
                         v-bk-tooltips.top="$t('不可删除')">
@@ -67,7 +68,6 @@
                     <cmdb-auth :auth="{ type: $OPERATION.D_SET_TEMPLATE, relation: [bizId, row.id] }" v-else>
                         <bk-button slot-scope="{ disabled }"
                             text
-                            class="ml15"
                             :disabled="disabled"
                             @click="handleDelete(row)"
                         >
@@ -174,8 +174,11 @@
                 this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
-                        mode: 'edit',
+                        mode: 'view',
                         templateId: row.id
+                    },
+                    query: {
+                        edit: 1
                     },
                     history: true
                 })

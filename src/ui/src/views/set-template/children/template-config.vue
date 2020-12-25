@@ -52,7 +52,7 @@
                 </cmdb-auth>
             </template>
             <template v-else>
-                <cmdb-auth :auth=" mode === 'create' ? { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] } : { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId, templateId] }">
+                <cmdb-auth :auth=" mode === 'create' ? { type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] } : { type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, templateId] }">
                     <bk-button slot-scope="{ disabled }"
                         class="options-confirm"
                         theme="primary"
@@ -65,6 +65,7 @@
             </template>
         </div>
         <bk-dialog v-model="showUpdateInfo"
+            width="480"
             :esc-close="false"
             :mask-close="false"
             :show-footer="false"
@@ -72,6 +73,7 @@
             <div class="update-alert-layout">
                 <i class="bk-icon icon-check-1"></i>
                 <h3>{{$t('修改成功')}}</h3>
+                <p class="update-success-tips">{{$t('集群模板修改成功提示')}}</p>
                 <div class="btns">
                     <bk-button class="mr10" theme="primary"
                         v-if="isApplied && serviceChange"
@@ -83,7 +85,7 @@
                         @click="handleToCreateInstance">
                         {{$t('创建集群')}}
                     </bk-button>
-                    <bk-button theme="default" @click="handleBackToList">{{$t('返回列表')}}</bk-button>
+                    <bk-button theme="default" @click="handleClose">{{$t('关闭按钮')}}</bk-button>
                 </div>
             </div>
         </bk-dialog>
@@ -132,6 +134,14 @@
             }
         },
         watch: {
+            '$route.query': {
+                immediate: true,
+                handler (query) {
+                    if (query.edit) {
+                        this.handleEdit()
+                    }
+                }
+            },
             mode (mode) {
                 this.errors.clear()
             },
@@ -235,7 +245,9 @@
             alertCreateInfo () {
                 this.$bkInfo({
                     type: 'success',
+                    width: 480,
                     title: this.$t('创建成功'),
+                    subTitle: this.$t('创建集群模板成功提示'),
                     okText: this.$t('创建集群'),
                     cancelText: this.$t('返回列表'),
                     confirmFn: () => {
@@ -283,8 +295,17 @@
             handleServiceSelected (services) {
                 this.services = services
             },
-            handleBackToList () {
-                this.$routerActions.redirect({ name: MENU_BUSINESS_SET_TEMPLATE })
+            handleClose () {
+                this.showUpdateInfo = false
+                this.insideMode = null
+                this.$routerActions.redirect({
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'view',
+                        templateId: this.templateId
+                    },
+                    history: false
+                })
             },
             handleToCreateInstance () {
                 this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
@@ -384,11 +405,17 @@
             font-size: 24px;
             color: #313238;
             font-weight: normal;
-            padding-bottom: 32px;
+            padding-bottom: 16px;
         }
         .btns {
             font-size: 0;
             padding-bottom: 20px;
+            .bk-button {
+                min-width: 86px;
+            }
+        }
+        .update-success-tips {
+            padding-bottom: 24px;
         }
     }
 </style>

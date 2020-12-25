@@ -93,9 +93,6 @@
                     </template>
                 </cmdb-auth>
             </template>
-            <div :slot="nodeNamePropertyId" v-bk-overflow-tips>
-                {{`[${instance[nodePrimaryPropertyId] || '--'}] ${instance[nodeNamePropertyId] || '--'}`}}
-            </div>
         </cmdb-details>
         <template v-else-if="type === 'update'">
             <cmdb-form class="topology-form"
@@ -315,6 +312,7 @@
                         properties: properties
                     })
                 }
+                this.insertNodeIdProperty(properties)
                 return Promise.resolve(properties)
             },
             async getPropertyGroups () {
@@ -397,6 +395,18 @@
                 }
                 this.templateInfo.setTemplateName = setTemplateInfo.name || this.$t('无')
                 return data.info[0]
+            },
+            insertNodeIdProperty (properties) {
+                if (properties.find(property => property.bk_property_id === this.nodePrimaryPropertyId)) {
+                    return
+                }
+                const nodeNameProperty = properties.find(property => property.bk_property_id === this.nodeNamePropertyId)
+                properties.unshift({
+                    ...nodeNameProperty,
+                    bk_property_id: this.nodePrimaryPropertyId,
+                    bk_property_name: this.$t('ID'),
+                    editable: false
+                })
             },
             getSetTemplateInfo (id) {
                 return this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {

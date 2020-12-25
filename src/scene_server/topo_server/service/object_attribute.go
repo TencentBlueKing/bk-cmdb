@@ -33,6 +33,9 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	data := dataWithModelBizID.Data
 	modelBizID := dataWithModelBizID.ModelBizID
 
+	// do not support adding preset attribute by api
+	data.Set(common.BKIsPre, false)
+
 	isBizCustomField := false
 	// adapt input path param with bk_biz_id
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
@@ -222,28 +225,22 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
-		if err != nil {
-			blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
-			return err
-		}
-
-		if len(ruleIDs) > 0 {
-			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
-				RuleIDs: ruleIDs,
-			}
-			if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, 0, deleteRuleOption); err != nil {
-				blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, ctx.Kit.Rid)
-				return err
-			}
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+	err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, modelType.BizID)
+	if err != nil {
+		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
+	}
+
+	if len(ruleIDs) > 0 {
+		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+			RuleIDs: ruleIDs,
+		}
+		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, 0, deleteRuleOption); err != nil {
+			blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
 	}
 	ctx.RespEntity(nil)
 }

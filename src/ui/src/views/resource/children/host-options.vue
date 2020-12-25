@@ -1,6 +1,6 @@
 <template>
     <div class="options-layout clearfix">
-        <div class="options-left">
+        <div class="options-left fl">
             <template v-if="scope === 1">
                 <cmdb-auth class="mr10"
                     :ignore="!!activeDirectory"
@@ -16,24 +16,31 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
+            </template>
+            <span style="display: inline-block;"
+                v-bk-tooltips="{ content: this.$t('仅主机池主机可进行此操作'), disabled: isAllResourceHost }">
                 <bk-select
                     class="assign-selector mr10"
                     font-size="medium"
                     :popover-width="180"
-                    :disabled="!table.checked.length"
+                    :disabled="!table.checked.length || !isAllResourceHost"
                     :clearable="false"
                     :placeholder="$t('分配到')"
                     v-model="assign.curSelected"
                     @selected="handleAssignHosts">
                     <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
                     <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
-                    <bk-option id="toDirs" :name="$t('资源池其他目录')"></bk-option>
+                    <bk-option id="toDirs" :name="$t('主机池其他目录')"></bk-option>
                 </bk-select>
-            </template>
-            <cmdb-transfer-menu class="mr10"
-                v-else>
-            </cmdb-transfer-menu>
-            <cmdb-clipboard-selector class="options-clipboard mr10"
+            </span>
+            <cmdb-transfer-menu class="mr10" v-if="scope !== 1" />
+            <bk-button class="mr10"
+                :disabled="!table.checked.length"
+                @click="handleMultipleEdit">
+                {{$t('编辑')}}
+            </bk-button>
+            <cmdb-clipboard-selector class="mr10"
+                label-key="bk_property_name"
                 :list="clipboardList"
                 :disabled="!table.checked.length"
                 @on-copy="handleCopy">
@@ -45,17 +52,8 @@
             </cmdb-button-group>
         </div>
         <div class="options-right">
-            <cmdb-host-filter class="ml10"
-                ref="hostFilter"
-                :section-height="$APP.height - 250"
-                :properties="filterProperties"
-                :show-scope="true">
-            </cmdb-host-filter>
-            <icon-button class="ml10"
-                icon="icon icon-cc-setting"
-                v-bk-tooltips.top="$t('列表显示属性配置')"
-                @click="handleColumnConfigClick">
-            </icon-button>
+            <filter-fast-search class="option-fast-search"></filter-fast-search>
+            <icon-button class="option-filter ml10" icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')" @click="handleSetFilters"></icon-button>
             <icon-button class="ml10"
                 v-bk-tooltips="$t('查看删除历史')"
                 icon="icon icon-cc-history"
@@ -109,32 +107,17 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <cmdb-form-multiple v-if="slider.show"
-                slot="content"
-                ref="multipleForm"
-                :properties="properties.host"
-                :property-groups="propertyGroups"
-                :object-unique="objectUnique"
-                :save-auth="saveAuth"
-                @on-submit="handleMultipleSave"
-                @on-cancel="handleSliderBeforeClose">
-            </cmdb-form-multiple>
-        </bk-sideslider>
-
-        <bk-sideslider
-            v-transfer-dom
-            :is-show.sync="columnsConfig.show"
-            :width="600"
-            :title="$t('列表显示属性配置')">
-            <cmdb-columns-config slot="content"
-                v-if="columnsConfig.show"
-                :properties="columnsConfigProperties"
-                :selected="columnsConfigSelected"
-                :disabled-columns="columnsConfig.disabledColumns"
-                @on-apply="handleApplyColumnsConfig"
-                @on-cancel="columnsConfig.show = false"
-                @on-reset="handleResetColumnsConfig">
-            </cmdb-columns-config>
+            <div slot="content" style="height: 100%" v-bkloading="{ isLoading: $loading(Object.values(slider.request)) }">
+                <component :is="slider.component"
+                    ref="multipleForm"
+                    :properties="properties.host"
+                    :property-groups="propertyGroups"
+                    :object-unique="objectUnique"
+                    :save-auth="saveAuth"
+                    @on-submit="handleMultipleSave"
+                    @on-cancel="handleSliderBeforeClose">
+                </component>
+            </div>
         </bk-sideslider>
 
         <bk-dialog
@@ -189,19 +172,21 @@
     import { mapGetters } from 'vuex'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
-    import cmdbHostFilter from '@/components/hosts/filter/index.vue'
-    import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
     import HostStore from '../transfer/host-store'
     import cmdbTransferMenu from '../transfer/transfer-menu'
+    import FilterForm from '@/components/filters/filter-form.js'
+    import FilterFastSearch from '@/components/filters/filter-fast-search'
+    import FilterStore from '@/components/filters/store'
+    import ExportFields from '@/components/export-fields/export-fields.js'
+    import FilterUtils from '@/components/filters/utils'
     export default {
         components: {
             cmdbImport,
             cmdbButtonGroup,
-            cmdbHostFilter,
-            cmdbColumnsConfig,
-            cmdbTransferMenu
+            cmdbTransferMenu,
+            FilterFastSearch
         },
         data () {
             return {
@@ -217,12 +202,11 @@
                 objectUnique: [],
                 slider: {
                     show: false,
-                    title: ''
-                },
-                columnsConfig: {
-                    show: false,
-                    selected: [],
-                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
+                    title: '',
+                    component: null,
+                    request: {
+                        objectUnique: Symbol('objectUnique')
+                    }
                 },
                 assign: {
                     show: false,
@@ -233,7 +217,8 @@
                     title: this.$t('分配到业务空闲机'),
                     requestId: Symbol('assignHosts')
                 },
-                assignOptions: []
+                assignOptions: [],
+                IPWithCloudSymbol: Symbol('IPWithCloud')
             }
         },
         computed: {
@@ -251,34 +236,32 @@
             table () {
                 return this.$parent.table
             },
-            clipboardList () {
-                return this.table.header.map(property => {
-                    return {
-                        id: property.bk_property_id,
-                        name: property.bk_property_name,
-                        objId: property.bk_obj_id
-                    }
+            isAllResourceHost () {
+                return this.table.selection.every(({ biz }) => {
+                    const [currentBiz] = biz
+                    return currentBiz.default === 1
                 })
             },
+            clipboardList () {
+                const IPWithCloud = FilterUtils.defineProperty({
+                    id: this.IPWithCloudSymbol,
+                    bk_obj_id: 'host',
+                    bk_property_id: this.IPWithCloudSymbol,
+                    bk_property_name: `${this.$t('云区域')}ID:IP`,
+                    bk_property_type: 'singlechar'
+                })
+                const clipboardList = FilterStore.header.slice()
+                clipboardList.splice(1, 0, IPWithCloud)
+                return clipboardList
+            },
             properties () {
-                return this.$parent.properties
+                return FilterStore.modelPropertyMap
             },
             propertyGroups () {
-                return this.$parent.propertyGroups
-            },
-            columnsConfigProperties () {
-                return this.$parent.columnsConfigProperties
-            },
-            columnsConfigSelected () {
-                return this.$parent.columnsConfig.selected
+                return FilterStore.propertyGroups
             },
             buttons () {
                 const buttonConfig = [{
-                    id: 'edit',
-                    text: this.$t('编辑'),
-                    handler: this.handleMultipleEdit,
-                    disabled: !this.table.checked.length
-                }, {
                     id: 'delete',
                     text: this.$t('删除'),
                     handler: this.handleMultipleDelete,
@@ -290,19 +273,9 @@
                     disabled: !this.table.checked.length
                 }]
                 if (this.scope !== 1) {
-                    buttonConfig.splice(1, 1)
+                    buttonConfig.splice(0, 1)
                 }
                 return buttonConfig
-            },
-            filterProperties () {
-                const { module, set, host, biz } = this.properties
-                const filterProperty = ['bk_host_innerip', 'bk_host_outerip']
-                return {
-                    host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
-                    module,
-                    set,
-                    biz
-                }
             },
             saveAuth () {
                 return this.table.selection.map(({ host, module, biz }) => {
@@ -378,7 +351,7 @@
                 } else {
                     this.assign.placeholder = this.$t('请选择xx', { name: this.$t('目录') })
                     this.assign.label = this.$t('目录列表')
-                    this.assign.title = this.$t('分配到资源池其他目录')
+                    this.assign.title = this.$t('分配到主机池其他目录')
                 }
                 this.setAssignOptions()
                 this.assign.show = true
@@ -391,7 +364,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
-                            relation: [[this.directoryId || '*'], [item.bk_biz_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_biz_id]]]
                         }
                     }))
                 } else {
@@ -401,7 +374,7 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
-                            relation: [[this.directoryId] || '*', [item.bk_module_id]]
+                            relation: [[[this.directoryId || '*'], [item.bk_module_id]]]
                         }
                     }))
                 }
@@ -457,48 +430,37 @@
                     console.error(e)
                 }
             },
-            getHostCellText (header, item) {
-                const objId = header.objId
-                const propertyId = header.id
-                const headerProperty = this.$tools.getProperty(this.properties[objId], propertyId)
-                const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
-                const text = []
-                originalValues.forEach(value => {
-                    const flattenedText = this.$tools.getPropertyText(headerProperty, value)
-                    flattenedText ? text.push(flattenedText) : void (0)
-                })
-                return text.join(',') || '--'
-            },
-            handleCopy (target) {
-                const copyList = this.table.list.filter(item => {
-                    return this.table.checked.includes(item['host']['bk_host_id'])
-                })
-                const copyText = []
-                copyList.forEach(item => {
-                    if (target.id === '__bk_host_topology__') {
-                        copyText.push((item.__bk_host_topology__ || []).join(','))
-                    } else {
-                        const cellText = this.getHostCellText(target, item)
-                        copyText.push(cellText)
+            handleCopy (property) {
+                const copyText = this.table.selection.map(data => {
+                    const modelId = property.bk_obj_id
+                    const [modelData] = Array.isArray(data[modelId]) ? data[modelId] : [data[modelId]]
+                    if (property.id === this.IPWithCloudSymbol) {
+                        const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
+                        const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
+                        return `${cloud}:${ip}`
                     }
+                    const value = modelData[property.bk_property_id]
+                    return this.$tools.getPropertyCopyValue(value, property)
                 })
-                if (copyText.length) {
-                    this.$copyText(copyText.join('\n')).then(() => {
-                        this.$success(this.$t('复制成功'))
-                    }, () => {
-                        this.$error(this.$t('复制失败'))
-                    })
-                } else {
-                    this.$info(this.$t('该字段无可复制的值'))
-                }
+                this.$copyText(copyText.join('\n')).then(() => {
+                    this.$success(this.$t('复制成功'))
+                }, () => {
+                    this.$error(this.$t('复制失败'))
+                })
             },
             async handleMultipleEdit () {
-                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-                    objId: 'host',
-                    params: {}
-                })
                 this.slider.title = this.$t('主机属性')
                 this.slider.show = true
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'host',
+                    params: {},
+                    config: {
+                        requestId: this.slider.request.objectUnique
+                    }
+                })
+                setTimeout(() => {
+                    this.slider.component = 'cmdb-form-multiple'
+                }, 200)
             },
             async handleMultipleSave (changedValues) {
                 await this.$store.dispatch('hostUpdate/updateHost', {
@@ -545,6 +507,7 @@
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.slider.show = false
+                                this.slider.component = null
                             },
                             cancelFn: () => {
                                 resolve(false)
@@ -553,42 +516,32 @@
                     })
                 }
                 this.slider.show = false
-            },
-            exportExcel (response) {
-                const contentDisposition = response.headers['content-disposition']
-                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
-                const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
-                const link = document.createElement('a')
-                link.style.display = 'none'
-                link.href = url
-                link.setAttribute('download', fileName)
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
+                this.slider.component = null
             },
             async exportField () {
-                const formData = new FormData()
-                formData.append('bk_host_id', this.table.checked)
-                if (this.$parent.customColumns) {
-                    formData.append('export_custom_fields', this.$parent.customColumns)
-                }
-                formData.append('bk_biz_id', '-1')
-                const res = await this.$store.dispatch('hostBatch/exportHost', {
-                    params: formData,
-                    config: {
-                        globalError: false,
-                        originalResponse: true,
-                        responseType: 'blob'
-                    }
+                ExportFields.show({
+                    properties: FilterStore.getModelProperties('host'),
+                    propertyGroups: FilterStore.propertyGroups,
+                    handler: this.exportHanlder
                 })
-                this.exportExcel(res)
             },
-            handleColumnConfigClick () {
-                Bus.$emit('toggle-host-filter', false)
-                this.columnsConfig.show = true
-            },
-            handleCloseFilter () {
-                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
+            async exportHanlder (properties) {
+                const formData = new FormData()
+                formData.append('bk_biz_id', -1)
+                formData.append('bk_host_id', this.table.selection.map(({ host }) => host.bk_host_id).join(','))
+                formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
+                try {
+                    this.$store.commit('setGlobalLoading', true)
+                    await this.$http.download({
+                        url: `${window.API_HOST}hosts/export`,
+                        method: 'post',
+                        data: formData
+                    })
+                } catch (error) {
+                    console.error(error)
+                } finally {
+                    this.$store.commit('setGlobalLoading', false)
+                }
             },
             routeToHistory () {
                 this.$routerActions.redirect({
@@ -596,42 +549,32 @@
                     history: true
                 })
             },
-            handleApplyColumnsConfig (properties) {
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.$route.meta.customInstanceColumn]: properties.map(property => property['bk_property_id'])
-                })
-                this.columnsConfig.show = false
-                RouterQuery.set({
-                    _t: Date.now()
-                })
-            },
-            handleResetColumnsConfig () {
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.$route.meta.customInstanceColumn]: []
-                })
-                this.columnsConfig.show = false
-                RouterQuery.set({
-                    _t: Date.now()
-                })
+            handleSetFilters () {
+                FilterForm.show()
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .options-layout {
-        margin-bottom: 10px;
-    }
     .options-left {
-        float: left;
         font-size: 0;
         .assign-selector {
             min-width: 80px;
         }
     }
     .options-right {
-        float: right;
+        display: flex;
+        justify-content: flex-end;
         overflow: hidden;
+        .option-fast-search {
+            flex: 1;
+            margin-left: 10px;
+            max-width: 300px;
+        }
+        .option-filter:hover {
+            color: $primaryColor;
+        }
     }
     .import-prepend {
         margin: 20px 29px -10px 33px;

@@ -38,23 +38,36 @@
             :width="759"
             :title="dialog.title"
             v-model="dialog.visible"
-            @after-leave="handleDialogClose"
-            @confirm="handleDialogConfirm">
+            @after-leave="handleDialogClose">
             <component
                 ref="dialogComponent"
                 :is="dialog.component"
                 :services-host="servicesHost"
-                v-bind="dialog.props">
+                v-bind="dialog.props"
+                @select-change="handleSelectChange"
+                @template-loaded="handleServiceTemplateLoaded">
             </component>
-            <template slot="footer" v-if="dialog.useCustomFooter">
-                <bk-button @click="dialog.visible = false">{{$t('关闭')}}</bk-button>
+            <template slot="footer">
+                <div class="dialog-footer" v-if="dialog.name === 'add'">
+                    <div class="summary" v-if="serviceTemplateCount > 0">
+                        <span class="stat">
+                            已选<em class="num">{{selectedServiceCount}}</em>个
+                        </span>
+                        <bk-link class="to-template" theme="primary" icon="icon-cc-share" @click="handleLinkClick">{{$t('跳转服务模板')}}</bk-link>
+                    </div>
+                    <div class="action">
+                        <bk-button theme="primary" class="btn" @click.stop="handleDialogConfirm">{{$t('确定')}}</bk-button>
+                        <bk-button theme="default" class="btn ml5" @click.stop="dialog.visible = false">{{$t('取消')}}</bk-button>
+                    </div>
+                </div>
+                <bk-button v-else @click="dialog.visible = false">{{$t('关闭')}}</bk-button>
             </template>
         </bk-dialog>
     </div>
 </template>
 
 <script>
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     import serviceTemplateSelector from './service-template-selector.vue'
     import serviceTemplateInfo from './service-template-info.vue'
     export default {
@@ -74,10 +87,12 @@
                 dialog: {
                     visible: false,
                     title: '',
-                    useCustomFooter: false,
-                    props: {}
+                    props: {},
+                    name: ''
                 },
-                servicesHost: []
+                servicesHost: [],
+                selectedServiceCount: 0,
+                serviceTemplateCount: 0
             }
         },
         computed: {
@@ -187,7 +202,7 @@
                     selected: this.services.map(service => service.id)
                 }
                 this.dialog.title = this.$t('添加服务模板')
-                this.dialog.useCustomFooter = false
+                this.dialog.name = 'add'
                 this.dialog.component = serviceTemplateSelector.name
                 this.dialog.visible = true
             },
@@ -196,7 +211,7 @@
                     id: service.id
                 }
                 this.dialog.title = `【${service.name}】${this.$t('模板服务信息')}`
-                this.dialog.useCustomFooter = true
+                this.dialog.name = 'view'
                 this.dialog.component = serviceTemplateInfo.name
                 this.dialog.visible = true
             },
@@ -204,6 +219,7 @@
                 if (this.dialog.component === serviceTemplateSelector.name) {
                     this.services = this.$refs.dialogComponent.getSelectedServices()
                 }
+                this.dialog.visible = false
             },
             handleDialogClose () {
                 this.dialog.component = null
@@ -223,6 +239,17 @@
                         keyword: service.name
                     },
                     history: true
+                })
+            },
+            handleSelectChange (selected) {
+                this.selectedServiceCount = selected.length
+            },
+            handleServiceTemplateLoaded (templates) {
+                this.serviceTemplateCount = (templates || []).length
+            },
+            handleLinkClick () {
+                this.$routerActions.redirect({
+                    name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
             }
         }
@@ -373,6 +400,37 @@
         span {
             color: $highlightColor;
             cursor: pointer;
+        }
+    }
+    .dialog-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .summary {
+            display: flex;
+            font-size: 14px;
+            .num {
+                color: #2DCB56;
+                font-style: normal;
+                font-weight: 700;
+                margin: 0 3px;
+            }
+            .to-template {
+                margin-left: 16px;
+                /deep/ .bk-link-text {
+                    font-size: 12px;
+                }
+                /deep/ .bk-link-icon {
+                    font-size: 12px;
+                    margin-top: 2px;
+                }
+            }
+        }
+        .action {
+            .btn {
+                min-width: 76px;
+            }
         }
     }
 </style>

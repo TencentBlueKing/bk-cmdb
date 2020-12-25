@@ -109,38 +109,6 @@ func (lgc *Logics) IsHostExistInApp(kit *rest.Kit, appID, hostID int64) (bool, e
 	return true, nil
 }
 
-// ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logics error
-func (lgc *Logics) ExistHostIDSInApp(kit *rest.Kit, appID int64, hostIDArray []int64) ([]int64, error) {
-	defErr := kit.CCError
-
-	conf := &metadata.DistinctHostIDByTopoRelationRequest{
-		ApplicationIDArr: []int64{appID},
-		HostIDArr:        hostIDArray,
-	}
-	result, err := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, conf)
-	if err != nil {
-		blog.Errorf("ExistHostIDSInApp http do error. err:%s, input:%#v,rid:%s", err.Error(), conf, kit.Rid)
-		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("ExistHostIDSInApp http reply error. err code:%d,err msg:%s, input:%#v,rid:%s", result.Code, result.ErrMsg, conf, kit.Rid)
-		return nil, err
-	}
-	hostIDMap := make(map[int64]bool, 0)
-	for _, id := range result.Data.IDArr {
-		hostIDMap[id] = true
-	}
-	var notExistHOstID []int64
-	for _, hostID := range hostIDArray {
-		_, ok := hostIDMap[hostID]
-		if !ok {
-			notExistHOstID = append(notExistHOstID, hostID)
-		}
-	}
-
-	return notExistHOstID, nil
-}
-
 func (lgc *Logics) GetSingleApp(kit *rest.Kit, cond mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
 	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{

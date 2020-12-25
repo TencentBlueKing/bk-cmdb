@@ -19,9 +19,6 @@ import (
 	"strings"
 
 	"configcenter/src/apiserver/service/match"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-
 	"github.com/emicklei/go-restful"
 )
 
@@ -30,11 +27,12 @@ type URLPath string
 
 // FilterChain url path filter
 func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
-	rid := util.GetHTTPCCRequestID(req.Request.Header)
-
 	var serverType RequestType
 	var err error
+
 	switch {
+	case u.WithCache(req):
+		serverType = CacheType
 	case u.WithTopo(req):
 		serverType = TopoType
 	case u.WithHost(req):
@@ -60,7 +58,7 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
 	}
-	blog.V(7).Infof("FilterChain match %s server, url: %s, rid: %s", serverType, req.Request.URL, rid)
+
 	return serverType, err
 }
 
@@ -179,7 +177,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/findmany/audit_list"):
 		from, to, isHit = rootPath, topoRoot, true
 
-	case strings.HasPrefix(string(*u), rootPath+"/find/audit/"):
+	case strings.HasPrefix(string(*u), rootPath+"/find/audit"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):
@@ -210,12 +208,6 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/hosts/"):
-		from, to, isHit = rootPath, hostRoot, true
-
-	case string(*u) == (rootPath + "/userapi"):
-		from, to, isHit = rootPath, hostRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/userapi/"):
 		from, to, isHit = rootPath, hostRoot, true
 
 	// dynamic grouping URL matching, and proxy to host server.
@@ -410,4 +402,23 @@ func (u *URLPath) WithCloud(req *restful.Request) (isHit bool) {
 func (u URLPath) revise(req *restful.Request, from, to string) {
 	req.Request.RequestURI = to + req.Request.RequestURI[len(from):]
 	req.Request.URL.Path = to + req.Request.URL.Path[len(from):]
+}
+
+// WithCache transform cache service's url
+func (u *URLPath) WithCache(req *restful.Request) (isHit bool) {
+	cacheRoot := "/cache/v3"
+	from, to := rootPath, cacheRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/cache/"):
+		from, to, isHit = rootPath+"/cache", cacheRoot, true
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
 }

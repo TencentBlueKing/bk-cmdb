@@ -50,17 +50,6 @@ const (
 	// BKAuditLogPageLimit the audit log page limit
 	BKAuditLogPageLimit = 200
 
-	// BKParent the parent code
-	BKParent = 1
-	// BKChild the child code
-	BKChild = 2
-
-	// BKParentStr the parent name
-	BKParentStr = "bk_parentid"
-
-	// BKChildStr the child name
-	BKChildStr = "bk_childid"
-
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 
@@ -207,12 +196,6 @@ const (
 
 	// BKDBAll matches arrays that contain all elements specified in the query.
 	BKDBAll = "$all"
-
-	// BKDBSize selects documents if the array field is a specified size.
-	BKDBSize = "$size"
-
-	// BKDBSortFieldSep the db sort field split char
-	BKDBSortFieldSep = ","
 )
 
 const (
@@ -622,6 +605,8 @@ const (
 	BKGroupField               = "group"
 
 	BKAttributeIDField = "bk_attribute_id"
+
+	BKSubscribeID = "subscribeID"
 )
 
 const (
@@ -898,12 +883,8 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey             = BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey          = BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventTxnQueuePrefix    = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
-	EventCacheEventTxnCommitQueueKey = BKCacheKeyV3Prefix + "event:inst_txn_commit_queue"
-	EventCacheEventTxnAbortQueueKey  = BKCacheKeyV3Prefix + "event:inst_txn_abort_queue"
-	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
+	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
 )
 
 // api cache keys
@@ -1055,6 +1036,10 @@ const (
 	BKOpenSourceLoginPluginVersion = "opensource"
 	BKSkipLoginPluginVersion       = "skip-login"
 
+	// monitor plugin type
+	BKNoopMonitorPlugin     = "noop"
+	BKBluekingMonitorPlugin = "blueking"
+
 	HTTPCookieBKToken = "bk_token"
 
 	WEBSessionUinKey           = "username"
@@ -1073,11 +1058,6 @@ const (
 	LogoutHTTPSchemeCookieKey = "http_scheme"
 	LogoutHTTPSchemeHTTP      = "http"
 	LogoutHTTPSchemeHTTPS     = "https"
-)
-
-const (
-	HostFieldDockerClientVersion = "docker_client_version"
-	HostFieldDockerServerVersion = "docker_server_version"
 )
 
 const BKStatusField = "status"

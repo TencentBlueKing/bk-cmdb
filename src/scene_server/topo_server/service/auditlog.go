@@ -13,8 +13,6 @@
 package service
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -80,7 +78,7 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	if condition.ObjID != "" {
-		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = condition.User
+		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = condition.ObjID
 	}
 
 	// parse operation start time and end time from string to time condition
@@ -124,19 +122,34 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 
 // SearchAuditDetail search audit log detail by id
 func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
-	id, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKFieldID), 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
+	query := metadata.AuditDetailQueryInput{}
+	if err := ctx.DecodeInto(&query); nil != err {
+		ctx.RespAutoError(err)
 		return
 	}
 
+	if rawErr := query.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	cond := make(map[string]interface{})
+	cond[common.BKFieldID] = map[string]interface{}{
+		common.BKDBIN: query.IDs,
+	}
+
+	auditDetailQuery := metadata.QueryCondition{
+		Condition: cond,
+	}
+	blog.V(5).Infof("AuditDetailQuery, AuditOperation auditDetailQuery: %+v, rid: %s", auditDetailQuery, ctx.Kit.Rid)
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	resp, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, id)
+	list, err := s.Core.AuditOperation().SearchAuditDetail(ctx.Kit, auditDetailQuery)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resp)
+	ctx.RespEntity(list)
 }
 
 func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{}, error) {

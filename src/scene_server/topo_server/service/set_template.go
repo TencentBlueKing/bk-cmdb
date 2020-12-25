@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -335,7 +334,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 	for _, item := range serviceTemplates {
 		serviceTemplateIDs = append(serviceTemplateIDs, item.ID)
 	}
-	moduleFilter := metadata.QueryCondition{
+	moduleFilter := &metadata.QueryCondition{
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
@@ -346,29 +345,27 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 			common.BKSetTemplateIDField: setTemplateID,
 		},
 	}
-	moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &moduleFilter)
-	if err != nil {
-		blog.ErrorJSON("ListSetTplRelatedSvcTplWithStatistics failed, ReadInstance of module http failed, option: %s, err: %s, rid: %s", moduleFilter, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
+
+	moduleResult := new(metadata.ResponseModuleInstance)
+	if err := s.Engine.CoreAPI.CoreService().Instance().ReadInstanceStruct(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDModule, moduleFilter, moduleResult); err != nil {
+		blog.ErrorJSON("ListSetTplRelatedSvcTplWithStatistics failed, ReadInstance of module http failed, "+
+			"option: %s, err: %s, rid: %s", moduleFilter, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
+
 	if ccErr := moduleResult.CCError(); ccErr != nil {
 		blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, ReadInstance of module failed, filter: %s, result: %s, rid: %s", moduleFilter, moduleResult, ctx.Kit.Rid)
 		ctx.RespAutoError(ccErr)
 		return
 	}
-	module := metadata.ModuleInst{}
 	moduleIDs := make([]int64, 0)
 	svcTpl2Modules := make(map[int64][]metadata.ModuleInst)
-	for _, item := range moduleResult.Data.Info {
-		if err := mapstruct.Decode2StructWithHook(item, &module); err != nil {
-			blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, parse module failed, module: %+v, err: %+v, rid: %s", item, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed))
-			return
-		}
-		if _, exist := svcTpl2Modules[module.ServiceTemplateID]; exist == false {
-			svcTpl2Modules[module.ServiceTemplateID] = make([]metadata.ModuleInst, 0)
-		}
+	// map[module]service_template_id
+	moduleIDSvcTplID := make(map[int64]int64, 0)
+	for _, module := range moduleResult.Data.Info {
+		moduleIDSvcTplID[module.ModuleID] = module.ServiceTemplateID
 		svcTpl2Modules[module.ServiceTemplateID] = append(svcTpl2Modules[module.ServiceTemplateID], module)
 		moduleIDs = append(moduleIDs, module.ModuleID)
 	}
@@ -395,12 +392,11 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 	}
 
 	// module hosts
-	moduleHostIDs := make(map[int64][]int64)
+	svcTplIDHostIDs := make(map[int64][]int64)
 	for _, item := range relationResult.Data.Info {
-		if _, exist := moduleHostIDs[item.ModuleID]; exist == false {
-			moduleHostIDs[item.ModuleID] = make([]int64, 0)
+		if svcTplID, ok := moduleIDSvcTplID[item.ModuleID]; ok {
+			svcTplIDHostIDs[svcTplID] = append(svcTplIDHostIDs[svcTplID], item.HostID)
 		}
-		moduleHostIDs[item.ModuleID] = append(moduleHostIDs[item.ModuleID], item.HostID)
 	}
 
 	type ServiceTemplateWithModuleInfo struct {
@@ -419,15 +415,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 			continue
 		}
 		info.Modules = modules
-		hostIDs := make([]int64, 0)
-		for _, moduleInst := range modules {
-			ids, ok := moduleHostIDs[moduleInst.ModuleID]
-			if ok == false {
-				continue
-			}
-			hostIDs = append(hostIDs, ids...)
-		}
-		info.HostCount = len(util.IntArrayUnique(hostIDs))
+		info.HostCount = len(util.IntArrayUnique(svcTplIDHostIDs[svcTpl.ID]))
 		result = append(result, info)
 	}
 
@@ -577,7 +565,7 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 		return
 	}
 
-	setDiffs, err := s.Core.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit.Ctx, ctx.Kit.Header, bizID, setTemplateID, option)
+	setDiffs, err := s.Core.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option)
 	if err != nil {
 		blog.Errorf("DiffSetTplWithInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v err: %s, rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

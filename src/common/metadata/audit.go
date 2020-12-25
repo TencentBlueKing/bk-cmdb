@@ -53,6 +53,13 @@ func (input *AuditQueryInput) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if len(input.Condition.OperationTime.Start) == 0 && len(input.Condition.OperationTime.End) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKOperationTimeField},
+		}
+	}
+
 	return errors.RawErrorInfo{}
 }
 
@@ -764,4 +771,26 @@ type resourceTypeInfo struct {
 type actionTypeInfo struct {
 	ID   ActionType `json:"id"`
 	Name string     `json:"name"`
+}
+
+type AuditDetailQueryInput struct {
+	IDs []int64 `json:"id"`
+}
+
+// Validate validates the input param
+func (input *AuditDetailQueryInput) Validate() errors.RawErrorInfo {
+	if len(input.IDs) > common.BKAuditLogPageLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommPageLimitIsExceeded,
+		}
+	}
+
+	if len(input.IDs) <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKFieldID},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

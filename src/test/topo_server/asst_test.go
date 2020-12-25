@@ -12,7 +12,7 @@ import (
 )
 
 var _ = Describe("inst test", func() {
-	var switchInstId1, switchInstId2, routerInstId1 int64
+	var switchInstId1, switchInstId2, routerInstId1, instAsst1, instAsst2 int64
 
 	It("create inst bk_obj_id='bk_switch'", func() {
 		input := map[string]interface{}{
@@ -81,7 +81,6 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.ID).To(Equal(int64(6)))
 	})
 
 	It("create inst association ='bk_router1_default_bk_switch1'", func() {
@@ -94,7 +93,7 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.ID).To(Equal(int64(1)))
+		instAsst1 = rsp.Data.ID
 	})
 
 	It("create inst association ='bk_router1_default_bk_switch2'", func() {
@@ -107,7 +106,7 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.ID).To(Equal(int64(2)))
+		instAsst2 = rsp.Data.ID
 	})
 	//check "SearchAssociationRelatedInst" features available.
 	It("search inst association related", func() {
@@ -178,6 +177,28 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
+	})
+	//check "DeleteInstBatch" "the number of IDs should be less than 500." function.
+	It("delete inst association batch", func() {
+		list := make([]int64, 501, 501)
+		input := &metadata.DeleteAssociationInstBatchRequest{
+			ID: list,
+		}
+		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+	//check "DeleteInstBatch" features available.
+	It("delete inst association batch", func() {
+		input := &metadata.DeleteAssociationInstBatchRequest{
+			ID: []int64{instAsst1, instAsst2},
+		}
+		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data).To(Equal(2))
 	})
 
 })

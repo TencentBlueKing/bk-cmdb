@@ -5,57 +5,72 @@
             <span class="info-ip">{{hostIp}}</span>
             <span class="info-area">{{cloudArea}}</span>
         </div>
-        <div class="info-topology clearfix">
-            <div class="topology-label fl">{{$t('业务拓扑')}}：</div>
-            <div class="topology-details clearfix">
-                <ul class="topology-list fl"
-                    v-for="(column, index) in ['left', 'right']"
-                    ref="topologyList"
-                    :key="index"
-                    :class="`${column}-list`"
-                    :style="{
-                        height: getListHeight(topologyList[column]) + 'px'
-                    }">
-                    <li class="topology-item"
-                        v-for="(item, columnIndex) in topologyList[column]"
-                        :key="columnIndex"
-                        :title="item.path">
-                        <span class="topology-path">{{item.path}}</span>
-                        <i class="topology-remove-trigger icon-cc-tips-close"
-                            v-if="!item.isInternal"
-                            @click="handleRemove(item.id)">
-                        </i>
-                    </li>
-                </ul>
-                <a class="view-all fl"
-                    href="javascript:void(0)"
-                    v-if="topology.length > 2"
-                    @click="viewAll">
-                    {{$t('更多信息')}}
-                    <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
-                </a>
+        <div class="info-topology">
+            <div class="topology-label">
+                <span>{{$t('所属拓扑')}}</span>
+                <span v-if="topologyList.length > 1" v-bk-tooltips="{
+                    content: $t(isSingleColumn ? '切换双列显示' : '切换单列显示'),
+                    interactive: false
+                }">
+                    <i class="topology-toggle icon-cc-single-column" v-if="isSingleColumn" @click="toggleDisplayType"></i>
+                    <i class="topology-toggle icon-cc-double-column" v-else @click="toggleDisplayType"></i>
+                </span>
+                <span v-pre style="padding: 0 5px;">:</span>
             </div>
+            <ul class="topology-list"
+                :class="{ 'is-single-column': isSingleColumn }"
+                :style="getListStyle(topologyList)">
+                <li :class="['topology-item', { 'is-internal': item.isInternal }]"
+                    v-for="(item, index) in topologyList"
+                    :key="index">
+                    <span class="topology-path" v-bk-overflow-tips @click="handlePathClick(item)">{{item.path}}</span>
+                    <i class="topology-remove-trigger icon-cc-tips-close"
+                        v-if="!item.isInternal"
+                        v-bk-tooltips="{ content: $t('从该模块移除'), interactive: false }"
+                        @click="handleRemove(item.id)">
+                    </i>
+                </li>
+            </ul>
+            <a class="action-btn view-all"
+                href="javascript:void(0)"
+                v-if="showMore"
+                @click="viewAll">
+                {{$t('更多信息')}}
+                <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
+            </a>
         </div>
     </div>
 </template>
 
 <script>
-    import { MENU_BUSINESS_TRANSFER_HOST } from '@/dictionary/menu-symbol'
-    import { mapState } from 'vuex'
+    import {
+        MENU_BUSINESS_TRANSFER_HOST,
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_RESOURCE_HOST
+    } from '@/dictionary/menu-symbol'
+    import { mapGetters, mapState } from 'vuex'
     export default {
         name: 'cmdb-host-info',
         data () {
             return {
-                topologyListWidth: {
-                    left: 'auto',
-                    right: 'auto'
-                },
+                displayType: window.localStorage.getItem('host_topology_display_type') || 'double',
                 showAll: false,
                 topoNodesPath: []
             }
         },
         computed: {
             ...mapState('hostDetails', ['info']),
+            ...mapGetters('hostDetails', ['isBusinessHost']),
+            business () {
+                const biz = this.info.biz || []
+                return biz[0]
+            },
+            bizId () {
+                return this.business.bk_biz_id
+            },
+            isSingleColumn () {
+                return this.displayType === 'single'
+            },
             host () {
                 return this.info.host || {}
             },
@@ -73,7 +88,7 @@
                     return `${this.$t('云区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`
                 }).join('\n')
             },
-            topology () {
+            topologyList () {
                 const modules = this.info.module || []
                 return this.topoNodesPath.map(item => {
                     const instId = item.topo_node.bk_inst_id
@@ -83,17 +98,15 @@
                         path: item.topo_path.reverse().map(node => node.bk_inst_name).join(' / '),
                         isInternal: module && module.default !== 0
                     }
+                }).sort((itemA, itemB) => {
+                    return itemA.path.localeCompare(itemB.path, 'zh-Hans-CN', { sensitivity: 'accent' })
                 })
             },
-            topologyList () {
-                const list = {
-                    left: [],
-                    right: []
+            showMore () {
+                if (this.isSingleColumn) {
+                    return this.topologyList.length > 1
                 }
-                this.topology.forEach((item, index) => {
-                    list[index % 2 ? 'right' : 'left'].push(item)
-                })
-                return list
+                return this.topologyList.length > 2
             },
             model () {
                 return this.$store.getters['objectModelClassify/getModelById']('host')
@@ -123,17 +136,52 @@
             },
             viewAll () {
                 this.showAll = !this.showAll
-                this.$emit('info-toggle', this.getListHeight(this.topologyList.left) + 51)
+                this.$emit('info-toggle')
             },
-            getListHeight (items) {
+            getListStyle (items) {
                 const itemHeight = 21
                 const itemMargin = 9
-                return (this.showAll ? items.length : 1) * (itemHeight + itemMargin)
+                const length = this.isSingleColumn ? items.length : Math.ceil(items.length / 2)
+                return {
+                    height: (this.showAll ? length : 1) * (itemHeight + itemMargin) + 'px',
+                    flex: (!this.isSingleColumn && items.length === 1) ? 'none' : ''
+                }
+            },
+            toggleDisplayType () {
+                this.displayType = this.displayType === 'single' ? 'double' : 'single'
+                this.$emit('info-toggle')
+                window.localStorage.setItem('host_topology_display_type', this.displayType)
+            },
+            handlePathClick (item) {
+                if (this.isBusinessHost) {
+                    this.$routerActions.open({
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
+                        params: {
+                            bizId: this.bizId
+                        },
+                        query: {
+                            node: `module-${item.id}`
+                        }
+                    })
+                } else {
+                    const modules = this.info.module || []
+                    this.$routerActions.open({
+                        name: MENU_RESOURCE_HOST,
+                        params: {
+                            bizId: this.bizId
+                        },
+                        query: {
+                            scope: '1',
+                            directory: modules[0].bk_module_id
+                        }
+                    })
+                }
             },
             handleRemove (moduleId) {
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
+                        bizId: this.bizId,
                         type: 'remove',
                         module: moduleId
                     },
@@ -151,9 +199,11 @@
 
 <style lang="scss" scoped>
     .info {
-        padding: 11px 24px 2px;
+        max-height: 450px;
+        padding: 11px 0 2px 24px;
         background:rgba(235, 244, 255, .6);
         border-bottom: 1px solid #dcdee5;
+        @include scrollbar-y;
     }
     .info-basic {
         font-size: 0;
@@ -180,7 +230,7 @@
             color: #333948;
         }
         .info-area {
-             display: inline-block;
+            display: inline-block;
             vertical-align: middle;
             height: 18px;
             margin-left: 10px;
@@ -195,18 +245,34 @@
     }
     .info-topology {
         line-height: 19px;
+        display: flex;
         .topology-label {
+            display: flex;
+            align-items: center;
+            align-self: baseline;
             padding: 0 0 0 50px;
             font-size: 14px;
             font-weight: bold;
+            line-height: 20px;
+            .topology-toggle {
+                font-size: 16px;
+                margin: 0 0 0 5px;
+                cursor: pointer;
+                &:hover {
+                    opacity: .75;
+                }
+            }
         }
-        .topology-details {
-            overflow: hidden;
+        .topology-list {
+            flex: 1;
         }
-        .view-all {
-            margin: 0 0 0 14px;
+        .action-btn {
+            align-self: flex-start;
+            margin: 0 14px;
             font-size: 12px;
             color: #007eff;
+        }
+        .view-all {
             .bk-icon {
                 display: inline-block;
                 vertical-align: -1px;
@@ -218,26 +284,40 @@
                 }
             }
         }
+        .change-topology {
+            .icon-cc-edit-shape {
+                font-size: 14px;
+            }
+        }
     }
     .topology-list {
+        display: flex;
+        flex-wrap: wrap;
         overflow: hidden;
         color: #63656e;
         will-change: height;
         transition: height .2s ease-in;
+        max-width: 700px;
+        &.is-single-column {
+            max-width: 850px;
+            display: inline-block;
+            flex: none;
+            .topology-item {
+                width: auto;
+            }
+        }
         .topology-item {
+            flex: 0 1 50%;
+            width: 50%;
+            height: 20px;
             font-size: 0px;
             margin: 0 0 9px 0;
-            height: 20px;
+            padding: 0 15px 0 0;
             line-height: 20px;
-            &:before {
-                content: "";
-                height: 100%;
-                width: 0;
-                display: inline-block;
-                vertical-align: middle;
+            &:only-child {
+                flex: 1 1 50%;
             }
             &:hover {
-                color: #000000;
                 .topology-remove-trigger {
                     opacity: 1;
                 }
@@ -246,17 +326,27 @@
                 display: inline-block;
                 vertical-align: middle;
                 font-size: 14px;
-                max-width: 330px;
+                max-width: calc(100% - 30px);
+                cursor: pointer;
                 @include ellipsis;
+                &:hover {
+                    color: $primaryColor;
+                }
             }
             .topology-remove-trigger {
                 opacity: 0;
-                font-size: 12px;
+                font-size: 20px;
                 cursor: pointer;
                 margin: 0 0 0 10px;
                 color: $textColor;
+                transform: scale(.5);
                 &:hover {
                     color: $primaryColor;
+                }
+            }
+            &.is-internal {
+                .topology-path {
+                    max-width: 100%;
                 }
             }
         }

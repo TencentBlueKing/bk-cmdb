@@ -235,13 +235,15 @@
                 }
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query
+                    query,
+                    history: true
                 })
             },
             handleViewFailed () {
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_FAILED,
-                    query: this.$route.query
+                    query: this.$route.query,
+                    history: true
                 })
             }
         }

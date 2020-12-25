@@ -42,6 +42,7 @@ type DiscoveryInterface interface {
 	CloudServer() Interface
 	AuthServer() Interface
 	Server(name string) Interface
+	CacheService() Interface
 	ServiceManageInterface
 }
 
@@ -135,6 +136,10 @@ func (d *discover) CloudServer() Interface {
 
 func (d *discover) AuthServer() Interface {
 	return d.servers[types.CC_MODULE_AUTH]
+}
+
+func (d *discover) CacheService() Interface {
+	return d.servers[types.CC_MODULE_CACHESERVICE]
 }
 
 // IsMaster check whether current is master

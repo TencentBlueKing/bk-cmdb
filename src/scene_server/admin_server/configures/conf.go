@@ -55,27 +55,7 @@ func (cc *ConfCenter) Ping() error {
 // Start the configure center module service
 func (cc *ConfCenter) Start(confDir, errRes, languageRes string) error {
 
-	// save configures
-	if err := cc.writeConfs2Center(confDir); err != nil {
-		blog.Errorf("fail to write configures to center, err:%s", err.Error())
-		return err
-	} else {
-		blog.Infof("write all configures resource to center %v success", types.CC_SERVCONF_BASEPATH)
-	}
-
-	if err := cc.writeErrorRes2Center(errRes); err != nil {
-		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
-		return err
-	} else {
-		blog.Infof("write error resource to center %v success", types.CC_SERVERROR_BASEPATH)
-	}
-
-	if err := cc.writeLanguageRes2Center(languageRes); err != nil {
-		blog.Errorf("fail to write language packages to center, err:%s", err.Error())
-		return err
-	} else {
-		blog.Infof("write language packages to center %v success", types.CC_SERVLANG_BASEPATH)
-	}
+	cc.WriteAllConfs2Center(confDir, errRes, languageRes)
 
 	// TODO discover config file change
 	go func() {
@@ -86,7 +66,34 @@ func (cc *ConfCenter) Start(confDir, errRes, languageRes string) error {
 	return nil
 }
 
-func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
+// WriteAllConfs2Center write all config to the configure center
+func (cc *ConfCenter) WriteAllConfs2Center(confDir, errRes, languageRes string) error {
+	// save configures
+	if err := cc.WriteConfs2Center(confDir); err != nil {
+		blog.Errorf("fail to write configures to center, err:%s", err.Error())
+		return err
+	} else {
+		blog.Infof("write all configures resource to center %v success", types.CC_SERVCONF_BASEPATH)
+	}
+
+	if err := cc.WriteErrorRes2Center(errRes); err != nil {
+		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
+		return err
+	} else {
+		blog.Infof("write error resource to center %v success", types.CC_SERVERROR_BASEPATH)
+	}
+
+	if err := cc.WriteLanguageRes2Center(languageRes); err != nil {
+		blog.Errorf("fail to write language packages to center, err:%s", err.Error())
+		return err
+	} else {
+		blog.Infof("write language packages to center %v success", types.CC_SERVLANG_BASEPATH)
+	}
+
+	return nil
+}
+
+func (cc *ConfCenter) WriteErrorRes2Center(errorres string) error {
 	info, err := os.Stat(errorres)
 	if os.ErrNotExist == err {
 		return fmt.Errorf("directory %s not exists", errorres)
@@ -111,7 +118,7 @@ func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
 	return cc.confRegDiscv.Write(key, data)
 }
 
-func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
+func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
 	info, err := os.Stat(languageres)
 	if os.ErrNotExist == err {
 		return fmt.Errorf("directory %s not exists", languageres)
@@ -139,7 +146,7 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 // WriteConfs2Center save configures into center.
 // parameter[confRootPath] define the configure's root path, the configure files are
 // redis.conf, mongodb.conf，common.conf，extra.conf
-func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
+func (cc *ConfCenter) WriteConfs2Center(confRootPath string) error {
 	configs := []string{
 		types.CCConfigureRedis,
 		types.CCConfigureMongo,
@@ -152,19 +159,19 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	for _, configName := range configs {
 		filePath := filepath.Join(confRootPath, configName+confFileSuffix)
 		key := types.CC_SERVCONF_BASEPATH + "/" + configName
-		if err := cc.writeConfigure(filePath, key); err != nil {
+		if err := cc.WriteConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of %s into center", configName)
 			continue
 		} else {
 			blog.Infof("write configure to center %s success", key)
-			cc.listenFileChange(key,filePath)
+			//cc.listenFileChange(key,filePath)
 		}
 	}
 
 	return nil
 }
 
-func (cc *ConfCenter) writeConfigure(confFilePath, key string) error {
+func (cc *ConfCenter) WriteConfigure(confFilePath, key string) error {
 	confFile, err := os.Open(confFilePath)
 	if err != nil {
 		blog.Errorf("fail to open file(%s), err(%s)", confFilePath, err.Error())
@@ -176,6 +183,12 @@ func (cc *ConfCenter) writeConfigure(confFilePath, key string) error {
 	if err != nil {
 		blog.Errorf("fail to read all data from config file(%s), err:%s", confFilePath, err.Error())
 		return err
+	}
+
+	// check the configuration in the file
+	if err := cc.checkFile(confFilePath); err != nil {
+		blog.Errorf("There is a problem in configuration file %s, err:%s", confFilePath, err)
+		os.Exit(1)
 	}
 
 	blog.V(3).Infof("write configure(%s), key(%s), data(%s)", confFilePath, key, data)
@@ -193,7 +206,7 @@ var commonViper *viper.Viper
 var extraViper *viper.Viper
 
 //此方法给adminserver实现热更新,监听每个文件，当文件发生更改时，将改后的数据重新写到注册中心
-func (cc *ConfCenter) listenFileChange(configcenterPath string,filePath string) {
+func (cc *ConfCenter) listenFileChange(configcenterPath string, filePath string) {
 	v := viper.New()
 	base := path.Base(filePath)
 	split := strings.Split(base, ".")
@@ -206,7 +219,7 @@ func (cc *ConfCenter) listenFileChange(configcenterPath string,filePath string) 
 	}
 	v.WatchConfig()
 	v.OnConfigChange(func(e fsnotify.Event) {
-		if err := cc.writeConfigure(filePath, configcenterPath); err != nil {
+		if err := cc.WriteConfigure(filePath, configcenterPath); err != nil {
 			blog.Warnf("fail to write configure of %s into center", base)
 		} else {
 			blog.Infof("write configure to center %s success", configcenterPath)

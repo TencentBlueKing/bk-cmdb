@@ -74,30 +74,30 @@ func (t *genericTransfer) SetCrossBusiness(kit *rest.Kit, bizID int64) {
 	t.srcBizID = bizID
 }
 
-func (t *genericTransfer) Transfer(kit *rest.Kit, hostID int64) errors.CCErrorCoder {
-	err := t.validHosts(kit, []int64{hostID})
+func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+	err := t.validHosts(kit, hostIDs)
 	if err != nil {
 		return err
 	}
 
 	// remove service instance if necessary
-	if err := t.removeHostServiceInstance(kit, []int64{hostID}); err != nil {
+	if err := t.removeHostServiceInstance(kit, hostIDs); err != nil {
 		return err
 	}
 
-	if err := t.delHostModuleRelation(kit, []int64{hostID}); err != nil {
+	if err := t.delHostModuleRelation(kit, hostIDs); err != nil {
 		// It is not the time to merge and base the time. When it fails,
 		// it is clear that the data before the change is pushed.
 		return err
 	}
 
 	// transfer host module config
-	if _, err := t.addHostModuleRelation(kit, hostID); err != nil {
+	if err := t.addHostModuleRelation(kit, hostIDs); err != nil {
 		return err
 	}
 
 	// auto create service instance if necessary
-	if err := t.autoCreateServiceInstance(kit, hostID); err != nil {
+	if err := t.autoCreateServiceInstance(kit, hostIDs); err != nil {
 		return err
 	}
 
@@ -323,65 +323,66 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizID int64, 
 }
 
 // AddSingleHostModuleRelation add single host module relation
-func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
 	bizID := t.bizID
+	existHostModuleIDMap := make(map[int64]map[int64]struct{}, 0)
 
-	var moduleIDArr []int64
 	// append method, filter already exist modules
 	if t.isIncrement {
-		cond := condition.CreateCondition()
-		cond.Field(common.BKAppIDField).Eq(t.bizID)
-		cond.Field(common.BKHostIDField).Eq(hostID)
-		cond.Field(common.BKModuleIDField).In(t.moduleIDArr)
-		condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+		cond := map[string]interface{}{
+			common.BKAppIDField:    t.bizID,
+			common.BKHostIDField:   map[string]interface{}{common.BKDBIN: hostIDs},
+			common.BKModuleIDField: map[string]interface{}{common.BKDBIN: t.moduleIDArr},
+		}
+		condMap := util.SetQueryOwner(cond, kit.SupplierAccount)
+
 		relationArr := make([]metadata.ModuleHost, 0)
-		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condMap).All(kit.Ctx, &relationArr)
+		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condMap).Fields(common.BKHostIDField,
+			common.BKModuleIDField).All(kit.Ctx, &relationArr)
 		if err != nil {
 			blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
-		// map[moduleID]bool
-		existModuleIDMap := make(map[int64]bool, 0)
+
 		for _, item := range relationArr {
-			existModuleIDMap[item.ModuleID] = true
-		}
-		for _, moduleID := range t.moduleIDArr {
-			if _, ok := existModuleIDMap[moduleID]; !ok {
-				moduleIDArr = append(moduleIDArr, moduleID)
+			if _, ok := existHostModuleIDMap[item.HostID]; !ok {
+				existHostModuleIDMap[item.HostID] = make(map[int64]struct{}, 0)
 			}
+			existHostModuleIDMap[item.HostID][item.ModuleID] = struct{}{}
 		}
+	}
 
-	} else {
-		moduleIDArr = t.moduleIDArr
-	}
-	if len(moduleIDArr) == 0 {
-		return nil, nil
-	}
 	var insertDataArr []mapstr.MapStr
-	for _, moduleID := range moduleIDArr {
-		insertData := mapstr.MapStr{
-			common.BKAppIDField: bizID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID,
-			// validation parameter ensure module must be exist  t.validParameterModule
-			common.BKSetIDField: t.moduleIDSetIDMap[moduleID],
-		}
+	for _, moduleID := range t.moduleIDArr {
+		for _, hostID := range hostIDs {
+			if _, ok := existHostModuleIDMap[hostID][moduleID]; ok {
+				continue
+			}
+			insertData := mapstr.MapStr{
+				common.BKAppIDField: bizID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID,
+				common.BKSetIDField: t.moduleIDSetIDMap[moduleID],
+			}
 
-		insertData = util.SetModOwner(insertData, kit.SupplierAccount)
-		insertDataArr = append(insertDataArr, insertData)
+			insertData = util.SetModOwner(insertData, kit.SupplierAccount)
+			insertDataArr = append(insertDataArr, insertData)
+		}
+	}
+
+	if len(insertDataArr) == 0 {
+		return nil
 	}
 
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr)
 	if err != nil {
 		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
+		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
-	return insertDataArr, nil
+	return nil
 }
 
-func (t *genericTransfer) autoCreateServiceInstance(kit *rest.Kit, hostID int64) errors.CCErrorCoder {
-	for _, moduleID := range t.moduleIDArr {
-		if _, err := t.dependent.AutoCreateServiceInstanceModuleHost(kit, hostID, moduleID); err != nil {
-			blog.Warnf("autoCreateServiceInstance failed, hostID: %d, moduleID: %d, rid: %s", hostID, moduleID, kit.Rid)
-		}
+func (t *genericTransfer) autoCreateServiceInstance(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+	if err := t.dependent.AutoCreateServiceInstanceModuleHost(kit, hostIDs, t.moduleIDArr); err != nil {
+		blog.Warnf("autoCreateServiceInstance failed, hostIDs: %+v, moduleID: %+v, rid: %s", hostIDs, t.moduleIDArr, kit.Rid)
 	}
 	return nil
 }

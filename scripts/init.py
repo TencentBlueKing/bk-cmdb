@@ -151,7 +151,7 @@ mongodb:
     common_file_template_str = '''
 #topoServer:
 #  es:
-#    fullTextSearch: off
+#    fullTextSearch: "off"
 #    url: http://127.0.0.1:9200
 #    usr: cc
 #    pwd: cc
@@ -229,6 +229,8 @@ webServer:
     resourcesPath: /tmp/
     #前端基础页面位置
     htmlRoot: $ui_root
+    #帮助文档地址
+    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
   app:
     agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
     #权限模式，web页面使用，可选值: internal, iam
@@ -239,8 +241,10 @@ webServer:
 # operation_server专属配置
 operationServer:
   timer:
-    #00:00-23:59,operation_server从配置文件读取的时间,默认是为00:30
+    # 00:00-23:59,运营统计定时收集数据时间点,默认是为00:30
     spec: 00:30  # 00:00 - 23:59
+  # 禁用运营统计数据统计功能，默认false
+  disableOperationStatistic: false
 #auth_server专属配置
 authServer:
   #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
@@ -251,6 +255,7 @@ authServer:
   appSecret: $auth_app_secret
 #cloudServer专属配置
 cloudServer:
+  # 加密服务使用
   cryptor:
     enableCryptor: ${enable_cryptor}
     secretKeyUrl: ${secret_key_url}
@@ -258,6 +263,10 @@ cloudServer:
     secretsToken: ${secrets_token}
     secretsProject: ${secrets_project}
     secretsEnv: ${secrets_env}
+  # 云同步任务
+  syncTask:
+    # 同步周期,最小为5分钟
+    syncPeriodMinutes: 5
 #datacollection专属配置
 datacollection:
   hostsnap:
@@ -269,6 +278,22 @@ datacollection:
     rateLimiter:
       qps: 40
       burst: 100
+# 监控配置， monitor配置项必须存在
+monitor:
+    # 监控插件名称，有noop，blueking， 不填时默认为noop
+    pluginName: noop
+    # 是否开启监控
+    enableMonitor: false
+    # 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+    dataID: 0
+    # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
+    queueSize: 100
+    # 用于对数据上报进行频率控制和限流
+    # qps的设置范围为1～50，默认值为10
+    # burst的设置范围为1～100，默认值为20
+    rateLimiter:
+      qps: 10
+      burst: 20
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -472,7 +497,8 @@ def main(argv):
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
         "cmdb_cloudserver": 60013,
-        "cmdb_authserver": 60014
+        "cmdb_authserver": 60014,
+        "cmdb_cacheservice": 50010
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",

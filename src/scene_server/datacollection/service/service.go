@@ -26,7 +26,7 @@ import (
 	"configcenter/src/scene_server/datacollection/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdparty/esbserver"
 
 	"github.com/emicklei/go-restful"
 )
@@ -190,6 +190,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	healthResp.SetCommonResponse()
 
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(healthResp)

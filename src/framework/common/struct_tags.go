@@ -21,6 +21,9 @@ import (
 
 // GetTags parse a object and get the all tags
 func GetTags(target interface{}) []string {
+	if target == nil {
+		return make([]string, 0)
+	}
 
 	targetType := reflect.TypeOf(target)
 	switch targetType.Kind() {
@@ -48,6 +51,10 @@ func SetValueToMapStrByTags(source interface{}) types.MapStr {
 
 	values := types.MapStr{}
 
+	if source == nil {
+		return values
+	}
+
 	targetType := reflect.TypeOf(source)
 	targetValue := reflect.ValueOf(source)
 	switch targetType.Kind() {
@@ -73,6 +80,9 @@ func SetValueToMapStrByTags(source interface{}) types.MapStr {
 
 // SetValueToStructByTags set the struct object field value by tags
 func SetValueToStructByTags(target interface{}, values types.MapStr) error {
+	if target == nil {
+		return nil
+	}
 
 	targetType := reflect.TypeOf(target)
 	targetValue := reflect.ValueOf(target)

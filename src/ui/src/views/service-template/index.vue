@@ -51,7 +51,7 @@
             </div>
         </div>
         <bk-table class="template-table"
-            v-bkloading="{ isLoading: $loading('get_proc_service_template') }"
+            v-bkloading="{ isLoading: $loading(request.list) }"
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 229"
@@ -63,8 +63,21 @@
             <bk-table-column prop="id" label="ID" class-name="is-highlight" show-overflow-tooltip sortable="custom"></bk-table-column>
             <bk-table-column prop="name" :label="$t('模板名称')" show-overflow-tooltip sortable="custom"></bk-table-column>
             <bk-table-column prop="service_category" :label="$t('服务分类')" show-overflow-tooltip></bk-table-column>
-            <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
-            <bk-table-column prop="module_count" :label="$t('已应用模块数')"></bk-table-column>
+            <bk-table-column prop="process_template_count" :label="$t('进程数量')">
+                <template slot-scope="{ row }">
+                    <cmdb-loading :loading="$loading(request.count)">
+                        <template v-if="row.process_template_count > 0">
+                            {{row.process_template_count}}
+                        </template>
+                        <span style="color: #ff9c01" v-else>{{row.process_template_count}}（{{$t('未配置')}}）</span>
+                    </cmdb-loading>
+                </template>
+            </bk-table-column>
+            <bk-table-column prop="module_count" :label="$t('已应用模块数')">
+                <template slot-scope="{ row }">
+                    <cmdb-loading :loading="$loading(request.count)">{{row.module_count}}</cmdb-loading>
+                </template>
+            </bk-table-column>
             <bk-table-column prop="modifier" :label="$t('修改人')" sortable="custom"></bk-table-column>
             <bk-table-column prop="last_time" :label="$t('修改时间')" show-overflow-tooltip sortable="custom">
                 <template slot-scope="{ row }">
@@ -73,32 +86,35 @@
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
-                        <bk-button slot-scope="{ disabled }"
-                            theme="primary"
-                            :disabled="disabled"
-                            :text="true"
-                            @click.stop="operationTemplate(row['id'], 'edit')">
-                            {{$t('编辑')}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
-                        <template slot-scope="{ disabled }">
-                            <span class="text-primary"
-                                style="color: #dcdee5 !important; cursor: not-allowed;"
-                                v-if="row['module_count'] && !disabled"
-                                v-bk-tooltips.top="$t('不可删除')">
-                                {{$t('删除')}}
-                            </span>
-                            <bk-button v-else
+                    <cmdb-loading :loading="$loading(request.count)">
+                        <!-- 与查询详情功能重复暂去掉 -->
+                        <!-- <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
+                            <bk-button slot-scope="{ disabled }"
                                 theme="primary"
                                 :disabled="disabled"
                                 :text="true"
-                                @click.stop="deleteTemplate(row)">
-                                {{$t('删除')}}
+                                @click.stop="operationTemplate(row['id'], 'edit')">
+                                {{$t('编辑')}}
                             </bk-button>
-                        </template>
-                    </cmdb-auth>
+                        </cmdb-auth> -->
+                        <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
+                            <template slot-scope="{ disabled }">
+                                <span class="text-primary"
+                                    style="color: #dcdee5 !important; cursor: not-allowed;"
+                                    v-if="row['module_count'] && !disabled"
+                                    v-bk-tooltips.top="$t('不可删除')">
+                                    {{$t('删除')}}
+                                </span>
+                                <bk-button v-else
+                                    theme="primary"
+                                    :disabled="disabled"
+                                    :text="true"
+                                    @click.stop="deleteTemplate(row)">
+                                    {{$t('删除')}}
+                                </bk-button>
+                            </template>
+                        </cmdb-auth>
+                    </cmdb-loading>
                 </template>
             </bk-table-column>
             <cmdb-table-empty
@@ -114,7 +130,11 @@
 <script>
     import { mapActions, mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import CmdbLoading from '@/components/loading/loading'
     export default {
+        components: {
+            CmdbLoading
+        },
         data () {
             return {
                 filter: {
@@ -125,7 +145,6 @@
                 table: {
                     height: 600,
                     list: [],
-                    allList: [],
                     pagination: {
                         current: 1,
                         count: 0,
@@ -144,7 +163,11 @@
                 allSecondaryList: [],
                 originTemplateData: [],
                 maincategoryId: null,
-                categoryId: null
+                categoryId: null,
+                request: {
+                    list: Symbol('list'),
+                    count: Symbol('count')
+                }
             }
         },
         computed: {
@@ -181,7 +204,7 @@
         },
         methods: {
             ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
-            ...mapActions('serviceClassification', ['searchServiceCategory']),
+            ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
             async getTableData (event) {
                 try {
                     const templateData = await this.getTemplateData()
@@ -190,20 +213,16 @@
                         this.getTableData()
                     }
                     this.table.pagination.count = templateData.count
-                    this.table.allList = templateData.info.map(template => {
-                        const result = {
-                            ...template,
-                            ...template['service_template']
-                        }
-                        const secondaryCategory = this.allSecondaryList.find(classification => classification['id'] === result['service_category_id'])
-                        const mainCategory = this.mainList.find(classification => secondaryCategory && classification['id'] === secondaryCategory['bk_parent_id'])
-                        const secondaryCategoryName = secondaryCategory ? secondaryCategory['name'] : '--'
-                        const mainCategoryName = mainCategory ? mainCategory['name'] : '--'
-                        result['service_category'] = `${mainCategoryName} / ${secondaryCategoryName}`
-                        return result
+                    this.table.list = templateData.info.map(template => {
+                        const secondaryCategory = this.allSecondaryList.find(classification => classification.id === template.service_category_id)
+                        const mainCategory = this.mainList.find(classification => secondaryCategory && classification.id === secondaryCategory.bk_parent_id)
+                        const secondaryCategoryName = secondaryCategory ? secondaryCategory.name : '--'
+                        const mainCategoryName = mainCategory ? mainCategory.name : '--'
+                        template.service_category = `${mainCategoryName} / ${secondaryCategoryName}`
+                        return template
                     })
                     this.table.stuff.type = this.hasFilter ? 'search' : 'default'
-                    this.table.list = this.table.allList
+                    this.table.list.length && this.getTemplateCount()
                 } catch ({ permission }) {
                     if (permission) {
                         this.table.stuff = {
@@ -213,24 +232,53 @@
                     }
                 }
             },
+            async getTemplateCount () {
+                try {
+                    const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplateCount', {
+                        bizId: this.bizId,
+                        params: {
+                            service_template_ids: this.table.list.map(row => row.id)
+                        },
+                        config: {
+                            requestId: this.request.count,
+                            cancelPrevious: true
+                        }
+                    })
+                    this.table.list.forEach(row => {
+                        const counts = data.find(counts => counts.service_template_id === row.id) || {}
+                        const {
+                            module_count: moduleCount = '--',
+                            process_template_count: processTemplateCount = '--'
+                        } = counts
+                        this.$set(row, 'module_count', moduleCount)
+                        this.$set(row, 'process_template_count', processTemplateCount)
+                    })
+                } catch (error) {
+                    console.error(error)
+                    this.table.list.forEach(row => {
+                        this.$set(row, 'module_count', '--')
+                        this.$set(row, 'process_template_count', '--')
+                    })
+                }
+            },
             getTemplateData () {
                 return this.searchServiceTemplate({
                     params: this.params,
                     config: {
-                        requestId: 'get_proc_service_template',
+                        requestId: this.request.list,
                         cancelPrevious: true,
                         globalPermission: false
                     }
                 })
             },
             async getServiceClassification () {
-                const res = await this.searchServiceCategory({
+                const { info: categories } = await this.searchServiceCategoryWithoutAmout({
                     params: { bk_biz_id: this.bizId },
                     config: {
                         requestId: 'get_proc_services_categories'
                     }
                 })
-                this.classificationList = res.info.map(item => item['category'])
+                this.classificationList = categories
                 this.mainList = this.classificationList.filter(classification => !classification['bk_parent_id'])
                 this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
             },
@@ -257,7 +305,6 @@
             deleteTemplate (template) {
                 this.$bkInfo({
                     title: this.$t('确认删除模板'),
-                    subTitle: this.$tc('即将删除服务模板', name, { name: template.name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({

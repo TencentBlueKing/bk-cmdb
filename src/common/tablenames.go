@@ -14,21 +14,6 @@ package common
 
 // table names
 const (
-	// BKTableNameProcModule the table name of the process module
-	BKTableNameProcModule = "cc_Proc2Module"
-
-	// BKTableNameProcTemplate the table name of the process template config
-	BKTableNameProcTemplate = "cc_Proc2Template"
-
-	// BKTableNameProcInstanceModel the table name of the process instance
-	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
-
-	// BKTableNameProcInstanceDetail  the table name of the process instance detail
-	BKTableNameProcInstanceDetail = "cc_ProcInstanceDetail"
-
-	// BKTableNameProcOperateTask  the table name of the process instance operater task info
-	BKTableNameProcOperateTask = "cc_ProcOpTask"
-
 	// BKTableNamePropertyGroup the table name of the property group
 	BKTableNamePropertyGroup = "cc_PropertyGroup"
 
@@ -111,11 +96,6 @@ const (
 
 // AllTables alltables
 var AllTables = []string{
-	BKTableNameProcModule,
-	BKTableNameProcTemplate,
-	BKTableNameProcInstanceModel,
-	BKTableNameProcInstanceDetail,
-	BKTableNameProcOperateTask,
 	BKTableNamePropertyGroup,
 	BKTableNameObjDes,
 	BKTableNameObjAttDes,

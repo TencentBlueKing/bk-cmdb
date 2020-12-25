@@ -194,7 +194,7 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Logic.TransferHostAcrossBusiness(ctx.Kit, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleIDArr)
+		err := s.Logic.TransferHostAcrossBusiness(ctx.Kit, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleID)
 		if err != nil {
 			blog.Errorf("TransferHostAcrossBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, ctx.Kit.Rid)
 			return err

@@ -3,7 +3,8 @@
         searchable
         v-model="localValue"
         v-bind="$attrs"
-        :multiple="multiple">
+        :multiple="multiple"
+        @toggle="handleToggle">
         <bk-option v-for="option in options"
             :key="option.id"
             :id="option.id"
@@ -13,8 +14,10 @@
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     export default {
         name: 'cmdb-search-enum',
+        mixins: [activeMixin],
         props: {
             value: {
                 type: [String, Array],

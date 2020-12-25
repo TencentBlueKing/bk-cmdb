@@ -13,7 +13,6 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
@@ -82,7 +81,7 @@ func (g *unique) Create() error {
 		Keys:      g.data.Keys,
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), g.kit.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
+	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
 	if nil != err {
 		blog.Errorf("[model-unique] failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -103,7 +102,7 @@ func (g *unique) Update(data mapstr.MapStr) error {
 		Keys:      g.data.Keys,
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), g.kit.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
+	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(g.kit.Ctx, g.kit.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return err
@@ -118,7 +117,7 @@ func (g *unique) Update(data mapstr.MapStr) error {
 
 func (g *unique) Save(data mapstr.MapStr) error {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
-	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(g.kit.Ctx, g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return err
@@ -147,7 +146,7 @@ func (g *unique) Save(data mapstr.MapStr) error {
 
 func (g *unique) IsExists() (bool, error) {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
-	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(g.kit.Ctx, g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return false, err

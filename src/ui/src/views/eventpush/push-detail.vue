@@ -423,7 +423,7 @@
                     name: this.$t('主机业务'),
                     children: [{
                         id: 'resource',
-                        name: this.$t('资源池')
+                        name: this.$t('主机池')
                     }, {
                         id: 'host',
                         name: this.$t('主机')

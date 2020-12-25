@@ -13,9 +13,7 @@
 package operation
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
@@ -83,7 +81,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, mod
 	}
 
 	// check if the object is mainline object, if yes. then user can not create required attribute.
-	yes, err := a.isMainlineModel(kit.Header, att.Attribute().ObjectID)
+	yes, err := a.isMainlineModel(kit, att.Attribute().ObjectID)
 	if err != nil {
 		blog.Warnf("add object attribute, but not allow to add required attribute to mainline object: %+v. rid: %d.", data, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
@@ -207,7 +205,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 		}
 
 		// delete the attribute.
-		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(context.Background(), kit.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(kit.Ctx, kit.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v, rid: %s", err, kit.Rid)
 			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -301,7 +299,7 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 		Page:      metadata.BasePage{Limit: int(limits), Start: int(start), Sort: sort},
 	}
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), kit.Header, opt)
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, opt)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -316,13 +314,8 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 }
 
 func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
-	// TODO replace this logic with cond := metadata.NewPublicOrBizConditionByBizID(bizID) when old interface can't operate biz custom field
-	var cond map[string]interface{}
-	if modelBizID == 0 {
-		cond = make(map[string]interface{}, 0)
-	} else {
-		cond = metadata.NewPublicOrBizConditionByBizID(modelBizID)
-	}
+	cond := make(map[string]interface{})
+	util.AddModelBizIDConditon(cond, modelBizID)
 
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
@@ -340,7 +333,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		Condition: cond,
 		Data:      data,
 	}
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(context.Background(), kit.Header, &input)
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -360,9 +353,9 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	return nil
 }
 
-func (a *attribute) isMainlineModel(head http.Header, modelID string) (bool, error) {
+func (a *attribute) isMainlineModel(kit *rest.Kit, modelID string) (bool, error) {
 	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), head,
+	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return false, err
@@ -391,7 +384,7 @@ func (a *attribute) UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data
 		Data:      data,
 	}
 
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(context.Background(), kit.Header, objID, &input)
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(kit.Ctx, kit.Header, objID, &input)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

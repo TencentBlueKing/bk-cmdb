@@ -32,7 +32,7 @@ func (s *Service) initAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}", Handler: s.SearchMainLineObjectTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/{owner_id}/{bk_biz_id}", Handler: s.SearchBusinessTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/cache/topotree", Handler: s.SearchTopologyTree})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/tree/brief/biz/{bk_biz_id}", Handler: s.SearchBriefBizTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/cache/topo/node_path/biz/{bk_biz_id}",
 		Handler: s.SearchTopologyNodePath})
 
@@ -57,6 +57,7 @@ func (s *Service) initAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inst/association/related/action/search", Handler: s.SearchAssociationRelatedInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inst/association/action/create", Handler: s.CreateAssociationInst})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/inst/association/{association_id}/action/delete", Handler: s.DeleteAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/inst/association/batch/action/delete", Handler: s.DeleteAssociationInstBatch})
 
 	// topo search methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})
@@ -77,7 +78,7 @@ func (s *Service) initAuditLog(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/audit_dict", Handler: s.SearchAuditDict})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/audit_list", Handler: s.SearchAuditList})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/audit/{id}", Handler: s.SearchAuditDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/audit", Handler: s.SearchAuditDetail})
 
 	utility.AddToRestfulWebService(web)
 }

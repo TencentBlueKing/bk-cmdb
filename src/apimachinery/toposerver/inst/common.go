@@ -67,14 +67,14 @@ func (t *instanceClient) SearchAuditList(ctx context.Context, h http.Header, inp
 	return resp, nil
 }
 
-func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header, id int64) (*metadata.Response, error) {
+func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header, input *metadata.AuditDetailQueryInput) (*metadata.Response, error) {
 	resp := new(metadata.Response)
-	subPath := "/find/audit/%d"
+	subPath := "/find/audit"
 
-	err := t.client.Get().
+	err := t.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, id).
+		Body(input).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -98,6 +98,20 @@ func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID s
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef(subPath, ownerID, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (t *instanceClient) SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64, input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error) {
+	resp = new(metadata.SearchBriefBizTopoResult)
+	subPath := "/find/topo/tree/brief/biz/%d"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

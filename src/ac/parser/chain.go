@@ -10,6 +10,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+
+	"github.com/tidwall/gjson"
 )
 
 type RequestContext struct {
@@ -27,9 +29,41 @@ type RequestContext struct {
 	// >=3: resource fields
 	Elements []string
 	// http request body contents.
-	Body []byte
-	// BizID is business ID
-	BizID int64
+	body []byte
+	// getBody get http request body contents
+	getBody func() (body []byte, err error)
+}
+
+// getRequestBody call the callback method to get the request body
+func (req *RequestContext) getRequestBody() (body []byte, err error) {
+	if req.body == nil {
+		body, err = req.getBody()
+		if err != nil {
+			return
+		}
+		req.body = body
+	}
+	return req.body, nil
+}
+
+// getValueFromBody get the parameter value from the request body
+func (req *RequestContext) getValueFromBody(key string) (value gjson.Result, err error) {
+	body, err := req.getRequestBody()
+	if err != nil {
+		return
+	}
+	value = gjson.GetBytes(body, key)
+	return
+}
+
+// getBizIDFromBody get the business id from the request body
+func (req *RequestContext) getBizIDFromBody() (biz int64, err error) {
+	val, err := req.getValueFromBody(common.BKAppIDField)
+	if err != nil {
+		return
+	}
+	biz = val.Int()
+	return
 }
 
 type parseStream struct {
@@ -58,6 +92,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		validateVersion().
 		validateResourceAction().
 		validateUserAndSupplier().
+		cacheRelated().
 		adminRelated().
 		hostRelated().
 		topology().

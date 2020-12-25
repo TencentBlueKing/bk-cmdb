@@ -1,9 +1,17 @@
 <template>
-    <div class="category-wrapper">
+    <div class="category-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <cmdb-tips class="mb10" tips-key="categoryTips">{{$t('服务分类功能提示')}}</cmdb-tips>
+        <div class="category-filter">
+            <bk-input class="filter-input"
+                :clearable="true"
+                :right-icon="'bk-icon icon-search'"
+                :placeholder="$t('请输入关键字')"
+                v-model.trim="keyword">
+            </bk-input>
+        </div>
         <div class="category-list">
-            <div class="category-item bgc-white" v-for="(mainCategory, index) in list" :key="index">
-                <div class="category-title" :style="{ 'background-color': mainCategory['editStatus'] ? '#f0f1f5' : '' }">
+            <div class="category-item bgc-white" v-for="(mainCategory, index) in displayList" :key="index">
+                <div class="category-title" :style="{ 'background-color': editMainStatus === mainCategory['id'] ? '#f0f1f5' : '' }">
                     <div class="main-edit"
                         :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"
                         v-if="editMainStatus === mainCategory['id']">
@@ -20,64 +28,53 @@
                     </div>
                     <template v-else>
                         <div class="category-name">
-                            <span class="category-name-text" :title="mainCategory.name">{{mainCategory.name}}</span>
-                            <cmdb-auth v-if="!mainCategory['is_built_in']"
+                            <template v-if="mainCategory['is_built_in']">
+                                <div class="category-name-text is-built-in">
+                                    <div class="text-inner">
+                                        <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
+                                        <span class="main-id">{{mainCategory.id}}</span>
+                                    </div>
+                                </div>
+                                <span class="built-in-sign">{{$t('内置')}}</span>
+                            </template>
+                            <cmdb-auth v-else
                                 :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
+                                <div slot-scope="{ disabled }" :class="['category-name-text', { disabled }]">
+                                    <div class="text-inner" @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
+                                        <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
+                                        <span class="main-id">{{mainCategory.id}}</span>
+                                    </div>
+                                </div>
+                            </cmdb-auth>
+                        </div>
+                        <div class="menu-operational" v-if="!mainCategory['is_built_in']">
+                            <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
                                 <bk-button slot-scope="{ disabled }"
-                                    class="main-edit-btn"
-                                    theme="primary"
+                                    class="menu-btn"
                                     :disabled="disabled"
                                     :text="true"
-                                    @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
-                                    <i class="icon-cc-edit-shape"></i>
+                                    @click="handleShowAddChild(mainCategory['id'])">
+                                    <i class="bk-cmdb-icon icon-cc-plus"></i>
                                 </bk-button>
                             </cmdb-auth>
-                            <span v-else class="built-in-sign">{{$t('内置')}}</span>
-                        </div>
-                        <cmdb-dot-menu class="dot-menu-operation" v-if="!mainCategory['is_built_in']">
-                            <div class="menu-operational">
-                                <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
-                                    <bk-button slot-scope="{ disabled }"
+                            <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }">
+                                <template slot-scope="{ disabled }">
+                                    <bk-button v-if="disabled || !mainCategory['child_category_list'].length"
                                         class="menu-btn"
-                                        :disabled="disabled"
                                         :text="true"
-                                        @click="handleShowAddChild(mainCategory['id'])">
-                                        {{$t('添加二级分类')}}
+                                        :disabled="disabled"
+                                        @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
+                                        <i class="bk-cmdb-icon icon-cc-del"></i>
                                     </bk-button>
-                                </cmdb-auth>
-                                <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }">
-                                    <template slot-scope="{ disabled }">
-                                        <bk-button v-if="disabled || !mainCategory['child_category_list'].length"
-                                            class="menu-btn"
-                                            :text="true"
-                                            :disabled="disabled"
-                                            @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
-                                            {{$t('删除')}}
-                                        </bk-button>
-                                        <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
-                                            {{$t('删除')}}
-                                        </span>
-                                    </template>
-                                </cmdb-auth>
-                            </div>
-                        </cmdb-dot-menu>
+                                    <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
+                                        <i class="bk-cmdb-icon icon-cc-del"></i>
+                                    </span>
+                                </template>
+                            </cmdb-auth>
+                        </div>
                     </template>
                 </div>
                 <div class="child-category">
-                    <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
-                        <category-input
-                            class="child-input"
-                            ref="editInput"
-                            :input-ref="'categoryInput'"
-                            :placeholder="$t('请输入二级分类')"
-                            :edit-id="mainCategory['bk_root_id']"
-                            name="categoryName"
-                            v-validate="'required|namedCharacter|length:128'"
-                            v-model="categoryName"
-                            @on-confirm="handleAddCategory"
-                            @on-cancel="handleCloseAddChild">
-                        </category-input>
-                    </div>
                     <div v-for="(childCategory, childIndex) in mainCategory['child_category_list']"
                         :key="childIndex"
                         :class="['child-item', {
@@ -98,7 +95,8 @@
                         </category-input>
                         <template v-else>
                             <div class="child-title">
-                                <span>{{childCategory['name']}}</span>
+                                <span :title="childCategory['name']">{{childCategory['name']}}</span>
+                                <span class="child-id" :title="childCategory['id']">{{childCategory['id']}}</span>
                                 <div class="child-edit" v-if="!childCategory['is_built_in']">
                                     <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
                                         <bk-button slot-scope="{ disabled }"
@@ -129,9 +127,39 @@
                             </div>
                         </template>
                     </div>
+                    <div class="child-item is-add" v-if="!mainCategory['is_built_in'] && !addChildStatus">
+                        <div class="child-title">
+                            <cmdb-auth @update-auth="isAuthcompleted = true" :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
+                                <bk-button slot-scope="{ disabled }"
+                                    class="add-btn"
+                                    :disabled="disabled"
+                                    :text="true"
+                                    v-show="isAuthcompleted"
+                                    @click="handleShowAddChild(mainCategory['id'])">
+                                    <i class="bk-cmdb-icon icon-cc-plus"></i>{{$t('添加')}}
+                                </bk-button>
+                            </cmdb-auth>
+                        </div>
+                    </div>
+                    <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
+                        <category-input
+                            class="child-input"
+                            ref="editInput"
+                            :input-ref="'categoryInput'"
+                            :placeholder="$t('请输入二级分类')"
+                            :edit-id="mainCategory['bk_root_id']"
+                            name="categoryName"
+                            v-validate="'required|namedCharacter|length:128'"
+                            v-model="categoryName"
+                            @on-confirm="handleAddCategory"
+                            @on-cancel="handleCloseAddChild">
+                        </category-input>
+                    </div>
                 </div>
             </div>
-            <div class="category-item add-item" :style="{ 'border-style': showAddMianCategory ? 'solid' : 'dashed' }">
+            <div class="category-item add-item"
+                :style="{ 'border-style': showAddMianCategory ? 'solid' : 'dashed' }"
+                v-show="!keyword">
                 <div class="category-title" :style="{ 'border-bottom-style': showAddMianCategory ? 'solid' : 'dashed' }">
                     <div class="main-edit" style="width: 100%;" v-if="showAddMianCategory">
                         <category-input
@@ -156,12 +184,14 @@
                     </bk-button>
                 </cmdb-auth>
             </div>
+            <bk-exception v-show="!displayList.length && !$loading(Object.values(request))" type="search-empty" scene="part"></bk-exception>
         </div>
     </div>
 </template>
 
 <script>
     import { mapActions, mapGetters } from 'vuex'
+    import debounce from 'lodash.debounce'
     import categoryInput from './children/category-input'
     export default {
         components: {
@@ -186,13 +216,28 @@
                 categoryName: '',
                 mainCategoryName: '',
                 childCategoryName: '',
-                list: []
+                list: [],
+                displayList: [],
+                keyword: '',
+                isAuthcompleted: false,
+                request: {
+                    category: Symbol('category')
+                }
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId'])
         },
+        watch: {
+            list (list) {
+                this.displayList = list
+            },
+            keyword () {
+                this.handleFilter()
+            }
+        },
         created () {
+            this.handleFilter = debounce(this.searchList, 300)
             this.getCategoryList()
         },
         methods: {
@@ -204,7 +249,8 @@
             ]),
             getCategoryList () {
                 this.searchServiceCategory({
-                    params: { bk_biz_id: this.bizId }
+                    params: { bk_biz_id: this.bizId },
+                    config: { requestId: this.request.category }
                 }).then((data) => {
                     const categoryList = data.info.map(item => {
                         return {
@@ -220,6 +266,21 @@
                         }
                     }).sort((prev, next) => prev.id - next.id)
                 })
+            },
+            searchList () {
+                if (this.keyword) {
+                    const reg = new RegExp(this.keyword, 'i')
+                    this.displayList = this.list.filter(mainCategory => {
+                        if (reg.test(mainCategory.name) || reg.test(mainCategory.id)) {
+                            return true
+                        }
+                        return mainCategory.child_category_list.findIndex(subCategory => {
+                            return reg.test(subCategory.name) || reg.test(subCategory.id)
+                        }) !== -1
+                    })
+                } else {
+                    this.displayList = this.list
+                }
             },
             createdCategory (name, rootId) {
                 this.createServiceCategory({
@@ -240,7 +301,7 @@
                             return category.hasOwnProperty('bk_root_id') && category['bk_root_id'] === rootId
                         })
                         const childList = currentObj ? currentObj['child_category_list'] : []
-                        childList.unshift(res)
+                        childList.push(res)
                         this.$set(this.list[markIndex], 'child_category_list', childList)
                     } else {
                         this.getCategoryList()
@@ -280,7 +341,7 @@
                     }).then(res => {
                         this.$success(this.$t('保存成功'))
                         this.handleCloseEditChild()
-                        this.handleCloseEditMain()
+                        // this.handleCloseEditMain()
                         if (mainIndex !== undefined && type === 'child') {
                             const childList = this.list[mainIndex].child_category_list.map(child => {
                                 if (child.id === res.id) {
@@ -361,6 +422,7 @@
             },
             handleShowAddChild (id) {
                 this.addChildStatus = id
+                this.isAuthcompleted = false
                 this.$nextTick(() => {
                     this.$refs.editInput[0].$refs.categoryInput.focus()
                 })
@@ -384,9 +446,16 @@
             position: relative;
             flex: 0 0 calc(25% - 15px);
             border: 1px solid #dcdee5;
+            border-radius: 0px 0px 2px 2px;
             margin-left: 20px;
             margin-bottom: 20px;
             overflow: hidden;
+            &:hover:not(.add-item) {
+                box-shadow: 0px 2px 6px 0px rgba(0, 0, 0, 0.1);
+                .menu-operational {
+                    display: flex;
+                }
+            }
             &:nth-child(4n+1) {
                 margin-left: 0;
             }
@@ -433,20 +502,16 @@
         .category-title {
             @include space-between;
             background-color: #fafbfd;
-            padding: 0 20px 0 16px;
-            height: 42px;
-            line-height: 42px;
+            padding: 0 12px 0 12px;
+            height: 52px;
             font-size: 14px;
             color: #63656e;
             font-weight: bold;
             border-bottom: 1px solid #dcdee5;
-            &:hover {
-                background-color: #f0f1f5;
-            }
             .main-edit {
                 display: flex;
                 align-items: center;
-                /deep/ .cagetory-input .bk-form-input{
+                /deep/ .cagetory-input .bk-form-input {
                     font-size: 14px;
                     color: #63656e;
                     background-color: transparent !important;
@@ -462,10 +527,48 @@
                 display: flex;
                 flex: 1;
                 width: 100%;
-                padding-right: 20px;
                 align-items: center;
+                overflow: hidden;
+                .auth-box {
+                    width: 100%;
+                }
                 .category-name-text {
-                    @include ellipsis;
+                    max-width: 100%;
+                    &.disabled {
+                        color: #dcdee5;
+                    }
+                    .text-inner {
+                        max-width: 100%;
+                        display: inline-flex;
+                        flex-direction: column;
+                        padding: 2px 6px;
+                        line-height: normal;
+                        cursor: pointer;
+                        &:hover {
+                            background: #f0f1f5;
+                        }
+                        .main-id {
+                            font-size: 12px;
+                            font-weight: 400;
+                            color: #C4C6CC;
+                            &::before {
+                                content: "#";
+                            }
+                        }
+                        .main-id,
+                        .main-name {
+                            @include ellipsis;
+                        }
+                    }
+                    &.is-built-in {
+                        max-width: calc(100% - 40px);
+                        .text-inner {
+                            cursor: initial;
+                            &:hover {
+                                background: transparent;
+                            }
+                        }
+                    }
                 }
                 .icon-cc-edit-shape {
                     font-size: 14px;
@@ -496,12 +599,6 @@
                     line-height: 1;
                 }
             }
-            .dot-menu-operation {
-                cursor: pointer;
-                /deep/ .bk-tooltip-ref {
-                    width: 100%;
-                }
-            }
         }
         .child-category {
             height: 280px;
@@ -516,17 +613,25 @@
                     &:first-child::after {
                         height: 32px;
                     }
+
+                    .child-input {
+                        margin-left: 10px;
+                        padding-left: 8px;
+                    }
                 }
-                &:hover:not(.is-built-in) {
+                &:hover:not(.is-built-in):not(.is-add) {
                     .child-title {
                         background-color: #fafbfd;
                         color: #3a84ff;
                     }
-                    >span {
+                    > span {
                         display: none;
                     }
                     .child-edit {
-                        opacity: 1;
+                        display: block;
+                    }
+                    .child-id {
+                        display: none;
                     }
                 }
                 &:first-child {
@@ -554,22 +659,42 @@
                     color: #63656e;
                     font-size: 14px;
                     flex: 1;
-                    padding-right: 20px;
-                    padding-left: 16px;
+                    padding-right: 8px;
+                    padding-left: 8px;
                     margin-left: 10px;
-                    >span {
+                    > span {
                         @include ellipsis;
                         padding-right: 10px;
                     }
+
+                    .child-id {
+                        min-width: 42px;
+                        font-size: 12px;
+                        color: #C4C6CC;
+                        padding-right: 6px;
+                        text-align: right;
+                        &::before {
+                            content: "#";
+                        }
+                    }
                 }
-                >span {
+                > span {
                     color: #c4c6cc;
                     padding-right: 18px;
                 }
                 .child-edit {
-                    opacity: 0;
+                    display: none;
+                    margin-left: auto;
                     &.tips-active {
                         opacity: 1;
+                    }
+                    .child-edit-btn {
+                        .icon-cc-tips-close {
+                            font-size: 12px;
+                        }
+                        .icon-cc-edit-shape {
+                            font-size: 16px;
+                        }
                     }
                 }
                 .edit-box {
@@ -582,27 +707,41 @@
                         background-color: #ffffff !important;
                     }
                 }
+                &.is-add {
+                    .add-btn {
+                        color: #979BA5;
+                        &:hover {
+                            color: #3a84ff;
+                        }
+                    }
+                }
+            }
+        }
+        .category-filter {
+            margin-bottom: 12px;
+            .filter-input {
+                width: 260px;
             }
         }
     }
     .menu-operational {
+        display: none;
         padding: 6px 0;
-        line-height: 32px;
+        line-height: 30px;
         .auth-box {
             display: block;
         }
         .menu-btn {
             display: block;
             width: 100%;
-            height: 32px;
-            line-height: 32px;
-            padding: 0 8px;
+            height: 30px;
+            line-height: 30px;
+            padding: 0 7px;
             text-align: left;
-            color: #63656e;
+            color: #979BA5;
             outline: none;
             &:hover {
                 color: #3a84ff;
-                background-color: #e1ecff;
             }
             &:disabled {
                 color: #dcdee5;
@@ -612,6 +751,9 @@
                 cursor: not-allowed;
                 color: #dcdee5;
                 background-color: transparent;
+            }
+            .bk-cmdb-icon {
+                font-size: 16px;
             }
         }
     }

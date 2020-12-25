@@ -26,6 +26,9 @@ import (
 	"configcenter/src/common/selector"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ProcessInstanceRelation struct {
@@ -132,6 +135,12 @@ type Process struct {
 }
 
 func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	mongo, ok := db.(*local.Mongo)
+	if !ok {
+		return fmt.Errorf("db is not *local.Mongo type")
+	}
+	dbc := mongo.GetDBClient()
+
 	categoryID, err := addDefaultCategory(ctx, db, conf)
 	if err != nil {
 		return fmt.Errorf("addDefaultCategory failed: %v", err)
@@ -179,7 +188,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: moduleName}
 			processMappingInModule := make([]metadata.ProcessModule, 0)
-			if err = db.Table(common.BKTableNameProcModule).Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
+			if err = db.Table("cc_Proc2Module").Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
 				return err
 			}
 			if len(processMappingInModule) <= 0 {
@@ -320,10 +329,24 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 							if tplBindIP == metadata.BindInnerIP || tplBindIP == metadata.BindOuterIP {
 								if hostMap[moduleHost.HostID] == nil {
-									host := metadata.HostMapStr{}
+									findOpts := &options.FindOptions{}
+									findOpts.SetLimit(1)
+									findOpts.SetProjection(map[string]int{common.BKHostInnerIPField: 1, common.BKHostOuterIPField: 1})
 									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}
-									if err = db.Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
-										common.BKHostOuterIPField).One(ctx, &host); err != nil {
+									host := make(map[string]interface{})
+
+									cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, filter, findOpts)
+									if err != nil {
+										blog.Errorf("find host %d failed, err: %s", moduleHost.HostID, err.Error())
+										return err
+									}
+
+									if !cursor.Next(ctx) {
+										return fmt.Errorf("host %d not exist", moduleHost.HostID)
+									}
+
+									if err := cursor.Decode(&host); err != nil {
+										blog.Errorf("decode host %d failed, err: %s", moduleHost.HostID, err.Error())
 										return err
 									}
 									hostMap[moduleHost.HostID] = host
@@ -522,6 +545,4 @@ type ProcessProperty struct {
 	GatewayPort        metadata.PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
 	GatewayProtocol    metadata.PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
 	GatewayCity        metadata.PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
-
-	BindInfo metadata.ProcPropertyBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }

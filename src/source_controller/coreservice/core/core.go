@@ -141,10 +141,10 @@ type TopoOperation interface {
 
 // HostOperation methods
 type HostOperation interface {
-	TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
-	TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
-	TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
-	RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
+	TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) error
+	TransferToNormalModule(kit *rest.Kit, input *metadata.HostsModuleRelation) error
+	TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) error
+	RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHostsFromModuleOption) error
 	DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error
 	GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
@@ -205,6 +205,7 @@ type Core interface {
 	SystemOperation() SystemOperation
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
+	EventOperation() EventOperation
 	CommonOperation() CommonOperation
 }
 
@@ -236,11 +237,11 @@ type ProcessOperation interface {
 	// service instance
 	CreateServiceInstance(kit *rest.Kit, template metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	GetServiceInstance(kit *rest.Kit, templateID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
-	UpdateServiceInstance(kit *rest.Kit, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	UpdateServiceInstances(kit *rest.Kit, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder
 	ListServiceInstance(kit *rest.Kit, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
 	ListServiceInstanceDetail(kit *rest.Kit, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 	DeleteServiceInstance(kit *rest.Kit, serviceInstanceIDs []int64) errors.CCErrorCoder
-	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID int64) errors.CCErrorCoder
 	ReconstructServiceInstanceName(kit *rest.Kit, instanceID int64) errors.CCErrorCoder
 
@@ -253,7 +254,6 @@ type ProcessOperation interface {
 	DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	GetBusinessDefaultSetModuleInfo(kit *rest.Kit, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
-	GetProc2Module(kit *rest.Kit, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder)
 }
 
 type LabelOperation interface {
@@ -313,6 +313,13 @@ type AuthOperation interface {
 	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder)
 }
 
+type EventOperation interface {
+	Subscribe(kit *rest.Kit, subscription *metadata.Subscription) (*metadata.Subscription, errors.CCErrorCoder)
+	UnSubscribe(kit *rest.Kit, subscribeID int64) errors.CCErrorCoder
+	UpdateSubscription(kit *rest.Kit, subscribeID int64, subscription *metadata.Subscription) errors.CCErrorCoder
+	ListSubscriptions(kit *rest.Kit, data *metadata.ParamSubscriptionSearch) (*metadata.RspSubscriptionSearch, errors.CCErrorCoder)
+}
+
 type CommonOperation interface {
 	GetDistinctField(kit *rest.Kit, param *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
 }
@@ -333,6 +340,7 @@ type core struct {
 	hostApplyRule   HostApplyRuleOperation
 	cloud           CloudOperation
 	auth            AuthOperation
+	event           EventOperation
 	common          CommonOperation
 }
 
@@ -352,6 +360,7 @@ func New(
 	sys SystemOperation,
 	cloud CloudOperation,
 	auth AuthOperation,
+	event EventOperation,
 	common CommonOperation,
 ) Core {
 	return &core{
@@ -370,6 +379,7 @@ func New(
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
 		auth:            auth,
+		event:           event,
 		common:          common,
 	}
 }
@@ -432,6 +442,10 @@ func (m *core) CloudOperation() CloudOperation {
 
 func (m *core) AuthOperation() AuthOperation {
 	return m.auth
+}
+
+func (m *core) EventOperation() EventOperation {
+	return m.event
 }
 
 func (m *core) CommonOperation() CommonOperation {

@@ -23,8 +23,6 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-
-	"github.com/tidwall/gjson"
 )
 
 var ServiceTemplateAuthConfigs = []AuthConfig{
@@ -45,7 +43,11 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.Update,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			templateID := gjson.GetBytes(request.Body, common.BKFieldID).Int()
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+			templateID := val.Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")
 			}
@@ -106,14 +108,6 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
-		Name:           "listServiceTemplateDetailPattern",
-		Description:    "查询服务模板详情",
-		Pattern:        "/api/v3/findmany/proc/service_template/with_detail",
-		HTTPMethod:     http.MethodPost,
-		BizIDGetter:    DefaultBizIDGetter,
-		ResourceType:   meta.ProcessServiceTemplate,
-		ResourceAction: meta.FindMany,
-	}, {
 		Name:         "unbindServiceTemplateOnModule",
 		Description:  "解绑模块的服务模板",
 		Pattern:      "/api/v3/delete/proc/template_binding_on_module",
@@ -132,12 +126,25 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.Delete,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			templateID := gjson.GetBytes(request.Body, common.BKServiceTemplateIDField).Int()
+			val, err := request.getValueFromBody(common.BKServiceTemplateIDField)
+			if err != nil {
+				return nil, err
+			}
+			templateID := val.Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")
 			}
 			return []int64{templateID}, nil
 		},
+	}, {
+		Name:           "FindServiceTemplateCountInfo",
+		Description:    "查询服务模版的计数信息",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/service_template/count_info/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 

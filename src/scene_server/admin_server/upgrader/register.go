@@ -94,7 +94,6 @@ var LegacyMigrationVersion = []string{
 	"x19_05_22_01",
 	"x19_08_19_01",
 	"x19_08_20_01",
-	"x19_08_26_01",
 	"x19_08_26_02",
 	"x19_09_03_01",
 	"x19_09_03_02",
@@ -241,6 +240,31 @@ func Upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *Config) 
 	return currentVersion, finishedMigrations, nil
 }
 
+// UpgradeSpecifyVersion 强制执行version版本的migrate, 不会修改数据库cc_System表中migrate 版本
+func UpgradeSpecifyVersion(ctx context.Context, db dal.RDB, cache redis.Client, conf *Config, version string) (err error) {
+	sort.Slice(upgraderPool, func(i, j int) bool {
+		return VersionCmp(upgraderPool[i].version, upgraderPool[j].version) < 0
+	})
+
+	hasCurrent := false
+	for _, v := range upgraderPool {
+		if v.version != version {
+			continue
+		}
+		blog.Infof(`run specify migration: %s`, v.version)
+		err = v.do(ctx, db, cache, conf)
+		if err != nil {
+			blog.Errorf("upgrade specify version %s error: %s", v.version, err.Error())
+			return fmt.Errorf("run specify migration %s failed, err: %s", v.version, err.Error())
+		}
+		hasCurrent = true
+	}
+	if !hasCurrent {
+		return fmt.Errorf("run specify migration %s failed, err: not found", version)
+	}
+
+	return nil
+}
 func remapVersion(v string) string {
 	if correct, ok := wrongVersion[v]; ok {
 		return correct

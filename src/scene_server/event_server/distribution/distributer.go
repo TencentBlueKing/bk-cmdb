@@ -28,7 +28,7 @@ import (
 	"configcenter/src/common/watch"
 	etypes "configcenter/src/scene_server/event_server/types"
 	ewatcher "configcenter/src/scene_server/event_server/watcher"
-	"configcenter/src/source_controller/coreservice/event"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
@@ -139,8 +139,9 @@ func (d *Distributor) registerMetrics() {
 
 	d.watchAndDistributeDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: fmt.Sprintf("%s_watch_dist_duration", etypes.MetricsNamespacePrefix),
-			Help: "watch and distribute duration of events.",
+			Name:    fmt.Sprintf("%s_watch_dist_duration", etypes.MetricsNamespacePrefix),
+			Help:    "watch and distribute duration of events.",
+			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000},
 		},
 		[]string{"status"},
 	)

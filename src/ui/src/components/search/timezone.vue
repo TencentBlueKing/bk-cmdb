@@ -3,7 +3,8 @@
         multiple
         searchable
         v-model="localValue"
-        v-bind="$attrs">
+        v-bind="$attrs"
+        @toggle="handleToggle">
         <bk-option v-for="timezone in timezones"
             :key="timezone"
             :id="timezone"
@@ -13,9 +14,11 @@
 </template>
 
 <script>
+    import activeMixin from './mixin-active'
     import TimeZones from '../ui/form/timezone.json'
     export default {
         name: 'cmdb-search-timezone',
+        mixins: [activeMixin],
         props: {
             value: {
                 type: Array,

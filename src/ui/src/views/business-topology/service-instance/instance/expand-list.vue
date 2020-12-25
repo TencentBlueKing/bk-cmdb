@@ -9,7 +9,7 @@
             :key="property.bk_property_id"
             :label="property.bk_property_name"
             :prop="property.bk_property_id"
-            show-overflow-tooltip>
+            :show-overflow-tooltip="property.bk_property_id !== 'bind_info'">
             <template slot-scope="{ row }">
                 <cmdb-property-value v-if="property.bk_property_id !== 'bind_info'"
                     :theme="property.bk_property_id === 'bk_func_name' ? 'primary' : 'default'"
@@ -152,6 +152,7 @@
                     title: this.$t('查看进程'),
                     instance: row.property,
                     hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
                     serviceTemplateId: this.serviceInstance.service_template_id,
                     processTemplateId: row.relation.process_template_id,
                     submitHandler: this.editSubmitHandler
@@ -163,6 +164,7 @@
                     title: this.$t('编辑进程'),
                     instance: row.property,
                     hostId: row.relation.bk_host_id,
+                    bizId: this.bizId,
                     serviceTemplateId: this.serviceInstance.service_template_id,
                     processTemplateId: row.relation.process_template_id,
                     submitHandler: this.editSubmitHandler

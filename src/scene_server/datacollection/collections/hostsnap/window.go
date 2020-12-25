@@ -22,6 +22,7 @@
  atTime,设置一天中,几点开启时间窗口,如配置成14:40,表示14:40开启窗口,如果配置格式不正确,默认值为1:00
 
  checkIntervalHours,规定每隔几个小时窗口开启,单位为小时,如配置成 3,表示每隔3个小时,开启时间窗口,如果配置格式不正确,默认值为 1。
+ 注：窗口可以通过的时间为整时，即如果配置成1，那么每隔一个小时的整点开启窗口
 
  windowMinutes,代表开启时间窗口后,多长时间内请求可以通过,单位为分钟。如配置成 60,表示开启窗口时间60分钟内请求可以通过。
  注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
@@ -49,6 +50,8 @@ const (
 	defaultAtTime = "1:00"
 	defaultAtTimeHour = 1
 	defaultAtTimeMin = 0
+	// oneHourToMinutes the value of one hour converted into minutes
+	oneHourToMinutes = 60
 )
 
 type Window struct {
@@ -98,12 +101,12 @@ func (w *Window) doFixedTimeTasks(atTime string) {
 		time.Sleep(targetTime.Add(time.Hour*24).Sub(now))
 	}
 
-	w.setStartTime(time.Now())
 	w.doTimedTasks(oneDayToHours)
 }
 
 // doTimedTasks do tasks according to a certain time interval
 func (w *Window) doTimedTasks(intervalTimeIntVal int) {
+	w.setStartTime(time.Now())
 	timer := time.NewTicker(time.Hour*time.Duration(intervalTimeIntVal))
 	for {
 		select {
@@ -111,6 +114,13 @@ func (w *Window) doTimedTasks(intervalTimeIntVal int) {
 			w.setStartTime(time.Now())
 		}
 	}
+}
+
+func (w *Window) doIntervalHoursTasks(checkIntervalHours int) {
+	now := time.Now()
+	w.setStartTime(now)
+	time.Sleep(time.Minute * time.Duration(oneHourToMinutes - now.Minute()))
+	w.doTimedTasks(checkIntervalHours)
 }
 
 // canPassWindow used to judge whether the request can be passed
@@ -133,34 +143,33 @@ func newWindow() *Window {
 	w := &Window{}
 
 	// if the parameters are configured, the time window is valid
-	if cc.IsExist("datacollection.hostsnap.timeWindow.windowMinutes") {
-		windowMinutes, _ := cc.Int("datacollection.hostsnap.timeWindow.windowMinutes")
+	if !cc.IsExist("datacollection.hostsnap.timeWindow.windowMinutes") {
+		return w
+	}
+	windowMinutes, _ := cc.Int("datacollection.hostsnap.timeWindow.windowMinutes")
 
-		if cc.IsExist("datacollection.hostsnap.timeWindow.atTime") {
-			atTime, _ := cc.String("datacollection.hostsnap.timeWindow.atTime")
-			w.setWindowMinutes(windowMinutes, oneDayToMinutes)
+	if cc.IsExist("datacollection.hostsnap.timeWindow.atTime") {
+		atTime, _ := cc.String("datacollection.hostsnap.timeWindow.atTime")
+		w.setWindowMinutes(windowMinutes, oneDayToMinutes)
 
-			w.setStartTime(time.Now())
-			go w.doFixedTimeTasks(atTime)
+		w.setStartTime(time.Now())
+		go w.doFixedTimeTasks(atTime)
 
-			w.exist = true
-			return w
+		w.exist = true
+		return w
+	}
+
+	if cc.IsExist("datacollection.hostsnap.timeWindow.checkIntervalHours") {
+		checkIntervalHours, _ := cc.Int("datacollection.hostsnap.timeWindow.checkIntervalHours")
+		if checkIntervalHours <= 0 {
+			blog.Errorf("checkIntervalHours val %d can not be less than or equal to 0, set the default value %d", checkIntervalHours, defaultCheckIntervalHours)
+			checkIntervalHours = defaultCheckIntervalHours
 		}
+		w.setWindowMinutes(windowMinutes, checkIntervalHours*60)
+		go w.doIntervalHoursTasks(checkIntervalHours)
 
-		if cc.IsExist("datacollection.hostsnap.timeWindow.checkIntervalHours") {
-			checkIntervalHours, _ := cc.Int("datacollection.hostsnap.timeWindow.checkIntervalHours")
-			if checkIntervalHours <= 0 {
-				blog.Errorf("checkIntervalHours val %d can not be less than or equal to 0, set the default value %d", checkIntervalHours, defaultCheckIntervalHours)
-				checkIntervalHours = defaultCheckIntervalHours
-			}
-			w.setWindowMinutes(windowMinutes, checkIntervalHours*60)
-
-			w.setStartTime(time.Now())
-			go w.doTimedTasks(checkIntervalHours)
-
-			w.exist = true
-			return w
-		}
+		w.exist = true
+		return w
 	}
 
 	return w

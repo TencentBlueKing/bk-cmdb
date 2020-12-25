@@ -32,12 +32,19 @@ import (
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
+	"configcenter/src/thirdparty/hooks"
 )
 
 // CreateBusiness create a new business
 func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	data := mapstr.MapStr{}
 	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := hooks.ValidateCreateBusinessHook(ctx.Kit, s.Engine.CoreAPI, data); err != nil {
+		blog.Errorf("validate create business hook failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -364,7 +371,13 @@ const exactUserRegexp = `(^USER_PLACEHOLDER$)|(^USER_PLACEHOLDER[,]{1})|([,]{1}U
 
 func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFieldArr []string) map[string]interface{} {
 	output := make(map[string]interface{})
+	exactAnd := make([]map[string]interface{}, 0)
 	for i, j := range input {
+		if j == nil {
+			output[i] = j
+			continue
+		}
+
 		objType := reflect.TypeOf(j)
 		switch objType.Kind() {
 		case reflect.String:
@@ -374,13 +387,11 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 			}
 			targetStr := j.(string)
 			if util.InStrArr(userFieldArr, i) {
-				exactOr := make([]map[string]interface{}, 0)
 				for _, user := range strings.Split(strings.Trim(targetStr, ","), ",") {
-					// search with exactly the user's name with regexp
+					// search with exactly the user's name with regexpF
 					like := strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", gparams.SpecialCharChange(user), -1)
-					exactOr = append(exactOr, mapstr.MapStr{i: mapstr.MapStr{common.BKDBLIKE: like}})
+					exactAnd = append(exactAnd, mapstr.MapStr{i: mapstr.MapStr{common.BKDBLIKE: like}})
 				}
-				output[common.BKDBOR] = exactOr
 			} else {
 				attrVal := gparams.SpecialCharChange(targetStr)
 				output[i] = map[string]interface{}{common.BKDBLIKE: attrVal, common.BKDBOPTIONS: "i"}
@@ -388,6 +399,10 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 		default:
 			output[i] = j
 		}
+	}
+
+	if len(exactAnd) > 0 {
+		output[common.BKDBAND] = exactAnd
 	}
 
 	return output

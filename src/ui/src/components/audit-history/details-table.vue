@@ -15,6 +15,10 @@
                 <label class="info-label">{{$t('动作')}}</label>
                 <span class="info-content" v-bk-overflow-tips>{{action ? action.name : details.action}}</span>
             </div>
+            <div class="info-group" v-if="modelId">
+                <label class="info-label">{{$t('模型类型')}}</label>
+                <span class="info-content" v-bk-overflow-tips>{{modelName}}</span>
+            </div>
             <div class="info-group">
                 <label class="info-label">{{$t('操作实例')}}</label>
                 <span class="info-content" v-bk-overflow-tips>{{details.resource_name}}</span>
@@ -117,6 +121,10 @@
             },
             modelId () {
                 return this.details.operation_detail.bk_obj_id
+            },
+            modelName () {
+                const model = this.$store.getters['objectModelClassify/getModelById'](this.modelId)
+                return model.bk_obj_name
             },
             tableList () {
                 if (this.showToggle) {
@@ -224,7 +232,6 @@
 
 <style lang="scss" scoped>
     .details-layout{
-        padding: 32px 50px;
         height: 100%;
     }
     .details-info {
@@ -241,7 +248,7 @@
                 display: inline-block;
                 width: 100px;
                 padding-right: 10px;
-                text-align: right;
+                color: #63656e;
                 &:after {
                     content: ":";
                     padding: 0 2px;
@@ -250,6 +257,7 @@
             .info-content {
                 display: inline-block;
                 width: calc(100% - 100px);
+                color: #313237;
                 @include ellipsis;
             }
         }

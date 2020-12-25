@@ -77,9 +77,23 @@ func (p *process) ListProcessInstancesWithHost(ctx context.Context, h http.Heade
 	return
 }
 
+func (p *process) ListProcessRelatedInfo(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessRelatedInfoOption) (resp *metadata.ListProcessRelatedInfoResponse, err error) {
+	resp = new(metadata.ListProcessRelatedInfoResponse)
+	subPath := "/findmany/proc/process_related_info/biz/%d"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (p *process) ListProcessInstancesNameIDsInModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "findmany/proc/process_instance/name_ids"
+	subPath := "/findmany/proc/process_instance/name_ids"
 
 	err = p.client.Post().
 		WithContext(ctx).
@@ -93,12 +107,26 @@ func (p *process) ListProcessInstancesNameIDsInModule(ctx context.Context, h htt
 
 func (p *process) ListProcessInstancesDetailsByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "findmany/proc/process_instance/detail/by_ids"
+	subPath := "/findmany/proc/process_instance/detail/by_ids"
 
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (p *process) ListProcessInstancesDetails(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessInstancesDetailsOption) (resp *metadata.MapArrayResponse, err error) {
+	resp = new(metadata.MapArrayResponse)
+	subPath := "/findmany/proc/process_instance/detail/biz/%d"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

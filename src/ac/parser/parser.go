@@ -25,17 +25,9 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
-	"github.com/tidwall/gjson"
 )
 
 func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAttribute, error) {
-	body, err := util.PeekRequest(req.Request)
-	if err != nil {
-		return nil, err
-	}
-
-	bizID := gjson.GetBytes(body, common.BKAppIDField).Int()
-
 	elements, err := urlParse(req.Request.URL.Path)
 	if err != nil {
 		return nil, err
@@ -47,8 +39,13 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 		Method:   req.Request.Method,
 		URI:      req.Request.URL.Path,
 		Elements: elements,
-		Body:     body,
-		BizID:    bizID,
+		getBody: func() (body []byte, err error) {
+			body, err = util.PeekRequest(req.Request)
+			if err != nil {
+				return nil, err
+			}
+			return
+		},
 	}
 
 	stream, err := newParseStream(requestContext, engine)

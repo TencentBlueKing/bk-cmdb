@@ -13,6 +13,7 @@
 package instances
 
 import (
+	stderr "errors"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 )
 
 var updateIgnoreKeys = []string{
@@ -48,8 +50,31 @@ var createIgnoreKeys = []string{
 	common.BKProcIDField,
 }
 
-func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, error) {
+func (m *instanceManager) getBizIDFromInstance(kit *rest.Kit, objID string, instanceData mapstr.MapStr, validTye string, instID int64) (int64, error) {
+	bizID, err := m.fetchBizIDFromInstance(kit, objID, instanceData, validTye, instID)
+	if err != nil {
+		blog.Errorf("fetchBizIDFromInstance failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+	if err := m.validBizID(kit, bizID); err != nil {
+		blog.Errorf("validBizID failed, err %v, rid: %s", err, kit.Rid)
+		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+	return bizID, nil
+}
+
+func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, instanceData mapstr.MapStr, validTye string, instID int64) (int64, error) {
 	switch objID {
+	case common.BKInnerObjIDHost:
+		if validTye == common.ValidUpdate {
+			bizID, err := m.getHostRelatedBizID(kit, instID)
+			if err != nil {
+				blog.Errorf("getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, kit.Rid)
+				return 0, kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
+			}
+			return bizID, nil
+		}
+		fallthrough
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc:
 		biz, exist := instanceData[common.BKAppIDField]
 		if exist == false {
@@ -75,6 +100,31 @@ func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, er
 	}
 }
 
+// getHostRelatedBizID 根据主机ID获取所属业务ID
+func (m *instanceManager) getHostRelatedBizID(kit *rest.Kit, hostID int64) (bizID int64, ccErr errors.CCErrorCoder) {
+	rid := kit.Rid
+	filter := map[string]interface{}{
+		common.BKHostIDField: hostID,
+	}
+	hostConfig := make([]metadata.ModuleHost, 0)
+	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
+		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
+		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if len(hostConfig) == 0 {
+		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
+		return 0, kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
+	}
+	bizID = hostConfig[0].AppID
+	for _, item := range hostConfig {
+		if item.AppID != bizID {
+			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
+			return 0, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
+		}
+	}
+	return bizID, nil
+}
+
 func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {
 	if bizID == 0 {
 		return nil
@@ -94,23 +144,17 @@ func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {
 	return nil
 }
 
-func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
-	bizID, err := FetchBizIDFromInstance(objID, instanceData)
-	if err != nil {
-		blog.Errorf("validCreateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+func (m *instanceManager) newValidator(kit *rest.Kit, objID string, bizID int64) (*validator, error) {
+	validator, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
+	if nil != err {
+		blog.Errorf("newValidator failed , NewValidator err:%v, rid: %s", err.Error(), kit.Rid)
+		return nil, err
 	}
 
-	err = m.validBizID(kit, bizID)
-	if err != nil {
-		blog.Errorf("valid biz id error %v, rid: %s", err, kit.Rid)
-		return err
-	}
-	valid, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
-	if nil != err {
-		blog.Errorf("init validator failed %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
+	return validator, nil
+}
+
+func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr, valid *validator) error {
 	for _, key := range valid.requireFields {
 		if _, ok := instanceData[key]; !ok {
 			blog.Errorf("field [%s] in required for model [%s], input data: %+v, rid: %s", key, objID, instanceData, kit.Rid)
@@ -118,6 +162,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
+
+	if err := m.validCloudID(kit, objID, instanceData); err != nil {
+		return err
+	}
+
 	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
 		return err
 	}
@@ -136,8 +185,6 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		if !ok {
 			delete(instanceData, key)
 			continue
-			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, kit.Rid)
-			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
@@ -149,6 +196,21 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
+	}
+
+	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
+	if err != nil {
+		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+
+	if skip {
+		return nil
+	}
+
+	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	// module instance's name must coincide with template
@@ -206,63 +268,17 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 	return nil
 }
 
-// getHostRelatedBizID 根据主机ID获取所属业务ID
-func getHostRelatedBizID(kit *rest.Kit, hostID int64) (bizID int64, ccErr errors.CCErrorCoder) {
-	rid := kit.Rid
-	filter := map[string]interface{}{
-		common.BKHostIDField: hostID,
-	}
-	hostConfig := make([]metadata.ModuleHost, 0)
-	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
-		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
-		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if len(hostConfig) == 0 {
-		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
-		return 0, kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
-	}
-	bizID = hostConfig[0].AppID
-	for _, item := range hostConfig {
-		if item.AppID != bizID {
-			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
-			return 0, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
-		}
-	}
-	return bizID, nil
-}
-
-func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
-	instID uint64, canEditAll bool) error {
-	updateData, err := m.getInstDataByID(kit, objID, instID, m)
-	if err != nil {
-		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, kit.Rid)
-		return err
-	}
-	var bizID int64
-	if objID != common.BKInnerObjIDHost {
-		bizID, err = FetchBizIDFromInstance(objID, updateData)
-		if err != nil {
-			blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
-		}
-	} else {
-		bizID, err = getHostRelatedBizID(kit, int64(instID))
-		if err != nil {
-			blog.ErrorJSON("validUpdateInstanceData failed, getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
-		}
-	}
-	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
+func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, updateData mapstr.MapStr,
+	instanceData mapstr.MapStr, valid *validator, instID int64, canEditAll bool) error {
+	if err := m.validCloudID(kit, objID, updateData); err != nil {
 		return err
 	}
 
-	valid, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
-	if nil != err {
-		blog.Errorf("init validator failed %s, rid: %s", err.Error(), kit.Rid)
+	if err := m.validMainlineInstanceName(kit, objID, updateData); err != nil {
 		return err
 	}
 
-	for key, val := range instanceData {
+	for key, val := range updateData {
 
 		if util.InStrArr(updateIgnoreKeys, key) {
 			// ignore the key field
@@ -271,12 +287,12 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 
 		property, ok := valid.properties[key]
 		if !ok || (!property.IsEditable && !canEditAll) {
-			delete(instanceData, key)
+			delete(updateData, key)
 			continue
 		}
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
-			instanceData[key] = val
+			updateData[key] = val
 		}
 		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
@@ -286,23 +302,22 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
-	for key, val := range instanceData {
-		updateData[key] = val
-	}
-	bizID, err = FetchBizIDFromInstance(objID, updateData)
-	if err != nil {
-		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
-	}
-	if bizID != 0 {
-		err = m.validBizID(kit, bizID)
-		if err != nil {
-			blog.Errorf("valid biz id error %v, rid: %s", err, kit.Rid)
-			return err
-		}
+	if err := m.changeStringToTime(updateData, valid.propertySlice); err != nil {
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
+		return err
 	}
 
-	return valid.validUpdateUnique(kit, updateData, instID, m)
+	skip, err := hooks.IsSkipValidateHook(kit, objID, updateData)
+	if err != nil {
+		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+
+	if skip {
+		return nil
+	}
+
+	return valid.validUpdateUnique(kit, updateData, instanceData, instID, m)
 }
 
 func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
@@ -333,6 +348,42 @@ func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string,
 			}
 			break
 		}
+	}
+	return nil
+}
+
+// validCloudID valid the bk_cloud_id
+func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
+	if objID == common.BKInnerObjIDHost {
+		if instanceData.Exists(common.BKCloudIDField) {
+			if cloudID, err := instanceData.Int64(common.BKCloudIDField); err != nil || cloudID < 0 {
+				blog.Errorf("invalid bk_cloud_id value:%#v, err:%v, rid:%s", instanceData[common.BKCloudIDField], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []metadata.Attribute) error {
+	for _, field := range propertys {
+		if field.PropertyType != common.FieldTypeTime {
+			continue
+		}
+		val, ok := valData[field.PropertyID]
+		if ok == false || val == nil {
+			continue
+		}
+		valStr, ok := val.(string)
+		if ok == false {
+			return stderr.New("it is not a string of time type")
+		}
+		if util.IsTime(valStr) {
+			valData[field.PropertyID] = util.Str2Time(valStr)
+			continue
+		}
+		return stderr.New("can not convert value from string type to time type")
 	}
 	return nil
 }

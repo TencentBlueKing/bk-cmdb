@@ -14,9 +14,9 @@
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
-    "@blueking/paas-login": "0.0.6",
+    "@blueking/paas-login": "0.0.9",
     "@blueking/user-selector": "^1.0.5-beta.2",
-    "@icon-cool/bk-icon-cmdb": "0.0.18",
+    "@icon-cool/bk-icon-cmdb": "^0.1.2",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "axios": "0.18.0",
     "bk-magic-vue": "2.2.2",
@@ -36,9 +36,11 @@
     "md5": "2.2.1",
     "moment": "2.22.2",
     "plotly.js": "1.51.3",
+    "qs": "^6.9.4",
     "sortablejs": "1.8.4",
     "utf8-byte-length": "^1.0.4",
     "v-click-outside": "1.0.5",
+    "validator": "^13.1.17",
     "vee-validate": "^2.2.14",
     "vue": "2.5.22",
     "vue-clipboard2": "0.2.1",

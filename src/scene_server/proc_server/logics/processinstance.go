@@ -19,7 +19,76 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
+
+func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstanceID int64, fields []string) (
+	[]metadata.ProcessInstance, errors.CCErrorCoder) {
+
+	if serviceInstanceID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
+	}
+	// list process instance relation
+	relationOption := metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: []int64{serviceInstanceID},
+	}
+	relationsResult, err := lgc.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, &relationOption)
+	if err != nil {
+		return nil, kit.CCError.CCErrorf(common.CCErrProcGetServiceInstancesFailed, "list process instance "+
+			"relation failed, bizID: %d, serviceInstanceID: %d, err: %+v", bizID, serviceInstanceID, err)
+	}
+
+	processIDs := make([]int64, 0)
+	for _, relation := range relationsResult.Info {
+		processIDs = append(processIDs, relation.ProcessID)
+	}
+	filter := map[string]interface{}{
+		common.BKProcessIDField: map[string]interface{}{
+			common.BKDBIN: processIDs,
+		},
+	}
+	reqParam := &metadata.QueryCondition{
+		Condition: filter,
+		Fields:    fields,
+	}
+	processResult, ccErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
+	if nil != ccErr {
+		return nil, kit.CCError.CCErrorf(common.CCErrProcGetServiceInstancesFailed, "list process instance "+
+			"property failed, bizID: %d, processIDs: %+v, err: %+v", bizID, processIDs, ccErr)
+	}
+
+	processIDPropertyMap := map[int64]mapstr.MapStr{}
+	for _, process := range processResult.Data.Info {
+		processIDVal, exist := process.Get(common.BKProcessIDField)
+		if !exist {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParseDataFailed, "list process instance failed, parse "+
+				"bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID, processIDs)
+		}
+		processID, err := util.GetInt64ByInterface(processIDVal)
+		if err != nil {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParseDataFailed, "list process instance failed, "+
+				"parse bk_process_id from process property failed, parse field to int64 failed, bizID: %d, "+
+				"processIDs: %+v, process: %+v, err: %+v", bizID, processIDs, process, err)
+		}
+		processIDPropertyMap[processID] = process
+	}
+
+	processInstanceList := make([]metadata.ProcessInstance, 0)
+	for _, relation := range relationsResult.Info {
+		processInstance := metadata.ProcessInstance{
+			Property: nil,
+			Relation: relation,
+		}
+		process, exist := processIDPropertyMap[relation.ProcessID]
+		if exist {
+			processInstance.Property = process
+		}
+		processInstanceList = append(processInstanceList, processInstance)
+	}
+
+	return processInstanceList, nil
+}
 
 func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, errors.CCErrorCoder) {
 	reqParam := &metadata.QueryCondition{
@@ -346,16 +415,16 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	if metadata.IsAsDefaultValue(t.AutoTimeGapSeconds.AsDefaultValue) {
-		if (t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil) ||
-			(t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap == nil) ||
-			(t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap) {
+	if metadata.IsAsDefaultValue(t.StartCheckSecs.AsDefaultValue) {
+		if (t.StartCheckSecs.Value == nil && i.StartCheckSecs != nil) ||
+			(t.StartCheckSecs.Value != nil && i.StartCheckSecs == nil) ||
+			(t.StartCheckSecs.Value != nil && i.StartCheckSecs != nil && *t.StartCheckSecs.Value != *i.StartCheckSecs) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["auto_time_gap"].ID,
-				PropertyID:            "auto_time_gap",
-				PropertyName:          attrMap["auto_time_gap"].PropertyName,
-				PropertyValue:         i.AutoTimeGap,
-				TemplatePropertyValue: t.AutoTimeGapSeconds,
+				ID:                    attrMap["bk_start_check_secs"].ID,
+				PropertyID:            "bk_start_check_secs",
+				PropertyName:          attrMap["bk_start_check_secs"].PropertyName,
+				PropertyValue:         i.StartCheckSecs,
+				TemplatePropertyValue: t.StartCheckSecs,
 			})
 		}
 	}
@@ -370,20 +439,6 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 				PropertyName:          attrMap["start_cmd"].PropertyName,
 				PropertyValue:         i.StartCmd,
 				TemplatePropertyValue: t.StartCmd,
-			})
-		}
-	}
-
-	if metadata.IsAsDefaultValue(t.FuncID.AsDefaultValue) {
-		if (t.FuncID.Value == nil && i.FuncID != nil) ||
-			(t.FuncID.Value != nil && i.FuncID == nil) ||
-			(t.FuncID.Value != nil && i.FuncID != nil && *t.FuncID.Value != *i.FuncID) {
-			changes = append(changes, metadata.ProcessChangedAttribute{
-				ID:                    attrMap["bk_func_id"].ID,
-				PropertyID:            "bk_func_id",
-				PropertyName:          attrMap["bk_func_id"].PropertyName,
-				PropertyValue:         i.FuncID,
-				TemplatePropertyValue: t.FuncID,
 			})
 		}
 	}

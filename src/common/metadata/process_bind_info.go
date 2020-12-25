@@ -176,6 +176,9 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[
 	for _, item := range i.BindInfo {
 		procBindInfoMap[item.Std.TemplateRowID] = item
 	}
+	if len(pbi.Value) != len(i.BindInfo) {
+		changed, isNamePortChanged = true, true
+	}
 
 	procBindInfoArr := make([]ProcBindInfo, 0)
 	for _, row := range pbi.Value {
@@ -602,7 +605,6 @@ func (pbi stdProcPropertyBindInfoValue) toKV() map[string]interface{} {
 /*** ProcBindInfo 依赖的方法  ****/
 
 func (pbi *ProcBindInfo) UnmarshalJSON(data []byte) error {
-	fmt.Printf("%s", string(data))
 	err := defaultProcBindInfoHandle.UJSON(data, pbi)
 	if err != nil {
 		return err

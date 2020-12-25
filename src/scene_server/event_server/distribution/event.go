@@ -129,8 +129,9 @@ func (h *EventHandler) registerMetrics() {
 
 	h.eventHandleDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: fmt.Sprintf("%s_event_handle_duration", etypes.MetricsNamespacePrefix),
-			Help: "handle duration of events.",
+			Name:    fmt.Sprintf("%s_event_handle_duration", etypes.MetricsNamespacePrefix),
+			Help:    "handle duration of events.",
+			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000},
 		},
 		[]string{"status"},
 	)
@@ -147,8 +148,9 @@ func (h *EventHandler) registerMetrics() {
 
 	h.pusherHandleDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: fmt.Sprintf("%s_pusher_handle_duration", etypes.MetricsNamespacePrefix),
-			Help: "pusher duration of events.",
+			Name:    fmt.Sprintf("%s_pusher_handle_duration", etypes.MetricsNamespacePrefix),
+			Help:    "pusher duration of events.",
+			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000},
 		},
 		[]string{"status"},
 	)

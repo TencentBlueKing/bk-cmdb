@@ -50,11 +50,6 @@ type HostSnapBatchResult struct {
 	Data     []map[string]interface{} `json:"data"`
 }
 
-type UserCustomQueryDetailResult struct {
-	BaseResp `json:",inline"`
-	Data     map[string]interface{} `json:"data"`
-}
-
 type HostInputType string
 
 const (
@@ -527,10 +522,10 @@ type CloneHostPropertyParams struct {
 
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter
 type TransferHostAcrossBusinessParameter struct {
-	SrcAppID       int64   `json:"src_bk_biz_id"`
-	DstAppID       int64   `json:"dst_bk_biz_id"`
-	HostID         []int64 `json:"bk_host_id"`
-	DstModuleIDArr []int64 `json:"bk_module_ids"`
+	SrcAppID    int64   `json:"src_bk_biz_id"`
+	DstAppID    int64   `json:"dst_bk_biz_id"`
+	HostID      []int64 `json:"bk_host_id"`
+	DstModuleID int64   `json:"bk_module_id"`
 }
 
 // HostModuleRelationParameter get host and module  relation parameter

@@ -79,23 +79,17 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 }
 
 func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
-
-	// if it is admin_server, skip the loading of other files,load only error and language.
-	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
-		errorres, _ := String("errors.res")
-		languageres, _ := String("language.res")
-		return loadErrorAndLanguage(errorres, languageres, handler)
-	}
+	cnfDir, _ := String("confs.dir")
 
 	// load local error and language
-	errorres := confPath + "/errors"
-	languageres := confPath + "/language"
+	errorres, _ := String("errors.res")
+	languageres, _ := String("language.res")
 	if err := loadErrorAndLanguage(errorres, languageres, handler); err != nil {
 		return err
 	}
 
 	// load local common
-	commonPath := confPath + "/" + types.CCConfigureCommon
+	commonPath := cnfDir + "/" + types.CCConfigureCommon
 	if err := SetCommonFromFile(commonPath); err != nil {
 		blog.Errorf("load config from file[%s], but can not found common config", commonPath)
 		return err
@@ -104,8 +98,13 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 		handler.OnProcessUpdate(ProcessConfig{}, ProcessConfig{})
 	}
 
+	// if it is admin_server, skip the loading of other files,load only error, language and common
+	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
+		return nil
+	}
+
 	// load local extra
-	extraPath := confPath + "/" + types.CCConfigureExtra
+	extraPath := cnfDir + "/" + types.CCConfigureExtra
 	if err := SetExtraFromFile(extraPath); err != nil {
 		blog.Errorf("load config from file[%s], but can not found extra config", extraPath)
 		return err
@@ -115,15 +114,15 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 	}
 
 	// load local redis
-	redisPath := confPath + "/" + types.CCConfigureRedis
+	redisPath := cnfDir + "/" + types.CCConfigureRedis
 	if err := SetRedisFromFile(redisPath); err != nil {
 		return err
 	}
 
 	// load local mongodb
-	mongodbPath := confPath + "/" + types.CCConfigureMongo
-	if err := SetMongodbFromFile(mongodbPath); err!= nil {
-		return  err
+	mongodbPath := cnfDir + "/" + types.CCConfigureMongo
+	if err := SetMongodbFromFile(mongodbPath); err != nil {
+		return err
 	}
 
 	return nil
@@ -141,7 +140,7 @@ func SetRedisFromByte(data []byte) error {
 		}
 		return nil
 	}
-	redisParser,err = newViperParser(data)
+	redisParser, err = newViperParser(data)
 	if err != nil {
 		blog.Errorf("fail to read configure from redis")
 		return err
@@ -153,7 +152,7 @@ func SetRedisFromFile(target string) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
-	redisParser,err = newViperParserFromFile(target)
+	redisParser, err = newViperParserFromFile(target)
 	if err != nil {
 		blog.Errorf("fail to read configure from redis")
 		return err
@@ -173,7 +172,7 @@ func SetMongodbFromByte(data []byte) error {
 		}
 		return nil
 	}
-	mongodbParser,err = newViperParser(data)
+	mongodbParser, err = newViperParser(data)
 	if err != nil {
 		blog.Errorf("fail to read configure from mongodb")
 		return err
@@ -185,7 +184,7 @@ func SetMongodbFromFile(target string) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
-	mongodbParser,err = newViperParserFromFile(target)
+	mongodbParser, err = newViperParserFromFile(target)
 	if err != nil {
 		blog.Errorf("fail to read configure from mongodb")
 		return err
@@ -197,7 +196,7 @@ func SetCommonFromByte(data []byte) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
-	//if it is not nil, do not create a new parser, but add the new configuration information to viper
+	// if it is not nil, do not create a new parser, but add the new configuration information to viper
 	if commonParser != nil {
 		err = commonParser.parser.ReadConfig(bytes.NewBuffer(data))
 		if err != nil {
@@ -206,7 +205,7 @@ func SetCommonFromByte(data []byte) error {
 		}
 		return nil
 	}
-	commonParser,err = newViperParser(data)
+	commonParser, err = newViperParser(data)
 	if err != nil {
 		blog.Errorf("fail to read configure from common")
 		return err
@@ -218,7 +217,7 @@ func SetCommonFromFile(target string) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
-	commonParser,err = newViperParserFromFile(target)
+	commonParser, err = newViperParserFromFile(target)
 	if err != nil {
 		blog.Errorf("fail to read configure from common")
 		return err
@@ -239,7 +238,7 @@ func SetExtraFromByte(data []byte) error {
 		}
 		return nil
 	}
-	extraParser,err = newViperParser(data)
+	extraParser, err = newViperParser(data)
 	if err != nil {
 		blog.Errorf("fail to read configure from extra")
 		return err
@@ -251,7 +250,7 @@ func SetExtraFromFile(target string) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
-	extraParser,err = newViperParserFromFile(target)
+	extraParser, err = newViperParserFromFile(target)
 	if err != nil {
 		blog.Errorf("fail to read configure from extra")
 		return err
@@ -259,7 +258,7 @@ func SetExtraFromFile(target string) error {
 	return nil
 }
 
-func SetMigrateFromByte(data []byte) error{
+func SetMigrateFromByte(data []byte) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
@@ -271,12 +270,12 @@ func SetMigrateFromByte(data []byte) error{
 		}
 		return nil
 	}
-	migrateParser,err = newViperParser(data)
+	migrateParser, err = newViperParser(data)
 	if err != nil {
 		blog.Errorf("fail to read configure from migrate")
 		return err
 	}
-	return  nil
+	return nil
 }
 
 func SetMigrateFromFile(target string) error {
@@ -286,7 +285,7 @@ func SetMigrateFromFile(target string) error {
 	// /data/migrate.yaml -> /data/migrate
 	split := strings.Split(target, ".")
 	filePath := split[0]
-	migrateParser,err = newViperParserFromFile(filePath)
+	migrateParser, err = newViperParserFromFile(filePath)
 	if err != nil {
 		blog.Errorf("fail to read configure from migrate")
 		return err
@@ -295,44 +294,62 @@ func SetMigrateFromFile(target string) error {
 }
 
 // Redis return redis configuration information according to the prefix.
-func Redis(prefix string) redis.Config {
+func Redis(prefix string) (redis.Config, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	parser := getRedisParser()
-	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
-	for parser == nil {
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getRedisParser()
+		if parser != nil {
+			break
+		}
 		blog.Warn("the configuration of redis is not ready yet")
 		time.Sleep(time.Duration(1) * time.Second)
 	}
-	return redis.Config{
-		Address:      parser.getString(prefix+".host"),
-		Password:     parser.getString(prefix+".pwd"),
-		Database:     parser.getString(prefix+".database"),
-		MasterName:   parser.getString(prefix+".masterName"),
-		SentinelPassword: parser.getString(prefix+".sentinelPwd"),
-		Enable:       parser.getString(prefix+".enable"),
-		MaxOpenConns: parser.getInt(prefix + ".maxOpenConns"),
+
+	if parser == nil {
+		blog.Errorf("can't find redis configuration")
+		return redis.Config{}, err.New("can't find redis configuration")
 	}
+
+	return redis.Config{
+		Address:          parser.getString(prefix + ".host"),
+		Password:         parser.getString(prefix + ".pwd"),
+		Database:         parser.getString(prefix + ".database"),
+		MasterName:       parser.getString(prefix + ".masterName"),
+		SentinelPassword: parser.getString(prefix + ".sentinelPwd"),
+		Enable:           parser.getString(prefix + ".enable"),
+		MaxOpenConns:     parser.getInt(prefix + ".maxOpenConns"),
+	}, nil
 }
 
 // Mongo return mongo configuration information according to the prefix.
-func Mongo(prefix string) mongo.Config {
+func Mongo(prefix string) (mongo.Config, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	parser := getMongodbParser()
-	// if the parser is empty, it means that the configuration has not been loaded asynchronously, sleep for one second until the configuration is loaded.
-	for parser == nil {
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getMongodbParser()
+		if parser != nil {
+			break
+		}
 		blog.Warn("the configuration of mongo is not ready yet")
 		time.Sleep(time.Duration(1) * time.Second)
 	}
+
+	if parser == nil {
+		blog.Errorf("can't find mongo configuration")
+		return mongo.Config{}, err.New("can't find mongo configuration")
+	}
+
 	c := mongo.Config{
-		Address:   parser.getString(prefix+".host"),
-		Port:      parser.getString(prefix+".port"),
-		User:      parser.getString(prefix+".usr"),
-		Password:  parser.getString(prefix+".pwd"),
-		Database:  parser.getString(prefix+".database"),
-		Mechanism: parser.getString(prefix+".mechanism"),
-		RsName:    parser.getString(prefix+".rsName"),
+		Address:   parser.getString(prefix + ".host"),
+		Port:      parser.getString(prefix + ".port"),
+		User:      parser.getString(prefix + ".usr"),
+		Password:  parser.getString(prefix + ".pwd"),
+		Database:  parser.getString(prefix + ".database"),
+		Mechanism: parser.getString(prefix + ".mechanism"),
+		RsName:    parser.getString(prefix + ".rsName"),
 	}
 
 	if c.RsName == "" {
@@ -344,19 +361,19 @@ func Mongo(prefix string) mongo.Config {
 	if !parser.isSet(prefix+".maxOpenConns") || parser.getUint64(prefix+".maxOpenConns") > mongo.MaximumMaxOpenConns {
 		c.MaxOpenConns = mongo.DefaultMaxOpenConns
 	} else {
-		c.MaxOpenConns = parser.getUint64(prefix+".maxOpenConns")
+		c.MaxOpenConns = parser.getUint64(prefix + ".maxOpenConns")
 	}
 
 	if !parser.isSet(prefix+".maxIdleConns") || parser.getUint64(prefix+".maxIdleConns") < mongo.MinimumMaxIdleOpenConns {
 		c.MaxIdleConns = mongo.MinimumMaxIdleOpenConns
 	} else {
-		c.MaxIdleConns = parser.getUint64(prefix+".maxIdleConns")
+		c.MaxIdleConns = parser.getUint64(prefix + ".maxIdleConns")
 	}
 
-	if !parser.isSet(prefix+".socketTimeoutSeconds") {
+	if !parser.isSet(prefix + ".socketTimeoutSeconds") {
 		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d", mongo.DefaultSocketTimeout)
 		c.SocketTimeout = mongo.DefaultSocketTimeout
-		return c
+		return c, nil
 	}
 
 	c.SocketTimeout = parser.getInt(prefix + ".socketTimeoutSeconds")
@@ -370,55 +387,55 @@ func Mongo(prefix string) mongo.Config {
 		c.SocketTimeout = mongo.MinimumSocketTimeout
 	}
 
-	return c
+	return c, nil
 }
 
 // String return the string value of the configuration information according to the key.
-func String(key string) (string,error) {
+func String(key string) (string, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
-		return migrateParser.getString(key),nil
+		return migrateParser.getString(key), nil
 	}
 	if commonParser != nil && commonParser.isSet(key) {
-		return commonParser.getString(key),nil
+		return commonParser.getString(key), nil
 	}
 	if extraParser != nil && extraParser.isSet(key) {
-		return extraParser.getString(key),nil
+		return extraParser.getString(key), nil
 	}
-	return "",err.New("config not found")
+	return "", err.New("config not found")
 }
 
 // Int return the int value of the configuration information according to the key.
-func Int(key string) (int,error) {
+func Int(key string) (int, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
-		return migrateParser.getInt(key),nil
+		return migrateParser.getInt(key), nil
 	}
 	if commonParser != nil && commonParser.isSet(key) {
-		return commonParser.getInt(key),nil
+		return commonParser.getInt(key), nil
 	}
 	if extraParser != nil && extraParser.isSet(key) {
-		return extraParser.getInt(key),nil
+		return extraParser.getInt(key), nil
 	}
-	return 0,err.New("config not found")
+	return 0, err.New("config not found")
 }
 
 // Bool return the bool value of the configuration information according to the key.
-func Bool(key string) (bool,error) {
+func Bool(key string) (bool, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
-		return migrateParser.getBool(key),nil
+		return migrateParser.getBool(key), nil
 	}
 	if commonParser != nil && commonParser.isSet(key) {
-		return commonParser.getBool(key),nil
+		return commonParser.getBool(key), nil
 	}
 	if extraParser != nil && extraParser.isSet(key) {
-		return extraParser.getBool(key),nil
+		return extraParser.getBool(key), nil
 	}
-	return false,err.New("config not found")
+	return false, err.New("config not found")
 }
 
 func IsExist(key string) bool {
@@ -459,27 +476,27 @@ type viperParser struct {
 	parser *viper.Viper
 }
 
-func newViperParser(data []byte) (*viperParser,error) {
+func newViperParser(data []byte) (*viperParser, error) {
 
 	v := viper.New()
 	v.SetConfigType("yaml")
 	err := v.ReadConfig(bytes.NewBuffer(data))
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	return &viperParser{parser: v},nil
+	return &viperParser{parser: v}, nil
 }
 
-func newViperParserFromFile(target string) (*viperParser,error) {
+func newViperParserFromFile(target string) (*viperParser, error) {
 	v := viper.New()
 	v.SetConfigName(path.Base(target))
 	v.AddConfigPath(path.Dir(target))
 	err := v.ReadInConfig()
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	v.WatchConfig()
-	return &viperParser{parser: v},nil
+	return &viperParser{parser: v}, nil
 }
 
 func (vp *viperParser) getString(path string) string {

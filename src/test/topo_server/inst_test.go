@@ -562,7 +562,11 @@ var _ = Describe("audit test", func() {
 	})
 
 	It("search audit detail", func() {
-		rsp, err := instClient.SearchAuditDetail(context.Background(), header, 1)
+		id := []int64{1}
+		input := &metadata.AuditDetailQueryInput{
+				IDs: id,
+		}
+		rsp, err := instClient.SearchAuditDetail(context.Background(), header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 	})

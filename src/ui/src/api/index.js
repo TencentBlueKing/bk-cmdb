@@ -4,7 +4,7 @@ import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
 // eslint-disable-next-line
 import { $error, $warn } from '@/magicbox'
-import { language } from '@/i18n'
+import i18n, { language } from '@/i18n'
 
 // axios实例
 const axiosInstance = Axios.create({
@@ -176,6 +176,8 @@ function handleReject (error, config) {
         }
         config.globalError && status !== 401 && $error(nextError.message)
         return Promise.reject(nextError)
+    } else if (error.message === 'Network Error') {
+        $error(i18n.t('资源请求失败提示'))
     } else {
         config.globalError && $error(error.message)
     }

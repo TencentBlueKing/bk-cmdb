@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/watch"
-	"configcenter/src/source_controller/coreservice/event"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/stream/types"
 

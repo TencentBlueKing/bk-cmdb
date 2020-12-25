@@ -159,33 +159,6 @@ func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.Q
 	return resp, err
 }
 
-func (h *host) GetHostSnap(ctx context.Context, header http.Header, hostID string) (resp *metadata.GetHostSnapResult, err error) {
-	resp = new(metadata.GetHostSnapResult)
-	subPath := "/find/host/snapshot/%s"
-
-	err = h.client.Get().
-		WithContext(ctx).
-		SubResourcef(subPath, hostID).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return resp, err
-}
-
-func (h *host) GetHostSnapBatch(ctx context.Context, header http.Header, input metadata.HostSnapBatchInput) (resp *metadata.GetHostSnapBatchResult, err error) {
-	resp = new(metadata.GetHostSnapBatchResult)
-	subPath := "/find/host/snapshot/batch"
-
-	err = h.client.Post().
-		Body(input).
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return resp, err
-}
-
 func (h *host) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
 	resp = new(metadata.HostLockResponse)
 	subPath := "/find/host/lock"
@@ -226,76 +199,6 @@ func (h *host) QueryHostLock(ctx context.Context, header http.Header, input *met
 		Do().
 		Into(resp)
 	return resp, err
-}
-
-func (h *host) AddUserConfig(ctx context.Context, header http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error) {
-	resp = new(metadata.IDResult)
-	subPath := "/create/userapi"
-
-	err = h.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
-}
-
-func (h *host) UpdateUserConfig(ctx context.Context, businessID string, id string, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
-	subPath := "/update/userapi/%s/%s"
-
-	err = h.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResourcef(subPath, businessID, id).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
-}
-
-func (h *host) DeleteUserConfig(ctx context.Context, businessID string, id string, header http.Header) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
-	subPath := "/delete/userapi/%s/%s"
-
-	err = h.client.Delete().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, businessID, id).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
-}
-
-func (h *host) GetUserConfig(ctx context.Context, header http.Header, opt *metadata.QueryInput) (resp *metadata.GetUserConfigResult, err error) {
-	resp = new(metadata.GetUserConfigResult)
-	subPath := "/findmany/userapi/search"
-
-	err = h.client.Post().
-		WithContext(ctx).
-		Body(opt).
-		SubResourcef(subPath).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
-}
-
-func (h *host) GetUserConfigDetail(ctx context.Context, businessID string, id string, header http.Header) (resp *metadata.GetUserConfigDetailResult, err error) {
-	resp = new(metadata.GetUserConfigDetailResult)
-	subPath := "/find/userapi/detail/%s/%s"
-
-	err = h.client.Get().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, businessID, id).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
 }
 
 // CreateDynamicGroup is dynamic group query datas base on conditions action api machinery.

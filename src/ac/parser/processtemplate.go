@@ -23,8 +23,6 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-
-	"github.com/tidwall/gjson"
 )
 
 // NOTE: 进程模板增删改操作检查服务模板的编辑权限
@@ -48,7 +46,11 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		// ResourceAction:        meta.Update,
 		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			procTemplateID := gjson.GetBytes(request.Body, common.BKProcessTemplateIDField).Int()
+			val, err := request.getValueFromBody(common.BKProcessTemplateIDField)
+			if err != nil {
+				return nil, err
+			}
+			procTemplateID := val.Int()
 			if procTemplateID <= 0 {
 				return nil, errors.New("invalid process template id")
 			}
@@ -64,7 +66,11 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 		// ResourceAction:        meta.Delete,
 		ResourceAction: meta.SkipAction,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			procTemplateIDs := gjson.GetBytes(request.Body, "process_templates").Array()
+			val, err := request.getValueFromBody("process_templates")
+			if err != nil {
+				return nil, err
+			}
+			procTemplateIDs := val.Array()
 			ids := make([]int64, 0)
 			for _, procTemplateID := range procTemplateIDs {
 				id := procTemplateID.Int()
