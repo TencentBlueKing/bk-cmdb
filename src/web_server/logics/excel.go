@@ -136,7 +136,11 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		if ok {
 			topos := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
 			if len(topos) > 0 {
-				rowMap[extFieldsBizID] = topos[0][:strings.Index(topos[0], logics.SplitFlag)]
+				idx := strings.Index(topos[0], logics.SplitFlag)
+				if idx > 0 {
+					rowMap[extFieldsBizID] = topos[0][:idx]
+				}
+
 				toposNobiz := make([]string, 0)
 				for _, topo := range topos {
 					idx := strings.Index(topo, logics.SplitFlag)
