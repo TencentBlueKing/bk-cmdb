@@ -43,8 +43,8 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 	}
 
 	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) == true {
-		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+	if common.IsInnerModel(objID) {
+		blog.Errorf("create instance failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
 	}
@@ -142,8 +142,8 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	deleteCondition := data.OpCondition
 
 	// forbidden delete inner model instance with common api
-	if common.IsInnerModel(objID) == true {
-		blog.V(5).Infof("DeleteInsts failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+	if common.IsInnerModel(objID) {
+		blog.Errorf("delete instances failed, delete %s instance with common delete api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
 	}
@@ -212,8 +212,8 @@ func (s *Service) DeleteInst(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
 	// forbidden delete inner model instance with common api
-	if common.IsInnerModel(objID) == true {
-		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+	if common.IsInnerModel(objID) {
+		blog.Errorf("delete instance failed, delete %s instance with common delete api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
 	}
@@ -293,9 +293,9 @@ func (s *Service) UpdateInsts(ctx *rest.Contexts) {
 	}
 	updateCondition := data.OpCondition
 
-	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
-		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+	// forbidden update inner model instance with common api
+	if common.IsInnerModel(objID) && util.InArray(objID, whiteList) == false {
+		blog.Errorf("update instances failed, update %s instance with common update api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
 	}
@@ -361,8 +361,8 @@ func (s *Service) UpdateInst(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
 	// forbidden update inner model instance with common api
-	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
-		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+	if common.IsInnerModel(objID) && util.InArray(objID, whiteList) == false {
+		blog.Errorf("update instance failed, update %s instance with common update api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
 	}
@@ -424,6 +424,14 @@ func (s *Service) UpdateInst(ctx *rest.Contexts) {
 // SearchInst search the inst
 func (s *Service) SearchInsts(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// forbidden search inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("search instances failed, search %s instance with common search api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
 	data := struct {
 		paraparse.SearchParams `json:",inline"`
 	}{}
@@ -470,6 +478,15 @@ func (s *Service) SearchInsts(ctx *rest.Contexts) {
 // SearchInstAndAssociationDetail search the inst with association details
 func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// forbidden search inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("search instance and association detail failed, " +
+			"search %s instance with common search api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
 	data := struct {
 		paraparse.SearchParams `json:",inline"`
 	}{}
@@ -504,6 +521,14 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 // SearchInstByObject search the inst of the object
 func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// forbidden search inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("search instance by object failed, search %s instance with common search api forbidden, rid: %s",
+			objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
 
 	data := struct {
 		paraparse.SearchParams `json:",inline"`
@@ -569,6 +594,14 @@ func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 // SearchInstByInstID search the inst by inst ID
 func (s *Service) SearchInstByInstID(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// forbidden search inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("search instance By instance ID failed, search %s instance with common search " +
+			"api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
 
 	instID, err := strconv.ParseInt(ctx.Request.PathParameter("inst_id"), 10, 64)
 	if nil != err {
