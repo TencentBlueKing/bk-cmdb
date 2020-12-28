@@ -14,6 +14,7 @@ package service
 
 import (
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -82,9 +83,14 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		}
 		return nil
 	})
-
 	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+		errList := strings.Split(txnErr.Error(), "[")
+		errStr := ""
+		if len(errList) >= 2 {
+			errStr = errList[1]
+		}
+		errStr = strings.Split(errStr, "]")[0]
+		ctx.RespEntityWithError(errStr, txnErr)
 		return
 	}
 

@@ -468,6 +468,7 @@ const (
 	CCErrorTopoOperateReourceDirFailNotExist       = 1101103
 	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
 	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
+	CCErrorTopoModelAttributeAlreadyExists         = 1101106
 
 	CCErrorModelNotFound = 1101102
 	// object controller 1102XXX
