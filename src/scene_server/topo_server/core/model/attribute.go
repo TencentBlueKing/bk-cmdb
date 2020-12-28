@@ -179,6 +179,27 @@ func (a *attribute) Create() error {
 	// check the property id repeated
 	a.attr.OwnerID = a.kit.SupplierAccount
 
+	// search the record
+	cond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKPropertyIDField: a.attr.PropertyID,
+			common.BKObjIDField:      a.attr.ID,
+		},
+	}
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttr(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, cond)
+	if nil != err {
+		blog.ErrorJSON("failed to request coreService to search model attrs, the err: %s, ObjectID: %s, input: %s, rid: %s", err.Error(), a.attr.ObjectID, cond, a.kit.Rid)
+		return a.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result {
+		blog.ErrorJSON("create model attrs, but search current model attrs failed, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, cond, a.kit.Rid)
+		return resp.CCError()
+	}
+	if len(resp.Data.Info) > 0 {
+		blog.ErrorJSON("create model attrs, but the attr already exists, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, cond, a.kit.Rid)
+		return a.kit.CCError.CCErrorf(common.CCErrorTopoModelAttributeAlreadyExists, a.attr.PropertyID)
+	}
+
 	// create a new record
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
 	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(a.kit.Ctx, a.kit.Header, a.attr.ObjectID, &input)
