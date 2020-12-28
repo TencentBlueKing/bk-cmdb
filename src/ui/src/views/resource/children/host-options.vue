@@ -74,11 +74,14 @@
                         :template-url="importInst.templateUrl"
                         :import-url="importInst.importUrl"
                         :import-payload="importInst.payload"
+                        :global-error="false"
+                        :before-upload="handleBeforeUpload"
+                        @error="handleImportError"
                         @success="handleImportSuccess"
                         @partialSuccess="handleImportSuccess">
                         <bk-form class="import-prepend" slot="prepend">
                             <bk-form-item :label="$t('主机池目录')" required>
-                                <bk-select v-model="importInst.directory" style="display: block;">
+                                <bk-select v-model="importInst.directory" searchable style="display: block;">
                                     <cmdb-auth-option v-for="directory in directoryList"
                                         :key="directory.bk_module_id"
                                         :id="directory.bk_module_id"
@@ -91,25 +94,34 @@
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
                             {{$t('说明：内网IP为必填列')}}
                         </span>
+                        <div slot="uploadErrorMessage" class="upload-error-message" v-if="importInstError">{{importInstError}}</div>
                     </cmdb-import>
                 </bk-tab-panel>
                 <bk-tab-panel name="agent" :label="$t('Agent导入')">
                     <div class="automatic-import">
-                        <p>{{$t("agent安装说明")}}</p>
-                        <div class="back-contain">
-                            <i class="icon-cc-skip"></i>
-                            <a href="javascript:void(0)" @click="openAgentApp">{{$t('点此进入节点管理')}}</a>
-                        </div>
+                        <img src="../../../assets/images/agent-import-guide.png">
+                        <p class="agent-install-tips1">{{$t("agent安装说明")}}</p>
+                        <p class="agent-install-tips2">{{$t("跳转节点管理，支持远程 / 手动安装")}}</p>
+                        <bk-button class="agent-install-button" theme="primary" @click="openAgentApp">{{$t('跳转安装')}}</bk-button>
                     </div>
                 </bk-tab-panel>
             </bk-tab>
             <div slot="content" class="edit-import-panel" v-if="importInst.type === 'edit'">
-                <bk-alert class="alert" type="warning" title="说明：导入编辑需要先导出需要修改的主机，并完成编辑修改后才能进行导入编辑操作"></bk-alert>
+                <bk-alert class="alert" type="warning" :title="$t('请上传导出的主机表格文件')"></bk-alert>
                 <cmdb-import :template-url="importInst.templateUrl"
                     :import-url="importInst.importUrl"
                     :templdate-available="importInst.templdateAvailable"
+                    :global-error="false"
+                    @error="handleImportError"
                     @success="handleImportSuccess"
                     @partialSuccess="handleImportSuccess">
+                    <span slot="successTips" slot-scope="{ success }">
+                        {{$t('更新成功N个主机数据', { N: success.length })}}
+                    </span>
+                    <span slot="errorTips" slot-scope="{ error }">
+                        {{$t('更新失败N个主机数据', { N: error.length })}}
+                    </span>
+                    <div slot="uploadErrorMessage" class="upload-error-message" v-if="importInstError">{{importInstError}}</div>
                 </cmdb-import>
             </div>
         </bk-sideslider>
@@ -212,7 +224,8 @@
                     importUrl: '',
                     templdateAvailable: true,
                     directory: '',
-                    payload: {}
+                    payload: {},
+                    error: null
                 },
                 businessList: [],
                 objectUnique: [],
@@ -247,7 +260,7 @@
                 if (this.activeDirectory) {
                     return this.activeDirectory.bk_module_id
                 }
-                return this.defaultDirectory ? this.defaultDirectory.bk_module_id : undefined
+                return undefined
             },
             table () {
                 return this.$parent.table
@@ -317,13 +330,19 @@
                 }, {
                     id: 'import-edit',
                     text: this.$t('导入编辑'),
-                    handler: this.handleEditImportInst,
-                    tooltips: this.$t('请先基于该列表导出并编辑后，再导入')
+                    handler: this.handleEditImportInst
                 }]
                 if (this.scope !== 1) {
                     buttonConfig.pop()
                 }
                 return buttonConfig
+            },
+            importInstError () {
+                const importInstError = this.importInst.error || {}
+                if (importInstError.bk_error_msg) {
+                    return importInstError.bk_error_msg
+                }
+                return importInstError.message || ''
             }
         },
         watch: {
@@ -331,12 +350,16 @@
                 if (!show) {
                     this.importInst.type = 'new'
                     this.importInst.active = 'import'
+                    this.importInst.error = null
                 } else {
                     this.importInst.directory = this.directoryId
                 }
             },
             'importInst.directory' (directory) {
                 this.importInst.payload.bk_module_id = directory
+            },
+            'importInst.active' () {
+                this.importInst.error = null
             }
         },
         async created () {
@@ -607,6 +630,15 @@
             handleImportSuccess () {
                 this.$parent.getHostList(true)
                 Bus.$emit('refresh-dir-count')
+            },
+            handleImportError (error) {
+                this.importInst.error = error
+            },
+            handleBeforeUpload () {
+                if (!this.importInst.directory) {
+                    this.$error(this.$t('请先选择主机池目录'))
+                    return false
+                }
             }
         }
     }
@@ -648,16 +680,20 @@
         }
     }
     .automatic-import{
-        padding:40px 30px 0 30px;
-        .back-contain{
-            cursor:pointer;
-            color: #3c96ff;
-            img{
-                margin-right: 5px;
-            }
-            a{
-                color:#3c96ff;
-            }
+        padding: 44px 30px 0 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        .agent-install-tips1 {
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .agent-install-tips2 {
+            font-size: 12px;
+            color: #979BA5;
+        }
+        .agent-install-button {
+            margin: 14px 0;
         }
     }
     .assign-dialog {
@@ -705,5 +741,10 @@
                 margin-top: 20px;
             }
         }
+    }
+
+    .upload-error-message {
+        margin: 8px 0;
+        color: $dangerColor;
     }
 </style>

@@ -1395,5 +1395,11 @@
     "请先基于该列表导出并编辑后，再导入": "Please export and edit based on this list before importing",
     "导入编辑": "Edit import",
     "新增导入": "New import",
-    "Agent导入": "Agent import"
+    "Agent导入": "Agent import",
+    "请上传导出的主机表格文件": "Please upload the exported host table file",
+    "更新成功N个主机数据": "Successfully updated {N} host data",
+    "更新失败N个主机数据": "The {N} host data update failed",
+    "请先选择主机池目录": "Please select directory",
+    "跳转安装": "Jump install",
+    "跳转节点管理，支持远程 / 手动安装": "Jump node management, support remote / manual installation"
 }
