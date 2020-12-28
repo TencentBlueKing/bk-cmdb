@@ -156,7 +156,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, errMsg[0]).Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "").Error(),
 			},
 			Data: map[string]interface{}{
 				"error": errMsg,
@@ -181,7 +181,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebHostCheckFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, errMsg[0]).Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, "").Error(),
 			},
 			Data: map[string]interface{}{
 				"error": errMsg,
@@ -272,7 +272,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebFileContentFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, errMsg[0]).Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, "").Error(),
 			},
 			Data: map[string]interface{}{
 				"error": errMsg,
@@ -297,7 +297,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 			BaseResp: metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrWebHostCheckFail,
-				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, errMsg[0]).Error(),
+				ErrMsg: defErr.Errorf(common.CCErrWebHostCheckFail, "").Error(),
 			},
 			Data: map[string]interface{}{
 				"error": errMsg,
