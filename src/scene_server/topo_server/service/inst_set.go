@@ -85,6 +85,8 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		errMsg := ""
 		if txnErr != nil {
 			errMsg = txnErr.Error()
+			resErr := strings.Split(firstErr.Error(), " ")[0]
+			result = strings.Replace(resErr, "'", "", -1)
 		}
 		batchCreateResult = append(batchCreateResult, OneSetCreateResult{
 			Index:    idx,
