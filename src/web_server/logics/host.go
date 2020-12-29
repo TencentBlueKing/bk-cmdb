@@ -342,8 +342,9 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 		return nil, err
 	}
 
-	for index, host := range hostInfos {
-		if nil == host {
+	for _, index := range util.SortedMapIntKeys(hostInfos) {
+		host := hostInfos[index]
+		if host == nil {
 			continue
 		}
 
@@ -380,7 +381,8 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		return nil, err
 	}
 
-	for index, host := range hostInfos {
+	for _, index := range util.SortedMapIntKeys(hostInfos) {
+		host := hostInfos[index]
 		if host == nil {
 			continue
 		}

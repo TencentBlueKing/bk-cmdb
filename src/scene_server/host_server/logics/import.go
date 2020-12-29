@@ -71,8 +71,9 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 
-	for index, host := range hostInfos {
-		if nil == host {
+	for _, index := range util.SortedMapInt64Keys(hostInfos) {
+		host := hostInfos[index]
+		if host == nil {
 			continue
 		}
 
@@ -198,8 +199,9 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 
-	for index, host := range hostInfos {
-		if nil == host {
+	for _, index := range util.SortedMapInt64Keys(hostInfos) {
+		host := hostInfos[index]
+		if host == nil {
 			continue
 		}
 

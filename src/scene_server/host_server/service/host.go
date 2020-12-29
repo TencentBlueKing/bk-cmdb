@@ -1404,7 +1404,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	indexHostIDMap := make(map[int64]int64, 0)
 	var errMsg, successMsg []string
 	CCLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
-	for index, hostInfo := range hostList.HostInfo {
+	for _, index := range util.SortedMapInt64Keys(hostList.HostInfo) {
+		hostInfo := hostList.HostInfo[index]
 		if hostInfo == nil {
 			continue
 		}
@@ -1472,7 +1473,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 			// get host attributes
 			if hasRules == true {
 				hasHostUpdateWithoutHostApplyFiled = true
-				for index, hostInfo := range hosts {
+				for _, index := range util.SortedMapInt64Keys(hosts) {
+					hostInfo := hosts[index]
 					delete(hostInfo, common.BKHostIDField)
 					intHostID := indexHostIDMap[index]
 					updateData := make(map[string]interface{})
@@ -1517,7 +1519,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		}
 
 		if hasHostUpdateWithoutHostApplyFiled == false {
-			for index, hostInfo := range hosts {
+			for _, index := range util.SortedMapInt64Keys(hosts) {
+				hostInfo := hosts[index]
 				delete(hostInfo, common.BKHostIDField)
 				intHostID := indexHostIDMap[index]
 

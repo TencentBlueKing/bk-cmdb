@@ -157,6 +157,12 @@ func (b *AtomicBool) SetTo(yes bool) {
 	}
 }
 
+type IntSlice []int
+
+func (p IntSlice) Len() int           { return len(p) }
+func (p IntSlice) Less(i, j int) bool { return p[i] < p[j] }
+func (p IntSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
 type Int64Slice []int64
 
 func (p Int64Slice) Len() int           { return len(p) }
