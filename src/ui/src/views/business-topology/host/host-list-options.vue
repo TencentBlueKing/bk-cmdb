@@ -31,10 +31,15 @@
                     <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
                 </bk-button>
                 <ul class="bk-dropdown-list" slot="dropdown-content">
-                    <li class="bk-dropdown-item"
+                    <cmdb-auth tag="li" class="bk-dropdown-item"
+                        :auth="[
+                            { type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] },
+                            { type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] },
+                            { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
+                        ]"
                         @click="handleTransfer($event, 'idle', false)">
                         {{$t('空闲模块')}}
-                    </li>
+                    </cmdb-auth>
                     <cmdb-auth tag="li" class="bk-dropdown-item"
                         :auth="[
                             { type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] },

@@ -24,11 +24,17 @@
                     v-for="(item, index) in topologyList"
                     :key="index">
                     <span class="topology-path" v-bk-overflow-tips @click="handlePathClick(item)">{{item.path}}</span>
-                    <i class="topology-remove-trigger icon-cc-tips-close"
-                        v-if="!item.isInternal"
-                        v-bk-tooltips="{ content: $t('从该模块移除'), interactive: false }"
-                        @click="handleRemove(item.id)">
-                    </i>
+                    <cmdb-auth :auth="[
+                        { type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] },
+                        { type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] },
+                        { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
+                    ]">
+                        <i class="topology-remove-trigger icon-cc-tips-close"
+                            v-if="!item.isInternal"
+                            v-bk-tooltips="{ content: $t('从该模块移除'), interactive: false }"
+                            @click="handleRemove(item.id)">
+                        </i>
+                    </cmdb-auth>
                 </li>
             </ul>
             <a class="action-btn view-all"

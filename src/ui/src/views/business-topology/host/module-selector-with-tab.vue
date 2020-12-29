@@ -13,16 +13,14 @@
                             :auth="auth"
                             @update-auth="handleUpdateAuth(...arguments, panel.props.name)">
                         </cmdb-auth>
-                        <keep-alive>
-                            <component v-if="authorized[panel.props.name] !== false"
-                                class="selector-component"
-                                :is="panel.component.name"
-                                v-bind="panel.component.props"
-                                @cancel="handleCancel"
-                                @confirm="handleConfirm">
-                            </component>
-                            <no-permission class="no-permission-container" v-else :permission="permission" @cancel="handleCancel" />
-                        </keep-alive>
+                        <component v-if="authorized[panel.props.name] !== false"
+                            class="selector-component"
+                            :is="panel.component.name"
+                            v-bind="panel.component.props"
+                            @cancel="handleCancel"
+                            @confirm="handleConfirm">
+                        </component>
+                        <no-permission class="no-permission-container" v-else :permission="permission" @cancel="handleCancel" />
                     </div>
                 </div>
             </bk-tab-panel>
@@ -172,7 +170,10 @@
                 this.$emit('confirm', tab, ...arguments)
             },
             handleUpdateAuth (isAuthorized, panel) {
-                this.$set(this.authorized, panel, isAuthorized)
+                // 已鉴权则不再更新，配合auth组件ignore，在切换tab时不重复鉴权
+                if (!this.authorized.hasOwnProperty(panel)) {
+                    this.$set(this.authorized, panel, isAuthorized)
+                }
             }
         }
     }
@@ -205,7 +206,11 @@
                         line-height: 42px;
                         min-width: auto;
                         &.active {
+                            color: #313238;
                             background-color: #fff;
+                        }
+                        &:not(.is-disabled):hover {
+                            color: #313238;
                         }
                     }
                 }

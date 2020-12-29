@@ -53,16 +53,18 @@
                 </div>
             </cmdb-resize-layout>
             <div class="wrapper-column wrapper-right">
-                <module-checked-list :checked="checked" />
+                <module-checked-list :checked="checked" @delete="handleDeleteModule" @clear="handleClearModule" />
             </div>
         </div>
         <div class="layout-footer">
-            <bk-button class="mr10" theme="primary"
-                :disabled="!checked.length"
-                :loading="confirmLoading"
-                @click="handleNextStep">
-                {{$t('确定')}}
-            </bk-button>
+            <span v-bk-tooltips="{ content: $t('请先选择业务模块'), disabled: checked.length > 0 }">
+                <bk-button class="mr10" theme="primary"
+                    :disabled="!checked.length"
+                    :loading="confirmLoading"
+                    @click="handleNextStep">
+                    {{$t('确定')}}
+                </bk-button>
+            </span>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>

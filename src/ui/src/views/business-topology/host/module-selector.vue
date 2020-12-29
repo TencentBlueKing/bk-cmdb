@@ -43,11 +43,7 @@
             </div>
         </div>
         <div class="layout-footer">
-            <span class="footer-tips mr10"
-                v-bk-tooltips="{
-                    content: $t('模块相同提示'),
-                    disabled: !checked.length || (checked.length && hasDifference)
-                }">
+            <span class="footer-tips mr10" v-bk-tooltips="confirmTooltips">
                 <bk-button theme="primary"
                     :disabled="!checked.length || !hasDifference"
                     :loading="confirmLoading"
@@ -133,6 +129,17 @@
             },
             hasTitle () {
                 return this.title && this.title.length
+            },
+            confirmTooltips () {
+                const tooltips = { disabled: true }
+                if (!this.checked.length) {
+                    tooltips.content = this.$t('请先选择业务模块')
+                    tooltips.disabled = false
+                } else if (!this.hasDifference) {
+                    tooltips.content = this.$t('模块相同提示')
+                    tooltips.disabled = false
+                }
+                return tooltips
             }
         },
         watch: {
@@ -212,7 +219,7 @@
                 return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
                     bizId: this.bizId,
                     config: {
-                        requestId: this.request.instance
+                        requestId: this.request.business
                     }
                 })
             },
