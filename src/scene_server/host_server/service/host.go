@@ -515,23 +515,15 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID,
-			ctx.Kit.SupplierAccount, hostList.HostInfo)
-		if err != nil {
-			blog.Errorf("add host failed, success: %v, errRow:%v, err: %v, hostList:%#v, rid:%s",
-				success, errRow, err, hostList, ctx.Kit.Rid)
-			retData["error"] = errRow
-			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
-		}
-		retData["success"] = success
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespEntityWithError(retData, txnErr)
-		return
+	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount, hostList.HostInfo, s.EnableTxn)
+	retData["success"] = success
+	retData["error"] = errRow
+	if err != nil {
+		blog.Errorf("add host failed, success: %v, errRow:%v, err: %v, hostList:%#v, rid:%s",
+			success, errRow, err, hostList, ctx.Kit.Rid)
+		ctx.RespEntityWithError(retData, ctx.Kit.CCError.CCError(common.CCErrHostCreateFail))
 	}
+
 	ctx.RespEntity(retData)
 }
 

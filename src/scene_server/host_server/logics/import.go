@@ -184,7 +184,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	return hostIDs, successMsg, updateErrMsg, errMsg, nil
 }
 
-func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string, hostInfos map[int64]map[string]interface{}) (hostIDs []int64, successMsg, errMsg []string, err error) {
+func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string, hostInfos map[int64]map[string]interface{},
+	enableTxn bool) (hostIDs []int64, successMsg, errMsg []string, err error) {
 	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
 	if err != nil {
 		blog.Errorf("AddHostByExcel failed, GetModuleIDAndIsInternal err:%s, appID:%d, moduleID:%d", err, appID, moduleID)
@@ -193,8 +194,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 
 	instance := NewImportInstance(kit, ownerID, lgc)
 
-	// for audit log.
-	logContents := make([]metadata.AuditLog, 0)
+	// for audit log
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 
@@ -215,42 +215,40 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
 
-		var auditLog *metadata.AuditLog
+		// use new transaction, need a new header
+		kit.Header = kit.NewHeader()
+		lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, enableTxn, kit.Header, func() error {
+			intHostID, err := instance.addHostInstance(common.BKDefaultDirSubArea, index, appID, []int64{moduleID}, toInternalModule, host)
+			if err != nil {
+				blog.Errorf("addHostInstance failed, err: %v, index:%d, bizID: %d, moduleID:%d, toInternalModule:%t, host:%v, rid: %s",
+					err, index, appID, moduleID, toInternalModule, host, kit.Rid)
+				errMsg = append(errMsg, fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
+				return err
+			}
+			host[common.BKHostIDField] = intHostID
 
-		intHostID, err := instance.addHostInstance(common.BKDefaultDirSubArea, index, appID, []int64{moduleID}, toInternalModule, host)
-		if err != nil {
-			errMsg = append(errMsg, fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
-			continue
-		}
-		host[common.BKHostIDField] = intHostID
+			// to generate audit log.
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+			auditLog, err := audit.GenerateAuditLog(generateAuditParameter, intHostID, appID, innerIP, nil)
+			if err != nil {
+				blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
+					intHostID, appID, err, kit.Rid)
+				errMsg = append(errMsg, err.Error())
+				return err
+			}
 
-		// to generate audit log.
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		auditLog, err = audit.GenerateAuditLog(generateAuditParameter, intHostID, appID, innerIP, nil)
-		if err != nil {
-			blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
-				intHostID, appID, err, kit.Rid)
-			errMsg = append(errMsg, err.Error())
-			continue
-		}
+			// add current host operate result to batch add result
+			successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
-		// add current host operate result to batch add result.
-		successMsg = append(successMsg, strconv.FormatInt(index, 10))
-
-		// add audit log.
-		logContents = append(logContents, *auditLog)
-		hostIDs = append(hostIDs, intHostID)
-	}
-
-	// to save audit log.
-	if len(logContents) > 0 {
-		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
-			return hostIDs, successMsg, errMsg, fmt.Errorf("save audit log failed, but add host success, err: %v", err)
-		}
-	}
-
-	if len(errMsg) > 0 {
-		return hostIDs, successMsg, errMsg, errors.New(ccLang.Language("host_import_err"))
+			// add audit log
+			if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+				blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+				errMsg = append(errMsg, kit.CCError.Error(common.CCErrAuditSaveLogFailed).Error())
+				return err
+			}
+			hostIDs = append(hostIDs, intHostID)
+			return nil
+		})
 	}
 
 	return hostIDs, successMsg, errMsg, nil
