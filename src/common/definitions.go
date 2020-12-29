@@ -1039,6 +1039,10 @@ const (
 	BKOpenSourceLoginPluginVersion = "opensource"
 	BKSkipLoginPluginVersion       = "skip-login"
 
+	// monitor plugin type
+	BKNoopMonitorPlugin     = "noop"
+	BKBluekingMonitorPlugin = "blueking"
+
 	HTTPCookieBKToken = "bk_token"
 
 	WEBSessionUinKey           = "username"

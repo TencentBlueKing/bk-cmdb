@@ -109,10 +109,6 @@ func TBObjectAsst() types.Table {
 	return Table(common.BKTableNameObjAsst)
 }
 
-func TB() types.Table {
-	return Table(common.BKTableNameObjAsst)
-}
-
 func TBServiceCategory() types.Table {
 	return Table(common.BKTableNameServiceCategory)
 }
