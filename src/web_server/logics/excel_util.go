@@ -129,7 +129,7 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 			var cellVal string
 			arrVal, ok := property.Option.([]interface{})
 			strEnumID, enumIDOk := val.(string)
-			if true == ok || true == enumIDOk {
+			if true == ok && true == enumIDOk {
 				cellVal = getEnumNameByID(strEnumID, arrVal)
 				cell.SetString(cellVal)
 			}
@@ -409,14 +409,8 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 				cellName := sheet.Cell(0, index)
 				cellName.Value = field.Name + isRequire
 				cellName.SetStyle(cellStyle)
-
-				cellType := sheet.Cell(1, index)
-				cellType.Value = "--"
-				cellType.SetStyle(cellStyle)
-
-				cellEnName := sheet.Cell(2, index)
-				cellEnName.Value = "--"
-				cellEnName.SetStyle(cellStyle)
+				setExcelCellIgnored(sheet, cellStyle, 1, index)
+				setExcelCellIgnored(sheet, cellStyle, 2, index)
 
 				// 给业务拓扑和业务列剩下的空格设置颜色
 				for i := 3; i < 1000; i++ {
@@ -425,6 +419,12 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 				}
 				sheet.Col(index).SetType(xlsx.CellTypeString)
 			}
+
+			if field.ID == common.BKCloudIDField {
+				setExcelCellIgnored(sheet, styleCell, 1, index)
+				setExcelCellIgnored(sheet, styleCell, 2, index)
+			}
+
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 		}
 	}
