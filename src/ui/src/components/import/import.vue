@@ -451,9 +451,6 @@
             line-height: 56px;
             background-color: #f9f9f9;
             color: #34d97b;
-            .bk-icon{
-                vertical-align: -1px;
-            }
         }
         &-fail{
             margin: 2px 0 0 0;

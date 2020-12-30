@@ -630,6 +630,7 @@
             handleImportSuccess () {
                 this.$parent.getHostList(true)
                 Bus.$emit('refresh-dir-count')
+                this.importInst.error = null
             },
             handleImportError (error) {
                 this.importInst.error = error
