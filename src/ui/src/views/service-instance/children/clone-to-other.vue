@@ -13,7 +13,6 @@
                         v-for="(data, index) in hosts"
                         ref="serviceInstanceTable"
                         deletable
-                        expanded
                         :key="data.host.bk_host_id"
                         :index="index"
                         :id="data.host.bk_host_id"
