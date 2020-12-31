@@ -108,9 +108,10 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return dbErr
 	}
 
-	if err := flow.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
-		blog.Errorf("new watch event failed, err: %v", err)
-		return err
+	flowErr := flow.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB)
+	if flowErr != nil {
+		blog.Errorf("new watch event failed, err: %v", flowErr)
+		return flowErr
 	}
 
 	return nil

@@ -48,9 +48,6 @@ type Config struct {
 	// MongoDB is mongodb configs.
 	MongoDB mongo.Config
 
-	// WatchMongoDB is the event watch mongodb config.
-	WatchMongoDB mongo.Config
-
 	// Redis is cc redis configs.
 	Redis redis.Config
 }

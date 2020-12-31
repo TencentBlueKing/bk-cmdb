@@ -66,3 +66,10 @@ type ChainNode struct {
 	// InstanceID object instance's ID, preserved for latter event aggregation operation
 	InstanceID int64 `json:"instance_id,omitempty" bson:"instance_id,omitempty"`
 }
+
+type LastChainNodeData struct {
+	Coll   string `json:"_id" bson:"_id"`
+	ID     uint64 `json:"id" bson:"id"`
+	Token  string `json:"token" bson:"token"`
+	Cursor string `json:"cursor" bson:"cursor"`
+}

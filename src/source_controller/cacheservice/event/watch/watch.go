@@ -69,8 +69,7 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 
 	// start from is ahead of the latest's event time, watch from now.
 	if int64(tailNode.ClusterTime.Sec) <= opts.StartFrom {
-		hit := c.GetHitNodeWithEventType([]*watch.ChainNode{tailNode}, opts.EventTypes)
-		if len(hit) == 0 {
+		if !c.isNodeWithEventType(tailNode, opts.EventTypes) {
 			// not matched, set to no event cursor with empty detail
 			return []*watch.WatchEventDetail{{
 				Cursor:    watch.NoEventCursor,
@@ -95,7 +94,7 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 			Cursor:    tailNode.Cursor,
 			Resource:  opts.Resource,
 			EventType: tailNode.EventType,
-			Detail:    watch.JsonString(detail),
+			Detail:    watch.JsonString(*detail),
 		}}, nil
 	}
 
@@ -122,54 +121,30 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		}}, nil
 	}
 
-	timeout := time.After(timeoutWatchLoopSeconds * time.Second)
-	isFirstLoop := true
-	for {
-		select {
-		case <-timeout:
-			// scan the event's too long time, need to exist immediately.
-			blog.Errorf("watch with start from: %d, scan the cursor chain, but scan too long time, rid: %s", opts.StartFrom, rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_start_from")
-		default:
-
-		}
-
-		nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, eventStep, key)
-		if err != nil {
-			blog.ErrorJSON("get event failed, err: %s, rid: %s, filter: %s", err, rid, filter)
-			return nil, err
-		}
-
-		// since the first node is after the start time, we need to include it in the nodes after the start time
-		if isFirstLoop {
-			nodes = append([]*watch.ChainNode{node}, nodes...)
-			isFirstLoop = false
-		}
-
-		// nodes has already scan to the end
-		if len(nodes) == 0 {
-			resp := &watch.WatchEventDetail{
-				Cursor:    watch.NoEventCursor,
-				Resource:  opts.Resource,
-				EventType: "",
-				Detail:    nil,
-			}
-			// at least the tail node should can be scan, so something goes wrong.
-			blog.V(5).Infof("watch with start from %s, but no event found in the chain, rid: %s",
-				opts.StartFrom, rid)
-			return []*watch.WatchEventDetail{resp}, nil
-		}
-
-		hitNodes := c.GetHitNodeWithEventType(nodes, opts.EventTypes)
-
-		if len(hitNodes) != 0 {
-			// matched event has been found, get them all.
-			return c.getEventDetailsWithNodes(kit, opts, hitNodes, key)
-		}
-
-		// update filter and do next scan round.
-		node = nodes[len(nodes)-1]
+	nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, eventStep, opts.EventTypes, key)
+	if err != nil {
+		blog.ErrorJSON("get event failed, err: %s, rid: %s, filter: %s", err, rid, filter)
+		return nil, err
 	}
+
+	// since the first node is after the start time, we need to include it in the nodes after the start time
+	if c.isNodeWithEventType(node, opts.EventTypes) {
+		nodes = append([]*watch.ChainNode{node}, nodes...)
+	}
+
+	// nodes has already scan to the end
+	if len(nodes) == 0 {
+		resp := &watch.WatchEventDetail{
+			Cursor:    tailNode.Cursor,
+			Resource:  opts.Resource,
+			EventType: "",
+			Detail:    nil,
+		}
+		return []*watch.WatchEventDetail{resp}, nil
+	}
+
+	// matched event has been found, get them all.
+	return c.getEventDetailsWithNodes(kit, opts, nodes, key)
 }
 
 // getEventDetailsWithNodes get event details with nodes, first get from redis, then get failed ones from mongo
@@ -193,6 +168,8 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 	if len(errCursors) == 0 {
 		resp := make([]*watch.WatchEventDetail, len(details))
 		for idx, detail := range details {
+			jsonStr := types.GetEventDetail(&detail)
+			detail = *json.CutJsonDataWithFields(jsonStr, opts.Fields)
 			resp[idx] = &watch.WatchEventDetail{
 				Cursor:    hitNodes[idx].Cursor,
 				Resource:  opts.Resource,
@@ -264,8 +241,7 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 		}, nil
 	}
 
-	hit := c.GetHitNodeWithEventType([]*watch.ChainNode{node}, opts.EventTypes)
-	if len(hit) == 0 {
+	if !c.isNodeWithEventType(node, opts.EventTypes) {
 		// not matched, set to no event cursor with empty detail
 		return &watch.WatchEventDetail{
 			Cursor:    watch.NoEventCursor,
@@ -290,7 +266,7 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 		Cursor:    node.Cursor,
 		Resource:  opts.Resource,
 		EventType: node.EventType,
-		Detail:    watch.JsonString(detail),
+		Detail:    watch.JsonString(*detail),
 	}, nil
 }
 
@@ -306,19 +282,34 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 	rid := kit.Rid
 	start := time.Now().Unix()
 
-	exists, nodes, err := c.searchFollowingEventChainNodes(kit, opts.Cursor, eventStep, key)
+	exists, nodes, err := c.searchFollowingEventChainNodes(kit, opts.Cursor, eventStep, opts.EventTypes, key)
 	if err != nil {
 		blog.Errorf("search nodes after cursor %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
 		return nil, err
 	}
 
-	if !exists {
+	if !exists && opts.Cursor != watch.NoEventCursor {
 		return nil, kit.CCError.CCError(common.CCErrEventChainNodeNotExist)
 	}
 
 	for {
-		if len(nodes) == 0 {
-			if time.Now().Unix()-start > timeoutWatchLoopSeconds {
+		if len(nodes) != 0 {
+			return c.getEventDetailsWithNodes(kit, opts, nodes, key)
+		}
+
+		// we got not even one event, sleep a little, and then try to continue the loop watch
+		time.Sleep(loopInternal)
+		blog.V(5).Infof("watch key: %s with resource: %s, got nothing, try next round. rid: %s",
+			key.Namespace(), opts.Resource, rid)
+
+		lastNode, exists, err := c.getLatestEvent(kit, key)
+		if err != nil {
+			blog.Errorf("watch from now, but get latest event failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+
+		if time.Now().Unix()-start > timeoutWatchLoopSeconds {
+			if !exists {
 				// has already looped for timeout seconds, and we still got no event.
 				// return with NoEventCursor and empty detail
 				return []*watch.WatchEventDetail{{
@@ -327,42 +318,23 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 					EventType: "",
 					Detail:    nil,
 				}}, nil
-			}
+			} else {
+				resp := &watch.WatchEventDetail{
+					Cursor:   lastNode.Cursor,
+					Resource: opts.Resource,
+					Detail:   nil,
+				}
 
-			// we got not event one event, sleep a little, and then try to continue the loop watch
-			time.Sleep(loopInternal)
-			blog.V(5).Infof("watch key: %s with resource: %s, got nothing, try next round. rid: %s",
-				key.Namespace(), opts.Resource, rid)
+				// at least the tail node should can be scan, so something goes wrong.
+				return []*watch.WatchEventDetail{resp}, nil
+			}
+		}
+
+		if !exists {
 			continue
 		}
 
-		hitNodes := c.GetHitNodeWithEventType(nodes, opts.EventTypes)
-		if len(hitNodes) != 0 {
-			// matched event has been found, get them all.
-			blog.V(5).Infof("watch key: %s with resource: %s, hit events, return immediately. rid: %s", key.Namespace(), opts.Resource, rid)
-			return c.getEventDetailsWithNodes(kit, opts, hitNodes, key)
-		}
-
-		if time.Now().Unix()-start > timeoutWatchLoopSeconds {
-			// no event is hit, but timeout, we return the last event cursor with nil detail
-			// because it's not what the use want, return the last cursor to help user can
-			// watch from here later for next watch round.
-			lastNode := nodes[len(nodes)-1]
-			resp := &watch.WatchEventDetail{
-				Cursor:   lastNode.Cursor,
-				Resource: opts.Resource,
-				Detail:   nil,
-			}
-
-			// at least the tail node should can be scan, so something goes wrong.
-			blog.V(5).Infof("watch with cursor %s, but no event matched in the chain, rid: %s", opts.Cursor, rid)
-			return []*watch.WatchEventDetail{resp}, nil
-		}
-		// not event one event is hit, sleep a little, and then try to continue the loop watch
-		time.Sleep(loopInternal)
-		blog.V(5).Infof("watch key: %s with resource: %s, hit nothing, try next round. rid: %s", key.Namespace(), opts.Resource, rid)
-
-		nodes, err = c.searchFollowingEventChainNodesByID(kit, nodes[len(nodes)-1].ID, eventStep, key)
+		nodes, err = c.searchFollowingEventChainNodesByID(kit, lastNode.ID, eventStep, opts.EventTypes, key)
 		if err != nil {
 			blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, rid)
 			return nil, err
@@ -371,27 +343,15 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 	}
 }
 
-func (c *Client) GetHitNodeWithEventType(nodes []*watch.ChainNode, typs []watch.EventType) []*watch.ChainNode {
-	if len(typs) == 0 {
-		return nodes
+func (c *Client) isNodeWithEventType(node *watch.ChainNode, types []watch.EventType) bool {
+	if len(types) == 0 {
+		return true
 	}
 
-	if len(nodes) == 0 {
-		return nodes
-	}
-
-	m := make(map[watch.EventType]bool)
-	for _, t := range typs {
-		m[t] = true
-	}
-
-	hitNodes := make([]*watch.ChainNode, 0)
-	for _, node := range nodes {
-		_, hit := m[node.EventType]
-		if hit {
-			hitNodes = append(hitNodes, node)
-			continue
+	for _, eventType := range types {
+		if node.EventType == eventType {
+			return true
 		}
 	}
-	return hitNodes
+	return false
 }

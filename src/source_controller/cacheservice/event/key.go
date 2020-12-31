@@ -268,13 +268,6 @@ func (k Key) InstanceID(doc []byte) int64 {
 	return 0
 }
 
-func (k Key) LockKey() string {
-	return k.namespace + ":lock"
-}
-
-func (k Key) LastTokenKey() string {
-	return k.namespace + ":last_token"
-}
 func (k Key) Collection() string {
 	return k.collection
 }

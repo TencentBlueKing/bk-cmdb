@@ -366,6 +366,18 @@ mongodb:
   maxIdleConns: 1
   mechanism: SCRAM-SHA-1
   rsName: $rs_name
+  # mongodb事件监听存储事件链的mongodb配置
+  watch:
+    host: $mongo_host
+    port: $mongo_port
+    usr: $mongo_user
+    pwd: "$mongo_pass"
+    database: $db
+    maxOpenConns: 3000
+    maxIdleConns: 100
+    mechanism: SCRAM-SHA-1
+    rsName: $rs_name
+    socketTimeoutSeconds: 10
 # redis配置
 redis:
   host: $redis_host:$redis_port

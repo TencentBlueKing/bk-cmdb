@@ -181,9 +181,9 @@ func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
 
 func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 	if typo == bsontype.DateTime {
-		rv := bson.RawValue{Type: bsontype.DateTime, Value: raw}
-		t.Sec = uint32(rv.Time().Unix())
-		t.Nano = uint32(rv.Time().Nanosecond())
+		timeStamp := bson.RawValue{Type: bsontype.DateTime, Value: raw}.Time()
+		t.Sec = uint32(timeStamp.Unix())
+		t.Nano = uint32(timeStamp.Nanosecond())
 		return nil
 	}
 

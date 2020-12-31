@@ -105,13 +105,25 @@ func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, 
 }
 
 func (e *eventServer) Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error) {
-	resp = make([]*watch.WatchEventDetail, 0)
+	response := new(metadata.WatchEventResp)
 	err = e.client.Post().
 		WithContext(ctx).
 		Body(opts).
 		SubResourcef("/watch/resource/%s", opts.Resource).
 		WithHeaders(h).
 		Do().
-		Into(resp)
-	return
+		Into(response)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = response.CCError(); err != nil {
+		return nil, err
+	}
+
+	if response.Data == nil {
+		return make([]*watch.WatchEventDetail, 0), nil
+	}
+	return response.Data.Events, nil
 }

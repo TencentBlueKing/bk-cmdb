@@ -176,12 +176,6 @@ func (es *EventServer) initConfigs() error {
 		return fmt.Errorf("init mongodb configs, %+v", err)
 	}
 
-	// event watch mongodb.
-	es.config.WatchMongoDB, err = es.engine.WithMongo("mongodb.watch")
-	if err != nil {
-		return fmt.Errorf("init event watch mongodb configs, %+v", err)
-	}
-
 	// cc redis.
 	es.config.Redis, err = es.engine.WithRedis()
 	if err != nil {

@@ -108,7 +108,7 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 }
 
 // getEventDetail get event detail with the needed fields by chain node, first get from redis, if failed, get from mongo
-func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (string,
+func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (*string,
 	bool, error) {
 
 	detail, err := c.getEventDetailFromRedis(kit, node.Cursor, fields, key)
@@ -121,21 +121,21 @@ func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []s
 
 // getEventDetailFromRedis get event detail with the needed fields by cursor from redis
 func (c *Client) getEventDetailFromRedis(kit *rest.Kit, cursor string, fields []string, key event.Key) (
-	string, error) {
+	*string, error) {
 
 	detail, err := c.cache.Get(kit.Ctx, key.DetailKey(cursor)).Result()
 	if err != nil {
 		blog.Errorf("get watch detail from redis failed, err: %v, cursor: %s", err, cursor)
-		return "", fmt.Errorf("get event detail from redis failed, err: %v", err)
+		return nil, fmt.Errorf("get event detail from redis failed, err: %v", err)
 	}
 
 	jsonStr := types.GetEventDetail(&detail)
-	return *json.CutJsonDataWithFields(jsonStr, fields), nil
+	return json.CutJsonDataWithFields(jsonStr, fields), nil
 }
 
 // getEventDetailFromMongo get event detail with the needed fields by chain node from mongo
 func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (
-	string, bool, error) {
+	*string, bool, error) {
 
 	// get delete events' detail with oid from cmdb
 	if node.EventType == watch.Delete {
@@ -156,18 +156,19 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
 					key.Collection(), node.Oid, err)
 				if c.db.IsNotFoundError(err) {
-					return "", false, nil
+					return nil, false, nil
 				}
-				return "", false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
+				return nil, false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
 			}
 
 			byt, err := json.Marshal(doc.Detail)
 			if err != nil {
 				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
 					key.Collection(), doc.Oid, err)
-				return "", false, fmt.Errorf("marshal detail failed, err: %v", err)
+				return nil, false, fmt.Errorf("marshal detail failed, err: %v", err)
 			}
-			return string(byt), true, nil
+			detail := string(byt)
+			return &detail, true, nil
 		} else {
 			doc := new(bsonx.Doc)
 			err := c.db.Table(common.BKTableNameDelArchive).Find(filter).Fields(detailFields...).One(kit.Ctx, doc)
@@ -175,18 +176,19 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
 					key.Collection(), node.Oid, err)
 				if c.db.IsNotFoundError(err) {
-					return "", false, nil
+					return nil, false, nil
 				}
-				return "", false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
+				return nil, false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
 			}
 
 			byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
 			if err != nil {
 				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
 					key.Collection(), doc.Lookup("oid").String(), err)
-				return "", false, fmt.Errorf("marshal detail failed, err: %v", err)
+				return nil, false, fmt.Errorf("marshal detail failed, err: %v", err)
 			}
-			return string(byt), true, nil
+			detail := string(byt)
+			return &detail, true, nil
 		}
 	}
 
@@ -194,7 +196,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 	objectId, err := primitive.ObjectIDFromHex(node.Oid)
 	if err != nil {
 		blog.ErrorJSON("get mongodb _id from oid(%s) failed, err: %s, rid: %s", node.Oid, err, kit.Rid)
-		return "", false, fmt.Errorf("get mongodb _id from oid(%s) failed, err: %s", node.Oid, err)
+		return nil, false, fmt.Errorf("get mongodb _id from oid(%s) failed, err: %s", node.Oid, err)
 	}
 	filter := map[string]interface{}{
 		"_id": objectId,
@@ -210,13 +212,14 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 	if err := c.db.Table(key.Collection()).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
 		blog.ErrorJSON("get detail from db failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 		if c.db.IsNotFoundError(err) {
-			return "", false, nil
+			return nil, false, nil
 		}
-		return "", false, fmt.Errorf("get event detail from mongo failed, err: %v", err)
+		return nil, false, fmt.Errorf("get event detail from mongo failed, err: %v", err)
 	}
 
 	detailJson, _ := json.Marshal(detailMap)
-	return string(detailJson), true, nil
+	detail := string(detailJson)
+	return &detail, true, nil
 }
 
 // SearchFollowingEventNodes search nodes after the node(excluding itself) by cursor and resource
@@ -233,7 +236,7 @@ func (c *Client) SearchFollowingEventChainNodes(kit *rest.Kit, opts *metadata.Se
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_resource")
 	}
 
-	exists, nodes, err := c.searchFollowingEventChainNodes(kit, opts.StartCursor, uint64(opts.Limit), key)
+	exists, nodes, err := c.searchFollowingEventChainNodes(kit, opts.StartCursor, uint64(opts.Limit), nil, key)
 	if err != nil {
 		blog.Errorf("search nodes after cursor %s failed, err: %v, rid: %s", opts.StartCursor, err, kit.Rid)
 		return nil, err
@@ -243,8 +246,8 @@ func (c *Client) SearchFollowingEventChainNodes(kit *rest.Kit, opts *metadata.Se
 }
 
 // searchFollowingEventNodes search nodes after the node(excluding itself) by cursor
-func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor string, limit uint64, key event.Key) (bool,
-	[]*watch.ChainNode, error) {
+func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor string, limit uint64, types []watch.EventType,
+	key event.Key) (bool, []*watch.ChainNode, error) {
 
 	// if start cursor is no event cursor, start from the beginning
 	if startCursor == watch.NoEventCursor {
@@ -258,11 +261,15 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 			return false, make([]*watch.ChainNode, 0), nil
 		}
 
-		nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, key)
+		nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, types, key)
 		if err != nil {
 			return false, nil, err
 		}
-		return true, append([]*watch.ChainNode{node}, nodes...), nil
+
+		if c.isNodeWithEventType(node, types) {
+			return true, append([]*watch.ChainNode{node}, nodes...), nil
+		}
+		return true, nodes, nil
 	}
 
 	filter := map[string]interface{}{
@@ -279,10 +286,29 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 		if !c.watchDB.IsNotFoundError(err) {
 			return false, nil, err
 		}
-		return false, nil, nil
+
+		filter := map[string]interface{}{
+			"_id": key.Collection(),
+		}
+
+		data := new(watch.LastChainNodeData)
+		err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKTokenField).One(kit.Ctx, data)
+		if err != nil {
+			blog.ErrorJSON("get last watch token failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
+			if !c.watchDB.IsNotFoundError(err) {
+				return false, nil, err
+			}
+			return false, nil, nil
+		}
+
+		nodes, err := c.searchFollowingEventChainNodesByID(kit, data.ID, limit, types, key)
+		if err != nil {
+			return false, nil, err
+		}
+		return true, nodes, nil
 	}
 
-	nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, key)
+	nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, types, key)
 	if err != nil {
 		return false, nil, err
 	}
@@ -290,11 +316,15 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 }
 
 // searchFollowingEventChainNodes search nodes after the node(excluding itself) by id
-func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, id uint64, limit uint64, key event.Key) (
-	[]*watch.ChainNode, error) {
+func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, id uint64, limit uint64, types []watch.EventType,
+	key event.Key) ([]*watch.ChainNode, error) {
 
 	filter := map[string]interface{}{
 		common.BKFieldID: map[string]interface{}{common.BKDBGT: id},
+	}
+
+	if len(types) > 0 {
+		filter[common.BKEventTypeField] = map[string]interface{}{common.BKDBIN: types}
 	}
 
 	nodes := make([]*watch.ChainNode, 0)
@@ -476,6 +506,10 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 		}
 	}
 
+	if len(deletedOids) == 0 {
+		return oidDetailMap, nil
+	}
+
 	oidDetailMap, err := c.searchDeletedEventDetailsFromMongo(kit, coll, deletedOids, fields, oidIndexMap, oidDetailMap)
 	if err != nil {
 		blog.Errorf("get delete details from db failed, err: %s, oids: %+v, rid: %s", err, deletedOids, kit.Rid)
@@ -486,12 +520,8 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 }
 
 // searchDeletedEventDetailsFromMongo search delete events' details from the cc_DelArchive table by oids
-func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, oids []string, fields []string,
+func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, deletedOids []string, fields []string,
 	oidIndexMap map[string][]int, oidDetailMap map[int]string) (map[int]string, error) {
-
-	if len(oids) == 0 {
-		return oidDetailMap, nil
-	}
 
 	detailFields := make([]string, len(fields))
 	for index, field := range fields {
@@ -500,7 +530,7 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 	detailFields = append(detailFields, "oid")
 
 	deleteFilter := map[string]interface{}{
-		"oid":  map[string]interface{}{common.BKDBIN: oids},
+		"oid":  map[string]interface{}{common.BKDBIN: deletedOids},
 		"coll": coll,
 	}
 
@@ -509,8 +539,8 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 		err := c.db.Table(common.BKTableNameDelArchive).Find(deleteFilter).Fields(detailFields...).All(kit.Ctx, &docs)
 		if err != nil {
 			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v, "+
-				"rid: %s", coll, oids, err, kit.Rid)
-			return nil, fmt.Errorf("get archive deleted docs from mongo failed, err: %v, oids: %+v", err, oids)
+				"rid: %s", coll, deletedOids, err, kit.Rid)
+			return nil, fmt.Errorf("get archive deleted docs from mongo failed, err: %v, oids: %+v", err, deletedOids)
 		}
 
 		for _, doc := range docs {
@@ -524,8 +554,8 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 		err := c.db.Table(common.BKTableNameDelArchive).Find(deleteFilter).Fields(detailFields...).All(kit.Ctx, &docs)
 		if err != nil {
 			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v, "+
-				"rid: %s", coll, oids, err, kit.Rid)
-			return nil, fmt.Errorf("get archive deleted docs from mongo failed, err: %v, oids: %+v", err, oids)
+				"rid: %s", coll, deletedOids, err, kit.Rid)
+			return nil, fmt.Errorf("get archive deleted docs from mongo failed, err: %v, oids: %+v", err, deletedOids)
 		}
 
 		for _, doc := range docs {
