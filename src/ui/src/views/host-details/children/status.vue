@@ -43,7 +43,7 @@
         <div class="status-offline" v-else-if="!$loading('getHostSnapshot')">
             <div class="offline-image"></div>
             <p class="offline-text">
-                {{$t('当前主机没有安装 Agent 或者 Agent 已经离线')}}
+                {{$t('主机快照提示语')}}
                 <a href="javascript:void(0)" @click="openAgentApp">
                     <i class="icon-cc-skip"></i>
                     {{$t('点此进入节点管理')}}
@@ -63,9 +63,11 @@
             }
         },
         computed: {
+            info () {
+                return this.$store.state.hostDetails.info || {}
+            },
             isWindows () {
-                const info = this.$store.state.hostDetails.info || {}
-                return info.bk_os_type === 'windows'
+                return this.info.host.bk_os_type === 'windows'
             },
             id () {
                 return this.$route.params.id
@@ -205,17 +207,20 @@
             openAgentApp () {
                 const topWindow = window.top
                 const isPaasConsole = topWindow !== window
+                const [cloud = {}] = this.info.host.bk_cloud_id || []
+                const urlSuffix = `#/plugin-manager/list?cloud_id=${cloud.bk_inst_id}&ip=${this.info.host.bk_host_innerip}`
                 if (isPaasConsole) {
                     topWindow.postMessage(JSON.stringify({
                         action: 'open_other_app',
-                        app_code: 'bk_nodeman'
+                        app_code: 'bk_nodeman',
+                        app_url: urlSuffix
                     }), '*')
                 } else {
                     const agentAppUrl = window.CMDB_CONFIG.site.agent
                     if (agentAppUrl) {
-                        window.open(agentAppUrl)
+                        window.open(agentAppUrl + urlSuffix)
                     } else {
-                        this.$warn(this.$t('未配置Agent安装APP地址'))
+                        this.$warn(this.$t('未配置节点管理地址'))
                     }
                 }
             }

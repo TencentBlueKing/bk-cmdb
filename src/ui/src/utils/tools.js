@@ -349,6 +349,10 @@ export function localSort (data, compareKey) {
     })
 }
 
+export function sort (data, compareKey) {
+    return [...data].sort((A, B) => A[compareKey] - B[compareKey])
+}
+
 export function createTopologyProperty () {
     return {
         bk_biz_id: 0,
@@ -422,6 +426,7 @@ export default {
     getDefaultPaginationConfig,
     getPageParams,
     localSort,
+    sort,
     createTopologyProperty,
     getPropertyCopyValue
 }
