@@ -376,6 +376,15 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	bizIDStr := c.PostForm("bk_biz_id")
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("UpdateHosts failed, bk_biz_id not integer. err: %+v, biz id: %s,  rid: %s", err, bizIDStr, rid)
+		err := defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+		reply := getReturnStr(err.GetCode(), err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
+		return
+	}
 	file, err := c.FormFile("file")
 	if nil != err {
 		blog.Errorf("UpdateHost excel import update hosts failed, get file from form data failed, err: %+v, rid: %s", err, rid)
@@ -417,7 +426,7 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, 0)
+	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, bizID)
 
 	c.JSON(http.StatusOK, result)
 }

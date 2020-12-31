@@ -280,7 +280,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		}
 	}
 
-	errMsg, err = lgc.CheckHostsUpdated(ctx, header, hosts)
+	errMsg, err = lgc.CheckHostsUpdated(ctx, header, hosts, modelBizID)
 	if nil != err {
 		blog.Errorf("ImportHosts failed,  CheckHostsAdded error:%s, rid: %s", err.Error(), rid)
 		return &metadata.ResponseDataMapStr{
@@ -362,7 +362,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 		// check if the host exist in db
 		key := generateHostCloudKey(innerIP, common.BKDefaultDirSubArea)
 		if _, exist := existentHosts[key]; exist {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, key))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, common.BKDefaultDirSubArea, innerIP))
 			continue
 		}
 	}
@@ -371,13 +371,28 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 }
 
 // CheckHostsUpdated check the hosts to be updated
-func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (errMsg []string, err error) {
+func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}, modelBizID int64) (errMsg []string, err error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
 	existentHost, err := lgc.getExistHostsByHostIDs(ctx, header, hostInfos)
 	if err != nil {
 		blog.Errorf("CheckHostsUpdated failed, getExistHostsByHostIDs err:%s, rid:%s", err.Error(), rid)
+		return nil, err
+	}
+
+	if modelBizID == 0 {
+		// get resource pool biz ID
+		modelBizID, err = lgc.GetDefaultBizID(ctx, header)
+		if err != nil {
+			blog.Errorf("CheckHostsUpdated failed, GetDefaultBizID err:%s, rid:%s", err.Error(), rid)
+			return nil, err
+		}
+	}
+
+	hostBizMap, err := lgc.GetHostBizRelations(ctx, header, hostInfos, modelBizID)
+	if err != nil {
+		blog.Errorf("CheckHostsUpdated failed, GetHostBizRelations err:%s, rid:%s", err.Error(), rid)
 		return nil, err
 	}
 
@@ -406,14 +421,99 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 			continue
 		}
 
+		// check if the host innerIP and hostID is consistent
 		excelIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
 		if ip != excelIP {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", index, excelIP, hostIDVal, ip))
 			continue
 		}
+
+		// check if the hostID and bizID is consistent
+		if hostBizMap[hostIDVal] != modelBizID {
+			errMsg = append(errMsg, ccLang.Languagef("import_hostID_bizID_not_consistent", index, excelIP))
+			continue
+		}
 	}
 
 	return errMsg, nil
+}
+
+// GetHostBizRelations get host and biz relations
+func (lgc *Logics) GetHostBizRelations(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}, bizID int64) (map[int64]int64, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	var hostIDs []int64
+	for _, host := range hostInfos {
+		if hostID, ok := host[common.BKHostIDField]; ok {
+			if hostIDVal, err := util.GetInt64ByInterface(hostID); err == nil {
+				hostIDs = append(hostIDs, hostIDVal)
+			}
+		}
+	}
+
+	hostLen := len(hostIDs)
+	if hostLen == 0 {
+		return make(map[int64]int64), nil
+	}
+
+	hostBizMap := make(map[int64]int64)
+	// the length of GetHostModuleRelation's param bk_host_id can't bigger than 500
+	for idx := 0; idx < hostLen; idx += 500 {
+		endIdx := idx + 500
+		if endIdx > hostLen {
+			endIdx = hostLen
+		}
+		hosts := hostIDs[idx:endIdx]
+
+		params := mapstr.MapStr{
+			common.BKAppIDField:  bizID,
+			common.BKHostIDField: hosts,
+		}
+		resp, err := lgc.CoreAPI.ApiServer().GetHostModuleRelation(ctx, header, params)
+		if err != nil {
+			blog.Errorf(" GetHostBizRelations failed, GetHostModuleRelation err:%v, params: %#v, rid: %s", err, params, rid)
+			return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !resp.Result {
+			blog.Errorf(" GetHostBizRelations failed, GetHostModuleRelation resp:%#v, params: %#v, rid: %s", resp, params, rid)
+			return nil, resp.CCError()
+		}
+
+		for _, relation := range resp.Data {
+			hostBizMap[relation.HostID] = relation.AppID
+		}
+	}
+
+	return hostBizMap, nil
+}
+
+// GetDefaultBizID get resource pool biz ID
+func (lgc *Logics) GetDefaultBizID(ctx context.Context, header http.Header) (int64, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	ownerID := util.GetOwnerID(header)
+
+	resp, err := lgc.CoreAPI.ApiServer().SearchDefaultApp(context.Background(), header, ownerID)
+	if err != nil {
+		blog.Errorf(" GetDefaultBizID failed, SearchDefaultApp err:%v, ownerID: %d, rid: %s", err, ownerID, rid)
+		return 0, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result {
+		blog.Errorf(" GetDefaultBizID failed, SearchDefaultApp resp:%#v, ownerID: %d, rid: %s", resp, ownerID, rid)
+		return 0, resp.CCError()
+	}
+
+	if len(resp.Data.Info) == 0 {
+		return 0, defErr.CCError(common.CCErrHostNotResourceFail)
+	}
+	bizID, err := resp.Data.Info[0].Int64(common.BKAppIDField)
+	if err != nil {
+		return 0, defErr.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+			common.BKAppIDField, "int64", err.Error())
+	}
+
+	return bizID, nil
 }
 
 // generateHostCloudKey generate a cloudKey for host that is unique among clouds by appending the cloudID.
@@ -468,9 +568,9 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 		blog.Errorf(" getExistHostsByInnerIPs failed, ListHostWithoutApp err:%v, option: %d, rid: %s", err, option, rid)
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if resp.Code != 0 || resp.Result == false {
+	if !resp.Result {
 		blog.Errorf(" getExistHostsByInnerIPs failed, ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
-		return nil, defErr.New(resp.Code, resp.ErrMsg)
+		return nil, resp.CCError()
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
@@ -529,9 +629,9 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 		blog.Errorf(" getExistHostsByHostIDs failed, ListHostWithoutApp err:%v, option: %d, rid: %s", err, option, rid)
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if resp.Code != 0 || resp.Result == false {
+	if !resp.Result {
 		blog.Errorf(" getExistHostsByHostIDs failed, ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
-		return nil, defErr.New(resp.Code, resp.ErrMsg)
+		return nil, resp.CCError()
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID

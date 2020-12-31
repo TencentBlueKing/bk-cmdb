@@ -304,8 +304,9 @@ func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessReque
 	return result.Data.Count, result.Data.Info, err
 }
 func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
-
-	cond.Condition[common.BKDefaultField] = 0
+	if !cond.Condition.Exists(common.BKDefaultField) {
+		cond.Condition[common.BKDefaultField] = 0
+	}
 	query := &metadata.QueryCondition{
 		Fields:    cond.Fields,
 		Condition: cond.Condition,

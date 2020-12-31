@@ -242,7 +242,7 @@ func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.
 	return
 }
 
-func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) TransferHostModule(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules"
 

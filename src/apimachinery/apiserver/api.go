@@ -214,6 +214,21 @@ func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr
 	return
 }
 
+func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp, err error) {
+
+	resp = new(metadata.HostModuleResp)
+	subPath := "/hosts/modules/read"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
