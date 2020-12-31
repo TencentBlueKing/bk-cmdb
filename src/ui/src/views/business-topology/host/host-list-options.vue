@@ -288,7 +288,8 @@
                 this.sideslider.componentProps = {
                     templateUrl: `${window.API_HOST}importtemplate/host`,
                     importUrl: `${window.API_HOST}hosts/update`,
-                    templdateAvailable: false
+                    templdateAvailable: false,
+                    importPayload: { bk_biz_id: this.bizId }
                 }
                 this.sideslider.title = this.$t('更新主机属性')
                 this.sideslider.show = true

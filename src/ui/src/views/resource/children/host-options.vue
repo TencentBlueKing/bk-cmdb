@@ -110,6 +110,7 @@
                 <bk-alert class="alert" type="warning" :title="$t('请上传导出的主机表格文件')"></bk-alert>
                 <cmdb-import :template-url="importInst.templateUrl"
                     :import-url="importInst.importUrl"
+                    :import-payload="importInst.payload"
                     :templdate-available="importInst.templdateAvailable"
                     :global-error="false"
                     @error="handleImportError"
@@ -356,7 +357,11 @@
                 }
             },
             'importInst.directory' (directory) {
-                this.importInst.payload.bk_module_id = directory
+                if (this.importInst.type === 'new') {
+                    this.importInst.payload = {
+                        bk_module_id: directory
+                    }
+                }
             },
             'importInst.active' () {
                 this.importInst.error = null
@@ -626,6 +631,10 @@
                 this.importInst.title = this.$t('导入编辑')
                 this.importInst.importUrl = `${window.API_HOST}hosts/update`
                 this.importInst.templdateAvailable = false
+                this.importInst.payload = {
+                    // 资源池约定为0
+                    bk_biz_id: 0
+                }
             },
             handleImportSuccess () {
                 this.$parent.getHostList(true)
