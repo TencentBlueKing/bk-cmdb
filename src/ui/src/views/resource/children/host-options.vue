@@ -207,6 +207,7 @@
     import FilterStore from '@/components/filters/store'
     import ExportFields from '@/components/export-fields/export-fields.js'
     import FilterUtils from '@/components/filters/utils'
+    import BatchExport from '@/components/batch-export/index.js'
     export default {
         components: {
             cmdbImport,
@@ -298,9 +299,14 @@
                     disabled: !this.table.checked.length
                 }, {
                     id: 'export',
-                    text: this.$t('导出'),
+                    text: this.$t('导出选中'),
                     handler: this.exportField,
                     disabled: !this.table.checked.length
+                }, {
+                    id: 'batchExport',
+                    text: this.$t('导出全部'),
+                    handler: this.batchExportField,
+                    disabled: !this.table.pagination.count
                 }]
                 if (this.scope !== 1) {
                     buttonConfig.splice(0, 1)
@@ -586,6 +592,7 @@
             },
             async exportField () {
                 ExportFields.show({
+                    title: this.$t('导出选中'),
                     properties: FilterStore.getModelProperties('host'),
                     propertyGroups: FilterStore.propertyGroups,
                     handler: this.exportHanlder
@@ -608,6 +615,38 @@
                 } finally {
                     this.$store.commit('setGlobalLoading', false)
                 }
+            },
+            async batchExportField () {
+                ExportFields.show({
+                    title: this.$t('导出全部'),
+                    properties: FilterStore.getModelProperties('host'),
+                    propertyGroups: FilterStore.propertyGroups,
+                    handler: this.batchExportHandler
+                })
+            },
+            batchExportHandler (properties) {
+                BatchExport({
+                    name: 'host',
+                    count: this.table.pagination.count,
+                    options: page => {
+                        const condition = this.$parent.getParams()
+                        const formData = new FormData()
+                        formData.append('bk_biz_id', -1)
+                        formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
+                        formData.append('export_condition', JSON.stringify({
+                            ...condition,
+                            page: {
+                                ...page,
+                                sort: 'bk_host_id'
+                            }
+                        }))
+                        return {
+                            url: `${window.API_HOST}hosts/export`,
+                            method: 'post',
+                            data: formData
+                        }
+                    }
+                })
             },
             routeToHistory () {
                 this.$routerActions.redirect({
