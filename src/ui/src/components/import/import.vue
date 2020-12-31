@@ -18,19 +18,24 @@
             </div>
         </div>
         <div class="upload-details">
+            <slot name="uploadErrorMessage"></slot>
             <template v-if="$slots.uploadResult">
                 <slot name="uploadResult"></slot>
             </template>
             <div v-else-if="hasUploadError()">
                 <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
                     <i class="bk-icon icon-check-circle-shape"></i>
-                    <span>{{$t('成功上传N条数据', { N: uploadResult.success.length })}}</span>
+                    <slot name="successTips" v-bind="uploadResult">
+                        <span>{{$t(successTips, { N: uploadResult.success.length })}}</span>
+                    </slot>
                 </div>
                 <!-- 上传失败列表  -->
                 <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
                     <div class="upload-details-fail-title">
                         <i class="bk-icon icon-close-circle-shape"></i>
-                        <span>{{$t('上传失败列表')}}({{uploadResult.error.length}})</span>
+                        <slot name="errorTips" v-bind="uploadResult">
+                            <span>{{$t(errorTips)}}({{uploadResult.error.length}})</span>
+                        </slot>
                     </div>
                     <ul ref="failList" class="upload-details-fail-list">
                         <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg" :key="index">{{errorMsg}}</li>
@@ -39,7 +44,9 @@
                 <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
                     <div class="upload-details-fail-title">
                         <i class="bk-icon icon-close-circle-shape"></i>
-                        <span>{{$t('更新失败列表')}}({{uploadResult.update_error.length}})</span>
+                        <slot name="updateErrorTips" v-bind="uploadResult">
+                            <span>{{$t(updateErrorTips)}}({{uploadResult.update_error.length}})</span>
+                        </slot>
                     </div>
                     <ul ref="failList" class="upload-details-fail-list">
                         <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
@@ -107,7 +114,24 @@
             templdateAvailable: {
                 type: Boolean,
                 default: true
-            }
+            },
+            globalError: {
+                type: Boolean,
+                default: true
+            },
+            successTips: {
+                type: String,
+                default: '成功上传N条数据'
+            },
+            errorTips: {
+                type: String,
+                default: '上传失败列表'
+            },
+            updateErrorTips: {
+                type: String,
+                default: '更新失败列表'
+            },
+            beforeUpload: Function
         },
         data () {
             return {
@@ -139,6 +163,11 @@
         methods: {
             handleFile (e) {
                 this.reset()
+
+                if (this.beforeUpload && this.beforeUpload() === false) {
+                    return
+                }
+
                 const files = e.target.files
                 const fileInfo = files[0]
                 if (!this.allowTypeRegExp.test(fileInfo.name)) {
@@ -154,6 +183,9 @@
                     this.fileInfo.size = this.formatSize(fileInfo.size, 2)
                     const formData = new FormData()
                     formData.append('file', files[0])
+                    for (const [key, value] of Object.entries(this.importPayload)) {
+                        formData.append(key, value)
+                    }
                     this.isLoading = true
                     this.$http.post(this.importUrl, formData, { transformData: false, globalError: false }).then(res => {
                         const defaultResult = {
@@ -174,7 +206,7 @@
                         } else {
                             this.failed = true
                             this.fileInfo.status = this.$t('失败')
-                            this.$error(res['bk_error_msg'])
+                            this.globalError && this.$error(res['bk_error_msg'])
                             this.$emit('error', res)
                         }
                         this.$refs.fileInput.value = ''
@@ -322,6 +354,7 @@
 
     .down-model-content {
         padding: 10px 30px;
+        font-size: 14px;
     }
 
     .upload-file{
@@ -386,7 +419,7 @@
         }
 
         .upload-file-name {
-            width: 245px;
+            width: calc(100% - 200px);
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -410,16 +443,14 @@
         }
 
     }
-    .upload-details{
+    .upload-details {
         margin: 2px 29px 0 33px;
+        font-size: 14px;
         &-success{
             padding: 0 21px;
             line-height: 56px;
             background-color: #f9f9f9;
             color: #34d97b;
-            .bk-icon{
-                vertical-align: -1px;
-            }
         }
         &-fail{
             margin: 2px 0 0 0;
@@ -429,9 +460,6 @@
             color: #ef4c4c;
             &-title{
                 padding: 0 21px;
-                .bk-icon{
-                    vertical-align: -1px;
-                }
             }
             &-list{
                 line-height: 28px;
