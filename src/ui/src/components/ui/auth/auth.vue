@@ -43,6 +43,9 @@
                 handler (value, oldValue) {
                     !deepEqual(value, oldValue) && this.setAuthProxy()
                 }
+            },
+            ignore () {
+                this.setAuthProxy()
             }
         },
         mounted () {

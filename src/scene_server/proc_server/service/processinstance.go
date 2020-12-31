@@ -1037,11 +1037,11 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 		processDetailMap[processID] = process
 	}
 
-	ps.listProcessRelatedInfo(ctx, bizID, processIDsNeed, processDetailMap)
+	ps.listProcessRelatedInfo(ctx, bizID, processIDsNeed, processDetailMap, int64(processResult.Data.Count))
 }
 
 // listProcessRelatedInfo list process related info according to process info
-func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, processIDs []int64, processDetailMap map[int64]interface{}) {
+func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, processIDs []int64, processDetailMap map[int64]interface{}, totalCnt int64) {
 
 	// objID array
 	srvinstArr := make([]int64, 0)
@@ -1235,7 +1235,7 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 		ret[idx] = info
 	}
 
-	ctx.RespEntityWithCount(int64(len(processIDs)), ret)
+	ctx.RespEntityWithCount(totalCnt, ret)
 }
 
 // ListProcessInstancesDetailsByIDs get process instances details and relation by their ids

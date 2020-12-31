@@ -60,11 +60,11 @@ const FilterStore = new Vue({
         },
         globalHeader () {
             const key = this.config.header && this.config.header.global
-            return getStorageHeader('globalUsercustom', key, this.properties)
+            return getStorageHeader('globalUsercustom', key, this.modelPropertyMap.host)
         },
         customHeader () {
             const key = this.config.header && this.config.header.custom
-            return getStorageHeader('usercustom', key, this.properties)
+            return getStorageHeader('usercustom', key, this.modelPropertyMap.host)
         },
         presetHeader () {
             const hostProperties = this.getModelProperties('host')

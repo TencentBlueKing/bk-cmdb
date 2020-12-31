@@ -23,7 +23,7 @@
             </div>
         </div>
         <bk-table class="service-table"
-            v-show="localExpanded"
+            v-if="localExpanded"
             :data="processList">
             <bk-table-column v-for="column in header"
                 :key="column.id"

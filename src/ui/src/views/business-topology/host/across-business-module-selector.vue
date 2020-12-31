@@ -162,7 +162,7 @@
                             bk_obj_id: 'set',
                             bk_obj_name: this.getModelById('set').bk_obj_name,
                             default: 0,
-                            child: (data.module || []).map(module => ({
+                            child: this.$tools.sort((data.module || []), 'default').map(module => ({
                                 bk_inst_id: module.bk_module_id,
                                 bk_inst_name: module.bk_module_name,
                                 bk_obj_id: 'module',

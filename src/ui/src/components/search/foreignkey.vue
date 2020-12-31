@@ -68,7 +68,11 @@
         async created () {
             try {
                 const { info } = await this.$store.dispatch('cloud/area/findMany', {
-                    params: {},
+                    params: {
+                        page: {
+                            sort: 'bk_cloud_name'
+                        }
+                    },
                     config: {
                         requestId: this.requestId,
                         fromCache: true
