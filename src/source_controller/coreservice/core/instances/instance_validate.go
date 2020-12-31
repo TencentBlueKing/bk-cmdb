@@ -274,6 +274,10 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
+	if err := hooks.ValidUpdateCloudIDHook(kit, objID, updateData, instanceData); err != nil {
+		return err
+	}
+
 	if err := m.validMainlineInstanceName(kit, objID, updateData); err != nil {
 		return err
 	}

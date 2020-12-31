@@ -23,3 +23,8 @@ func IsSkipValidateHook(kit *rest.Kit, objID string, data mapstr.MapStr) (bool, 
 
 	return false, nil
 }
+
+// ValidUpdateCloudIDHook is a hook to check if an update operation on host cloud ID field is valid or not
+func ValidUpdateCloudIDHook(kit *rest.Kit, objID string, originInst mapstr.MapStr, updateData mapstr.MapStr) error {
+	return nil
+}
