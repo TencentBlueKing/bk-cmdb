@@ -71,6 +71,7 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 			Result:  h.IsHealthy,
 			Message: h.Message,
 		}
+		rsp.SetCommonResponse()
 		js, err := json.Marshal(rsp)
 		if nil != err {
 			w.WriteHeader(http.StatusInternalServerError)

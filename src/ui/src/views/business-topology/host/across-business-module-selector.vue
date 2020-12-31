@@ -1,6 +1,6 @@
 <template>
     <div class="module-selector-layout"
-        v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        v-bkloading="{ isLoading: loading }">
         <div class="wrapper">
             <cmdb-resize-layout class="topo-resize-layout"
                 direction="right"
@@ -72,7 +72,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { AuthRequestId } from '@/components/ui/auth/auth-queue.js'
+    import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
     import ModuleCheckedList from './module-checked-list.vue'
     export default {
         name: 'cmdb-across-business-module-selector',
@@ -95,6 +95,7 @@
         },
         data () {
             return {
+                loading: true,
                 businessList: [],
                 targetBizId: '',
                 checked: [],
@@ -134,6 +135,12 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
+                } finally {
+                    setTimeout(() => {
+                        afterVerify(() => {
+                            this.loading = false
+                        })
+                    }, 0)
                 }
             },
             async getModules () {
@@ -165,7 +172,7 @@
                             bk_obj_id: 'set',
                             bk_obj_name: this.getModelById('set').bk_obj_name,
                             default: 0,
-                            child: (data.module || []).map(module => ({
+                            child: this.$tools.sort((data.module || []), 'default').map(module => ({
                                 bk_inst_id: module.bk_module_id,
                                 bk_inst_name: module.bk_module_name,
                                 bk_obj_id: 'module',

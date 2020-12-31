@@ -90,7 +90,7 @@ func NewService(conf Config) *Service {
 
 	srv.requestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: Namespace + "http_request_total",
+			Name: Namespace + "_http_request_total",
 			Help: "http request total.",
 		},
 		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode},
@@ -99,7 +99,7 @@ func NewService(conf Config) *Service {
 
 	srv.requestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    Namespace + "http_request_duration_millisecond",
+			Name:    Namespace + "_http_request_duration_millisecond",
 			Help:    "Histogram of latencies for HTTP requests.",
 			Buckets: []float64{10, 30, 50, 70, 100, 200, 300, 400, 500, 1000, 2000, 5000},
 		},

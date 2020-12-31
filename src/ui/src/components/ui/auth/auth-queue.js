@@ -54,6 +54,18 @@ function unique (data) {
 
 export const AuthRequestId = Symbol('auth_request_id')
 
+let afterVerifyQueue = []
+export function afterVerify (func, once = true) {
+    afterVerifyQueue.push({
+        handler: func,
+        once
+    })
+}
+function execAfterVerify (authData) {
+    afterVerifyQueue.forEach(({ handler }) => handler(authData))
+    afterVerifyQueue = afterVerifyQueue.filter(({ once }) => !once)
+}
+
 export default new Vue({
     data () {
         return {
@@ -103,6 +115,7 @@ export default new Vue({
                     })
                     component.updateAuth(Object.freeze(authResults), Object.freeze(authMetas))
                 })
+                execAfterVerify(authData)
             }
         }
     }

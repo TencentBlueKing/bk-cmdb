@@ -3,7 +3,7 @@
         <div class="options-left fl">
             <template v-if="scope === 1">
                 <cmdb-auth class="mr10"
-                    :ignore="!!activeDirectory"
+                    :ignore="!activeDirectory"
                     :auth="[
                         { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
                         { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
@@ -12,15 +12,18 @@
                         theme="primary"
                         style="margin-left: 0"
                         :disabled="disabled"
-                        @click="importInst.show = true">
+                        @click="handleNewImportInst">
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
+            </template>
+            <span style="display: inline-block;"
+                v-bk-tooltips="{ content: this.$t('仅主机池主机可进行此操作'), disabled: isAllResourceHost }">
                 <bk-select
                     class="assign-selector mr10"
                     font-size="medium"
                     :popover-width="180"
-                    :disabled="!table.checked.length"
+                    :disabled="!table.checked.length || !isAllResourceHost"
                     :clearable="false"
                     :placeholder="$t('分配到')"
                     v-model="assign.curSelected"
@@ -29,15 +32,14 @@
                     <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
                     <bk-option id="toDirs" :name="$t('主机池其他目录')"></bk-option>
                 </bk-select>
-            </template>
-            <cmdb-transfer-menu class="mr10"
-                v-else>
-            </cmdb-transfer-menu>
-            <bk-button class="mr10"
-                :disabled="!table.checked.length"
-                @click="handleMultipleEdit">
-                {{$t('编辑')}}
-            </bk-button>
+            </span>
+            <cmdb-transfer-menu class="mr10" v-if="scope !== 1" />
+            <cmdb-button-group
+                class="mr10"
+                trigger-text="编辑"
+                :buttons="editButtonGroup"
+                :expand="false">
+            </cmdb-button-group>
             <cmdb-clipboard-selector class="mr10"
                 label-key="bk_property_name"
                 :list="clipboardList"
@@ -59,47 +61,72 @@
                 @click="routeToHistory">
             </icon-button>
         </div>
-        
+
         <bk-sideslider
             v-transfer-dom
             :is-show.sync="importInst.show"
             :width="800"
-            :title="$t('批量导入')">
-            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content" v-if="importInst.show">
-                <bk-tab-panel name="import" :label="$t('批量导入')">
+            :title="importInst.title">
+            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content"
+                v-if="importInst.show && importInst.type === 'new'">
+                <bk-tab-panel name="import" :label="$t('新增导入')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :template-url="importInst.templateUrl"
                         :import-url="importInst.importUrl"
-                        @success="$parent.getHostList(true)"
-                        @partialSuccess="$parent.getHostList(true)">
+                        :import-payload="importInst.payload"
+                        :global-error="false"
+                        :before-upload="handleBeforeUpload"
+                        @error="handleImportError"
+                        @success="handleImportSuccess"
+                        @partialSuccess="handleImportSuccess">
                         <bk-form class="import-prepend" slot="prepend">
                             <bk-form-item :label="$t('主机池目录')" required>
-                                <bk-select v-model="importInst.directory" style="display: block;">
-                                    <bk-option v-for="directory in directoryList"
+                                <bk-select v-model="importInst.directory" searchable style="display: block;">
+                                    <cmdb-auth-option v-for="directory in directoryList"
                                         :key="directory.bk_module_id"
                                         :id="directory.bk_module_id"
-                                        :name="directory.bk_module_name">
-                                    </bk-option>
+                                        :name="directory.bk_module_name"
+                                        :auth="{ type: $OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] }">
+                                    </cmdb-auth-option>
                                 </bk-select>
                             </bk-form-item>
                         </bk-form>
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
                             {{$t('说明：内网IP为必填列')}}
                         </span>
+                        <div slot="uploadErrorMessage" class="upload-error-message" v-if="importInstError">{{importInstError}}</div>
                     </cmdb-import>
                 </bk-tab-panel>
-                <bk-tab-panel name="agent" :label="$t('自动导入')">
+                <bk-tab-panel name="agent" :label="$t('Agent导入')">
                     <div class="automatic-import">
-                        <p>{{$t("agent安装说明")}}</p>
-                        <div class="back-contain">
-                            <i class="icon-cc-skip"></i>
-                            <a href="javascript:void(0)" @click="openAgentApp">{{$t('点此进入节点管理')}}</a>
-                        </div>
+                        <img src="../../../assets/images/agent-import-guide.png">
+                        <p class="agent-install-tips1">{{$t("agent安装说明")}}</p>
+                        <p class="agent-install-tips2">{{$t("跳转节点管理，支持远程 / 手动安装")}}</p>
+                        <bk-button class="agent-install-button" theme="primary" @click="openAgentApp">{{$t('跳转安装')}}</bk-button>
                     </div>
                 </bk-tab-panel>
             </bk-tab>
+            <div slot="content" class="edit-import-panel" v-if="importInst.type === 'edit'">
+                <bk-alert class="alert" type="warning" :title="$t('请上传导出的主机表格文件')"></bk-alert>
+                <cmdb-import :template-url="importInst.templateUrl"
+                    :import-url="importInst.importUrl"
+                    :import-payload="importInst.payload"
+                    :templdate-available="importInst.templdateAvailable"
+                    :global-error="false"
+                    @error="handleImportError"
+                    @success="handleImportSuccess"
+                    @partialSuccess="handleImportSuccess">
+                    <span slot="successTips" slot-scope="{ success }">
+                        {{$t('更新成功N个主机数据', { N: success.length })}}
+                    </span>
+                    <span slot="errorTips" slot-scope="{ error }">
+                        {{$t('更新失败N个主机数据', { N: error.length })}}
+                    </span>
+                    <div slot="uploadErrorMessage" class="upload-error-message" v-if="importInstError">{{importInstError}}</div>
+                </cmdb-import>
+            </div>
         </bk-sideslider>
-        
+
         <bk-sideslider
             v-transfer-dom
             :is-show.sync="slider.show"
@@ -180,6 +207,7 @@
     import FilterStore from '@/components/filters/store'
     import ExportFields from '@/components/export-fields/export-fields.js'
     import FilterUtils from '@/components/filters/utils'
+    import BatchExport from '@/components/batch-export/index.js'
     export default {
         components: {
             cmdbImport,
@@ -191,11 +219,15 @@
             return {
                 scope: '',
                 importInst: {
+                    title: '',
                     show: false,
                     active: 'import',
                     templateUrl: `${window.API_HOST}importtemplate/host`,
-                    importUrl: `${window.API_HOST}hosts/import`,
-                    directory: ''
+                    importUrl: '',
+                    templdateAvailable: true,
+                    directory: '',
+                    payload: {},
+                    error: null
                 },
                 businessList: [],
                 objectUnique: [],
@@ -230,10 +262,16 @@
                 if (this.activeDirectory) {
                     return this.activeDirectory.bk_module_id
                 }
-                return this.defaultDirectory ? this.defaultDirectory.bk_module_id : undefined
+                return undefined
             },
             table () {
                 return this.$parent.table
+            },
+            isAllResourceHost () {
+                return this.table.selection.every(({ biz }) => {
+                    const [currentBiz] = biz
+                    return currentBiz.default === 1
+                })
             },
             clipboardList () {
                 const IPWithCloud = FilterUtils.defineProperty({
@@ -261,9 +299,14 @@
                     disabled: !this.table.checked.length
                 }, {
                     id: 'export',
-                    text: this.$t('导出'),
+                    text: this.$t('导出选中'),
                     handler: this.exportField,
                     disabled: !this.table.checked.length
+                }, {
+                    id: 'batchExport',
+                    text: this.$t('导出全部'),
+                    handler: this.batchExportField,
+                    disabled: !this.table.pagination.count
                 }]
                 if (this.scope !== 1) {
                     buttonConfig.splice(0, 1)
@@ -283,15 +326,51 @@
                         relation: [module[0].bk_module_id, host.bk_host_id]
                     }
                 })
+            },
+            editButtonGroup () {
+                const buttonConfig = [{
+                    id: 'batch-edit',
+                    text: this.$t('批量编辑'),
+                    handler: this.handleMultipleEdit,
+                    disabled: !this.table.checked.length,
+                    tooltips: { content: this.$t('请先勾选需要编辑的主机'), disabled: this.table.checked.length > 0 }
+                }, {
+                    id: 'import-edit',
+                    text: this.$t('导入编辑'),
+                    handler: this.handleEditImportInst
+                }]
+                if (this.scope !== 1) {
+                    buttonConfig.pop()
+                }
+                return buttonConfig
+            },
+            importInstError () {
+                const importInstError = this.importInst.error || {}
+                if (importInstError.bk_error_msg) {
+                    return importInstError.bk_error_msg
+                }
+                return importInstError.message || ''
             }
         },
         watch: {
             'importInst.show' (show) {
                 if (!show) {
+                    this.importInst.type = 'new'
                     this.importInst.active = 'import'
+                    this.importInst.error = null
                 } else {
                     this.importInst.directory = this.directoryId
                 }
+            },
+            'importInst.directory' (directory) {
+                if (this.importInst.type === 'new') {
+                    this.importInst.payload = {
+                        bk_module_id: directory
+                    }
+                }
+            },
+            'importInst.active' () {
+                this.importInst.error = null
             }
         },
         async created () {
@@ -310,7 +389,7 @@
         methods: {
             async getFullAmountBusiness () {
                 try {
-                    const data = await this.$http.get('biz/simplify?sort=bk_biz_name')
+                    const data = await this.$http.get('biz/simplify?sort=bk_biz_id')
                     this.businessList = data.info || []
                 } catch (e) {
                     console.error(e)
@@ -353,7 +432,7 @@
                 if (this.assign.curSelected === 'toBusiness') {
                     this.assignOptions = this.businessList.map(item => ({
                         id: item.bk_biz_id,
-                        name: item.bk_biz_name,
+                        name: `[${item.bk_biz_id}] ${item.bk_biz_name}`,
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
@@ -513,6 +592,7 @@
             },
             async exportField () {
                 ExportFields.show({
+                    title: this.$t('导出选中'),
                     properties: FilterStore.getModelProperties('host'),
                     propertyGroups: FilterStore.propertyGroups,
                     handler: this.exportHanlder
@@ -536,6 +616,38 @@
                     this.$store.commit('setGlobalLoading', false)
                 }
             },
+            async batchExportField () {
+                ExportFields.show({
+                    title: this.$t('导出全部'),
+                    properties: FilterStore.getModelProperties('host'),
+                    propertyGroups: FilterStore.propertyGroups,
+                    handler: this.batchExportHandler
+                })
+            },
+            batchExportHandler (properties) {
+                BatchExport({
+                    name: 'host',
+                    count: this.table.pagination.count,
+                    options: page => {
+                        const condition = this.$parent.getParams()
+                        const formData = new FormData()
+                        formData.append('bk_biz_id', -1)
+                        formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
+                        formData.append('export_condition', JSON.stringify({
+                            ...condition,
+                            page: {
+                                ...page,
+                                sort: 'bk_host_id'
+                            }
+                        }))
+                        return {
+                            url: `${window.API_HOST}hosts/export`,
+                            method: 'post',
+                            data: formData
+                        }
+                    }
+                })
+            },
             routeToHistory () {
                 this.$routerActions.redirect({
                     name: 'hostHistory',
@@ -544,6 +656,38 @@
             },
             handleSetFilters () {
                 FilterForm.show()
+            },
+            handleNewImportInst () {
+                this.importInst.type = 'new'
+                this.importInst.show = true
+                this.importInst.title = this.$t('导入主机')
+                this.importInst.importUrl = `${window.API_HOST}hosts/import`
+                this.importInst.templdateAvailable = true
+            },
+            handleEditImportInst () {
+                this.importInst.type = 'edit'
+                this.importInst.show = true
+                this.importInst.title = this.$t('导入编辑')
+                this.importInst.importUrl = `${window.API_HOST}hosts/update`
+                this.importInst.templdateAvailable = false
+                this.importInst.payload = {
+                    // 资源池约定为0
+                    bk_biz_id: 0
+                }
+            },
+            handleImportSuccess () {
+                this.$parent.getHostList(true)
+                Bus.$emit('refresh-dir-count')
+                this.importInst.error = null
+            },
+            handleImportError (error) {
+                this.importInst.error = error
+            },
+            handleBeforeUpload () {
+                if (!this.importInst.directory) {
+                    this.$error(this.$t('请先选择主机池目录'))
+                    return false
+                }
             }
         }
     }
@@ -585,16 +729,20 @@
         }
     }
     .automatic-import{
-        padding:40px 30px 0 30px;
-        .back-contain{
-            cursor:pointer;
-            color: #3c96ff;
-            img{
-                margin-right: 5px;
-            }
-            a{
-                color:#3c96ff;
-            }
+        padding: 44px 30px 0 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        .agent-install-tips1 {
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .agent-install-tips2 {
+            font-size: 12px;
+            color: #979BA5;
+        }
+        .agent-install-button {
+            margin: 14px 0;
         }
     }
     .assign-dialog {
@@ -631,5 +779,21 @@
             display: inline-block;
             vertical-align: -2px;
         }
+    }
+
+    .edit-import-panel {
+        .alert {
+            margin: 24px 29px 0 33px
+        }
+        /deep/ {
+            .up-file {
+                margin-top: 20px;
+            }
+        }
+    }
+
+    .upload-error-message {
+        margin: 8px 0;
+        color: $dangerColor;
     }
 </style>

@@ -22,7 +22,6 @@ import (
 )
 
 type Interface interface {
-	SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error)
 	SearchBusiness(ctx context.Context, h http.Header, bizID int64) (jsonString string, err error)
 	ListBusiness(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonArray string, err error)
 	SearchSet(ctx context.Context, h http.Header, setID int64) (jsonString string, err error)

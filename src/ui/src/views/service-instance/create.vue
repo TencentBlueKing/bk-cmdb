@@ -37,7 +37,6 @@
                                 v-for="(instance, index) in instances"
                                 ref="serviceInstanceTable"
                                 deletable
-                                expanded
                                 :key="instance.bk_host_id"
                                 :index="index"
                                 :id="instance.bk_host_id"

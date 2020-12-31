@@ -11,12 +11,8 @@
                 @enter="handleFilterTemplates"
                 @clear="handleFilterTemplates">
             </bk-input>
-            <span class="to-template" @click="handleLinkClick">
-                <i class="icon-cc-share"></i>
-                {{$t('跳转服务模板')}}
-            </span>
-            <span class="select-all fr" v-if="$parent.$parent.mode !== 'edit'">
-                <bk-checkbox :value="isSelectAll" @change="handleSelectAll">全选</bk-checkbox>
+            <span class="select-all fr">
+                <bk-checkbox :value="isSelectAll" :indeterminate="isHalfSelected" @change="handleSelectAll">全选</bk-checkbox>
             </span>
         </div>
         <ul class="template-list clearfix"
@@ -115,7 +111,24 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             isSelectAll () {
-                return this.localSelected.length === this.allTemplates.length
+                return this.localSelected.length === this.templates.length
+            },
+            isHalfSelected () {
+                return !this.isSelectAll && this.localSelected.length > 0
+            },
+            isEditMode () {
+                return this.$parent.$parent.mode === 'edit'
+            }
+        },
+        watch: {
+            localSelected: {
+                handler (value) {
+                    this.$emit('select-change', value)
+                },
+                immediate: true
+            },
+            allTemplates (value) {
+                this.$emit('template-loaded', value)
             }
         },
         async created () {
@@ -168,10 +181,15 @@
                 this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
             },
             handleSelectAll (checked) {
+                const serviceExistHost = this.$parent.$parent.serviceExistHost
                 if (checked) {
-                    this.localSelected = this.allTemplates.map(template => template.id)
+                    this.localSelected = this.templates.map(template => template.id)
                 } else {
-                    this.localSelected = []
+                    if (this.isEditMode) {
+                        this.localSelected = this.templates.filter(template => serviceExistHost(template.id)).map(template => template.id)
+                    } else {
+                        this.localSelected = []
+                    }
                 }
             },
             async handleShowDetails (template = {}, event, disabled) {
@@ -223,7 +241,7 @@
                 })
                 this.tips.show = true
                 this.$nextTick(() => {
-                    this.tips.instance.show()
+                    this.tips.instance && this.tips.instance.show()
                 })
             },
             handlehideTips () {

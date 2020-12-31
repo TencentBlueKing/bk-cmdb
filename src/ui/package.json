@@ -14,12 +14,12 @@
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
-    "@blueking/paas-login": "0.0.6",
+    "@blueking/paas-login": "0.0.9",
     "@blueking/user-selector": "^1.0.5-beta.2",
     "@icon-cool/bk-icon-cmdb": "^0.1.2",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "axios": "0.18.0",
-    "bk-magic-vue": "2.2.2",
+    "bk-magic-vue": "2.2.11",
     "cytoscape": "3.10.0",
     "cytoscape-dagre": "2.2.2",
     "cytoscape-edgehandles": "3.6.0",
@@ -57,7 +57,7 @@
     "babel-eslint": "^10.0.1",
     "babel-helper-vue-jsx-merge-props": "^2.0.3",
     "babel-loader": "^7.1.1",
-    "babel-plugin-import-bk-magic-vue": "^2.0.10",
+    "babel-plugin-import-bk-magic-vue": "^2.1.10",
     "babel-plugin-syntax-jsx": "^6.18.0",
     "babel-plugin-transform-runtime": "^6.22.0",
     "babel-plugin-transform-vue-jsx": "^3.5.0",

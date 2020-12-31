@@ -198,7 +198,7 @@
                         service_instance_count: internal.service_instance_count,
                         default: internal.default,
                         is_idle_set: true,
-                        child: (internal.module || []).map(module => ({
+                        child: this.$tools.sort((internal.module || []), 'default').map(module => ({
                             bk_obj_id: 'module',
                             bk_inst_id: module.bk_module_id,
                             bk_inst_name: module.bk_module_name,

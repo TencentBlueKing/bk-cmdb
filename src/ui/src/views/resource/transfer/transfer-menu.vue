@@ -65,7 +65,7 @@
             },
             validateSameBiz () {
                 if (!HostStore.isSameBiz) {
-                    this.$error(this.$t('该功能仅支持对相同业务下的主机进行操作'))
+                    this.$error(this.$t('仅支持对相同业务下的主机进行操作'))
                     return false
                 }
                 return true
@@ -76,7 +76,7 @@
                     return false
                 }
                 if (HostStore.isAllResourceHost) {
-                    this.$error(this.$t('该功能仅支持对业务下的主机进行操作'))
+                    this.$error(this.$t('仅支持对业务下的主机进行操作'))
                     return false
                 }
                 const props = {
@@ -96,7 +96,7 @@
                     return false
                 }
                 if (HostStore.isAllResourceHost) {
-                    this.$error(this.$t('该功能仅支持对业务下的主机进行操作'))
+                    this.$error(this.$t('仅支持对业务下的主机进行操作'))
                     return false
                 }
                 const props = {
@@ -131,7 +131,7 @@
                 }
                 const isAllIdleModule = HostStore.isAllIdleModule
                 if (!isAllIdleModule) {
-                    this.$error(this.$t('该功能仅支持对空闲机模块下的主机进行操作'))
+                    this.$error(this.$t('仅支持对空闲机模块下的主机进行操作'))
                     return false
                 }
                 this.dialog.props = {

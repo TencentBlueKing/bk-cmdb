@@ -44,7 +44,8 @@ type Service struct {
 
 func (s *Service) WebService() *gin.Engine {
 	setGinMode()
-	ws := gin.Default()
+	ws := gin.New()
+	ws.Use(gin.Logger())
 
 	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
@@ -60,7 +61,7 @@ func (s *Service) WebService() *gin.Engine {
 						stack = stack[:nbytes]
 					}
 					request, _ := httputil.DumpRequest(c.Request, false)
-					blog.Errorf("[Recovery] panic recovered:\n%s\n%s\n%s", string(request), err, string(stack))
+					blog.Errorf("[Recovery] recovered:\n%s\n%s\n%s", string(request), err, string(stack))
 				}
 				c.AbortWithStatus(500)
 			}
@@ -165,5 +166,6 @@ func (s *Service) Healthz(c *gin.Context) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+	answer.SetCommonResponse()
 	c.JSON(200, answer)
 }

@@ -32,7 +32,7 @@ import (
 )
 
 // BuildExcelFromData product excel from data
-func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
+func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string, propertyList []string) error {
 	rid := util.GetHTTPCCRequestID(header)
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -65,6 +65,8 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
+		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
+		rowMap = replaceEnName(rowMap, usernameMap, propertyList)
 
 		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 
@@ -81,7 +83,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 }
 
 // BuildHostExcelFromData product excel from data
-func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64) error {
+func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header, modelBizID int64, usernameMap map[string]string, propertyList []string) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -110,8 +112,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 		rowMap, err := mapstr.NewFromInterface(hostData[common.BKInnerObjIDHost])
 		if err != nil {
 			blog.ErrorJSON("BuildHostExcelFromData failed, hostData: %s, err: %s, rid: %s", hostData, err.Error(), rid)
-			msg := fmt.Sprintf("data format error:%v", hostData)
-			return ccErr.Errorf(common.CCErrCommReplyDataFormatError, msg)
+			return ccErr.CCError(common.CCErrCommReplyDataFormatError)
 		}
 
 		if _, exist := fields[common.BKCloudIDField]; exist {
@@ -130,20 +131,37 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			rowMap.Set(common.BKCloudIDField, cloudArea)
 		}
 
+		// set extended fields
 		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
 		if ok {
-			topo := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
-			biz := strings.Split(topo[0], logics.SplitFlag)
-			rowMap[extFieldsTopoID] = strings.Join(topo, "\n")
-			rowMap[extFieldsBizID] = strings.Join(biz[:1], "\n")
+			topos := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
+			if len(topos) > 0 {
+				idx := strings.Index(topos[0], logics.SplitFlag)
+				if idx > 0 {
+					rowMap[extFieldsBizID] = topos[0][:idx]
+				}
+
+				toposNobiz := make([]string, 0)
+				for _, topo := range topos {
+					idx := strings.Index(topo, logics.SplitFlag)
+					if idx > 0 && len(topo) >= idx+len(logics.SplitFlag) {
+						toposNobiz = append(toposNobiz, topo[idx+len(logics.SplitFlag):])
+					}
+				}
+				rowMap[extFieldsTopoID] = strings.Join(toposNobiz, "\n")
+			}
 		}
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
 		if err != nil {
 			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
-			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
+			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, instIDKey, objID)
 		}
+
+		// 使用中英文用户名重新构造用户列表(用户列表实际为逗号分隔的string型)
+		rowMap = replaceEnName(rowMap, usernameMap, propertyList)
+
 		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 		instPrimaryKeyValMap[instID] = primaryKeyArr
 		rowIndex++
@@ -178,7 +196,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		return err
 	}
 
-	cond := &metadata.QueryCondition{
+	cond := &metadata.SearchAssociationObjectRequest{
 		Condition: map[string]interface{}{
 			condition.BKDBOR: []mapstr.MapStr{
 				{
@@ -190,9 +208,8 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 			},
 		},
 	}
-
-	////确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
-	resp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(ctx, header, cond)
+	//确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	resp, err := lgc.CoreAPI.TopoServer().Association().SearchObject(ctx, header, cond)
 	if err != nil {
 		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, rid)
 		return err
@@ -201,7 +218,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", resp.ErrMsg, rid)
 		return err
 	}
-	asstList := resp.Data.Info
+	asstList := resp.Data
 	productExcelAssociationHeader(ctx, sheet, defLang, len(instAsst), asstList)
 
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset
@@ -249,6 +266,10 @@ func buildExcelPrimaryStr(property PropertyPrimaryVal) string {
 func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf, modelBizID int64) error {
 	rid := util.GetHTTPCCRequestID(header)
 	filterFields := getFilterFields(objID)
+	// host excel template doesn't need export field bk_cloud_id
+	if objID == common.BKInnerObjIDHost {
+		filterFields = append(filterFields, common.BKCloudIDField)
+	}
 	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID)
 	if err != nil {
 		blog.Errorf("get %s fields error:%s, rid: %s", objID, err.Error(), rid)

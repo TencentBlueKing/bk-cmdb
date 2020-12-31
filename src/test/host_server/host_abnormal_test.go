@@ -1382,19 +1382,6 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("transfer host to resource pool without biz id", func() {
-			input := &metadata.DefaultModuleHostConfigParams{
-				ApplicationID: bizId1,
-				HostIDs: []int64{
-					hostId1,
-				},
-			}
-			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
-
 		It("transfer multiple hosts to idle module", func() {
 			input := &metadata.DefaultModuleHostConfigParams{
 				ApplicationID: bizId1,
