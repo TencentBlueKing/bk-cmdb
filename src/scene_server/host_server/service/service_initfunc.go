@@ -67,7 +67,6 @@ func (s *Service) initFindhost(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/modulehost", Handler: s.FindModuleHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module_relation/bk_biz_id/{bk_biz_id}", Handler: s.FindModuleHostRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_service_templates/biz/{bk_biz_id}", Handler: s.FindHostsByServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_set_templates/biz/{bk_biz_id}", Handler: s.FindHostsBySetTemplates})

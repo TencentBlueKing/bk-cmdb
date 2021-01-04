@@ -27,31 +27,6 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (s *Service) FindModuleHost(ctx *rest.Contexts) {
-
-	defErr := ctx.Kit.CCError
-
-	body := new(meta.HostModuleFind)
-	if err := ctx.DecodeInto(&body); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(body.ModuleIDS) > 500 {
-		blog.Errorf("module length %d exceeds 500, rid:%s", len(body.ModuleIDS), ctx.Kit.Rid)
-		ctx.RespAutoError(defErr.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, 500))
-		return
-	}
-	host, err := s.Logic.FindHostByModuleIDs(ctx.Kit, body, false)
-	if err != nil {
-		blog.Errorf("find host failed, err: %#v, input:%#v, rid:%s", err, body, ctx.Kit.Rid)
-		ctx.RespAutoError(defErr.Error(common.CCErrHostGetFail))
-		return
-	}
-
-	ctx.RespEntity(*host)
-}
-
 // FindModuleHostRelation find host with module by module id
 func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	req := ctx.Request

@@ -135,13 +135,6 @@ type SetCommonSearch struct {
 	Page      BasePage          `json:"page"`
 }
 
-type HostModuleFind struct {
-	ModuleIDS []int64  `json:"bk_module_ids"`
-	AppID     int64    `json:"bk_biz_id"`
-	Fields    []string `json:"fields"`
-	Page      BasePage `json:"page"`
-}
-
 type FindHostsBySrvTplOpt struct {
 	ServiceTemplateIDs []int64  `json:"bk_service_template_ids"`
 	ModuleIDs          []int64  `json:"bk_module_ids"`

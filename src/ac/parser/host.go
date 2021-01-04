@@ -326,7 +326,6 @@ const (
 	updateHostInfoBatchPattern     = "/api/v3/hosts/batch"
 	updateHostPropertyBatchPattern = "/api/v3/hosts/property/batch"
 	cloneHostPropertyBatchPattern  = "/api/v3/hosts/property/clone"
-	findHostsWithModulesPattern    = "/api/v3/findmany/modulehost"
 
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
@@ -363,26 +362,6 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.FindMany,
 				},
 			},
 		}
