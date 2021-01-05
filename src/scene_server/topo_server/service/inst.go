@@ -193,7 +193,7 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		if err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, deleteCondition.Delete.InstID, true); err != nil {
+		if err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, objID, deleteCondition.Delete.InstID, true); err != nil {
 			blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), objID, deleteCondition.Delete.InstID, ctx.Kit.Rid)
 			return err
 		}
@@ -267,7 +267,7 @@ func (s *Service) DeleteInst(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		if err := s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, []int64{instID}, true); err != nil {
+		if err := s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, objID, []int64{instID}, true); err != nil {
 			blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instID: %d, rid: %s", err.Error(), objID, instID, ctx.Kit.Rid)
 			return err
 		}
@@ -481,7 +481,7 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 
 	// forbidden search inner model instance with common api
 	if common.IsInnerModel(objID) {
-		blog.Errorf("search instance and association detail failed, " +
+		blog.Errorf("search instance and association detail failed, "+
 			"search %s instance with common search api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
@@ -597,7 +597,7 @@ func (s *Service) SearchInstByInstID(ctx *rest.Contexts) {
 
 	// forbidden search inner model instance with common api
 	if common.IsInnerModel(objID) {
-		blog.Errorf("search instance By instance ID failed, search %s instance with common search " +
+		blog.Errorf("search instance By instance ID failed, search %s instance with common search "+
 			"api forbidden, rid: %s", objID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
 		return
