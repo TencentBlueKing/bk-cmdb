@@ -101,12 +101,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 
 	hostIDStr := c.PostForm("bk_host_id")
 	appIDStr := c.PostForm("bk_biz_id")
+	exportCondStr := c.PostForm("export_condition")
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("ExportHost failed, bk_biz_id not integer. err: %+v, biz id: %s,  rid: %s", err, appIDStr, rid)
 		err := defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
 		reply := getReturnStr(err.GetCode(), err.Error(), nil)
 		_, _ = c.Writer.Write([]byte(reply))
+		return
 	}
 
 	objID := common.BKInnerObjIDHost
@@ -125,11 +127,17 @@ func (s *Service) ExportHost(c *gin.Context) {
 		hostFields = append(hostFields, property.ID)
 	}
 
-	hostInfo, err := s.Logics.GetHostData(appID, hostIDStr, hostFields, header)
+	hostInfo, err := s.Logics.GetHostData(appID, hostIDStr, hostFields, exportCondStr, header, defLang)
 	if err != nil {
-		blog.Errorf("ExportHost failed, get hosts by id [%+v] failed, err: %v, rid: %s", hostIDStr, err, rid)
-		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg)
+		blog.Errorf("ExportHost failed, get hosts failed, err: %+v, bk_host_id:%s, export_condition:%s, rid: %s", err, hostIDStr, exportCondStr, rid)
+		reply := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
+		return
+	}
+	if len(hostInfo) == 0 {
+		blog.Errorf("ExportHost failed, get hosts failed, no host is found, bk_host_id:%s, export_condition:%s, rid: %s", hostIDStr, exportCondStr, rid)
+		reply := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, "no host is found").Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
 		return
 	}
 
