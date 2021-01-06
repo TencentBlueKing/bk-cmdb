@@ -47,7 +47,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Config.MongoDB = mongoConf
 
-	watchDBConf, err := cc.Mongo("mongodb.watch")
+	watchDBConf, err := cc.Mongo("watch")
 	if err != nil {
 		return err
 	}

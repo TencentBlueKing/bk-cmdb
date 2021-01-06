@@ -142,17 +142,17 @@ mongodb:
   #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
   socketTimeoutSeconds: 10
   # mongodb事件监听存储事件链的mongodb配置
-  watch:
-    host: $mongo_host
-    port: $mongo_port
-    usr: $mongo_user
-    pwd: "$mongo_pass"
-    database: $db
-    maxOpenConns: 3000
-    maxIdleConns: 100
-    mechanism: SCRAM-SHA-1
-    rsName: $rs_name
-    socketTimeoutSeconds: 10
+watch:
+  host: $mongo_host
+  port: $mongo_port
+  usr: $mongo_user
+  pwd: "$mongo_pass"
+  database: $db
+  maxOpenConns: 10
+  maxIdleConns: 5
+  mechanism: SCRAM-SHA-1
+  rsName: $rs_name
+  socketTimeoutSeconds: 10
     '''
     template = FileTemplate(mongodb_file_template_str)
     result = template.substitute(**context)
@@ -367,17 +367,17 @@ mongodb:
   mechanism: SCRAM-SHA-1
   rsName: $rs_name
   # mongodb事件监听存储事件链的mongodb配置
-  watch:
-    host: $mongo_host
-    port: $mongo_port
-    usr: $mongo_user
-    pwd: "$mongo_pass"
-    database: $db
-    maxOpenConns: 3000
-    maxIdleConns: 100
-    mechanism: SCRAM-SHA-1
-    rsName: $rs_name
-    socketTimeoutSeconds: 10
+watch:
+  host: $mongo_host
+  port: $mongo_port
+  usr: $mongo_user
+  pwd: "$mongo_pass"
+  database: $db
+  maxOpenConns: 10
+  maxIdleConns: 5
+  mechanism: SCRAM-SHA-1
+  rsName: $rs_name
+  socketTimeoutSeconds: 10
 # redis配置
 redis:
   host: $redis_host:$redis_port

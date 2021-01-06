@@ -111,7 +111,7 @@ func initResource(cacheSvr *CacheServer) error {
 		return err
 	}
 
-	cacheSvr.Config.WatchMongo, err = cacheSvr.Core.WithMongo("mongodb.watch")
+	cacheSvr.Config.WatchMongo, err = cacheSvr.Core.WithMongo("watch")
 	if err != nil {
 		return err
 	}
