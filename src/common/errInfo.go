@@ -702,6 +702,7 @@ const (
 	CCErrWebUserinfoFormatWrong         = 1111016
 	CCErrWebUnknownLoginVersion         = 1111017
 	CCErrWebGetUsernameMapFail          = 1111018
+	CCErrWebHostCheckFail               = 1111019
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

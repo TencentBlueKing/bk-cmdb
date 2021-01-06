@@ -47,9 +47,21 @@ func (s *Service) ImportHost(c *gin.Context) {
 	if nil != err {
 		blog.Errorf("ImportHost failed, get file from form data failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
+
+	moduleID := int64(0)
+	if moduleIDStr := c.PostForm(common.BKModuleIDField); moduleIDStr != "" {
+		moduleID, err = strconv.ParseInt(moduleIDStr, 10, 64)
+		if err != nil {
+			blog.Errorf("ImportHost failed, bk_module_id not integer, err: %+v, bk_module_id: %s,  rid: %s", err, moduleIDStr, rid)
+			msg := getReturnStr(common.CCErrCommParamsNeedInt, defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKModuleIDField).Error(), nil)
+			c.String(http.StatusOK, msg)
+			return
+		}
+	}
+
 	webCommon.SetProxyHeader(c)
 
 	randNum := rand.Uint32()
@@ -66,7 +78,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 	if err := c.SaveUploadedFile(file, filePath); nil != err {
 		blog.Errorf("ImportHost failed, save form data to local file failed, save data as excel failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 
@@ -81,10 +93,10 @@ func (s *Service) ImportHost(c *gin.Context) {
 	if nil != err {
 		blog.Errorf("ImportHost failed, open form data as excel file failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
-	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, 0)
+	result := s.Logics.ImportHosts(ctx, f, c.Request.Header, defLang, 0, moduleID)
 
 	c.JSON(http.StatusOK, result)
 }
@@ -212,7 +224,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 
@@ -382,6 +394,15 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	bizIDStr := c.PostForm("bk_biz_id")
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("UpdateHosts failed, bk_biz_id not integer. err: %+v, biz id: %s,  rid: %s", err, bizIDStr, rid)
+		err := defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+		reply := getReturnStr(err.GetCode(), err.Error(), nil)
+		_, _ = c.Writer.Write([]byte(reply))
+		return
+	}
 	file, err := c.FormFile("file")
 	if nil != err {
 		blog.Errorf("UpdateHost excel import update hosts failed, get file from form data failed, err: %+v, rid: %s", err, rid)
@@ -423,7 +444,7 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, 0)
+	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, bizID)
 
 	c.JSON(http.StatusOK, result)
 }

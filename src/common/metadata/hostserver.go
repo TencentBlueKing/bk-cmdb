@@ -59,6 +59,7 @@ const (
 
 type HostList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
+	ModuleID      int64                            `json:"bk_module_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
 	InputType     HostInputType                    `json:"input_type"`
 }

@@ -405,7 +405,7 @@ var _ = Describe("host test", func() {
 				},
 				"is_increment": true,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -422,7 +422,7 @@ var _ = Describe("host test", func() {
 				},
 				"is_increment": true,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -581,7 +581,7 @@ var _ = Describe("host test", func() {
 				},
 				"is_increment": true,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -685,7 +685,7 @@ var _ = Describe("host test", func() {
 				},
 				"is_increment": true,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -966,7 +966,7 @@ var _ = Describe("host test", func() {
 				},
 				"is_increment": true,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -983,7 +983,7 @@ var _ = Describe("host test", func() {
 				},
 				"is_increment": true,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
@@ -1291,7 +1291,7 @@ var _ = Describe("list_hosts_topo test", func() {
 			},
 			"is_increment": true,
 		}
-		transferRsp, err := hostServerClient.HostModuleRelation(context.Background(), header, transferInput)
+		transferRsp, err := hostServerClient.TransferHostModule(context.Background(), header, transferInput)
 		util.RegisterResponse(transferRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(transferRsp.Result).To(Equal(true))

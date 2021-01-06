@@ -299,6 +299,7 @@ func (ps *parseStream) userCustom() *parseStream {
 const (
 	deleteHostBatchPattern                = "/api/v3/hosts/batch"
 	addHostsToHostPoolPattern             = "/api/v3/hosts/add"
+	addHostsByExcelPattern                = "/api/v3/hosts/excel/add"
 	addHostsToResourcePoolPattern         = "/api/v3/hosts/add/resource"
 	moveHostToBusinessModulePattern       = "/api/v3/hosts/modules"
 	moveResPoolHostToBizIdleModulePattern = "/api/v3/hosts/modules/resource/idle"
@@ -841,7 +842,41 @@ func (ps *parseStream) hostTransfer() *parseStream {
 		return ps
 	}
 
-	// add hosts to resource pool
+	// add new hosts come from excel to resource pool directory
+	if ps.hitPattern(addHostsByExcelPattern, http.MethodPost) {
+		val, err := ps.RequestCtx.getValueFromBody("bk_module_id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		dirID := val.Int()
+		if dirID == 0 {
+			var err error
+			dirID, err = ps.getResourcePoolDefaultDirID()
+			if err != nil {
+				ps.err = fmt.Errorf("invalid directory id value, %s", err.Error())
+				return ps
+			}
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.AddHostToResourcePool,
+				},
+				Layers: []meta.Item{
+					{
+						Type:       meta.ResourcePoolDirectory,
+						InstanceID: dirID,
+					},
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// add hosts to resource pool directory
 	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
 		val, err := ps.RequestCtx.getValueFromBody("directory")
 		if err != nil {

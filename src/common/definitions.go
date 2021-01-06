@@ -851,6 +851,9 @@ const (
 
 	// BatchHostAddMaxRow batch sync add host max row
 	BatchHostAddMaxRow = 128
+
+	// ExcelImportMaxRow excel import max row
+	ExcelImportMaxRow = 1000
 )
 
 const (

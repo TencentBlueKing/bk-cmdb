@@ -165,7 +165,7 @@ func (lgc *Logics) GetModuleIDAndIsInternal(kit *rest.Kit, bizID, moduleID int64
 			common.BKAppIDField:    bizID,
 			common.BKModuleIDField: moduleID,
 		}
-		moduleMap, err := lgc.GetModuleMapByCond(kit, []string{common.BKDefaultField}, cond)
+		moduleMap, err := lgc.GetModuleMapByCond(kit, []string{common.BKDefaultField, common.BKModuleIDField}, cond)
 		if err != nil {
 			blog.Errorf("GetModuleIDAndIsInternal get module info failed, err: %s, bizID: %d, moduleID: %d, rid: %s", err.Error(), bizID, moduleID, kit.Rid)
 			return 0, false, err
@@ -175,7 +175,7 @@ func (lgc *Logics) GetModuleIDAndIsInternal(kit *rest.Kit, bizID, moduleID int64
 			blog.Errorf("GetModuleIDAndIsInternal module not exist, bizID: %d, moduleID: %d, rid: %s", bizID, moduleID, kit.Rid)
 			return 0, false, kit.CCError.CCErrorf(common.CCErrHostModuleNotBelongBusinessErr, moduleID, bizID)
 		}
-		return moduleID, module[common.BKDefaultField] == common.NormalModuleFlag, nil
+		return moduleID, module[common.BKDefaultField] != common.NormalModuleFlag, nil
 	}
 }
 

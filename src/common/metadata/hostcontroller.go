@@ -167,6 +167,11 @@ type HostConfigData struct {
 	Page  BasePage     `json:"page"`
 }
 
+type HostModuleResp struct {
+	BaseResp `json:",inline"`
+	Data     []ModuleHost `json:"data"`
+}
+
 type ModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostID        int64   `json:"bk_host_id"`
