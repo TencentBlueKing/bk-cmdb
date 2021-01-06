@@ -29,7 +29,7 @@
                     <i18n path="N台主机">
                         <b class="info-count" place="count">{{resources.length}}</b>
                     </i18n>
-                    <i class="edit-trigger icon icon-cc-edit" v-if="!isRemoveModule" @click="handleChangeHost"></i>
+                    <i class="edit-trigger icon icon-cc-edit" v-if="!changeHostDisabled" @click="handleChangeHost"></i>
                 </div>
             </div>
             <div class="info clearfix mb10" v-if="type !== 'remove'">
@@ -167,8 +167,8 @@
                     active: null
                 },
                 dialog: {
-                    width: 720,
-                    height: 460,
+                    width: 830,
+                    height: 600,
                     show: false,
                     component: null,
                     props: {}
@@ -259,7 +259,13 @@
                 return type === 'remove' && module
             },
             isRetry () {
-                return this.$route.query.retry === '1'
+                return parseInt(this.$route.query.retry) === 1
+            },
+            isSingle () {
+                return parseInt(this.$route.query.single) === 1
+            },
+            changeHostDisabled () {
+                return this.isSingle || this.isRemoveModule
             }
         },
         watch: {
@@ -571,8 +577,8 @@
                     props.previousModules = firstSelectionModules
                 }
                 this.dialog.props = props
-                this.dialog.width = 720
-                this.dialog.height = 460
+                this.dialog.width = 830
+                this.dialog.height = 600
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },

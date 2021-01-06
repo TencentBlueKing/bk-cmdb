@@ -165,7 +165,8 @@ function handleReject (error, config) {
             if (window.loginModal) {
                 window.loginModal.show()
             } else {
-                window.CMDB_CONFIG.site.login && (window.location.href = window.CMDB_CONFIG.site.login)
+                // 接口401需要拿html中定义的Site
+                window.Site.login && (window.location.href = window.Site.login)
             }
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
