@@ -486,6 +486,29 @@ func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, inst
 	return &ret.Data, nil
 }
 
+func (p *process) CreateServiceInstances(ctx context.Context, h http.Header, instances []*metadata.ServiceInstance) ([]*metadata.ServiceInstance, errors.CCErrorCoder) {
+	ret := new(metadata.ManyServiceInstanceResult)
+	subPath := "/createmany/process/service_instance"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(instances).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("CreateServiceInstances failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}
+
 func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := "/find/process/service_instance/%d"
@@ -603,13 +626,13 @@ func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, 
 /*
 	process instance relation api
 */
-func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Header, instance *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
+func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := "/create/process/process_instance_relation"
 
 	err := p.client.Post().
 		WithContext(ctx).
-		Body(instance).
+		Body(relation).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
@@ -624,6 +647,29 @@ func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Head
 	}
 
 	return &ret.Data, nil
+}
+
+func (p *process) CreateProcessInstanceRelations(ctx context.Context, h http.Header, relations []*metadata.ProcessInstanceRelation) ([]*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
+	ret := new(metadata.ManyProcessInstanceRelationResult)
+	subPath := "/createmany/process/process_instance_relation"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(relations).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("CreateProcessInstanceRelations failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
 }
 
 func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
@@ -783,6 +829,29 @@ func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Head
 	}
 
 	return nil, nil
+}
+
+func (p *process) ConstructServiceInstanceName(ctx context.Context, h http.Header, params *metadata.SrvInstNameParams) errors.CCErrorCoder {
+	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
+	subPath := "/update/process/service_instance_name"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ReconstructServiceInstanceName failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
 }
 
 func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder {
