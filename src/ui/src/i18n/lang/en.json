@@ -1419,5 +1419,6 @@
     "请先选择主机池目录": "Please select directory",
     "跳转安装": "Jump install",
     "跳转节点管理，支持远程 / 手动安装": "Jump node management, support remote / manual installation",
-    "移除所有进程监听信息": "Remove all process monitoring information"
+    "移除所有进程监听信息": "Remove all process monitoring information",
+    "IP重复": "IP duplicate"
 }
