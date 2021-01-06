@@ -50,7 +50,17 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
-	moduleID, _ := strconv.ParseInt(c.PostForm(common.BKModuleIDField), 10, 64)
+
+	moduleID := int64(0)
+	if moduleIDStr := c.PostForm(common.BKModuleIDField); moduleIDStr != "" {
+		moduleID, err = strconv.ParseInt(moduleIDStr, 10, 64)
+		if err != nil {
+			blog.Errorf("ImportHost failed, bk_module_id not integer, err: %+v, bk_module_id: %s,  rid: %s", err, moduleIDStr, rid)
+			msg := getReturnStr(common.CCErrCommParamsNeedInt, defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKModuleIDField).Error(), nil)
+			c.String(http.StatusOK, msg)
+			return
+		}
+	}
 
 	webCommon.SetProxyHeader(c)
 
