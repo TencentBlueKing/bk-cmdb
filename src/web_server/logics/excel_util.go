@@ -74,6 +74,9 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	if headerRow > len(sheet.Rows) {
 		return ret, errors.New(defLang.Language("web_excel_not_data"))
 	}
+	if headerRow+common.ExcelImportMaxRow < len(sheet.Rows) {
+		return ret, errors.New(defLang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow))
+	}
 	for index, name := range sheet.Rows[headerRow-1].Cells {
 		strName := name.Value
 		field, ok := fields[strName]
@@ -91,7 +94,7 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
 		// web_import_field_not_found
 		blog.Errorf(defLang.Languagef("web_import_field_not_found, rid: %s", strings.Join(errCells, ",")), rid)
-		return ret, errors.New(defLang.Languagef("web_import_field_not_found", errCells[0]+"..."))
+		return ret, errors.New(defLang.Language("web_import_field_not_found"))
 	}
 	return ret, nil
 

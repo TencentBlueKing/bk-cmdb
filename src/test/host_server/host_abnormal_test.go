@@ -806,7 +806,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -823,7 +823,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -840,7 +840,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -858,7 +858,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -874,7 +874,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -888,7 +888,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -902,7 +902,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -919,7 +919,7 @@ var _ = Describe("host abnormal test", func() {
 					hostId3,
 				},
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -937,7 +937,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
@@ -982,7 +982,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -1026,7 +1026,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 				"is_increment": false,
 			}
-			rsp, err := hostServerClient.HostModuleRelation(context.Background(), header, input)
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))

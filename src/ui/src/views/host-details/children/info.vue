@@ -24,11 +24,17 @@
                     v-for="(item, index) in topologyList"
                     :key="index">
                     <span class="topology-path" v-bk-overflow-tips @click="handlePathClick(item)">{{item.path}}</span>
-                    <i class="topology-remove-trigger icon-cc-tips-close"
-                        v-if="!item.isInternal"
-                        v-bk-tooltips="{ content: $t('从该模块移除'), interactive: false }"
-                        @click="handleRemove(item.id)">
-                    </i>
+                    <cmdb-auth :auth="[
+                        { type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] },
+                        { type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] },
+                        { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
+                    ]">
+                        <i class="topology-remove-trigger icon-cc-tips-close"
+                            v-if="!item.isInternal"
+                            v-bk-tooltips="{ content: $t('从该模块移除'), interactive: false }"
+                            @click="handleRemove(item.id)">
+                        </i>
+                    </cmdb-auth>
                 </li>
             </ul>
             <a class="action-btn view-all"
@@ -38,24 +44,55 @@
                 {{$t('更多信息')}}
                 <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
             </a>
+            <a class="action-btn change-topology" v-if="isBusinessHost"
+                href="javascript:void(0)"
+                @click="handleEditTopo">
+                {{$t('修改')}}
+                <i class="icon icon-cc-edit-shape"></i>
+            </a>
         </div>
+        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
+            <component
+                :is="dialog.component"
+                v-bind="dialog.componentProps"
+                :confirm-loading="confirmLoading"
+                @cancel="handleDialogCancel"
+                @confirm="handleDialogConfirm">
+            </component>
+        </cmdb-dialog>
     </div>
 </template>
 
 <script>
+    import { mapState, mapGetters } from 'vuex'
     import {
         MENU_BUSINESS_TRANSFER_HOST,
         MENU_BUSINESS_HOST_AND_SERVICE,
-        MENU_RESOURCE_HOST
+        MENU_RESOURCE_BUSINESS_HOST_DETAILS,
+        MENU_RESOURCE_HOST,
+        MENU_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
-    import { mapGetters, mapState } from 'vuex'
+    import ModuleSelectorWithTab from '@/views/business-topology/host/module-selector-with-tab.vue'
     export default {
         name: 'cmdb-host-info',
+        components: {
+            [ModuleSelectorWithTab.name]: ModuleSelectorWithTab
+        },
         data () {
             return {
                 displayType: window.localStorage.getItem('host_topology_display_type') || 'double',
                 showAll: false,
-                topoNodesPath: []
+                topoNodesPath: [],
+                dialog: {
+                    show: false,
+                    component: null,
+                    componentProps: {},
+                    width: 828,
+                    height: 600
+                },
+                request: {
+                    moveToIdleModule: Symbol('moveToIdleModule')
+                }
             }
         },
         computed: {
@@ -73,6 +110,9 @@
             },
             host () {
                 return this.info.host || {}
+            },
+            modules () {
+                return this.info.module || []
             },
             hostIp () {
                 if (Object.keys(this.host).length) {
@@ -110,6 +150,9 @@
             },
             model () {
                 return this.$store.getters['objectModelClassify/getModelById']('host')
+            },
+            confirmLoading () {
+                return this.$loading(Object.values(this.request))
             }
         },
         watch: {
@@ -192,6 +235,108 @@
                     },
                     history: true
                 })
+            },
+            handleEditTopo () {
+                this.dialog.component = ModuleSelectorWithTab.name
+                this.dialog.componentProps.modules = this.modules
+                this.dialog.componentProps.business = this.business
+                this.dialog.show = true
+            },
+            handleDialogCancel () {
+                this.dialog.show = false
+            },
+            handleDialogConfirm () {
+                const [tab, ...params] = [...arguments]
+                const { tabName, moduleType } = tab
+                if (tabName !== 'acrossBusiness') {
+                    if (moduleType === 'idle') {
+                        const isAllIdleSetHost = this.modules.every(module => module.default !== 0)
+                        if (isAllIdleSetHost) {
+                            this.transferDirectly(...params)
+                        } else {
+                            this.gotoTransferPage(...params, moduleType)
+                        }
+                    } else {
+                        this.gotoTransferPage(...params, moduleType)
+                    }
+                } else {
+                    this.moveHostToOtherBusiness(...params)
+                }
+            },
+            async transferDirectly (modules) {
+                try {
+                    const internalModule = modules[0]
+                    await this.$http.post(
+                        `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
+                            bk_host_ids: [this.host.bk_host_id],
+                            default_internal_module: internalModule.data.bk_inst_id,
+                            remove_from_node: {
+                                bk_inst_id: this.bizId,
+                                bk_obj_id: 'biz'
+                            }
+                        }, {
+                            requestId: this.request.moveToIdleModule
+                        }
+                    )
+                    this.dialog.show = false
+                    this.$success('转移成功')
+                    this.$emit('change')
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            gotoTransferPage (modules, moduleType) {
+                const query = {
+                    sourceModel: 'biz',
+                    sourceId: this.bizId,
+                    targetModules: modules.map(node => node.data.bk_inst_id).join(','),
+                    resources: [this.host.bk_host_id].join(','),
+                    single: 1
+                }
+                this.$routerActions.redirect({
+                    name: MENU_BUSINESS_TRANSFER_HOST,
+                    params: {
+                        bizId: this.bizId,
+                        type: moduleType
+                    },
+                    query: query,
+                    history: true
+                })
+            },
+            async moveHostToOtherBusiness (modules, targetBizId) {
+                try {
+                    const [targetModule] = modules
+                    await this.$http.post('hosts/modules/across/biz', {
+                        src_bk_biz_id: this.bizId,
+                        dst_bk_biz_id: targetBizId,
+                        bk_host_id: [this.host.bk_host_id],
+                        bk_module_id: targetModule.data.bk_inst_id
+                    })
+
+                    this.dialog.show = false
+                    this.$success('转移成功')
+
+                    // 跳转刷新
+                    const routeParams = {
+                        id: this.host.bk_host_id
+                    }
+                    const routeName = this.$route.name
+                    if (routeName === MENU_RESOURCE_BUSINESS_HOST_DETAILS) {
+                        routeParams.business = targetBizId
+                    } else if (routeName === MENU_BUSINESS_HOST_DETAILS) {
+                        routeParams.bizId = targetBizId
+                    }
+                    this.$routerActions.redirect({
+                        name: routeName,
+                        params: {
+                            ...this.$route.params,
+                            ...routeParams
+                        },
+                        reload: false
+                    })
+                } catch (error) {
+                    console.error(error)
+                }
             }
         }
     }

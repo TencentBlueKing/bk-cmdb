@@ -42,8 +42,8 @@
             return {
                 isShow: false,
                 dialog: {
-                    width: 720,
-                    height: 460,
+                    width: 830,
+                    height: 600,
                     show: false,
                     component: null,
                     props: {}
@@ -85,8 +85,8 @@
                     title: this.$t('转移主机到空闲模块')
                 }
                 this.dialog.props = props
-                this.dialog.width = 720
-                this.dialog.height = 460
+                this.dialog.width = 830
+                this.dialog.height = 600
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },
@@ -115,8 +115,8 @@
                     props.previousModules = firstSelectionModules
                 }
                 this.dialog.props = props
-                this.dialog.width = 720
-                this.dialog.height = 460
+                this.dialog.width = 830
+                this.dialog.height = 600
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },

@@ -35,7 +35,7 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
-	DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64) error
+	DeleteBusiness(kit *rest.Kit, bizID int64) error
 	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
@@ -258,28 +258,14 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	return bizInst, nil
 }
 
-func (b *business) DeleteBusiness(kit *rest.Kit, obj model.Object, bizID int64) error {
-	setObj, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDSet)
-	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-
-	bizModel, err := b.obj.FindSingleObject(kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-
-	if err = b.set.DeleteSet(kit, setObj, bizID, nil); nil != err {
+func (b *business) DeleteBusiness(kit *rest.Kit, bizID int64) error {
+	if err := b.set.DeleteSet(kit, bizID, nil); nil != err {
 		blog.Errorf("[operation-biz] failed to delete the set, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.New(common.CCErrTopoAppDeleteFailed, err.Error())
 	}
 
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-
-	return b.inst.DeleteInst(kit, bizModel, innerCond, true)
+	innerCond := map[string]interface{}{common.BKAppIDField: bizID}
+	return b.inst.DeleteInst(kit, common.BKInnerObjIDApp, innerCond, true)
 }
 
 func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
@@ -304,8 +290,9 @@ func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessReque
 	return result.Data.Count, result.Data.Info, err
 }
 func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
-
-	cond.Condition[common.BKDefaultField] = 0
+	if !cond.Condition.Exists(common.BKDefaultField) {
+		cond.Condition[common.BKDefaultField] = 0
+	}
 	query := &metadata.QueryCondition{
 		Fields:    cond.Fields,
 		Condition: cond.Condition,

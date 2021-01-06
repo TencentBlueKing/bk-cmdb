@@ -103,13 +103,6 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 
 // DeleteBusiness delete the business
 func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
@@ -118,7 +111,7 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, obj, bizID); err != nil {
+		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, bizID); err != nil {
 			return err
 		}
 		return nil
@@ -209,7 +202,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	updateData := mapstr.New()
 	switch common.DataStatusFlag(ctx.Request.PathParameter("flag")) {
 	case common.DataStatusDisabled:
-		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj, obj.Object().ObjectID, bizID); nil != err {
+		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj.Object().ObjectID, bizID); nil != err {
 			ctx.RespAutoError(err)
 			return
 		}

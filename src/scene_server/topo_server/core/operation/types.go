@@ -15,7 +15,6 @@ package operation
 import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 type opcondition struct {
@@ -69,12 +68,6 @@ type CommonInstTopoV2 struct {
 	Prev []*CommonInstTopo `json:"prev"`
 	Next []*CommonInstTopo `json:"next"`
 	Curr interface{}       `json:"curr"`
-}
-
-type deletedInst struct {
-	instID int64
-	bizID  int64
-	obj    model.Object
 }
 
 type ExportObjectCondition struct {

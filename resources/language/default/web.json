@@ -4,8 +4,9 @@
     "web_en_name_required": "英文名(必填)",
     "web_bk_alias_name_required": "中文名(必填)",
     "web_bk_data_type_required": "数据类型(必填)",
+    "web_excel_import_too_much": "excel文件中导入过多数据，最大可导入数据行数为%d",
     "web_excel_not_data": "excel文件中没有数据",
-    "web_import_field_not_found": "导入不存在的字段,请重新下载模板，并且不要删除excel前三行, %s",
+    "web_import_field_not_found": "导入不存在的字段，请重新下载模板，并且不要删除excel前三行",
     "web_excel_row_handle_error": "%s %d行无法处理内容;",
     "web_excel_header_required": "(必填)",
     "web_excel_header_field_error": "[未发现字段名(错误)]",
@@ -13,5 +14,8 @@
     "web_excel_sheet_not_found": "文件内容不能为空,工作簿内容不存在",
     "web_get_object_field_failure": "查询对象属性失败，错误:%s",
     "web_ext_field_topo":"业务拓扑",
+    "both_hostid_exportcond_empty": "excel导出条件参数bk_host_id和export_condition不能同时为空",
+    "host_id_len_err": "excel导出条件参数bk_host_id的主机数量范围是1～%d",
+    "export_page_limit_err": "excel导出条件参数page.limit的范围是1～%d",
     "": ""
 }
