@@ -124,7 +124,7 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 		}
 
 		indexes := []daltypes.Index{
-			{Name: "index_id", Keys: map[string]int32{common.BKFieldID: -1}, Background: true},
+			{Name: "index_id", Keys: map[string]int32{common.BKFieldID: -1}, Background: true, Unique: true},
 			{Name: "index_cursor", Keys: map[string]int32{common.BKCursorField: -1}, Background: true, Unique: true},
 			{Name: "index_cluster_time", Keys: map[string]int32{common.BKClusterTimeField: -1}, Background: true,
 				ExpireAfterSeconds: dbChainTTLTime},

@@ -292,9 +292,9 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 		}
 
 		data := new(watch.LastChainNodeData)
-		err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKTokenField).One(kit.Ctx, data)
+		err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
 		if err != nil {
-			blog.ErrorJSON("get last watch token failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
+			blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			if !c.watchDB.IsNotFoundError(err) {
 				return false, nil, err
 			}

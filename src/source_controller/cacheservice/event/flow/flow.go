@@ -14,6 +14,7 @@ package flow
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -44,6 +45,12 @@ type flowOptions struct {
 }
 
 func newFlow(ctx context.Context, opts flowOptions) error {
+	_, ok := opts.watchDB.(*local.Mongo)
+	if !ok {
+		blog.Errorf("run flow, but watch db is not an instance of local mongo to start transaction")
+		return fmt.Errorf("watch db is not an instance of local mongo")
+	}
+
 	flow := Flow{
 		flowOptions: opts,
 		metrics:     initialMetrics(opts.key.Collection()),
@@ -109,7 +116,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		return false
 	}
 
-	chainNodes := make([]*watch.ChainNode, eventLen)
+	chainNodes := make([]*watch.ChainNode, 0)
 	oids := make([]string, eventLen)
 	hasError := true
 
@@ -139,9 +146,11 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 
 	// process events into db chain nodes to store in db and details to store in redis
 	pipe := redis.Client().Pipeline()
+	lastTokenData := make(map[string]interface{})
 	for index, e := range es {
 		// collect event's basic metrics
 		f.metrics.collectBasic(e)
+		lastTokenData[common.BKTokenField] = e.Token.Data
 
 		switch e.OperationType {
 		case types.Insert, types.Update, types.Replace, types.Delete:
@@ -174,7 +183,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		if instanceID := f.key.InstanceID(e.DocBytes); instanceID > 0 {
 			chainNode.InstanceID = instanceID
 		}
-		chainNodes[index] = chainNode
+		chainNodes = append(chainNodes, chainNode)
 
 		docBytes := e.DocBytes
 		if e.OperationType == types.Delete {
@@ -195,18 +204,22 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), time.Duration(f.key.TTLSeconds())*time.Second)
 	}
 
+	// if all events are invalid, set last token to the last events' token, do not need to retry for the invalid ones
+	if len(chainNodes) == 0 {
+		if err := f.tokenHandler.setLastWatchToken(context.Background(), lastTokenData); err != nil {
+			f.metrics.collectMongoError()
+			return false
+		}
+	}
+
 	// store details at first, in case those watching cmdb events read chain when details are not inserted yet
 	if _, err := pipe.Exec(); err != nil {
 		f.metrics.collectRedisError()
-		blog.Errorf("run flow, but insert details failed, err: %v, oids: %+v", err, oids)
+		blog.Errorf("run flow, but insert details for %s failed, err: %v, oids: %+v", err, f.key.Collection(), oids)
 		return true
 	}
 
-	watchDBMongo, ok := f.watchDB.(*local.Mongo)
-	if !ok {
-		blog.Errorf("run flow, but watch db is not an instance of local mongo to start transaction")
-		return false
-	}
+	watchDBMongo, _ := f.watchDB.(*local.Mongo)
 	watchDBClient := watchDBMongo.GetDBClient()
 
 	session, err := watchDBClient.StartSession()
@@ -214,28 +227,33 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		blog.Errorf("run flow, but start mongo session failed, err: %v", err)
 		return true
 	}
-
-	if err = session.StartTransaction(); err != nil {
-		blog.Errorf("run flow, but start mongo transaction failed, err: %v", err)
-		return true
-	}
+	defer session.EndSession(context.Background())
 
 	if txnErr := mongo.WithSession(context.Background(), session, func(sc mongo.SessionContext) error {
-		if err := f.watchDB.Table(f.key.ChainCollection()).Insert(context.Background(), chainNodes); err != nil {
-			blog.Errorf("run flow, but insert chain nodes failed, err: %v, oids: %+v", err, oids)
+		if err = session.StartTransaction(); err != nil {
+			blog.Errorf("run flow, but start mongo transaction failed, err: %v", err)
+			return err
+		}
+
+		if err := f.watchDB.Table(f.key.ChainCollection()).Insert(sc, chainNodes); err != nil {
+			blog.Errorf("run flow, but insert chain nodes for %s failed, err: %v, oids: %+v", f.key.Collection(), err, oids)
 			if !strings.Contains(err.Error(), "duplicate key error") {
 				f.metrics.collectMongoError()
 			}
+			_ = session.AbortTransaction(context.Background())
 			return err
 		}
 
 		lastNode := chainNodes[len(chainNodes)-1]
-		if err := f.tokenHandler.setLastWatchToken(context.Background(), lastNode); err != nil {
+		lastTokenData[common.BKFieldID] = lastNode.ID
+		lastTokenData[common.BKCursorField] = lastNode.Cursor
+		if err := f.tokenHandler.setLastWatchToken(sc, lastTokenData); err != nil {
 			f.metrics.collectMongoError()
+			_ = session.AbortTransaction(context.Background())
 			return err
 		}
 
-		if err = sc.CommitTransaction(sc); err != nil {
+		if err = session.CommitTransaction(context.Background()); err != nil {
 			blog.Errorf("run flow, but commit mongo transaction failed, err: %v", err)
 			return err
 		}
@@ -244,7 +262,6 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		// if an error occurred, roll back and re-watch again
 		return true
 	}
-	session.EndSession(context.Background())
 
 	blog.Infof("insert watch event for %s success, oids: %+v", f.key.Collection(), oids)
 	hasError = false
@@ -341,14 +358,7 @@ func (f *flowTokenHandler) SetLastWatchToken(ctx context.Context, token string) 
 }
 
 // setLastWatchToken set last watch token(used after events are successfully inserted)
-func (f *flowTokenHandler) setLastWatchToken(ctx context.Context, node *watch.ChainNode) error {
-	data := watch.LastChainNodeData{
-		Coll:   f.key.Collection(),
-		ID:     node.ID,
-		Token:  node.Token,
-		Cursor: node.Cursor,
-	}
-
+func (f *flowTokenHandler) setLastWatchToken(ctx context.Context, data map[string]interface{}) error {
 	filter := map[string]interface{}{
 		"_id": f.key.Collection(),
 	}
@@ -378,7 +388,7 @@ func (f *flowTokenHandler) GetStartWatchToken(ctx context.Context) (token string
 
 			if !f.watchDB.IsNotFoundError(err) {
 				f.metrics.collectMongoError()
-				blog.Errorf("get last watch token from mongo failed,err: %v", err)
+				blog.Errorf("get last watch token from mongo failed, err: %v", err)
 				return "", err
 			}
 			// the tail node is not exist.

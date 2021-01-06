@@ -289,7 +289,15 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 	}
 
 	if !exists && opts.Cursor != watch.NoEventCursor {
-		return nil, kit.CCError.CCError(common.CCErrEventChainNodeNotExist)
+		// TODO uncomment this, right now returns no event cursor for not exist cursor in case update from former
+		//  version with chain stored in redis causes all former cursors in redis to be invalid
+		//return nil, kit.CCError.CCError(common.CCErrEventChainNodeNotExist)
+		return []*watch.WatchEventDetail{{
+			Cursor:    watch.NoEventCursor,
+			Resource:  opts.Resource,
+			EventType: "",
+			Detail:    nil,
+		}}, nil
 	}
 
 	for {
