@@ -20,18 +20,22 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 	"configcenter/src/source_controller/cacheservice/cache/topology"
+	"configcenter/src/source_controller/cacheservice/event/watch"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
 )
 
-func NewCache(event reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface) (
-	*ClientSet, error) {
+func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface,
+	watchDB dal.DB) (*ClientSet, error) {
 
-	if err := business.NewCache(event); err != nil {
+	if err := business.NewCache(reflector); err != nil {
 		return nil, fmt.Errorf("new business cache failed, err: %v", err)
 	}
 
-	if err := host.NewCache(event); err != nil {
+	if err := host.NewCache(reflector); err != nil {
 		return nil, fmt.Errorf("new host cache failed, err: %v", err)
 	}
 
@@ -48,6 +52,7 @@ func NewCache(event reflector.Interface, loopW stream.LoopInterface, isMaster di
 		Host:     hostClient,
 		Business: bizClient,
 		Topology: topo,
+		Event:    watch.NewClient(watchDB, mongodb.Client(), redis.Client()),
 	}
 	return cache, nil
 }
@@ -57,4 +62,5 @@ type ClientSet struct {
 	Topology *topology.Topology
 	Host     *host.Client
 	Business *business.Client
+	Event    *watch.Client
 }

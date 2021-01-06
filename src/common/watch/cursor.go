@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/stream/types"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -241,7 +242,6 @@ func (c *Cursor) Decode(cur string) error {
 		return fmt.Errorf("got invalid nano field %s, err: %v", elements[4], err)
 	}
 	c.ClusterTime.Nano = uint32(nano)
-
 	return nil
 }
 

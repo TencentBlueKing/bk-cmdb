@@ -6,5 +6,7 @@
     "1103004": "Failed to test callback",
     "1103005": "Failed to telnet callback",
     "1103006": "Failed to push event",
+    "1103007": "Event chain node not exist",
+    "1103008": "Event detail not exist",
     "": ""
 }

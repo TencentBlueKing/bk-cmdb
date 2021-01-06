@@ -10,21 +10,32 @@
  * limitations under the License.
  */
 
-package event
+package flow
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream"
 )
 
-func NewEvent(watch stream.Interface, isMaster discovery.ServiceManageInterface) error {
+func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB, ccDB dal.DB) error {
+	watchMongoDB, ok := watchDB.(*local.Mongo)
+	if !ok {
+		blog.Errorf("watch event, but watch db is not an instance of local mongo to start transaction")
+		return fmt.Errorf("watch db is not an instance of local mongo")
+	}
+
 	e := Event{
 		watch:    watch,
 		isMaster: isMaster,
+		watchDB:  watchMongoDB,
+		ccDB:     ccDB,
 	}
 
 	if err := e.runHost(context.Background()); err != nil {
@@ -76,104 +87,115 @@ func NewEvent(watch stream.Interface, isMaster discovery.ServiceManageInterface)
 }
 
 type Event struct {
-	watch    stream.Interface
+	watch    stream.LoopInterface
+	watchDB  *local.Mongo
+	ccDB     dal.DB
 	isMaster discovery.ServiceManageInterface
 }
 
 func (e *Event) runHost(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameBaseHost,
-		key:        HostKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.HostKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runModuleHostRelation(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameModuleHostConfig,
-		key:        ModuleHostRelationKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.ModuleHostRelationKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runBiz(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameBaseApp,
-		key:        BizKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.BizKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runSet(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameBaseSet,
-		key:        SetKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.SetKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runModule(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameBaseModule,
-		key:        ModuleKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.ModuleKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runSetTemplate(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameSetTemplate,
-		key:        SetTemplateKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.SetTemplateKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runObjectBase(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameBaseInst,
-		key:        ObjectBaseKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.ObjectBaseKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runProcess(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameBaseProcess,
-		key:        ProcessKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.ProcessKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
 }
 
 func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
-	opts := FlowOptions{
-		Collection: common.BKTableNameProcessInstanceRelation,
-		key:        ProcessInstanceRelationKey,
-		watch:      e.watch,
-		isMaster:   e.isMaster,
+	opts := flowOptions{
+		key:      event.ProcessInstanceRelationKey,
+		watch:    e.watch,
+		watchDB:  e.watchDB,
+		ccDB:     e.ccDB,
+		isMaster: e.isMaster,
 	}
 
 	return newFlow(ctx, opts)

@@ -46,6 +46,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 type Config struct {
 	MongoDB       mongo.Config
+	WatchDB       mongo.Config
 	Errors        ErrorConfig
 	Language      LanguageConfig
 	Configures    ConfConfig

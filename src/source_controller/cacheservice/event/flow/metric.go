@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package event
+package flow
 
 import (
 	"time"

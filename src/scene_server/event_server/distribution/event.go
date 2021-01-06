@@ -180,8 +180,8 @@ func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string
 			deletedFields = append(deletedFields, deletedField.String())
 		}
 
-		jsonDetailStr := types.GetEventDetail(eventDetailStr)
-		cut := ccjson.CutJsonDataWithFields(&jsonDetailStr, opts.Fields)
+		jsonDetailStr := types.GetEventDetail(&eventDetailStr)
+		cut := ccjson.CutJsonDataWithFields(jsonDetailStr, opts.Fields)
 
 		event := &watch.WatchEventDetail{
 			Cursor:    nodes[idx].Cursor,

@@ -14,6 +14,7 @@ package service
 
 import (
 	"net/http"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -24,8 +25,9 @@ import (
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
 	cacheop "configcenter/src/source_controller/cacheservice/cache"
-	watchEvent "configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/source_controller/cacheservice/event/flow"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
 
@@ -81,22 +83,35 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return eventErr
 	}
 
-	c, cacheErr := cacheop.NewCache(event, loopW, engine.ServiceManageInterface)
+	watchDB, dbErr := local.NewMgo(s.cfg.WatchMongo.GetMongoConf(), time.Minute)
+	if dbErr != nil {
+		blog.Errorf("new watch mongo client failed, err: %v", dbErr)
+		return dbErr
+	}
+
+	c, cacheErr := cacheop.NewCache(event, loopW, engine.ServiceManageInterface, watchDB)
 	if cacheErr != nil {
 		blog.Errorf("new cache instance failed, err: %v", cacheErr)
 		return cacheErr
 	}
 	s.cacheSet = c
 
-	watcher, watchErr := stream.NewStream(s.cfg.Mongo.GetMongoConf())
+	watcher, watchErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
 	if watchErr != nil {
-		blog.Errorf("new watch stream failed, err: %v", watchErr)
+		blog.Errorf("new loop watch stream failed, err: %v", watchErr)
 		return watchErr
 	}
 
-	if err := watchEvent.NewEvent(watcher, engine.ServiceManageInterface); err != nil {
-		blog.Errorf("new watch event failed, err: %v", err)
-		return err
+	ccDB, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
+	if dbErr != nil {
+		blog.Errorf("new cc mongo client failed, err: %v", dbErr)
+		return dbErr
+	}
+
+	flowErr := flow.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB)
+	if flowErr != nil {
+		blog.Errorf("new watch event failed, err: %v", flowErr)
+		return flowErr
 	}
 
 	return nil

@@ -34,6 +34,7 @@ import (
 type Service struct {
 	*backbone.Engine
 	db           dal.RDB
+	watchDB      dal.RDB
 	cache        redis.Client
 	ccApiSrvAddr string
 	ctx          context.Context
@@ -50,6 +51,10 @@ func NewService(ctx context.Context) *Service {
 
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
+}
+
+func (s *Service) SetWatchDB(watchDB dal.RDB) {
+	s.watchDB = watchDB
 }
 
 func (s *Service) SetCache(cache redis.Client) {

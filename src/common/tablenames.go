@@ -92,6 +92,9 @@ const (
 	BKTableNameCloudSyncTask    = "cc_CloudSyncTask"
 	BKTableNameCloudAccount     = "cc_CloudAccount"
 	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
+
+	// BKTableNameWatchToken the table to store the latest watch token for collections
+	BKTableNameWatchToken = "cc_WatchToken"
 )
 
 // AllTables alltables
