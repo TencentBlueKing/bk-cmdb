@@ -10,16 +10,19 @@
  * limitations under the License.
  */
 
-package y3_9_202012151534
+package y3_9_202101061721
 
 import (
 	"context"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var oidCollIndex = types.Index{
@@ -27,6 +30,51 @@ var oidCollIndex = types.Index{
 	Unique:     true,
 	Background: true,
 	Name:       "idx_oid_coll",
+}
+
+var collIndex = types.Index{
+	Keys:       map[string]int32{"coll": 1},
+	Unique:     false,
+	Background: true,
+	Name:       "idx_coll",
+}
+
+type archiveData struct {
+	MongoID primitive.ObjectID `bson:"_id"`
+}
+
+// delPreviousDelArchiveData delete previous del archive data
+func delPreviousDelArchiveData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	for {
+		dataArr := make([]archiveData, 0)
+		err := db.Table(common.BKTableNameDelArchive).Find(nil).Fields("_id").Start(0).
+			Limit(common.BKMaxPageSize).All(ctx, &dataArr)
+		if err != nil {
+			blog.Errorf("find previous del archive data failed, err: %v", err)
+			return err
+		}
+
+		if len(dataArr) == 0 {
+			return nil
+		}
+
+		delMongoIDs := make([]primitive.ObjectID, len(dataArr))
+		for index, data := range dataArr {
+			delMongoIDs[index] = data.MongoID
+		}
+
+		delCond := map[string]interface{}{
+			"_id": map[string]interface{}{common.BKDBIN: delMongoIDs},
+		}
+		if err := db.Table(common.BKTableNameDelArchive).Delete(ctx, delCond); err != nil {
+			blog.Errorf("delete previous del archive data failed, err: %v", err)
+			return err
+		}
+
+		time.Sleep(time.Millisecond * 5)
+	}
+
+	return nil
 }
 
 // addDelArchiveIndex add unique index for coll and oid
@@ -38,7 +86,7 @@ func addDelArchiveIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	}
 
 	for _, index := range existIndexes {
-		if index.Name == oidCollIndex.Name {
+		if index.Name == oidCollIndex.Name || index.Name == collIndex.Name {
 			return nil
 		}
 	}
@@ -46,6 +94,12 @@ func addDelArchiveIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	err = db.Table(common.BKTableNameDelArchive).CreateIndex(ctx, oidCollIndex)
 	if err != nil {
 		blog.ErrorJSON("add index %s for del archive table failed, err: %s", oidCollIndex, err)
+		return err
+	}
+
+	err = db.Table(common.BKTableNameDelArchive).CreateIndex(ctx, collIndex)
+	if err != nil {
+		blog.ErrorJSON("add index %s for del archive table failed, err: %s", collIndex, err)
 		return err
 	}
 

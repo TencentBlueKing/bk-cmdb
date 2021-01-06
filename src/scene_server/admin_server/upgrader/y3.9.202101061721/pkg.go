@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202012151534
+package y3_9_202101061721
 
 import (
 	"context"
@@ -21,15 +21,21 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202012151534", upgrade)
+	upgrader.RegistUpgrader("y3.9.202101061721", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.9.202012151534")
+	blog.Infof("start execute y3.9.202101061721")
+
+	err = delPreviousDelArchiveData(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202101061721] delete previous del archive data failed, error %v", err)
+		return err
+	}
 
 	err = addDelArchiveIndex(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202012151534] add del archive table index failed, error %v", err)
+		blog.Errorf("[upgrade y3.9.202101061721] add del archive table index failed, error %v", err)
 		return err
 	}
 

@@ -14,19 +14,27 @@ package flow
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream"
 )
 
 func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB, ccDB dal.DB) error {
+	watchMongoDB, ok := watchDB.(*local.Mongo)
+	if !ok {
+		blog.Errorf("watch event, but watch db is not an instance of local mongo to start transaction")
+		return fmt.Errorf("watch db is not an instance of local mongo")
+	}
+
 	e := Event{
 		watch:    watch,
 		isMaster: isMaster,
-		watchDB:  watchDB,
+		watchDB:  watchMongoDB,
 		ccDB:     ccDB,
 	}
 
@@ -80,7 +88,7 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 
 type Event struct {
 	watch    stream.LoopInterface
-	watchDB  dal.DB
+	watchDB  *local.Mongo
 	ccDB     dal.DB
 	isMaster discovery.ServiceManageInterface
 }

@@ -14,7 +14,6 @@ package flow
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -40,17 +39,11 @@ type flowOptions struct {
 	key      event.Key
 	watch    stream.LoopInterface
 	isMaster discovery.ServiceManageInterface
-	watchDB  dal.DB
+	watchDB  *local.Mongo
 	ccDB     dal.DB
 }
 
 func newFlow(ctx context.Context, opts flowOptions) error {
-	_, ok := opts.watchDB.(*local.Mongo)
-	if !ok {
-		blog.Errorf("run flow, but watch db is not an instance of local mongo to start transaction")
-		return fmt.Errorf("watch db is not an instance of local mongo")
-	}
-
 	flow := Flow{
 		flowOptions: opts,
 		metrics:     initialMetrics(opts.key.Collection()),
@@ -132,16 +125,16 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		f.metrics.collectCycleDuration(time.Since(start) / time.Duration(eventLen))
 	}()
 
-	ids, err := f.watchDB.NextSequences(context.Background(), f.key.ChainCollection(), eventLen)
-	if err != nil {
-		blog.Errorf("get event ids for collection: %s failed, err: %v", f.key.ChainCollection(), err)
-		return true
-	}
-
 	oidDetailMap, retry, err := f.getDeleteEventDetails(es)
 	if err != nil {
 		blog.Errorf("get deleted event details failed, err: %v", err)
 		return retry
+	}
+
+	ids, err := f.watchDB.NextSequences(context.Background(), f.key.ChainCollection(), eventLen)
+	if err != nil {
+		blog.Errorf("get event ids for collection: %s failed, err: %v", f.key.ChainCollection(), err)
+		return true
 	}
 
 	// process events into db chain nodes to store in db and details to store in redis
@@ -210,6 +203,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 			f.metrics.collectMongoError()
 			return false
 		}
+		return false
 	}
 
 	// store details at first, in case those watching cmdb events read chain when details are not inserted yet
@@ -219,19 +213,18 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		return true
 	}
 
-	watchDBMongo, _ := f.watchDB.(*local.Mongo)
-	watchDBClient := watchDBMongo.GetDBClient()
+	watchDBClient := f.watchDB.GetDBClient()
 
 	session, err := watchDBClient.StartSession()
 	if err != nil {
-		blog.Errorf("run flow, but start mongo session failed, err: %v", err)
+		blog.Errorf("run flow, but start mongo session failed, err: %v, coll: %s", err, f.key.Collection())
 		return true
 	}
 	defer session.EndSession(context.Background())
 
 	if txnErr := mongo.WithSession(context.Background(), session, func(sc mongo.SessionContext) error {
 		if err = session.StartTransaction(); err != nil {
-			blog.Errorf("run flow, but start mongo transaction failed, err: %v", err)
+			blog.Errorf("run flow, but start mongo transaction failed, err: %v, coll: %s", err, f.key.Collection())
 			return err
 		}
 
@@ -253,6 +246,8 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 			return err
 		}
 
+		// Use context.Background() to ensure that the commit can complete successfully even if the context passed to
+		// mongo.WithSession is changed to have a timeout.
 		if err = session.CommitTransaction(context.Background()); err != nil {
 			blog.Errorf("run flow, but commit mongo transaction failed, err: %v", err)
 			return err

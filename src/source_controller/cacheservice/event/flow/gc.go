@@ -30,100 +30,104 @@ import (
 func (f *Flow) cleanDelArchiveData(ctx context.Context) {
 	blog.Infof("start clean cc_DelArchive data job success.")
 	go func() {
+		var lastCleanDay int
 		for {
 			if time.Now().Hour() != 1 {
 				time.Sleep(5 * time.Minute)
 				continue
 			}
+
 			rid := util.GenerateRID()
+			if !f.isMaster.IsMaster() {
+				blog.Infof("try to clean cc_DelArchive data job, but not master, skip, rid: %s", rid)
+				time.Sleep(5 * time.Minute)
+				continue
+			}
+
+			if lastCleanDay == time.Now().Day() {
+				blog.Infof("try to clean cc_DelArchive data job, but has cleaned today, skip, rid: %s", rid)
+				time.Sleep(5 * time.Minute)
+				continue
+			}
+
 			blog.Infof("start do clean cc_DelArchive data job, rid: %s", rid)
 			f.doClean(ctx, rid)
+			lastCleanDay = time.Now().Day()
 			blog.Infof("start do clean cc_DelArchive data job done, rid: %s", rid)
 		}
 	}()
 }
 
 func (f *Flow) doClean(ctx context.Context, rid string) {
-	timeout := time.After(time.Hour)
-	for {
-		select {
-		case <-timeout:
-			blog.Errorf("do clean cc_DelArchive data job timeout, rid: %s", rid)
-			return
-		default:
-		}
-		time.Sleep(5 * time.Minute)
+	blog.Infof("do clean cc_DelArchive data job, rid: %s", rid)
 
-		if !f.isMaster.IsMaster() {
-			blog.Infof("try to clean cc_DelArchive data job, but not master, skip, rid: %s", rid)
+	// it's time to do the clean job.
+	// generate a ObjectID with a time.
+	week := time.Now().Unix() - 7*24*60*60
+	weekAgo := time.Unix(week, 0)
+	oid := primitive.NewObjectIDFromTimestamp(weekAgo)
+
+	// count the data older than this oid
+	filter := mapstr.MapStr{
+		"_id": mapstr.MapStr{
+			common.BKDBLT: oid,
+		},
+	}
+
+	count, err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Count(ctx)
+	if err != nil {
+		blog.Errorf("clean cc_DelArchive data, but count expired data in %s failed. rid: %s", common.BKTableNameDelArchive, rid)
+		return
+	}
+
+	blog.Infof("do clean cc_DelArchive data job, found %d expired docs, rid: %s", count, rid)
+
+	pageSize := 250
+	total := 0
+	success := true
+	for {
+		docs := make([]archived, 0)
+		err = f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Limit(uint64(pageSize)).Fields("oid").All(ctx, &docs)
+		if err != nil {
+			blog.Errorf("clean cc_DelArchive data, but find expired data failed, err: %v, rid: %s", err, rid)
+			time.Sleep(10 * time.Second)
+			success = false
 			continue
 		}
 
-		blog.Infof("do clean cc_DelArchive data job, rid: %s", rid)
+		if len(docs) == 0 {
+			break
+		}
 
-		// it's time to do the clean job.
-		// generate a ObjectID with a time.
-		week := time.Now().Unix() - 7*24*60*60
-		weekAgo := time.Unix(week, 0)
-		oid := primitive.NewObjectIDFromTimestamp(weekAgo)
+		oids := make([]string, len(docs))
+		for idx, doc := range docs {
+			oids[idx] = doc.Oid
+		}
 
-		// count the data older than this oid
-		filter := mapstr.MapStr{
-			"_id": mapstr.MapStr{
-				common.BKDBLT: oid,
+		delFilter := mapstr.MapStr{
+			"oid": mapstr.MapStr{
+				common.BKDBIN: oids,
 			},
 		}
 
-		count, err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Count(ctx)
+		err = f.ccDB.Table(common.BKTableNameDelArchive).Delete(ctx, delFilter)
 		if err != nil {
-			blog.Errorf("clean cc_DelArchive data, but count expired data in %s failed. rid: %s", common.BKTableNameDelArchive, rid)
+			blog.Errorf("clean cc_DelArchive data, but delete data failed, err: %v, rid: %s", err, rid)
+			time.Sleep(10 * time.Second)
+			success = false
 			continue
 		}
 
-		blog.Infof("do clean cc_DelArchive data job, found %d expired docs, rid: %s", count, rid)
+		total += len(docs)
+		blog.Infof("already cleaned %d cc_DelArchive data, all: %d, rid: %s", total, count, rid)
+		// sleep a while
+		time.Sleep(10 * time.Second)
+	}
 
-		pageSize := 500
-		success := true
-		for start := 0; start < int(count); start += pageSize {
-			docs := make([]archived, pageSize)
-			err = f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Fields("oid").All(ctx, &docs)
-			if err != nil {
-				blog.Errorf("clean cc_DelArchive data, but find expired data failed, err: %v, rid: %s", err, rid)
-				time.Sleep(10 * time.Second)
-				success = false
-				continue
-			}
-
-			oids := make([]string, len(docs))
-			for idx, doc := range docs {
-				oids[idx] = doc.Oid
-			}
-
-			delFilter := mapstr.MapStr{
-				"oid": mapstr.MapStr{
-					common.BKDBIN: oids,
-				},
-			}
-
-			err = f.ccDB.Table(common.BKTableNameDelArchive).Delete(ctx, delFilter)
-			if err != nil {
-				blog.Errorf("clean cc_DelArchive data, but delete data failed, err: %v, rid: %s", err, rid)
-				time.Sleep(10 * time.Second)
-				success = false
-				continue
-			}
-			// sleep a while
-			time.Sleep(10 * time.Second)
-		}
-
-		if success {
-			blog.Infof("clean cc_DelArchive data success, delete %d docs, rid: %s", count, rid)
-		} else {
-			blog.Infof("clean cc_DelArchive data job done, but part of it is failed, rid: %s", rid)
-		}
-
-		// finished the for loop.
-		return
+	if success {
+		blog.Infof("clean cc_DelArchive data success, delete %d docs, rid: %s", count, rid)
+	} else {
+		blog.Infof("clean cc_DelArchive data job done, but part of it is failed, rid: %s", rid)
 	}
 }
 
