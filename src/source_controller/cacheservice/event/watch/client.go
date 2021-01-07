@@ -236,7 +236,7 @@ func (c *Client) SearchFollowingEventChainNodes(kit *rest.Kit, opts *metadata.Se
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_resource")
 	}
 
-	exists, nodes, err := c.searchFollowingEventChainNodes(kit, opts.StartCursor, uint64(opts.Limit), nil, key)
+	exists, nodes, _, err := c.searchFollowingEventChainNodes(kit, opts.StartCursor, uint64(opts.Limit), nil, key)
 	if err != nil {
 		blog.Errorf("search nodes after cursor %s failed, err: %v, rid: %s", opts.StartCursor, err, kit.Rid)
 		return nil, err
@@ -247,29 +247,29 @@ func (c *Client) SearchFollowingEventChainNodes(kit *rest.Kit, opts *metadata.Se
 
 // searchFollowingEventNodes search nodes after the node(excluding itself) by cursor
 func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor string, limit uint64, types []watch.EventType,
-	key event.Key) (bool, []*watch.ChainNode, error) {
+	key event.Key) (bool, []*watch.ChainNode, uint64, error) {
 
 	// if start cursor is no event cursor, start from the beginning
 	if startCursor == watch.NoEventCursor {
 		node, exists, err := c.getEarliestEvent(kit, key)
 		if err != nil {
 			blog.Errorf("get earliest event for kwy %s failed, err: %v", key.Namespace(), err)
-			return false, nil, err
+			return false, nil, 0, err
 		}
 
 		if !exists {
-			return false, make([]*watch.ChainNode, 0), nil
+			return false, make([]*watch.ChainNode, 0), 0, nil
 		}
 
 		nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, types, key)
 		if err != nil {
-			return false, nil, err
+			return false, nil, 0, err
 		}
 
 		if c.isNodeWithEventType(node, types) {
-			return true, append([]*watch.ChainNode{node}, nodes...), nil
+			return true, append([]*watch.ChainNode{node}, nodes...), node.ID, nil
 		}
-		return true, nodes, nil
+		return true, nodes, node.ID, nil
 	}
 
 	filter := map[string]interface{}{
@@ -284,11 +284,12 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 	if err != nil {
 		blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 		if !c.watchDB.IsNotFoundError(err) {
-			return false, nil, err
+			return false, nil, 0, err
 		}
 
 		filter := map[string]interface{}{
-			"_id": key.Collection(),
+			"_id":                key.Collection(),
+			common.BKCursorField: startCursor,
 		}
 
 		data := new(watch.LastChainNodeData)
@@ -296,23 +297,23 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 		if err != nil {
 			blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			if !c.watchDB.IsNotFoundError(err) {
-				return false, nil, err
+				return false, nil, 0, err
 			}
-			return false, nil, nil
+			return false, nil, 0, nil
 		}
 
 		nodes, err := c.searchFollowingEventChainNodesByID(kit, data.ID, limit, types, key)
 		if err != nil {
-			return false, nil, err
+			return false, nil, 0, err
 		}
-		return true, nodes, nil
+		return true, nodes, data.ID, nil
 	}
 
 	nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, types, key)
 	if err != nil {
-		return false, nil, err
+		return false, nil, 0, err
 	}
-	return true, nodes, nil
+	return true, nodes, node.ID, nil
 }
 
 // searchFollowingEventChainNodes search nodes after the node(excluding itself) by id

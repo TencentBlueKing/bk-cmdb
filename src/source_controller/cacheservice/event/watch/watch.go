@@ -282,7 +282,7 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 	rid := kit.Rid
 	start := time.Now().Unix()
 
-	exists, nodes, err := c.searchFollowingEventChainNodes(kit, opts.Cursor, eventStep, opts.EventTypes, key)
+	exists, nodes, nodeID, err := c.searchFollowingEventChainNodes(kit, opts.Cursor, eventStep, opts.EventTypes, key)
 	if err != nil {
 		blog.Errorf("search nodes after cursor %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
 		return nil, err
@@ -292,6 +292,7 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 		// TODO uncomment this, right now returns no event cursor for not exist cursor in case update from former
 		//  version with chain stored in redis causes all former cursors in redis to be invalid
 		//return nil, kit.CCError.CCError(common.CCErrEventChainNodeNotExist)
+		opts.Cursor = watch.NoEventCursor
 		return []*watch.WatchEventDetail{{
 			Cursor:    watch.NoEventCursor,
 			Resource:  opts.Resource,
@@ -310,16 +311,17 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 		blog.V(5).Infof("watch key: %s with resource: %s, got nothing, try next round. rid: %s",
 			key.Namespace(), opts.Resource, rid)
 
-		lastNode, exists, err := c.getLatestEvent(kit, key)
-		if err != nil {
-			blog.Errorf("watch from now, but get latest event failed, err: %v, rid: %s", err, rid)
-			return nil, err
-		}
-
 		if time.Now().Unix()-start > timeoutWatchLoopSeconds {
+			lastNode, exists, err := c.getLatestEvent(kit, key)
+			if err != nil {
+				blog.Errorf("watch from now, but get latest event failed, err: %v, rid: %s", err, rid)
+				return nil, err
+			}
+
 			if !exists {
 				// has already looped for timeout seconds, and we still got no event.
 				// return with NoEventCursor and empty detail
+				opts.Cursor = watch.NoEventCursor
 				return []*watch.WatchEventDetail{{
 					Cursor:    watch.NoEventCursor,
 					Resource:  opts.Resource,
@@ -338,16 +340,11 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 			}
 		}
 
-		if !exists {
-			continue
-		}
-
-		nodes, err = c.searchFollowingEventChainNodesByID(kit, lastNode.ID, eventStep, opts.EventTypes, key)
+		nodes, err = c.searchFollowingEventChainNodesByID(kit, nodeID, eventStep, opts.EventTypes, key)
 		if err != nil {
 			blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, rid)
 			return nil, err
 		}
-		continue
 	}
 }
 
