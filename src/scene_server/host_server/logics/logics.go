@@ -13,9 +13,22 @@
 package logics
 
 import (
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common/backbone"
+	"configcenter/src/storage/dal/redis"
 )
 
 type Logics struct {
 	*backbone.Engine
+	cache       redis.Client
+	AuthManager *extensions.AuthManager
+}
+
+// NewLogics get logics handle
+func NewLogics(b *backbone.Engine, cache redis.Client, authManager *extensions.AuthManager) *Logics {
+	return &Logics{
+		Engine:      b,
+		cache:       cache,
+		AuthManager: authManager,
+	}
 }

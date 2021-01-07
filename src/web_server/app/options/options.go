@@ -14,6 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -36,16 +37,13 @@ func NewServerOption() *ServerOption {
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
+	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/ccapi.conf")
 }
 
 type Session struct {
 	Name            string
-	Skip            string
 	DefaultLanguage string
-	Host            string
-	Port            string
-	Secret          string
 	MultipleOwner   string
 }
 
@@ -59,14 +57,27 @@ type Site struct {
 	BkHttpsLoginUrl string
 	AppCode         string
 	CheckUrl        string
+	// available value: internal, iam
+	AuthScheme string
+	// available value: off, on
+	FullTextSearch string
+	PaasDomainUrl  string
+	HelpDocUrl     string
 }
 
 type Config struct {
 	Site         Site
 	Session      Session
+	Redis        redis.Config
 	Version      string
 	AgentAppUrl  string
 	LoginUrl     string
 	LoginVersion string
 	ConfigMap    map[string]string
+	AuthCenter   AppInfo
+}
+
+type AppInfo struct {
+	AppCode string `json:"appCode"`
+	URL     string `json:"url"`
 }

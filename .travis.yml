@@ -1,13 +1,14 @@
 language: go
 
 go:
-  - "1.8.x"
+  - "1.12.x"
 
 # safelist
 branches:
   only:
-  - master
-  - travis_ci
+    - master
+    - /^v3\.[1-9]+[0-9]*[0-9]*\.x$/
+    - travis_ci
 
 env:
   global:

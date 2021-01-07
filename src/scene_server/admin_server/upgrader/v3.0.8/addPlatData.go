@@ -23,39 +23,27 @@ import (
 )
 
 func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tablename := "cc_PlatBase"
-	blog.Errorf("add data for  %s table ", tablename)
-	rows := []map[string]interface{}{
-		map[string]interface{}{
-			common.BKCloudNameField: "default area",
-			common.BKOwnerIDField:   common.BKDefaultOwnerID,
-			common.BKCloudIDField:   common.BKDefaultDirSubArea,
-			common.CreateTimeField:  time.Now(),
-			common.LastTimeField:    time.Now(),
-		},
-	}
-	for _, row := range rows {
-		// ensure id plug > 1, 1Reserved
-		platID, err := db.NextSequence(ctx, tablename)
-		if err != nil {
-			return err
-		}
-		// Direct connecting area id = 1
-		if common.BKDefaultDirSubArea == row[common.BKCloudIDField] {
-			platID = common.BKDefaultDirSubArea
-		}
-
-		row[common.BKCloudIDField] = platID
-		_, _, err = upgrader.Upsert(ctx, db, tablename, row, "", []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tablename, err)
-			return err
-		}
-
-		return nil
-
+	tableName := common.BKTableNameBasePlat
+	blog.Infof("add data for  %s table ", tableName)
+	row := map[string]interface{}{
+		common.BKCloudNameField: "default area",
+		common.BKOwnerIDField:   common.BKDefaultOwnerID,
+		common.BKCloudIDField:   common.BKDefaultDirSubArea,
+		common.CreateTimeField:  time.Now(),
+		common.LastTimeField:    time.Now(),
 	}
 
-	blog.Errorf("add data for  %s table  ", tablename)
+	// ensure id > 1, 1 is reserved for direct connecting area
+	_, err := db.NextSequence(ctx, tableName)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = upgrader.Upsert(ctx, db, tableName, row, "", []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
+	if nil != err {
+		blog.Errorf("add data for  %s table error  %s", tableName, err)
+		return err
+	}
+
 	return nil
 }

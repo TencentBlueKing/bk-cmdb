@@ -13,20 +13,28 @@
 package util
 
 import (
+	"fmt"
+	"regexp"
+	"strconv"
 	"time"
 
-	"github.com/coccyx/timeparser"
-
 	"configcenter/src/common"
+
+	"github.com/coccyx/timeparser"
 )
 
 var (
-	//需要转换的时间的标志
-	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField}
+	// 需要转换的时间的标志
+	convTimeFields = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
 )
 
 func GetCurrentTimeStr() string {
 	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+func GetCurrentTimePtr() *time.Time {
+	now := time.Now()
+	return &now
 }
 
 func ConvParamsTime(data interface{}) interface{} {
@@ -54,7 +62,8 @@ func convTimeItem(item interface{}) (interface{}, error) {
 						break
 					}
 				}
-				if !timeTypeOk { //如果当前不需要转换，递归转
+				// 如果当前不需要转换，递归转
+				if !timeTypeOk {
 					arrItem[key], _ = convTimeItem(value)
 					continue
 				}
@@ -91,7 +100,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//如果是数据，递归转换所有子项
+		// 如果是数据，递归转换所有子项
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {
@@ -151,31 +160,30 @@ func convItemToTime(val interface{}) (interface{}, error) {
 
 }
 
-type Ticker struct {
-	C      chan time.Time
-	ticker *time.Ticker
-	stoped bool
-}
+var validPeriod = regexp.MustCompile("^\\d*[DHMS]$") // period regexp to check period
 
-func (t *Ticker) Stop() {
-	t.ticker.Stop()
-	t.stoped = true
-}
-
-func (t *Ticker) Tick() {
-	t.C <- time.Now()
-}
-
-func NewTicker(d time.Duration) *Ticker {
-	t := &Ticker{
-		ticker: time.NewTicker(d),
-		C:      make(chan time.Time, 2),
+// 00002H --> 2H
+// 0000D/0M ---> ∞
+// empty string / ∞ ---> ∞
+// regexp matched: positive integer (include positive integer begin with more the one '0') + [D/H/M/S]
+// eg. 0H, 000H, 0002H, 32M，34S...
+// examples of no matched:  1.4H, -2H, +2H ...
+func FormatPeriod(period string) (string, error) {
+	if common.Infinite == period || "" == period {
+		return common.Infinite, nil
 	}
-	go func() {
-		for !t.stoped {
-			t.C <- <-t.ticker.C
-		}
-		close(t.C)
-	}()
-	return t
+
+	if !validPeriod.MatchString(period) {
+		return "", fmt.Errorf("invalid period")
+	}
+
+	num, err := strconv.Atoi(period[:len(period)-1])
+	if nil != err {
+		return "", err
+	}
+	if 0 == num {
+		return common.Infinite, nil
+	}
+
+	return strconv.Itoa(num) + period[len(period)-1:], nil
 }

@@ -14,20 +14,20 @@ package eventserver
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/watch"
 )
 
 func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.ParamSubscriptionSearch) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/subscribe/search/%s/%s", ownerID, appID)
+	subPath := "/subscribe/search/%s/%s"
 
 	err = e.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -41,7 +41,7 @@ func (e *eventServer) Ping(ctx context.Context, h http.Header, dat interface{}) 
 	err = e.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -55,7 +55,7 @@ func (e *eventServer) Telnet(ctx context.Context, h http.Header, dat interface{}
 	err = e.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -64,12 +64,12 @@ func (e *eventServer) Telnet(ctx context.Context, h http.Header, dat interface{}
 
 func (e *eventServer) Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/subscribe/%s/%s", ownerID, appID)
+	subPath := "/subscribe/%s/%s"
 
 	err = e.client.Post().
 		WithContext(ctx).
 		Body(subscription).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -78,12 +78,12 @@ func (e *eventServer) Subscribe(ctx context.Context, ownerID string, appID strin
 
 func (e *eventServer) UnSubscribe(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/subscribe/%s/%s/%s", ownerID, appID, subscribeID)
+	subPath := "/subscribe/%s/%s/%s"
 
 	err = e.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID, subscribeID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -92,12 +92,24 @@ func (e *eventServer) UnSubscribe(ctx context.Context, ownerID string, appID str
 
 func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/subscribe/%s/%s/%s", ownerID, appID, subscribeID)
+	subPath := "/subscribe/%s/%s/%s"
 
 	err = e.client.Put().
 		WithContext(ctx).
 		Body(subscription).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID, subscribeID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (e *eventServer) Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error) {
+	resp = make([]*watch.WatchEventDetail, 0)
+	err = e.client.Post().
+		WithContext(ctx).
+		Body(opts).
+		SubResourcef("/watch/resource/%s", opts.Resource).
 		WithHeaders(h).
 		Do().
 		Into(resp)

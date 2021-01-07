@@ -12,27 +12,31 @@
     <div class="pop-wrapper">
         <div class="pop-master">
             <div class="pop-box">
-                <div class="title">{{$t('EventPush["推送测试"]')}}</div>
+                <div class="title">{{$t('推送测试')}}</div>
                 <div class="content">
-                    <p class="info">{{$t('EventPush["配置平台以POST方法推送以下示例数据到您配置的URL"]')}}</p>
+                    <p class="info">{{$t('配置平台以POST方法推送以下示例数据到您配置的URL')}}</p>
                     <div class="content-box">
                         <pre>{{example}}</pre>
                     </div>
                     <div class="btn-group">
-                        <bk-button type="primary" class="btn" @click="testTelnet" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["只测试连通性"]')}}</bk-button>
-                        <bk-button type="primary" class="btn" @click="testPing" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["推送测试"]')}}</bk-button>
-                        <bk-button type="default" class="btn vice-btn" @click="closePop">{{$t('Common["取消"]')}}</bk-button>
+                        <bk-button theme="primary" class="btn" @click="testTelnet" :loading="$loading(['testPing', 'testTelnet'])">
+                            {{$t('只测试连通性')}}
+                        </bk-button>
+                        <bk-button theme="primary" class="btn" @click="testPing" :loading="$loading(['testPing', 'testTelnet'])">
+                            {{$t('推送测试')}}
+                        </bk-button>
+                        <bk-button theme="default" class="btn vice-btn" @click="closePop">{{$t('取消')}}</bk-button>
                     </div>
                 </div>
             </div>
-            <div class="result-info" v-show="isResultShow" v-bkloading="{isLoading: $loading(['testPing', 'testTelnet'])}">
-                <p class="text-success" v-if="resultInfo.result"><i class="bk-icon icon-check-circle-shape"></i>{{$t('EventPush["推送成功"]')}}</p>
-                <p class="text-danger" v-else><i class="bk-icon icon-close-circle-shape"></i>{{$t('EventPush["推送失败"]')}}</p>
+            <div class="result-info" v-show="isResultShow" v-bkloading="{ isLoading: $loading(['testPing', 'testTelnet']) }">
+                <p class="text-success" v-if="resultInfo.result"><i class="bk-icon icon-check-circle-shape"></i>{{$t('推送成功')}}</p>
+                <p class="text-danger" v-else><i class="bk-icon icon-close-circle-shape"></i>{{$t('推送失败')}}</p>
                 <template v-if="resultInfo.result">
-                    <ul class="result-data" :class="{'close': !isResultOpen}" v-if="typeof(resultInfo.data)==='string'">
+                    <ul class="result-data" :class="{ 'close': !isResultOpen }" v-if="typeof (resultInfo.data) === 'string'">
                         <li>{{resultInfo.data}}</li>
                     </ul>
-                    <ul class="result-data" :class="{'close': !isResultOpen}" v-else>
+                    <ul class="result-data" :class="{ 'close': !isResultOpen }" v-else>
                         <li v-for="(value, key, index) in resultInfo.data" :key="index">{{key}}：{{value}}</li>
                     </ul>
                 </template>
@@ -41,11 +45,11 @@
                         <li>{{resultInfo['bk_error_msg']}}</li>
                     </ul>
                 </template>
-                <a href="javascript:void(0)" class="result-slide" 
-                    :class="{'close': !isResultOpen}"
-                    v-if="resultInfo.result" 
-                    @click="isResultOpen=!isResultOpen">
-                    {{isResultOpen ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
+                <a href="javascript:void(0)" class="result-slide"
+                    :class="{ 'close': !isResultOpen }"
+                    v-if="resultInfo.result"
+                    @click="isResultOpen = !isResultOpen">
+                    {{isResultOpen ? $t('收起') : $t('展开')}}
                 </a>
             </div>
         </div>
@@ -58,6 +62,7 @@
     export default {
         props: {
             callbackURL: {
+                type: String,
                 required: true,
                 default: ''
             },
@@ -85,6 +90,9 @@
                 }
             }
         },
+        beforeDestroy () {
+            this.$http.cancelRequest(['testPing', 'testTelnet'])
+        },
         methods: {
             ...mapActions('eventSub', [
                 'pingSubscription',
@@ -98,9 +106,12 @@
                 const res = await this.pingSubscription({
                     params: {
                         callback_url: this.callbackURL,
-                        data: {}
+                        data: JSON.stringify(this.example)
                     },
-                    config: {requestId: 'testPing'}
+                    config: {
+                        requestId: 'testPing',
+                        transformData: false
+                    }
                 })
                 this.resultInfo = res
             },
@@ -110,8 +121,11 @@
             async testTelnet () {
                 this.isResultShow = true
                 const res = await this.testingConnection({
-                    params: {callback_url: this.callbackURL},
-                    config: {requestId: 'testTelnet'}
+                    params: { callback_url: this.callbackURL },
+                    config: {
+                        requestId: 'testTelnet',
+                        transformData: false
+                    }
                 })
                 this.resultInfo = res
             },

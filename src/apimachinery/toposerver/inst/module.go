@@ -14,7 +14,6 @@ package inst
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -23,12 +22,12 @@ import (
 
 func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
-	subPath := fmt.Sprintf("/module/%s/%s", appID, setID)
+	subPath := "/module/%s/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
+		SubResourcef(subPath, appID, setID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -37,12 +36,12 @@ func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID s
 
 func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
+	subPath := "/module/%s/%s/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, appID, setID, moduleID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -51,12 +50,12 @@ func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID s
 
 func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
+	subPath := "/module/%s/%s/%s"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
+		SubResourcef(subPath, appID, setID, moduleID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -65,12 +64,54 @@ func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID s
 
 func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := fmt.Sprintf("/module/search/%s/%s/%s", ownerID, appID, setID)
+	subPath := "/module/search/%s/%s/%s"
 
-	err = t.client.Put().
+	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID, setID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := "/findmany/module/biz/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
+	resp = new(metadata.MapArrayResponse)
+	subPath := "/findmany/module/bk_biz_id/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	subPath := "/findmany/module/with_relation/biz/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

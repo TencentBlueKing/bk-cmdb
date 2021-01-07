@@ -14,76 +14,130 @@ package service
 
 import (
 	"context"
+	"net/http"
 
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
+	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/event_server/distribution"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
+
+	"github.com/emicklei/go-restful"
 )
 
+// Service impls main logics as service for datacolection app.
 type Service struct {
-	*backbone.Engine
-	db    dal.RDB
-	cache *redis.Client
-	ctx   context.Context
+	ctx    context.Context
+	engine *backbone.Engine
+
+	// db is cc main database.
+	db dal.RDB
+
+	// cache is cc redis client.
+	cache redis.Client
+
+	// distributer is event subscription distributer.
+	distributer *distribution.Distributor
+
+	authorizer ac.AuthorizeInterface
 }
 
-func NewService(ctx context.Context) *Service {
-	return &Service{
-		ctx: ctx,
-	}
+// NewService creates a new Service object.
+func NewService(ctx context.Context, engine *backbone.Engine) *Service {
+	return &Service{ctx: ctx, engine: engine}
 }
 
+// SetDB setups database.
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
-func (s *Service) SetCache(db *redis.Client) {
+// SetCache setups cc main redis.
+func (s *Service) SetCache(db redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
-		return s.CCErr
-	}
-	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
-
-	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
-	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))
-	ws.Route(ws.POST("/subscribe/telnet").To(s.Telnet))
-	ws.Route(ws.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
-	ws.Route(ws.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
-	ws.Route(ws.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
-
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
-
-	return ws
+func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
+	s.authorizer = authorizer
 }
 
+// SetDistributer setups event subscription distributer.
+func (s *Service) SetDistributer(distributer *distribution.Distributor) {
+	s.distributer = distributer
+}
+
+// WebService setups a new restful web service.
+func (s *Service) WebService() *restful.Container {
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
+	getErrFunc := func() errors.CCErrorIf {
+		return s.engine.CCErr
+	}
+
+	api.Path("/event/v3")
+	api.Filter(s.engine.Metric().RestfulMiddleWare)
+	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
+	api.Produces(restful.MIME_JSON)
+
+	s.initService(api)
+
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
+}
+
+func (s *Service) initService(web *restful.WebService) {
+
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/search/{ownerID}/{appID}", Handler: s.ListSubscriptions})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/{ownerID}/{appID}", Handler: s.Subscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UnSubscribe})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UpdateSubscription})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/ping", Handler: s.Ping})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/telnet", Handler: s.Telnet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
+
+	utility.AddToRestfulWebService(web)
+
+}
+
+// Healthz is a HTTP restful interface for health check.
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	// metadata.
 	meta := metric.HealthMeta{IsHealthy: true}
 
-	// zk health status
-	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
+	// zookeeper health status info.
+	zkItem := metric.HealthItem{
+		IsHealthy: true,
+		Name:      types.CCFunctionalityServicediscover,
+	}
+	if err := s.engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
 
-	// mongodb
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
+	// mongodb health status info.
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
-	// redis
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.cache.Ping().Err()))
+	// cc main redis health status info.
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
@@ -106,6 +160,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
+
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
 }

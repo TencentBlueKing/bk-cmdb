@@ -14,58 +14,75 @@ package model
 
 import (
 	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // FieldValid field valid method
 type FieldValid struct {
+	lang language.DefaultCCLanguageIf
 }
 
 // Valid valid the field
-func (f *FieldValid) Valid(params types.ContextParams, data mapstr.MapStr, fieldID string) (string, error) {
+func (f *FieldValid) Valid(kit *rest.Kit, data mapstr.MapStr, fieldID string) (string, error) {
 
 	val, err := data.String(fieldID)
 	if nil != err {
-		return val, params.Err.New(common.CCErrCommParamsIsInvalid, fieldID+" "+err.Error())
+		return val, kit.CCError.New(common.CCErrCommParamsIsInvalid, fieldID+" "+err.Error())
 	}
 	if 0 == len(val) {
-		return val, params.Err.Errorf(common.CCErrCommParamsNeedSet, fieldID)
+		return val, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, fieldID)
 	}
 
 	return val, nil
 }
 
 // ValidID check the property ID
-func (f *FieldValid) ValidID(params types.ContextParams, value string) error {
-
-	match, err := regexp.MatchString(`^[a-z\d_]+$`, value)
+func (f *FieldValid) ValidID(kit *rest.Kit, value string) error {
+	if common.AttributeIDMaxLength < utf8.RuneCountInString(value) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+			f.lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+	}
+	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, value)
 	if nil != err {
 		return err
 	}
 
 	if !match {
-		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, value)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, value)
 	}
 
 	return nil
 }
 
 // ValidName check the name
-func (f *FieldValid) ValidName(params types.ContextParams, value string) error {
-	if 20 < utf8.RuneCountInString(value) {
-		return params.Err.Errorf(common.CCErrCommOverLimit, value)
+func (f *FieldValid) ValidName(kit *rest.Kit, value string) error {
+	if common.AttributeNameMaxLength < utf8.RuneCountInString(value) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+			f.lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
+	}
+	value = strings.TrimSpace(value)
+	return nil
+}
+
+// ValidPlaceHolder check the PlaceHolder
+func (f *FieldValid) ValidPlaceHolder(kit *rest.Kit, value string) error {
+	if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(value) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+			f.lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
 	}
 	return nil
 }
 
 // ValidNameWithRegex valid by regex
-func (f *FieldValid) ValidNameWithRegex(params types.ContextParams, value string) error {
+func (f *FieldValid) ValidNameWithRegex(kit *rest.Kit, value string) error {
 
-	if err := f.ValidName(params, value); nil != err {
+	if err := f.ValidName(kit, value); nil != err {
 		return err
 	}
 
@@ -77,7 +94,7 @@ func (f *FieldValid) ValidNameWithRegex(params types.ContextParams, value string
 			}
 
 		if !match {
-			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, value)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, value)
 		}
 	*/
 	return nil

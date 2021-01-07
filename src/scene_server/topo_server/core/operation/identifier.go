@@ -18,12 +18,14 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 type IdentifierOperationInterface interface {
-	SearchIdentifier(params types.ContextParams, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierResult, error)
+	SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error)
 }
 
 func NewIdentifier(client apimachinery.ClientSetInterface) IdentifierOperationInterface {
@@ -34,16 +36,79 @@ type identifier struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (g *identifier) SearchIdentifier(params types.ContextParams, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierResult, error) {
-	rsp, err := g.clientSet.ObjectController().Identifier().SearchIdentifier(context.Background(), params.Header, objType, param)
+func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error) {
+	cond := condition.CreateCondition()
+
+	or := []mapstr.MapStr{
+		{
+			common.BKHostInnerIPField: map[string]interface{}{
+				common.BKDBIN: param.IP.Data,
+			},
+		}, {
+			common.BKHostOuterIPField: map[string]interface{}{
+				common.BKDBIN: param.IP.Data,
+			},
+		},
+	}
+
+	cond.NewOR().MapStrArr(or)
+	if param.IP.CloudID != nil {
+		cond.Field(common.BKCloudIDField).In(param.IP.CloudID)
+	}
+
+	if param.Page.Limit > common.BKMaxPageSize {
+		return nil, kit.CCError.CCError(common.CCErrCommOverLimit)
+	}
+	if param.Page.Limit == 0 {
+		param.Page.Limit = common.BKMaxPageSize
+	}
+
+	hostQuery := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Fields:    []string{common.BKHostIDField},
+		Page:      param.Page,
+	}
+	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(context.Background(), kit.Header, common.BKInnerObjIDHost, hostQuery)
 	if nil != err {
-		return nil, err
+		blog.Errorf("query host failed. error: %v, input: %+v,  rid:%s", err, hostQuery, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !hostRet.Result {
+		blog.ErrorJSON("query host failed, input:%s, condition:%s, rid:%s", hostRet, kit, hostQuery, kit.Rid)
+		return nil, kit.CCError.New(hostRet.Code, hostRet.ErrMsg)
+	}
+
+	if len(hostRet.Data.Info) == 0 {
+		return &metadata.SearchHostIdentifierData{Count: 0, Info: []metadata.HostIdentifier{}}, nil
+	}
+
+	var hostIDs []int64
+	for _, hostInfo := range hostRet.Data.Info {
+		hostID, err := hostInfo.Int64(common.BKHostIDField)
+		if err != nil {
+			blog.Errorf("bk_host_id not int . error: %v, host info:%s,  rid:%s", err, hostInfo, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
+				common.BKHostIDField, "int64", err.Error())
+		}
+		hostIDs = append(hostIDs, hostID)
+	}
+
+	if len(hostIDs) == 0 {
+		return new(metadata.SearchHostIdentifierData), nil
+	}
+
+	queryHostIdentifier := &metadata.SearchHostIdentifierParam{HostIDs: hostIDs}
+	rsp, err := g.clientSet.CoreService().Host().FindIdentifier(context.Background(), kit.Header, queryHostIdentifier)
+	if nil != err {
+		blog.Errorf("search identifier failed. err: %v, ids: %v,  rid:%s", err, hostIDs, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[identifier] failed to search the identifier , error info is %s", rsp.ErrMsg)
-		return nil, params.Err.New(common.CCErrObjectSelectIdentifierFailed, rsp.ErrMsg)
+		blog.ErrorJSON("search identifier failed, reply: %s, ids: %s, condition: %s, rid: %s", rsp, hostIDs,
+			queryHostIdentifier, kit.Rid)
+		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return rsp, nil
+	return &rsp.Data, nil
 }

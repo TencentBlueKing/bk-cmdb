@@ -13,70 +13,65 @@
 package mapstr
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/mohae/deepcopy"
 )
 
 // MapStr the common event data definition
 type MapStr map[string]interface{}
 
-// New create a new MapStr instance
-func New() MapStr {
-	return MapStr{}
-}
-
-// NewArrayFromInterface create a new array from interface
-func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
-	results := []MapStr{}
-	for _, item := range datas {
-		results = append(results, item)
-	}
-	return results
-}
-
-// NewArrayFromMapStr create a new array from mapstr array
-func NewArrayFromMapStr(datas []MapStr) []MapStr {
-	results := []MapStr{}
-	for _, item := range datas {
-		results = append(results, item)
-	}
-	return results
-}
-
-// NewFromInterface create a mapstr instance from the interface
-func NewFromInterface(data interface{}) (MapStr, error) {
-
-	switch tmp := data.(type) {
-	default:
-		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
-	case nil:
-		return MapStr{}, nil
-	case string:
-		result := New()
-		err := json.Unmarshal([]byte(tmp), &result)
-		return result, err
-	case *map[string]interface{}:
-		return MapStr(*tmp), nil
-	case map[string]string:
-		result := New()
-		for key, val := range tmp {
-			result.Set(key, val)
-		}
-		return result, nil
-	case map[string]interface{}:
-		return MapStr(tmp), nil
-	}
+// Clone create a new MapStr by deepcopy
+func (cli MapStr) Clone() MapStr {
+	cpyInst := deepcopy.Copy(cli)
+	return cpyInst.(MapStr)
 }
 
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
+		if strings.Contains(key, ".") {
+			root := key[:strings.Index(key, ".")]
+			if _, ok := cli[root]; ok && IsNil(cli[root]) {
+				delete(cli, root)
+			}
+		}
 		cli[key] = val
 	}
+}
+
+// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
+func IsNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return rflValue.IsNil()
+	}
+	return true
+}
+
+// ToMapInterface convert to map[string]interface{}
+func (cli MapStr) ToMapInterface() map[string]interface{} {
+	return cli
+}
+
+// ToStructByTag convert self into a struct with 'tagName'
+//
+//  eg:
+//  self := MapStr{"testName":"testvalue"}
+//  targetStruct := struct{
+//      Name string `field:"testName"`
+//  }
+//  After call the function self.ToStructByTag(targetStruct, "field")
+//  the targetStruct.Name value will be 'testvalue'
+func (cli MapStr) ToStructByTag(targetStruct interface{}, tagName string) error {
+	return SetValueToStructByTagsWithTagName(targetStruct, cli, tagName)
 }
 
 // MarshalJSONInto convert to the input value
@@ -84,10 +79,17 @@ func (cli MapStr) MarshalJSONInto(target interface{}) error {
 
 	data, err := cli.ToJSON()
 	if nil != err {
-		return err
+		return fmt.Errorf("marshal %#v failed: %v", target, err)
 	}
 
-	return json.Unmarshal(data, target)
+	d := json.NewDecoder(bytes.NewReader(data))
+	d.UseNumber()
+
+	err = d.Decode(target)
+	if err != nil {
+		return fmt.Errorf("unmarshal %s failed: %v", data, err)
+	}
+	return nil
 }
 
 // ToJSON convert to json string
@@ -132,7 +134,6 @@ func (cli MapStr) Bool(key string) (bool, error) {
 
 // Int64 return the value by the key
 func (cli MapStr) Int64(key string) (int64, error) {
-
 	switch t := cli[key].(type) {
 	default:
 		return 0, errors.New("invalid num")
@@ -149,6 +150,14 @@ func (cli MapStr) Int64(key string) (int64, error) {
 	case float32:
 		return int64(t), nil
 	case float64:
+		return int64(t), nil
+	case uint:
+		return int64(t), nil
+	case uint16:
+		return int64(t), nil
+	case uint32:
+		return int64(t), nil
+	case uint64:
 		return int64(t), nil
 	case json.Number:
 		num, err := t.Int64()
@@ -187,8 +196,10 @@ func (cli MapStr) String(key string) (string, error) {
 	switch t := cli[key].(type) {
 	case nil:
 		return "", nil
-	default:
-		return fmt.Sprintf("%v", t), nil
+	case float32:
+		return strconv.FormatFloat(float64(t), 'f', -1, 32), nil
+	case float64:
+		return strconv.FormatFloat(float64(t), 'f', -1, 64), nil
 	case map[string]interface{}, []interface{}:
 		rest, err := json.Marshal(t)
 		if nil != err {
@@ -199,6 +210,8 @@ func (cli MapStr) String(key string) (string, error) {
 		return t.String(), nil
 	case string:
 		return t, nil
+	default:
+		return fmt.Sprintf("%v", t), nil
 	}
 }
 
@@ -251,12 +264,14 @@ func (cli MapStr) MapStr(key string) (MapStr, error) {
 
 	switch t := cli[key].(type) {
 	default:
-		return nil, errors.New("the data is not a map[string]interface{} type")
+		return nil, fmt.Errorf("the value of the key(%s) is not a map[string]interface{} type", key)
 	case nil:
 		if _, ok := cli[key]; ok {
 			return MapStr{}, nil
 		}
 		return nil, errors.New("the key is invalid")
+	case MapStr:
+		return t, nil
 	case map[string]interface{}:
 		return MapStr(t), nil
 	}
@@ -271,18 +286,20 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 		val := reflect.ValueOf(cli[key])
 		switch val.Kind() {
 		default:
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		case reflect.Slice:
 			tmpval, ok := val.Interface().([]MapStr)
 			if ok {
 				return tmpval, nil
 			}
 
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		}
 
 	case nil:
 		return nil, fmt.Errorf("the key(%s) is invalid", key)
+	case []MapStr:
+		return t, nil
 	case []map[string]interface{}:
 		items := make([]MapStr, 0)
 		for _, item := range t {
@@ -295,6 +312,12 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 			switch childType := item.(type) {
 			case map[string]interface{}:
 				items = append(items, childType)
+			case MapStr:
+				items = append(items, childType)
+			case nil:
+				continue
+			default:
+				return nil, fmt.Errorf("the value of the key(%s) is not a valid type, type: %v,value:%+v", key, childType, t)
 			}
 		}
 		return items, nil

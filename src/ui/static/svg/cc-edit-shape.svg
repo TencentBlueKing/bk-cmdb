@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="15px" height="14px" viewBox="0 0 15 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54 (76480) - https://sketchapp.com -->
+    <title>编辑</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <path d="M0,14 L0,12 L14,12 L14,14 L0,14 Z M3.5,10.5 L1.5,10.5 L1.5,8.5 L8.5,1.5 L10.5,3.50396729 L3.5,10.5 Z M11,3 L9,1 L10,-4.81392703e-13 L12,2.00396729 L11,3 Z" id="path-1"></path>
+    </defs>
+    <g id="服务目录" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="服务分类" transform="translate(-305.000000, -542.000000)">
+            <g id="编组" transform="translate(82.000000, 409.933333)">
+                <g id="表格" transform="translate(0.000000, 0.066667)">
+                    <g id="分组">
+                        <g id="服务" transform="translate(18.320158, 6.000000)">
+                            <g id="编辑" transform="translate(205.000000, 126.000000)">
+                                <mask id="mask-2" fill="white">
+                                    <use xlink:href="#path-1"></use>
+                                </mask>
+                                <use id="合并形状" fill="#3A84FF" fill-rule="nonzero" xlink:href="#path-1"></use>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

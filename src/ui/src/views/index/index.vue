@@ -1,88 +1,126 @@
 <template>
-    <div class="index-wrapper">
-        <v-search class="index-search"></v-search>
-        <v-recently ref="recently"></v-recently>
-        <v-classify></v-classify>
-        <p class="copyright" ref="copyright">
-            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
-        </p>
+    <div class="index-layout">
+        <div class="search-layout" :style="{ paddingTop: inSearchPaddingTop + 'px' }">
+            <div :class="['search-tab', { 'is-focus': isFocus }]" v-show="showSearchTab" v-if="isFullTextSearch">
+                <span :class="['tab-item', { 'active': activeName === 'host' }]"
+                    @click="handleChangeTab('host')">
+                    {{$t('主机搜索')}}
+                </span>
+                <span :class="['tab-item', { 'active': activeName === 'fullText' }]"
+                    @click="handleChangeTab('fullText')">
+                    {{$t('全文检索')}}
+                </span>
+            </div>
+            <div class="tab-content">
+                <host-search v-show="activeName === 'host'" @focus="handleFocus"></host-search>
+                <search-input v-show="activeName === 'fullText'"
+                    v-if="isFullTextSearch"
+                    :is-full-text-search="true"
+                    @search-status="handleSearchStatus"
+                    @focus="handleFocus">
+                </search-input>
+            </div>
+        </div>
+        <the-map style="user-select: none;"></the-map>
+        <the-footer></the-footer>
     </div>
 </template>
 
 <script>
-    import vSearch from './children/search'
-    import vRecently from './children/recently'
-    import vClassify from './children/classify'
-    import getScrollbarWidth from '@/utils/scrollbar-width.js'
-    import { addMainScrollListener, removeMainScrollListener, addMainResizeListener, removeMainResizeListener } from '@/utils/main-scroller'
+    import hostSearch from './children/host-search'
+    import searchInput from './children/search-input'
+    import theMap from './children/map'
+    import theFooter from './children/footer'
+    import { mapGetters } from 'vuex'
     export default {
+        name: 'index',
         components: {
-            vSearch,
-            vRecently,
-            vClassify
+            hostSearch,
+            searchInput,
+            theMap,
+            theFooter
         },
         data () {
-            const year = (new Date()).getFullYear()
             return {
-                year,
-                scrollHandler: null,
-                resizeHandler: null
+                activeName: 'host',
+                inSearchPaddingTop: null,
+                showSearchTab: true,
+                isFocus: false
             }
         },
-        beforeRouteLeave (to, from, next) {
-            this.$refs.recently.updateRecently(to.path)
-            next()
+        computed: {
+            ...mapGetters(['site']),
+            isFullTextSearch () {
+                return this.site.fullTextSearch === 'on'
+            },
+            paddingTop () {
+                return parseInt((this.$APP.height - 58) / 3, 10)
+            }
         },
         created () {
-            const calcCopyrightPosition = ($scroller) => {
-                const scrollerRect = $scroller.getBoundingClientRect()
-                const scrollerHeight = scrollerRect.height
-                const scrollerWidth = scrollerRect.width
-                const scrollerTop = $scroller.scrollTop
-                const copyrightHeight = this.$refs.copyright.getBoundingClientRect().height
-                const scrollbarWidth = scrollerWidth === ($scroller.scrollWidth + getScrollbarWidth()) ? 0 : getScrollbarWidth()
-                this.$refs.copyright.style.top = scrollerTop + scrollerHeight - copyrightHeight - scrollbarWidth + 'px'
+            this.inSearchPaddingTop = this.paddingTop
+            const query = this.$route.query
+            const showFullText = ['keywords', 'show'].every(key => query.hasOwnProperty(key))
+            if (showFullText && this.isFullTextSearch) {
+                this.activeName = 'fullText'
             }
-            this.scrollHandler = event => {
-                calcCopyrightPosition(event.target)
-            }
-            this.resizeHandler = () => {
-                calcCopyrightPosition(document.querySelector('.main-scroller'))
-            }
-            addMainScrollListener(this.scrollHandler)
-            addMainResizeListener(this.resizeHandler)
         },
-        mounted () {
-            this.resizeHandler()
-        },
-        beforeDestroy () {
-            removeMainScrollListener(this.scrollHandler)
-            removeMainResizeListener(this.resizeHandler)
+        methods: {
+            handleChangeTab (name) {
+                this.activeName = name
+            },
+            handleSearchStatus (status) {
+                this.inSearchPaddingTop = status ? 0 : this.paddingTop
+                this.showSearchTab = !status
+            },
+            handleFocus (status) {
+                this.isFocus = status
+            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .index-wrapper{
+    .index-layout {
+        padding: 0 0 50px;
+        background-color: #F5F6FA;
         position: relative;
-        background-color: #f5f6fa;
+        z-index: 1;
     }
-    .index-search{
-        width: 50%;
-        margin: 0 auto;
-        padding: 40px 0 50px;
-    }
-    .copyright{
-        position: absolute;
-        width: calc(100% - 50px);
-        height: 43px;
-        left: 25px;
-        bottom: 0;
-        line-height: 42px;
-        font-size: 12px;
-        text-align: center;
-        color: rgba(116, 120, 131, 0.5);
-        border-top: 1px solid rgba(116, 120, 131, 0.2);
-        background-color: #f5f6fa;
+    .search-layout {
+        height: 100%;
+        transition: all 0.4s;
+        .search-tab {
+            max-width: 726px;
+            margin: 0 auto;
+            font-size: 0;
+            &.is-focus .tab-item.active {
+                border-color: #3A84FF;
+            }
+            .tab-item {
+                @include inlineBlock;
+                position: relative;
+                height: 30px;
+                line-height: 30px;
+                text-align: center;
+                padding: 0 14px;
+                margin: 0 4px -1px 0;
+                font-size: 14px;
+                color: #63656E;
+                background-color: #DCDEE5;
+                border: 1px solid #C4C6CC;
+                border-radius: 6px 6px 0 0;
+                transition: all 0.2s;
+                cursor: pointer;
+                &.active {
+                    background-color: #FFFFFF;
+                    border-bottom-color: #FFFFFF !important;
+                    z-index: 1000;
+                }
+            }
+        }
+        .tab-content {
+            height: 100%;
+        }
     }
 </style>

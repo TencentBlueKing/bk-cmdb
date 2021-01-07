@@ -16,9 +16,9 @@ import (
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
-	frtypes "configcenter/src/common/mapstr"
-	metadata "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
 var _ Association = (*association)(nil)
@@ -26,7 +26,7 @@ var _ Association = (*association)(nil)
 type association struct {
 	asst       metadata.Association
 	isMainLine bool
-	params     types.ContextParams
+	kit        *rest.Kit
 	clientSet  apimachinery.ClientSetInterface
 }
 
@@ -56,10 +56,10 @@ func (cli *association) Create() error {
 func (cli *association) Delete() error {
 	return nil
 }
-func (cli *association) Update(data frtypes.MapStr) error {
+func (cli *association) Update(data mapstr.MapStr) error {
 	return nil
 }
-func (cli *association) Save(data frtypes.MapStr) error {
+func (cli *association) Save(data mapstr.MapStr) error {
 	return nil
 }
 
@@ -71,11 +71,11 @@ func (cli *association) GetTopo(obj Object) (Topo, error) {
 	return nil, nil
 }
 
-func (cli *association) ToMapStr() (frtypes.MapStr, error) {
-	rst := metadata.SetValueToMapStrByTags(&cli.asst)
+func (cli *association) ToMapStr() (mapstr.MapStr, error) {
+	rst := mapstr.SetValueToMapStrByTags(&cli.asst)
 	return rst, nil
 }
 
-func (cli *association) Parse(data frtypes.MapStr) (*metadata.Association, error) {
+func (cli *association) Parse(data mapstr.MapStr) (*metadata.Association, error) {
 	return cli.asst.Parse(data)
 }

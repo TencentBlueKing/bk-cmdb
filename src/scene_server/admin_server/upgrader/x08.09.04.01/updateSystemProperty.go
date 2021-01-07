@@ -18,12 +18,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
 
 func updateSystemProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	objs := []metadata.ObjectDes{}
+	objs := []metadata.Object{}
 	condition := map[string]interface{}{
 		"bk_classification_id": "bk_biz_topo",
 	}
@@ -49,34 +48,13 @@ func updateSystemProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return db.Table(tablename).Update(ctx, condition, data)
 }
 
-func updateIcon(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	condition := map[string]interface{}{
-		"bk_obj_id": common.BKInnerObjIDTomcat,
-	}
-	data := map[string]interface{}{
-		"bk_obj_icon": "icon-cc-tomcat",
-	}
-	err = db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
-	if err != nil {
-		return err
-	}
-	condition = map[string]interface{}{
-		"bk_obj_id": common.BKInnerObjIDApache,
-	}
-	data = map[string]interface{}{
-		"bk_obj_icon": "icon-cc-apache",
-	}
-
-	return db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
-}
-
 func fixesProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: map[string]interface{}{"$in": []string{"priority", "proc_num", "auto_time_gap", "timeout"}},
 	}
 	data := map[string]interface{}{
-		"option": validator.IntOption{Min: "1", Max: "10000"},
+		"option": metadata.IntOption{Min: "1", Max: "10000"},
 	}
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
 	if nil != err {

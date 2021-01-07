@@ -1,0 +1,26 @@
+name: Go workflow
+on: [push]
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        go: ['1.12', '1.13']
+    steps:
+      - name: Go ${{ matrix.go }}
+        uses: actions/setup-go@v1
+        with:
+          version: ${{ matrix.go }}
+      - name: Checkout source code
+        uses: actions/checkout@master
+      - name: Get dependencies
+        run: go get -t -v
+      - name: Run test
+        run: go test -test.v -coverprofile=coverage.out -covermode=count
+      - name: Publish coverage
+        if: matrix.os != 'windows-latest'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: bash <(curl -s https://codecov.io/bash)

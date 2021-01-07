@@ -14,125 +14,158 @@ package identifier
 
 import (
 	"context"
-	"encoding/json"
-	"sort"
-	
-	redis "gopkg.in/redis.v5"
-	
-	"configcenter/src/common/util" 
+
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 )
 
-type HostIdentifier struct {
-	HostID          int64              `json:"bk_host_id" bson:"bk_host_id"`
-	HostName        string             `json:"bk_host_name" bson:"bk_host_name"`
-	SupplierID      int64              `json:"bk_supplier_id"`
-	SupplierAccount string             `json:"bk_supplier_account"`
-	CloudID         int64              `json:"bk_cloud_id" bson:"bk_cloud_id"`
-	CloudName       string             `json:"bk_cloud_name" bson:"bk_cloud_name"`
-	InnerIP         string             `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	OuterIP         string             `json:"bk_host_outerip" bson:"bk_host_outerip"`
-	OSType          string             `json:"bk_os_type" bson:"bk_os_type"`
-	OSName          string             `json:"bk_os_name" bson:"bk_os_name"`
-	Memory          int64              `json:"bk_mem" bson:"bk_mem"`
-	CPU             int64              `json:"bk_cpu" bson:"bk_cpu"`
-	Disk            int64              `json:"bk_disk" bson:"bk_disk"`
-	Module          map[string]*Module `json:"associations" bson:"associations"`
-	Process         []Process          `json:"process" bson:"process"`
-}
-
-type PorcessSorter []Process
-
-func (p PorcessSorter) Len() int      { return len(p) }
-func (p PorcessSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-func (p PorcessSorter) Less(i, j int) bool {
-	sort.Sort(util.Int64Slice(p[i].BindModules))
-	return p[i].ProcessID < p[j].ProcessID
-}
-
-type Process struct {
-	ProcessID       int64   `json:"bk_process_id" bson:"bk_process_id"`               // 进程名称
-	ProcessName     string  `json:"bk_process_name" bson:"bk_process_name"`           // 进程名称
-	BindIP          string  `json:"bind_ip" bson:"bind_ip"`                           // 绑定IP, 枚举: [{ID: "1", Name: "127.0.0.1"}, {ID: "2", Name: "0.0.0.0"}, {ID: "3", Name: "第一内网IP"}, {ID: "4", Name: "第一外网IP"}]
-	PORT            string  `json:"port" bson:"port"`                                 // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
-	PROTOCOL        string  `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
-	FuncID          string  `json:"bk_func_id" bson:"bk_func_id"`                     // 功能ID
-	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
-	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
-	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
-}
-
-type Module struct {
-	BizID      int64  `json:"bk_biz_id"`
-	BizName    string `json:"bk_biz_name"`
-	SetID      int64  `json:"bk_set_id"`
-	SetName    string `json:"bk_set_name"`
-	ModuleID   int64  `json:"bk_module_id"`
-	ModuleName string `json:"bk_module_name"`
-	SetStatus  string `json:"bk_service_status"`
-	SetEnv     string `json:"bk_set_env"`
-}
-
-func (iden *HostIdentifier) MarshalBinary() (data []byte, err error) {
-	sort.Sort(PorcessSorter(iden.Process))
-	return json.Marshal(iden)
-}
-
-func (iden *HostIdentifier) fillIden(ctx context.Context, cache *redis.Client, db dal.RDB) *HostIdentifier {
+func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) (*metadata.HostIdentifier, error) {
 	// fill cloudName
-	cloud, err := getCache(ctx, cache, db, common.BKInnerObjIDPlat, iden.CloudID, false)
+	cloud, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDPlat, identifier.CloudID)
 	if err != nil {
-		blog.Errorf("identifier: getCache error %s", err.Error())
-		return iden
+		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDPlat, identifier.CloudID, err.Error())
+		return nil, err
 	}
-	iden.CloudName = getString(cloud.data[common.BKCloudNameField])
+	identifier.CloudName = getString(cloud.data[common.BKCloudNameField])
 
+	customLayers, err := getCustomLayers(ctx, db, identifier.SupplierAccount)
+	if err != nil {
+		blog.ErrorJSON("identifier: getCustomLayers error %s", err)
+		return nil, err
+	}
 	// fill module
-	for moduleID := range iden.Module {
-		biz, err := getCache(ctx, cache, db, common.BKInnerObjIDApp, iden.Module[moduleID].BizID, false)
+	for _, hostIdentModule := range identifier.HostIdentModule {
+		err = fillModule(identifier, hostIdentModule, customLayers, ctx, cache, clientSet, db)
 		if err != nil {
-			blog.Errorf("identifier: getCache error %s", err.Error())
-			continue
+			blog.ErrorJSON("identifier: fillModule error %s, hostIdentModule: %s", err, hostIdentModule)
+			return nil, err
 		}
-		iden.Module[moduleID].BizName = getString(biz.data[common.BKAppNameField])
-		iden.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
-		iden.SupplierID = getInt(biz.data, common.BKSupplierIDField)
-
-		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, iden.Module[moduleID].SetID, false)
-		if err != nil {
-			blog.Errorf("identifier: getCache error %s", err.Error())
-			continue
-		}
-		iden.Module[moduleID].SetName = getString(set.data[common.BKSetNameField])
-		iden.Module[moduleID].SetEnv = getString(set.data[common.BKSetEnvField])
-		iden.Module[moduleID].SetStatus = getString(set.data[common.BKSetStatusField])
-
-		module, err := getCache(ctx, cache, db, common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID, false)
-		if err != nil {
-			blog.Errorf("identifier: getCache error %s", err.Error())
-			continue
-		}
-		iden.Module[moduleID].ModuleName = getString(module.data[common.BKModuleNameField])
 	}
 
 	// fill process
-	for procindex := range iden.Process {
-		process := &iden.Process[procindex]
-		proc, err := getCache(ctx, cache, db, common.BKInnerObjIDProc, process.ProcessID, false)
+	for index := range identifier.Process {
+		err = fillProcess(&identifier.Process[index], ctx, cache, clientSet, db)
 		if err != nil {
-			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
-			continue
+			blog.ErrorJSON("identifier: fillProcess error %s, process: %s", err, identifier.Process[index])
+			return nil, err
 		}
-		process.ProcessName = getString(proc.data[common.BKProcessNameField])
-		process.FuncID = getString(proc.data[common.BKFuncIDField])
-		process.FuncName = getString(proc.data[common.BKFuncName])
-		process.BindIP = getString(proc.data[common.BKBindIP])
-		process.PROTOCOL = getString(proc.data[common.BKProtocol])
-		process.PORT = getString(proc.data[common.BKPort])
-		process.StartParamRegex = getString(proc.data["bk_start_param_regex"])
 	}
 
-	return iden
+	return identifier, nil
+}
+
+func fillProcess(process *metadata.HostIdentProcess, ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+	proc, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDProc, process.ProcessID)
+	if err != nil {
+		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
+		return err
+	}
+
+	ip, port, protocol, enable, bindInfoArr := getBindInfo(proc.data[common.BKProcBindInfo])
+	process.ProcessName = getString(proc.data[common.BKProcessNameField])
+	process.FuncName = getString(proc.data[common.BKFuncName])
+	process.BindIP = ip         //getString(proc.data[common.BKBindIP])
+	process.Protocol = protocol // getString(proc.data[common.BKProtocol])
+	process.Port = port         // getString(proc.data[common.BKPort])
+	process.PortEnable = enable
+	process.BindInfo = bindInfoArr
+	process.StartParamRegex = getString(proc.data[common.BKStartParamRegex])
+	return nil
+}
+
+func fillModule(identifier *metadata.HostIdentifier, hostIdentModule *metadata.HostIdentModule, customLayers []string,
+	ctx context.Context, cache redis.Client, clientSet apimachinery.ClientSetInterface, db dal.RDB) error {
+
+	biz, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDApp, hostIdentModule.BizID)
+	if err != nil {
+		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDApp, hostIdentModule.BizID, err.Error())
+		return err
+	}
+	hostIdentModule.BizName = getString(biz.data[common.BKAppNameField])
+	identifier.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
+
+	set, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDSet, hostIdentModule.SetID)
+	if err != nil {
+		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDSet, hostIdentModule.SetID, err.Error())
+		return err
+	}
+	hostIdentModule.SetName = getString(set.data[common.BKSetNameField])
+	hostIdentModule.SetEnv = getString(set.data[common.BKSetEnvField])
+	hostIdentModule.SetStatus = getString(set.data[common.BKSetStatusField])
+
+	module, err := getCache(ctx, cache, clientSet, db, common.BKInnerObjIDModule, hostIdentModule.ModuleID)
+	if err != nil {
+		blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDModule, hostIdentModule.ModuleID, err.Error())
+		return err
+	}
+	hostIdentModule.ModuleName = getString(module.data[common.BKModuleNameField])
+
+	// fill host layer info
+	parentID, err := getInt(set.data, common.BKParentIDField)
+	if err != nil {
+		blog.Errorf("identifier: convert set bk_parent_id failed, the raw is %+v", set.data[common.BKParentIDField])
+		return err
+	}
+	if len(customLayers) == 0 {
+		customLayers, err = getCustomLayers(ctx, db, identifier.SupplierAccount)
+		if err != nil {
+			blog.ErrorJSON("identifier: getCustomLayers error %s", err)
+			return err
+		}
+	}
+	var layer *metadata.Layer
+	for _, curObj := range customLayers {
+		objLayer, err := getCache(ctx, cache, clientSet, db, curObj, parentID)
+		if err != nil {
+			blog.Errorf("identifier: getCache for %s %d error %s", curObj, parentID, err.Error())
+			return err
+		}
+
+		instID, err := getInt(objLayer.data, common.BKInstIDField)
+		if err != nil {
+			blog.Errorf("identifier: convert %s bk_inst_id failed, the raw is %+v", curObj, objLayer.data[common.BKInstIDField])
+			return err
+		}
+
+		layer = &metadata.Layer{
+			InstID:   instID,
+			InstName: getString(objLayer.data[common.BKInstNameField]),
+			ObjID:    curObj,
+			Child:    layer,
+		}
+		parentID, err = getInt(objLayer.data, common.BKParentIDField)
+		if err != nil {
+			blog.Errorf("identifier: convert set bk_parent_id failed, the raw is %+v", set.data[common.BKParentIDField])
+			return err
+		}
+	}
+	hostIdentModule.Layer = layer
+	return nil
+}
+
+// get custom layer objects TODO use cache when it supports refreshing
+func getCustomLayers(ctx context.Context, db dal.RDB, supplierAccount string) ([]string, error) {
+	asstMap := make(map[string]string)
+	asstArr := make([]metadata.Association, 0)
+	cond := condition.CreateCondition().Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
+	condMap := util.SetQueryOwner(cond.ToMapStr().ToMapInterface(), supplierAccount)
+	err := db.Table(common.BKTableNameObjAsst).Find(condMap).All(ctx, &asstArr)
+	if err != nil {
+		blog.ErrorJSON("findHostLayerInfo query mainline association info error. condition:%s", condMap)
+		return nil, err
+	}
+	for _, asst := range asstArr {
+		asstMap[asst.ObjectID] = asst.AsstObjID
+	}
+	customLayers := make([]string, 0)
+	for obj := asstMap[common.BKInnerObjIDSet]; obj != "" && obj != common.BKInnerObjIDApp; obj = asstMap[obj] {
+		customLayers = append(customLayers, obj)
+	}
+	return customLayers, err
 }

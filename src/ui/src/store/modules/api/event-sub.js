@@ -28,7 +28,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    subscribeEvent ({ commit, state, dispatch, rootGetters }, {bkBizId, params, config}) {
+    subscribeEvent ({ commit, state, dispatch, rootGetters }, { bkBizId, params, config }) {
         return $http.post(`event/subscribe/${rootGetters.supplierAccount}/${bkBizId}`, params, config)
     },
 
@@ -41,7 +41,7 @@ const actions = {
      * @param {Number} subscriptionId 订阅id
      * @return {Promise} promise 对象
      */
-    unsubcribeEvent ({commit, state, dispatch, rootGetters}, {bkBizId, subscriptionId}) {
+    unsubcribeEvent ({ commit, state, dispatch, rootGetters }, { bkBizId, subscriptionId }) {
         return $http.delete(`event/subscribe/${rootGetters.supplierAccount}/${bkBizId}/${subscriptionId}`)
     },
 
@@ -55,7 +55,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    updateEventSubscribe ({commit, state, dispatch, rootGetters}, {bkBizId, subscriptionId, params, config}) {
+    updateEventSubscribe ({ commit, state, dispatch, rootGetters }, { bkBizId, subscriptionId, params, config }) {
         return $http.put(`event/subscribe/${rootGetters.supplierAccount}/${bkBizId}/${subscriptionId}`, params, config)
     },
 
@@ -68,7 +68,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchSubscription ({commit, state, dispatch, rootGetters}, {bkBizId, params, config}) {
+    searchSubscription ({ commit, state, dispatch, rootGetters }, { bkBizId, params, config }) {
         return $http.post(`event/subscribe/search/${rootGetters.supplierAccount}/${bkBizId}`, params, config)
     },
 
@@ -80,7 +80,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    pingSubscription ({ commit, state, dispatch }, {params, config}) {
+    pingSubscription ({ commit, state, dispatch }, { params, config }) {
         return $http.post(`event/subscribe/ping`, params, config)
     },
 
@@ -92,7 +92,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    testingConnection ({ commit, state, dispatch }, {params, config}) {
+    testingConnection ({ commit, state, dispatch }, { params, config }) {
         return $http.post(`event/subscribe/telnet`, params, config)
     }
 }

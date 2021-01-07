@@ -1,12 +1,11 @@
 <template>
-    <div class="form-bool-input">
-        <input class="cmdb-form-input" type="text" v-model.trim="localValue">
-    </div>
+    <bk-input class="cmdb-form-input" type="text" v-model.trim="localValue"></bk-input>
 </template>
 
 <script>
     export default {
         name: 'cmdb-form-bool-input',
+        // eslint-disable-next-line
         props: ['value'],
         data () {
             return {
@@ -27,6 +26,11 @@
         },
         created () {
             this.localValue = this.value
+        },
+        methods: {
+            focus () {
+                this.$el.querySelector('input').focus()
+            }
         }
     }
 </script>

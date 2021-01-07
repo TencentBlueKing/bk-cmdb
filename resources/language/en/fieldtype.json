@@ -2,6 +2,7 @@
 	"field_type_singlechar": "short character",
 	"field_type_longchar": "long character",
 	"field_type_int": "number",
+	"field_type_float": "float",
 	"field_type_enum": "enumeration",
 	"field_type_date": "date",
 	"field_type_time": "time",
@@ -11,6 +12,10 @@
 	"field_type_timezone": "time zone",
 	"field_type_bool": "boolean",
 	"field_type_bool_true": "Yes",
-	"field_type_bool_false": "No"
+	"field_type_bool_false": "No",
 
+	"field_name": "Field name(Please do not edit)",
+	"field_type": "Field type(Please do not edit)",
+	"field_id": "Field ID(Please do not edit)",
+	"inst_data": "Instance data"
 }

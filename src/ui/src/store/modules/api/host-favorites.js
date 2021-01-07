@@ -90,7 +90,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    udpateFavorites ({ commit, state, dispatch }, { id, params, config }) {
+    updateFavorites ({ commit, state, dispatch }, { id, params, config }) {
         return $http.put(`hosts/favorites/${id}`, params, config)
     },
 

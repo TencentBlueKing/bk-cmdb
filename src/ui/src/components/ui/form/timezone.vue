@@ -1,12 +1,19 @@
 <template>
-    <div class="cmdb-form form-timezone">
-        <bk-selector class="form-timezone-selector"
-            :searchable="true"
-            :list="timezoneList"
-            :disabled="disabled"
-            :selected.sync="selected">
-        </bk-selector>
-    </div>
+    <bk-select class="form-timezone-selector"
+        searchable
+        v-model="selected"
+        :clearable="false"
+        :disabled="disabled"
+        :multiple="multiple"
+        :placeholder="placeholder"
+        ref="selector">
+        <bk-option
+            v-for="(option, index) in timezoneList"
+            :key="index"
+            :id="option.id"
+            :name="option.name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>
@@ -15,11 +22,20 @@
         name: 'cmdb-form-timezone',
         props: {
             value: {
+                type: [Array, String, Number],
                 default: ''
             },
             disabled: {
                 type: Boolean,
                 default: false
+            },
+            multiple: {
+                type: Boolean,
+                default: false
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -31,7 +47,7 @@
             })
             return {
                 timezoneList,
-                selected: ''
+                selected: this.multiple ? [] : ''
             }
         },
         watch: {
@@ -43,18 +59,35 @@
             selected (selected) {
                 this.$emit('input', selected)
                 this.$emit('on-selected', selected)
+            },
+            disabled (disabled) {
+                if (!disabled) {
+                    this.selected = this.getDefaultValue()
+                }
             }
         },
         created () {
-            this.selected = this.value ? this.value : 'Asia/Shanghai'
+            this.selected = this.getDefaultValue()
+        },
+        methods: {
+            getDefaultValue () {
+                let value = this.value || ''
+                if (this.multiple && !value.length) {
+                    value = ['Asia/Shanghai']
+                } else {
+                    value = value || 'Asia/Shanghai'
+                }
+                return value
+            },
+            focus () {
+                this.$refs.selector.show()
+            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .form-timezone{
-        .form-timezone-selector{
-            width: 100%;
-        }
+    .form-timezone-selector{
+        width: 100%;
     }
 </style>

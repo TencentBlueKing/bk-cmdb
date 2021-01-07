@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="12px" height="16px" viewBox="0 0 12 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <path fill="#63656E"
+        d="
+            M10.875,8
+            L11.454545,8
+            C11.75625,8 12,8.25025 12,8.56
+            L12,15.44
+            C12,15.74975 11.75625,16 11.454545,16
+            L0.545455,16 
+            C0.24375,16 0,15.74975 0,15.44 
+            L0,8.56
+            C0,8.25025 0.24375,8 0.545455,8 
+        ">
+    </path>
+    <path fill="#63656E"
+        d="
+            M1.704545,8 
+            L1.704545,2.24 
+            C1.704545,1.00275 2.68125,0 3.886364,0 
+            L8.113636,0 
+            C9.31875,0 10.295455,1.00275 10.295455,2.24 
+            L10.295455,6 
+            L9.068182,6 
+            L9.068182,2.24 
+            C9.068182,1.69925 8.640341,1.26 8.113636,1.26 
+            L3.886364,1.26 
+            C3.359659,1.26 2.931818,1.69925 2.931818,2.24 
+            L2.931818,8 
+            L9,8 
+            L10.875,8 Z
+        ">
+        <animateTransform id="lock"
+            attributeName="transform"
+            attributeType="XML"
+            type="translate"
+            values="0 2; 0 0; 0 0"
+            keyTimes="0; .5; 1"
+            dur="1s"
+            repeatCount="indefinite">
+        </animateTransform>
+    </path>
+</svg>

@@ -13,25 +13,21 @@
 package metadata
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/coccyx/timeparser"
-	"github.com/gin-gonic/gin/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+
+	"github.com/coccyx/timeparser"
 )
 
-type BaseResp struct {
-	Result bool   `json:"result"`
-	Code   int    `json:"bk_error_code"`
-	ErrMsg string `json:"bk_error_msg"`
-}
+const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
 
-var SuccessBaseResp = BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr}
-
+// RespError
 type RespError struct {
 	// error message
 	Msg error
@@ -40,16 +36,15 @@ type RespError struct {
 	Data    interface{}
 }
 
-const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
-
 func (r *RespError) Error() string {
 	br := new(Response)
 	br.Code = r.ErrCode
-	br.ErrMsg = r.Msg.Error()
 	if nil != r.Msg {
 		if ccErr, ok := (r.Msg).(errors.CCErrorCoder); ok {
 			br.Code = ccErr.GetCode()
 			br.ErrMsg = ccErr.Error()
+		} else {
+			br.ErrMsg = r.Msg.Error()
 		}
 	}
 	br.Data = r.Data
@@ -65,47 +60,81 @@ func (r *RespError) Error() string {
 // data is the data you want to return to client.
 func NewSuccessResp(data interface{}) *Response {
 	return &Response{
-		BaseResp: BaseResp{true, common.CCSuccess, common.CCSuccessStr},
+		BaseResp: BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr},
 		Data:     data,
 	}
 }
 
 type Response struct {
 	BaseResp `json:",inline"`
-	Data     interface{} `json:"data"`
+	Data     interface{} `json:"data" mapstructure:"data"`
+}
+
+type BoolResponse struct {
+	BaseResp `json:",inline"`
+	Data     bool `json:"data"`
+}
+
+type Uint64Response struct {
+	BaseResp `json:",inline"`
+	Count    uint64 `json:"count"`
+}
+
+type CoreUint64Response struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
+}
+
+type ArrayResponse struct {
+	BaseResp `json:",inline"`
+	Data     []interface{} `json:"data"`
 }
 
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
-	Data     []map[string]interface{} `json:"data"`
+	Data     []mapstr.MapStr `json:"data"`
+}
+
+// ResponseInstData
+type ResponseInstData struct {
+	BaseResp `json:",inline"`
+	Data     InstDataInfo `json:"data"`
+}
+
+// InstDataInfo response instance data result Data field
+type InstDataInfo struct {
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
+}
+
+type ResponseDataMapStr struct {
+	BaseResp `json:",inline"`
+	Data     mapstr.MapStr `json:"data"`
 }
 
 type QueryInput struct {
-	Condition interface{} `json:"condition"`
-	Fields    string      `json:"fields,omitempty"`
-	Start     int         `json:"start,omitempty"`
-	Limit     int         `json:"limit,omitempty"`
-	Sort      string      `json:"sort,omitempty"`
+	Condition      map[string]interface{} `json:"condition"`
+	Fields         string                 `json:"fields,omitempty"`
+	Start          int                    `json:"start,omitempty"`
+	Limit          int                    `json:"limit,omitempty"`
+	Sort           string                 `json:"sort,omitempty"`
+	DisableCounter bool                   `json:"disable_counter,omitempty"`
 }
 
-//ConvTime ??????????cc_type key ??????time.Time
+// ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
-	conds, ok := o.Condition.(map[string]interface{})
-	if true != ok && nil != conds {
-		return nil
-	}
-	for key, item := range conds {
+	for key, item := range o.Condition {
 		convItem, err := o.convTimeItem(item)
 		if nil != err {
 			continue
 		}
-		conds[key] = convItem
+		o.Condition[key] = convItem
 	}
 
 	return nil
 }
 
-//convTimeItem ????????,??????????cc_time_type
+// convTimeItem cc_time_type
 func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 
 	switch item.(type) {
@@ -154,7 +183,6 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//??????????????
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {
@@ -177,17 +205,17 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 func (o *QueryInput) convInterfaceToTime(val interface{}) (interface{}, error) {
 	switch val.(type) {
 	case string:
-		ts, err := timeparser.TimeParser(val.(string))
+		ts, err := timeparser.TimeParserInLocation(val.(string), time.Local)
 		if nil != err {
 			return nil, err
 		}
-		return ts.UTC(), nil
+		return ts.Local(), nil
 	default:
 		ts, err := util.GetInt64ByInterface(val)
 		if nil != err {
 			return 0, err
 		}
-		t := time.Unix(ts, 0).UTC()
+		t := time.Unix(ts, 0).Local()
 		return t, nil
 	}
 
@@ -206,15 +234,14 @@ type BkHostInfo struct {
 
 type DefaultModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
-	HostID        []int64 `json:"bk_host_id"`
+	HostIDs       []int64 `json:"bk_host_id"`
 }
 
-//common search struct
+// common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
 	Fields    []string               `json:"fields,omitempty"`
-	Native    int                    `json:"native,omitempty"`
 }
 
 // PropertyGroupCondition used to reflect the property group json
@@ -226,4 +253,42 @@ type PropertyGroupCondition struct {
 type UpdateParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Data      map[string]interface{} `json:"data"`
+}
+type ListHostWithoutAppResponse struct {
+	BaseResp `json:",inline"`
+	Data     ListHostResult `json:"data"`
+}
+
+type SearchInstBatchOption struct {
+	IDs    []int64  `json:"bk_ids"`
+	Fields []string `json:"fields"`
+}
+
+func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
+	if len(s.IDs) == 0 || len(s.IDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(s.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// BkBaseResp base response defined in blueking api protocol
+type BkBaseResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type BKResponse struct {
+	BkBaseResp `json:",inline"`
+	Data       interface{} `json:"data"`
 }

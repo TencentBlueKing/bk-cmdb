@@ -13,6 +13,7 @@
 package condition
 
 import (
+	"errors"
 	"reflect"
 
 	"configcenter/src/common"
@@ -37,8 +38,11 @@ type Condition interface {
 	SetFields(fields []string)
 	GetFields() []string
 	Field(fieldName string) Field
+	NewOR() OR
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
+	AddConditionItem(cond ConditionItem) error
+	IsFieldExist(fieldName string) bool
 }
 
 // Condition the condition definition
@@ -47,13 +51,21 @@ type condition struct {
 	limit        int64
 	sort         string
 	fields       []Field
+	or           []OR
 	filterFields []string
+}
+
+// ConditionItem subcondition
+type ConditionItem struct {
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
 }
 
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
-	pageInfo := metadata.BasePage{}
+	pageInfo := BasePage{}
 	if err := page.MarshalJSONInto(&pageInfo); nil != err {
 		return err
 	}
@@ -104,7 +116,7 @@ func (cli *condition) Parse(data types.MapStr) error {
 						return err
 					}
 					tmpField.fields = append(tmpField.fields, tmp)
-				case BKDBEQ, BKDBGT, BKDBGTE, BKDBIN, BKDBNIN, BKDBLIKE, BKDBLT, BKDBLTE, BKDBNE, BKDBOR:
+				case BKDBEQ, BKDBGT, BKDBGTE, BKDBIN, BKDBNIN, BKDBLIKE, BKDBLT, BKDBLTE, BKDBNE, BKDBOR, BKDBEXISTS:
 					tmpField.opeartor = key
 					if err := fieldFunc(tmpField, subVal); nil != err {
 						return err
@@ -123,6 +135,12 @@ func (cli *condition) Parse(data types.MapStr) error {
 		tmpField.condition = cli
 		tmpField.fieldName = key
 		tmpField.opeartor = BKDBEQ
+		//	support parse meta data
+		if key == metadata.BKMetadata {
+			tmpField.fieldValue = val
+			cli.fields = append(cli.fields, tmpField)
+			return nil
+		}
 		if err := fieldFunc(tmpField, val); nil != err {
 			return err
 		}
@@ -176,11 +194,68 @@ func (cli *condition) Field(fieldName string) Field {
 	return field
 }
 
+// CreateField create a field
+func (cli *condition) NewOR() OR {
+	field := &orField{
+		condition: cli,
+	}
+	cli.or = append(cli.or, field)
+	return field
+}
+
 // ToMapStr to MapStr object
 func (cli *condition) ToMapStr() types.MapStr {
 	tmpResult := types.MapStr{}
 	for _, item := range cli.fields {
 		tmpResult.Merge(item.ToMapStr())
 	}
+	//Note: Here ToMapStr is the query condition for conversion to mongodb.
+	//When there are multiple or, the last one will prevail.
+	//The reason why this field uses array is for future compatibility consideration.
+	for _, item := range cli.or {
+		tmpResult.Merge(item.ToMapStr())
+	}
+
 	return tmpResult
+}
+
+// AddConditionItem add ConditionItem into condition
+func (cli *condition) AddConditionItem(cond ConditionItem) error {
+	switch cond.Operator {
+	case common.BKDBEQ:
+		cli.Field(cond.Field).Eq(cond.Value)
+	case common.BKDBGT:
+		cli.Field(cond.Field).Gt(cond.Value)
+	case common.BKDBGTE:
+		cli.Field(cond.Field).Gte(cond.Value)
+	case common.BKDBIN:
+		cli.Field(cond.Field).In(cond.Value)
+	case common.BKDBLIKE:
+		cli.Field(cond.Field).Like(cond.Value)
+	case common.BKDBLT:
+		cli.Field(cond.Field).Lt(cond.Value)
+	case common.BKDBLTE:
+		cli.Field(cond.Field).Lte(cond.Value)
+	case common.BKDBNE:
+		cli.Field(cond.Field).NotEq(cond.Value)
+	case common.BKDBNIN:
+		cli.Field(cond.Field).NotIn(cond.Value)
+	case common.BKDBOR:
+		cli.Field(cond.Field).Or(cond.Value)
+	case common.BKDBExists:
+		cli.Field(cond.Field).Exists(cond.Value)
+	default:
+		return errors.New("invalid operator")
+	}
+	return nil
+}
+
+// IsFieldExist check fieldName is in condition or not
+func (cli *condition) IsFieldExist(fieldName string) bool {
+	for _, item := range cli.fields {
+		if item.GetFieldName() == fieldName {
+			return true
+		}
+	}
+	return false
 }

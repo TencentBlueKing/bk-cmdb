@@ -1,4 +1,9 @@
 #!/bin/bash
 
 set -e
-killall cmdb-name-placeholder
+
+pid=`ps -ef | grep cmdb-name-placeholder | grep -v grep | grep -v tail | awk '{print $2}'`
+if [ -n "$pid" ];then
+    kill $pid
+fi
+

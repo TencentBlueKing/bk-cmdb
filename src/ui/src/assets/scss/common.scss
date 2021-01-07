@@ -5,23 +5,21 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    outline: none;
 }
 
 html,
 body {
     height: 100%;
     overflow: hidden;
-    font-family: "pingFang-SC-Regular,Microsoft Yahei,Arial";
+    font-family: -apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,Helvetica Neue,Arial;
     color: $cmdbTextColor;
+    background-color: #FAFBFD;
 }
 
 ul,
 dl {
     list-style: none;
-}
-
-th {
-    font-weight: normal;
 }
 
 a,
@@ -35,6 +33,7 @@ a:focus {
 
 .clearfix {
     zoom: 1;
+
     &:before,
     &:after {
         content: "";
@@ -60,9 +59,59 @@ a:focus {
     display: none;
 }
 
-input::-webkit-input-placeholder {
-    color: #c3cdd7;
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+    color: #c3cdd7 !important;
     font-size: 12px;
+}
+
+[class^="icon-cc"], [class*=" icon-cc"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'bk-cmdb' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.inline-block-middle {
+    display: inline-block;
+    vertical-align: middle;
+    outline: 0;
+}
+
+.bgc-white {
+    background-color: #fff;
+}
+
+div.cmdb-form-item {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+
+    &.is-error {
+        input.cmdb-form-input {
+            border-color: $cmdbDangerColor;
+        }
+
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            font-size: 12px;
+            line-height: 16px;
+            color: $cmdbDangerColor;
+            max-width: 100%;
+            @include ellipsis;
+        }
+    }
+
 }
 
 input.cmdb-form-input {
@@ -73,13 +122,90 @@ input.cmdb-form-input {
     border: 1px solid $cmdbBorderColor;
     border-radius: 2px;
     outline: none;
+
     &:focus {
         border-color: $cmdbBorderFocusColor;
     }
+
     &:disabled {
         background-color: #fafafa;
         color: #aaa;
         cursor: not-allowed;
+    }
+}
+
+.cmdb-form-checkbox {
+    font-size: 0;
+    color: #737987;
+    margin-right: 30px;
+    line-height: 18px;
+    display: inline-block;
+    padding: 7px 0;
+    font-size: 0;
+
+    .cmdb-checkbox-text {
+        display: inline-block;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 14px;
+        cursor: pointer;
+        vertical-align: middle;
+        font-size: 14px;
+        @include ellipsis;
+    }
+
+    input[type=checkbox] {
+        width: 18px;
+        height: 18px;
+        outline: none;
+        visibility: visible;
+        cursor: pointer;
+        vertical-align: middle;
+        background: #fff;
+        background-image: url('../images/checkbox-sprite.png');
+        display: inline-block;
+        background-position: 0 -62px;
+        -webkit-appearance: none;
+        margin: 0 5px 0 0;
+
+        &:checked {
+            background-position: -33px -62px;
+
+            &[disabled] {
+                color: #ccc;
+                background-position: -99px -62px;
+            }
+        }
+
+        &[disabled] {
+            background-position: -66px -62px;
+            cursor: default;
+
+            &+.bk-checkbox-text {
+                color: #ccc;
+                cursor: default;
+            }
+        }
+    }
+
+    &.cmdb-checkbox-small {
+        input[type=checkbox] {
+            width: 14px;
+            height: 14px;
+            background-position: 0 -95px;
+
+            &:checked {
+                background-position: -33px -95px;
+
+                &[disabled] {
+                    background-position: -99px -95px;
+                }
+            }
+
+            &[disabled] {
+                background-position: -66px -95px;
+            }
+        }
     }
 }
 
@@ -110,18 +236,22 @@ input.cmdb-form-input {
         display: inline-block;
         background-position: 0 0;
         -webkit-appearance: none;
+
         margin: 0 5px 0 0;
 
         &:checked {
             background-position: -33px 0;
+
             &[disabled] {
                 color: #ccc;
                 background-position: -99px 0;
             }
         }
+
         &[disabled] {
             background-position: -66px 0;
             cursor: default;
+
             &+.bk-radio-text {
                 color: #ccc;
                 cursor: default;
@@ -137,144 +267,13 @@ input.cmdb-form-input {
 
             &:checked {
                 background-position: -33px -33px;
+
                 &[disabled] {
                     background-position: -99px -33px;
                 }
             }
+
             &[disabled] {
-                background-position: -66px -33px;
-            }
-        }
-    }
-}
-
-.cmdb-form-checkbox {
-    font-size: 14px;
-    color: #737987;
-    margin-right: 30px;
-    line-height: 18px;
-    display: inline-block;
-    padding: 7px 0;
-
-    .cmdb-checkbox-text {
-        display: inline-block;
-        font-style: normal;
-        font-weight: normal;
-        cursor: pointer;
-        vertical-align: middle;
-        @include ellipsis;
-    }
-
-    input[type=checkbox] {
-        width: 18px;
-        height: 18px;
-        outline: none;
-        visibility: visible;
-        cursor: pointer;
-        vertical-align: middle;
-        background: #fff;
-        background-image: url('../images/checkbox-sprite.png');
-        display: inline-block;
-        background-position: 0 -62px;
-        -webkit-appearance: none;
-        margin: 0 5px 0 0;
-
-        &:checked {
-            background-position: -33px -62px;
-            &[disabled] {
-                color: #ccc;
-                background-position: -99px -62px;
-            }
-        }
-        &[disabled] {
-            background-position: -66px -62px;
-            cursor: default;
-            &+.bk-checkbox-text {
-                color: #ccc;
-                cursor: default;
-            }
-        }
-    }
-
-    &.cmdb-checkbox-small {
-        input[type=checkbox] {
-            width: 14px;
-            height: 14px;
-            background-position: 0 -95px;
-
-            &:checked {
-                background-position: -33px -95px;
-                &[disabled] {
-                    background-position: -99px -95px;
-                }
-            }
-            &[disabled] {
-                background-position: -66px -95px;
-            }
-        }
-    }
-}
-
-.cmdb-form-radio{
-    font-size: 14px;
-    color: #666666;
-    margin-right: 30px;
-    line-height: 18px;
-    display: inline-block;
-    padding: 7px 0;
-
-    .cmdb-radio-text{
-        font-style: normal;
-        font-weight: normal;
-        cursor: pointer;
-        vertical-align: middle;
-    }
-
-    input[type=radio]{
-        width: 18px;
-        height: 18px;
-        outline: none;
-        visibility: visible;
-        cursor: pointer;
-        vertical-align: middle;
-        background-color: #fff;
-        background-image: url('../images/checkbox-sprite.png');
-        display: inline-block;
-        background-position: 0 0;
-        -webkit-appearance: none;
-
-        margin: 0 5px 0 0;
-
-        &:checked {
-            background-position: -33px 0;
-            &[disabled]{
-                color: #ccc;
-                background-position: -99px 0;
-            }
-        }
-        &[disabled]{
-            background-position: -66px 0;
-            cursor: default;
-            & + .bk-radio-text{
-                color: #ccc;
-                cursor: default;
-            }
-        }
-    }
-
-    &.cmdb-radio-small{
-        input[type=radio]{
-            width: 14px;
-            height: 14px;
-            background-position: 0 -33px;
-
-            &:checked {
-                background-position: -33px -33px;
-                &[disabled]{
-                    background-position: -99px -33px;
-                }
-            }
-            &[disabled]{
                 background-position: -66px -33px;
             }
         }
@@ -291,21 +290,46 @@ input.cmdb-form-input {
 }
 
 .text-primary {
-    color: #3c96ff;
+    color: #3c96ff !important;
+
+    -webkit-appearance: none;
+    border: none;
+    outline: 0;
+    background-color: transparent;
+    cursor: pointer;
     &:hover {
-        color: #0082ff;
+        color: #0082ff !important;
+    }
+
+    &.disabled,
+    &:disabled {
+        color: #c4c6cc !important;
+        cursor: not-allowed !important;
     }
 }
 
 .text-danger {
     color: #ff5656;
+
     &:hover {
         color: #f72239;
+    }
+
+    &.disabled,
+    &:disabled {
+        opacity: .385;
+        cursor: not-allowed !important;
     }
 }
 
 .color-danger {
     color: #ff5656;
+}
+.color-warning {
+    color: #ffb400;
+}
+.color-success {
+    color: #30d878;
 }
 
 .mask {
@@ -320,54 +344,14 @@ input.cmdb-form-input {
     transition: .2s height ease-in-out, .2s padding-top ease-in-out, .2s padding-bottom ease-in-out
 }
 
-/* rewrite magicbox style -----start----- */
-
-.bk-tab2 {
-    border: none !important;
-    height: 100% !important;
-    padding: 0 20px;
-    .bk-tab2-content {
-        height: calc(100% - 58px) !important;
-        section {
-            height: 100% !important;
-        }
-    }
-}
-
-.bk-tab2 .bk-tab2-head .bk-tab2-nav .tab2-nav-item {
-    padding: 0 32px !important;
-}
-
-.bk-button.bk-default:hover {
-    color: #0082ff;
-    border-color: #0082ff;
-    background: #fff;
-}
-
-.bk-selector .bk-selector-list-item .text {
-    @include ellipsis;
-}
-
-.bk-selector.bk-selector-small {
-    .bk-selector-input {
-        height: 30px;
-        line-height: 30px;
-    }
-    .bk-selector-icon {
-        top: 9px;
-    }
-}
-
-
-/* rewrite magicbox style ------end------ */
-
-
 /* form-error -----------start----------- */
 
 .form-component.error {
+
     input[name="date-select"],
     .bk-selector-input,
     .form-int-input,
+    .form-float-input,
     .form-longchar-input,
     .form-singlechar-input,
     .member-container {
@@ -379,140 +363,9 @@ input.cmdb-form-input {
 /* form-error -----------end----------- */
 
 
-/* v-tooltip ------start------ */
-
-.tooltip {
-    display: block !important;
-    z-index: 10000;
-
-    .tooltip-inner {
-        background: #333;
-        color: white;
-        border-radius: 2px;
-        padding: 5px 10px 4px;
-        max-width: 200px;
-        font-size: 14px;
-        line-height: 16px;
-        word-break: break-all;
-    }
-
-    .tooltip-arrow {
-        width: 0;
-        height: 0;
-        border-style: solid;
-        position: absolute;
-        margin: 5px;
-        border-color: #333;
-        z-index: 1;
-    }
-
-    &[x-placement^="top"] {
-        margin-bottom: 5px;
-        .tooltip-arrow {
-            border-width: 5px 5px 0 5px;
-            border-left-color: transparent !important;
-            border-right-color: transparent !important;
-            border-bottom-color: transparent !important;
-            bottom: -5px;
-            left: calc(50% - 5px);
-            margin-top: 0;
-            margin-bottom: 0;
-        }
-    }
-
-    &[x-placement^="bottom"] {
-        margin-top: 5px;
-
-        .tooltip-arrow {
-            border-width: 0 5px 5px 5px;
-            border-left-color: transparent !important;
-            border-right-color: transparent !important;
-            border-top-color: transparent !important;
-            top: -5px;
-            left: calc(50% - 5px);
-            margin-top: 0;
-            margin-bottom: 0;
-        }
-    }
-
-    &[x-placement^="right"] {
-        margin-left: 5px;
-
-        .tooltip-arrow {
-            border-width: 5px 5px 5px 0;
-            border-left-color: transparent !important;
-            border-top-color: transparent !important;
-            border-bottom-color: transparent !important;
-            left: -5px;
-            top: calc(50% - 5px);
-            margin-left: 0;
-            margin-right: 0;
-        }
-    }
-
-    &[x-placement^="left"] {
-        margin-right: 5px;
-
-        .tooltip-arrow {
-            border-width: 5px 0 5px 5px;
-            border-top-color: transparent !important;
-            border-right-color: transparent !important;
-            border-bottom-color: transparent !important;
-            right: -5px;
-            top: calc(50% - 5px);
-            margin-left: 0;
-            margin-right: 0;
-        }
-    }
-
-    &.popover {
-        .popover-inner {
-            max-width: none;
-            background: #fff;
-            color: $cmdbTextColor;
-            border-radius: 2px;
-            box-shadow: 0 5px 30px rgba(black, .4);
-        }
-
-        .popover-arrow {
-            border-color: #fff;
-        }
-    }
-
-    &[aria-hidden='true'] {
-        visibility: hidden;
-        opacity: 0;
-        transition: opacity .15s, visibility .15s;
-    }
-
-    &[aria-hidden='false'] {
-        visibility: visible;
-        opacity: 1;
-        transition: opacity .15s;
-    }
+.v-cursor {
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 12px 16px;
+    background-image: url("../images/lock.svg");
 }
-
-.v-popover {
-    .trigger {
-        outline: none;
-    }
-}
-
-/* v-tooltip -------end------- */
-
-
-/* table -------start------- */
-
-.cc-table-body {
-    .empty-info {
-        p {
-            margin-bottom: 10px;
-        }
-        .bk-button {
-            margin-top: 10px;
-        }
-    }
-}
-
-/* table -------end------- */
-

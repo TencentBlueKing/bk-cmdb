@@ -21,103 +21,94 @@ import (
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
 // Property object fields
 type Property struct {
-	ID                     string
-	Name                   string
-	PropertyType           string
-	Option                 interface{}
-	IsPre                  bool
-	IsRequire              bool
-	Group                  string
-	Index                  int
-	ExcelColIndex          int
-	NotObjPropery          bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
-	AsstObjPrimaryProperty []Property
-	IsOnly                 bool
-	AsstObjID              string
+	ID            string
+	Name          string
+	PropertyType  string
+	Option        interface{}
+	IsPre         bool
+	IsRequire     bool
+	Group         string
+	ExcelColIndex int
+	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
+	IsOnly        bool
+	AsstObjID     string
+	NotExport     bool
 }
 
 // PropertyGroup property group
 type PropertyGroup struct {
 	Name  string
-	Index int
+	Index int64
 	ID    string
 }
 
-// GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header http.Header) (map[string]Property, error) {
+type PropertyPrimaryVal struct {
+	ID     string
+	Name   string
+	StrVal string
+}
 
-	fields, err := lgc.getObjFieldIDs(objID, header)
+// GetObjFieldIDs get object fields
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, modelBizID int64) (map[string]Property, error) {
+	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID)
 	if nil != err {
-		return nil, err
-	}
-	groups, err := lgc.getObjectGroup(objID, header)
-	if nil != err {
-		return nil, err
+		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
 
 	ret := make(map[string]Property)
-	index := 0
-
-	for _, group := range groups {
-		for _, field := range fields {
-			if field.Group == group.ID {
-				if util.InStrArr(filterFields, field.ID) {
-					continue
-				}
-				switch field.PropertyType {
-				case common.FieldTypeSingleAsst:
-					fallthrough
-				case common.FieldTypeMultiAsst:
-
-					field.AsstObjPrimaryProperty, err = lgc.getAsstObjectPrimaryFieldByObjID(field.AsstObjID, header)
-					if nil != err {
-						blog.Errorf("get associate object fields error: error:%s", err.Error())
-						return nil, fmt.Errorf("get associate object fields error: error:%s", err.Error())
-					}
-				}
-				field.ExcelColIndex = index
-				ret[field.ID] = field
-				index++
-			}
+	for _, field := range fields {
+		if util.InStrArr(filterFields, field.ID) {
+			field.NotExport = true
 		}
+		ret[field.ID] = field
 	}
+
 	return ret, nil
 }
 
-func (lgc *Logics) getObjectGroup(objID string, header http.Header) ([]PropertyGroup, error) {
-	ownerID := util.GetActionOnwerIDByHTTPHeader(header)
-	condition := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": mapstr.MapStr{"start": 0, "limit": common.BKNoLimit, "sort": common.BKPropertyGroupIndexField}}
+func (lgc *Logics) getObjectGroup(objID string, header http.Header, modelBizID int64) ([]PropertyGroup, error) {
+	rid := util.GetHTTPCCRequestID(header)
+	ownerID := util.GetOwnerID(header)
+	condition := mapstr.MapStr{
+		common.BKObjIDField: objID,
+		"page": mapstr.MapStr{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  common.BKPropertyGroupIndexField,
+		},
+		common.BKAppIDField: modelBizID,
+	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
-		blog.Errorf("get %s fields group return:%s, err:%s", objID, result, err.Error())
-		return nil, err
+		blog.Errorf("get %s fields group failed, err:%+v, rid: %s", objID, err, rid)
+		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
+	}
+	if !result.Result {
+		blog.Errorf("get %s fields group result failed. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, rid)
+		return nil, fmt.Errorf("get attribute group result false, result: %+v", result)
 	}
 	fields := result.Data
-	if nil != err {
-		blog.Errorf("get %s fields group  return:%s data not array, err:%s", objID, result, err.Error())
-		return nil, err
-	}
-	ret := []PropertyGroup{}
+	ret := make([]PropertyGroup, 0)
 	for _, mapField := range fields {
 		propertyGroup := PropertyGroup{}
-		propertyGroup.Index = int(mapField.GroupIndex)
+		propertyGroup.Index = mapField.GroupIndex
 		propertyGroup.Name = mapField.GroupName
 		propertyGroup.ID = mapField.GroupID
 		ret = append(ret, propertyGroup)
 	}
-	blog.V(3).Infof("getObjectGroup count:%d", len(ret))
+	blog.V(5).Infof("getObjectGroup count:%d, rid: %s", len(ret), rid)
 	return ret, nil
 
 }
 
-func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.Header) ([]Property, error) {
-
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header)
+func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, modelBizID int64) ([]Property, error) {
+	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, modelBizID)
 	if nil != err {
 		return nil, err
 	}
@@ -131,60 +122,142 @@ func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.He
 
 }
 
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header) ([]Property, error) {
-	sort := fmt.Sprintf("-%s,bk_property_index", common.BKIsRequiredField)
-	return lgc.getObjFieldIDsBySort(objID, sort, header)
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64) ([]Property, error) {
+	rid := util.GetHTTPCCRequestID(header)
+	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
 
+	// sortedFields 模型字段已经根据bk_property_index排序好了
+	sortedFields, err := lgc.getObjFieldIDsBySort(objID, sort, header, nil, modelBizID)
+	if err != nil {
+		blog.Errorf("getObjFieldIDs, getObjFieldIDsBySort failed, sort: %s, rid: %s, err: %v", sort, rid, err)
+		return nil, err
+	}
+
+	groups, err := lgc.getObjectGroup(objID, header, modelBizID)
+	if nil != err {
+		return nil, fmt.Errorf("getObjFieldIDs, get attribute group failed, err: %+v", err)
+	}
+	if len(groups) == 0 {
+		return nil, fmt.Errorf("get attribute group by object not found")
+	}
+
+	fields := make([]Property, 0)
+	noUniqueFields := make([]Property, 0)
+	noRequiredFields := make([]Property, 0)
+	index := 1
+	// 第一步，选出唯一校验字段；
+	for _, field := range sortedFields {
+		if field.IsOnly == true {
+			field.ExcelColIndex = index
+			index++
+			fields = append(fields, field)
+		} else {
+			noUniqueFields = append(noUniqueFields, field)
+		}
+	}
+
+	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
+	for _, group := range groups {
+		for _, field := range noUniqueFields {
+			if field.Group != group.ID {
+				continue
+			}
+			if field.IsRequire != true {
+				noRequiredFields = append(noRequiredFields, field)
+				continue
+			}
+			field.ExcelColIndex = index
+			index++
+			fields = append(fields, field)
+		}
+	}
+
+	// 第三步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
+	for _, group := range groups {
+		for _, field := range noRequiredFields {
+			if field.Group != group.ID {
+				continue
+			}
+			field.ExcelColIndex = index
+			index++
+			fields = append(fields, field)
+		}
+	}
+	return fields, nil
 }
 
-func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, modelBizID int64) ([]Property, error) {
+	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
-		common.BKObjIDField:   objID,
-		common.BKOwnerIDField: common.BKDefaultOwnerID,
-		"page": mapstr.MapStr{
+		common.BKObjIDField: objID,
+		metadata.PageName: mapstr.MapStr{
 			"start": 0,
 			"limit": common.BKNoLimit,
 			"sort":  sort,
 		},
+		common.BKAppIDField: modelBizID,
 	}
+	condition.Merge(conds)
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, condition)
 	if nil != err {
-		blog.Errorf("get %s fields  return:%s", objID, result)
-		return nil, err
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
+	}
+
+	inputParam := metadata.QueryCondition{
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: objID,
+		}),
+	}
+	uniques, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), header, inputParam)
+	if nil != err {
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !uniques.Result {
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(uniques.Code, uniques.ErrMsg)
+	}
+
+	keyIDs := map[uint64]bool{}
+	for _, unique := range uniques.Data.Info {
+		if unique.MustCheck {
+			for _, key := range unique.Keys {
+				keyIDs[key.ID] = true
+			}
+			break
+		}
+	}
+	if len(keyIDs) <= 0 {
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
 
 	ret := []Property{}
-
-	for _, mapField := range result.Data {
-
-		fieldIsOnly := mapField.IsOnly
-		fieldName := mapField.PropertyName
-		fieldID := mapField.PropertyID
-		fieldType := mapField.PropertyType
-		fieldIsRequire := mapField.IsRequired
-		fieldIsOption := mapField.Option
-		fieldIsPre := mapField.IsPre
-		fieldGroup := mapField.PropertyGroup
-		fieldIndex := mapField.PropertyIndex
-		fieldData := mapField.ToMapStr()
-		fieldAsstObjID, _ := fieldData[common.BKAsstObjIDField].(string)
-
+	for _, attr := range result.Data {
 		ret = append(ret, Property{
-			ID:           fieldID,
-			Name:         fieldName,
-			PropertyType: fieldType,
-			IsRequire:    fieldIsRequire,
-			IsPre:        fieldIsPre,
-			Option:       fieldIsOption,
-			Group:        fieldGroup,
-			Index:        int(fieldIndex),
-			IsOnly:       fieldIsOnly,
-			AsstObjID:    fieldAsstObjID,
+			ID:            attr.PropertyID,
+			Name:          attr.PropertyName,
+			PropertyType:  attr.PropertyType,
+			IsRequire:     attr.IsRequired,
+			IsPre:         attr.IsPre,
+			Option:        attr.Option,
+			Group:         attr.PropertyGroup,
+			ExcelColIndex: int(attr.PropertyIndex),
+			IsOnly:        keyIDs[uint64(attr.ID)],
 		})
 	}
-	blog.V(3).Infof("getObjFieldIDsBySort ret count:%d", len(ret))
+	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)
 	return ret, nil
 }
 
@@ -196,12 +269,12 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 	case common.FieldTypeSingleChar:
 	case common.FieldTypeLongChar:
 	case common.FieldTypeInt:
+	case common.FieldTypeFloat:
 	case common.FieldTypeEnum:
 	case common.FieldTypeDate:
 	case common.FieldTypeTime:
 	case common.FieldTypeUser:
-	case common.FieldTypeSingleAsst:
-	case common.FieldTypeMultiAsst:
+	case common.FieldTypeOrganization:
 	case common.FieldTypeBool:
 	case common.FieldTypeTimeZone:
 
@@ -224,7 +297,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		Name:          "",
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
-		ExcelColIndex: 0,
+		ExcelColIndex: 1, // why set ExcelColIndex=1? because ExcelColIndex=0 used by tip column
 	}
 
 	switch objID {

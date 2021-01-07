@@ -32,6 +32,10 @@ const actions = {
         return $http.post(`set/${bizId}`, params, config)
     },
 
+    createset ({ commit, state, dispatch }, { bizId, params, config }) {
+        return $http.post(`set/${bizId}/batch`, params, config)
+    },
+
     /**
      * 删除集群
      * @param {Function} commit store commit mutation hander

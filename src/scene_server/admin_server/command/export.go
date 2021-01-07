@@ -14,31 +14,12 @@ package command
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"configcenter/src/storage/dal"
 )
 
 func export(ctx context.Context, db dal.RDB, opt *option) error {
-	file, err := os.Create(opt.position)
-	if nil != err {
-		return err
-	}
-	defer file.Close()
-	defer file.Sync()
 
-	topo, err := getBKTopo(ctx, db, opt)
-	if nil != err {
-		return err
-	}
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "    ")
-	err = encoder.Encode(topo)
-	if nil != err {
-		return fmt.Errorf("encode topo error: %s", err.Error())
-	}
-
-	return nil
+	return fmt.Errorf("unrealized")
 }

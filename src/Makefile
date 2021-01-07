@@ -13,13 +13,23 @@ default:
 	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 	@echo -e "\033[34mbuilding web... \033[0m"
 	@cd $(SOURCE_ROOT)/ui && bash ./build.sh ${NPM} ${BIN_PATH}
-	
+
+.PHONY:linux
+linux:
+	@echo ""
+	@echo -e "\033[34mbuilding server... \033[0m"
+	@rm -rf "./ui/node_modules"
+	@cd  $(SCRIPT_DIR) && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 bash ./build.sh
+	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
+	@echo -e "\033[34mbuilding web... \033[0m"
+	@cd $(SOURCE_ROOT)/ui && bash ./build.sh ${NPM} ${BIN_PATH}
+
 .PHONY:server
 server:
 	@echo ""
 	@echo -e "\033[34mbuilding server... \033[0m"
 	@rm -rf "./ui/node_modules"
-	@cd  $(SCRIPT_DIR) && bash ./build.sh
+	@cd  $(SCRIPT_DIR) &&  bash ./build.sh
 	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 
 .PHONY:ui
@@ -53,9 +63,10 @@ enterprise:
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/language/
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/web/
 
-	cp -R ${RESOURCE_DIR}/errors/  $(SOURCE_ROOT)/bin/enterprise/cmdb/
-	cp -R ${RESOURCE_DIR}/language/  $(SOURCE_ROOT)/bin/enterprise/cmdb/
+	cp -R ${RESOURCE_DIR}/errors/*  $(SOURCE_ROOT)/bin/enterprise/cmdb/errors
+	cp -R ${RESOURCE_DIR}/language/*  $(SOURCE_ROOT)/bin/enterprise/cmdb/language
 	cp  ${BIN_PATH}/cmdb_*/cmdb_*  $(SOURCE_ROOT)/bin/enterprise/cmdb/server/bin/
+	cp  ${BIN_PATH}/tool_*/tool_*  $(SOURCE_ROOT)/bin/enterprise/cmdb/server/bin/
 
 .PHONY:clean
 clean:

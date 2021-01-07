@@ -14,113 +14,105 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
+	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
+	"configcenter/src/ac/extensions"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
+		blog.Errorf("wrap server info failed, err: %v", err)
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := new(hostsvc.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
+	hostSrv := new(HostServer)
+
+	input := &backbone.BackboneParameter{
+		Regdiscv:     op.ServConf.RegDiscover,
+		ConfigPath:   op.ServConf.ExConfig,
+		ConfigUpdate: hostSrv.onHostConfigUpdate,
+		SrvInfo:      svrInfo,
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOST, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
-	hostSvr := new(HostServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOST,
-		op.ServConf.ExConfig,
-		hostSvr.onHostConfigUpdate,
-		bonC)
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
+		blog.Errorf("new backbone failed, err: %v", err)
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if nil != hostSrv.Config {
+			configReady = true
+			break
+		}
+		blog.Infof("waiting for config ready ...")
+		time.Sleep(time.Second)
+	}
+	if false == configReady {
+		blog.Infof("waiting config timeout.")
+		return errors.New("configuration item not found")
+	}
+
+	hostSrv.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
+	}
+
+	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %s", err.Error())
+		return fmt.Errorf("new redis client failed, err: %s", err.Error())
+	}
+
+	authManager := extensions.NewAuthManager(engine.CoreAPI)
+	service.AuthManager = authManager
 	service.Engine = engine
-	service.Logics = &logics.Logics{Engine: engine}
-	service.Config = &hostSvr.Config
-	hostSvr.Core = engine
-	hostSvr.Service = service
-	hostSvr.Logic = service.Logics
-	select {}
+	service.Config = hostSrv.Config
+	service.CacheDB = cacheDB
+	service.EnableTxn = op.EnableTxn
+	service.Logic = logics.NewLogics(engine, cacheDB, authManager)
+	hostSrv.Core = engine
+	hostSrv.Service = service
+
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+	if err != nil {
+		blog.Errorf("start backbone failed, err: %+v", err)
+		return err
+	}
+
+	select {
+	case <-ctx.Done():
+	}
 	return nil
 }
 
 type HostServer struct {
 	Core    *backbone.Engine
-	Config  options.Config
+	Config  *options.Config
 	Service *hostsvc.Service
-	Logic   *logics.Logics
+}
+
+func (h *HostServer) WebService() *restful.Container {
+	return h.Service.WebService()
 }
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	h.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
-	h.Config.Gse.ZkUser = current.ConfigMap["gse.user"]
-	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
-	h.Config.Gse.RedisPort = current.ConfigMap["gse.port"]
-	h.Config.Gse.RedisPassword = current.ConfigMap["gse.redis_pwd"]
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
+	if h.Config == nil {
+		h.Config = new(options.Config)
 	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

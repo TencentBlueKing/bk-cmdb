@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="57px" height="66px" viewBox="0 0 57 66" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55.2 (78181) - https://sketchapp.com -->
+    <title>丑丑锁</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <path d="M49.6363636,26.1428571 L43.3333333,26.1428571 L43.3333333,17.4285714 C43.3333333,5.80952381 37.5555556,0 26,0 C14.4444444,0 8.66666667,5.80952381 8.66666667,17.4285714 L8.66666667,26.1428571 L2.36363636,26.1428571 C1.05625,26.1428571 0,27.2332321 0,28.5828571 L0,58.56 C0,59.909625 1.05625,61 2.36363636,61 L49.6363636,61 C50.94375,61 52,59.909625 52,58.56 L52,28.5828571 C52,27.2332321 50.94375,26.1428571 49.6363636,26.1428571 Z M39,26 L13,26 L13,17.2 C13,8.4 17.3333333,4 26,4 C34.6666667,4 39,8.4 39,17.2 L39,26 Z" id="path-1"></path>
+        <filter x="-7.7%" y="-3.3%" width="115.4%" height="113.1%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="1" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.0512456294 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="页面1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="样式02-无权限弹窗调整" transform="translate(-643.000000, -220.000000)" fill-rule="nonzero">
+            <g id="没有权限操作" transform="translate(302.500000, 180.500000)">
+                <g id="导出">
+                    <g id="lock-fill" transform="translate(343.000000, 40.000000)">
+                        <g id="丑丑锁">
+                            <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+                            <use fill="#C4C6CC" xlink:href="#path-1"></use>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

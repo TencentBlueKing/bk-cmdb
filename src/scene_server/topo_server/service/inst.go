@@ -16,169 +16,435 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	paraparse "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/operation"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+var whiteList = []string{
+	common.BKInnerObjIDHost,
+}
+
 // CreateInst create a new inst
-func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *Service) CreateInst(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 
-	// /inst/{owner_id}/{obj_id}
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
 
-	objID := pathParams("obj_id")
-
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		blog.Errorf("failed to search the inst, %s", err.Error())
-		return nil, err
+		blog.Errorf("failed to search the inst, %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isMainline == true {
+		// TODO add custom mainline instance param validation
 	}
 
 	if data.Exists("BatchInfo") {
+		/*
+			   BatchInfo data format:
+			    {
+			      "BatchInfo": {
+			        "4": { // excel line number
+			          "bk_inst_id": 1,
+			          "bk_inst_key": "a22",
+			          "bk_inst_name": "a11",
+			          "bk_version": "121",
+			          "import_from": "1"
+					}
+				  },
+			      "input_type": "excel"
+			    }
+		*/
 		batchInfo := new(operation.InstBatchInfo)
-		data.MarshalJSONInto(batchInfo)
-		setInst, err := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
-		if nil != err {
-			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
-			return nil, err
+		if err := data.MarshalJSONInto(batchInfo); err != nil {
+			blog.Errorf("create instance failed, import object[%s] instance batch, but got invalid BatchInfo:[%v], err: %+v, rid: %s", objID, batchInfo, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+			return
 		}
-		return setInst, nil
+
+		var setInst *operation.BatchResult
+		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+			var err error
+			setInst, err = s.Core.InstOperation().CreateInstBatch(ctx.Kit, obj, batchInfo)
+			if nil != err {
+				blog.Errorf("failed to create new object %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+				return err
+			}
+			return nil
+		})
+
+		if txnErr != nil {
+			ctx.RespAutoError(txnErr)
+			return
+		}
+		ctx.RespEntity(setInst)
+		return
 	}
 
-	setInst, err := s.core.InstOperation().CreateInst(params, obj, data)
-	if nil != err {
-		blog.Errorf("failed to create a new %s, %s", objID, err.Error())
-		return nil, err
-	}
+	var setInst inst.Inst
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		setInst, err = s.Core.InstOperation().CreateInst(ctx.Kit, obj, data)
+		if nil != err {
+			blog.Errorf("failed to create a new %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
 
-	return setInst.ToMapStr(), nil
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(setInst.ToMapStr())
 }
-func (s *topoService) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
+func (s *Service) DeleteInsts(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	data := struct {
+		operation.OpCondition `json:",inline"`
+		ModelBizID            int64 `json:"bk_biz_id"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	deleteCondition := data.OpCondition
+
+	// forbidden delete inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("DeleteInsts failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
+	}
+
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	deleteCondition := &operation.OpCondition{}
-	if err := data.MarshalJSONInto(deleteCondition); nil != err {
-		return nil, err
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("DeleteInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if isMainline == true {
+		// TODO add custom mainline instance param validation
 	}
 
-	return nil, s.core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true)
+	authInstances := make([]extensions.InstanceSimplify, 0)
+	input := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			obj.GetInstIDFieldName(): map[string]interface{}{
+				common.BKDBIN: deleteCondition.Delete.InstID,
+			}}}
+
+	_, insts, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, input, false)
+	if nil != err {
+		blog.Errorf("DeleteInst failed, find authInstances to be deleted failed, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	for _, inst := range insts {
+		instID, _ := inst.GetInstID()
+		instName, _ := inst.GetInstName()
+		instBizID, _ := inst.GetBizID()
+		authInstances = append(authInstances, extensions.InstanceSimplify{
+			InstanceID: instID,
+			Name:       instName,
+			BizID:      instBizID,
+			ObjectID:   objID,
+		})
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		if err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, deleteCondition.Delete.InstID, true); err != nil {
+			blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), objID, deleteCondition.Delete.InstID, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteInst delete the inst
-func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *Service) DeleteInst(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
 
-	if "batch" == pathParams("inst_id") {
-		return s.DeleteInsts(params, pathParams, queryParams, data)
+	// forbidden delete inner model instance with common api
+	if common.IsInnerModel(objID) == true {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
 	}
 
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if "batch" == ctx.Request.PathParameter("inst_id") {
+		s.DeleteInsts(ctx)
+		return
+	}
+
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
+		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "inst id"))
+		return
 	}
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	err = s.core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true)
-	return nil, err
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("DeleteInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if isMainline == true {
+		// TODO add custom mainline instance param validation
+	}
+
+	authInstances := make([]extensions.InstanceSimplify, 0)
+	_, insts, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, &metadata.QueryInput{Condition: map[string]interface{}{obj.GetInstIDFieldName(): instID}}, false)
+	if nil != err {
+		blog.Errorf("DeleteInst failed, find authInstances to be deleted failed, error info is %s, rid: %s", err.Error(), ctx.Kit)
+		ctx.RespAutoError(err)
+		return
+	}
+	for _, inst := range insts {
+		instName, _ := inst.GetInstName()
+		instBizID, _ := inst.GetBizID()
+		authInstances = append(authInstances, extensions.InstanceSimplify{
+			InstanceID: instID,
+			Name:       instName,
+			BizID:      instBizID,
+			ObjectID:   objID,
+		})
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		if err := s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, []int64{instID}, true); err != nil {
+			blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instID: %d, rid: %s", err.Error(), objID, instID, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
-func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	objID := pathParams("obj_id")
+func (s *Service) UpdateInsts(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	data := struct {
+		operation.OpCondition `json:",inline"`
+	}{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	updateCondition := data.OpCondition
 
-	updateCondition := &operation.OpCondition{}
-	if err := data.MarshalJSONInto(updateCondition); nil != err {
-		blog.Errorf("[api-inst] failed to parse the input data(%v), error info is %s", data, err.Error())
-		return nil, err
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
+		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
 	}
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+	// check inst_id field to be not empty, is dangerous for empty inst_id field, which will update or delete all instance
+	for idx, item := range updateCondition.Update {
+		if item.InstID == 0 {
+			blog.Errorf("update instance failed, %d's update item's field `inst_id` emtpy, rid: %s", idx, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+			return
+		}
 	}
-
-	for _, item := range updateCondition.Update {
-
-		cond := condition.CreateCondition()
-		cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
-		err = s.core.InstOperation().UpdateInst(params, item.InstInfo, obj, cond, item.InstID)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.GetID(), item.InstID, data, err.Error())
-			return nil, err
+	for idx, instID := range updateCondition.Delete.InstID {
+		if instID == 0 {
+			blog.Errorf("update instance failed, %d's delete item's field `inst_id` emtpy, rid: %s", idx, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+			return
 		}
 	}
 
-	return nil, nil
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("UpdateInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if isMainline == true {
+		// TODO add custom mainline instance param validation
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		instanceIDs := make([]int64, 0)
+		for _, item := range updateCondition.Update {
+			instanceIDs = append(instanceIDs, item.InstID)
+			cond := condition.CreateCondition()
+			cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
+			err = s.Core.InstOperation().UpdateInst(ctx.Kit, item.InstInfo, obj, cond, item.InstID)
+			if nil != err {
+				blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s, rid: %s", obj.Object().ObjectID, item.InstID, data, err.Error(), ctx.Kit.Rid)
+				return err
+			}
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // UpdateInst update the inst
-func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *Service) UpdateInst(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
 
-	// /inst/{owner_id}/{obj_id}/{inst_id}
-
-	if "batch" == pathParams("inst_id") {
-		return s.UpdateInsts(params, pathParams, queryParams, data)
+	// forbidden update inner model instance with common api
+	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
+		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI))
+		return
 	}
 
-	objID := pathParams("obj_id")
-
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+	if "batch" == ctx.Request.PathParameter("inst_id") {
+		s.UpdateInsts(ctx)
+		return
 	}
 
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
+		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "inst id"))
+		return
+	}
+
+	data := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("UpdateInsts failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if isMainline == true {
+		// TODO add custom mainline instance param validation
 	}
 
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-	err = s.core.InstOperation().UpdateInst(params, data, obj, cond, instID)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", obj.GetID(), pathParams("inst_id"), data, err.Error())
-		return nil, err
-	}
 
-	return nil, err
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.InstOperation().UpdateInst(ctx.Kit, data, obj, cond, instID)
+		if nil != err {
+			blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s, rid: %s", obj.Object().ObjectID, ctx.Request.PathParameter("inst_id"), data, err.Error(), ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // SearchInst search the inst
-func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	objID := pathParams("obj_id")
-
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+func (s *Service) SearchInsts(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	data := struct {
+		paraparse.SearchParams `json:",inline"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
+	//	if nil != ctx.Kit.MetaData {
+	//		data.Set(metadata.BKMetadata, *ctx.Kit.MetaData)
+	//	}
 	// construct the query inst condition
-	queryCond := &paraparse.SearchParams{
-		Condition: mapstr.New(),
-	}
-	if err := data.MarshalJSONInto(queryCond); nil != err {
-		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
-		return nil, err
+	queryCond := data.SearchParams
+	if queryCond.Condition == nil {
+		queryCond.Condition = mapstr.New()
 	}
 	page := metadata.ParsePage(queryCond.Page)
 	query := &metadata.QueryInput{}
@@ -188,41 +454,37 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 	query.Sort = page.Sort
 	query.Start = page.Start
 
-	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, query, false)
+	cnt, instItems, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, query, false)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
-	return result, nil
+	ctx.RespEntity(result)
 }
 
 // SearchInstAndAssociationDetail search the inst with association details
-func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//fmt.Println("SearchInstAndAssociationDetail")
-	// /inst/search/owner/{owner_id}/object/{obj_id}/detail
-
-	objID := pathParams("obj_id")
-
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	data := struct {
+		paraparse.SearchParams `json:",inline"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	// construct the query inst condition
-
-	queryCond := &paraparse.SearchParams{
-		Condition: mapstr.New(),
-	}
-	if err := data.MarshalJSONInto(queryCond); nil != err {
-		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
-		return nil, err
+	queryCond := data.SearchParams
+	if queryCond.Condition == nil {
+		queryCond.Condition = mapstr.New()
 	}
 	page := metadata.ParsePage(queryCond.Page)
+
 	query := &metadata.QueryInput{}
 	query.Condition = queryCond.Condition
 	query.Fields = strings.Join(queryCond.Fields, ",")
@@ -230,36 +492,36 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 	query.Sort = page.Sort
 	query.Start = page.Start
 
-	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, query, true)
+	result, err := s.Core.InstOperation().FindOriginInst(ctx.Kit, objID, query)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-
-	result := frtypes.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
-	return result, nil
+	ctx.RespEntity(result)
 }
 
 // SearchInstByObject search the inst of the object
-func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
 
-	// /inst/search/owner/{owner_id}/object/{obj_id}
-
-	objID := pathParams("obj_id")
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	data := struct {
+		paraparse.SearchParams `json:",inline"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	queryCond := &paraparse.SearchParams{
-		Condition: mapstr.New(),
-	}
-	if err := data.MarshalJSONInto(queryCond); nil != err {
-		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
-		return nil, err
+	queryCond := data.SearchParams
+	if queryCond.Condition == nil {
+		queryCond.Condition = mapstr.New()
 	}
 	page := metadata.ParsePage(queryCond.Page)
 	query := &metadata.QueryInput{}
@@ -268,60 +530,57 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 	query.Limit = page.Limit
 	query.Sort = page.Sort
 	query.Start = page.Start
-	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, query, false)
+	cnt, instItems, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, query, false)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
-
-	return result, nil
-
+	ctx.RespEntity(result)
 }
 
 // SearchInstByAssociation search inst by the association inst
-func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	// fmt.Println("SearchInstByAssociation")
-	// /inst/association/search/owner/{owner_id}/object/{obj_id}
+func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
+	data := struct {
+		operation.AssociationParams `json:",inline"`
+	}{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	objID := ctx.Request.PathParameter("bk_obj_id")
 
-	objID := pathParams("obj_id")
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	result, err := s.Core.InstOperation().FindInstByAssociationInst(ctx.Kit, objID, &data.AssociationParams)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	cnt, instItems, err := s.core.InstOperation().FindInstByAssociationInst(params, obj, data)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
-	}
-
-	result := frtypes.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
-	return result, nil
+	ctx.RespEntity(result)
 }
 
 // SearchInstByInstID search the inst by inst ID
-func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *Service) SearchInstByInstID(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
 
-	// /inst/search/{owner_id}/{obj_id}/{inst_id}
-
-	objID := pathParams("obj_id")
-
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter("inst_id"), 10, 64)
 	if nil != err {
-		return nil, params.Err.New(common.CCErrTopoInstSelectFailed, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoInstSelectFailed, err.Error()))
+		return
 	}
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	cond := condition.CreateCondition()
@@ -329,78 +588,246 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = cond.ToMapStr()
 
-	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
+	cnt, instItems, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, queryCond, false)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
-
-	return result, nil
+	ctx.RespEntity(result)
 }
 
 // SearchInstChildTopo search the child inst topo for a inst
-func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//fmt.Println("SearchInstChildTopo")
-	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
+func (s *Service) SearchInstChildTopo(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
 
-	objID := pathParams("object_id")
-
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	query := &metadata.QueryInput{}
-
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	_, instItems, err := s.core.InstOperation().FindInstChildTopo(params, obj, instID, query)
-	return instItems, err
-
+	_, instItems, err := s.Core.InstOperation().FindInstChildTopo(ctx.Kit, obj, instID, query)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(instItems)
 }
 
 // SearchInstTopo search the inst topo
-func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//fmt.Println("SearchInstTopo")
-	// /inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}
+func (s *Service) SearchInstTopo(ctx *rest.Contexts) {
 
-	objID := pathParams("object_id")
-
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
+		blog.Errorf("search inst topo failed, path parameter inst_id invalid, object: %s inst_id: %s, err: %+v, rid: %s", objID, ctx.Request.PathParameter("inst_id"), err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		return
 	}
 
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID)
 	if nil != err {
-		return nil, err
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	query := &metadata.QueryInput{}
-
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	_, instItems, err := s.core.InstOperation().FindInstTopo(params, obj, instID, query)
-	return instItems, err
+	_, instItems, err := s.Core.InstOperation().FindInstTopo(ctx.Kit, obj, instID, query)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(instItems)
+}
+
+// Deprecated 2019-09-30 废弃接口
+func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
+
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "id"))
+		return
+	}
+	start, err := strconv.ParseInt(ctx.Request.PathParameter("start"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "start"))
+		return
+	}
+	limit, err := strconv.ParseInt(ctx.Request.PathParameter("limit"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "limit"))
+		return
+	}
+
+	cond := condition.CreateCondition()
+	condOR := cond.NewOR()
+	condOR.Item(map[string]interface{}{common.BKObjIDField: objID, common.BKInstIDField: instID})
+	condOR.Item(map[string]interface{}{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID})
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Page: metadata.BasePage{
+			Limit: int(limit),
+			Start: int(start),
+		},
+	}
+
+	if input.IsIllegal() {
+		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
+	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationList(ctx.Kit, input)
+	if err != nil {
+		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(map[string]interface{}{
+		"info":  infos,
+		"count": cnt,
+		"page":  input.Page,
+	})
+}
+
+func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {
+
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "id"))
+		return
+	}
+	start, err := strconv.ParseInt(ctx.Request.PathParameter("start"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "start"))
+		return
+	}
+	limit, err := strconv.ParseInt(ctx.Request.PathParameter("limit"), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "limit"))
+		return
+	}
+
+	cond := condition.CreateCondition()
+	condOR := cond.NewOR()
+	condOR.Item(map[string]interface{}{common.BKObjIDField: objID, common.BKInstIDField: instID})
+	condOR.Item(map[string]interface{}{common.BKAsstObjIDField: objID, common.BKAsstInstIDField: instID})
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Page: metadata.BasePage{
+			Limit: int(limit),
+			Start: int(start),
+		},
+	}
+
+	if input.IsIllegal() {
+		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
+	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationUIList(ctx.Kit, objID, input)
+	if err != nil {
+		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(map[string]interface{}{
+		"data":              infos,
+		"association_count": cnt,
+		"page":              input.Page,
+	})
+}
+
+// SearchInstAssociationWithOtherObject  要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID） 返回实例关联或者被关联模型实例得数据。
+func (s *Service) SearchInstAssociationWithOtherObject(ctx *rest.Contexts) {
+
+	reqParams := &metadata.RequestInstAssociationObjectID{}
+	if err := ctx.DecodeInto(reqParams); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if reqParams.Condition.ObjectID == "" {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+	if reqParams.Condition.InstID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKInstIDField))
+		return
+	}
+	if reqParams.Condition.AssociationObjectID == "" {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "association_obj_id"))
+		return
+	}
+
+	cond := condition.CreateCondition()
+	if reqParams.Condition.IsTargetObject {
+		// 作为目标模型
+		cond.Field(common.BKAsstObjIDField).Eq(reqParams.Condition.ObjectID)
+		cond.Field(common.BKAsstInstIDField).Eq(reqParams.Condition.InstID)
+		cond.Field(common.BKObjIDField).Eq(reqParams.Condition.AssociationObjectID)
+	} else {
+		// 作为源模型
+		cond.Field(common.BKObjIDField).Eq(reqParams.Condition.ObjectID)
+		cond.Field(common.BKInstIDField).Eq(reqParams.Condition.InstID)
+		cond.Field(common.BKAsstObjIDField).Eq(reqParams.Condition.AssociationObjectID)
+	}
+
+	input := &metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+		Page:      reqParams.Page,
+	}
+
+	if input.IsIllegal() {
+		blog.ErrorJSON("parse page illegal, input:%s,rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
+	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationSingleObjectInstInfo(ctx.Kit, reqParams.Condition.AssociationObjectID, input)
+	if err != nil {
+		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(map[string]interface{}{
+		"info":  infos,
+		"count": cnt,
+		"page":  input.Page,
+	})
 }

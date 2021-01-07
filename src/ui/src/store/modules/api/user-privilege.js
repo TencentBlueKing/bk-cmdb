@@ -23,7 +23,35 @@ const state = {
 
 const getters = {
     privilege: state => state.privilege,
-    roles: state => state.roles
+    roles: state => state.roles,
+    modelAuthority: (state, getters, rootState, rootGetters) => modelId => {
+        if (rootGetters.admin) {
+            return ['search', 'update', 'delete']
+        }
+        const modelConfig = state.privilege['model_config']
+        let modelAuthority = []
+        for (const classifyId in modelConfig) {
+            if (modelConfig[classifyId].hasOwnProperty(modelId)) {
+                modelAuthority = modelConfig[classifyId][modelId]
+                break
+            }
+        }
+        return modelAuthority
+    },
+    globalBusiAuthority: (state, getters, rootState, rootGetters) => id => {
+        if (rootGetters.admin) {
+            return ['search', 'update', 'delete']
+        }
+        const globalBusi = state.privilege['sys_config']['global_busi'] || []
+        return globalBusi.includes(id) ? ['search', 'update', 'delete'] : []
+    },
+    backConfigAuthority: (state, getters, rootState, rootGetters) => id => {
+        if (rootGetters.admin) {
+            return ['search', 'update', 'delete']
+        }
+        const backConfig = state.privilege['sys_config']['back_config'] || []
+        return backConfig.includes(id) ? ['search', 'update', 'delete'] : []
+    }
 }
 
 const actions = {

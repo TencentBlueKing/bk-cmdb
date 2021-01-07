@@ -29,7 +29,10 @@ type Field interface {
 	Gt(val interface{}) Condition
 	NotGt(val interface{}) Condition
 	Gte(val interface{}) Condition
+	Or(val interface{}) Condition
+	Exists(val interface{}) Condition
 	ToMapStr() types.MapStr
+	GetFieldName() string
 }
 
 // Field the field object
@@ -49,9 +52,12 @@ func (cli *field) ToMapStr() types.MapStr {
 		tmpResult.Merge(item.ToMapStr())
 	}
 
-	if BKDBEQ == cli.opeartor {
+	switch cli.opeartor {
+	case BKDBEQ:
 		tmpResult.Merge(types.MapStr{cli.fieldName: cli.fieldValue})
-	} else {
+	case BKDBOR:
+		tmpResult.Merge(types.MapStr{BKDBOR: cli.fieldValue})
+	default:
 		tmpResult.Merge(types.MapStr{
 			cli.fieldName: types.MapStr{
 				cli.opeartor: cli.fieldValue,
@@ -97,7 +103,7 @@ func (cli *field) NotIn(val interface{}) Condition {
 	return cli.condition
 }
 
-// NotIn not in a array
+// NotGt not in a array
 func (cli *field) NotGt(val interface{}) Condition {
 	cli.opeartor = BKDBNot
 	cli.fieldValue = map[string]interface{}{
@@ -132,4 +138,22 @@ func (cli *field) Gte(val interface{}) Condition {
 	cli.opeartor = BKDBGTE
 	cli.fieldValue = val
 	return cli.condition
+}
+
+// Or if any expression of value are true
+func (cli *field) Or(val interface{}) Condition {
+	cli.opeartor = BKDBOR
+	cli.fieldValue = val
+	return cli.condition
+}
+
+// Exists set the key exists value as val
+func (cli *field) Exists(val interface{}) Condition {
+	cli.opeartor = BKDBEXISTS
+	cli.fieldValue = val
+	return cli.condition
+}
+
+func (cli *field) GetFieldName() string {
+	return cli.fieldName
 }

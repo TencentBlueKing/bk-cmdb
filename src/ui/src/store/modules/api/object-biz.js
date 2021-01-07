@@ -9,22 +9,24 @@
  */
 
 import $http from '@/api'
-import jsCookie from 'js-cookie'
 
 const state = {
-    business: []
+    business: [],
+    bizId: null,
+    authorizedBusiness: null
 }
 
 const getters = {
     business: state => state.business,
-    privilegeBusiness: (state, getters, rootState, rootGetters) => {
-        if (rootGetters.admin) return state.business
-        const privilege = (jsCookie.get('bk_privi_biz_id') || '').split('-')
-        return state.business.filter(business => privilege.includes(business['bk_biz_id'].toString()))
-    }
+    bizId: state => state.bizId,
+    currentBusiness: state => state.authorizedBusiness.find(business => business.bk_biz_id === state.bizId),
+    authorizedBusiness: state => state.authorizedBusiness || []
 }
 
 const actions = {
+    getAuthorizedBusiness ({ commit, state }, config = {}) {
+        return $http.get('biz/with_reduced?sort=bk_biz_id', config)
+    },
     /**
      * 添加业务
      * @param {Function} commit store commit mutation hander
@@ -83,8 +85,8 @@ const actions = {
      * @param {Number} bizId 业务id
      * @return {promises} promises 对象
      */
-    recoveryBusiness ({ commit, state, dispatch, rootGetters }, {params, config}) {
-        return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${params['bk_biz_id']}`, {}, config)
+    recoveryBusiness ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+        return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${bizId}`, params, config)
     },
 
     /**
@@ -96,11 +98,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchBusiness ({ commit, state, dispatch, rootGetters }, {params, config}) {
-        return $http.post(`biz/search/${rootGetters.supplierAccount}`, params, config)
+    searchBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`${window.API_HOST}biz/search/web`, params, config)
     },
 
-    searchBusinessById ({rootGetters}, {bizId, config}) {
+    searchBusinessById ({ rootGetters }, { bizId, config }) {
         return $http.post(`biz/search/${rootGetters.supplierAccount}`, {
             condition: {
                 'bk_biz_id': {
@@ -115,12 +117,21 @@ const actions = {
         }, config).then(data => {
             return data.info[0] || {}
         })
+    },
+    getFullAmountBusiness ({ commit }, config = {}) {
+        return $http.get('biz/simplify', config)
     }
 }
 
 const mutations = {
     setBusiness (state, business) {
         state.business = business
+    },
+    setBizId (state, bizId) {
+        state.bizId = bizId
+    },
+    setAuthorizedBusiness (state, list) {
+        state.authorizedBusiness = list
     }
 }
 

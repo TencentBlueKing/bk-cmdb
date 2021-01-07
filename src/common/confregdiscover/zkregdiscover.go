@@ -13,11 +13,12 @@
 package confregdiscover
 
 import (
-	"configcenter/src/common/zkclient"
 	"context"
 	"fmt"
-	"strings"
 	"time"
+
+	"configcenter/src/common/zkclient"
+	"configcenter/src/common/backbone/service_mange/zk"
 )
 
 // ZkRegDiscover config register and discover by zookeeper
@@ -29,38 +30,19 @@ type ZkRegDiscover struct {
 }
 
 // NewZkRegDiscover create a object of ZkRegDiscover
-func NewZkRegDiscover(serv string, timeOut time.Duration) *ZkRegDiscover {
-	zkservs := strings.Split(serv, ",")
+func NewZkRegDiscover(client *zk.ZkClient) *ZkRegDiscover {
+	ctx, ctxCancel := client.WithCancel()
 	return &ZkRegDiscover{
-		zkcli:          zkclient.NewZkClient(zkservs),
-		sessionTimeOut: timeOut,
+		zkcli:          client.Client(),
+		sessionTimeOut: client.SessionTimeOut(),
+		rootCtx:        ctx,
+		cancel:         ctxCancel,
 	}
 }
 
 // Ping to ping server
 func (zkRD *ZkRegDiscover) Ping() error {
 	return zkRD.zkcli.Ping()
-}
-
-// Start used to run register and discover server
-func (zkRD *ZkRegDiscover) Start() error {
-
-	if err := zkRD.zkcli.ConnectEx(zkRD.sessionTimeOut); err != nil {
-		return fmt.Errorf("fail to connect zookeeper. err:%s", err.Error())
-	}
-
-	zkRD.rootCtx, zkRD.cancel = context.WithCancel(context.Background())
-
-	return nil
-}
-
-//Stop to stop register and discover server
-func (zkRD *ZkRegDiscover) Stop() error {
-	zkRD.zkcli.Close()
-
-	zkRD.cancel()
-
-	return nil
 }
 
 //Write to save config data into zookeeper
@@ -74,16 +56,14 @@ func (zkRD *ZkRegDiscover) Read(path string) (string, error) {
 
 func (zkRD *ZkRegDiscover) Discover(key string) (<-chan *DiscoverEvent, error) {
 
-	discvCtx, _ := context.WithCancel(zkRD.rootCtx)
-
 	env := make(chan *DiscoverEvent, 1)
 
-	go zkRD.loopDiscover(key, discvCtx, env)
+	go zkRD.loopDiscover(zkRD.rootCtx, key, env)
 
 	return env, nil
 }
 
-func (zkRD *ZkRegDiscover) loopDiscover(path string, discvCtx context.Context, env chan *DiscoverEvent) {
+func (zkRD *ZkRegDiscover) loopDiscover(discvCtx context.Context, path string, env chan *DiscoverEvent) {
 	for {
 		discvEnv := &DiscoverEvent{
 			Err: nil,

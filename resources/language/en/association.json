@@ -1,0 +1,31 @@
+{
+    "unique_kind_name_run": "run on",
+    "unique_kind_src_to_dest_run": "run on",
+    "unique_kind_dest_to_src_run": "run",
+    
+    "unique_kind_name_group": "group",
+    "unique_kind_src_to_dest_group": "group",
+    "unique_kind_dest_to_src_group": "group by",
+
+    "unique_kind_name_default": "default association",
+    "unique_kind_src_to_dest_default": "associate",
+    "unique_kind_dest_to_src_default": "associate",
+
+    "unique_kind_name_cover": "cover",
+    "unique_kind_src_to_dest_cover": "cover",
+    "unique_kind_dest_to_src_cover": "be covered",
+
+    "unique_kind_name_connect": "connect",
+    "unique_kind_src_to_dest_connect": "connect",
+    "unique_kind_dest_to_src_connect": "connected",
+
+    "unique_kind_name_bk_mainline": "mainline",
+    "unique_kind_src_to_dest_bk_mainline": "group",
+    "unique_kind_dest_to_src_bk_mainline": "group by",
+
+    "unique_kind_name_belong": "belong",
+    "unique_kind_src_to_dest_belong": "belong",
+    "unique_kind_dest_to_src_belong": "contain",
+    
+    "": ""
+}

@@ -1,46 +1,93 @@
 <template>
-    <div id="app">
+    <div id="app" v-bkloading="{ isLoading: globalLoading }" :bk-language="$i18n.locale"
+        :class="{
+            'no-breadcrumb': hideBreadcrumbs,
+            'main-full-screen': mainFullScreen
+        }">
         <div class="browser-tips" v-if="showBrowserTips">
-            <span class="tips-text">{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span>
+            <span class="tips-text">{{$t('您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果')}}</span>
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
         <the-header></the-header>
-        <the-nav class="nav-layout"></the-nav>
-        <main class="main-layout" v-bkloading="{isLoading: globalLoading}">
-            <div ref="mainScroller" class="main-scroller" @scroll="execMainScrollListener($event)">
-                <router-view class="views-layout"></router-view>
-            </div>
-        </main>
+        <router-view class="views-layout" :name="topView" ref="topView"></router-view>
+        <the-permission-modal ref="permissionModal"></the-permission-modal>
+        <the-login-modal ref="loginModal"
+            v-if="loginUrl"
+            :login-url="loginUrl"
+            :success-url="loginSuccessUrl">
+        </the-login-modal>
     </div>
 </template>
 
 <script>
     import theHeader from '@/components/layout/header'
-    import theNav from '@/components/layout/nav'
-    import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
+    import thePermissionModal from '@/components/modal/permission'
+    import theLoginModal from '@blueking/paas-login'
+    // import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+    import { MENU_INDEX } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
         components: {
             theHeader,
-            theNav
+            thePermissionModal,
+            theLoginModal
         },
         data () {
             const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
             return {
                 showBrowserTips,
-                execMainScrollListener
+                loginSuccessUrl: window.location.origin + '/static/login_success.html'
+                // execMainScrollListener
             }
         },
         computed: {
-            ...mapGetters(['globalLoading'])
+            ...mapGetters(['site', 'globalLoading', 'mainFullScreen']),
+            ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
+            isIndex () {
+                return this.$route.name === MENU_INDEX
+            },
+            hideBreadcrumbs () {
+                return !(this.$route.meta.layout || {}).breadcrumbs
+            },
+            topView () {
+                const topRoute = this.$route.matched[0]
+                return (topRoute && topRoute.meta.view) || 'default'
+            },
+            loginUrl () {
+                const siteLoginUrl = this.site.login || ''
+                const loginStrIndex = siteLoginUrl.indexOf('login')
+                let loginModalUrl
+                if (loginStrIndex > -1) {
+                    loginModalUrl = siteLoginUrl.substring(0, loginStrIndex) + 'login/plain'
+                }
+                return loginModalUrl
+            }
+        },
+        watch: {
+            site (site) {
+                let language = (this.$i18n.locale || 'cn').toLocaleLowerCase()
+                if (['zh-cn', 'zh_cn', 'zh', 'cn'].includes(language)) {
+                    language = 'cn'
+                }
+                document.title = site.title.i18n[language] || site.title.value
+            }
         },
         mounted () {
-            addResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            // addResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            addResizeListener(this.$el, this.calculateAppHeight)
+            window.permissionModal = this.$refs.permissionModal
+            window.loginModal = this.$refs.loginModal
         },
         beforeDestroy () {
-            removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            // removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            removeResizeListener(this.$el, this.calculateAppHeight)
+        },
+        methods: {
+            calculateAppHeight () {
+                this.$store.commit('setAppHeight', this.$el.offsetHeight)
+            }
         }
     }
 </script>
@@ -58,7 +105,7 @@
         text-align: center;
         color: #ff5656;
         background-color: #f8f6db;
-        z-index: 9999;
+        z-index: 99999;
         .tips-text{
             margin: 0 20px 0 0 ;
         }
@@ -66,25 +113,31 @@
             cursor: pointer;
         }
     }
-    .nav-layout{
-        position: relative;
-        float: left;
-        height: 100%;
-        margin: -61px 0 0 0;
-        z-index: 1001;
-    }
-    .main-layout{
-        height: calc(100% - 61px);
-        overflow: hidden;
-        position: relative;
-    }
-    .main-scroller{
-        height: 100%;
-        overflow: auto;
-    }
     .views-layout{
-        min-height: 100%;
-        min-width: 1100px;
-        padding: 20px;
+        height: calc(100% - 58px);
+    }
+    // 主内容区全屏
+    .main-full-screen {
+        /deep/ {
+            .header-layout,
+            .nav-layout,
+            .breadcrumbs-layout {
+                display: none;
+            }
+        }
+        .views-layout {
+            height: 100%;
+        }
+    }
+    .no-breadcrumb {
+        /deep/ {
+            .main-layout {
+                margin-top: 0
+            }
+            .main-views {
+                height: 100%;
+                margin-top: 0;
+            }
+        }
     }
 </style>

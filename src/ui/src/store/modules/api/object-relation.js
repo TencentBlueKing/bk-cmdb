@@ -1,6 +1,7 @@
 import $http from '@/api'
 
 const getUpdateParams = (payload) => {
+    // eslint-disable-next-line
     const { updateType, objId, relation, id, value, params, multiple } = payload
     let newRelation = [...relation]
     if (multiple) {
@@ -29,11 +30,15 @@ const actions = {
      * @param {Object} config API请求配置
      * @return {Promise} promise 对象
      */
-    getInstRelation ({ commit, state, dispatch, rootGetters }, { objId, instId, config }) {
-        return $http.post(`inst/association/topo/search/owner/${rootGetters.supplierAccount}/object/${objId}/inst/${instId}`, {}, config)
+    getInstRelation ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
+        return $http.post(`find/instassttopo/object/${objId}/inst/${instId}`, params, config)
     },
 
-    updateInstRelation ({commit, state, dispatch, rootGetters}, {params, config}) {
+    getInstRelationTopo ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
+        return $http.post(`/findmany/inst/association/object/${objId}/inst_id/${instId}/offset/0/limit/200/web`, params, config)
+    },
+
+    updateInstRelation ({ commit, state, dispatch, rootGetters }, { params, config }) {
         const updateParams = getUpdateParams(params)
         let promise
         switch (params.objId) {

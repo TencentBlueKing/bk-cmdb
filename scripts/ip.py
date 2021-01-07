@@ -1,5 +1,5 @@
-#!/usr/bin/python 
-# -*- coding: utf-8 -*-   
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import socket
 try:
@@ -8,4 +8,4 @@ try:
     ip = s.getsockname()[0]
 finally:
     s.close()
-print ip
+print(ip)

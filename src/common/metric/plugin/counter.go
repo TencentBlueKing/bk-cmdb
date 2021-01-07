@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package plugin
 
 import (
@@ -27,7 +39,7 @@ func NewCounterMetric(name, help string) CounterInterface {
 	}
 }
 
-var _ metric.MetricInterf = CounterMetric{}
+var _ metric.MetricInterf = &CounterMetric{}
 
 type CounterMetric struct {
 	name string
@@ -35,18 +47,18 @@ type CounterMetric struct {
 	counter
 }
 
-func (cm CounterMetric) GetMeta() metric.MetricMeta {
-	return metric.MetricMeta{
+func (cm *CounterMetric) GetMeta() *metric.MetricMeta {
+	return &metric.MetricMeta{
 		Name: cm.name,
 		Help: cm.help,
 	}
 }
 
-func (cm CounterMetric) GetValue() (*metric.FloatOrString, error) {
+func (cm *CounterMetric) GetValue() (*metric.FloatOrString, error) {
 	return metric.FormFloatOrString(cm.counter.GetCounter())
 }
 
-func (cm CounterMetric) GetExtension() (*metric.MetricExtension, error) {
+func (cm *CounterMetric) GetExtension() (*metric.MetricExtension, error) {
 	return nil, nil
 }
 
@@ -69,7 +81,7 @@ func (c *counter) Decrease(dec float64) float64 {
 	return c.value
 }
 
-func (c counter) GetCounter() float64 {
+func (c *counter) GetCounter() float64 {
 	c.locker.RLock()
 	defer c.locker.RUnlock()
 	return c.value

@@ -13,13 +13,15 @@
 package util
 
 import (
+	"fmt"
+
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
+	cc "configcenter/src/common/backbone/configcenter"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type APIMachineryConfig struct {
-	// the address of zookeeper address, comma separated.
-	ZkAddr string
 	// request's qps value
 	QPS int64
 	// request's burst value
@@ -32,6 +34,7 @@ type Capability struct {
 	Discover discovery.Interface
 	Throttle flowctrl.RateLimiter
 	Mock     MockInfo
+	Reg      prometheus.Registerer
 }
 
 type MockInfo struct {
@@ -51,4 +54,38 @@ type TLSClientConfig struct {
 	CAFile string
 	// the password to decrypt the certificate
 	Password string
+}
+
+func NewTLSClientConfigFromConfig(prefix string, config map[string]string) (TLSClientConfig, error) {
+	tlsConfig := TLSClientConfig{}
+
+	skipVerifyKey := fmt.Sprintf("%s.insecureSkipVerify", prefix)
+	if val, err := cc.String(skipVerifyKey); err == nil {
+		skipVerifyVal := val
+		if skipVerifyVal == "true" {
+			tlsConfig.InsecureSkipVerify = true
+		}
+	}
+
+	certFileKey := fmt.Sprintf("%s.certFile", prefix)
+	if val, err := cc.String(certFileKey); err == nil {
+		tlsConfig.CertFile = val
+	}
+
+	keyFileKey := fmt.Sprintf("%s.keyFile", prefix)
+	if val, err := cc.String(keyFileKey); err == nil {
+		tlsConfig.KeyFile = val
+	}
+
+	caFileKey := fmt.Sprintf("%s.caFile", prefix)
+	if val, err := cc.String(caFileKey); err == nil {
+		tlsConfig.CAFile = val
+	}
+
+	passwordKey := fmt.Sprintf("%s.password", prefix)
+	if val, err := cc.String(passwordKey); err == nil {
+		tlsConfig.Password = val
+	}
+
+	return tlsConfig, nil
 }

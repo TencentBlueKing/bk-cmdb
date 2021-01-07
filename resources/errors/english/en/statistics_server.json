@@ -1,0 +1,9 @@
+{
+  "1114001": "Failed to get the number of services, modules, and hosts",
+  "1114002": "New statistical report failed",
+  "1114003": "Failed to get statistics chart",
+  "1114004": "Update statistics chart failed",
+  "1114005": "Failed to get chart data",
+  "1114006": "Failed to delete statistical chart",
+  "1114007": "Statistical report already exists"
+}
