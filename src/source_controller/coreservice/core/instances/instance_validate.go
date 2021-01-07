@@ -274,7 +274,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
-	if err := hooks.ValidUpdateCloudIDHook(kit, objID, updateData, instanceData); err != nil {
+	if err := hooks.ValidUpdateCloudIDHook(kit, objID, instanceData, updateData); err != nil {
 		return err
 	}
 
@@ -311,7 +311,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
-	skip, err := hooks.IsSkipValidateHook(kit, objID, updateData)
+	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
 	if err != nil {
 		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return err
