@@ -9,7 +9,6 @@
  */
 
 import $http from '@/api'
-import { transformHostSearchParams, localSort } from '@/utils/tools'
 
 const state = {
 
@@ -28,15 +27,30 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchHost ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/search`, transformHostSearchParams(params), config).then(data => {
-            if (data.hasOwnProperty('info')) {
-                data.info.forEach(host => {
-                    localSort(host.module, 'bk_module_name')
-                    localSort(host.set, 'bk_set_name')
-                })
+    searchHost ({ commit, state, dispatch }, {params, config}) {
+        return $http.post(`hosts/search`, params, config)
+    },
+
+    searchHostByInnerip (context, { bizId, innerip, config }) {
+        return $http.post(`hosts/search`, {
+            'bk_biz_id': bizId,
+            condition: ['biz', 'set', 'module', 'host'].map(model => {
+                return {
+                    'bk_obj_id': model,
+                    condition: []
+                }
+            }),
+            ip: {
+                flag: 'bk_host_innerip',
+                exact: 1,
+                data: [innerip]
+            },
+            page: {
+                start: 0,
+                limit: 1
             }
-            return data
+        }, config).then(data => {
+            return data.info[0] || {}
         })
     },
 
@@ -61,8 +75,8 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-    getHostSnapshot ({ commit, state, dispatch }, { hostId, config }) {
-        return $http.get(`hosts/snapshot/${hostId}`, config)
+    getHostSnapshot ({ commit, state, dispatch }, { hostId }) {
+        return $http.get(`hosts/snapshot/${hostId}`)
     },
 
     /**

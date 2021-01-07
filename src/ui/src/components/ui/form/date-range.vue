@@ -1,13 +1,18 @@
 <template>
-    <bk-date-picker style="width: 100%"
-        v-model="time"
-        transfer
-        :font-size="fontSize"
-        :placeholder="placeholder || $t('选择日期范围')"
-        :clearable="clearable"
-        :type="timer ? 'datetimerange' : 'daterange'"
-        :disabled="disabled">
-    </bk-date-picker>
+    <div class="form-date-range">
+        <bk-date-range class="bk-date-range"
+            :placeholder="placeholder"
+            :disabled="disabled"
+            :position="position"
+            :rangeSeparator="rangeSeparator"
+            :quickSelect="quickSelect"
+            :ranges="ranges"
+            :timer="timer"
+            :startDate="startDate"
+            :endDate="endDate"
+            @change="handleChange">
+        </bk-date-range>
+    </div>
 </template>
 
 <script>
@@ -15,59 +20,93 @@
         name: 'cmdb-form-date-range',
         props: {
             value: {
-                type: [Array, String],
+                type: Array,
                 default () {
                     return []
                 }
-            },
-            disabled: {
-                type: Boolean,
-                default: false
-            },
-            timer: Boolean,
-            clearable: {
-                type: Boolean,
-                default: true
             },
             placeholder: {
                 type: String,
                 default: ''
             },
-            fontSize: {
-                type: [String, Number],
-                default: 'medium'
+            disabled: {
+                type: Boolean,
+                default: false
+            },
+            position: {
+                type: String,
+                default: 'bottom-right',
+                validator (val) {
+                    return ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(val)
+                }
+            },
+            rangeSeparator: {
+                type: String,
+                default: ' - '
+            },
+            quickSelect: {
+                type: Boolean,
+                default: false
+            },
+            ranges: {
+                type: Object
+            },
+            timer: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
             return {
-                localValue: [...this.value]
+                localSelected: []
             }
         },
         computed: {
-            time: {
-                get () {
-                    return this.localValue.map(date => {
-                        return date ? new Date(date) : ''
-                    })
-                },
-                set (value) {
-                    const localValue = value.map(date => this.$tools.formatTime(date, this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'))
-                    this.localValue = localValue.filter(date => !!date)
-                }
+            startDate () {
+                return this.localSelected.length ? this.localSelected[0] : ''
+            },
+            endDate () {
+                return this.localSelected.length ? this.localSelected[1] : ''
+            },
+            separator () {
+                return ` ${this.rangeSeparator} `
             }
         },
         watch: {
             value (value) {
-                if ([...value].join('') !== this.localValue.join('')) {
-                    this.localValue = [...value]
+                this.setLocalSelected()
+            },
+            localSelected (localSelected, oldSelected) {
+                if (localSelected.join(this.separator) !== this.value.join(this.separator)) {
+                    this.$emit('input', [...localSelected])
+                    this.$emit('on-change', [...localSelected], [...oldSelected])
+                }
+            }
+        },
+        created () {
+            this.setLocalSelected()
+        },
+        methods: {
+            setLocalSelected () {
+                if (this.localSelected.join(this.separator) !== this.value.join(this.separator)) {
+                    this.localSelected = [...this.value]
                 }
             },
-            localValue (value, oldValue) {
-                if (value.join('') !== [...this.value].join('')) {
-                    this.$emit('input', [...value])
-                    this.$emit('change', [...value], [...oldValue])
-                }
+            handleChange (oldValue, newValue) {
+                this.localSelected = newValue.split(this.separator)
             }
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .form-date-range{
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .bk-date-range{
+        width: 100%;
+        white-space: normal;
+    }
+</style>

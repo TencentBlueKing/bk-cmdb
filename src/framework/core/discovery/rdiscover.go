@@ -13,7 +13,7 @@
 package discovery
 
 import (
-	"context"
+	"configcenter/src/framework/core/log"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -22,12 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/RegisterDiscover"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
-	"configcenter/src/framework/core/log"
+
+	"context"
 )
 
 var _ DiscoverInterface = &RegDiscover{}
@@ -38,25 +38,25 @@ type RegDiscover struct {
 	ip         string
 	port       uint
 	isSSL      bool
-	rd         *registerdiscover.RegDiscover
+	rd         *RegisterDiscover.RegDiscover
 	rootCtx    context.Context
 	cancel     context.CancelFunc
+	topoServs  []*types.TopoServInfo
 	topoLock   sync.RWMutex
-	apiServers []*types.ProcServInfo
-	lock       sync.RWMutex
+	procServs  []*types.ProcServInfo
+	procLock   sync.RWMutex
 }
 
 // NewRegDiscover create a RegDiscover object
-func NewRegDiscover(moduleName string, client *zk.ZkClient, ip string, port uint, isSSL bool) *RegDiscover {
-	rtx, cancel := client.WithCancel()
+func NewRegDiscover(moduleName string, zkserv string, ip string, port uint, isSSL bool) *RegDiscover {
 	return &RegDiscover{
 		moduleName: moduleName,
 		ip:         ip,
 		port:       port,
 		isSSL:      isSSL,
-		rd:         registerdiscover.NewRegDiscoverEx(client),
-		rootCtx:    rtx,
-		cancel:     cancel,
+		rd:         RegisterDiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
+		topoServs:  []*types.TopoServInfo{},
+		procServs:  []*types.ProcServInfo{},
 	}
 }
 
@@ -68,6 +68,14 @@ func (cc *RegDiscover) Ping() error {
 // Start the register and discover
 func (r *RegDiscover) Start() error {
 
+	//create root context
+	r.rootCtx, r.cancel = context.WithCancel(context.Background())
+	//start regdiscover
+	if err := r.rd.Start(); err != nil {
+		blog.Error("fail to start register and discover serv. err:%s", err.Error())
+		return err
+	}
+
 	// register migrate server
 	if err := r.registerItself(); err != nil {
 		blog.Error("fail to register migrate(%s), err:%s", r.ip, err.Error())
@@ -75,7 +83,7 @@ func (r *RegDiscover) Start() error {
 	}
 
 	// here: discover other services
-	// cc api server
+	/// cc api server
 	apiPath := types.CC_SERV_BASEPATH + "/" + types.CC_MODULE_APISERVER
 	apiEvent, err := r.rd.DiscoverService(apiPath)
 	if err != nil {
@@ -94,6 +102,15 @@ func (r *RegDiscover) Start() error {
 	}
 }
 
+// Stop the register and discover
+func (r *RegDiscover) Stop() error {
+	r.cancel()
+
+	r.rd.Stop()
+
+	return nil
+}
+
 func (r *RegDiscover) GetServer(servType string) (string, error) {
 	switch servType {
 	case types.CC_MODULE_APISERVER:
@@ -107,10 +124,10 @@ func (r *RegDiscover) GetServer(servType string) (string, error) {
 // GetApiServ fetch proc server info
 func (r *RegDiscover) GetApiServ() (string, error) {
 
-	r.lock.RLock()
-	defer r.lock.RUnlock()
+	r.procLock.RLock()
+	defer r.procLock.RUnlock()
 
-	lServ := len(r.apiServers)
+	lServ := len(r.procServs)
 	if lServ <= 0 {
 		err := fmt.Errorf("there is no api servers")
 		blog.Errorf("%s", err.Error())
@@ -119,7 +136,7 @@ func (r *RegDiscover) GetApiServ() (string, error) {
 
 	//rand
 	rand.Seed(int64(time.Now().Nanosecond()))
-	servInfo := r.apiServers[rand.Intn(lServ)]
+	servInfo := r.procServs[rand.Intn(lServ)]
 
 	host := servInfo.Scheme + "://" + servInfo.IP + ":" + strconv.Itoa(int(servInfo.Port))
 
@@ -164,9 +181,9 @@ func (r *RegDiscover) discoverApiServ(servInfos []string) error {
 		procServs = append(procServs, proc)
 	}
 
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	r.apiServers = procServs
+	r.procLock.Lock()
+	defer r.procLock.Unlock()
+	r.procServs = procServs
 
 	return nil
 }

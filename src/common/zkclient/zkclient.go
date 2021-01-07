@@ -14,8 +14,6 @@ package zkclient
 
 import (
 	"errors"
-	"sync"
-
 	//"bcs/bcs-common/common/blog"
 	"encoding/json"
 	"fmt"
@@ -101,11 +99,9 @@ func (zlock *ZkLock) UnLock() error {
 }
 
 type ZkClient struct {
-	ZkHost       []string
-	ZkConn       *zk.Conn
-	zkAcl        []zk.ACL
-	zkConnClosed bool
-	sync.Mutex
+	ZkHost []string
+	ZkConn *zk.Conn
+	zkAcl  []zk.ACL
 }
 
 func NewZkClient(host []string) *ZkClient {
@@ -140,16 +136,12 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	}
 
 	z.ZkConn = c
-	z.zkConnClosed = false
 	return nil
 }
 
 func (z *ZkClient) Close() {
-	z.Lock()
-	defer z.Unlock()
-	if nil != z.ZkConn && !z.zkConnClosed {
+	if nil != z.ZkConn {
 		z.ZkConn.Close()
-		z.zkConnClosed = true
 	}
 }
 
@@ -387,14 +379,14 @@ func (z *ZkClient) CheckMulNode(path string, data []byte) error {
 func (z *ZkClient) GetAll2Json(path string) (string, error) {
 	childs, err := z.GetChildren(path)
 	if err != nil {
-		//blog.Warnf("fail to get children from path(%s). err:%s", path, err.Error())
+		//blog.Warn("fail to get children from path(%s). err:%s", path, err.Error())
 		return "", err
 	}
 
 	if len(childs) <= 0 {
 		ctx, getErr := z.Get(path)
 		if getErr != nil {
-			//blog.Warnf("fail to get value from path(%s), err:%s", path, err.Error())
+			//blog.Warn("fail to get value from path(%s), err:%s", path, err.Error())
 			return "", getErr
 		}
 
@@ -407,11 +399,11 @@ func (z *ZkClient) GetAll2Json(path string) (string, error) {
 		chPath := path + "/" + child
 		val, _ := z.GetAll2Json(chPath)
 		mpChilds[child] = val
-		//blog.Infof("children path(%s), value(%s)", chPath, val)
+		//blog.Info("children path(%s), value(%s)", chPath, val)
 	}
 
 	data, err := json.Marshal(mpChilds)
 
-	//blog.Infof("data:%s", string(data))
+	//blog.Info("data:%s", string(data))
 	return string(data), err
 }

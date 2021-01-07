@@ -13,63 +13,38 @@
 package service
 
 import (
+	"encoding/json"
+
 	"configcenter/src/common"
-	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (s *Service) SelectObjectTopoGraphics(ctx *rest.Contexts) {
-	resp, err := s.Core.GraphicsOperation().SelectObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"))
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(resp)
-}
-
-func (s *Service) UpdateObjectTopoGraphics(ctx *rest.Contexts) {
-	requestBody := struct {
-		Data []metadata.TopoGraphics `json:"data" field:"data"`
-	}{}
-	if err := ctx.DecodeInto(&requestBody); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), requestBody.Data)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
-func (s *Service) UpdateObjectTopoGraphicsNew(ctx *rest.Contexts) {
-	input := metadata.UpdateTopoGraphicsInput{}
-	err := ctx.DecodeInto(&input)
+func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr, error) {
+	datas := []metadata.TopoGraphics{}
+	err := json.Unmarshal(data, &datas)
 	if nil != err {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "not set anything"))
-		return
+		return nil, err
+	}
+	result := mapstr.New()
+	result.Set("origin", datas)
+	return result, nil
+}
+func (s *topoService) SelectObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.core.GraphicsOperation().SelectObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"))
+}
+
+func (s *topoService) UpdateObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	datas := make([]metadata.TopoGraphics, 0)
+	val, exists := data.Get("origin")
+	if !exists {
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), input.Origin)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	datas, _ = val.([]metadata.TopoGraphics)
 
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
+	err := s.core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), datas)
+	return nil, err
 }

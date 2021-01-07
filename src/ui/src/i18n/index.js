@@ -5,7 +5,15 @@ import messages from './lang/messages'
 
 Vue.use(VueI18n)
 
-const locale = Cookies.get('blueking_language') === 'en' ? 'en' : 'zh_CN'
+const languageMaps = {
+    'zh_cn': 'zh_CN',
+    'zh-cn': 'zh_CN',
+    'zh': 'zh_CN'
+}
+
+let locale = Cookies.get('blueking_language') || 'zh_CN'
+
+locale = languageMaps.hasOwnProperty(locale) ? languageMaps[locale] : locale
 
 const i18n = new VueI18n({
     locale,

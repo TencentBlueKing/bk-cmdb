@@ -62,9 +62,7 @@ const Transition = {
 }
 
 const toCamelCase = function (str) {
-    return str.replace(/-([a-z])/g, function (g) {
-        return g[1].toUpperCase()
-    })
+    return str.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase() })
 }
 
 export default {
@@ -74,10 +72,10 @@ export default {
         const events = context.data.on || {}
         const camelCaseEvents = {}
         const transitionEvents = {}
-        for (const event in events) {
+        for (let event in events) {
             camelCaseEvents[toCamelCase(event)] = events[event]
         }
-        for (const event in Transition) {
+        for (let event in Transition) {
             if (camelCaseEvents.hasOwnProperty(event)) {
                 transitionEvents[event] = el => {
                     Transition[event](el)

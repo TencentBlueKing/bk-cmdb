@@ -18,17 +18,16 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/types"
 )
 
 func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	for tablename, indexs := range tables {
-		exists, err := db.HasTable(ctx, tablename)
+		exists, err := db.HasTable(tablename)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(ctx, tablename); err != nil && !db.IsDuplicatedError(err) {
+			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
@@ -41,15 +40,15 @@ func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err er
 	return nil
 }
 
-var tables = map[string][]types.Index{
-	common.BKTableNameNetcollectDevice: []types.Index{
-		{Keys: map[string]int32{"device_id": 1}, Background: true},
-		{Keys: map[string]int32{"device_name": 1}, Background: true},
-		{Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
+var tables = map[string][]dal.Index{
+	common.BKTableNameNetcollectDevice: []dal.Index{
+		{Keys: map[string]interface{}{"device_id": 1}, Background: true},
+		{Keys: map[string]interface{}{"device_name": 1}, Background: true},
+		{Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 	},
 
-	common.BKTableNameNetcollectProperty: []types.Index{
-		{Keys: map[string]int32{"netcollect_property_id": 1}, Background: true},
-		{Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
+	common.BKTableNameNetcollectProperty: []dal.Index{
+		{Keys: map[string]interface{}{"netcollect_property_id": 1}, Background: true},
+		{Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 	},
 }

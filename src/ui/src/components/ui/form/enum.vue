@@ -1,24 +1,13 @@
 <template>
-    <bk-select class="form-enum-selector"
-        v-model="selected"
-        :clearable="allowClear"
-        :searchable="searchable"
-        :disabled="disabled"
-        :multiple="multiple"
-        :placeholder="placeholder"
-        :font-size="fontSize"
-        :popover-options="{
-            boundary: 'window'
-        }"
-        v-bind="$attrs"
-        ref="selector">
-        <bk-option
-            v-for="(option, index) in options"
-            :key="index"
-            :id="option.id"
-            :name="option.name">
-        </bk-option>
-    </bk-select>
+    <div class="form-enum">
+        <bk-selector class="form-enum-selector"
+            :searchable="searchable"
+            :list="options"
+            :disabled="disabled"
+            :allow-clear="allowClear"
+            :selected.sync="selected">
+        </bk-selector>
+    </div>
 </template>
 
 <script>
@@ -26,14 +15,9 @@
         name: 'cmdb-form-enum',
         props: {
             value: {
-                type: [Array, String, Number],
                 default: ''
             },
             disabled: {
-                type: Boolean,
-                default: false
-            },
-            multiple: {
                 type: Boolean,
                 default: false
             },
@@ -41,82 +25,54 @@
                 type: Boolean,
                 default: false
             },
-            autoSelect: {
-                type: Boolean,
-                default: true
-            },
             options: {
                 type: Array,
                 default () {
                     return []
                 }
-            },
-            placeholder: {
-                type: String,
-                default: ''
-            },
-            fontSize: {
-                type: [String, Number],
-                default: 'medium'
+            }
+        },
+        data () {
+            return {
+                selected: ''
             }
         },
         computed: {
             searchable () {
                 return this.options.length > 7
-            },
-            selected: {
-                get () {
-                    if (this.isEmpty(this.value)) {
-                        return this.getDefaultValue()
-                    }
-                    return this.value
-                },
-                set (value) {
-                    let emitValue = value
-                    if (value === '') {
-                        emitValue = this.multiple ? [] : null
-                    }
-                    this.$emit('input', emitValue)
-                    this.$emit('on-selected', emitValue)
-                }
             }
         },
         watch: {
-            value: {
-                immediate: true,
-                handler (value) {
-                    this.checkSelected()
-                }
+            value (value) {
+                this.selected = value
+            },
+            selected (selected) {
+                this.$emit('input', selected)
+                this.$emit('on-selected', selected)
             }
         },
+        created () {
+            this.setInitData()
+        },
         methods: {
-            isEmpty (value) {
-                return ['', undefined, null].includes(value)
-            },
-            getDefaultValue () {
-                if (this.autoSelect) {
+            setInitData () {
+                if (this.value === '') {
                     const defaultOption = this.options.find(option => option['is_default'])
-                    return defaultOption
-                        ? this.multiple ? [defaultOption.id] : defaultOption.id
-                        : ''
+                    if (defaultOption) {
+                        this.selected = defaultOption.id
+                    }
+                } else {
+                    this.selected = this.value
                 }
-                return this.multiple ? [] : ''
-            },
-            checkSelected () {
-                const selected = this.selected
-                if (this.value !== selected) {
-                    this.selected = selected
-                }
-            },
-            focus () {
-                this.$refs.selector.show()
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .form-enum-selector{
-        width: 100%;
+    .form-enum {
+        .form-enum-selector{
+            width: 100%;
+        }
     }
 </style>

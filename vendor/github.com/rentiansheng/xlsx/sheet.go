@@ -253,15 +253,8 @@ func (s *Sheet) makeXLSXSheet(refTable *RefTable, styles *xlsxStyleSheet) *xlsxW
 				worksheet.DataValidations = &xlsxCellDataValidations{}
 			}
 			colName := ColIndexToLetters(c)
-			for _, dd := range col.DataValidation {
-				if dd.minRow == dd.maxRow {
-					dd.Sqref = fmt.Sprintf("%s%d", colName, dd.minRow)
-				} else {
-					dd.Sqref = fmt.Sprintf("%s%d:%s%d", colName, dd.minRow, colName, dd.maxRow)
-				}
-				worksheet.DataValidations.DataValidattion = append(worksheet.DataValidations.DataValidattion, dd)
-
-			}
+			col.DataValidation.Sqref = fmt.Sprintf("%s%d:%s%d", colName, col.DataValidationStart, colName, col.DataValidationEnd)
+			worksheet.DataValidations.DataValidattion = append(worksheet.DataValidations.DataValidattion, col.DataValidation)
 			worksheet.DataValidations.Count = len(worksheet.DataValidations.DataValidattion)
 		}
 	}

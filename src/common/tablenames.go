@@ -17,35 +17,38 @@ const (
 	// BKTableNameProcModule the table name of the process module
 	BKTableNameProcModule = "cc_Proc2Module"
 
-	// BKTableNameProcTemplate the table name of the process template config
+	// BKTableNameProcTempalte the table name of the process template config
 	BKTableNameProcTemplate = "cc_Proc2Template"
 
 	// BKTableNameProcInstanceModel the table name of the process instance
 	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
 
-	// BKTableNameProcInstanceDetail  the table name of the process instance detail
-	BKTableNameProcInstanceDetail = "cc_ProcInstanceDetail"
+	// BKTableNameProcInstaceDetail  the table name of the process instance detail
+	BKTableNameProcInstaceDetail = "cc_ProcInstanceDetail"
 
 	// BKTableNameProcOperateTask  the table name of the process instance operater task info
 	BKTableNameProcOperateTask = "cc_ProcOpTask"
 
+	// BKTableNamePrivilege the table name of the privilege module
+	BKTableNamePrivilege = "cc_Privilege"
+
+	// BKTableNameUserGroup the table name of the user group module
+	BKTableNameUserGroup = "cc_UserGroup"
+
+	// BKTableNameUserGroupPrivilege the table name of the user group privilege
+	BKTableNameUserGroupPrivilege = "cc_UserGroupPrivilege"
+
 	// BKTableNamePropertyGroup the table name of the property group
 	BKTableNamePropertyGroup = "cc_PropertyGroup"
-
-	// BKTableNameObjDes the table name of the asst des
-	BKTableNameAsstDes = "cc_AsstDes"
 
 	// BKTableNameObjDes the table name of the object
 	BKTableNameObjDes = "cc_ObjDes"
 
-	// BKTableNameObjDes the table name of the object
-	BKTableNameObjUnique = "cc_ObjectUnique"
-
 	// BKTableNameObjAttDes the table name of the object attribute
 	BKTableNameObjAttDes = "cc_ObjAttDes"
 
-	// BKTableNameObjClassification the table name of the object classification
-	BKTableNameObjClassification = "cc_ObjClassification"
+	// BKTableNameObjClassifiction the table name of the object classification
+	BKTableNameObjClassifiction = "cc_ObjClassification"
 
 	// BKTableNameInstAsst the table name of the inst association
 	BKTableNameInstAsst = "cc_InstAsst"
@@ -57,56 +60,25 @@ const (
 	BKTableNameBasePlat    = "cc_PlatBase"
 	BKTableNameBaseSet     = "cc_SetBase"
 	BKTableNameBaseProcess = "cc_Process"
-	BKTableNameDelArchive  = "cc_DelArchive"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 	BKTableNameSystem           = "cc_System"
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
-	BKTableNameAuditLog         = "cc_AuditLog"
+	BKTableNameOperationLog     = "cc_OperationLog"
 	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
-	BKTableNameDynamicGroup     = "cc_DynamicGroup"
 	BKTableNameUserCustom       = "cc_UserCustom"
+	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 	BKTableNameTransaction      = "cc_Transaction"
 	BKTableNameIDgenerator      = "cc_idgenerator"
 
-	BKTableNameNetcollectDevice   = "cc_NetcollectDevice"
-	BKTableNameNetcollectProperty = "cc_NetcollectProperty"
-
-	BKTableNameNetcollectConfig  = "cc_NetcollectConfig"
-	BKTableNameNetcollectReport  = "cc_NetcollectReport"
-	BKTableNameNetcollectHistory = "cc_NetcollectHistory"
+	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
+	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
 
 	BKTableNameHostLock = "cc_HostLock"
-
-	// Operation tables
-	BKTableNameChartConfig   = "cc_ChartConfig"
-	BKTableNameChartPosition = "cc_ChartPosition"
-	BKTableNameChartData     = "cc_ChartData"
-
-	// process tables
-	BKTableNameServiceCategory         = "cc_ServiceCategory"
-	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
-	BKTableNameServiceInstance         = "cc_ServiceInstance"
-	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
-	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
-
-	BKTableNameSetTemplate                = "cc_SetTemplate"
-	BKTableNameSetServiceTemplateRelation = "cc_SetServiceTemplateRelation"
-	BKTableNameAPITask                    = "cc_APITask"
-	BKTableNameSetTemplateSyncStatus      = "cc_SetTemplateSyncStatus"
-	BKTableNameSetTemplateSyncHistory     = "cc_SetTemplateSyncHistory"
-
-	// rule for host property auto apply
-	BKTableNameHostApplyRule = "cc_HostApplyRule"
-
-	// cloud sync tables
-	BKTableNameCloudSyncTask    = "cc_CloudSyncTask"
-	BKTableNameCloudAccount     = "cc_CloudAccount"
-	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
 )
 
 // AllTables alltables
@@ -114,12 +86,15 @@ var AllTables = []string{
 	BKTableNameProcModule,
 	BKTableNameProcTemplate,
 	BKTableNameProcInstanceModel,
-	BKTableNameProcInstanceDetail,
+	BKTableNameProcInstaceDetail,
 	BKTableNameProcOperateTask,
+	BKTableNamePrivilege,
+	BKTableNameUserGroup,
+	BKTableNameUserGroupPrivilege,
 	BKTableNamePropertyGroup,
 	BKTableNameObjDes,
 	BKTableNameObjAttDes,
-	BKTableNameObjClassification,
+	BKTableNameObjClassifiction,
 	BKTableNameInstAsst,
 	BKTableNameBaseApp,
 	BKTableNameBaseHost,
@@ -132,40 +107,16 @@ var AllTables = []string{
 	BKTableNameSystem,
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
-	BKTableNameAuditLog,
+	BKTableNameOperationLog,
 	BKTableNameSubscription,
 	BKTableNameUserAPI,
-	BKTableNameDynamicGroup,
 	BKTableNameUserCustom,
+	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
-	BKTableNameNetcollectConfig,
-	BKTableNameNetcollectDevice,
-	BKTableNameNetcollectProperty,
-	BKTableNameNetcollectReport,
-	BKTableNameNetcollectHistory,
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
-	BKTableNameObjUnique,
-	BKTableNameAsstDes,
-	BKTableNameServiceCategory,
-	BKTableNameServiceTemplate,
-	BKTableNameServiceInstance,
-	BKTableNameProcessTemplate,
-	BKTableNameProcessInstanceRelation,
-	BKTableNameSetTemplate,
-	BKTableNameSetServiceTemplateRelation,
-	BKTableNameChartConfig,
-	BKTableNameChartPosition,
-	BKTableNameChartData,
-	BKTableNameHostApplyRule,
-	BKTableNameAPITask,
-	BKTableNameSetTemplateSyncStatus,
-	BKTableNameSetTemplateSyncHistory,
-	BKTableNameCloudSyncTask,
-	BKTableNameCloudAccount,
-	BKTableNameCloudSyncHistory,
 }
 
 // GetInstTableName returns inst data table name
@@ -177,12 +128,16 @@ func GetInstTableName(objID string) string {
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:
 		return BKTableNameBaseModule
+	case BKInnerObjIDObject:
+		return BKTableNameBaseInst
 	case BKInnerObjIDHost:
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:
 		return BKTableNameBaseProcess
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
+	case BKTableNameInstAsst:
+		return BKTableNameInstAsst
 	default:
 		return BKTableNameBaseInst
 	}

@@ -16,235 +16,246 @@ import (
 	"io"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (assoc *association) DeleteMainlineAssociation(kit *rest.Kit, objID string) error {
+func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
 
-	targetObj, err := assoc.obj.FindSingleObject(kit, objID)
+	targetObj, err := a.obj.FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to find the target object(%s), error info is %s, rid: %s", objID, err.Error(), kit.Rid)
+		blog.Errorf("[opeartion-asst] failed to find the target object(%s), error info is %s", objID, err.Error())
 		return err
 	}
 
-	tObject := targetObj.Object()
 	parentObj, err := targetObj.GetMainlineParentObject()
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to find the object(%s)'s parent, error info is %s, rid: %s", objID, err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to find the object(%s)'s parent, error info is %s", objID, err.Error())
 		return err
 	}
 
 	// update associations
 	childObj, err := targetObj.GetMainlineChildObject()
 	if nil != err && io.EOF != err {
-		blog.Errorf("[operation-asst] failed to find the object(%s)'s child, error info is %s, rid: %s", objID, err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to find the object(%s)'s child, error info is %s", objID, err.Error())
 		return err
 	}
 
-	if err = assoc.ResetMainlineInstAssociation(kit, targetObj); nil != err && io.EOF != err {
-		blog.Errorf("[operation-asst] failed to delete the object(%s)'s instance, error info %s, rid: %s", objID, err.Error(), kit.Rid)
+	if err = a.ResetMainlineInstAssociatoin(params, targetObj); nil != err && io.EOF != err {
+		blog.Errorf("[operation-asst] failed to delete the object(%s)'s insts, error info %s", objID, err.Error())
 		return err
 	}
 
-	if nil != childObj {
-		// FIX: 正常情况下 childObj 不可以能为 nil，只有在拓扑异常的时候才会出现
-		if err = childObj.SetMainlineParentObject(parentObj.Object().ObjectID); nil != err && io.EOF != err {
-			blog.Errorf("[operation-asst] failed to update the association, error info is %s, rid: %s", err.Error(), kit.Rid)
+	if nil != childObj { // FIX: 正常情况下 childObj 不可以能为 nil，只有在拓扑异常的时候才会出现
+
+		if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err && io.EOF != err {
+			blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
 			return err
 		}
-	}
 
-	// delete this object related association.
-	cond := condition.CreateCondition()
-	or := cond.NewOR()
-	or.Item(mapstr.MapStr{metadata.AssociationFieldObjectID: objID})
-	or.Item(mapstr.MapStr{metadata.AssociationFieldAssociationObjectID: objID})
-	if err = assoc.DeleteAssociation(kit, cond); nil != err {
+	}
+	// delete objects
+	if err = a.obj.DeleteObject(params, targetObj.GetRecordID(), nil, false); nil != err && io.EOF != err {
+		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", targetObj.GetID(), err.Error())
 		return err
 	}
 
-	// delete objects
-	if err = assoc.obj.DeleteObject(kit, tObject.ID, false); nil != err && io.EOF != err {
-		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s, rid: %s", tObject.ID, err.Error(), kit.Rid)
+	// delete the object associations
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldObjectID).Eq(targetObj.GetID())
+	cond.Field(common.BKOwnerIDField).Eq(targetObj.GetSupplierAccount())
+	if err = a.DeleteAssociation(params, cond); nil != err {
+		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
+		return err
+	}
+
+	cond = condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(targetObj.GetID())
+	cond.Field(common.BKOwnerIDField).Eq(targetObj.GetSupplierAccount())
+	if err = a.DeleteAssociation(params, cond); nil != err {
+		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-// SearchMainlineAssociationTopo get mainline topo of special model
-// result is a list with targetObj as head, so if you want a full topo, target must be biz model.
-func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
+func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
-	// foundObjIDMap used as a map to detect whether found model is already in,
-	// so that we can detect infinite loop.
-	foundObjIDMap := make(map[string]bool)
 	results := make([]*metadata.MainlineObjectTopo, 0)
-	for {
-		tObject := targetObj.Object()
 
-		resultsLen := len(results)
+	for {
+
 		tmpRst := &metadata.MainlineObjectTopo{}
-		tmpRst.ObjID = tObject.ObjectID
-		tmpRst.ObjName = tObject.ObjectName
-		tmpRst.OwnerID = kit.SupplierAccount
+		tmpRst.ObjID = targetObj.GetID()
+		tmpRst.ObjName = targetObj.GetName()
+		tmpRst.OwnerID = params.SupplierAccount
 
 		parentObj, err := targetObj.GetMainlineParentObject()
 		if nil == err {
-			tmpRst.PreObjID = parentObj.Object().ObjectID
-			tmpRst.PreObjName = parentObj.Object().ObjectName
+			tmpRst.PreObjID = parentObj.GetID()
+			tmpRst.PreObjName = parentObj.GetName()
 		} else if nil != err && io.EOF != err {
 			return nil, err
 		}
 
 		childObj, err := targetObj.GetMainlineChildObject()
 		if nil == err {
-			tmpRst.NextObj = childObj.Object().ObjectID
-			tmpRst.NextName = childObj.Object().ObjectName
+			tmpRst.NextObj = childObj.GetID()
+			tmpRst.NextName = childObj.GetName()
 		} else if nil != err {
-			if io.EOF != err {
-				return nil, err
-			}
-			if _, ok := foundObjIDMap[tmpRst.ObjID]; !ok {
+			if io.EOF == err {
 				results = append(results, tmpRst)
-				foundObjIDMap[tmpRst.ObjID] = true
+				return results, nil
 			}
-			return results, nil
+			return nil, err
 		}
 
-		if _, ok := foundObjIDMap[tmpRst.ObjID]; !ok {
-			results = append(results, tmpRst)
-			foundObjIDMap[tmpRst.ObjID] = true
-		}
+		results = append(results, tmpRst)
 		targetObj = childObj
-
-		// detect infinite loop by checking whether there are new added objects in current loop.
-		if resultsLen == len(results) {
-			// merely return found objects here to avoid infinite loop.
-			// returned results here maybe parts of all mainline objects.
-			// better to prevent loop from taking shape seriously, at adding or editing association.
-			return results, nil
-		}
 	}
 
 }
 
-func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error) {
-	// find the mainline module's head, which is biz.
-	bizObj, err := assoc.obj.FindSingleObject(kit, common.BKInnerObjIDApp)
+func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
+
+	// check the level
+	bizObj, err := a.obj.FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
 		return nil, err
 	}
 
-	if data.AsstObjID == "" {
-		blog.Errorf("[operation-asst] bk_asst_obj_id empty,rid:%s, rid: %s", util.GetHTTPCCRequestID(kit.Header), kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
-	}
-
-	if data.ClassificationID == "" {
-		blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s, rid: %s", util.GetHTTPCCRequestID(kit.Header), kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
-	}
-	items, err := assoc.SearchMainlineAssociationTopo(kit, bizObj)
+	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
 		return nil, err
 	}
 
-	if len(items) >= maxTopoLevel {
-		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items), maxTopoLevel, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrTopoBizTopoLevelOverLimit)
+	if len(items) >= params.MaxTopoLevel {
+		blog.Errorf("[operation-asst] the mainline topo leve is %d, the max limit is %d", len(items), params.MaxTopoLevel)
+		return nil, params.Err.Error(common.CCErrTopoBizTopoLevelOverLimit)
+	}
+
+	// check and fetch the association object's classification
+	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
+	if nil != err {
+		blog.Errorf("[opration-asst] failed to find the single classification, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, data.ClassificationID)
 	}
 
 	// find the mainline parent object
-	parentObj, err := assoc.obj.FindSingleObject(kit, data.AsstObjID)
+	parentObj, err := a.obj.FindSingleObject(params, data.AsstObjID)
 	switch t := err.(type) {
 	case nil:
 	default:
-		blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s, rid: %s", data.ObjectID, t.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s", data.ObjectID, t.Error())
 		return nil, t
 	case errors.CCErrorCoder:
 		if t.GetCode() == common.CCErrTopoObjectSelectFailed {
-			blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s, rid: %s", data.ObjectID, t.Error(), kit.Rid)
+			blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s", data.ObjectID, t.Error())
 			return nil, t
 		}
 	}
 
-	pObject := parentObj.Object()
 	// find the mainline child object for the parent
 	childObj, err := parentObj.GetMainlineChildObject()
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to find the child object for the object(%s), error info is %s, rid: %s", pObject.ObjectID, err.Error(), kit.Rid)
+		blog.Errorf("[operation-asst] failed to find the child object for the object(%s), error info is %s", parentObj.GetID(), err.Error())
 		return nil, err
 	}
 
 	// check and create the association mainline object
-	if err = assoc.obj.IsValidObject(kit, data.ObjectID); nil == err {
-		blog.Errorf("[operation-asst] the object(%s) is duplicate, rid: %s", data.ObjectID, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, data.ObjectID)
+	if err = a.obj.IsValidObject(params, data.ObjectID); nil == err {
+		blog.Errorf("[operation-asst] the object(%s) is duplicate", data.ObjectID)
+		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, data.ObjectID)
 	}
 
-	objData := mapstr.MapStr{
-		common.BKObjIDField:            data.ObjectID,
-		common.BKObjNameField:          data.ObjectName,
-		common.BKObjIconField:          data.ObjectIcon,
-		common.BKClassificationIDField: data.ClassificationID,
-	}
-	currentObj, err := assoc.obj.CreateObject(kit, true, objData)
-	if err != nil {
+	currentObj := a.modelFactory.CreaetObject(params)
+	currentObj.SetID(data.ObjectID)
+	currentObj.SetName(data.ObjectName)
+	currentObj.SetIcon(data.ObjectIcon)
+	currentObj.SetClassification(objCls)
+
+	if err = currentObj.Save(nil); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s), error info is %s", currentObj.GetID(), err.Error())
 		return nil, err
 	}
 
-	cObj := currentObj.Object()
+	attr := currentObj.CreateAttribute()
+	attr.SetIsSystem(true)
+	attr.SetID(common.BKChildStr)
+	attr.SetType(common.FieldTypeLongChar)
+	attr.SetName(common.BKChildStr)
+	attr.SetOption(nil)
+
+	if err = attr.Save(nil); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKChildStr, err.Error())
+		return nil, err
+	}
+
+	// create the default group
+	grp := currentObj.CreateGroup()
+	grp.SetDefault(true)
+	grp.SetIndex(-1)
+	grp.SetName("Default")
+	grp.SetID("default")
+	if err = grp.Save(nil); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
+		return nil, err
+	}
+
+	defaultInstNameAttr := currentObj.CreateAttribute()
+	defaultInstNameAttr.SetIsSystem(false)
+	defaultInstNameAttr.SetIsOnly(true)
+	defaultInstNameAttr.SetIsPre(true)
+	defaultInstNameAttr.SetIsEditable(true)
+	defaultInstNameAttr.SetType(common.FieldTypeLongChar)
+	defaultInstNameAttr.SetIsRequired(true)
+	defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
+	defaultInstNameAttr.SetName(currentObj.GetDefaultInstPropertyName())
+	defaultInstNameAttr.SetGroupIndex(-1)
+	defaultInstNameAttr.SetGroup(grp)
+
+	if err = defaultInstNameAttr.Save(nil); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), currentObj.GetDefaultInstPropertyName(), err.Error())
+		return nil, err
+	}
+
+	defaultInstParentAttr := currentObj.CreateAttribute()
+	defaultInstParentAttr.SetIsSystem(true)
+	defaultInstParentAttr.SetIsOnly(true)
+	defaultInstParentAttr.SetIsEditable(false)
+	defaultInstParentAttr.SetType(common.FieldTypeInt)
+	defaultInstParentAttr.SetIsRequired(true)
+	defaultInstParentAttr.SetID(common.BKInstParentStr)
+	defaultInstParentAttr.SetName(common.BKInstParentStr)
+
+	if err = defaultInstParentAttr.Save(nil); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKInstParentStr, err.Error())
+		return nil, err
+	}
+
 	// update the mainline topo inst association
-	createdInstIDs, err := assoc.SetMainlineInstAssociation(kit, parentObj, currentObj, childObj)
-	if nil != err {
-		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s, rid: %s", err.Error(), kit.Rid)
+	if err = a.SetMainlineInstAssociation(params, parentObj, currentObj, childObj); nil != err {
+		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s", err.Error())
 		return nil, err
 	}
 
-	if err = currentObj.CreateMainlineObjectAssociation(pObject.ObjectID); err != nil {
-		blog.Errorf("[operation-asst] create mainline object[%s] association related to object[%s] failed, err: %v, rid: %s", kit.Rid,
-			cObj.ObjectID, pObject.ObjectID, err)
+	// reset the parent's child object
+	if err = parentObj.SetMainlineChildObject(currentObj.GetID()); nil != err {
+		blog.Errorf("[operation-asst] failed to set the mainline object, error info is %s", err.Error())
 		return nil, err
 	}
 
-	if err = childObj.SetMainlineParentObject(cObj.ObjectID); err != nil {
-		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current failed, err: %v, rid: %s", kit.Rid,
-			cObj.ObjectID, childObj.Object().ObjectID, err)
+	// reset the current's child object
+	if err = currentObj.SetMainlineChildObject(childObj.GetID()); nil != err {
+		blog.Errorf("[operation-asst] failed to set the mainline object, error info is %s ", err.Error())
 		return nil, err
-	}
-
-	// create audit log for the created instances.
-	audit := auditlog.NewInstanceAudit(assoc.clientSet.CoreService())
-
-	cond := map[string]interface{}{
-		currentObj.GetInstIDFieldName(): map[string]interface{}{
-			common.BKDBIN: createdInstIDs,
-		},
-	}
-
-	// generate audit log.
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, currentObj.GetObjectID(), cond)
-	if err != nil {
-		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	err = audit.SaveAuditLog(kit, auditLog...)
-	if err != nil {
-		blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
 	return currentObj, nil

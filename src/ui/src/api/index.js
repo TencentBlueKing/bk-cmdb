@@ -1,11 +1,13 @@
+import Vue from 'vue'
 import Axios from 'axios'
 import md5 from 'md5'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
-// eslint-disable-next-line
 import { $error, $warn } from '@/magicbox'
-import { language } from '@/i18n'
 
+const Site = window.Site
+window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
+window.API_PREFIX = window.API_HOST + 'api/' + Site.version
 // axios实例
 const axiosInstance = Axios.create({
     baseURL: window.API_PREFIX,
@@ -15,15 +17,10 @@ const axiosInstance = Axios.create({
 })
 
 // axios实例拦截器
-axiosInstance.interceptors.request.use(
-    config => config,
-    error => {
-        return Promise.reject(error)
-    }
-)
-
 axiosInstance.interceptors.response.use(
-    response => response,
+    response => {
+        return response.data
+    },
     error => {
         return Promise.reject(error)
     }
@@ -46,8 +43,7 @@ const $http = {
     },
     deleteHeader: key => {
         delete axiosInstance.defaults.headers[key]
-    },
-    download: download
+    }
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -105,7 +101,7 @@ async function getPromise (method, url, data, userConfig = {}) {
         const axiosRequest = methodsWithData.includes(method) ? axiosInstance[method](url, data, config) : axiosInstance[method](url, config)
         axiosRequest.then(response => {
             Object.assign(config, response.config)
-            handleResponse({ config, response, resolve, reject })
+            handleResponse({config, response, resolve, reject})
         }).catch(error => {
             Object.assign(config, error.config)
             reject(error)
@@ -113,7 +109,7 @@ async function getPromise (method, url, data, userConfig = {}) {
     }).catch(error => {
         return handleReject(error, config)
     }).finally(() => {
-        $http.queue.delete(config.requestId, config.requestSymbol)
+        $http.queue.delete(config.requestId)
     })
     // 添加请求队列
     $http.queue.set(config)
@@ -130,18 +126,11 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @param {reject} promise拒绝函数
  * @return
  */
-const PermissionCode = 9900403
-function handleResponse ({ config, response, resolve, reject }) {
-    const transformedResponse = response.data
-    const { bk_error_msg: message, permission } = transformedResponse
-    if (transformedResponse.bk_error_code === PermissionCode) {
-        config.globalPermission && popupPermissionModal(transformedResponse.permission)
-        return reject({ message, permission, code: PermissionCode })
-    }
-    if (!transformedResponse.result && config.globalError) {
-        reject({ message })
+function handleResponse ({config, response, resolve, reject}) {
+    if (!response.result && config.globalError) {
+        reject({message: response['bk_error_msg']})
     } else {
-        resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
+        resolve(config.originalResponse ? response : response.data, config)
     }
 }
 
@@ -152,38 +141,24 @@ function handleResponse ({ config, response, resolve, reject }) {
  * @return Promise.reject
  */
 function handleReject (error, config) {
-    if (error.code && error.code === PermissionCode) {
-        return Promise.reject(error)
-    }
     if (Axios.isCancel(error)) {
         return Promise.reject(error)
     }
-    if (error.response) {
-        const { status, data } = error.response
-        const nextError = { message: error.message, status }
+    if (config.globalError && error.response) {
+        const {status, data} = error.response
+        const nextError = {message: error.message}
         if (status === 401) {
-            if (window.loginModal) {
-                window.loginModal.show()
-            } else {
-                window.CMDB_CONFIG.site.login && (window.location.href = window.CMDB_CONFIG.site.login)
-            }
+            window.location.href = Site.login
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
-        } else if (status === 403) {
-            nextError.message = language === 'en' ? 'You don\'t have permission.' : '无权限操作'
         } else if (status === 500) {
-            nextError.message = language === 'en' ? 'System error, please contact developers.' : '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
+            nextError.message = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         }
-        config.globalError && status !== 401 && $error(nextError.message)
+        $error(nextError.message)
         return Promise.reject(nextError)
-    } else {
-        config.globalError && $error(error.message)
     }
+    $error(error.message)
     return Promise.reject(error)
-}
-
-function popupPermissionModal (permission = []) {
-    window.permissionModal && window.permissionModal.show(permission)
 }
 
 /**
@@ -193,7 +168,6 @@ function popupPermissionModal (permission = []) {
  * @param {userConfig} 用户配置，包含axios的配置与本系统自定义配置
  * @return {Promise} 本次http请求的Promise
  */
-
 function initConfig (method, url, userConfig) {
     if (userConfig.hasOwnProperty('requestGroup')) {
         userConfig.requestGroup = userConfig.requestGroup instanceof Array ? userConfig.requestGroup : [userConfig.requestGroup]
@@ -203,7 +177,6 @@ function initConfig (method, url, userConfig) {
         // http请求默认id
         requestId: md5(method + url),
         requestGroup: [],
-        requestSymbol: Symbol('requestSymbol'),
         // 是否全局捕获异常
         globalError: true,
         // 是否直接复用缓存的请求
@@ -212,14 +185,10 @@ function initConfig (method, url, userConfig) {
         clearCache: false,
         // 响应结果是否返回原始数据
         originalResponse: false,
-        // 转换返回数据，仅返回data对象
-        transformData: true,
         // 当路由变更时取消请求
-        cancelWhenRouteChange: false,
+        cancelWhenRouteChange: true,
         // 取消上次请求
-        cancelPrevious: false,
-        // 是否全局捕获权限异常
-        globalPermission: true
+        cancelPrevious: false
     }
     return Object.assign(defaultConfig, userConfig)
 }
@@ -241,43 +210,6 @@ function getCancelToken () {
     }
 }
 
-async function download (options = {}) {
-    const { url, method = 'post', data } = options
-    const config = Object.assign({
-        globalError: false,
-        originalResponse: true,
-        responseType: 'blob'
-    }, options.config)
-    if (!url) {
-        $error('Empty download url')
-        return false
-    }
-    let promise
-    if (methodsWithData.includes(method)) {
-        promise = $http[method](url, data, config)
-    } else {
-        promise = $http[method](url, config)
-    }
-    try {
-        const response = await promise
-        const disposition = response.headers['content-disposition']
-        const fileName = disposition.substring(disposition.indexOf('filename') + 9)
-        const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
-            type: response.headers['content-type']
-        }))
-        const link = document.createElement('a')
-        link.style.display = 'none'
-        link.href = downloadUrl
-        link.setAttribute('download', fileName)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        return Promise.resolve(response)
-    } catch (e) {
-        $error('Download failure')
-        console.error(e)
-        return Promise.reject(e)
-    }
-}
+Vue.prototype.$http = $http
 
 export default $http

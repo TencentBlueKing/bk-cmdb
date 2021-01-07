@@ -11,12 +11,12 @@ export default class CachedPromise {
     }
 
     set (id, promise, config) {
-        Object.assign(this.cache, { [id]: { promise, config } })
+        Object.assign(this.cache, {[id]: {promise, config}})
     }
 
     getGroupedIds (id) {
         const groupedIds = []
-        for (const requestId in this.cache) {
+        for (let requestId in this.cache) {
             const isInclude = groupedIds.includes(requestId)
             const isMatch = this.cache[requestId].config.requestGroup.includes(id)
             if (!isInclude && isMatch) {

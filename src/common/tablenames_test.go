@@ -30,6 +30,7 @@ func TestGetInstTableName(t *testing.T) {
 		{"", args{BKInnerObjIDHost}, BKTableNameBaseHost},
 		{"", args{BKInnerObjIDProc}, BKTableNameBaseProcess},
 		{"", args{BKInnerObjIDPlat}, BKTableNameBasePlat},
+		{"", args{BKTableNameInstAsst}, BKTableNameInstAsst},
 		{"", args{""}, BKTableNameBaseInst},
 	}
 	for _, tt := range tests {

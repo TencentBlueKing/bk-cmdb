@@ -23,14 +23,14 @@ type Config struct {
 	RegisterPath string
 	RegisterInfo types.ServerInfo
 	CoreAPI      apimachinery.ClientSetInterface
+	Server       Server
 }
 
 type Server struct {
-	ListenAddr   string
-	ListenPort   uint
-	Handler      http.Handler
-	TLS          TLSConfig
-	PProfEnabled bool
+	ListenAddr string
+	ListenPort uint
+	Handler    http.Handler
+	TLS        TLSConfig
 }
 
 type TLSConfig struct {

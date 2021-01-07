@@ -13,14 +13,15 @@
 package input
 
 import (
+	"configcenter/src/framework/core/log"
 	"context"
 	"time"
-
-	"configcenter/src/framework/core/log"
 )
 
 func (cli *manager) subExecuteInputer(inputer *wrapInputer) error {
+
 	inputObj := inputer.Run(cli.ctx)
+
 	if nil == inputObj {
 		return nil
 	}
@@ -37,7 +38,7 @@ func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 	// non timing inputer
 	if !inputer.isTiming {
 		if err := cli.subExecuteInputer(inputer); nil != err {
-			log.Errorf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
+			log.Fatalf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
 			inputer.SetStatus(ExceptionExitStatus)
 			return
 		}
@@ -48,21 +49,25 @@ func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 
 	log.Infof("the Inputer(%s) is timing runing", inputer.Name())
 
-	cli.subExecuteInputer(inputer) // execute once
+	cli.subExecuteInputer(inputer) // execute onece
+	tick := time.NewTicker(inputer.frequency)
 
 	for {
+		//fmt.Println("tick:", tick)
 		select {
 		case <-ctx.Done():
 			inputer.SetStatus(StoppedStatus)
-			log.Warningf("the Inputer(%s) normal exit", inputer.Name())
+			log.Infof("the Inputer(%s) normal exit", inputer.Name())
 			return
-		case <-time.After(inputer.frequency):
+		case <-tick.C:
+			tick.Stop()
 			log.Infof("timing frequency(%s)", inputer.Name())
 			if err := cli.subExecuteInputer(inputer); nil != err {
-				log.Errorf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
+				log.Fatalf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
 				inputer.SetStatus(ExceptionExitStatus)
 				return
 			}
+			tick = time.NewTicker(inputer.frequency)
 		}
 	}
 

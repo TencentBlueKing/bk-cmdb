@@ -8,11 +8,5 @@
     }],
     "stage-2"
   ],
-  "plugins": [
-    "transform-vue-jsx",
-    "transform-runtime",
-    ["import-bk-magic-vue", {
-        "baseLibName": "bk-magic-vue"
-    }]
-  ]
+  "plugins": ["transform-vue-jsx", "transform-runtime"]
 }

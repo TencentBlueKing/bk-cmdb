@@ -1,219 +1,206 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-
-import StatusError from './StatusError.js'
-
+import store from '@/store'
 import preload from '@/setup/preload'
-import afterload from '@/setup/afterload'
-import { setupValidator } from '@/setup/validate'
+import $http from '@/api'
 
-import {
-    before as businessBeforeInterceptor
-} from './business-interceptor'
-
-import {
-    MENU_ENTRY,
-    MENU_BUSINESS,
-    MENU_RESOURCE,
-    MENU_MODEL,
-    MENU_ANALYSIS,
-    MENU_ADMIN
-} from '@/dictionary/menu-symbol'
-
-import {
-    indexViews,
-    adminViews,
-    hostLandingViews,
-    businessViews,
-    resourceViews,
-    modelViews,
-    analysisViews
-} from '@/views'
-
-import dynamicRouterView from '@/components/layout/dynamic-router-view'
+const index = () => import(/* webpackChunkName: index */ '@/views/index')
+const model = () => import(/* webpackChunkName: model */ '@/views/model')
+const modelTopo = () => import(/* webpackChunkName: model */ '@/views/model/model-topo')
+const business = () => import(/* webpackChunkName: business */ '@/views/business')
+const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
+const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
+const deleteHistory = () => import(/* webpackChunkName: deleteHistory */ '@/views/history')
+const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
+const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
+const permission = () => import(/* webpackChunkName: hosts */ '@/views/permission')
+const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
+const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
+const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
+const process = () => import(/* webpackChunkName: process */ '@/views/process')
+const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
+const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
 
-export const viewRouters = []
-
-const statusRouters = [
-    {
-        name: '404',
-        path: '/404',
-        components: require('@/views/status/404')
-    }, {
-        name: 'error',
-        path: '/error',
-        components: require('@/views/status/error')
-    }
-]
-
-const redirectRouters = [{
-    path: '*',
-    redirect: {
-        name: '404'
-    }
-}]
-
 const router = new Router({
-    mode: 'hash',
-    routes: [
-        ...redirectRouters,
-        ...statusRouters,
-        ...hostLandingViews,
-        {
-            name: MENU_ENTRY,
-            component: dynamicRouterView,
-            children: indexViews,
-            path: '/',
-            redirect: '/index'
-        },
-        {
-            name: MENU_ADMIN,
-            component: dynamicRouterView,
-            children: adminViews,
-            path: '/admin',
-            redirect: '/admin/index'
-        },
-        {
-            name: MENU_BUSINESS,
-            components: {
-                default: dynamicRouterView,
-                error: require('@/views/status/error').default,
-                permission: require('@/views/status/non-exist-business').default
-            },
-            children: businessViews,
-            path: '/business/:bizId?'
-        }, {
-            name: MENU_MODEL,
-            component: dynamicRouterView,
-            children: modelViews,
-            path: '/model',
-            redirect: '/model/index'
-        },
-        {
-            name: MENU_RESOURCE,
-            component: dynamicRouterView,
-            children: resourceViews,
-            path: '/resource',
-            redirect: '/resource/index'
-        }, {
-            name: MENU_ANALYSIS,
-            component: dynamicRouterView,
-            children: analysisViews,
-            path: '/analysis',
-            redirect: '/analysis/audit'
+    linkActiveClass: 'active',
+    routes: [{
+        path: '/',
+        redirect: '/index'
+    }, {
+        path: '/index',
+        component: index,
+        meta: {
+            ignoreAuthorize: true
         }
-    ]
+    }, {
+        path: '/business',
+        component: business
+    }, {
+        path: '/model',
+        component: model,
+        children: [{
+            path: ':classifyId',
+            component: modelTopo,
+            meta: {
+                relative: '/model'
+            }
+        }, {
+            path: '',
+            component: modelTopo,
+            meta: {
+                relative: '/model'
+            }
+        }]
+    }, {
+        path: '/eventpush',
+        component: eventpush
+    }, {
+        path: '/permission',
+        component: permission
+    }, {
+        path: '/history/biz',
+        component: businessArchived,
+        meta: {
+            relative: '/business'
+        }
+    }, {
+        path: '/general-model/:objId',
+        component: generalModel
+    }, {
+        path: '/history/:objId',
+        component: deleteHistory
+    }, {
+        path: '/hosts',
+        component: hosts,
+        meta: {
+            requireBusiness: true
+        }
+    }, {
+        path: '/resource',
+        component: resource
+    }, {
+        path: '/auditing',
+        component: audit
+    }, {
+        path: '/topology',
+        component: topology,
+        meta: {
+            requireBusiness: true
+        }
+    }, {
+        path: '/process',
+        component: process,
+        meta: {
+            requireBusiness: true
+        }
+    }, {
+        path: '/custom-query',
+        component: customQuery,
+        meta: {
+            requireBusiness: true
+        }
+    }, {
+        path: '/status-require-business',
+        components: require('@/views/status/require-business'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '/status-403',
+        components: require('@/views/status/403'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '/status-404',
+        components: require('@/views/status/404'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '/status-error',
+        component: error,
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '*',
+        redirect: '/status-404'
+    }]
 })
 
-const beforeHooks = new Set()
-
-function runBeforeHooks () {
-    return Promise.all(Array.from(beforeHooks).map(callback => callback()))
+const cancelRequest = () => {
+    const allRequest = $http.queue.get()
+    const requestQueue = allRequest.filter(request => request.cancelWhenRouteChange)
+    return $http.cancel(requestQueue.map(request => request.requestId))
 }
 
-export const addBeforeHooks = function (hook) {
-    beforeHooks.add(hook)
-}
-
-function cancelRequest (app) {
-    const pendingRequest = app.$http.queue.get()
-    const cancelId = pendingRequest.filter(request => request.cancelWhenRouteChange).map(request => request.requestId)
-    app.$http.cancelRequest(cancelId)
-}
-
-const checkViewAuthorize = async to => {
-    // owener判断已经发现无业务时
-    // if (to.meta.view === 'permission') {
-    //     return false
-    // }
-    // const auth = to.meta.auth || {}
-    // const view = auth.view
-    // if (view) {
-    //     const viewAuthData = typeof view === 'function' ? view(to, router.app) : view
-    //     const viewAuth = await router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
-    //     to.meta.view = viewAuth ? 'default' : 'permission'
-    // }
-    return Promise.resolve()
-}
-
-const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
-
-const checkAvailable = (to, from) => {
-    if (typeof to.meta.checkAvailable === 'function') {
-        return to.meta.checkAvailable(to, from, router.app)
-    } else if (to.meta.hasOwnProperty('available')) {
-        return to.meta.available
+const hasAuthority = (to) => {
+    if (to.meta.ignoreAuthorize) {
+        return true
     }
-    return true
-}
-
-const setupStatus = {
-    preload: true,
-    afterload: true
-}
-
-router.beforeEach((to, from, next) => {
-    Vue.nextTick(async () => {
-        try {
-            cancelRequest(router.app)
-            to.name !== from.name && router.app.$store.commit('setTitle', '')
-            if (to.meta.view !== 'permission') {
-                Vue.set(to.meta, 'view', 'default')
-            }
-            if (to.name === from.name) {
-                return next()
-            }
-            if (setupStatus.preload) {
-                setLoading(true)
-                setupStatus.preload = false
-                await preload(router.app)
-                setupValidator(router.app)
-            }
-            await runBeforeHooks()
-            const shouldContinue = await businessBeforeInterceptor(router.app, to, from, next)
-            if (!shouldContinue) {
-                return false
-            }
-
-            const isAvailable = checkAvailable(to, from)
-            if (!isAvailable) {
-                throw new StatusError({ name: '404' })
-            }
-            await checkViewAuthorize(to)
-            return next()
-        } catch (e) {
-            console.error(e)
-            setupStatus.preload = true
-            if (e.__CANCEL__) {
-                next()
-            } else if (e instanceof StatusError) {
-                next({ name: e.name, query: e.query })
-            } else if (e.status !== 401) {
-                console.error(e)
-                // 保留路由，将视图切换为error
-                Vue.set(to.meta, 'view', 'error')
-                next()
-            } else {
-                next()
-            }
-        } finally {
-            setLoading(false)
+    const path = to.meta.relative || to.query.relative || to.path
+    const authorizedNavigation = router.app.$store.getters['objectModelClassify/authorizedNavigation']
+    return authorizedNavigation.some(navigation => {
+        if (navigation.hasOwnProperty('path')) {
+            return navigation.path === path
         }
+        return navigation.children.some(child => child.path === path || child.relative === path)
     })
-})
+}
 
-router.afterEach(async (to, from) => {
+const hasPrivilegeBusiness = () => {
+    const privilegeBusiness = router.app.$store.getters['objectBiz/privilegeBusiness']
+    return !!privilegeBusiness.length
+}
+
+router.beforeEach(async (to, from, next) => {
     try {
-        if (setupStatus.afterload) {
-            setupStatus.afterload = false
-            await afterload(router.app, to, from)
+        if (to.path !== '/status-error') {
+            router.app.$store.commit('setGlobalLoading', true)
+            await cancelRequest()
+            await preload(router.app)
+            if (to.meta.ignoreAuthorize) {
+                next()
+            } else if (hasAuthority(to)) {
+                if (to.meta.requireBusiness && !hasPrivilegeBusiness()) {
+                    next({
+                        path: '/status-require-business',
+                        query: {
+                            relative: to.path
+                        }
+                    })
+                } else {
+                    next()
+                }
+            } else {
+                next({
+                    path: '/status-403',
+                    query: {
+                        relative: to.path
+                    }
+                })
+            }
+        } else {
+            next()
         }
     } catch (e) {
-        setupStatus.afterload = true
-        console.error(e)
+        next({
+            path: '/status-error',
+            query: {
+                relative: to.path
+            }
+        })
     }
+})
+
+router.afterEach((to, from) => {
+    if (to.path === '/status-error') {
+        $http.cancel()
+    }
+    router.app.$store.commit('setGlobalLoading', false)
 })
 
 export default router

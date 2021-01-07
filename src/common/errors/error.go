@@ -32,11 +32,9 @@ type ccErrorHelper struct {
 // CreateDefaultCCErrorIf create the default cc error interface instance
 func (cli *ccErrorHelper) CreateDefaultCCErrorIf(language string) DefaultCCErrorIf {
 	return &ccDefaultErrorHelper{
-		language:    language,
-		errorStr:    cli.Error,
-		errorStrf:   cli.Errorf,
-		ccErrorStr:  cli.CCError,
-		ccErrorStrf: cli.CCErrorf,
+		language:  language,
+		errorStr:  cli.Error,
+		errorStrf: cli.Errorf,
 	}
 }
 
@@ -49,20 +47,6 @@ func (cli *ccErrorHelper) Error(language string, errCode int) error {
 
 // Errorf returns an error that adapt to the error interface which accepts arguments
 func (cli *ccErrorHelper) Errorf(language string, ErrorCode int, args ...interface{}) error {
-	return &ccError{code: ErrorCode, callback: func() string {
-		return cli.errorStrf(language, ErrorCode, args...)
-	}}
-}
-
-// CCError returns an error that adapt to the error interface which not accepts arguments
-func (cli *ccErrorHelper) CCError(language string, errCode int) CCErrorCoder {
-	return &ccError{code: errCode, callback: func() string {
-		return cli.errorStr(language, errCode)
-	}}
-}
-
-// Errorf returns an error that adapt to the error interface which accepts arguments
-func (cli *ccErrorHelper) CCErrorf(language string, ErrorCode int, args ...interface{}) CCErrorCoder {
 	return &ccError{code: ErrorCode, callback: func() string {
 		return cli.errorStrf(language, ErrorCode, args...)
 	}}
@@ -94,6 +78,7 @@ func LoadErrorResourceFromDir(dir string) (map[string]ErrorCode, error) {
 		language := items[len(items)-2 : len(items)-1]
 
 		// analysis error package file
+		fmt.Printf("loading error resource from %s\n", path)
 		data, rerr := ioutil.ReadFile(path)
 		if nil != rerr {
 			return rerr

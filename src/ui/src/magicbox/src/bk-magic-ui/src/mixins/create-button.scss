@@ -1,0 +1,48 @@
+@mixin create-button($color, $hover, $active) {
+    & {
+        background: $color;
+        border-color: $color;
+        color: #fff;
+    }
+    &:hover,
+    &.hover {
+        background-color: $hover;
+        border-color: $hover;
+        opacity: 1;
+    }
+    &:active,
+    &.active {
+        background-color: $active;
+        border-color: $active;
+    }
+    &.is-loading {
+        color: $color;
+        background-color: $color !important;
+        border-color: $color !important;
+    }
+    &.is-selected {
+        background-color: $active !important;
+        border-color: $active !important;
+        color: #fff !important;
+        position: relative;
+        z-index: 1;
+        cursor: default;
+    }
+    &.is-outline {
+        color: $color;
+        border-color: $color;
+        background-color: #fff;
+        &:hover,
+        &.hover {
+            background-color: $hover;
+            border-color: $hover;
+            color: #fff;
+        }
+        &.active,
+        &:active {
+            background-color: $active;
+            border-color: $active;
+            color: #fff;
+        }
+    }
+}

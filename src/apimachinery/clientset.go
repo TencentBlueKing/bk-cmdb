@@ -15,17 +15,16 @@ package apimachinery
 import (
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/apimachinery/authserver"
-	"configcenter/src/apimachinery/cacheservice"
-	"configcenter/src/apimachinery/cloudserver"
-	"configcenter/src/apimachinery/coreservice"
+	"configcenter/src/apimachinery/auditcontroller"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/eventserver"
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/healthz"
+	"configcenter/src/apimachinery/hostcontroller"
 	"configcenter/src/apimachinery/hostserver"
+	"configcenter/src/apimachinery/objcontroller"
+	"configcenter/src/apimachinery/proccontroller"
 	"configcenter/src/apimachinery/procserver"
-	"configcenter/src/apimachinery/taskserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
 )
@@ -38,18 +37,21 @@ type ClientSetInterface interface {
 	ApiServer() apiserver.ApiServerClientInterface
 	EventServer() eventserver.EventServerClientInterface
 
-	CoreService() coreservice.CoreServiceClientInterface
-	TaskServer() taskserver.TaskServerClientInterface
-	CloudServer() cloudserver.CloudServerClientInterface
-	AuthServer() authserver.AuthServerClientInterface
-
-	CacheService() cacheservice.CacheServiceClientInterface
+	ObjectController() objcontroller.ObjControllerClientInterface
+	AuditController() auditcontroller.AuditCtrlInterface
+	ProcController() proccontroller.ProcCtrlClientInterface
+	HostController() hostcontroller.HostCtrlClientInterface
 
 	Healthz() healthz.HealthzInterface
 }
 
-func NewApiMachinery(c *util.APIMachineryConfig, discover discovery.DiscoveryInterface) (ClientSetInterface, error) {
+func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
 	client, err := util.NewClient(c.TLSConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +109,16 @@ func (cs *ClientSet) TopoServer() toposerver.TopoServerClientInterface {
 	return toposerver.NewTopoServerClient(c, cs.version)
 }
 
+func (cs *ClientSet) ObjectController() objcontroller.ObjControllerClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.ObjectCtrl(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return objcontroller.NewObjectControllerInterface(c, cs.version)
+}
+
 func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -148,60 +160,42 @@ func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 	return eventserver.NewEventServerClientInterface(c, cs.version)
 }
 
+func (cs *ClientSet) AuditController() auditcontroller.AuditCtrlInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.AuditCtrl(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	cs.Mock.SetMockData = false
+	return auditcontroller.NewAuditCtrlInterface(c, cs.version)
+}
+
+func (cs *ClientSet) ProcController() proccontroller.ProcCtrlClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.ProcCtrl(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	cs.Mock.SetMockData = false
+	return proccontroller.NewProcCtrlClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.HostCtrl(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return hostcontroller.NewHostCtrlClientInterface(c, cs.version)
+}
+
 func (cs *ClientSet) Healthz() healthz.HealthzInterface {
 	c := &util.Capability{
 		Client:   cs.client,
 		Throttle: cs.throttle,
 	}
 	return healthz.NewHealthzClient(c, cs.discover)
-}
-
-func (cs *ClientSet) CoreService() coreservice.CoreServiceClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.CoreService(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return coreservice.NewCoreServiceClient(c, cs.version)
-}
-
-func (cs *ClientSet) TaskServer() taskserver.TaskServerClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.TaskServer(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return taskserver.NewProcServerClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) CloudServer() cloudserver.CloudServerClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.CloudServer(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return cloudserver.NewCloudServerClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) AuthServer() authserver.AuthServerClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.AuthServer(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return authserver.NewAuthServerClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) CacheService() cacheservice.CacheServiceClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.CacheService(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	return cacheservice.NewCacheServiceClient(c, cs.version)
 }

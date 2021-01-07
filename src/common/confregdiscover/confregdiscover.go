@@ -13,7 +13,7 @@
 package confregdiscover
 
 import (
-	"configcenter/src/common/backbone/service_mange/zk"
+	"time"
 )
 
 //DiscoverEvent if servers changed, will create a discover event
@@ -29,23 +29,24 @@ type ConfRegDiscover struct {
 }
 
 // NewConfRegDiscover used to create a object of ConfRegDiscover
-func NewConfRegDiscover(client *zk.ZkClient) *ConfRegDiscover {
+// session timeout default 60 second
+func NewConfRegDiscover(serv string) *ConfRegDiscover {
 	confRD := &ConfRegDiscover{
-		confRD: nil,
+        confRD: nil,
 	}
 
-	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(client))
+	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(serv, time.Second*60))
 
 	return confRD
 }
 
 // NewConfRegDiscoverWithTimeOut used to create a object
-func NewConfRegDiscoverWithTimeOut(client *zk.ZkClient) *ConfRegDiscover {
+func NewConfRegDiscoverWithTimeOut(serv string, timeOut time.Duration) *ConfRegDiscover {
 	confRD := &ConfRegDiscover{
-		confRD: nil,
+        confRD: nil,
 	}
 
-	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(client))
+	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(serv, timeOut))
 
 	return confRD
 }
@@ -55,6 +56,16 @@ func (crd *ConfRegDiscover) Ping() error {
 	return crd.confRD.Ping()
 }
 
+//Start the register and discover service
+func (crd *ConfRegDiscover) Start() error {
+	return crd.confRD.Start()
+}
+
+//Stop the register and discover service
+func (crd *ConfRegDiscover) Stop() error {
+	return crd.confRD.Stop()
+}
+
 //Write the configure data
 func (crd *ConfRegDiscover) Write(key string, data []byte) error {
 	return crd.confRD.Write(key, data)
@@ -62,7 +73,7 @@ func (crd *ConfRegDiscover) Write(key string, data []byte) error {
 
 // Read the configure data
 func (crd *ConfRegDiscover) Read(path string) (string, error) {
-	return crd.confRD.Read(path)
+    return crd.confRD.Read(path)
 }
 
 //DiscoverConfig discover the config wether is changed

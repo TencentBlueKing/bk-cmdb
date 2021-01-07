@@ -4,48 +4,27 @@
     white-space: nowrap;
 }
 
-@mixin space-between {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-@mixin scrollbar ($width: 6px) {
+@mixin scrollbar {
     overflow: auto;
     &::-webkit-scrollbar {
-        width: $width;
-        height: $width;
-        background: rgba(165, 165, 165, .1);
+        width: 8px;
+        height: 8px;
         &-thumb {
-            min-height: 24px;
             border-radius: 20px;
-            background-color: #dcdee5;
+            background: #a5a5a5;
+            box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
         }
     }
 }
 
-@mixin scrollbar-x ($width: 6px) {
+@mixin scrollbar-x{
     @include scrollbar;
     overflow-x: auto;
     overflow-y: hidden;
 }
 
-@mixin scrollbar-y ($width: 6px) {
-    @include scrollbar($width);
+@mixin scrollbar-y{
+    @include scrollbar;
     overflow-x: hidden;
     overflow-y: auto;
-}
-
-@mixin inlineBlock ($align: middle) {
-    display: inline-block;
-    vertical-align: $align;
-}
-
-@mixin middleBlockHack {
-    &:before {
-        @include inlineBlock;
-        content: "";
-        width: 0;
-        height: 100%;
-    }
 }

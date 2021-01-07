@@ -1,0 +1,114 @@
+@charset "utf-8";
+@import "./conf";
+
+@mixin getTheme ($theme) {
+    .bk-step {
+        &.done {
+            .bk-step-number,
+            .bk-step-icon,
+            .bk-step-text {
+                background-color: $theme;
+                border-color: $theme;
+            }
+            &::after {
+                background-color: $theme;
+            }
+        }
+        &.current {
+            .bk-step-number,
+            .bk-step-icon,
+            .bk-step-text {
+                border-color: $theme;
+                color: $theme;
+            }
+        }
+    }
+}
+
+.bk-steps {
+    display: table;
+    width: 100%;
+    display: flex;
+    .bk-icon {
+        font-size: 18px;
+    }
+    @include getTheme($primaryColor);
+    .bk-step {
+        position: relative;
+        flex: 1;
+        text-align: center;
+        &::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 17px;
+            width: 100%;
+            height: 2px;
+            background-color: $fnMinorColor;
+        }
+        .bk-step-indicator {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 2px solid $fnMinorColor;
+            border-radius: 50%;
+            line-height: 32px;
+            color: $fnMinorColor;
+            text-align: center;
+            background-color: #fff;
+            z-index: 1;
+        }
+        .bk-step-number {
+            font-size: 18px;
+            font-family: arial;
+        }
+        .bk-step-icon {
+            font-size: 20px;
+        }
+        .bk-step-title {
+            display: block;
+            margin-top: 10px;
+            color: $fnMinorColor;
+            font-size: 14px;
+        }
+        &:last-of-type {
+            &::after {
+                display: none;
+            }
+        }
+        &.done {
+            .bk-step-number,
+            .bk-step-icon,
+            .bk-step-text {
+                color: #fff;
+            }
+            .bk-step-title {
+                color: $fnMainColor;
+            }
+        }
+        &.current {
+            .bk-step-number,
+            .bk-step-icon,
+            .bk-step-text {
+                border-width: 2px;
+            }
+            .bk-step-title {
+                color: $fnMainColor;
+            }
+        }
+    }
+    &-info {
+        @include getTheme($infoColor);
+    }
+    &-success {
+        @include getTheme($successColor);
+    }
+    &-warning {
+        @include getTheme($warningColor);
+    }
+    &-danger {
+        @include getTheme($dangerColor);
+    }
+}

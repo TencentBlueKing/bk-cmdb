@@ -13,23 +13,21 @@
 package common
 
 import (
-	"reflect"
-
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/types"
+	"fmt"
+	"reflect"
 )
 
 // GetTags parse a object and get the all tags
 func GetTags(target interface{}) []string {
-	if target == nil {
-		return make([]string, 0)
-	}
 
 	targetType := reflect.TypeOf(target)
 	switch targetType.Kind() {
 	default:
 		break
 	case reflect.Ptr:
+		fmt.Printf("hello")
 		targetType = targetType.Elem()
 
 	}
@@ -50,10 +48,6 @@ func GetTags(target interface{}) []string {
 func SetValueToMapStrByTags(source interface{}) types.MapStr {
 
 	values := types.MapStr{}
-
-	if source == nil {
-		return values
-	}
 
 	targetType := reflect.TypeOf(source)
 	targetValue := reflect.ValueOf(source)
@@ -80,9 +74,6 @@ func SetValueToMapStrByTags(source interface{}) types.MapStr {
 
 // SetValueToStructByTags set the struct object field value by tags
 func SetValueToStructByTags(target interface{}, values types.MapStr) error {
-	if target == nil {
-		return nil
-	}
 
 	targetType := reflect.TypeOf(target)
 	targetValue := reflect.ValueOf(target)

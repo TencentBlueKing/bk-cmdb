@@ -13,10 +13,9 @@
 package input
 
 import (
+	"configcenter/src/framework/core/output"
 	"context"
 	"time"
-
-	"configcenter/src/framework/core/output"
 )
 
 // InputerStatus the inputer status type definition.

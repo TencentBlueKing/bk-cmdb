@@ -15,7 +15,8 @@ package service
 import (
 	"context"
 
-	"configcenter/src/ac/iam"
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -23,21 +24,14 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/redis"
-
-	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	*backbone.Engine
 	db           dal.RDB
-	cache        redis.Client
 	ccApiSrvAddr string
 	ctx          context.Context
-	Config       options.Config
-	iam          *iam.Iam
 }
 
 func NewService(ctx context.Context) *Service {
@@ -50,46 +44,23 @@ func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
-func (s *Service) SetCache(cache redis.Client) {
-	s.cache = cache
-}
-
-func (s *Service) SetIam(iam *iam.Iam) {
-	s.iam = iam
-}
-
 func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
 	s.ccApiSrvAddr = ccApiSrvAddr
 }
 
-func (s *Service) WebService() *restful.Container {
-	container := restful.NewContainer()
-
-	api := new(restful.WebService)
-	getErrFunc := func() errors.CCErrorIf {
+func (s *Service) WebService() *restful.WebService {
+	ws := new(restful.WebService)
+	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	api.Path("/migrate/v3")
-	api.Filter(s.Engine.Metric().RestfulMiddleWare)
-	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
-	api.Produces(restful.MIME_JSON)
+	ws.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 
-	api.Route(api.POST("/authcenter/init").To(s.InitAuthCenter))
-	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
-	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
-	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
-	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
-	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
-	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
-	api.Route(api.GET("/healthz").To(s.Healthz))
+	ws.Route(ws.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
+	ws.Route(ws.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.Set))
+	ws.Route(ws.POST("/clear").To(s.clear))
+	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
-	container.Add(api)
-
-	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
-	container.Add(healthzAPI)
-
-	return container
+	return ws
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
@@ -104,12 +75,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// mongodb
-	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
-	meta.Items = append(meta.Items, healthItem)
-
-	// redis
-	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err())
-	meta.Items = append(meta.Items, redisItem)
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

@@ -13,150 +13,84 @@
 package service
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
+	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
+func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	user := util.GetUser(pheader)
 
 	params := make(map[string]interface{})
-	if err := ctx.DecodeInto(&params); nil != err {
-		ctx.RespAutoError(err)
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Errorf("save user custom failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	result, err := s.CoreAPI.CoreService().Host().GetUserCustomByUser(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header)
-	if err != nil {
-		blog.Errorf("SaveUserCustom GetUserCustomByUser http do error,err:%s,input:%s, rid:%s", err.Error(), params, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
-		return
-	}
-	if !result.Result {
-		blog.Errorf("SaveUserCustom GetUserCustomByUser http response error,err code:%d,err msg:%s,input:%s, rid:%s", result.Code, result.ErrMsg, params, ctx.Kit.Rid)
-		ctx.RespAutoError(result.CCError())
+	result, err := s.CoreAPI.HostController().User().GetUserCustomByUser(context.Background(), user, pheader)
+	if err != nil || (err == nil && !result.Result) {
+		blog.Error("save user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 		return
 	}
 
-	var res *metadata.BaseResp
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		var err error
-		if len(result.Data) == 0 {
-			res, err = s.CoreAPI.CoreService().Host().AddUserCustom(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header, params)
-			if err != nil {
-				blog.Errorf("SaveUserCustom AddUserCustom http do error,err:%s,input:%s, rid:%s", err.Error(), params, ctx.Kit.Rid)
-				return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if !res.Result {
-				blog.Errorf("SaveUserCustom AddUserCustom http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, ctx.Kit.Rid)
-				return res.CCError()
-			}
-			return nil
+	if len(result.Data) == 0 {
+		result, err := s.CoreAPI.HostController().User().AddUserCustom(context.Background(), user, pheader, params)
+		if err != nil || (err == nil && !result.Result) {
+			blog.Errorf("save user custom, add failed, err: %v, %v", err, result.ErrMsg)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
+			return
+		} else {
+			resp.WriteEntity(result)
+			return
+		}
+	}
+	id := result.Data["id"].(string)
+	uResult, err := s.CoreAPI.HostController().User().UpdateUserCustomByID(context.Background(), user, id, pheader, params)
+	if err != nil || (err == nil && !uResult.Result) {
+		blog.Errorf("save user custom, but update failed, err: %v, %v", err, uResult.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
+		return
+	}
 
-		}
-		id := result.Data["id"].(string)
-		res, err = s.CoreAPI.CoreService().Host().UpdateUserCustomByID(ctx.Kit.Ctx, ctx.Kit.User, id, ctx.Kit.Header, params)
-		if err != nil {
-			blog.Errorf("SaveUserCustom UpdateUserCustomByID http do error,err:%s,input:%s, rid:%s", err.Error(), params, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !res.Result {
-			blog.Errorf("SaveUserCustom UpdateUserCustomByID http response error,err code:%d,err msg:%s,input:%s, rid:%s", res.Code, res.ErrMsg, params, ctx.Kit.Rid)
-			return res.CCError()
-		}
-		return nil
+	resp.WriteEntity(uResult)
+}
+
+func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	user := util.GetUser(pheader)
+	result, err := s.CoreAPI.HostController().User().GetUserCustomByUser(context.Background(), user, pheader)
+	if err != nil || (err == nil && !result.Result) {
+		blog.Error("get user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
+		return
+	}
+	resp.WriteEntity(result)
+}
+
+func (s *Service) GetDefaultCustom(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	user := util.GetUser(pheader)
+
+	result, err := s.CoreAPI.HostController().User().GetDefaultUserCustom(context.Background(), user, pheader)
+	if err != nil || (err == nil && !result.Result) {
+		blog.Errorf("get default user custom failed, err: %v, %v", err, result.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostCustomGetDefaultFail)})
+		return
+	}
+	resp.WriteEntity(metadata.GetUserCustomResult{
+		BaseResp: metadata.SuccessBaseResp,
+		Data:     result.Data,
 	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
-func (s *Service) GetUserCustom(ctx *rest.Contexts) {
-
-	result, err := s.CoreAPI.CoreService().Host().GetUserCustomByUser(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header)
-	if err != nil {
-		blog.Errorf("GetUserCustom http do error,err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
-		return
-	}
-	if !result.Result {
-		blog.Errorf("GetUserCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(result.CCError())
-		return
-	}
-
-	ctx.RespEntity(result.Data)
-}
-
-// GetModelDefaultCustom 获取模型在列表页面展示字段
-func (s *Service) GetModelDefaultCustom(ctx *rest.Contexts) {
-
-	result, err := s.CoreAPI.CoreService().Host().GetDefaultUserCustom(ctx.Kit.Ctx, ctx.Kit.Header)
-	if err != nil {
-		blog.Errorf("GetDefaultCustom http do error,err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
-		return
-	}
-	if !result.Result {
-		blog.Errorf("GetDefaultCustom http response error,err code:%d,err msg:%s, rid:%s", result.Code, result.ErrMsg, ctx.Kit.Rid)
-		ctx.RespAutoError(result.CCError())
-		return
-	}
-	// ensure return {} by json decode
-	if result.Data == nil {
-		result.Data = make(map[string]interface{}, 0)
-	}
-
-	ctx.RespEntity(result.Data)
-}
-
-// SaveModelDefaultCustom 设置模型在列表页面展示字段
-func (s *Service) SaveModelDefaultCustom(ctx *rest.Contexts) {
-
-	objID := ctx.Request.PathParameter("obj_id")
-
-	input := make(map[string]interface{})
-	if err := ctx.DecodeInto(&input); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(input) == 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
-		return
-	}
-
-	userCustomInput := make(map[string]interface{}, 0)
-	// add prefix all key
-	for key, val := range input {
-		userCustomInput[fmt.Sprintf("%s_%s", objID, key)] = val
-	}
-
-	var result *metadata.BaseResp
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		var err error
-		result, err = s.CoreAPI.CoreService().Host().UpdateDefaultUserCustom(ctx.Kit.Ctx, ctx.Kit.Header, userCustomInput)
-		if err != nil {
-			blog.ErrorJSON("SaveUserCustom GetUserCustomByUser http do error,err:%s,input:%s, rid:%s", err.Error(), input, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := result.CCError(); err != nil {
-			blog.ErrorJSON("SaveUserCustom GetUserCustomByUser http reply error. result: %s, input: %s, rid: %s", result, input, ctx.Kit.Rid)
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-
-	ctx.RespEntity(nil)
 }

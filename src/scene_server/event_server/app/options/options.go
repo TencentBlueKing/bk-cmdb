@@ -13,41 +13,38 @@
 package options
 
 import (
-	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/rpc"
 
 	"github.com/spf13/pflag"
 )
 
-// ServerOption is options of server.
+//ServerOption define option of server in flags
 type ServerOption struct {
-	// ServConf is CC API config.
 	ServConf *config.CCAPIConfig
 }
 
-// NewServerOption creates a new ServerOption object.
+//NewServerOption create a ServerOption object
 func NewServerOption() *ServerOption {
-	return &ServerOption{
+	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
 	}
+
+	return &s
 }
 
-// AddFlags add flags to server options.
+//AddFlags add flags
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60009", "The ip address and port for the serve on")
-	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
+	//fs.UintVar(&s.ServConf.Port, "port", 60009, "The port for the serve on")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
-	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
-	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
+	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 }
 
-// Config is configs for event server.
 type Config struct {
-	// MongoDB is mongodb configs.
 	MongoDB mongo.Config
-
-	// Redis is cc redis configs.
-	Redis redis.Config
+	Redis   redis.Config
+	RPC     rpc.ClientConfig
 }

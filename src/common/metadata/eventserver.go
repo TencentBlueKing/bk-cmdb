@@ -19,8 +19,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"configcenter/src/common/watch"
 )
 
 type RspSubscriptionCreate struct {
@@ -56,18 +54,17 @@ type RspSubscriptionTestCallback struct {
 
 // Subscription define
 type Subscription struct {
-	SubscriptionID   int64  `bson:"subscription_id" json:"subscription_id"`
-	SubscriptionName string `bson:"subscription_name" json:"subscription_name"`
-	SystemName       string `bson:"system_name" json:"system_name"`
-	CallbackURL      string `bson:"callback_url" json:"callback_url"`
-	ConfirmMode      string `bson:"confirm_mode" json:"confirm_mode"`
-	ConfirmPattern   string `bson:"confirm_pattern" json:"confirm_pattern"`
-	TimeOutSeconds   int64  `bson:"time_out" json:"time_out"` // second
-	// SubscriptionForm is a list of event types split by comma
-	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"`
+	SubscriptionID   int64       `bson:"subscription_id" json:"subscription_id"`
+	SubscriptionName string      `bson:"subscription_name" json:"subscription_name"`
+	SystemName       string      `bson:"system_name" json:"system_name"`
+	CallbackURL      string      `bson:"callback_url" json:"callback_url"`
+	ConfirmMode      string      `bson:"confirm_mode" json:"confirm_mode"`
+	ConfirmPattern   string      `bson:"confirm_pattern" json:"confirm_pattern"`
+	TimeOut          int64       `bson:"time_out" json:"time_out"`                   // second
+	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"` // json format
 	Operator         string      `bson:"operator" json:"operator"`
 	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
-	LastTime         Time        `bson:"last_time" json:"last_time"`
+	LastTime         *Time       `bson:"last_time" json:"last_time"`
 	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
 
@@ -82,36 +79,36 @@ func (Subscription) TableName() string {
 }
 
 func (s Subscription) GetCacheKey() string {
-	eventTypes := strings.Split(s.SubscriptionForm, ",")
-	sort.Strings(eventTypes)
-	s.SubscriptionForm = strings.Join(eventTypes, ",")
+	eventnames := strings.Split(s.SubscriptionForm, ",")
+	sort.Strings(eventnames)
+	s.SubscriptionForm = strings.Join(eventnames, ",")
 	ns := &Subscription{
 		SubscriptionID:   s.SubscriptionID,
 		CallbackURL:      s.CallbackURL,
 		ConfirmMode:      s.ConfirmMode,
 		ConfirmPattern:   s.ConfirmPattern,
 		SubscriptionForm: s.SubscriptionForm,
-		TimeOutSeconds:   s.TimeOutSeconds,
+		TimeOut:          s.TimeOut,
 	}
 	b, _ := json.Marshal(ns)
 	return string(b)
 }
 
 func (s Subscription) GetTimeout() time.Duration {
-	return time.Second * time.Duration(s.TimeOutSeconds)
+	return time.Second * time.Duration(s.TimeOut)
 }
 
 type EventInst struct {
-	ID            int64       `json:"event_id,omitempty"`
-	EventType     string      `json:"event_type"`
-	Action        string      `json:"action"`
-	ActionTime    Time        `json:"action_time"`
-	ObjType       string      `json:"obj_type"`
-	Data          []EventData `json:"data"`
-	OwnerID       string      `json:"bk_supplier_account"`
-	Cursor        string      `json:"cursor"`
-	UpdateFields  []string    `json:"update_fields"`
-	DeletedFields []string    `json:"deleted_fields"`
+	ID          int64       `json:"event_id,omitempty"`
+	TxnID       string      `json:"txn_id"`
+	EventType   string      `json:"event_type"`
+	Action      string      `json:"action"`
+	ActionTime  Time        `json:"action_time"`
+	ObjType     string      `json:"obj_type"`
+	Data        []EventData `json:"data"`
+	OwnerID     string      `json:"bk_supplier_account"`
+	RequestID   string      `json:"request_id"`
+	RequestTime Time        `json:"request_time"`
 }
 
 func (e *EventInst) MarshalBinary() (data []byte, err error) {
@@ -126,9 +123,6 @@ type EventData struct {
 func (e *EventInst) GetType() string {
 	if e.EventType == EventTypeRelation {
 		return e.ObjType
-	}
-	if e.EventType == EventTypeAssociation {
-		return e.ObjType + EventActionUpdate
 	}
 	return e.ObjType + e.Action
 }
@@ -161,17 +155,12 @@ type EventType string
 
 // EventType enumeration
 const (
-	// 实例CRUD事件，实例类型通过event中的objType字段区分
-	EventTypeInstData = "instdata"
-	// 实例间的绑定关系发生变化，目前主要用于主机转移
+	EventTypeInstData           = "instdata"
 	EventTypeRelation           = "relation"
-	EventTypeAssociation        = "association"
 	EventTypeResourcePoolModule = "resource"
 )
 
 // Event object type
-// common instance's Event object type are model object id
-// below are object type for relations
 const (
 	EventObjTypeProcModule     = "processmodule"
 	EventObjTypeModuleTransfer = "moduletransfer"
@@ -182,8 +171,8 @@ type ConfirmMode string
 
 // ConfirmMode define
 var (
-	ConfirmModeHTTPStatus = "httpstatus"
-	ConfirmModeRegular    = "regular"
+	ConfirmmodeHttpstatus = "httpstatus"
+	ConfirmmodeRegular    = "regular"
 )
 
 // Scan implement sql driver's Scan interface
@@ -199,51 +188,4 @@ func (n *ConfirmMode) Scan(value interface{}) error {
 // Value implement sql driver's Value interface
 func (n ConfirmMode) Value() (driver.Value, error) {
 	return string(n), nil
-}
-
-// ParseCursorTypeFromEventType returns target cursor type type base on event type.
-func ParseCursorTypeFromEventType(eventType string) watch.CursorType {
-	switch eventType {
-	case "hostcreate":
-		return watch.Host
-
-	case "hostupdate":
-		return watch.Host
-
-	case "hostdelete":
-		return watch.Host
-
-	case "moduletransfer":
-		return watch.ModuleHostRelation
-
-	case "bizcreate":
-		return watch.Biz
-
-	case "bizupdate":
-		return watch.Biz
-
-	case "bizdelete":
-		return watch.Biz
-
-	case "setcreate":
-		return watch.Set
-
-	case "setupdate":
-		return watch.Set
-
-	case "setdelete":
-		return watch.Set
-
-	case "modulecreate":
-		return watch.Module
-
-	case "moduleupdate":
-		return watch.Module
-
-	case "moduledelete":
-		return watch.Module
-
-	default:
-		return watch.ObjectBase
-	}
 }

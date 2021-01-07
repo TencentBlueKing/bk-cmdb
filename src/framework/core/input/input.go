@@ -13,12 +13,11 @@
 package input
 
 import (
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
 	"context"
 	"sync"
 	"time"
-
-	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/log"
 )
 
 // manager implements the Manager interface
@@ -101,7 +100,7 @@ func (cli *manager) Run(ctx context.Context, inputerCtx InputerContext) {
 
 			cli.inputerLock.RLock()
 
-			// scan the all Inputers and restart the stopped Inputer
+			// scan the all Inputers and restart the stoped Inputer
 			for _, inputer := range cli.inputers {
 				switch inputer.GetStatus() {
 				case NormalStatus:
@@ -132,7 +131,7 @@ func (cli *manager) Run(ctx context.Context, inputerCtx InputerContext) {
 					})
 
 				default:
-					log.Errorf("unknown the Inputer status (%d)", inputer.GetStatus())
+					log.Fatalf("unknown the Inputer status (%d)", inputer.GetStatus())
 				}
 			}
 

@@ -13,20 +13,24 @@
 package manager
 
 import (
-	"context"
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/httpserver"
+	"configcenter/src/framework/core/types"
+
+	"configcenter/src/framework/core/input"
+	"configcenter/src/framework/core/output"
+
+	"configcenter/src/framework/core/log"
+
+	"github.com/emicklei/go-restful"
+
 	"encoding/json"
 	"io/ioutil"
 
-	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/httpserver"
-	"configcenter/src/framework/core/input"
-	"configcenter/src/framework/core/log"
-	"configcenter/src/framework/core/output"
-	"configcenter/src/framework/core/types"
-	"github.com/emicklei/go-restful"
+	"context"
 )
 
-// Manager contains the basic framework data and the publisher client used to public events.
+// Manager contains the basic framework data and the publisher client used to publis events.
 type Manager struct {
 	cancel      context.CancelFunc
 	eventMgr    *eventSubscription

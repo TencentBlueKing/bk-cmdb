@@ -26,15 +26,14 @@ const (
 )
 
 type ObjQueryInput struct {
-	Condition      interface{} `json:"condition"`
-	Fields         string      `json:"fields"`
-	Start          int         `json:"start"`
-	Limit          int         `json:"limit"`
-	Sort           string      `json:"sort"`
-	DisableCounter bool        `json:"disable_counter"`
+	Condition interface{} `json:"condition"`
+	Fields    string      `json:"fields"`
+	Start     int         `json:"start"`
+	Limit     int         `json:"limit"`
+	Sort      string      `json:"sort"`
 }
 
-// ConvTime 将查询条件中字段包含cc_type key ，子节点变为time.Time
+//ConvTime 将查询条件中字段包含cc_type key ，子节点变为time.Time
 func (o *ObjQueryInput) ConvTime() error {
 	conds, ok := o.Condition.(map[string]interface{})
 	if true != ok && nil != conds {

@@ -26,20 +26,19 @@ type option struct {
 	dryrun   bool
 	mini     bool
 	scope    string
-	bizName  string
 }
 
 // Node topo node define
 type Node struct {
-	ObjID    string                 `json:"bk_obj_id,omitempty"`
-	Data     map[string]interface{} `json:"data,omitempty"`
-	Children []*Node                `json:"childs,omitempty"`
-	nodeKey  string
-	mark     string
+	ObjID   string                 `json:"bk_obj_id,omitempty"`
+	Data    map[string]interface{} `json:"data,omitempty"`
+	Childs  []*Node                `json:"childs,omitempty"`
+	nodekey string
+	mark    string
 }
 
 func (n *Node) getChildObjID() string {
-	for _, child := range n.Children {
+	for _, child := range n.Childs {
 		return child.ObjID
 	}
 	return ""
@@ -53,20 +52,20 @@ func (n *Node) getInstID() (uint64, error) {
 	return id, nil
 }
 
-func (n *Node) getChildInstNames() (instNames []string) {
-	instNameField := n.getChildInstNameField()
-	for _, child := range n.Children {
-		name, ok := child.Data[instNameField].(string)
+func (n *Node) getChilDInstNames() (instnames []string) {
+	instnamefield := n.getChilDInstNameField()
+	for _, child := range n.Childs {
+		name, ok := child.Data[instnamefield].(string)
 		if !ok {
-			blog.Errorf("child has no inst name field %#v", child.Data[instNameField])
+			blog.Errorf("child has no instname field %#v", child.Data[instnamefield])
 			continue
 		}
-		instNames = append(instNames, name)
+		instnames = append(instnames, name)
 	}
 	return
 }
-func (n *Node) getChildInstNameField() string {
-	for _, child := range n.Children {
+func (n *Node) getChilDInstNameField() string {
+	for _, child := range n.Childs {
 		return common.GetInstNameField(child.ObjID)
 	}
 	return ""
@@ -76,98 +75,49 @@ func (n *Node) getInstNameField() string {
 }
 
 func getInt64(v interface{}) (uint64, error) {
-	switch tv := v.(type) {
-	case int8:
-		return uint64(tv), nil
-	case int16:
-		return uint64(tv), nil
-	case int32:
-		return uint64(tv), nil
-	case int64:
-		return uint64(tv), nil
+	switch id := v.(type) {
 	case int:
-		return uint64(tv), nil
-	case uint8:
-		return uint64(tv), nil
-	case uint16:
-		return uint64(tv), nil
-	case uint32:
-		return uint64(tv), nil
-	case uint64:
-		return uint64(tv), nil
-	case uint:
-		return uint64(tv), nil
+		return uint64(id), nil
+	case int64:
+		return uint64(id), nil
 	case float32:
-		return uint64(tv), nil
+		return uint64(id), nil
 	case float64:
-		return uint64(tv), nil
+		return uint64(id), nil
 	default:
 		return 0, fmt.Errorf("v is not number : %+v", v)
 	}
 }
 
 func newNode(objID string) *Node {
-	return &Node{ObjID: objID, Data: map[string]interface{}{}, Children: []*Node{}}
+	return &Node{ObjID: objID, Data: map[string]interface{}{}, Childs: []*Node{}}
 }
 
 // result: map[parentkey]map[childkey]node
-func (n *Node) walk(walkFunc func(node *Node) error) error {
-	for _, child := range n.Children {
-		if err := child.walk(walkFunc); nil != err {
+func (n *Node) walk(walkfunc func(node *Node) error) error {
+	if err := walkfunc(n); nil != err {
+		return err
+	}
+	for _, child := range n.Childs {
+		if err := child.walk(walkfunc); nil != err {
 			return err
 		}
-	}
-	if err := walkFunc(n); nil != err {
-		return err
 	}
 	return nil
 }
 
-// getNodeKey outputs ==> `{parentKey}-{objectID}[{key1}:{value1},{key2}:{value2}]`
-func (n *Node) getNodeKey(parentKey string, keys []string) (nodeKey string) {
+// nodekey: model2[key1:value,key2:value]-model2[key1:value,key2:value]
+func (n *Node) getNodekey(parentKey string, keys []string) (nodekey string) {
+	nodekey = n.ObjID + "["
 	if "" != parentKey {
-		nodeKey = parentKey + "-"
+		nodekey = parentKey + "-" + nodekey
 	}
-	nodeKey += n.ObjID + "["
-	kv := make([]string, 0)
+	kv := []string{}
 	for _, key := range keys {
-		item := fmt.Sprintf("%s:%s", key, n.Data[key])
-		kv = append(kv, item)
+		kv = append(kv, key+":"+fmt.Sprint(n.Data[key]))
 	}
-	nodeKey += strings.Join(kv, ",") + "]"
-	return nodeKey
-}
-
-// BKTopo 蓝鲸安装拓扑的的结构
-type BKTopo struct {
-	// map[process name]map[key]value
-	Proc               []map[string]interface{} `json:"proc"`
-	ServiceTemplateArr []BKServiceTemplate      `json:"service_template"`
-	Topo               BKBizTopo                `json:"topo"`
-}
-
-// BKServiceTemplate 服务模版与进程关系
-type BKServiceTemplate struct {
-	Name string `json:"name"`
-	// 只能有前面两个有效, 没有内容的时候，使用Default
-	ServiceCategoryName []string `json:"service_category_name"`
-	// ServiceCategoryName,服务分类转换成分类ID
-	ServiceCategoryID int64    `json:"-"`
-	BindProcess       []string `json:"bind_proc"`
-	BindProcessUUID   []string `json:"bind_proc_uuid"`
-}
-
-// BKBizTopo business set,module
-type BKBizTopo struct {
-	SetArr    []map[string]interface{} `json:"set"`
-	ModuleArr []BKBizModule            `json:"module"`
-}
-
-// BKBizModule business module info
-type BKBizModule struct {
-	SetName         string                 `json:"bk_set_name"`
-	ServiceTemplate string                 `json:"service_template"`
-	Info            map[string]interface{} `json:"info"`
+	nodekey = strings.Join(kv, ",") + "]"
+	return nodekey
 }
 
 // Topo define
@@ -189,8 +139,8 @@ type Process struct {
 	Modules []string               `json:"modules"`
 }
 type ProcessTopo struct {
-	BizName   string     `json:"bk_biz_name"`
-	Processes []*Process `json:"procs"`
+	BizName string     `json:"bk_biz_name"`
+	Procs   []*Process `json:"procs"`
 }
 
 const actionCreate = "create"

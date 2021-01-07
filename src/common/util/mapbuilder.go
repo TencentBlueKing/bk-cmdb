@@ -13,32 +13,33 @@
 package util
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
-type MapBuilder struct {
+type MapBuiler struct {
 	value map[string]interface{}
 }
 
-func NewMapBuilder(kvPairs ...interface{}) *MapBuilder {
+func NewMapBuilder(kvpairs ...interface{}) *MapBuiler {
 	value := map[string]interface{}{}
-	for i := range kvPairs {
+	for i := range kvpairs {
 		if i%2 == 0 {
-			value[kvPairs[i].(string)] = kvPairs[i+1]
+			value[kvpairs[i].(string)] = kvpairs[i+1]
 		}
 	}
-	return &MapBuilder{value}
+	return &MapBuiler{value}
 }
 
-func (m *MapBuilder) Build() map[string]interface{} {
+func (m *MapBuiler) Build() map[string]interface{} {
 	return m.value
 }
 
-func (m *MapBuilder) Set(k string, v interface{}) {
+func (m *MapBuiler) Set(k string, v interface{}) {
 	m.value[k] = v
 }
 
-func (m *MapBuilder) Append(k string, vs ...interface{}) {
+func (m *MapBuiler) Append(k string, vs ...interface{}) {
 	_, ok := m.value[k]
 	if !ok {
 		m.value[k] = []interface{}{}
@@ -46,12 +47,18 @@ func (m *MapBuilder) Append(k string, vs ...interface{}) {
 	m.value[k] = append(m.value[k].([]interface{}), vs...)
 }
 
-func (m *MapBuilder) Delete(k string) {
+func (m *MapBuiler) Delete(k string) {
 	delete(m.value, k)
 }
 
+func NewMapFromJSON(data string) map[string]interface{} {
+	value := map[string]interface{}{}
+	_ = json.Unmarshal([]byte(data), &value)
+	return value
+}
+
 func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[string]interface{} {
-	newInst := make(map[string]interface{})
+	newinst := map[string]interface{}{}
 
 	ignore := map[string]bool{}
 	for _, key := range ignores {
@@ -66,24 +73,17 @@ func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[s
 		if ignore[key] {
 			continue
 		}
-		newInst[key] = data[key]
+		newinst[key] = data[key]
 	}
-	return newInst
+	return newinst
 
 }
 
-// CloneHeader clone http header
-func CloneHeader(src http.Header) http.Header {
+// CopyHeader copy http header
+func CopyHeader(src http.Header) http.Header {
 	tar := http.Header{}
 	for key := range src {
 		tar.Set(key, src.Get(key))
 	}
 	return tar
-}
-
-// CopyHeader copy http header into target
-func CopyHeader(src http.Header, target http.Header) {
-	for key := range src {
-		target.Set(key, src.Get(key))
-	}
 }

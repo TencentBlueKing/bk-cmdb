@@ -14,17 +14,12 @@ package x08_09_18_01
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
@@ -55,44 +50,28 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 		exitsAsstHostIDArr = append(exitsAsstHostIDArr, instAsst.InstID)
 	}
 
-	mongo, ok := db.(*local.Mongo)
-	if !ok {
-		return fmt.Errorf("db is not *local.Mongo type")
+	type hostInfoStruct struct {
+		HostID  int64  `bson:"bk_host_id"`
+		PlatID  int64  `bson:"bk_cloud_id"`
+		OwnerID string `bson:"bk_supplier_account"`
 	}
-	dbc := mongo.GetDBClient()
-
-	hostInfoMap := make([]map[string]interface{}, 0)
-	findOpts := &options.FindOptions{}
-	findOpts.SetProjection(map[string]int{common.BKHostIDField: 1, common.BKCloudIDField: 1, common.BKOwnerIDField: 1})
+	hostInfoMap := make([]hostInfoStruct, 0)
+	fields := []string{common.BKHostIDField, common.BKCloudIDField, common.BKOwnerIDField}
 	hostCondition := make(mapstr.MapStr)
 	if 0 < len(exitsAsstHostIDArr) {
 		hostCondition[common.BKHostIDField] = mapstr.MapStr{common.BKDBNIN: exitsAsstHostIDArr}
 	}
 
-	cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, hostCondition, findOpts)
+	err = db.Table(common.BKTableNameBaseHost).Find(hostCondition).Fields(fields...).All(ctx, &hostInfoMap)
 	if err != nil && !db.IsNotFoundError(err) {
-		return err
-	}
-
-	if err := cursor.All(ctx, &hostInfoMap); err != nil && !db.IsNotFoundError(err) {
 		return err
 	}
 
 	nowTime := time.Now().UTC()
 	for _, host := range hostInfoMap {
-		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-		if err != nil {
-			return err
-		}
-		platID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-		if err != nil {
-			return err
-		}
-		ownerID := util.GetStrByInterface(host[common.BkSupplierAccount])
-
 		instAsstConditionMap := mapstr.MapStr{
 			common.BKObjIDField:     common.BKInnerObjIDHost,
-			common.BKInstIDField:    hostID,
+			common.BKInstIDField:    host.HostID,
 			common.BKAsstObjIDField: common.BKInnerObjIDPlat,
 		}
 		cnt, err := db.Table(common.BKTableNameInstAsst).Find(instAsstConditionMap).Count(ctx)
@@ -106,11 +85,11 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 			}
 			addAsstInst := instAsstStruct{
 				ID:           int64(id),
-				InstID:       hostID,
+				InstID:       host.HostID,
 				ObjectID:     common.BKInnerObjIDHost,
-				AsstInstID:   platID,
+				AsstInstID:   host.PlatID,
 				AsstObjectID: common.BKInnerObjIDPlat,
-				OwnerID:      ownerID,
+				OwnerID:      host.OwnerID,
 				CreateTime:   nowTime,
 				LastTime:     nowTime,
 			}

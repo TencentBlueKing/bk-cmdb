@@ -20,7 +20,6 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/watch"
 )
 
 type EventServerClientInterface interface {
@@ -30,7 +29,6 @@ type EventServerClientInterface interface {
 	Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error)
 	UnSubscribe(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header) (resp *metadata.Response, err error)
 	Rebook(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error)
-	Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error)
 }
 
 func NewEventServerClientInterface(c *util.Capability, version string) EventServerClientInterface {

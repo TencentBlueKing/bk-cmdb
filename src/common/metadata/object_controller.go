@@ -13,7 +13,7 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
+	types "configcenter/src/common/mapstr"
 )
 
 // RspID response id
@@ -24,7 +24,6 @@ type RspID struct {
 // CreateResult create result
 type CreateResult struct {
 	BaseResp `json:",inline"`
-	Data     []Association `json:"data"`
 }
 
 // UpdateResult update result
@@ -66,15 +65,15 @@ type AttributeWrapper struct {
 
 // UpdateGroupCondition update group condition struct
 type UpdateGroupCondition struct {
-	ModelBizID int64 `json:"bk_biz_id"`
-	Condition  struct {
-		ID int64 `field:"id" json:"id,omitempty"`
+	Condition struct {
+		ID      int64  `json:"id,omitempty"`
+		GroupID string `json:"bk_group_id,omitempty"`
+		ObjID   string `json:"bk_obj_id,omitempty"`
 	} `json:"condition"`
 
 	Data struct {
-		IsCollapse *bool   `field:"is_collapse" json:"is_collapse,omitempty"`
-		Name       *string `field:"bk_group_name" json:"bk_group_name,omitempty"`
-		Index      *int64  `field:"bk_group_index" json:"bk_group_index,omitempty"`
+		Name  string `json:"bk_group_name,omitempty"`
+		Index int64  `json:"bk_group_index"`
 	} `json:"data"`
 }
 
@@ -117,7 +116,8 @@ type QueryObjectClassificationResult struct {
 // ClassificationWithObject classification with object
 type ClassificationWithObject struct {
 	Classification `json:",inline"`
-	Objects        []Object `json:"bk_objects"`
+	Objects        []Object            `json:"bk_objects"`
+	AsstObjects    map[string][]Object `json:"bk_asst_objects"`
 }
 
 // QueryObjectClassificationWithObjectsResult query the object classification with objects result
@@ -134,8 +134,8 @@ type QueryObjectAssociationResult struct {
 
 // InstResult inst item result
 type InstResult struct {
-	Count int             `json:"count"`
-	Info  []mapstr.MapStr `json:"info"`
+	Count int            `json:"count"`
+	Info  []types.MapStr `json:"info"`
 }
 
 // QueryInstResult query inst result
@@ -147,7 +147,7 @@ type QueryInstResult struct {
 // CreateInstResult create inst result
 type CreateInstResult struct {
 	BaseResp `json:",inline"`
-	Data     mapstr.MapStr `json:"data"`
+	Data     types.MapStr `json:"data"`
 }
 
 // ObjClassificationObject define the class object class

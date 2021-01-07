@@ -1,6 +1,4 @@
 import moment from 'moment'
-import GET_VALUE from 'get-value'
-import i18n from '@/i18n'
 
 /**
  * 拍平列表
@@ -11,8 +9,8 @@ import i18n from '@/i18n'
 
 export function getFullName (names) {
     if (!names) return ''
-    const userList = window.CMDB_USER_LIST || [] // set in setup/preload.js
-    const enNames = String(names).split(',')
+    const userList = window.CMDB_USER_LIST // set in setup/preload.js
+    const enNames = names.split(',')
     const fullNames = enNames.map(enName => {
         const user = userList.find(user => user['english_name'] === enName)
         if (user) {
@@ -21,6 +19,29 @@ export function getFullName (names) {
         return enName
     })
     return fullNames.join(',')
+}
+
+export function flatternList (properties, list) {
+    if (!list.length) return list
+    const flatternedList = clone(list)
+    flatternedList.forEach((item, index) => {
+        flatternedList[index] = flatternItem(properties, item)
+    })
+    return flatternedList
+}
+
+/**
+ * 拍平实例具体的属性
+ * @param {Object} properties - 模型具体属性
+ * @param {Object} item - 模型实例
+ * @return {Object} 拍平后的模型实例
+ */
+export function flatternItem (properties, item) {
+    const flatternedItem = clone(item)
+    properties.forEach(property => {
+        flatternedItem[property['bk_property_id']] = getPropertyText(property, flatternedItem)
+    })
+    return flatternedItem
 }
 
 /**
@@ -34,32 +55,51 @@ export function getPropertyText (property, item) {
     const propertyId = property['bk_property_id']
     const propertyType = property['bk_property_type']
     let propertyValue = item[propertyId]
-    if (
-        propertyValue === null
-        || propertyValue === undefined
-        || propertyValue === ''
-    ) {
-        return '--'
-    }
     if (propertyType === 'enum') {
-        const options = Array.isArray(property.option) ? property.option : []
-        const enumOption = options.find(option => option.id === propertyValue)
-        propertyValue = enumOption ? enumOption.name : '--'
+        const enumOption = (property.option || []).find(option => option.id === propertyValue)
+        propertyValue = enumOption ? enumOption.name : null
     } else if (['singleasst', 'multiasst'].includes(propertyType)) {
-        const values = Array.isArray(propertyValue) ? propertyValue : []
-        propertyValue = values.map(inst => inst['bk_inst_name']).join(',')
+        propertyValue = (propertyValue || []).map(inst => inst['bk_inst_name']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
         propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
     } else if (propertyType === 'objuser') {
         propertyValue = getFullName(propertyValue)
-    } else if (propertyType === 'foreignkey') {
-        if (Array.isArray(propertyValue)) {
-            propertyValue = propertyValue.map(inst => inst['bk_inst_name']).join(',')
-        } else {
-            return String(propertyValue).length ? propertyValue : '--'
-        }
     }
-    return propertyValue.toString()
+    return propertyValue || '--'
+}
+
+/**
+ * 拍平主机列表
+ * @param {Object} properties - 模型属性,eg: {host: [], biz: []}
+ * @param {Array} list - 模型实例列表
+ * @return {Array} 拍平后的模型实例列表
+ */
+export function flatternHostList (properties, list) {
+    if (!list.length) return list
+    const flatternedList = clone(list)
+    flatternedList.forEach((item, index) => {
+        flatternedList[index] = flatternHostItem(properties, item)
+    })
+    return flatternedList
+}
+
+/**
+ * 拍平主机实例具体的属性
+ * @param {Object} property - 模型具体属性
+ * @param {Object} item - 模型实例
+ * @return {Object} 拍平后的模型实例
+ */
+export function flatternHostItem (properties, item) {
+    const flatternedItem = clone(item)
+    for (let objId in properties) {
+        properties[objId].forEach(property => {
+            const originalValue = item[objId] instanceof Array ? item[objId] : [item[objId]]
+            originalValue.forEach(value => {
+                value[property['bk_property_id']] = getPropertyText(property, value)
+            })
+        })
+    }
+    return flatternedItem
 }
 
 /**
@@ -68,66 +108,27 @@ export function getPropertyText (property, item) {
  * @param {Object} inst - 原始实例
  * @return {Object} 实例真实值
  */
-
-function getDefaultOptionValue (property) {
-    const defaultOption = (property.option || []).find(option => option.is_default)
-    if (defaultOption) {
-        return defaultOption.id
-    }
-    return ''
-}
-
-export function getInstFormValues (properties, inst = {}, autoSelect = true) {
+export function getInstFormValues (properties, inst = {}) {
     const values = {}
     properties.forEach(property => {
         const propertyId = property['bk_property_id']
         const propertyType = property['bk_property_type']
-        if (['singleasst', 'multiasst', 'foreignkey'].includes(propertyType)) {
+        if (['singleasst', 'multiasst'].includes(propertyType)) {
             // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
             // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
         } else if (['date', 'time'].includes(propertyType)) {
-            const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-            values[propertyId] = formatedTime || null
-        } else if (['int', 'float'].includes(propertyType)) {
-            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
+            values[propertyId] = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+        } else if (['int'].includes(propertyType)) {
+            values[propertyId] = ['', undefined].includes(inst[propertyId]) ? null : inst[propertyId]
         } else if (['bool'].includes(propertyType)) {
-            if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
-                values[propertyId] = typeof property['option'] === 'boolean' ? property['option'] : false
-            } else {
-                values[propertyId] = !!inst[propertyId]
-            }
+            values[propertyId] = !!inst[propertyId]
         } else if (['enum'].includes(propertyType)) {
-            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
-        } else if (['timezone'].includes(propertyType)) {
-            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
-        } else if (['organization'].includes(propertyType)) {
-            values[propertyId] = inst[propertyId] || null
-        } else if (['table'].includes(propertyType)) {
-            values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, autoSelect))
+            values[propertyId] = [null].includes(inst[propertyId]) ? '' : inst[propertyId]
         } else {
             values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
         }
     })
-    return { ...inst, ...values }
-}
-
-export function formatValues (values, properties) {
-    const formatted = { ...values }
-    const defaultValueMap = {
-        enum: null,
-        int: null,
-        float: null,
-        list: null,
-        bool: false
-    }
-    const convertProperties = properties.filter(property => Object.keys(defaultValueMap).includes(property.bk_property_type))
-    convertProperties.forEach(property => {
-        const key = property.bk_property_id
-        if (formatted.hasOwnProperty(key) && ['', undefined, null].includes(formatted[key])) {
-            formatted[key] = defaultValueMap[property.bk_property_type]
-        }
-    })
-    return formatted
+    return values
 }
 
 /**
@@ -140,7 +141,7 @@ export function formatTime (originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
     if (!originalTime) {
         return ''
     }
-    const formatedTime = moment(originalTime).format(format)
+    let formatedTime = moment(originalTime).format(format)
     if (formatedTime === 'Invalid date') {
         return originalTime
     } else {
@@ -240,13 +241,6 @@ export function getHeaderProperties (properties, customColumns, fixedPropertyIds
     return headerProperties
 }
 
-export function getHeaderPropertyName (property) {
-    if (property.unit) {
-        return `${property.bk_property_name}(${property.unit})`
-    }
-    return property.bk_property_name
-}
-
 /**
  * 深拷贝
  * @param {Object} object - 需拷贝的对象
@@ -254,117 +248,6 @@ export function getHeaderPropertyName (property) {
  */
 export function clone (object) {
     return JSON.parse(JSON.stringify(object))
-}
-
-export function getValidateRules (property) {
-    const rules = {}
-    const {
-        bk_property_type: propertyType,
-        option,
-        isrequired
-    } = property
-    if (isrequired) {
-        rules.required = true
-    }
-    if (option) {
-        if (['int', 'float'].includes(propertyType)) {
-            if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                rules['min_value'] = option.min
-            }
-            if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                rules['max_value'] = option.max
-            }
-        } else if (['singlechar', 'longchar'].includes(propertyType)) {
-            rules['regex'] = option
-        }
-    }
-    if (['singlechar', 'longchar'].includes(propertyType)) {
-        rules[propertyType] = true
-        rules.length = propertyType === 'singlechar' ? 256 : 2000
-    } else if (propertyType === 'int') {
-        rules.number = true
-    } else if (propertyType === 'float') {
-        rules.float = true
-    } else if (propertyType === 'objuser') {
-        rules.length = 2000
-    }
-    return rules
-}
-
-export function getSort (sort, defaultSort = {}) {
-    const order = sort.order || defaultSort.order || 'ascending'
-    const prop = sort.prop || defaultSort.prop || ''
-    if (prop && order === 'descending') {
-        return `-${prop}`
-    }
-    return prop
-}
-
-export function getValue () {
-    return GET_VALUE(...arguments)
-}
-
-export function transformHostSearchParams (params) {
-    const transformedParams = clone(params)
-    const conditions = transformedParams.condition
-    conditions.forEach(item => {
-        item.condition.forEach(field => {
-            const operator = field.operator
-            const value = field.value
-            if (['$in', '$nin', '$multilike'].includes(operator) && !Array.isArray(value)) {
-                field.value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
-            }
-        })
-    })
-    return transformedParams
-}
-
-const defaultPaginationConfig = window.innerHeight > 750
-    ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
-    : { limit: 10, 'limit-list': [10, 50, 100, 500] }
-export function getDefaultPaginationConfig (customConfig = {}) {
-    const RouterQuery = require('@/router/query').default
-    const config = {
-        count: 0,
-        current: parseInt(RouterQuery.get('page', 1)),
-        limit: parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit)),
-        'limit-list': customConfig['limit-list'] || defaultPaginationConfig['limit-list']
-    }
-    return config
-}
-
-export function getPageParams (pagination) {
-    return {
-        start: (pagination.current - 1) * pagination.limit,
-        limit: pagination.limit
-    }
-}
-
-export function localSort (data, compareKey) {
-    return data.sort((A, B) => {
-        return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
-    })
-}
-
-export function createTopologyProperty () {
-    return {
-        bk_biz_id: 0,
-        bk_isapi: true,
-        bk_issystem: false,
-        bk_obj_id: 'host',
-        bk_property_group: undefined,
-        bk_property_group_name: undefined,
-        bk_property_id: '__bk_host_topology__',
-        bk_property_index: Infinity,
-        bk_property_name: i18n.t('业务拓扑'),
-        bk_property_type: 'topology',
-        editable: false,
-        id: Date.now(),
-        ispre: true,
-        isonly: true,
-        isreadonly: true,
-        isrequired: true
-    }
 }
 
 export default {
@@ -375,17 +258,11 @@ export default {
     getDefaultHeaderProperties,
     getCustomHeaderProperties,
     getHeaderProperties,
-    getHeaderPropertyName,
+    flatternList,
+    flatternItem,
+    flatternHostList,
+    flatternHostItem,
     formatTime,
     clone,
-    getInstFormValues,
-    formatValues,
-    getValidateRules,
-    getSort,
-    getValue,
-    transformHostSearchParams,
-    getDefaultPaginationConfig,
-    getPageParams,
-    localSort,
-    createTopologyProperty
+    getInstFormValues
 }

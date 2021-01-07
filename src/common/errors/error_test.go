@@ -19,7 +19,7 @@ import (
 
 func TestLoad(t *testing.T) {
 
-	ccerrmgr, err := NewFactory("./examples/errorres")
+	ccerrmgr, err := New("./examples/errorres")
 	if nil != err {
 		t.Errorf("failed to create cc error manager, error info is %s", err.Error())
 		return

@@ -14,27 +14,25 @@ package model
 
 import (
 	"configcenter/src/apimachinery"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/language"
 	metadata "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // New create a new model factory instance
-func New(clientSet apimachinery.ClientSetInterface, languageIf language.CCLanguageIf) Factory {
+func New(clientSet apimachinery.ClientSetInterface) Factory {
 	return &factory{
 		clientSet: clientSet,
-		language:  languageIf,
 	}
 }
 
 // CreateClassification create classification objects
-func CreateClassification(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, clsItems []metadata.Classification) []Classification {
+func CreateClassification(params types.ContextParams, clientSet apimachinery.ClientSetInterface, clsItems []metadata.Classification) []Classification {
 	results := make([]Classification, 0)
 	for _, cls := range clsItems {
+
 		results = append(results, &classification{
 			cls:       cls,
-			kit:       kit,
+			params:    params,
 			clientSet: clientSet,
 		})
 	}
@@ -43,12 +41,13 @@ func CreateClassification(kit *rest.Kit, clientSet apimachinery.ClientSetInterfa
 }
 
 // CreateObject create  objects
-func CreateObject(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, objItems []metadata.Object) []Object {
+func CreateObject(params types.ContextParams, clientSet apimachinery.ClientSetInterface, objItems []metadata.Object) []Object {
 	results := make([]Object, 0)
 	for _, obj := range objItems {
+
 		results = append(results, &object{
 			obj:       obj,
-			kit:       kit,
+			params:    params,
 			clientSet: clientSet,
 		})
 	}
@@ -57,13 +56,13 @@ func CreateObject(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, objI
 }
 
 // CreateGroup create group  objects
-func CreateGroup(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []GroupInterface {
-	results := make([]GroupInterface, 0)
+func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []Group {
+	results := make([]Group, 0)
 	for _, grp := range groupItems {
 
 		results = append(results, &group{
 			grp:       grp,
-			kit:       kit,
+			params:    params,
 			clientSet: clientSet,
 		})
 	}
@@ -72,15 +71,15 @@ func CreateGroup(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, group
 }
 
 // CreateAttribute create attribute  objects
-func CreateAttribute(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []AttributeInterface {
-	results := make([]AttributeInterface, 0)
+func CreateAttribute(params types.ContextParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []Attribute {
+	results := make([]Attribute, 0)
 	for _, attr := range attrItems {
+
 		results = append(results, &attribute{
 			attr:      attr,
-			kit:       kit,
+			params:    params,
 			clientSet: clientSet,
 		})
-
 	}
 
 	return results
@@ -88,61 +87,60 @@ func CreateAttribute(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, a
 
 type factory struct {
 	clientSet apimachinery.ClientSetInterface
-	language  language.CCLanguageIf
 }
 
-func (cli *factory) CreateObject(kit *rest.Kit) Object {
+func (cli *factory) CreaetObject(params types.ContextParams) Object {
 	obj := &object{
-		FieldValid: FieldValid{
-			lang: cli.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)),
-		},
-		kit:       kit,
+		params:    params,
 		clientSet: cli.clientSet,
 	}
-	obj.SetSupplierAccount(kit.SupplierAccount)
+	obj.SetSupplierAccount(params.SupplierAccount)
 	return obj
 }
 
-func (cli *factory) CreateClassification(kit *rest.Kit) Classification {
+func (cli *factory) CreaetClassification(params types.ContextParams) Classification {
 	cls := &classification{
-		kit:       kit,
+		params:    params,
 		clientSet: cli.clientSet,
 	}
-	cls.SetSupplierAccount(kit.SupplierAccount)
+	cls.SetSupplierAccount(params.SupplierAccount)
 	return cls
 }
 
-func (cli *factory) CreateAttribute(kit *rest.Kit) AttributeInterface {
+func (cli *factory) CreateAttribute(params types.ContextParams) Attribute {
 	attr := &attribute{
-		FieldValid: FieldValid{
-			lang: cli.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)),
-		},
-		kit:       kit,
+		params:    params,
 		clientSet: cli.clientSet,
 	}
-	attr.SetSupplierAccount(kit.SupplierAccount)
+	attr.SetSupplierAccount(params.SupplierAccount)
 	return attr
 }
 
-func (cli *factory) CreateGroup(kit *rest.Kit, bizID int64) GroupInterface {
-	return NewGroup(kit, cli.clientSet, bizID)
+func (cli *factory) CreateGroup(params types.ContextParams) Group {
+	grp := &group{
+		params:    params,
+		clientSet: cli.clientSet,
+	}
+	grp.SetSupplierAccount(params.SupplierAccount)
+	return grp
 }
 
-func (cli *factory) CreateMainLineAssociation(kit *rest.Kit, obj Object, asstKey string, asstObj Object) Association {
+func (cli *factory) CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
 	asst := &association{
 		isMainLine: true,
-		kit:        kit,
+		params:     params,
 		clientSet:  cli.clientSet,
 	}
-	asst.SetSupplierAccount(kit.SupplierAccount)
+	asst.SetSupplierAccount(params.SupplierAccount)
 	return asst
 }
-func (cli *factory) CreateCommonAssociation(kit *rest.Kit, obj Object, asstKey string, asstObj Object) Association {
+func (cli *factory) CreateCommonAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
+
 	asst := &association{
 		isMainLine: false,
-		kit:        kit,
+		params:     params,
 		clientSet:  cli.clientSet,
 	}
-	asst.SetSupplierAccount(kit.SupplierAccount)
+	asst.SetSupplierAccount(params.SupplierAccount)
 	return asst
 }

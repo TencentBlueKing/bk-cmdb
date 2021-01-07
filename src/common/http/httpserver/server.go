@@ -13,13 +13,12 @@
 package httpserver
 
 import (
+	"configcenter/src/common/blog"
+	"configcenter/src/common/ssl"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
-
-	"configcenter/src/common/blog"
-	"configcenter/src/common/ssl"
 
 	"github.com/emicklei/go-restful"
 )
@@ -112,7 +111,7 @@ func (s *HttpServer) RegisterActions(ws *restful.WebService, actions []*Action) 
 			ws.Route(route)
 			blog.Debug("register delete api, url(%s)", action.Path)
 		default:
-			blog.Errorf("unrecognized action verb: %s", action.Verb)
+			blog.Error("unrecognized action verb: %s", action.Verb)
 		}
 	}
 }
@@ -125,7 +124,7 @@ func (s *HttpServer) registerActionsFilter(r *restful.RouteBuilder, filters []re
 
 func (s *HttpServer) ListenAndServe() error {
 
-	var chError = make(chan error, 1)
+	var chError = make(chan error)
 	//list and serve by addrport
 	go func() {
 		addrport := net.JoinHostPort(s.addr, strconv.FormatUint(uint64(s.port), 10))
@@ -133,15 +132,15 @@ func (s *HttpServer) ListenAndServe() error {
 		if s.isSSL {
 			tlsConf, err := ssl.ServerTslConf(s.caFile, s.certFile, s.keyFile, s.certPasswd)
 			if err != nil {
-				blog.Errorf("fail to load certfile, err:%s", err.Error())
+				blog.Error("fail to load certfile, err:%s", err.Error())
 				chError <- fmt.Errorf("fail to load certfile")
 				return
 			}
 			httpserver.TLSConfig = tlsConf
-			blog.Infof("Start https service on(%s)", addrport)
+			blog.Info("Start https service on(%s)", addrport)
 			chError <- httpserver.ListenAndServeTLS("", "")
 		} else {
-			blog.Infof("Start http service on(%s)", addrport)
+			blog.Info("Start http service on(%s)", addrport)
 			chError <- httpserver.ListenAndServe()
 		}
 	}()

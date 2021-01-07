@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -26,33 +27,7 @@ func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	tablename := common.BKTableNameObjAttDes
 	now := time.Now()
 
-	type Attribute struct {
-		ID                int64       `field:"id" json:"id" bson:"id"`
-		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-		ObjectID          string      `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-		PropertyID        string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
-		PropertyName      string      `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name"`
-		PropertyGroup     string      `field:"bk_property_group" json:"bk_property_group" bson:"bk_property_group"`
-		PropertyGroupName string      `field:"bk_property_group_name,ignoretomap" json:"bk_property_group_name" bson:"-"`
-		PropertyIndex     int64       `field:"bk_property_index" json:"bk_property_index" bson:"bk_property_index"`
-		Unit              string      `field:"unit" json:"unit" bson:"unit"`
-		Placeholder       string      `field:"placeholder" json:"placeholder" bson:"placeholder"`
-		IsEditable        bool        `field:"editable" json:"editable" bson:"editable"`
-		IsPre             bool        `field:"ispre" json:"ispre" bson:"ispre"`
-		IsRequired        bool        `field:"isrequired" json:"isrequired" bson:"isrequired"`
-		IsReadOnly        bool        `field:"isreadonly" json:"isreadonly" bson:"isreadonly"`
-		IsOnly            bool        `field:"isonly" json:"isonly" bson:"isonly"`
-		IsSystem          bool        `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem"`
-		IsAPI             bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi"`
-		PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
-		Option            interface{} `field:"option" json:"option" bson:"option"`
-		Description       string      `field:"description" json:"description" bson:"description"`
-		Creator           string      `field:"creator" json:"creator" bson:"creator"`
-		CreateTime        *time.Time  `json:"create_time" bson:"create_time"`
-		LastTime          *time.Time  `json:"last_time" bson:"last_time"`
-	}
-
-	row := &Attribute{
+	row := &metadata.Attribute{
 		ObjectID:      common.BKInnerObjIDProc,
 		PropertyID:    "bk_start_param_regex",
 		PropertyName:  "启动参数匹配规则",

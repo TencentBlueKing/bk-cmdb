@@ -1,12 +1,11 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/emicklei/go-restful"
-	"github.com/emicklei/go-restful-swagger12"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/memcache"
+	"github.com/emicklei/go-restful/swagger"
+	"google.golang.com/appengine"
+	"google.golang.com/appengine/memcache"
+	"net/http"
 )
 
 // This example is functionally the same as ../restful-user-service.go
@@ -153,7 +152,7 @@ func init() {
 		WebServicesUrl: getGaeURL(),
 		ApiPath:        "/apidocs.json",
 
-		// Optionally, specify where the UI is located
+		// Optionally, specifiy where the UI is located
 		SwaggerPath: "/apidocs/",
 		// GAE support static content which is configured in your app.yaml.
 		// This example expect the swagger-ui in static/swagger so you should place it there :)

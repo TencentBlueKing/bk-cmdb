@@ -1,0 +1,279 @@
+@charset "utf-8";
+@import "./reset.scss";
+@import "./conf.scss";
+@import "./transition.scss";
+@import "./iconfont.scss";
+
+/*===================================================*\
+ * 字体大小
+\*===================================================*/
+
+@for $i from 10 through 40 {
+    .f#{$i} {
+        font-size:#{$i}px!important;
+    }
+}
+
+/*===================================================*\
+ * margin 和 padding什
+\*===================================================*/
+
+@mixin initBox($selector, $opt) {
+    @for $i from 0 through 50 {
+        @if ($i % 5==0) {
+            #{$selector}#{$i} {
+                #{$opt}:#{$i}px!important;
+            }
+        }
+    }
+}
+
+@include initBox('.m', 'margin');
+@include initBox('.mt', 'margin-top');
+@include initBox('.mb', 'margin-bottom');
+@include initBox('.ml', 'margin-left');
+@include initBox('.mr', 'margin-right');
+
+@include initBox('.p', 'padding');
+@include initBox('.pt', 'padding-top');
+@include initBox('.pb', 'padding-bottom');
+@include initBox('.pl', 'padding-left');
+@include initBox('.pr', 'padding-right');
+
+
+/*===================================================*\
+ * 基础背景色
+\*===================================================*/
+
+.bk-bg-default {
+    background-color: #fafafa;
+}
+
+.bk-bg-info {
+    background-color: $infoColor;
+}
+
+.bk-bg-primary {
+    background-color: $primaryColor;
+}
+
+.bk-bg-warning {
+    background-color: $warningColor;
+}
+
+.bk-bg-danger {
+    background-color: $dangerColor;
+}
+
+.bk-bg-success {
+    background-color: $successColor;
+}
+
+
+/*===================================================*\
+ * 基础字体色
+\*===================================================*/
+
+.bk-text-default {
+    color: #888;
+}
+
+.bk-text-info {
+    color: $infoColor;
+}
+
+.bk-text-primary {
+    color: $primaryColor;
+}
+
+.bk-text-warning {
+    color: $warningColor;
+}
+
+.bk-text-danger {
+    color: $dangerColor;
+}
+
+.bk-text-success {
+    color: $successColor;
+}
+
+.bk-text-main {
+    color: $fnMainColor;
+}
+
+.bk-text-minor {
+    color: $fnMinorColor;
+}
+
+
+
+/*===================================================*\
+ * 基础字体
+\*===================================================*/
+
+.bk-text-yahei {
+    font-family: $fnFamily;
+}
+
+.fb {
+    font-weight: bold!important;
+}
+
+.fn {
+    font-weight: normal!important;
+}
+
+.lh150 {
+    line-height: 150%!important;
+}
+
+.lh180 {
+    line-height: 180%!important;
+}
+
+.lh200 {
+    line-height: 200%!important;
+}
+
+.unl {
+    text-decoration: underline!important;
+}
+
+.no_unl {
+    text-decoration: none!important;
+}
+
+.tl {
+    text-align: left!important;
+}
+
+.tc {
+    text-align: center!important;
+}
+
+.tr {
+    text-align: right!important;
+}
+
+.bc {
+    margin-left: auto!important;
+    margin-right: auto!important;
+}
+
+.fl {
+    float: left!important;
+}
+
+.fr {
+    float: right!important;
+}
+
+.cb {
+    clear: both!important;
+}
+
+.cl {
+    clear: left!important;
+}
+
+.cr {
+    clear: right!important;
+}
+
+.clearfix:after {
+    content: '.';
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden
+}
+
+.clearfix {
+    display: inline-block;
+}
+
+.clearfix {
+    display: block;
+    zoom: 1;
+}
+
+.vm {
+    vertical-align: middle!important;
+}
+
+.pr {
+    position: relative!important;
+}
+
+.pa {
+    position: absolute!important;
+}
+
+.abs-right {
+    position: absolute!important;
+}
+
+.zoom {
+    zoom: 1
+}
+
+.hidden {
+    visibility: hidden!important;
+}
+
+.none {
+    display: none!important;
+}
+
+.h50 {
+    height: 50px!important;
+}
+
+.h80 {
+    height: 80px!important;
+}
+
+.h100 {
+    height: 100px!important;
+}
+
+.h200 {
+    height: 200px!important;
+}
+
+.h {
+    height: 100%!important;
+}
+
+.bk-has-submenu {
+    position: relative;
+    &:hover {
+        .bk-submenu {
+            display: block;
+        }
+    }
+    .bk-submenu {
+        display: none;
+        position: absolute;
+        width: 100%;
+        left: 0;
+        right: 0;
+        padding: 0;
+        &>li {
+            display: block;
+        }
+    }
+}
+
+%scrollbar {
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 5px;
+        &-thumb {
+            border-radius: 20px;
+            background: #a5a5a5;
+            box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
+        }
+    }
+}

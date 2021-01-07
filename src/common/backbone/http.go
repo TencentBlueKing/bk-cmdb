@@ -13,65 +13,28 @@
 package backbone
 
 import (
-	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
-	"time"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
-	"configcenter/src/common/zkclient"
 )
 
-func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.CancelFunc) error {
-	handler := c.Handler
-	if c.PProfEnabled {
-		rootMux := http.NewServeMux()
-		rootMux.HandleFunc("/", c.Handler.ServeHTTP)
-		rootMux.Handle("/debug/", http.DefaultServeMux)
-		handler = rootMux
-	}
+func ListenServer(c Server) error {
 	server := &http.Server{
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
-		Handler: handler,
+		Handler: c.Handler,
 	}
-	exit := make(chan os.Signal, 1)
-	signal.Notify(exit, syscall.SIGTERM)
-	go func() {
-		for {
-			select {
-			case sig := <-exit:
-				blog.Infof("receive signal %v, begin to shutdown", sig)
-				svcDisc.Cancel()
-				if err := svcDisc.ClearRegisterPath(); err != nil && err != zkclient.ErrNoNode {
-					break
-				}
-				time.Sleep(time.Second * 5)
-				server.SetKeepAlivesEnabled(false)
-				err := server.Shutdown(context.Background())
-				if err != nil {
-					blog.Fatalf("Could not gracefully shutdown the server: %v \n", err)
-				}
-				blog.Info("server shutdown done")
-				cancel()
-				return
-			}
-		}
-	}()
 
 	if len(c.TLS.CertFile) == 0 && len(c.TLS.KeyFile) == 0 {
 		blog.Infof("start insecure server on %s:%d", c.ListenAddr, c.ListenPort)
 		go func() {
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			if err := server.ListenAndServe(); err != nil {
 				blog.Fatalf("listen and serve failed, err: %v", err)
 			}
 		}()
@@ -99,7 +62,7 @@ func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.C
 	server.TLSConfig = tlsC
 	blog.Infof("start secure server on %s:%d", c.ListenAddr, c.ListenPort)
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil {
 			blog.Fatalf("listen and serve failed, err: %v", err)
 		}
 	}()

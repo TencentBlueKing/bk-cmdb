@@ -1,0 +1,415 @@
+@import "./conf";
+@import "./mixins/create-rotate";
+
+.bk-loading {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: $loadingZIndex;
+    .bk-loading-wrapper {
+        text-align: center;
+        line-height: 1;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        -webkit-transform: translate(-50%, -50%);
+    }
+    &-title {
+        text-align: center;
+        font-size: 14px;
+        color: $fnMainColor;
+        line-height: initial;
+        margin-top: 5px;
+    }
+    .bk-loading1 {
+        position: relative;
+        width: 75px;
+        height: 14px;
+        margin: auto;
+        display: inline-block;
+        .point {
+            position: absolute;
+            top: 0;
+            width: 14px;
+            height: 14px;
+            animation-name: scale-animate;
+            animation-duration: .8s;
+            animation-iteration-count: infinite;
+            animation-direction: normal;
+            transform: scale(.6);
+            border-radius: 19px;
+        }
+
+        .point1 {
+            background-color: #fd6154;
+            left: 0;
+            animation-delay: 0.1s;
+        }
+
+        .point2 {
+            background-color: #ffb726;
+            left: 20px;
+            animation-delay: 0.25s;
+        }
+
+        .point3 {
+            background-color: #4cd084;
+            left: 40px;
+            animation-delay: 0.4s;
+        }
+
+        .point4 {
+            background-color: #57a3f1;
+            left: 60px;
+            animation-delay: 0.55s;
+        }
+
+        &.bk-black{
+            .point1,
+            .point2,
+            .point3,
+            .point4{
+                background: #39424e;
+            }
+        }
+    }
+}
+// 加载动画一，点状
+.bk-dot-loading,
+.bk-loading1 {
+    position: relative;
+    width: 75px;
+    height: 14px;
+    margin: auto;
+    display: inline-block;
+    .point {
+        position: absolute;
+        top: 0;
+        width: 14px;
+        height: 14px;
+        animation-name: scale-animate;
+        animation-duration: .8s;
+        animation-iteration-count: infinite;
+        animation-direction: normal;
+        transform: scale(.6);
+        border-radius: 19px;
+    }
+
+    .point1 {
+        background-color: #fd6154;
+        left: 0;
+        animation-delay: 0.1s;
+    }
+
+    .point2 {
+        background-color: #ffb726;
+        left: 20px;
+        animation-delay: 0.25s;
+    }
+
+    .point3 {
+        background-color: #4cd084;
+        left: 40px;
+        animation-delay: 0.4s;
+    }
+
+    .point4 {
+        background-color: #57a3f1;
+        left: 60px;
+        animation-delay: 0.55s;
+    }
+
+    &.bk-black {
+        .point1,
+        .point2,
+        .point3,
+        .point4 {
+            background: #39424e;
+        }
+    }
+}
+
+@keyframes scale-animate {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(.6);
+    }
+}
+
+@-webkit-keyframes scale-animate {
+    0% {
+        -webkit-transform: scale(1);
+    }
+
+    100% {
+        -webkit-transform: scale(.6);
+    }
+}
+
+.bk-spin-loading,
+.bk-loading2 {
+    width: 39px;
+    height: 39px;
+    position: relative;
+    margin: auto;
+    display:inline-block;
+    vertical-align: middle;
+    .rotate {
+        position: absolute;
+        top: 77%;
+        right: 43%;
+        background-color: none;
+        background-color: #39424e\9\0;
+        width: 6px;
+        height: 8px;
+        transform-origin: 50% -10px;
+        border-radius: 8px;
+        transform: scale(0.4);
+        animation-name: fade;
+        animation-duration: 1.2s;
+        animation-iteration-count: infinite;
+        animation-direction: normal;
+    }
+    &.bk-spin-loading-success {
+        .rotate {
+            background: #30d878\9\0;
+            animation-name: fadeSuccess;
+        }
+    }
+    &.bk-spin-loading-danger {
+        .rotate {
+            background:  #ff5656\9\0;
+            animation-name: fadeDanger;
+        }
+    }
+    &.bk-spin-loading-warning {
+        .rotate {
+            background: #ffb400\9\0;
+            animation-name: fadeWarning;
+        }
+    }
+    &.bk-spin-loading-primary {
+        .rotate {
+            background: #3c96ff\9\0;
+            animation-name: fadePrimary;
+        }
+    }
+
+    &.bk-spin-loading-white {
+        .rotate {
+            background: #fff\9\0;
+            animation-name: fadeWhite;
+        }
+    }
+
+    .rotate1 {
+        @include create-rotate(0.45s, -90deg);
+    }
+    .rotate2 {
+        @include create-rotate(0.6s, -45deg);
+    }
+    .rotate3 {
+        @include create-rotate(0.75s, 0deg);
+    }
+    .rotate4 {
+        @include create-rotate(0.9s, 45deg);
+    }
+    .rotate5 {
+        @include create-rotate(1.05s, 90deg);
+    }
+    .rotate6 {
+        @include create-rotate(1.2s, 135deg);
+    }
+    .rotate7 {
+        @include create-rotate(1.35s, 180deg);
+    }
+    .rotate8 {
+        @include create-rotate(1.5s, -135deg);
+    }
+    &.bk-spin-loading-large {
+        width: 69px;
+        height: 69px;
+        .rotate {
+            width: 10px;
+            height: 14px;
+            transform-origin: 50% -18px;
+        }
+    }
+    &.bk-spin-loading-small {
+        width: 27px;
+        height: 27px;
+        .rotate {
+            width: 4px;
+            height: 5px;
+            transform-origin: 50% -7px;
+        }
+    }
+    &.bk-spin-loading-mini {
+        width: 16px;
+        height: 16px;
+        .rotate {
+            width: 2px;
+            height: 3px;
+            transform-origin: 50% -4px;
+        }
+    }
+}
+
+@keyframes fade {
+    0% {
+        background-color: #39424e;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+@-webkit-keyframes fade {
+    0% {
+        background-color: #39424e;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@keyframes fadeSuccess {
+    0% {
+        background-color: $successColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@-webkit-keyframes fadeSuccess {
+    0% {
+        background-color: $successColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@keyframes fadePrimary {
+    0% {
+        background-color: $primaryColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@-webkit-keyframes fadePrimary {
+    0% {
+        background-color: $primaryColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@keyframes fadeDanger {
+    0% {
+        background-color: $dangerColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@-webkit-keyframes fadeDanger {
+    0% {
+        background-color: $dangerColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@keyframes fadeWarning {
+    0% {
+        background-color: $warningColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@-webkit-keyframes fadeWarning {
+    0% {
+        background-color: $warningColor;
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@keyframes fadeWhite {
+    0% {
+        background-color: rgb(255, 255, 255);
+    }
+
+    100% {
+        background-color: none;
+    }
+}
+
+@-webkit-keyframes fadeWhite {
+    0%{
+        background-color: rgb(255, 255, 255);
+    }
+
+    100%{
+        background-color: none;
+    }
+}
+
+// 加载动画容器，.bk-loading 保留，为了兼容
+.bk-loading-box,
+.bk-loading {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: $loadingZIndex;
+    .bk-loading-wrapper {
+        text-align: center;
+        line-height: 1;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    &-title {
+        text-align: center;
+        font-size: 14px;
+        color: $fnMainColor;
+        line-height: initial;
+        margin-top: 5px;
+    }
+}

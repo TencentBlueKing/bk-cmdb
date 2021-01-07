@@ -13,15 +13,14 @@
 package util
 
 import (
+	"configcenter/src/common"
 	"reflect"
 	"testing"
-
-	"configcenter/src/common"
 )
 
 func TestSetQueryOwner(t *testing.T) {
 	type args struct {
-		condition map[string]interface{}
+		condition interface{}
 		ownerID   string
 	}
 	tests := []struct {
@@ -29,33 +28,9 @@ func TestSetQueryOwner(t *testing.T) {
 		args args
 		want map[string]interface{}
 	}{
-		{
-			"",
-			args{nil, "ownerid"},
-			map[string]interface{}{
-				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, "ownerid"}},
-			},
-		},
-		{
-			"",
-			args{nil, common.BKSuperOwnerID},
-			map[string]interface{}{},
-		},
-		{
-			"",
-			args{map[string]interface{}{"name": "haha"}, common.BKSuperOwnerID},
-			map[string]interface{}{
-				"name": "haha",
-			},
-		},
-		{
-			"",
-			args{map[string]interface{}{"name": "haha"}, "ownerid"},
-			map[string]interface{}{
-				"name":                "haha",
-				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, "ownerid"}},
-			},
-		},
+		{"", args{nil, "ownerid"}, map[string]interface{}{
+			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, "ownerid"}},
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -79,26 +54,6 @@ func TestSetModOwner(t *testing.T) {
 		{"", args{nil, "ownerid"}, map[string]interface{}{
 			common.BKOwnerIDField: "ownerid",
 		}},
-		{
-			"",
-			args{nil, common.BKSuperOwnerID},
-			map[string]interface{}{},
-		},
-		{
-			"",
-			args{struct{ Name string }{Name: "haha"}, common.BKSuperOwnerID},
-			map[string]interface{}{
-				"name": "haha",
-			},
-		},
-		{
-			"",
-			args{struct{ Name string }{Name: "haha"}, "ownerid"},
-			map[string]interface{}{
-				"name":                "haha",
-				common.BKOwnerIDField: "ownerid",
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

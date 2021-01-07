@@ -1,0 +1,11 @@
+{
+    "1170001":"Business name must be 1-32 characters",
+    "1170002":"%s",
+    "1170003":"The length of the set name cannot exceed 24 bytes",
+    "1170004":"Each module ID must be a number",
+    "1170005":"Each set ID must be a number",
+    "1170006":"osType must be windows or linux",
+    "1170007":"Multi-module transfers cannot contain default module",
+
+    "":""
+}

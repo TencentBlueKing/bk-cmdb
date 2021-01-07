@@ -44,20 +44,20 @@ func (c CurlyRouter) SelectRoute(
 }
 
 // selectRoutes return a collection of Route from a WebService that matches the path tokens from the request.
-func (c CurlyRouter) selectRoutes(ws *WebService, requestTokens []string) sortableCurlyRoutes {
-	candidates := make(sortableCurlyRoutes, 0, 8)
+func (c CurlyRouter) selectRoutes(ws *WebService, requestTokens []string) []Route {
+	candidates := &sortableCurlyRoutes{[]*curlyRoute{}}
 	for _, each := range ws.routes {
-		matches, paramCount, staticCount := c.matchesRouteByPathTokens(each.pathParts, requestTokens, each.hasCustomVerb)
+		matches, paramCount, staticCount := c.matchesRouteByPathTokens(each.pathParts, requestTokens)
 		if matches {
-			candidates.add(curlyRoute{each, paramCount, staticCount}) // TODO make sure Routes() return pointers?
+			candidates.add(&curlyRoute{each, paramCount, staticCount}) // TODO make sure Routes() return pointers?
 		}
 	}
-	sort.Sort(candidates)
-	return candidates
+	sort.Sort(sort.Reverse(candidates))
+	return candidates.routes()
 }
 
 // matchesRouteByPathTokens computes whether it matches, howmany parameters do match and what the number of static path elements are.
-func (c CurlyRouter) matchesRouteByPathTokens(routeTokens, requestTokens []string, routeHasCustomVerb bool) (matches bool, paramCount int, staticCount int) {
+func (c CurlyRouter) matchesRouteByPathTokens(routeTokens, requestTokens []string) (matches bool, paramCount int, staticCount int) {
 	if len(routeTokens) < len(requestTokens) {
 		// proceed in matching only if last routeToken is wildcard
 		count := len(routeTokens)
@@ -72,15 +72,6 @@ func (c CurlyRouter) matchesRouteByPathTokens(routeTokens, requestTokens []strin
 			return false, 0, 0
 		}
 		requestToken := requestTokens[i]
-		if routeHasCustomVerb && hasCustomVerb(routeToken){
-			if !isMatchCustomVerb(routeToken, requestToken) {
-				return false, 0, 0
-			}
-			staticCount++
-			requestToken = removeCustomVerb(requestToken)
-			routeToken = removeCustomVerb(routeToken)
-		}
-
 		if strings.HasPrefix(routeToken, "{") {
 			paramCount++
 			if colon := strings.Index(routeToken, ":"); colon != -1 {
@@ -117,13 +108,11 @@ func (c CurlyRouter) regularMatchesPathToken(routeToken string, colon int, reque
 	return (matched && err == nil), false
 }
 
-var jsr311Router = RouterJSR311{}
-
 // detectRoute selectes from a list of Route the first match by inspecting both the Accept and Content-Type
 // headers of the Request. See also RouterJSR311 in jsr311.go
-func (c CurlyRouter) detectRoute(candidateRoutes sortableCurlyRoutes, httpRequest *http.Request) (*Route, error) {
+func (c CurlyRouter) detectRoute(candidateRoutes []Route, httpRequest *http.Request) (*Route, error) {
 	// tracing is done inside detectRoute
-	return jsr311Router.detectRoute(candidateRoutes.routes(), httpRequest)
+	return RouterJSR311{}.detectRoute(candidateRoutes, httpRequest)
 }
 
 // detectWebService returns the best matching webService given the list of path tokens.

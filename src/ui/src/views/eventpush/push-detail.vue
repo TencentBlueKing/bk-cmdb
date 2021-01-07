@@ -4,131 +4,130 @@
             <ul class="event-form">
                 <li class="form-item">
                     <label for="" class="label-name">
-                        {{$t('订阅名称')}}<span class="color-danger">*</span>
+                        {{$t('EventPush["推送名称"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入订阅名称')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入推送名称\']')"
                             maxlength="20"
                             v-model.trim="tempEventData['subscription_name']"
-                            :data-vv-name="$t('订阅名称')"
-                            v-validate="'required'">
-                        </bk-input>
-                        <span v-show="errors.has($t('订阅名称'))" class="color-danger">{{ errors.first($t('订阅名称')) }}</span>
+                            :data-vv-name="$t('EventPush[\'推送名称\']')"
+                            v-validate="'required'"
+                        >
+                        <span v-show="errors.has($t('EventPush[\'推送名称\']'))" class="color-danger">{{ errors.first($t('EventPush[\'推送名称\']')) }}</span>
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
-                        {{$t('系统名称')}}
+                        {{$t('EventPush["系统名称"]')}}
                     </label>
                     <div class="item-content">
-                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入系统名称')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入系统名称\']')"
                             v-model.trim="tempEventData['system_name']"
-                            v-validate="'singlechar|length:256'"
-                            :data-vv-name="$t('系统名称')">
-                        </bk-input>
-                        <span v-show="errors.has($t('系统名称'))" class="color-danger">{{ errors.first($t('系统名称')) }}</span>
+                            v-validate="'singlechar'"
+                            :data-vv-name="$t('EventPush[\'系统名称\']')"
+                        >
+                        <span v-show="errors.has($t('EventPush[\'系统名称\']'))" class="color-danger">{{ errors.first($t('EventPush[\'系统名称\']')) }}</span>
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
                         URL<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content url">
+                    <div class="item-content url" :class="{'en': language !== 'zh_CN'}">
                         <div class="url-box">
-                            <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入URL')"
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
                                 v-model.trim="tempEventData['callback_url']"
                                 v-validate="'required|http'"
-                                name="http">
-                            </bk-input>
+                                name="http"
+                            >
                             <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
                         </div>
-                        <bk-button class="test-btn" theme="primary" @click.prevent="testPush">{{$t('测试推送')}}</bk-button>
+                        <bk-button class="test-btn" type="primary" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
-                        {{$t('成功确认方式')}}<span class="color-danger">*</span>
+                        {{$t('EventPush["成功确认方式"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
                         <label for="http" class="cmdb-form-radio cmdb-radio-small">
                             <input type="radio" name="confimType" id="http" value="httpstatus"
                                 v-model="tempEventData['confirm_mode']"
-                            >{{$t('HTTP状态')}}
+                            >{{$t('EventPush["HTTP状态"]')}}
                         </label>
                         <label for="reg" class="cmdb-form-radio cmdb-radio-small">
                             <input type="radio" name="confimType" id="reg" value="regular"
                                 v-model="tempEventData['confirm_mode']"
-                            >{{$t('正则验证')}}
+                            >{{$t('Common["正则验证"]')}}
                         </label>
                         <div class="input-box">
-                            <bk-input type="text" class="cmdb-form-input" :placeholder="$t('请输入正则验证')"
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
                                 v-if="tempEventData['confirm_mode'] === 'regular'"
                                 v-model.trim="tempEventData['confirm_pattern']['regular']"
-                                :data-vv-name="$t('该字段')"
-                                v-validate="'required'">
-                            </bk-input>
-                            <bk-input type="text" class="cmdb-form-input" :placeholder="$t('成功标志')"
+                                :data-vv-name="$t('Common[\'该字段\']')"
+                                v-validate="'required'"
+                            >
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'成功标志\']')"
                                 v-else
                                 v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
-                                v-validate="{ required: true, regex: /^[0-9]+$/ }"
-                                :data-vv-name="$t('该字段')">
-                            </bk-input>
-                            <i class="tip" :class="{ 'reg': tempEventData['confirm_mode'] === 'regular' }"></i>
+                                v-validate="{required: true, regex: /^[0-9]+$/}"
+                                :data-vv-name="$t('Common[\'该字段\']')"
+                            >
+                            <i class="tip" :class="{'reg': tempEventData['confirm_mode'] === 'regular'}"></i>
                         </div>
-                        <span v-show="errors.has($t('该字段'))" class="color-danger">{{ errors.first($t('该字段')) }}</span>
+                        <span v-show="errors.has($t('Common[\'该字段\']'))" class="color-danger">{{ errors.first($t('Common[\'该字段\']')) }}</span>
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
-                        {{$t('超时时间')}}<span class="color-danger">*</span>
+                        {{$t('EventPush["超时时间"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content length-short">
-                        <bk-input type="text" class="cmdb-form-input" :placeholder="$t('单位：秒')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'单位：秒\']')"
                             v-model.trim="tempEventData['time_out']"
-                            v-validate="{ required: true, regex: /^[0-9]+$/ }"
-                            :data-vv-name="$t('超时时间')"
-                            maxlength="10">
-                        </bk-input>
-                        <span class="unit">S</span>
-                        <div v-show="errors.has($t('超时时间'))" class="color-danger">{{ errors.first($t('超时时间')) }}</div>
+                            v-validate="{required: true, regex: /^[0-9]+$/}"
+                            :data-vv-name="$t('EventPush[\'超时时间\']')"
+                            maxlength="10"
+                        ><span class="unit">S</span>
+                        <div v-show="errors.has($t('EventPush[\'超时时间\']'))" class="color-danger">{{ errors.first($t('EventPush[\'超时时间\']')) }}</div>
                     </div>
                 </li>
             </ul>
             <div class="info">
                 <i class="bk-icon icon-exclamation-circle"></i>
-                <span :class="{ 'color-danger': subscriptionFormError }">{{$t('至少选择1个事件')}}</span><i18n path="已选择"><span class="num" place="number">{{selectNum}}</span></i18n>
+                <span :class="{'color-danger': subscriptionFormError}">{{$t('EventPush["至少选择1个事件"]')}}</span><i18n path="EventPush['已选择']"><span class="num" place="number">{{selectNum}}</span></i18n>
             </div>
             <ul class="event-wrapper">
                 <li class="event-box clearfix"
                     :key="index"
                     v-for="(classify, index) in eventPushList">
                     <div class="event-title" @click="toggleEventList(classify)">
-                        <i class="bk-icon icon-angle-down" :class="{ 'up': classify.isHidden }"></i>
+                        <i class="bk-icon icon-angle-down" :class="{'up': classify.isHidden}"></i>
                         {{classify.name}}
                     </div>
                     <transition name="slide">
                         <ul v-if="!classify.isHidden" :style="eventHeight(classify.children.length)">
                             <li v-for="(item, idx) in classify.children" :key="idx" class="event-item">
-                                <template v-if="item.id === 'resource' && classify.classificationId === 'bk_host_manage'">
+                                <template v-if="item.id === 'resource'">
                                     <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                     <div class="options">
                                         <label for="resourceall" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                value="resourceall"
-                                                :checked="tempEventData['subscription_form'][item.id].length === 2"
-                                                id="resourceall" @change="checkAll('resource')"><i class="cmdb-checkbox-text" :title="$t('全选')">{{$t('全选')}}</i>
+                                            value="resourceall"
+                                            :checked="tempEventData['subscription_form'][item.id].length == 2"
+                                            id="resourceall" @change="checkAll('resource')"><i class="cmdb-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                         </label>
                                         <label for="hostcreate" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                value="hostcreate"
-                                                id="hostcreate"><i class="cmdb-checkbox-text" :title="$t('新增主机')">{{$t('新增主机')}}</i>
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            value="hostcreate"
+                                            id="hostcreate"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'新增主机\']')">{{$t('EventPush["新增主机"]')}}</i>
                                         </label>
                                         <label for="hostdelete" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                value="hostdelete"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                id="hostdelete"><i class="cmdb-checkbox-text" :title="$t('删除主机')">{{$t('删除主机')}}</i>
+                                            value="hostdelete"
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            id="hostdelete"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'删除主机\']')">{{$t('EventPush["删除主机"]')}}</i>
                                         </label>
                                     </div>
                                 </template>
@@ -137,27 +136,27 @@
                                     <div class="options">
                                         <label :for="'hostall'" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                :value="'hostall'"
-                                                :checked="tempEventData['subscription_form'][item.id].length === 3"
-                                                :id="'hostall'" @change="checkAll('host')"><i class="cmdb-checkbox-text" :title="$t('全选')">{{$t('全选')}}</i>
+                                            :value="'hostall'"
+                                            :checked="tempEventData['subscription_form'][item.id].length == 3"
+                                            :id="'hostall'" @change="checkAll('host')"><i class="cmdb-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                         </label>
-                                        <label :for="item.id + 'update'" class="cmdb-form-checkbox cmdb-checkbox-small">
+                                        <label :for="item.id+'update'" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                :value="item.id + 'update'"
-                                                :id="item.id + 'update'"><i class="cmdb-checkbox-text" :title="$t('编辑')">{{$t('编辑')}}</i>
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            :value="item.id+'update'"
+                                            :id="item.id+'update'"><i class="cmdb-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
                                         </label>
                                         <label for="moduletransfer" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                value="moduletransfer"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                id="moduletransfer"><i class="cmdb-checkbox-text" :title="$t('模块转移')">{{$t('模块转移')}}</i>
+                                            value="moduletransfer"
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            id="moduletransfer"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'模块转移\']')">{{$t('EventPush["模块转移"]')}}</i>
                                         </label>
                                         <label for="hostidentifier" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                value="hostidentifier"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                id="hostidentifier"><i class="cmdb-checkbox-text" :title="$t('主机身份')">{{$t('主机身份')}}</i>
+                                            value="hostidentifier"
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            id="hostidentifier"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'主机身份\']')">{{$t('EventPush["主机身份"]')}}</i>
                                         </label>
                                     </div>
                                 </template>
@@ -166,28 +165,28 @@
                                     <div class="options">
                                         <label :for="`${item.id}all`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                :value="`${item.id}all`"
-                                                @change="checkAll(item.id)"
-                                                :checked="tempEventData['subscription_form'][item.id].length === 3"
-                                                :id="`${item.id}all`"><i class="cmdb-checkbox-text" :title="$t('全选')">{{$t('全选')}}</i>
+                                            :value="`${item.id}all`"
+                                            @change="checkAll(item.id)"
+                                            :checked="tempEventData['subscription_form'][item.id].length == 3"
+                                            :id="`${item.id}all`"><i class="cmdb-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                         </label>
                                         <label :for="`${item.id}create`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                :value="`${item.id}create`"
-                                                :id="`${item.id}create`"><i class="cmdb-checkbox-text" :title="$t('新增')">{{$t('新增')}}</i>
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            :value="`${item.id}create`"
+                                            :id="`${item.id}create`"><i class="cmdb-checkbox-text" :title="$t('Common[\'新增\']')">{{$t('Common["新增"]')}}</i>
                                         </label>
                                         <label :for="`${item.id}update`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                :value="`${item.id}update`"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                :id="`${item.id}update`"><i class="cmdb-checkbox-text" :title="$t('编辑')">{{$t('编辑')}}</i>
+                                            :value="`${item.id}update`"
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            :id="`${item.id}update`"><i class="cmdb-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
                                         </label>
                                         <label :for="`${item.id}delete`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
-                                                :value="`${item.id}delete`"
-                                                v-model="tempEventData['subscription_form'][item.id]"
-                                                :id="`${item.id}delete`"><i class="cmdb-checkbox-text" :title="$t('删除')">{{$t('删除')}}</i>
+                                            :value="`${item.id}delete`"
+                                            v-model="tempEventData['subscription_form'][item.id]"
+                                            :id="`${item.id}delete`"><i class="cmdb-checkbox-text" :title="$t('Common[\'删除\']')">{{$t('Common["删除"]')}}</i>
                                         </label>
                                     </div>
                                 </template>
@@ -198,12 +197,12 @@
             </ul>
         </div>
         <footer class="footer">
-            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="save">{{type === 'create' ? $t('提交') : $t('保存')}}</bk-button>
-            <bk-button theme="default" class="btn vice-btn" @click="cancel">{{$t('取消')}}</bk-button>
+            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
+            <bk-button type="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
         <v-pop
             v-if="isPopShow"
-            :callback-u-r-l="tempEventData['callback_url']"
+            :callbackURL="tempEventData['callback_url']"
             @closePop="isPopShow = false"
         >
         </v-pop>
@@ -212,11 +211,8 @@
 
 <script>
     import vPop from './pop'
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
-        components: {
-            vPop
-        },
         props: {
             curPush: {
                 type: Object
@@ -255,14 +251,16 @@
             }
         },
         computed: {
-            ...mapGetters('objectModelClassify', ['classifications']),
+            ...mapGetters([
+                'language'
+            ]),
             selectNum () {
                 let num = 0
-                const {
+                let {
                     subscription_form: subscriptionForm
                 } = this.tempEventData
-                for (const key in subscriptionForm) {
-                    const item = subscriptionForm[key]
+                for (let key in subscriptionForm) {
+                    let item = subscriptionForm[key]
                     if (item.length) {
                         num += item.length
                     }
@@ -273,10 +271,10 @@
                 return num
             },
             params () {
-                const params = this.$tools.clone(this.tempEventData)
+                let params = this.$tools.clone(this.tempEventData)
                 params['confirm_pattern'] = this.tempEventData['confirm_mode'] === 'httpstatus' ? this.tempEventData['confirm_pattern']['httpstatus'] : this.tempEventData['confirm_pattern']['regular']
-                const subscriptionForm = []
-                for (const key in params['subscription_form']) {
+                let subscriptionForm = []
+                for (let key in params['subscription_form']) {
                     if (params['subscription_form'][key].length) {
                         subscriptionForm.push(params['subscription_form'][key].join(','))
                     }
@@ -286,19 +284,15 @@
                 return params
             }
         },
-        created () {
-            this.setEventPushList()
-            this.initData()
-        },
         methods: {
             ...mapActions('eventSub', [
                 'subscribeEvent',
                 'updateEventSubscribe'
             ]),
             isCloseConfirmShow () {
-                const tempEventData = this.tempEventData
-                const eventData = this.eventData
-                for (const key in tempEventData) {
+                let tempEventData = this.tempEventData
+                let eventData = this.eventData
+                for (let key in tempEventData) {
                     if (key === 'confirm_pattern') {
                         if (tempEventData[key][tempEventData['confirm_mode']] !== eventData[key][eventData['confirm_mode']]) {
                             return true
@@ -309,8 +303,8 @@
                                 return true
                             }
                         } else {
-                            const tempList = JSON.stringify(tempEventData[key])
-                            const list = JSON.stringify(eventData[key])
+                            let tempList = JSON.stringify(tempEventData[key])
+                            let list = JSON.stringify(eventData[key])
                             if (tempList !== list) {
                                 return true
                             }
@@ -348,16 +342,15 @@
                 if (!await this.checkParams()) {
                     return
                 }
-                // eslint-disable-next-line
                 let res = null
                 if (this.type === 'create') {
-                    res = await this.subscribeEvent({ bkBizId: 0, params: this.params, config: { requestId: 'savePush' } })
+                    res = await this.subscribeEvent({bkBizId: 0, params: this.params, config: {requestId: 'savePush'}})
                 } else {
-                    res = await this.updateEventSubscribe({ bkBizId: 0, subscriptionId: this.curPush['subscription_id'], params: this.params, config: { requestId: 'savePush' } })
+                    res = await this.updateEventSubscribe({bkBizId: 0, subscriptionId: this.curPush['subscription_id'], params: this.params, config: {requestId: 'savePush'}})
                 }
                 this.$emit('saveSuccess')
-                this.$success(this.$t('保存成功'))
-                this.eventData = { ...this.tempEventData }
+                this.$success(this.$t('EventPush["保存成功"]'))
+                this.eventData = {...this.tempEventData}
             },
             cancel () {
                 this.$emit('cancel')
@@ -382,23 +375,22 @@
                 return `height: ${len * 32}px`
             },
             setEventPushList () {
-                const eventPushList = []
-                const subscriptionForm = {}
-                this.classifications.map(classify => {
+                let eventPushList = []
+                let subscriptionForm = {}
+                this.$classifications.map(classify => {
                     if (classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_host_manage') {
-                        const event = {
+                        let event = {
                             name: classify['bk_classification_name'],
                             isHidden: false,
-                            classificationId: classify['bk_classification_id'],
                             children: []
                         }
                         if (classify['bk_classification_id'] === 'bk_biz_topo') {
                             event.children.push({
                                 id: 'set',
-                                name: this.$t('集群')
+                                name: this.$t("Hosts['集群']")
                             }, {
                                 id: 'module',
-                                name: this.$t('模块')
+                                name: this.$t("Hosts['模块']")
                             })
                             subscriptionForm['set'] = []
                             subscriptionForm['module'] = []
@@ -419,14 +411,13 @@
                 eventPushList.unshift({
                     isDefault: true,
                     isHidden: false,
-                    classificationId: 'bk_host_manage',
-                    name: this.$t('主机业务'),
+                    name: this.$t('EventPush["主机业务"]'),
                     children: [{
                         id: 'resource',
-                        name: this.$t('主机池')
+                        name: this.$t('EventPush["资源池"]')
                     }, {
                         id: 'host',
-                        name: this.$t('主机')
+                        name: this.$t('EventPush["主机"]')
                     }]
                 })
                 this.$set(this.tempEventData, 'subscription_form', subscriptionForm)
@@ -434,7 +425,7 @@
             },
             initData () {
                 if (this.type === 'edit') {
-                    const subscriptionForm = {}
+                    let subscriptionForm = {}
                     this.curPush['subscription_form'].map(item => {
                         switch (item) {
                             case 'hostcreate':
@@ -484,12 +475,19 @@
                             httpstatus: this.curPush['confirm_mode'] === 'httpstatus' ? this.curPush['confirm_pattern'] : '',
                             regular: this.curPush['confirm_mode'] === 'regular' ? this.curPush['confirm_pattern'] : ''
                         },
-                        subscription_form: { ...this.tempEventData['subscription_form'], ...subscriptionForm },
+                        subscription_form: {...this.tempEventData['subscription_form'], ...subscriptionForm},
                         time_out: this.curPush['time_out']
                     }
                 }
                 this.eventData = this.$tools.clone(this.tempEventData)
             }
+        },
+        created () {
+            this.setEventPushList()
+            this.initData()
+        },
+        components: {
+            vPop
         }
     }
 </script>
@@ -513,7 +511,7 @@
         }
         .detail-box{
             padding: 20px 30px;
-            height: calc(100% - 51px);
+            height: calc(100% - 63px);
             overflow-y: auto;
             @include scrollbar;
         }
@@ -534,7 +532,6 @@
                 text-align: right;
                 line-height: 36px;
                 font-size: 14px;
-                @include ellipsis;
                 .color-danger{
                     position: absolute;
                     top: 2px;
@@ -555,6 +552,14 @@
                         vertical-align: top;
                         margin-left: 10px;
                         width: 96px;
+                    }
+                    &.en {
+                        .cmdb-form-input {
+                            width: calc(100% - 135px);
+                        }
+                        .test-btn {
+                            width: 125px;
+                        }
                     }
                 }
                 span {
@@ -594,7 +599,7 @@
                 }
                 &.length-short{
                     position: relative;
-                    .cmdb-form-input{
+                    input{
                         width: 97px;
                         margin-right: 10px;
                     }
@@ -649,12 +654,11 @@
                     width: 32px;
                     text-align: center;
                     margin-right: -6px;
-                    font-size: 20px;
+                    font-size: 12px;
                     font-weight: bold;
                     transition: all .5s;
-                    vertical-align: top;
                     &.up{
-                        transform: rotate(-90deg);
+                        transform: rotate(180deg);
                     }
                 }
                 ul{
@@ -714,12 +718,13 @@
             }
         }
         .footer{
-            padding: 9px 20px;
-            border-top: 1px solid $cmdbBorderColor;
-            background-color: #fafbfd;
+            height: 63px;
+            line-height: 63px;
+            background: #f9f9f9;
             font-size: 0;
+            padding-left: 130px;
             .btn{
-                margin-right: 10px;
+                margin-right: 11px;
             }
         }
     }

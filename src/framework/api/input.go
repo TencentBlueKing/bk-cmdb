@@ -13,9 +13,9 @@
 package api
 
 import (
-	"time"
-
 	"configcenter/src/framework/core/input"
+	//"fmt"
+	"time"
 )
 
 var (
@@ -32,7 +32,7 @@ func RegisterInputer(inputer input.Inputer) {
 	})
 }
 
-// RegisterFrequencyInputer execute a non-blocking timing inputer, execute periodically.
+// RegisterFrequencyInputer execute a non-blocking timing inputer, only execute once
 func RegisterFrequencyInputer(inputer input.Inputer, frequency time.Duration) {
 
 	if frequency < time.Minute*5 {

@@ -1,0 +1,29 @@
+$borderColor: #ded8d8;
+
+.bk-collapse-item {
+    .bk-collapse-item-header {
+        padding: 0px 10px;
+        height: 42px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        line-height: 42px;
+        font-size: 14px;
+        cursor: pointer;
+        .collapse-expand {
+            position: relative;
+            transform: rotate(90deg);
+        }
+        span {
+            transition: all linear 0.2s;
+        }
+        &:hover {
+            color: #3c96ff;
+        }
+    }
+    .bk-collapse-item-content {
+        padding: 0px 10px;
+    }
+    .collapse-transition {
+        transition: .2s height ease-in-out, .2s padding-top ease-in-out, .2s padding-bottom ease-in-out
+    }
+}

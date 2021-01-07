@@ -18,36 +18,28 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
 
-var admin = "admin"
-
 func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-
-	if count, err := db.Table(common.BKTableNameBaseApp).Find(mapstr.MapStr{common.BKAppNameField: common.DefaultAppName}).Count(ctx); err != nil {
-		return err
-	} else if count >= 1 {
-		return nil
-	}
-
 	// add default biz
 	defaultBiz := map[string]interface{}{}
 	defaultBiz[common.BKAppNameField] = common.DefaultAppName
-	defaultBiz[common.BKMaintainersField] = admin
-	defaultBiz[common.BKProductPMField] = admin
+	defaultBiz[common.BKMaintainersField] = "admin"
+	defaultBiz[common.BKProductPMField] = "admin"
 	defaultBiz[common.BKTimeZoneField] = "Asia/Shanghai"
 	defaultBiz[common.BKLanguageField] = "1" //中文
 	defaultBiz[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 	defaultBiz[common.BKOwnerIDField] = conf.OwnerID
+	defaultBiz[common.BKSupplierIDField] = common.BKDefaultSupplierID
 	defaultBiz[common.BKDefaultField] = common.DefaultAppFlag
 	defaultBiz[common.CreateTimeField] = time.Now()
 	defaultBiz[common.LastTimeField] = time.Now()
 	filled := fillEmptyFields(defaultBiz, AppRow())
-	bizID, _, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseApp, defaultBiz, common.BKAppIDField, []string{common.BKOwnerIDField, common.BKAppNameField, common.BKDefaultField}, append(filled, common.BKAppIDField))
+	bizID, _, err := upgrader.Upsert(ctx, db, "cc_ApplicationBase", defaultBiz, common.BKAppIDField, []string{common.BKOwnerIDField, common.BKAppNameField, common.BKDefaultField}, append(filled, common.BKAppIDField))
 	if err != nil {
 		blog.Error("add defaultBiz error ", err.Error())
 		return err
@@ -63,7 +55,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultSet[common.CreateTimeField] = time.Now()
 	defaultSet[common.LastTimeField] = time.Now()
 	filled = fillEmptyFields(defaultSet, SetRow())
-	setID, _, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseSet, defaultSet, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKSetNameField, common.BKAppIDField, common.BKDefaultField}, append(filled, common.BKSetIDField))
+	setID, _, err := upgrader.Upsert(ctx, db, "cc_SetBase", defaultSet, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKSetNameField, common.BKAppIDField, common.BKDefaultField}, append(filled, common.BKSetIDField))
 	if err != nil {
 		blog.Error("add defaultSet error ", err.Error())
 		return err
@@ -80,7 +72,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultResModule[common.CreateTimeField] = time.Now()
 	defaultResModule[common.LastTimeField] = time.Now()
 	filled = fillEmptyFields(defaultResModule, ModuleRow())
-	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, defaultResModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", defaultResModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultResModule error ", err.Error())
 		return err
@@ -95,7 +87,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultFaultModule[common.CreateTimeField] = time.Now()
 	defaultFaultModule[common.LastTimeField] = time.Now()
 	filled = fillEmptyFields(defaultFaultModule, ModuleRow())
-	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, defaultFaultModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", defaultFaultModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultFaultModule error ", err.Error())
 		return err
@@ -104,7 +96,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	return nil
 }
 
-func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
+func fillEmptyFields(data map[string]interface{}, rows []*metadata.Attribute) []string {
 	filled := []string{}
 	for _, field := range rows {
 		fieldName := field.PropertyID
@@ -121,11 +113,10 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 		case common.FieldTypeInt:
 			data[fieldName] = nil
 		case common.FieldTypeEnum:
-			// parse enum option failure. not set default value
-			enumOptions, _ := metadata.ParseEnumOption(context.Background(), option)
+			enumOptions := validator.ParseEnumOption(option)
 			v := ""
 			if len(enumOptions) > 0 {
-				var defaultOption *metadata.EnumVal
+				var defaultOption *validator.EnumVal
 				for _, k := range enumOptions {
 					if k.IsDefault {
 						defaultOption = &k
@@ -143,7 +134,7 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 			data[fieldName] = ""
 		case common.FieldTypeUser:
 			data[fieldName] = ""
-		case "multiasst":
+		case common.FieldTypeMultiAsst:
 			data[fieldName] = nil
 		case common.FieldTypeTimeZone:
 			data[fieldName] = nil

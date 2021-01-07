@@ -1,0 +1,180 @@
+@import "./conf";
+@import "./form";
+@import './mixins/scroller.scss';
+
+.bk-tag-selector {
+    position: relative;
+    .bk-tag-input {
+        padding: 3px 0 0 3px;
+        border: 1px solid #e6e6e7;
+        min-height: 36px;
+        border-radius: 2px;
+        font-size: 12px;
+        position: relative;
+        z-index: 1;
+        background: #fff;
+        cursor: pointer;
+        overflow: hidden;
+        &.disabled {
+            background: #fafafa;
+            cursor: not-allowed;
+            .tag-list {
+                > li {
+                    cursor: not-allowed;
+                }
+                .key-node {
+                    padding-right: 2px;
+                }
+            }
+        }
+        .placeholder {
+            margin: 0;
+            padding: 0;
+            position: absolute;
+            top: 7px;
+            left: 10px;
+            color: #c3cdd7;
+        }
+        .input {
+            width: 10px;
+            height: 24px;
+            padding: 0;
+            border: 0;
+            box-shadow: border-box;
+            outline: none;
+            max-width: 295px;
+            margin-top: 2px;
+        }
+        .tag-list {
+            display: inline-block;
+            max-height: 135px;
+            overflow: auto;
+            float: left;
+            margin: 0;
+            padding: 0;
+            >li {
+                display: inline-block;
+                cursor: pointer;
+                position: relative;
+                margin: 0 3px 3px 0;
+                border-radius: 2px;
+                float: left;
+                height: 28px;
+                line-height: 26px;
+                &.key-node {
+                    border: solid 1px #e6e6e7;
+                }
+            }
+            .key-node {
+                background: #fafafa;
+                .remove-key {
+                    display: inline-block;
+                }
+            }
+            .remove-key {
+                position: relative;
+                width: 16px;
+                height: 16px;
+                line-height: 16px;
+                top: 2px;
+                right: 5px;
+                display: inline-block;
+                font-size: 12px;
+                text-align: center;
+                color: #666;
+                display: none;
+                text-decoration: none;
+            }
+        }
+        .tag {
+            display: inline-block;
+            background-color: #fafafa;
+            color: #666;
+            font-size: 12px;
+            border: none;
+            vertical-align: middle;
+            box-sizing: border-box;
+            overflow: hidden;
+            border-radius: 2px;
+            padding: 0 11px;
+            min-height: 21px;
+            line-height: 21px;
+            word-break: break-all;
+            max-width: 200px;
+            overflow: hidden;
+            display: inline-block;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .dropdown-actions {
+            width: 100%;
+            font-size: 0;
+            .bk-button {
+                width: 50%;
+                margin: 0;
+                border-radius: 0;
+                border-width: 0;
+                border-top-width: 1px;
+            }
+        }
+    }
+    .bk-selector-list {
+        position: absolute;
+        top: calc(100% + 5px);
+        left: 0;
+        right: 0;
+        box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
+        border-radius: 2px;
+        background-color: #fff;
+        z-index: 100;
+        overflow-y: hidden;
+        > ul {
+            @include scroller;
+            max-height: 160px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            overflow-y: auto;
+        }
+        &-item {
+            position: relative;
+            width: 100%;
+            border-left: $formBorderColor;
+            border-right: $formBorderColor;
+            background-color: #fff;
+            cursor: pointer;
+            &:first-child {
+                border-top: $formBorderColor;
+            }
+            &:last-child {
+                border-bottom: $formBorderColor;
+            }
+            &:hover,
+            &.bk-selector-selected {
+                background-color: #eef6fe;
+                color: $primaryColor;
+                .bk-selector-tools {
+                    display: block;
+                }
+            }
+            .text {
+                padding: 0 10px;
+                line-height: 42px;
+                font-size: 12px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .bk-selector-tools {
+                position: absolute;
+                display: none;
+                top: 10px;
+                right: 0;
+                font-size: 12px;
+                .bk-selector-list-icon {
+                    margin-right: 14px;
+                }
+            }
+        }
+    }
+}

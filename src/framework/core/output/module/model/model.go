@@ -34,7 +34,7 @@ type model struct {
 	Description string `field:"description"`
 	Creator     string `field:"creator"`
 	Modifier    string `field:"modifier"`
-	id          int64
+	id          int
 }
 
 func (cli *model) ToMapStr() types.MapStr {

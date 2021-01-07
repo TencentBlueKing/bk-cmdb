@@ -13,169 +13,105 @@
 package service
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/http/rest"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateObjectGroup create a new object group
+func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
-	dataWithModelBizID := MapStrWithModelBizID{}
-	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
-		ctx.RespAutoError(err)
-		return
+	rsp, err := s.core.GroupOperation().CreateObjectGroup(params, data)
+	if nil != err {
+		return nil, err
 	}
 
-	var rsp model.GroupInterface
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		var err error
-		rsp, err = s.Core.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithModelBizID.Data, dataWithModelBizID.ModelBizID)
-		if nil != err {
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	retData := rsp.ToMapStr()
-	ctx.RespEntity(retData)
+	return rsp.ToMapStr()
 }
 
 // UpdateObjectGroup update the object group information
-func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
+func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cond := &metadata.UpdateGroupCondition{}
-	err := ctx.DecodeInto(cond)
+
+	err := data.MarshalJSONInto(cond)
 	if nil != err {
-		ctx.RespAutoError(err)
-		return
+		return nil, err
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
-		if nil != err {
-			return err
-		}
-
-		// query attribute groups with given condition, so that update them to iam after updated
-		searchCondition := condition.CreateCondition()
-		if cond.Condition.ID != 0 {
-			searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
-		}
-		result, err := s.Core.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.ModelBizID)
-		if err != nil {
-			blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
-		attributeGroups := make([]metadata.Group, 0)
-		for _, item := range result {
-			attributeGroups = append(attributeGroups, item.Group())
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
+	err = s.core.GroupOperation().UpdateObjectGroup(params, cond)
+	if nil != err {
+		return nil, err
 	}
-	ctx.RespEntity(nil)
+
+	return nil, nil
 }
 
 // DeleteObjectGroup delete the object group
-func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
-	gid, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	gid, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if nil != err {
-		ctx.RespAutoError(err)
-		return
+		return nil, err
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
-		if nil != err {
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
+	err = s.core.GroupOperation().DeleteObjectGroup(params, gid)
+	if nil != err {
+		return nil, err
 	}
-	ctx.RespEntity(nil)
+
+	return nil, nil
 }
 
-// UpdateObjectAttributeGroupProperty update the object attribute belongs to group information
-func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
-	requestBody := struct {
-		Data       []metadata.PropertyGroupObjectAtt `json:"data" field:"json"`
-		ModelBizID int64                             `json:"bk_biz_id"`
-	}{}
-	if err := ctx.DecodeInto(&requestBody); err != nil {
-		ctx.RespAutoError(err)
-		return
+func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (frtypes.MapStr, error) {
+
+	datas := []metadata.PropertyGroupObjectAtt{}
+	err := json.Unmarshal(data, &datas)
+	if nil != err {
+		return nil, err
+	}
+	result := frtypes.MapStr{}
+	result.Set("origin", datas)
+	return result, nil
+}
+
+// UpdateObjectAttributeGroup update the object attribute belongs to group information
+func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	datas := make([]metadata.PropertyGroupObjectAtt, 0)
+	val, exists := data.Get("origin")
+	if !exists {
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	objectAtt := requestBody.Data
-	if objectAtt == nil {
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "param not set"))
-		return
+	datas, _ = val.([]metadata.PropertyGroupObjectAtt)
+
+	err := s.core.GroupOperation().UpdateObjectAttributeGroup(params, datas)
+	if nil != err {
+		return nil, err
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.ModelBizID)
-		if nil != err {
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
+	return nil, nil
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
+func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_object_id"), ctx.Request.PathParameter("property_id"), ctx.Request.PathParameter("group_id"))
-		if nil != err {
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
+	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("object_id"), pathParams("property_id"), pathParams("group_id"))
+	if nil != err {
+		return nil, err
 	}
-	ctx.RespEntity(nil)
+
+	return nil, nil
 }
 
 // SearchGroupByObject search the groups by the object
-func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
+func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cond := condition.CreateCondition()
-
-	modelType := new(ModelType)
-	if err := ctx.DecodeInto(modelType); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	resp, err := s.Core.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), cond, modelType.BizID)
-	if nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(resp)
-
+	return s.core.GroupOperation().FindGroupByObject(params, pathParams("object_id"), cond)
 }

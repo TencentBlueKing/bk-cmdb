@@ -14,49 +14,82 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/storage/dal/redis"
+	"configcenter/src/common/version"
+	confCenter "configcenter/src/web_server/app/config"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
+	"configcenter/src/web_server/middleware"
 	websvc "configcenter/src/web_server/service"
 
-	"github.com/holmeswang/contrib/sessions"
+	redis "gopkg.in/redis.v5"
 )
 
 type WebServer struct {
 	Config options.Config
 }
 
-func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+func Run(ctx context.Context, op *options.ServerOption) error {
 
-	// init esb client
-	esb.InitEsbClient(nil)
-
-	svrInfo, err := types.NewServerInfo(op.ServConf)
+	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	c := &util.APIMachineryConfig{
+		ZkAddr:    op.ServConf.RegDiscover,
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
+	}
+
+	machinery, err := apimachinery.NewApiMachinery(c)
+	if err != nil {
+		return fmt.Errorf("new api machinery failed, err: %v", err)
+	}
+
 	service := new(websvc.Service)
+	service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
+	}
 
 	webSvr := new(WebServer)
-	service.Config = &webSvr.Config
-	input := &backbone.BackboneParameter{
-		ConfigUpdate: webSvr.onServerConfigUpdate,
-		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
-		SrvInfo:      svrInfo,
+	webSvr.getConfig(op.ServConf.RegDiscover)
+	service.Config = webSvr.Config
+	server := backbone.Server{
+		ListenAddr: svrInfo.IP,
+		ListenPort: svrInfo.Port,
+		Handler:    service.WebService(),
+		TLS:        backbone.TLSConfig{},
 	}
-	engine, err := backbone.NewBackbone(ctx, input)
+
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_WEBSERVER, svrInfo.IP)
+	bonC := &backbone.Config{
+		RegisterPath: regPath,
+		RegisterInfo: *svrInfo,
+		CoreAPI:      machinery,
+		Server:       server,
+	}
+
+	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+		types.CC_MODULE_WEBSERVER,
+		op.ServConf.ExConfig,
+		webSvr.onServerConfigUpdate,
+		bonC)
+
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -71,100 +104,141 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}
 	}
 	if false == configReady {
-		return errors.New("configuration item not found")
+		return fmt.Errorf("Configuration item not found")
 	}
 
-	webSvr.Config.Redis, err = engine.WithRedis()
-	if err != nil {
-		return err
-	}
-	var redisErr error
-	if webSvr.Config.Redis.MasterName == "" {
-		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
-		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address, webSvr.Config.Redis.Password, []byte("secret"))
-		if redisErr != nil {
-			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
-		}
-	} else {
-		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
-		address := strings.Split(webSvr.Config.Redis.Address, ";")
-		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp", webSvr.Config.Redis.Password, []byte("secret"))
-		if redisErr != nil {
-			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
-		}
-	}
-	cacheCli, err := redis.NewFromConfig(webSvr.Config.Redis)
+	redisAddress := webSvr.Config.Session.Host
+	redisSecret := strings.TrimSpace(webSvr.Config.Session.Secret)
 
-	if nil != err {
-		return err
+	if !strings.Contains(redisAddress, ":") && len(webSvr.Config.Session.Port) > 0 {
+		redisAddress = webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
 	}
+
+	cacheCli := redis.NewClient(
+		&redis.Options{
+			Addr:     redisAddress,
+			PoolSize: 100,
+			Password: redisSecret,
+			DB:       0,
+		})
 
 	service.Engine = engine
-	service.CacheCli = cacheCli
 	service.Logics = &logics.Logics{Engine: engine}
-	service.Config = &webSvr.Config
+	service.Config = webSvr.Config
+	middleware.Engine = engine
+	middleware.CacheCli = cacheCli
 
-	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
-	if err != nil {
-		return err
+	select {}
+	return nil
+
+}
+
+func (w *WebServer) getConfig(regDiscover string) error {
+	cfCenter := confCenter.NewConfCenter(regDiscover)
+	cfCenter.GetConfigOnce()
+
+	/// fetch config of itselft
+	var confData []byte
+	_ = confData
+	for {
+		confData = cfCenter.GetConfigureCtx()
+		if confData == nil {
+			blog.Warnf("fail to get configure, will get again")
+			time.Sleep(time.Second * 2)
+			continue
+		} else {
+			blog.Infof("get configure. ctx(%s)", string(confData))
+			cfCenter.Stop()
+			break
+		}
 	}
+	config := cfCenter.ParseConf(confData)
+	w.Config.Site.DomainUrl = config["site.domain_url"] + "/"
+	w.Config.Site.HtmlRoot = config["site.html_root"]
+	w.Config.Site.ResourcesPath = config["site.resources_path"]
+	w.Config.Site.BkLoginUrl = config["site.bk_login_url"]
+	w.Config.Site.AppCode = config["site.app_code"]
+	w.Config.Site.CheckUrl = config["site.check_url"]
+	w.Config.Site.AccountUrl = config["site.bk_account_url"]
+	w.Config.Site.BkHttpsLoginUrl = config["site.bk_https_login_url"]
+	w.Config.Site.HttpsDomainUrl = config["site.https_domain_url"]
 
-	select {
-	case <-ctx.Done():
+	w.Config.Session.Name = config["session.name"]
+	w.Config.Session.Skip = config["session.skip"]
+	w.Config.Session.Host = config["session.host"]
+	w.Config.Session.Port = config["session.port"]
+	w.Config.Session.Secret = strings.TrimSpace(config["session.secret"])
+	w.Config.Session.MultipleOwner = config["session.multiple_owner"]
+	w.Config.Session.DefaultLanguage = config["session.defaultlanguage"]
+	w.Config.LoginVersion = config["login.version"]
+	if "" == w.Config.Session.DefaultLanguage {
+		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
-
+	w.Config.Version = config["api.version"]
+	w.Config.AgentAppUrl = config["app.agent_app_url"]
+	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
+	w.Config.ConfigMap = config
 	return nil
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
-	domainUrl, _ := cc.String("webServer.site.domainUrl")
-	w.Config.Site.DomainUrl = domainUrl + "/"
-	w.Config.Site.HtmlRoot, _ = cc.String("webServer.site.htmlRoot")
-	w.Config.Site.ResourcesPath, _ = cc.String("webServer.site.resourcesPath")
-	w.Config.Site.BkLoginUrl, _ = cc.String("webServer.site.bkLoginUrl")
-	w.Config.Site.AppCode, _ = cc.String("webServer.site.appCode")
-	w.Config.Site.CheckUrl, _ = cc.String("webServer.site.checkUrl")
+	w.Config.Site.DomainUrl = current.ConfigMap["site.domain_url"] + "/"
+	w.Config.Site.HtmlRoot = current.ConfigMap["site.html_root"]
+	w.Config.Site.ResourcesPath = current.ConfigMap["site.resources_path"]
+	w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
+	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
+	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
+	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
+	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
+	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
 
-	authscheme, err := cc.String("webServer.site.authscheme")
-	if err != nil {
-		w.Config.Site.AuthScheme = "internal"
-	} else {
-		w.Config.Site.AuthScheme = authscheme
-	}
-
-	fullTextSearch, err := cc.String("es.fullTextSearch")
-	if err != nil {
-		w.Config.Site.FullTextSearch = "off"
-	} else {
-		w.Config.Site.FullTextSearch = fullTextSearch
-	}
-
-	w.Config.Site.AccountUrl, _ = cc.String("webServer.site.bkAccountUrl")
-	w.Config.Site.BkHttpsLoginUrl, _ = cc.String("webServer.site.bkHttpsLoginUrl")
-	w.Config.Site.HttpsDomainUrl, _ = cc.String("webServer.site.httpsDomainUrl")
-	w.Config.Site.PaasDomainUrl, _ = cc.String("webServer.site.paasDomainUrl")
-	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
-
-	w.Config.Session.Name, _ = cc.String("webServer.session.name")
-	w.Config.Session.MultipleOwner, _ = cc.String("webServer.session.multipleOwner")
-	w.Config.Session.DefaultLanguage, _ = cc.String("webServer.session.defaultlanguage")
-	w.Config.LoginVersion, _ = cc.String("webServer.login.version")
+	w.Config.Session.Name = current.ConfigMap["session.name"]
+	w.Config.Session.Skip = current.ConfigMap["session.skip"]
+	w.Config.Session.Host = current.ConfigMap["session.host"]
+	w.Config.Session.Port = current.ConfigMap["session.port"]
+	w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
+	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
+	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
+	w.Config.LoginVersion = current.ConfigMap["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
 
-	w.Config.Version, _ = cc.String("webServer.api.version")
-	w.Config.AgentAppUrl, _ = cc.String("webServer.app.agentAppUrl")
-	w.Config.AuthCenter.AppCode, _ = cc.String("webServer.app.authAppCode")
-	w.Config.AuthCenter.URL, _ = cc.String("webServer.app.authUrl")
+	w.Config.Version = current.ConfigMap["api.version"]
+	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-	if esbConfig, err := esb.ParseEsbConfig("webServer"); err == nil {
-		esb.UpdateEsbConfig(*esbConfig)
-	}
+	w.Config.ConfigMap = current.ConfigMap
 
 }
 
 //Stop the ccapi server
 func (ccWeb *WebServer) Stop() error {
 	return nil
+}
+
+func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
+	ip, err := op.ServConf.GetAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := op.ServConf.GetPort()
+	if err != nil {
+		return nil, err
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	info := &types.ServerInfo{
+		IP:       ip,
+		Port:     port,
+		HostName: hostname,
+		Scheme:   "http",
+		Version:  version.GetVersion(),
+		Pid:      os.Getpid(),
+	}
+	return info, nil
 }

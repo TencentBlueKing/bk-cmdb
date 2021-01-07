@@ -13,10 +13,7 @@
 package util
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -34,10 +31,6 @@ func (o *operation) Data() map[string]interface{} {
 	return o.op
 }
 
-func (o *operation) MapStr() mapstr.MapStr {
-	return mapstr.NewFromMap(o.op)
-}
-
 func (o *operation) WithHostID(hostID int64) *operation {
 	o.op[common.BKHostIDField] = hostID
 	return o
@@ -45,6 +38,11 @@ func (o *operation) WithHostID(hostID int64) *operation {
 
 func (o *operation) WithAppID(appID int64) *operation {
 	o.op[common.BKAppIDField] = appID
+	return o
+}
+
+func (o *operation) WithSupplierID(field int64) *operation {
+	o.op[common.BKSupplierIDField] = field
 	return o
 }
 
@@ -87,6 +85,10 @@ func (o *operation) WithModuleID(id int64) *operation {
 	o.op[common.BKModuleIDField] = id
 	return o
 }
+func (o *operation) WithPage(p metadata.BasePage) *operation {
+	o.op[metadata.PageName] = p
+	return o
+}
 
 func (o *operation) WithAssoObjID(id string) *operation {
 	o.op[common.BKAsstObjIDField] = id
@@ -105,44 +107,5 @@ func (o *operation) WithHostInnerIP(ip string) *operation {
 
 func (o *operation) WithCloudID(id int64) *operation {
 	o.op[common.BKCloudIDField] = id
-	return o
-}
-
-func (o *operation) WithAttrComm() *operation {
-	attrMeta := metadata.Metadata{
-		Label: make(metadata.Label, 0),
-	}
-	// attrMeta.Label.SetModelKind(metadata.PublicModelKindValue)
-	conds := mapstr.New()
-	for key, val := range attrMeta.Label {
-		conds.Set(key, val)
-	}
-	o.op[common.MetadataField] = conds
-	return o
-}
-
-func (o *operation) WithAttrBizID(bizID int64) *operation {
-	attrMeta := metadata.Metadata{
-		Label: make(metadata.Label, 0),
-	}
-	attrMeta.Label.SetModelKind(metadata.BusinessModelKindValue)
-	attrMeta.Label.SetBusinessID(bizID)
-	conds := mapstr.New()
-	for key, val := range attrMeta.Label {
-		conds.Set(key, val)
-	}
-	o.op[common.MetadataField] = conds
-
-	return o
-}
-
-func (o *operation) WithAttrCommBizID(bizID int64) *operation {
-	conds := mapstr.New()
-	conds[common.BKDBOR] = []mapstr.MapStr{
-		{metadata.LabelModelKind: metadata.PublicModelKindValue},
-		{metadata.LabelModelKind: metadata.BusinessModelKindValue, metadata.LabelBusinessID: strconv.FormatInt(bizID, 10)},
-	}
-	o.op[common.MetadataField] = conds
-
 	return o
 }

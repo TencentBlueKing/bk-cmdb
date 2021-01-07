@@ -13,13 +13,14 @@
 package service
 
 import (
+	"encoding/json"
+	"strconv"
 	"strings"
 
 	"configcenter/src/common"
-	"configcenter/src/common/version"
 
+	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 // Index html file
@@ -27,24 +28,62 @@ func (s *Service) Index(c *gin.Context) {
 	session := sessions.Default(c)
 	role := session.Get("role")
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
+	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 
-	pageConf := gin.H{
-		"site":           s.Config.Site.DomainUrl,
-		"version":        s.Config.Version,
-		"ccversion":      version.CCVersion,
-		"authscheme":     s.Config.Site.AuthScheme,
-		"fullTextSearch": s.Config.Site.FullTextSearch,
-		"role":           role,
-		"curl":           s.Config.LoginUrl,
-		"userName":       userName,
-		"agentAppUrl":    s.Config.AgentAppUrl,
-		"authCenter":     s.Config.AuthCenter,
-		"helpDocUrl":     s.Config.Site.HelpDocUrl,
+	userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(userName, common.BKDefaultOwnerID, language)
+
+	var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi, mainLineObjIDStr string
+	if nil == userPriviApp {
+		strUserPriveApp = ""
+	} else {
+		cstrUserPriveApp, _ := json.Marshal(userPriviApp)
+		strUserPriveApp = string(cstrUserPriveApp)
 	}
 
-	if s.Config.Site.PaasDomainUrl != "" {
-		pageConf["userManage"] = strings.TrimSuffix(s.Config.Site.PaasDomainUrl, "/") + "/api/c/compapi/v2/usermanage/fs_list_users/"
+	if nil == rolePrivilege {
+		strRolePrivilege = ""
+	} else {
+		cstrRolePrivilege, _ := json.Marshal(rolePrivilege)
+		strRolePrivilege = string(cstrRolePrivilege)
+	}
+	if nil == modelPrivi {
+		strModelPrivi = ""
+	} else {
+		cstrModelPrivi, _ := json.Marshal(modelPrivi)
+		strModelPrivi = string(cstrModelPrivi)
+	}
+	if nil == sysPrivi {
+		strSysPrivi = ""
+	} else {
+		cstrSysPrivi, _ := json.Marshal(sysPrivi)
+		strSysPrivi = string(cstrSysPrivi)
 	}
 
-	c.HTML(200, "index.html", pageConf)
+	mainLineObjIDB, _ := json.Marshal(mainLineObjIDArr)
+	mainLineObjIDStr = string(mainLineObjIDB)
+
+	session.Set("userPriviApp", string(strUserPriveApp))
+	session.Set("rolePrivilege", string(strRolePrivilege))
+
+	session.Set("modelPrivi", string(strModelPrivi))
+	session.Set("sysPrivi", string(strSysPrivi))
+	session.Set("mainLineObjID", string(mainLineObjIDStr))
+	session.Save()
+
+	//set cookie
+	appIDArr := make([]string, 0)
+	for key, _ := range userPriviApp {
+		appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
+	}
+	appIDStr := strings.Join(appIDArr, "-")
+	c.SetCookie("bk_privi_biz_id", appIDStr, 24*60*60, "", "", false, false)
+
+	c.HTML(200, "index.html", gin.H{
+		"site":        s.Config.Site.DomainUrl,
+		"version":     s.Config.Version,
+		"role":        role,
+		"curl":        s.Config.LoginUrl,
+		"userName":    userName,
+		"agentAppUrl": s.Config.AgentAppUrl,
+	})
 }

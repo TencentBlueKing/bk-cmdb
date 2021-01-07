@@ -14,6 +14,7 @@ package object
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -21,26 +22,26 @@ import (
 
 func (t *object) SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objects/topographics/scope_type/%s/scope_id/%s/action/search"
+	subPath := fmt.Sprintf("/objects/topographics/scope_type/%s/scope_id/%s/action/search", scopeType, scopeID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, scopeType, scopeID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *object) UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objects/topographics/scope_type/%s/scope_id/%s/action/update"
+	subPath := fmt.Sprintf("/objects/topographics/scope_type/%s/scope_id/%s/action/update", scopeType, scopeID)
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(data).
-		SubResourcef(subPath, scopeType, scopeID).
+		Body(nil).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

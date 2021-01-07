@@ -3,33 +3,5 @@
     "import_property_str_format_error": "主机属性%s格式错误",
     "import_asst_property_str_not_found": "主机关联属性%s格式错误",
     "import_asst_property_str_primary_count_len": "主机关联对象%s唯一键个数错误",
-    "import_str_asst_str_query_data_format_error": "获取%s的%s关联对象%s数据格式",
-    "import_asst_obj_property_str_primary_count_len": "[%s]关联对象[%s]唯一键个数错误",
-    "import_asst_obj_property_str_primary_format_error": "[%s]关联对象唯一键[%s]数据格式错误",
-    "import_asst_obj_property_str_primary_type_error": "[%s]关联对象唯一键[%s]数据类型错误",
-    "import_asstid_not_foud":"关联关系[%s] 不存在",
-    "import_instance_not_foud":"[%s] 模型 [%s] 不存在",
-    "import_asst_obj_primary_property_str_not_found": "[%s]属性[%s]不存在",
-
-    "excel_association_attribute": "关联属性(请勿编辑)",
-    "excel_field_description": "填写说明(请勿编辑)",
-    "excel_association_object_id":"关联标识",
-    "excel_association_op":"操作",
-    "excel_association_src_inst":"源实例",
-    "excel_association_dst_inst":"目标实例",
-    "excel_example_association":"例如:bk_switch_connect_host",
-    "excel_example_op":"新增/删除",
-    "excel_example_association_src_inst":"填写实例唯一标识,如果有多个唯一标识用逗号分隔,例如: 内网ip=XXX,云区域=0",
-    "excel_example_association_dst_inst":"填写实例唯一标识,如果有多个唯一标识用逗号分隔,例如: 内网ip=XXX,云区域=0",
-
-    "import_association_id_not_found":"关联关系[%s]不存在",
-    "import_association_operate_not_found":"操作类型不存在",
-    "import_host_hostID_not_int":"主机ID的值不是数字类型",
-    "import_host_cloudID_invalid":"主机云区域ID的数值无效",
-    "import_update_host_miss_hostID": "%d行缺少主机ID",
-    "import_host_update_fail": "%d行更新失败%s",
-    "import_update_host_hostID_not_int": "%d行主机ID的值不是数字类型",
-
-
-    "":""
+    "import_str_asst_str_query_data_format_error": "获取%s的%s关联对象%s数据格式"
 }

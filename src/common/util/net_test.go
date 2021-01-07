@@ -12,15 +12,7 @@
 
 package util
 
-import (
-	"bytes"
-	"io/ioutil"
-	"net/http"
-	"testing"
-
-	"github.com/emicklei/go-restful"
-	"github.com/stretchr/testify/require"
-)
+import "testing"
 
 func TestGetDailAddress(t *testing.T) {
 	type args struct {
@@ -46,22 +38,4 @@ func TestGetDailAddress(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestPeekRequest(t *testing.T) {
-	expectbody := `{"name":"john"}`
-	raw, err := http.NewRequest("POST", "/test/1", bytes.NewBufferString(expectbody))
-	require.NoError(t, err)
-	req := restful.NewRequest(raw)
-	content, err := PeekRequest(req.Request)
-	require.NoError(t, err)
-	require.Equal(t, expectbody, string(content))
-
-	ncontent, err := ioutil.ReadAll(req.Request.Body)
-	require.NoError(t, err)
-	require.Equal(t, expectbody, string(ncontent))
-
-	ncontent, err = ioutil.ReadAll(req.Request.Body)
-	require.NoError(t, err)
-	require.Equal(t, "", string(ncontent))
 }

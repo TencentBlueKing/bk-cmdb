@@ -14,6 +14,7 @@ package object
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -26,7 +27,7 @@ func (t *object) CreateObjectBatch(ctx context.Context, h http.Header, data map[
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -39,20 +40,20 @@ func (t *object) SearchObjectBatch(ctx context.Context, h http.Header, data map[
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.Object) (resp *metadata.CreateModelResult, err error) {
-	resp = new(metadata.CreateModelResult)
+func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.Object) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/object"
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(obj).
-		SubResourcef(subPath).
+		Body(nil).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -65,7 +66,7 @@ func (t *object) SelectObjectWithParams(ctx context.Context, h http.Header, data
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -78,7 +79,7 @@ func (t *object) SelectObjectTopo(ctx context.Context, h http.Header, data map[s
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -86,12 +87,12 @@ func (t *object) SelectObjectTopo(ctx context.Context, h http.Header, data map[s
 }
 func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/%s"
+	subPath := fmt.Sprintf("/object/%s", objID)
 
-	err = t.client.Put().
+	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, objID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -99,12 +100,12 @@ func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, 
 }
 func (t *object) DeleteObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/%s"
+	subPath := fmt.Sprintf("/object/%s", objID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, objID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

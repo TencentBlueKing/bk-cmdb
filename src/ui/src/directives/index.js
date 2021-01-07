@@ -1,13 +1,11 @@
 import Vue from 'vue'
 import vClickOutside from 'v-click-outside'
-import cursor from './cursor.js'
-import transferDom from './transfer-dom.js'
+import vTooltip from 'v-tooltip'
 
 Vue.use(vClickOutside)
-Vue.use(cursor)
-Vue.directive('transfer-dom', transferDom)
+Vue.use(vTooltip)
 
 export default {
     'v-click-outside': vClickOutside,
-    'v-transfer-dom': transferDom
+    'vTooltip': vTooltip
 }

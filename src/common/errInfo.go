@@ -12,17 +12,16 @@
 
 package common
 
-// CC error number defined in this file
-// Errno name is composed of the following format CCErr[XXX]
+//CC error number defined in this file
+//Errno name is composed of the following format CCErr[XXX]
 const (
+
 	// the system code
 
 	// CCSystemBusy the system is busy
-	CCSystemBusy         = -1
-	CCSystemUnknownError = -2
-	CCSuccess            = 0
-	CCSuccessStr         = "success"
-	CCNoPermission       = 9900403
+	CCSystemBusy = -1
+	CCSuccess    = 0
+	CCSuccessStr = "success"
 
 	// common error code 1199XXX
 
@@ -44,16 +43,16 @@ const (
 	// CCErrCommHTTPBodyEmpty  HTTP request body data is not set
 	CCErrCommHTTPBodyEmpty = 1199005
 
-	// CCErrCommParamsInvalid parameter validation in the body is not pass
+	// CCErrCommParamsInvalid parameter validation in the body is not paased
 	CCErrCommParamsInvalid = 1199006
 
 	// CCErrCommParamsNeedString  the parameter must be of type string
 	CCErrCommParamsNeedString = 1199007
 
-	// CCErrCommParamsLostField the parameter not specified
+	// CCErrCommParamsLostField the prameter not specified
 	CCErrCommParamsLostField = 1199008
 
-	// CCErrCommParamsNeedInt the parameter must be of type int
+	// CCErrCommParamsNeedInt the parameter must be of tyep int
 	CCErrCommParamsNeedInt = 1199009
 
 	// CCErrCommParamsNeedSet the parameter unassigned
@@ -61,6 +60,9 @@ const (
 
 	// CCErrCommParamsIsInvalid the parameter is invalid or nonexistent
 	CCErrCommParamsIsInvalid = 1199011
+
+	// CCErrCommUniqueCheckFailed the uniqueness validation fails
+	CCErrCommUniqueCheckFailed = 1199012
 
 	// CCErrCommParseDataFailed failed to read data from data field
 	CCErrCommParseDataFailed = 1199013
@@ -80,19 +82,19 @@ const (
 	// CCErrCommDBInsertFailed database cannot add data
 	CCErrCommDBInsertFailed = 1199018
 
-	// CCErrCommNotFound the goal does not exist
+	//CCErrCommNotFound the goal does not exist
 	CCErrCommNotFound = 1199019
 
-	// CCErrCommDBUpdateFailed database cannot update data
+	//CCErrCommDBUpdateFailed database cannot update data
 	CCErrCommDBUpdateFailed = 1199020
 
-	// CCErrCommDBDeleteFailed database cannot delete data
+	//CCErrCommDBDeleteFailed database cannot delete data
 	CCErrCommDBDeleteFailed = 1199021
 
-	// CCErrCommRelyOnServerAddressFailed dependent service did not start
+	//CCErrCommRelyOnServerAddressFailed dependent service did not start
 	CCErrCommRelyOnServerAddressFailed = 1199022
 
-	// CCErrCommExcelTemplateFailed unable to generate and download
+	//CCErrCommExcelTemplateFailed unable to generate and download
 	CCErrCommExcelTemplateFailed = 1199023
 
 	// CCErrCommParamsNeedTimeZone the parameter must be time zone type
@@ -107,13 +109,13 @@ const (
 	// CCErrCommNotAuthItem failed to get authorization information
 	CCErrCommNotAuthItem = 1199027
 
-	// CCErrCommNotAuthItem field validate failed
+	// CCErrCommNotAuthItem field valide failed
 	CCErrCommFieldNotValid = 1199028
 
-	// CCErrCommReplyDataFormatError Return data format error
+	//CCErrCommReplyDataFormatError Return data format error
 	CCErrCommReplyDataFormatError = 1199029
 
-	// CCErrCommReplyDataFormatError Return data format error
+	//CCErrCommReplyDataFormatError Return data format error
 	CCErrCommPostInputParseError = 1199030
 
 	// CCErrCommResourceInitFailed %s init failed
@@ -138,107 +140,12 @@ const (
 	CCErrCommInstDataNil = 1199038
 	// CCErrCommInstFieldNotFound  %s field does not exist in %s
 	CCErrCommInstFieldNotFound = 1199039
-	// CCErrCommInstFieldConvertFail  convert %s  field %s to %s error %s
-	CCErrCommInstFieldConvertFail = 1199040
+	// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
+	CCErrCommInstFieldConvFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
-	// CCErrCommParamsNeedFloat the parameter must be float type
-	CCErrCommParamsNeedFloat = 1199042
-	// CCErrCommFieldNotValidFail  valid data error, %s
-	CCErrCommFieldNotValidFail = 1199043
-
-	CCErrCommNotAllSuccess = 1199044
-	// parse auth attribute in api server rest filter failed.
-	CCErrCommParseAuthAttributeFailed = 1199045
-
-	// authorize request to auth center failed
-	CCErrCommCheckAuthorizeFailed = 1199046
-
-	// auth failed, do not have permission.
-	CCErrCommAuthNotHavePermission = 1199047
-
-	CCErrCommAuthorizeFailed             = 1199048
-	CCErrCommRegistResourceToIAMFailed   = 1199049
-	CCErrCommUnRegistResourceToIAMFailed = 1199050
-	CCErrCommInappropriateVisitToIAM     = 1199051
-
-	CCErrCommGetMultipleObject                = 1199052
-	CCErrCommAuthCenterIsNotEnabled           = 1199053
-	CCErrCommOperateBuiltInItemForbidden      = 1199054
-	CCErrCommRemoveRecordHasChildrenForbidden = 1199055
-	CCErrCommRemoveReferencedRecordForbidden  = 1199056
-	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
-
-	CCErrCommGenerateRecordIDFailed   = 1199058
-	CCErrCommPageLimitIsExceeded      = 1199059
-	CCErrCommUnexpectedParameterField = 1199060
-
-	CCErrCommParseDBFailed                     = 1199061
-	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
-
-	CCErrCommParametersCountNotEnough         = 1199063
-	CCErrCommFuncCalledWithInappropriateParam = 1199064
-
-	// CCErrCommStartTransactionFailed start transaction failed
-	CCErrCommStartTransactionFailed = 1199065
-	// CCErrCommCommitTransactionFailed commit transaction failed
-	CCErrCommCommitTransactionFailed = 1199066
-	// CCErrCommAbortTransactionFailed abort transaction failed
-	CCErrCommAbortTransactionFailed = 1199067
-
-	CCErrCommListAuthorizedResourcedFromIAMFailed = 1199068
-	CCErrParseAttrOptionEnumFailed                = 1199069
-
-	// CCErrCommParamsNotSupportXXErr 参数%s的值%s 无效
-	CCErrCommParamsValueInvalidError = 1199070
-
-	// 构造DB查询条件失败
-	CCErrConstructDBFilterFailed = 1199071
-	CCErrGetNoAuthSkipURLFailed  = 1199072
-
-	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
-	CCErrCommValExceedMaxFailed          = 1199073
-	CCErrCommGlobalCCErrorNotInitialized = 1199074
-
-	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI = 1199075
-	CCErrTopoUpdateBuiltInCloudForbidden                   = 1199076
-
-	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
-	CCErrCommTopoModuleNotFoundError = 1199078
-	// CCErrBizNotFoundError business [%s] does not exist
-	CCErrCommBizNotFoundError      = 1199079
-	CCErrParseAttrOptionListFailed = 1199080
-	// one argument: maxValue
-	CCErrExceedMaxOperationRecordsAtOnce = 1199081
-
-	CCErrCommListAuthorizedResourceFromIAMFailed             = 1199082
-	CCErrCommModifyFieldForbidden                            = 1199083
-	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
-	CCErrCommUnexpectedFieldType                             = 1199085
-
-	CCErrCommGetBusinessIDByHostIDFailed = 1199086
-
-	// CCErrCommOPInProgressErr have the same task[%s] in progress
-	CCErrCommOPInProgressErr = 1199087
-	// CCErrCommRedisOPErr operate redis error.
-	CCErrCommRedisOPErr = 1199088
-
-	// CCErrArrayLengthWrong the length of the array is wrong
-	CCErrArrayLengthWrong = 1199089
-
-	// too many requests
-	CCErrTooManyRequestErr = 1199997
-
-	// unknown or unrecognized error
-	CCErrorUnknownOrUnrecognizedError = 1199998
-
-	// CCErrCommInternalServerError %s Internal Server Error
-	CCErrCommInternalServerError = 1199999
 
 	// apiserver 1100XXX
-	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
-	CCErrAPIGetUserResourceAuthStatusFailed    = 1100002
-	CCErrAPINoObjectInstancesIsFound           = 1100003
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance
@@ -328,7 +235,7 @@ const (
 	// CCErrTopoObjectGroupSelectFailed unable to select a object group
 	CCErrTopoObjectGroupSelectFailed = 1101028
 
-	// CCErrTopoObjectClassificationHasObject the object classification can't be deleted under classification
+	// CCErrTopoObjectClassificationHasObject the object classification can't be deleted under clssification
 	CCErrTopoObjectClassificationHasObject = 1101029
 
 	// CCErrTopoHasHostCheckFailed cannot detect if host information is included
@@ -337,140 +244,50 @@ const (
 	// CCErrTopoHasHost include host
 	CCErrTopoHasHost = 1101030
 
-	// CCErrTopoGetCloudErrStrFailed get cloud error
-	CCErrTopoGetCloudErrStrFailed = 1101031
+	// CCErrTopoGetCloudErrStrFaild get cloud error
+	CCErrTopoGetCloudErrStrFaild = 1101031
 	// CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
 
-	// CCErrTopoGetAppFailed search app err %s
-	CCErrTopoGetAppFailed = 1101033
+	// CCErrTopoGetAppFaild search app err %s
+	CCErrTopoGetAppFaild = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
 	CCErrTopoBizTopoLevelOverLimit = 1101035
-	// CCErrTopoInstHasBeenAssociation the instance has been associated
+	// CCErrTopoInstHasBeenAssociation the mainline topo level over limit
 	CCErrTopoInstHasBeenAssociation = 1101036
 	// it is forbidden to delete , that has some insts
 	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037
 	// the associations %s->%s already exist
 	CCErrTopoAssociationAlreadyExist = 1101038
-	// the source association object does not exist
-	CCErrTopoAssociationSourceObjectNotExist = 1101039
-	// the destination association object does not exist
-	CCErrTopoAssociationDestinationObjectNotExist = 1101040
-	// invalid object association id, should be int64
-	CCErrTopoInvalidObjectAssociationID = 1101041
-	// got multiple object association with one association id
-	CCErrTopoGotMultipleAssociationInstance = 1101042
-	// association with a object has multiple instance, can not be deleted.
-	CCErrTopoAssociationHasAlreadyBeenInstantiated = 1101043
-	// get association kind with id failed.
-	CCErrTopoGetAssociationKindFailed = 1101044
-	// create object association missing object kind id, src object id or destination object id.
-	CCErrorTopoAssociationMissingParameters = 1101045
-	// the given association id does not exist.
-	CCErrorTopoObjectAssociationNotExist = 1101046
-	// update object association, but update fields that can not be updated.
-	CCErrorTopoObjectAssociationUpdateForbiddenFields = 1101047
-	// mainline object association do not exist
-	CCErrorTopoMainlineObjectAssociationNotExist = 1101048
-	// CCErrorTopoImportAssociation  import association error
-	CCErrorTopoImportAssociation = 1101049
-	// got multiple association kind with a id
-	CCErrorTopoGetMultipleAssocKindInstWithOneID = 1101050
-	// delete a pre-defined association kind.
-	CCErrorTopoDeletePredefinedAssociationKind = 1101051
-	// create new instance for a new association, but association map is 1:1
-	CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
-	// the object has associate to another object, or has been associated by another one.
-	CCErrorTopoObjectHasAlreadyAssociated = 1101053
-	// update a pre-defined association, it's forbidden.
-	CCErrorTopoUpdatePredefinedAssociation = 1101054
-	// can not delete a pre-defined association.
-	CCErrorTopoDeletePredefinedAssociation = 1101055
-	// association do not exist.
-	CCErrorTopoAssociationDoNotExist = 1101056
-	// create model's instance batch, but instance's data missing field bk_inst_name
-	CCErrorTopoObjectInstanceMissingInstanceNameField = 1101057
-	// object instance's bk_inst_name filed is not string
-	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
-	// create model's instance patch, but instance's name is duplicate.
-	CCErrorTopoMultipleObjectInstanceName = 1101059
 
-	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
-	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
-	CCErrTopoAppDeleteFailed                                  = 1101131
-	CCErrTopoAppUpdateFailed                                  = 1101132
-	CCErrTopoAppSearchFailed                                  = 1101133
-	CCErrTopoAppCreateFailed                                  = 1101134
-	CCErrTopoForbiddenToDeleteModelFailed                     = 1101135
-	CCErrTopoMainlineCreatFailed                              = 1101137
-	CCErrTopoMainlineDeleteFailed                             = 1101138
-	CCErrTopoMainlineSelectFailed                             = 1101139
-	CCErrTopoTopoSelectFailed                                 = 1101140
-	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1101149
-	CCErrHostNotAllowedToMutiBiz                              = 1101150
-	CCErrTopoGraphicsSearchFailed                             = 1101151
-	CCErrTopoGraphicsUpdateFailed                             = 1101152
-	CCErrTopoObjectUniqueCreateFailed                         = 1101160
-	CCErrTopoObjectUniqueUpdateFailed                         = 1101161
-	CCErrTopoObjectUniqueDeleteFailed                         = 1101162
-	CCErrTopoObjectUniqueSearchFailed                         = 1101163
-	CCErrTopoObjectPropertyNotFound                           = 1101164
-	CCErrTopoObjectPropertyUsedByUnique                       = 1101165
-	CCErrTopoObjectUniqueKeyKindInvalid                       = 1101166
-	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1101167
-	CCErrTopoObjectUniqueCanNotHasMultipleMustCheck           = 1101168
-	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1101069
-	// association kind has been apply to object
-	CCErrorTopoAssKindHasApplyToObject = 1101070
-	// pre definition association kind can not be delete
-	CCErrorTopoPreAssKindCanNotBeDelete = 1101071
-	CCErrorTopoAsstKindIsNotExist       = 1101072
-	CCErrorAsstInstIsNotExist           = 1101073
-	CCErrorInstToAsstIsNotExist         = 1101074
-	CCErrorInstHasAsst                  = 1101075
-	CCErrTopoCreateAssocKindFailed      = 1101076
-	CCErrTopoUpdateAssoKindFailed       = 1101077
-	CCErrTopoDeleteAssoKindFailed       = 1101078
-	CCErrTopoModuleIDNotfoundFailed     = 1101080
-	CCErrTopoBkAppNotAllowedDelete      = 1101081
-	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
-	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
-	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
-	CCErrorTopoAssociationKindInconsistent = 1101083
-	// CCErrorTopoModelStopped means model have been stopped to use
-	CCErrorTopoModelStopped = 1101084
-	// mainline's object unique can not be updated, deleted or create new rules.
-	CCErrorTopoMainlineObjectCanNotBeChanged   = 1101085
-	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
-	CCErrTopoArchiveBusinessHasHost            = 1101087
+	CCErrTopoAppDeleteFailed                       = 1001031
+	CCErrTopoAppUpdateFailed                       = 1001032
+	CCErrTopoAppSearchFailed                       = 1001033
+	CCErrTopoAppCreateFailed                       = 1001034
+	CCErrTopoForbiddenToDeleteModelFailed          = 1001035
+	CCErrTopoMainlineCreatFailed                   = 1001037
+	CCErrTopoMainlineDeleteFailed                  = 1001038
+	CCErrTopoMainlineSelectFailed                  = 1001039
+	CCErrTopoTopoSelectFailed                      = 1001040
+	CCErrTopoUserGroupCreateFailed                 = 1001041
+	CCErrTopoUserGroupDeleteFailed                 = 1001042
+	CCErrTopoUserGroupUpdateFailed                 = 1001043
+	CCErrTopoUserGroupSelectFailed                 = 1001044
+	CCErrTopoUserGroupPrivilegeUpdateFailed        = 1001045
+	CCErrTopoUserGroupPrivilegeSelectFailed        = 1001046
+	CCErrTopoUserPrivilegeSelectFailed             = 1001047
+	CCErrTopoRolePrivilegeCreateFailed             = 1001048
+	CCErrTopoDeleteMainLineObjectAndInstNameRepeat = 1001049
+	CCErrHostNotAllowedToMutiBiz                   = 1001050
+	CCErrTopoGraphicsSearchFailed                  = 1001051
+	CCErrTopoGraphicsUpdateFailed                  = 1001052
 
-	CCErrorTopoFullTextFindErr              = 1101088
-	CCErrorTopoFullTextClientNotInitialized = 1101089
+	CCErrTopoMulueIDNotfoundFailed = 1101080
+	CCErrTopoBkAppNotAllowedDelete = 1101081
 
-	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
-	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
-	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
-	CCErrorTopoObjectInstanceObjIDFieldConflictWithURL     = 1101093
-	CCErrTopoImportMainlineForbidden                       = 1101094
-
-	CCErrorTopoSyncModuleTaskFailed    = 1101095
-	CCErrorTopoSyncModuleTaskIsRunning = 1101096
-
-	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
-	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
-	CCErrorTopoModuleNameDuplicated                             = 1101099
-
-	CCErrorTopoPathParamPaserFailed                = 1101100
-	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
-	CCErrorTopoOnlyResourceDirNameCanBeUpdated     = 1101102
-	CCErrorTopoOperateReourceDirFailNotExist       = 1101103
-	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
-	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
-
-	CCErrorModelNotFound = 1101102
-	// object controller 1102XXX
+	// objectcontroller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
 	CCErrObjectPropertyGroupInsertFailed = 1102000
@@ -488,7 +305,7 @@ const (
 	CCErrObjectSelectIdentifierFailed = 1102008
 
 	// CCErrObjectDBOpErrno failed to operation database
-	CCErrObjectDBOpErrno = 1102020
+	CCErrObjectDBOpErrno = 1102004
 
 	// event_server 1103XXX
 	// CCErrEventSubscribeInsertFailed failed to save the Subscribe
@@ -515,10 +332,9 @@ const (
 
 	// migrate 1105XXX
 	//  CCErrCommMigrateFailed failed to migrate
-	CCErrCommMigrateFailed        = 1105000
-	CCErrCommInitAuthCenterFailed = 1105001
+	CCErrCommMigrateFailed = 1105000
 
-	// host controller 1106XXX
+	// hostcontroller 1106XXX
 	CCErrHostSelectInst                  = 1106000
 	CCErrHostCreateInst                  = 1106002
 	CCErrHostGetSnapshot                 = 1106003
@@ -539,12 +355,8 @@ const (
 	CCErrHostFavouriteDupFail            = 1106018
 	CCErrHostGetSnapshotChannelEmpty     = 1106019
 	CCErrHostGetSnapshotChannelClose     = 1106020
-	CCErrCloudCreateSyncTaskFail         = 1106021
-	CCErrCloudConfirmHistoryAddFail      = 1106022
-	CCErrCloudSyncHistorySearchFail      = 1106023
-	CCErrHostGetSnapshotBatch            = 1106024
 
-	// process controller 1107XXX
+	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
 	CCErrProcCreateProc2Module   = 1107002
 	CCErrProcSelectProc2Module   = 1107003
@@ -559,15 +371,15 @@ const (
 	CCErrProcCreateProc2Template = 1107012
 	CCErrProcSelectProc2Template = 1107013
 
-	// process server 1108XXX
+	// procserver 1108XXX
 	CCErrProcSearchDetailFaile          = 1108001
 	CCErrProcBindToMoudleFaile          = 1108002
 	CCErrProcUnBindToMoudleFaile        = 1108003
 	CCErrProcSelectBindToMoudleFaile    = 1108004
-	CCErrProcUpdateProcessFailed        = 1108005
-	CCErrProcSearchProcessFailed        = 1108006
-	CCErrProcDeleteProcessFailed        = 1108007
-	CCErrProcCreateProcessFailed        = 1108008
+	CCErrProcUpdateProcessFaile         = 1108005
+	CCErrProcSearchProcessFaile         = 1108006
+	CCErrProcDeleteProcessFaile         = 1108007
+	CCErrProcCreateProcessFaile         = 1108008
 	CCErrProcFieldValidFaile            = 1108009
 	CCErrProcGetByApplicationIDFail     = 1108010
 	CCErrProcGetByIP                    = 1108011
@@ -584,36 +396,11 @@ const (
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
 
-	CCErrProcGetServiceInstancesFailed                    = 1108024
-	CCErrProcCreateServiceInstancesFailed                 = 1108025
-	CCErrProcDeleteServiceInstancesFailed                 = 1108026
-	CCErrProcGetProcessTemplatesFailed                    = 1108027
-	CCErrProcGetProcessInstanceFailed                     = 1108028
-	CCErrProcGetProcessInstanceRelationFailed             = 1108029
-	CCErrProcDeleteServiceTemplateFailed                  = 1108030
-	CCErrProcCreateProcessTemplateFailed                  = 1108031
-	CCErrProcUpdateProcessTemplateFailed                  = 1108032
-	CCErrProcGetProcessTemplateFailed                     = 1108033
-	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
-	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
-	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
-	CCErrProcModuleNotBindWithTemplate                    = 1108037
-	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
-	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
-	CCErrProcRemoveTemplateBindingOnModule                = 1108040
-	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
+	// auditlog 1109XXX
+	CCErrAuditSaveLogFaile      = 1109001
+	CCErrAuditTakeSnapshotFaile = 1109001
 
-	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
-	CCErrProcGetServiceCategoryFailed            = 1108043
-
-	CCErrHostTransferFinalModuleConflict = 1108044
-
-	// audit log 1109XXX
-	CCErrAuditSaveLogFailed      = 1109001
-	CCErrAuditTakeSnapshotFailed = 1109002
-	CCErrAuditSelectFailed       = 1109003
-
-	// host server
+	//hostserver
 	CCErrHostGetFail              = 1110001
 	CCErrHostUpdateFail           = 1110002
 	CCErrHostUpdateFieldFail      = 1110003
@@ -623,7 +410,7 @@ const (
 	CCErrHostFiledValdFail        = 1110007
 	CCErrHostNotFound             = 1110008
 	CCErrHostLength               = 1110009
-	CCErrHostDetailFail           = 1111011
+	CCErrHostDetailFail           = 1110010
 	CCErrHostSnap                 = 1110011
 	CCErrHostFeildValidFail       = 1110012
 	CCErrHostFavCreateFail        = 1110013
@@ -646,214 +433,223 @@ const (
 	CCErrAddHostToModuleFailStr   = 1110030
 
 	// hostserver api machinery new error code
-	CCErrAddUserCustomQueryFailed       = 1110040
-	CCErrUpdateUserCustomQueryFailed    = 1110041
-	CCErrDeleteUserCustomQueryFailed    = 1110042
-	CCErrSearchUserCustomQueryFailed    = 1110043
-	CCErrGetUserCustomQueryDetailFailed = 1110044
-	CCErrHostModuleConfigFailed         = 1110045
-	CCErrHostGetSetFailed               = 1110046
-	CCErrHostGetAPPFail                 = 1110047
-	CCErrHostAPPNotFoundFail            = 1110048
-	CCErrHostGetModuleFail              = 1110049
-	CCErrHostAgentStatusFail            = 1110050
-	// CCErrHostNotResourceFail The resource pool was not found"
-	CCErrHostNotResourceFail = 1110051
-	// CCErrHostBelongResourceFail The host is already in the resource pool
-	CCErrHostBelongResourceFail = 1110052
-	// CCErrHostGetResourceFail failed to get resource pool information, error message: %s
-	CCErrHostGetResourceFail = 1110053
-	// CCErrHostModuleNotExist get %s module not found
-	CCErrHostModuleNotExist = 1110054
-	// CCErrDeleteHostFromBusiness Delete the host under the business
-	CCErrDeleteHostFromBusiness = 1110055
-	// CCErrHostModuleConfigNotMatch hostID[%#v] not belong to business
-	CCErrHostModuleConfigNotMatch = 1110056
-	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
-	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
-	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
-	CCErrHostSetNotExist                                      = 1110059
-	CCErrHostSetNotBelongBusinessErr                          = 1110060
-	CCErrHostModuleNotBelongBusinessErr                       = 1110061
-	CCErrHostModuleNotBelongSetErr                            = 1110062
-	CCErrHostPlatCloudNameIsrequired                          = 1110063
-	CCErrHostPlatCloudNameAlreadyExist                        = 1110064
-	CCErrHostFindManyCloudAreaAddHostCountFieldFail           = 1110065
-	CCErrDeleteDefaultCloudAreaFail                           = 1110066
-	CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail         = 1110067
+	CCErrAddUserCustomQueryFaild       = 1110040
+	CCErrUpdateUserCustomQueryFaild    = 1110041
+	CCErrDeleteUserCustomQueryFaild    = 1110042
+	CCErrSearchUserCustomQueryFaild    = 1110043
+	CCErrGetUserCustomQueryDetailFaild = 1110044
+	CCErrHostModuleConfigFaild         = 1110045
+	CCErrHostGetSetFaild               = 1110046
+	CCErrHostGetAPPFail                = 1110047
+	CCErrHostAPPNotFoundFail           = 1110048
+	CCErrHostGetModuleFail             = 1110049
+	CCErrHostAgentStatusFail           = 1110050
 
-	// web 1111XXX
-	CCErrWebFileNoFound                 = 1111001
-	CCErrWebFileSaveFail                = 1111002
-	CCErrWebOpenFileFail                = 1111003
-	CCErrWebFileContentEmpty            = 1111004
-	CCErrWebFileContentFail             = 1111005
-	CCErrWebGetHostFail                 = 1111006
-	CCErrWebCreateEXCELFail             = 1111007
-	CCErrWebGetObjectFail               = 1111008
-	CCErrWebGetAddNetDeviceResultFail   = 1111009
-	CCErrWebGetAddNetPropertyResultFail = 1111010
-	CCErrWebGetNetDeviceFail            = 1111011
-	CCErrWebGetNetPropertyFail          = 1111012
-	CCErrWebNeedFillinUsernamePasswd    = 1111013
-	CCErrWebUsernamePasswdWrong         = 1111014
-	CCErrWebNoUsernamePasswd            = 1111015
-	CCErrWebUserinfoFormatWrong         = 1111016
-	CCErrWebUnknownLoginVersion         = 1111017
+	//web  1111XXX
+	CCErrWebFileNoFound      = 1111001
+	CCErrWebFileSaveFail     = 1111002
+	CCErrWebOpenFileFail     = 1111003
+	CCErrWebFileContentEmpty = 1111004
+	CCErrWebFileContentFail  = 1111005
+	CCErrWebGetHostFail      = 1111006
+	CCErrWebCreateEXCELFail  = 1111007
+	CCErrWebGetObjectFail    = 1111008
 
-	// datacollection 1112xxx
-	CCErrCollectNetDeviceCreateFail            = 1112000
-	CCErrCollectNetDeviceGetFail               = 1112001
-	CCErrCollectNetDeviceDeleteFail            = 1112002
-	CCErrCollectObjIDNotNetDevice              = 1112003
-	CCErrCollectNetPropertyCreateFail          = 1112004
-	CCErrCollectNetPropertyGetFail             = 1112005
-	CCErrCollectNetPropertyDeleteFail          = 1112006
-	CCErrCollectNetDeviceObjPropertyNotExist   = 1112007
-	CCErrCollectDeviceNotExist                 = 1112008
-	CCErrCollectPeriodFormatFail               = 1112009
-	CCErrCollectNetDeviceHasPropertyDeleteFail = 1112010
-	CCErrCollectNetCollectorSearchFail         = 1112011
-	CCErrCollectNetCollectorUpdateFail         = 1112012
-	CCErrCollectNetCollectorDiscoverFail       = 1112013
-	CCErrCollectNetReportSearchFail            = 1112014
-	CCErrCollectNetReportConfirmFail           = 1112015
-	CCErrCollectNetHistorySearchFail           = 1112016
-	CCErrCollectNetDeviceUpdateFail            = 1112017
-	CCErrCollectNetPropertyUpdateFail          = 1112018
+	CC_Err_Comm_HOST_CREATE_FAIL          = 4300
+	CC_Err_Comm_HOST_CREATE_FAIL_STR      = "create host fail"
+	CC_Err_Comm_HOST_MODIFY_FAIL          = 4301
+	CC_Err_Comm_HOST_MODIFY_FAIL_STR      = "modify host fail"
+	CC_Err_Comm_HOST_Field_VALID_FAIL     = 4302
+	CC_Err_Comm_HOST_Field_VALID_FAIL_STR = "host field valid fail"
 
-	// coreservice 1113xxx
-	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
-	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
+	CC_Err_Comm_Host_Get_FAIL             = 4303
+	CC_Err_Comm_Host_Get_FAIL_STR         = "get host fail"
+	CC_Err_Comm_Host_Update_Field_ERR     = 4304
+	CC_Err_Comm_Host_Update_Field_ERR_STR = "update host field err"
+	CC_Err_Comm_Host_Update_FAIL_ERR      = 4305
+	CC_Err_Comm_Host_Update_FAIL_ERR_STR  = "update host fail err"
+	CC_Err_Comm_Host_Not_Founded_ERR      = 4306
+	CC_Err_Comm_Host_Not_Founded_ERR_STR  = "find no host by condition"
+	CC_Err_Comm_Host_Length_ERR           = 4307
+	CC_Err_Comm_Host_Length_ERR_STR       = "not expected host length"
 
-	// CCErrCoreServiceHostNotBelongBusiness hostID [%#v] does not belong of  businessID [%d]
-	CCErrCoreServiceHostNotBelongBusiness = 1113002
-	// CCErrCoreServiceHostNotExist hostID [%#v] does not exist
-	CCErrCoreServiceHostNotExist = 1113003
-	// ModuleID [%#v] has not belong of  businessID [%d]
-	CCErrCoreServiceHasModuleNotBelongBusiness = 1113004
-	// CCErrCoreServiceModuleContainDefaultModuleErr  translate host to multiple module not contain default module
-	CCErrCoreServiceModuleContainDefaultModuleErr = 1113005
-	// CCErrCoreServiceBusinessNotExist Business [%#v] does not exist
-	CCErrCoreServiceBusinessNotExist = 1113006
-	// CCErrCoreServiceDefaultModuleNotExist Business [%#v] default module does not exist
-	CCErrCoreServiceDefaultModuleNotExist = 1113007
-	// CCErrCoreServiceModuleNotDefaultModuleErr   businessID [%d] of moduleID[%d] not default module
-	CCErrCoreServiceModuleNotDefaultModuleErr = 1113008
-	// CCErrCoreServiceTransferHostModuleErr   transfer module host config error. error detail in return data
-	CCErrCoreServiceTransferHostModuleErr = 1113009
-	// CCErrCoreServiceEventPushEventFailed failed to sent event
-	CCErrCoreServiceEventPushEventFailed = 1113010
+	// api server v2 error 1170xxx, follow-up will be deleted
 
-	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
-	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
+	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
+	CCErrAPIServerV2APPNameLenErr = 1170001
 
-	CCErrHostRemoveFromDefaultModuleFailed                                    = 1113012
-	CCErrCoreServiceTransferToDefaultModuleUseWrongMethod                     = 1113013
-	CCErrCoreServiceModuleWithoutServiceTemplateCouldNotCreateServiceInstance = 1113014
-	CCErrCoreServiceModuleNotFound                                            = 1113015
-	CCErrCoreServiceInstanceAlreadyExist                                      = 1113016
-	CCErrCoreServiceServiceCategoryNameDuplicated                             = 1113017
-	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
-	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
-	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
-	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
-	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
-	// CCErrCoreServiceDeleteMultpleObjectIDRecordErr 删除多个模型中的%s数据
-	CCErrCoreServiceDeleteMultpleObjectIDRecordErr = 1113023
-	// CCErrCoreServiceDeleteMultipleObjectIDRecordErr 不允许删除在唯一校验中的字段
-	CCErrCoreServiceNotAllowUniqueAttr = 1113024
-	// CCErrCoreServiceNotUpdatePredefinedAttrErr 修改不允许修改的属性的描述
-	CCErrCoreServiceNotUpdatePredefinedAttrErr = 1113025
-	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许新加必填字段
-	CCErrCoreServiceNotAllowAddRequiredFieldErr = 1113026
-	// CCErrCoreServiceNotAllowAddRequiredFieldErr 模型[%s]不允许修改必填字段
-	CCErrCoreServiceNotAllowChangeRequiredFieldErr = 1113027
-	// CCErrCoreServiceNotAllowAddFieldErr 模型[%s]不允许新加字段
-	CCErrCoreServiceNotAllowAddFieldErr = 1113028
-	// CCErrCoreServiceNotAllowDeleteErr 模型【%s】不允许删除
-	CCErrCoreServiceNotAllowDeleteErr = 1113029
-	// CCErrCoreServiceModelHasInstanceErr 模型下有示例数据
-	CCErrCoreServiceModelHasInstanceErr = 1113030
-	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
-	CCErrCoreServiceModelHasAssociationErr           = 1113031
-	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
-	// SearchTopoTreeScanTooManyData means hit too many data, we return directly.
-	SearchTopoTreeScanTooManyData = 1113033
+	// CCErrAPIServerV2DirectErr  disply error
+	CCErrAPIServerV2DirectErr = 1170002
 
-	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
-	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
-	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
-	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
-	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
-	CCErrCoreServiceHostNotUnderAnyResourceDirectory = 11130034
+	// CCErrAPIServerV2SetNameLenErr  set name must be < 24 len
+	CCErrAPIServerV2SetNameLenErr = 1170003
 
-	// synchronize data core service  11139xx
-	CCErrCoreServiceSyncError = 1113900
-	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not exist
-	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
+	// CCErrAPIServerV2MultiModuleIDErr  single module id  is int
+	CCErrAPIServerV2MultiModuleIDErr = 1170004
 
-	// synchronize_server 1114xxx
+	// CCErrAPIServerV2MultiSetIDErr  single set id is int
+	CCErrAPIServerV2MultiSetIDErr = 1170005
 
-	CCErrSynchronizeError = 1113903
+	// CCErrAPIServerV2OSTypeErr osType must be linux or windows
+	CCErrAPIServerV2OSTypeErr = 1170006
 
-	// operation_server 1116xxx
-	CCErrOperationBizModuleHostAmountFail = 1116001
-	CCErrOperationNewAddStatisticFail     = 1116002
-	CCErrOperationChartAlreadyExist       = 1116003
-	CCErrOperationDeleteChartFail         = 1116004
-	CCErrOperationSearchChartFail         = 1116005
-	CCErrOperationUpdateChartFail         = 1116006
-	CCErrOperationGetChartDataFail        = 1116007
-	CCErrOperationUpdateChartPositionFail = 1116008
-
-	// task_server 1117xxx
-	// CCErrTaskNotFound task not found
-	CCErrTaskNotFound = 1117001
-	// CCErrTaskSubTaskNotFound sub task not found
-	CCErrTaskSubTaskNotFound = 1117002
-	// CCErrTaskStatusNotAllowChangeTo task not allow status change to xx
-	CCErrTaskStatusNotAllowChangeTo = 1117003
-	// CCErrTaskErrResponseEmtpyFail error response empty
-	CCErrTaskErrResponseEmtpyFail = 1117004
-	CCErrTaskLockedTaskFail       = 1117005
-	CCErrTaskUnLockedTaskFail     = 1117006
-	CCErrTaskListTaskFail         = 1117007
-
-	// cloud_server 1118xxx
-	// CCErrCloudVendorNotSupport cloud vendor not support
-	CCErrCloudVendorNotSupport                = 1118001
-	CCErrCloudAccountNameAlreadyExist         = 1118002
-	CCErrCloudValidAccountParamFail           = 1118003
-	CCErrCloudAccountIDNoExistFail            = 1118004
-	CCErrCloudSyncTaskNameAlreadyExist        = 1118005
-	CCErrCloudValidSyncTaskParamFail          = 1118006
-	CCErrCloudVpcIDIsRequired                 = 1118007
-	CCErrCloudVendorInterfaceCalledFailed     = 1118008
-	CCErrCloudAccountSecretIDAlreadyExist     = 1118009
-	CCErrCloudTaskAlreadyExistInAccount       = 1118010
-	CCErrCloudAccoutIDSecretWrong             = 1118011
-	CCErrCloudHttpRequestTimeout              = 1118012
-	CCErrCloudVpcGetFail                      = 1118013
-	CCErrCloudRegionGetFail                   = 1118014
-	CCErrCloudSyncDirNoChosen                 = 1118015
-	CCErrCloudSyncDirNoExist                  = 1118016
-	CCErrCloudIDNoProvided                    = 1118017
-	CCErrCloudIDNoExist                       = 1118018
-	CCErrDefaultCloudIDProvided               = 1118019
-	CCErrCloudAccountCreateFail               = 1118020
-	CCErrGetCloudAccountConfBatchFailed       = 1118021
-	CCErrDeleteDestroyedHostRelatedFailed     = 1118022
-	CCErrCloudAccountDeletedFailedForSyncTask = 1118023
+	// CCErrAPIServerV2HostModuleContainDefaultModuleErr  translate host to multiple module not contain default module
+	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
 
 	/** TODO: 以下错误码需要改造 **/
 
-	// json
-	CCErrCommJsonDecode    = 3001
-	CCErrCommJsonDecodeStr = "json decode failed!"
-	CCErrCommJsonEncode    = 3002
-	CCErrCommJsonEncodeStr = "json encode failed!"
+	// db
+	CC_ERR_Comm_DB_OP_ERRNO = 1000
 
-	JsonMarshalErr    = 9000
-	JsonMarshalErrStr = "json marshal error"
+	CC_ERR_Comm_DB_OP_ERRNO_STR  = "database return some exception"
+	CC_Err_Comm_DB_Insert_Failed = "insert data failed"
+	CC_Err_Comm_DB_Delete_Failed = "delete data failed"
+	CC_Err_Comm_DB_Update_Failed = "update data failed"
+	CC_Err_Comm_DB_Select_Failed = "select data failed"
+
+	//http
+	CC_Err_Comm_http_DO               = 2000
+	CC_Err_Comm_http_DO_STR           = "do http request failed!"
+	CC_Err_Comm_http_Input_Params     = 2001
+	CC_Err_Comm_http_Input_Params_STR = "input params error!"
+	CC_Err_Comm_http_ReadReqBody      = 2002
+	CC_Err_Comm_http_ReadReqBody_STR  = "read http request body failed!"
+
+	//json
+	CC_ERR_Comm_JSON_DECODE     = 3001
+	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
+	CC_ERR_Comm_JSON_ENCODE     = 3002
+	CC_ERR_Comm_JSON_ENCODE_STR = "json encode failed!"
+	CC_ERR_Comm_JSON_GET        = 3003
+	cc_ERR_Comm_JSON_GET_STR    = "get data from json failed!"
+
+	//app
+	CC_Err_Comm_APP_ID_ERR               = 4001
+	CC_Err_Comm_APP_ID_ERR_STR           = "app id error"
+	CC_Err_Comm_APP_DEL_FAIL             = 4002
+	CC_Err_Comm_APP_DEL_FAIL_STR         = "delete app fail"
+	CC_Err_Comm_APP_Create_FAIL          = 4003
+	CC_Err_Comm_APP_Create_FAIL_STR      = "create app fail"
+	CC_Err_Comm_APP_Create_Field_ERR     = 4004
+	CC_Err_Comm_APP_Create_Field_ERR_STR = "create app lack field"
+	CC_Err_Comm_APP_Create_Name_DUP      = 4005
+	CC_Err_Comm_APP_Create_Name_DUP_STR  = "duplicate application name"
+	CC_Err_Comm_APP_Update_FAIL          = 4006
+	CC_Err_Comm_APP_Update_FAIL_STR      = "update application fail"
+	CC_Err_Comm_APP_Field_VALID_FAIL     = 4007
+	CC_Err_Comm_APP_Field_VALID_FAIL_STR = "app field valid fail"
+	CC_Err_Comm_APP_QUERY_FAIL           = 4008
+	CC_Err_Comm_APP_QUERY_FAIL_STR       = "query app fail"
+	CC_Err_Comm_APP_CHECK_HOST_FAIL      = 4009
+	CC_Err_Comm_APP_CHECK_HOST_FAIL_STR  = "failed to check host for app"
+	CC_Err_Comm_APP_HAS_HOST_FAIL        = 4010
+	CC_Err_Comm_APP_HAS_HOST_FAIL_STR    = "failed to delete app, because of it has some hosts"
+	//set
+	CC_Err_Comm_Set_QUERY_FAIL      = 4100
+	CC_Err_Comm_Set_QUERY_FAIL_STR  = "get set fail"
+	CC_Err_Comm_Set_CREATE_FAIL     = 4101
+	CC_Err_Comm_Set_CREATE_FAIL_STR = "create set fail"
+	CC_Err_Comm_Set_Update_FAIL     = 4102
+	CC_Err_Comm_Set_Update_FAIL_STR = "update set fail"
+	CC_Err_Comm_Set_Delete_FAIL     = 4103
+	CC_Err_Comm_Set_Delete_FAIL_STR = "delete set fail"
+	//module
+	CC_Err_Comm_Module_QUERY_FAIL      = 4200
+	CC_Err_Comm_Module_QUERY_FAIL_STR  = "get module fail"
+	CC_Err_Comm_Module_Update_FAIL     = 4201
+	CC_Err_Comm_Module_Update_FAIL_STR = "update module error"
+
+	CC_Err_Comm_Host_SNAPSHOT_GET_FAIL_ERR     = 4306
+	CC_Err_Comm_Host_SNAPSHOT_GET_FAIL_ERR_STR = "get host snapshot fail err"
+	//process
+	CC_Err_Comm_PROC_Create_FAIL            = 4400
+	CC_Err_Comm_PROC_Create_FAIL_STR        = "create process fail"
+	CC_Err_Comm_PROC_Create_Field_ERR       = 4401
+	CC_Err_Comm_PROC_Create_Field_ERR_STR   = "create process lack field"
+	CC_Err_Comm_PROC_Field_VALID_FAIL       = 4402
+	CC_Err_Comm_PROC_Field_VALID_FAIL_STR   = "process field valid fail"
+	CC_Err_Comm_PROC_DELETE_FAIL            = 4403
+	CC_Err_Comm_PROC_DELETE_FAIL_STR        = "delete process  fail"
+	CC_Err_Comm_PROC_SEARCH_FAIL            = 4404
+	CC_Err_Comm_PROC_SEARCH_FAIL_STR        = "search process  fail"
+	CC_Err_Comm_CREATE_PROC_MODULE_FAIL     = 4405
+	CC_Err_Comm_CREATE_PROC_MODULE_FAIL_STR = "create process module config  fail"
+	CC_Err_Comm_GET_PROC_FAIL               = 4406
+	CC_Err_Comm_GET_PROC_FAIL_STR           = "get process fail"
+	CC_Err_Comm_GET_PROC_MODULE_FAIL        = 4407
+	CC_Err_Comm_GET_PROC_MODULE_FAIL_STR    = "get process module config  fail"
+	CC_Err_Comm_BIND_PROC_MODULE_FAIL       = 4408
+	CC_Err_Comm_BIND_PROC_MODULE_FAIL_STR   = "bind process module config  fail"
+	CC_Err_Comm_PROC_UPDATE_FAIL            = 4409
+	CC_Err_Comm_PROC_UPDATE_FAIL_STR        = "update process  fail"
+	CC_Err_Comm_DELETE_PROC_MODULE_FAIL     = 4410
+	CC_Err_Comm_DELETE_PROC_MODULE_FAIL_STR = "delete process  fail"
+	//主机历史
+	CC_Err_Comm_HOST_HISTORY_Create_FAIL     = 4400
+	CC_Err_Comm_HOST_HISTORY_Create_FAIL_STR = "create app fail"
+
+	//collect
+	CC_Err_Comm_HOST_FAVOURITE_CREATE_FAIL     = 4401
+	CC_Err_Comm_HOST_FAVOURITE_CREATE_FAIL_STR = "create host favourite fail"
+	CC_Err_Comm_HOST_FAVOURITE_QUERY_FAIL      = 4402
+	CC_Err_Comm_HOST_FAVOURITE_QUERY_FAIL_STR  = "query host favourite fail"
+	CC_Err_Comm_HOST_FAVOURITE_EDIT_FAIL       = 4403
+	CC_Err_Comm_HOST_FAVOURITE_EDIT_FAIL_STR   = "modify host favourite fail"
+
+	//user custom
+	CC_Err_Comm_USER_CUSTOM_SAVE_FAIL      = 5000
+	CC_Err_Comm_USER_CUSTOM_SAVE_FAIL_STR  = "save user custom fail"
+	CC_Err_Comm_USER_CUSTOM_QUERY_FAIL     = 5001
+	CC_Err_Comm_USER_CUSTOM_QUERY_FAIL_STR = "query user custom fail"
+	CC_Err_Comm_USER_CUSTOM_EDIT_FAIL      = 5002
+	CC_Err_Comm_USER_CUSTOM_EDIT_FAIL_STR  = "modify user custom fail"
+
+	//privilege
+	CC_Err_Comm_CREATE_ROLE_PRI_FAIL             = 7000
+	CC_Err_Comm_CREATE_ROLE_PRI_FAIL_STR         = "create role privilege error"
+	CC_Err_Comm_GET_ROLE_PRI_FAIL                = 7001
+	CC_Err_Comm_GET_ROLE_PRI_FAIL_STR            = "get role privilege error"
+	CC_Err_Comm_ROLE_PRI_EXIST                   = 7002
+	CC_Err_Comm_ROLE_PRI_EXIST_STR               = "role privilege exist"
+	CC_Err_Comm_UPDATE_ROLE_PRI_FAIL             = 7003
+	CC_Err_Comm_UPDATE_ROLE_PRI_FAIL_STR         = "create role privilege error"
+	CC_Err_Comm_CREATE_USER_GROUP_FAIL           = 7004
+	CC_Err_Comm_CREATE_USER_GROUP_FAIL_STR       = "create user group error"
+	CC_Err_Comm_UPDATE_USER_GROUP_FAIL           = 7005
+	CC_Err_Comm_UPDATE_USER_GROUP_FAIL_STR       = "update user group error"
+	CC_Err_Comm_SEARCH_USER_GROUP_FAIL           = 7006
+	CC_Err_Comm_SEARCH_USER_GROUP_FAIL_STR       = "search user group error"
+	CC_Err_Comm_DELETE_USER_GROUP_FAIL           = 7007
+	CC_Err_Comm_DELETE_USER_GROUP_FAIL_STR       = "delete user group error"
+	CC_Err_Comm_INSERT_USER_GROUP_PRIVI_FAIL     = 7008
+	CC_Err_Comm_INSERT_USER_GROUP_PRIVI_FAIL_STR = "insert user group privilege error"
+	CC_Err_Comm_UPDATE_USER_GROUP_PRIVI_FAIL     = 7009
+	CC_Err_Comm_UPDATE_USER_GROUP_PRIVI_FAIL_STR = "update user group privilege error"
+	CC_Err_Comm_GET_USER_GROUP_PRIVI_FAIL        = 7010
+	CC_Err_Comm_GET_USER_GROUP_PRIVI_FAIL_STR    = "get user group privilege error"
+	CC_Err_Comm_DUP_GROUP_NAME_ERR               = 7011
+	CC_Err_Comm_DUP_GROUP_NAME_ERR_STR           = "duplicate group name"
+	CC_Err_Comm_DUP_GROUP_PRIVI_ERR              = 7012
+	CC_Err_Comm_DUP_GROUP_PRIVI_ERR_STR          = "duplicate group privilege"
+	CC_Err_Comm_GET_USER_PRIVI_ERR               = 7013
+	CC_Err_Comm_GET_USER_PRIVI_ERR_STR           = "get user privilege error"
+	// object
+	CC_Err_Comm_Object_Valid_Failed = 8000
+
+	Json_Marshal_ERR     = 9000
+	Json_Marshal_ERR_STR = "json marshal error"
+
+	// property
+	CC_Err_Comm_GET_PROPERTY_PRI_FAIL     = 10001
+	CC_Err_Comm_GET_PROPERTY_PRI_FAIL_STR = "get property error"
+
+	// plat
+	CC_Err_Comm_GET_PLAT_FAIL         = 11001
+	CC_Err_Comm_GET_PLAT_FAIL_STR     = "get plat error"
+	CC_Err_Comm_DELETE_PLAT_FAIL      = 11002
+	CC_Err_Comm_DELETE_PLAT_FAIL_STR  = "delete plat error"
+	CC_Err_Comm_CREATE_PLAT_FAIL      = 11003
+	CC_Err_Comm_CREATE_PLAT_FAIL_STR  = "create plat error"
+	CC_Err_Comm_HOST_IN_PLAT_FAIL     = 11004
+	CC_Err_Comm_HOST_IN_PLAT_FAIL_STR = "plat has host data, can not delete plat"
 )

@@ -21,8 +21,9 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/api"
@@ -33,11 +34,7 @@ import (
 	"configcenter/src/framework/core/monitor/metric"
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
-	_ "configcenter/src/framework/plugins"
-
-	// load all plugins
-
-	"github.com/spf13/pflag"
+	_ "configcenter/src/framework/plugins" // load all plugins
 )
 
 // APPNAME the name of this application, will be use as identification mark for monitoring
@@ -55,16 +52,15 @@ func main() {
 
 	log.SetLoger(&log.Logger{
 		Info: func(args ...interface{}) {
-			blog.Infof("%v", args)
+			blog.Info("%v", args)
 		},
 		Infof:  blog.Infof,
 		Fatal:  blog.Fatal,
 		Fatalf: blog.Fatalf,
 		Error: func(args ...interface{}) {
-			blog.Errorf("%v", args)
+			blog.Error("%v", args)
 		},
-		Errorf:   blog.Errorf,
-		Warningf: blog.Warnf,
+		Errorf: blog.Errorf,
 	})
 
 	if err := config.Init(opt); err != nil {
@@ -79,16 +75,7 @@ func main() {
 	}
 
 	if "" != opt.Regdiscv {
-		disClient := zk.NewZkClient(opt.Regdiscv, 40*time.Second)
-		if err := disClient.Start(); err != nil {
-			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
-			return
-		}
-		if err := disClient.Ping(); err != nil {
-			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
-			return
-		}
-		rd := discovery.NewRegDiscover(APPNAME, disClient, server.GetAddr(), server.GetPort(), false)
+		rd := discovery.NewRegDiscover(APPNAME, opt.Regdiscv, server.GetAddr(), server.GetPort(), false)
 		go func() {
 			rd.Start()
 		}()
@@ -105,9 +92,7 @@ func main() {
 		client.NewForConfig(config.Get(), nil)
 	}
 
-	// initial the background framework manager.
 	api.Init()
-
 	defer func() {
 		blog.CloseLogs()
 		api.UnInit()
@@ -124,7 +109,7 @@ func main() {
 	server.RegisterActions(api.Actions()...)
 	server.RegisterActions(metricManager.Actions()...)
 
-	httpChan := make(chan error, 1)
+	httpChan := make(chan error)
 	go func() { httpChan <- server.ListenAndServe() }()
 
 	sigs := make(chan os.Signal, 1)

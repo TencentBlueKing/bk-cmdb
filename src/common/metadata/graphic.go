@@ -20,54 +20,65 @@ type Position struct {
 
 // Asst the node association node
 type GraphAsst struct {
-	AsstType              string            `json:"bk_asst_type"`
-	NodeType              string            `json:"node_type"`
-	ObjID                 string            `json:"bk_obj_id"`
-	InstID                int64             `json:"bk_inst_id"`
-	AssociationKindInstID int64             `json:"bk_asst_inst_id"`
-	AsstName              string            `json:"bk_asst_name"`
-	Label                 map[string]string `json:"label"`
+	AsstType string            `json:"bk_asst_type"`
+	NodeType string            `json:"node_type"`
+	ObjID    string            `json:"bk_obj_id"`
+	InstID   int               `json:"bk_inst_id"`
+	ObjAtt   string            `json:"bk_object_att_id"`
+	AsstName string            `json:"bk_asst_name"`
+	Label    map[string]string `json:"label"`
 }
 
 type TopoGraphics struct {
-	ScopeType       string                 `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
-	ScopeID         string                 `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
-	NodeType        string                 `json:"node_type" bson:"node_type"`                       // obj inst
-	ObjID           string                 `json:"bk_obj_id" bson:"bk_obj_id"`
-	IsPre           bool                   `json:"ispre"             bson:"ispre"`
-	InstID          int                    `json:"bk_inst_id" bson:"bk_inst_id"`
-	NodeName        string                 `json:"node_name,omitempty" bson:"node_name,omitempty"`
-	Position        Position               `json:"position" bson:"position"`
+	ScopeType       *string                `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
+	ScopeID         *string                `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
+	NodeType        *string                `json:"node_type,omitempty" bson:"node_type,omitempty"`   // obj inst
+	ObjID           *string                `json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	IsPre           *bool                  `json:"ispre,omitempty"             bson:"ispre,omitempty"`
+	InstID          *int                   `json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	NodeName        *string                `json:"node_name,omitempty" bson:"node_name,omitempty"`
+	Position        *Position              `json:"position,omitempty" bson:"position,omitempty"`
 	Ext             map[string]interface{} `json:"ext,omitempty" bson:"ext,omitempty"`
-	Icon            string                 `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon,omitempty"`
-	SupplierAccount string                 `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"` // bk_supplier_account
+	Icon            *string                `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon,omitempty"`
+	BizID           *int                   `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	SupplierAccount *string                `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"` // bk_supplier_account
 	Assts           []GraphAsst            `json:"assts,omitempty"`
 }
 
-type UpdateTopoGraphicsInput struct {
-	Origin []TopoGraphics `field:"origin" json:"origin" bson:"origin"`
-}
-
 func (t *TopoGraphics) FillBlank() *TopoGraphics {
-	t.SetSupplierAccount("0")
-	t.SetExt(map[string]interface{}{})
-	t.SetPosition(Position{})
+	if t.BizID == nil {
+		t.SetBizID(0)
+	}
+	if t.SupplierAccount == nil {
+		t.SetSupplierAccount("0")
+	}
+	if t.Ext == nil {
+		t.SetExt(map[string]interface{}{})
+	}
+	if t.Position == nil {
+		t.SetPosition(&Position{})
+	}
 	return t
 }
 
-func (t *TopoGraphics) SetNodeType(val string) { t.NodeType = val }
-func (t *TopoGraphics) SetObjID(val string)    { t.ObjID = val }
-func (t *TopoGraphics) SetInstID(val int)      { t.InstID = val }
-func (t *TopoGraphics) SetNodeName(val string) { t.NodeName = val }
-func (t *TopoGraphics) SetIsPre(val bool)      { t.IsPre = val }
-func (t *TopoGraphics) SetPosition(val Position) {
-	t.Position = val
+func (t *TopoGraphics) SetNodeType(val string) { t.NodeType = &val }
+func (t *TopoGraphics) SetObjID(val string)    { t.ObjID = &val }
+func (t *TopoGraphics) SetInstID(val int)      { t.InstID = &val }
+func (t *TopoGraphics) SetNodeName(val string) { t.NodeName = &val }
+func (t *TopoGraphics) SetIsPre(val bool)      { t.IsPre = &val }
+func (t *TopoGraphics) SetPosition(val *Position) {
+	if val == nil {
+		t.Position = &Position{}
+	} else {
+		t.Position = val
+	}
 }
 func (t *TopoGraphics) SetExt(val map[string]interface{}) { t.Ext = val }
-func (t *TopoGraphics) SetIcon(val string)                { t.Icon = val }
-func (t *TopoGraphics) SetScopeType(val string)           { t.ScopeType = val }
-func (t *TopoGraphics) SetScopeID(val string)             { t.ScopeID = val }
-func (t *TopoGraphics) SetSupplierAccount(val string)     { t.SupplierAccount = val }
+func (t *TopoGraphics) SetIcon(val string)                { t.Icon = &val }
+func (t *TopoGraphics) SetScopeType(val string)           { t.ScopeType = &val }
+func (t *TopoGraphics) SetScopeID(val string)             { t.ScopeID = &val }
+func (t *TopoGraphics) SetBizID(val int)                  { t.BizID = &val }
+func (t *TopoGraphics) SetSupplierAccount(val string)     { t.SupplierAccount = &val }
 
 type SearchTopoGraphicsResult struct {
 	BaseResp `json:",inline"`

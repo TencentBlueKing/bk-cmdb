@@ -26,6 +26,7 @@ const (
 	fieldPlatID          = "bk_cloud_id"
 	fieldPlatName        = "bk_cloud_name"
 	fieldSupplierAccount = "bk_supplier_account"
+	fieldSupplierID      = "bk_supplier_id"
 	fieldBusinessID      = "bk_biz_id"
 	fieldCapacity        = "bk_capacity"
 	fieldServiceStatus   = "bk_service_status"

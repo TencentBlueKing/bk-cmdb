@@ -1,13 +1,13 @@
 <template>
-    <bk-input type="text"
-        v-model="localValue"
-        :placeholder="localPlaceholder"
-        :maxlength="maxlength"
-        :disabled="disabled"
-        v-bind="$attrs"
-        @change="handleChange"
-        @enter="handleEnter">
-    </bk-input>
+    <div class="cmdb-form form-singlechar">
+        <input class="cmdb-form-input form-singlechar-input" type="text"
+            :placeholder="$t('Form[\'请输入短字符\']')"
+            :maxlength="maxlength"
+            :value="value"
+            :disabled="disabled"
+            @input="handleInput($event)"
+            @change="handleChange">
+    </div>
 </template>
 
 <script>
@@ -15,7 +15,6 @@
         name: 'cmdb-form-singlechar',
         props: {
             value: {
-                type: [String, Number],
                 default: ''
             },
             disabled: {
@@ -25,35 +24,31 @@
             maxlength: {
                 type: Number,
                 default: 256
-            },
-            placeholder: {
-                type: String,
-                default: ''
-            }
-        },
-        computed: {
-            localPlaceholder () {
-                return this.placeholder || this.$t('请输入短字符')
-            },
-            localValue: {
-                get () {
-                    return (this.value === null || this.value === undefined) ? '' : this.value
-                },
-                set (value) {
-                    this.$emit('input', value)
-                }
             }
         },
         methods: {
-            handleChange (value) {
-                this.$emit('on-change', value)
+            handleInput (event) {
+                let value = event.target.value.trim()
+                this.$emit('input', value)
             },
-            handleEnter (value) {
-                this.$emit('enter', value)
-            },
-            focus () {
-                this.$el.querySelector('input').focus()
+            handleChange () {
+                this.$emit('on-change', this.value)
             }
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .form-singlechar-input {
+        height: 36px;
+        width: 100%;
+        padding: 0 10px;
+        background-color: #fff;
+        border: 1px solid $cmdbBorderColor;
+        font-size: 14px;
+        outline: none;
+        &:focus{
+            border-color: $cmdbBorderFocusColor;
+        }
+    }
+</style>

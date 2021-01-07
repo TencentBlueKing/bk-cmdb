@@ -1,0 +1,33 @@
+.bk-circle{
+    display: inline-block;
+    position: relative;
+    text-align: center;
+    circle {
+        line-height: 1;
+        /* transition: stroke-dasharray .25s; */
+        transform-origin: center;
+        stroke-linecap: round;
+    }
+    .title{
+        text-align: center;
+        position: absolute;
+        left: 50%;
+        width: 100%;
+        overflow: auto;
+        transform: translate(-50%, 0)
+    }
+    .num{
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -60%);
+        color: #737987;
+    }
+    .progress-background{
+        transform: scale(0.9);
+    }
+    .progress-bar{
+        transform: scale(0.9) rotate(-90deg);
+        transition: stroke-dashoffset 0.5s ease;
+    }
+}

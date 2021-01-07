@@ -14,157 +14,138 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
+	"os"
 
-	"configcenter/src/ac/extensions"
+	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/types"
-	"configcenter/src/common/util"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/service"
-	"configcenter/src/storage/driver/redis"
-	"configcenter/src/thirdparty/elasticsearch"
+	toposvr "configcenter/src/scene_server/topo_server/service"
 )
 
 // TopoServer the topo server
 type TopoServer struct {
-	Core        *backbone.Engine
-	Config      options.Config
-	Service     *service.Service
-	configReady bool
+	Core    *backbone.Engine
+	Config  options.Config
+	Service toposvr.TopoServiceInterface
 }
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-	t.configReady = true
-	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, string(current.ConfigData))
 
-	var err error
-	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", nil)
-	if err != nil {
-		blog.Warnf("parse es config failed: %v", err)
-	}
-}
-
-func (t *TopoServer) setBusinessTopoLevelMax() error {
-	tryCnt := 30
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
-	for i := 1; i <= tryCnt; i++ {
-		time.Sleep(time.Second * 2)
-		res, err := t.Core.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
-		if err != nil {
-			blog.Warnf("setBusinessTopoLevelMax failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
-			continue
-		}
-		if res.Result == false {
-			blog.Warnf("setBusinessTopoLevelMax failed,  try count:%d, SearchConfigAdmin err: %s", i, res.ErrMsg)
-			continue
-		}
-		t.Config.BusinessTopoLevelMax = int(res.Data.Backend.MaxBizTopoLevel)
-		break
+	cfg, err := mapstr.NewFromInterface(current.ConfigMap)
+	if nil != err {
+		blog.Errorf("failed to update config, error info is %s", err.Error())
 	}
 
-	if t.Config.BusinessTopoLevelMax == 0 {
-		blog.Errorf("setBusinessTopoLevelMax failed, BusinessTopoLevelMax is 0, check the coreservice and the value in table cc_System")
-		return fmt.Errorf("setBusinessTopoLevelMax failed")
+	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
+		blog.Errorf("failed to update config, error info is %s", err.Error())
 	}
-
-	blog.Infof("setBusinessTopoLevelMax successfully, BusinessTopoLevelMax is %d", t.Config.BusinessTopoLevelMax)
-	return nil
+	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	t.Service.SetConfig(t.Config, t.Core)
 }
 
 // Run main function
-func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := types.NewServerInfo(op.ServConf)
+func Run(ctx context.Context, op *options.ServerOption) error {
+	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	blog.Infof("srv conf: %+v", svrInfo)
-	blog.Infof("enableTxn is %t", op.EnableTxn)
+	blog.V(3).Infof("srv conf:", svrInfo)
 
-	server := new(TopoServer)
-	server.Service = new(service.Service)
-
-	input := &backbone.BackboneParameter{
-		Regdiscv:     op.ServConf.RegDiscover,
-		ConfigPath:   op.ServConf.ExConfig,
-		ConfigUpdate: server.onTopoConfigUpdate,
-		SrvInfo:      svrInfo,
+	c := &util.APIMachineryConfig{
+		ZkAddr:    op.ServConf.RegDiscover,
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
 	}
-	engine, err := backbone.NewBackbone(ctx, input)
+
+	machinery, err := apimachinery.NewApiMachinery(c)
+	if err != nil {
+		return fmt.Errorf("new api machinery failed, err: %v", err)
+	}
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
+
+	topoSvr := new(TopoServer)
+	topoSvr.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
+
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-	server.Core = engine
 
-	if err := server.CheckForReadiness(); err != nil {
-		return err
+	topoService := toposvr.New()
+	topoSvr.Service = topoService
+
+	server := backbone.Server{
+		ListenAddr: svrInfo.IP,
+		ListenPort: svrInfo.Port,
+		Handler:    restful.NewContainer().Add(topoService.WebService()),
+		TLS:        backbone.TLSConfig{},
 	}
 
-	if err := server.setBusinessTopoLevelMax(); err != nil {
-		return err
+	bonC := &backbone.Config{
+		RegisterPath: regPath,
+		RegisterInfo: *svrInfo,
+		CoreAPI:      machinery,
+		Server:       server,
 	}
 
-	server.Config.Redis, err = engine.WithRedis()
-	if err != nil {
-		return err
+	engine, err := backbone.NewBackbone(
+		ctx,
+		op.ServConf.RegDiscover,
+		types.CC_MODULE_TOPO,
+		op.ServConf.ExConfig,
+		topoSvr.onTopoConfigUpdate,
+		bonC)
+
+	if nil != err {
+		return fmt.Errorf("new engine failed, error is %s", err.Error())
 	}
 
-	// TODO 可以在backbone 完成
-	if err := redis.InitClient("redis", &server.Config.Redis); err != nil {
-		blog.Errorf("it is failed to connect reids. err:%s", err.Error())
-		return err
-	}
+	topoSvr.Core = engine
 
-	essrv := new(elasticsearch.EsSrv)
-	if server.Config.Es.FullTextSearch == "on" {
-		esClient, err := elasticsearch.NewEsClient(server.Config.Es)
-		if err != nil {
-			blog.Errorf("failed to create elastic search client, err:%s", err.Error())
-			return fmt.Errorf("new es client failed, err: %v", err)
-		}
-		essrv.Client = esClient
-	}
+	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
+	topoService.SetConfig(topoSvr.Config, engine)
 
-	authManager := extensions.NewAuthManager(engine.CoreAPI)
-	server.Service = &service.Service{
-		Language:    engine.Language,
-		Engine:      engine,
-		AuthManager: authManager,
-		Es:          essrv,
-		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
-		Error:       engine.CCErr,
-		EnableTxn:   op.EnableTxn,
-		Config:      server.Config,
-	}
-
-	err = backbone.StartServer(ctx, cancel, engine, server.Service.WebService(), true)
-	if err != nil {
-		return err
-	}
 	select {
 	case <-ctx.Done():
 	}
 	return nil
 }
 
-const waitForSeconds = 180
-
-func (t *TopoServer) CheckForReadiness() error {
-	for i := 1; i < waitForSeconds; i++ {
-		if !t.configReady {
-			blog.Info("waiting for topology server configuration ready.")
-			time.Sleep(time.Second)
-			continue
-		}
-		blog.Info("topology server configuration ready.")
-		return nil
+func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
+	ip, err := op.ServConf.GetAddress()
+	if err != nil {
+		return nil, err
 	}
-	return errors.New("wait for topology server configuration timeout")
+
+	port, err := op.ServConf.GetPort()
+	if err != nil {
+		return nil, err
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	info := &types.ServerInfo{
+		IP:       ip,
+		Port:     port,
+		HostName: hostname,
+		Scheme:   "http",
+		Version:  version.GetVersion(),
+		Pid:      os.Getpid(),
+	}
+	return info, nil
 }

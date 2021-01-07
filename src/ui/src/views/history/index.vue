@@ -1,146 +1,207 @@
 <template>
     <div class="history-layout">
-        <div class="history-options">
-            <cmdb-form-date-range class="history-date-range"
-                v-model="condition.operation_time"
-                @change="handlePageChange(1)">
-            </cmdb-form-date-range>
-            <bk-input class="history-host-filter ml10"
-                v-if="isHost"
-                right-icon="icon-search"
-                clearable
-                v-model="condition.resource_name"
-                :placeholder="$t('请输入xx', { name: 'IP' })"
-                @enter="handlePageChange(1)"
-                @clear="handlePageChange(1)">
-            </bk-input>
+        <div class="history-options clearfix">
+            <label class="fl">{{$t('Common["已删除历史"]')}}</label>
+            <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+            <bk-date-range class="history-date-range fr"
+                :ranges="ranges"
+                :range-separator="'-'"
+                :quick-select="true"
+                :start-date="startDate"
+                :end-date="endDate"
+                position="bottom-left"
+                @change="setFilterTime">
+            </bk-date-range>
         </div>
-        <bk-table class="history-table"
-            v-bkloading="{ isLoading: $loading() }"
-            :pagination="pagination"
-            :data="history"
-            :max-height="$APP.height - 190"
-            :row-style="{ cursor: 'pointer' }"
-            @page-change="handlePageChange"
-            @page-limit-change="handleSizeChange"
-            @row-click="handleRowClick">
-            <bk-table-column prop="resource_id" label="ID"></bk-table-column>
-            <bk-table-column prop="resource_name" :label="isHost ? 'IP' : $t('资源')"></bk-table-column>
-            <bk-table-column prop="operation_time" :label="$t('更新时间')">
-                <template slot-scope="{ row }">{{$tools.formatTime(row.operation_time)}}</template>
-            </bk-table-column>
-            <bk-table-column prop="user" :label="$t('操作账号')">
-                <template slot-scope="{ row }">
-                    <cmdb-form-objuser :value="row.user" type="info"></cmdb-form-objuser>
-                </template>
-            </bk-table-column>
-        </bk-table>
+        <cmdb-table class="history-table"
+            rowCursor="default"
+            :sortable="false"
+            :loading="$loading()"
+            :pagination.sync="pagination"
+            :list="list"
+            :header="header"
+            :wrapperMinusHeight="157"
+            @handlePageChange="handlePageChange"
+            @handleSizeChange="handleSizeChange">
+        </cmdb-table>
     </div>
 </template>
 
 <script>
-    import AuditDetails from '@/components/audit-history/details.js'
+    import { mapGetters, mapActions } from 'vuex'
+    import moment from 'moment'
     export default {
         data () {
             return {
-                dictionary: [],
-                history: [],
-                pagination: this.$tools.getDefaultPaginationConfig(),
-                condition: {
-                    operation_time: [],
-                    resource_name: '',
-                    action: ['delete']
+                properties: [],
+                header: [],
+                list: [],
+                pagination: {
+                    current: 1,
+                    size: 10,
+                    count: 0
                 },
-                requestId: Symbol('getHistory')
+                ranges: {},
+                opTime: [],
+                opTimeResolver: null
             }
         },
         computed: {
-            objId () {
-                if (this.$route.name === 'hostHistory') {
-                    return 'host'
+            ...mapGetters(['supplierAccount']),
+            ...mapGetters('userCustom', ['usercustom']),
+            customColumns () {
+                const customKeyMap = {
+                    [this.objId]: `${this.objId}_table_columns`,
+                    'host': 'resource_table_columns'
                 }
+                return this.usercustom[customKeyMap[this.objId]] || []
+            },
+            objId () {
                 return this.$route.params.objId
             },
-            isHost () {
-                return this.objId === 'host'
+            startDate () {
+                return this.$tools.formatTime(moment().subtract(1, 'month'), 'YYYY-MM-DD')
+            },
+            endDate () {
+                return this.$tools.formatTime(moment(), 'YYYY-MM-DD')
             }
         },
         watch: {
-            objId: {
-                immediate: true,
-                handler (objId) {
-                    const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
-                    this.$store.commit('setTitle', `${model.bk_obj_name}${this.$t('删除历史')}`)
+            opTime (opTime) {
+                if (this.opTimeResolver) {
+                    this.opTimeResolver()
+                } else {
+                    this.handlePageChange(1)
                 }
             }
         },
-        created () {
-            this.getAuditDictionary()
-            this.getHistory()
-        },
-        methods: {
-            async getAuditDictionary () {
-                try {
-                    this.dictionary = await this.$store.dispatch('audit/getDictionary', {
+        async created () {
+            try {
+                this.properties = await this.searchObjectAttribute({
+                    params: {
+                        bk_obj_id: this.objId,
+                        bk_supplier_account: this.supplierAccount
+                    },
+                    config: {
+                        requestId: `post_searchObjectAttribute_${this.objId}`,
                         fromCache: true
-                    })
-                } catch (error) {
-                    this.dictionary = []
-                }
-            },
-            async getHistory () {
-                try {
-                    const { info, count } = await this.$store.dispatch('audit/getList', {
-                        params: {
-                            condition: this.getUsefulConditon(),
-                            page: {
-                                ...this.$tools.getPageParams(this.pagination),
-                                sort: '-operation_time'
-                            }
-                        },
-                        config: {
-                            requestId: this.requestId
-                        }
-                    })
-                    this.pagination.count = count
-                    this.history = info
-                } catch (error) {
-                    console.error(error)
-                    this.history = []
-                }
-            },
-            getUsefulConditon () {
-                const usefuleCondition = {
-                    category: this.isHost ? 'host' : 'resource',
-                    resource_type: this.isHost ? 'host' : 'model_instance'
-                }
-                Object.keys(this.condition).forEach(key => {
-                    const value = this.condition[key]
-                    if (String(value).length) {
-                        usefuleCondition[key] = value
                     }
                 })
-                if (usefuleCondition.operation_time) {
-                    const [start, end] = usefuleCondition.operation_time
-                    usefuleCondition.operation_time = {
-                        start: start + ' 00:00:00',
-                        end: end + ' 23:59:59'
+                await this.setTableHeader()
+                await this.setTimeResolver()
+                await this.initFilterTime()
+                this.getTableData()
+            } catch (e) {
+                // ignore
+            }
+        },
+        methods: {
+            ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+            ...mapActions('operationAudit', ['getOperationLog']),
+            back () {
+                this.$router.go(-1)
+            },
+            setTimeResolver () {
+                return new Promise((resolve, reject) => {
+                    this.opTimeResolver = () => {
+                        this.opTimeResolver = null
+                        resolve()
+                    }
+                })
+            },
+            initFilterTime () {
+                const language = this.$i18n.locale
+                if (language === 'en') {
+                    this.ranges = {
+                        'Yesterday': [moment().subtract(1, 'days'), moment()],
+                        'Last Week': [moment().subtract(7, 'days'), moment()],
+                        'Last Month': [moment().subtract(1, 'month'), moment()],
+                        'Last Three Month': [moment().subtract(3, 'month'), moment()]
+                    }
+                } else {
+                    this.ranges = {
+                        昨天: [moment().subtract(1, 'days'), moment()],
+                        最近一周: [moment().subtract(7, 'days'), moment()],
+                        最近一个月: [moment().subtract(1, 'month'), moment()],
+                        最近三个月: [moment().subtract(3, 'month'), moment()]
                     }
                 }
-                return usefuleCondition
+                this.opTime = [this.startDate + ' 00:00:00', this.endDate + ' 23:59:59']
+                return Promise.resolve()
+            },
+            setTableHeader () {
+                const idMap = {
+                    'host': 'bk_host_id',
+                    'set': 'bk_set_id',
+                    'module': 'bk_module_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_plat_id'
+                }
+                const fixedPropertyMap = {
+                    'host': ['bk_host_innerip', 'bk_cloud_id'],
+                    'set': ['bk_set_name'],
+                    'module': ['bk_module_name'],
+                    'biz': ['bk_biz_name'],
+                    'plat': ['bk_plat_name']
+                }
+                const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customColumns, fixedPropertyMap[this.objId] || ['bk_inst_name'])
+                this.header = [{
+                    id: idMap[this.objId] || 'bk_inst_id',
+                    name: 'ID'
+                }].concat(headerProperties.map(property => {
+                    return {
+                        id: property['bk_property_id'],
+                        name: property['bk_property_name']
+                    }
+                })).concat([{
+                    id: 'op_time',
+                    width: 180,
+                    name: this.$t('Common["更新时间"]')
+                }])
+                return Promise.resolve(this.header)
+            },
+            setFilterTime (oldVal, newVal) {
+                this.opTime = newVal.split(' - ').map((date, index) => {
+                    return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')
+                })
+            },
+            getTableData () {
+                this.getOperationLog({
+                    params: this.getSearchParams(),
+                    config: {
+                        cancelPrevious: true,
+                        requestId: `search${this.objId}OperationLog`
+                    }
+                }).then(log => {
+                    this.pagination.count = log.count
+                    const list = log.info.map(data => {
+                        return {
+                            ...(data.content['cur_data'] ? data.content['cur_data'] : data.content['pre_data']),
+                            'op_time': this.$tools.formatTime(data['op_time'])
+                        }
+                    })
+                    this.list = this.$tools.flatternList(this.properties, list)
+                })
+            },
+            getSearchParams () {
+                return {
+                    condition: {
+                        'op_type': 3,
+                        'op_time': this.opTime,
+                        'op_target': this.objId
+                    },
+                    start: (this.pagination.current - 1) * this.pagination.size,
+                    limit: this.pagination.size,
+                    sort: '-op_time'
+                }
             },
             handleSizeChange (size) {
-                this.pagination.limit = size
+                this.pagination.size = size
                 this.handlePageChange(1)
             },
             handlePageChange (current) {
                 this.pagination.current = current
-                this.getHistory()
-            },
-            handleRowClick (row) {
-                AuditDetails.show({
-                    id: row.id
-                })
+                this.getTableData()
             }
         }
     }
@@ -148,19 +209,22 @@
 
 <style lang="scss" scoped>
     .history-layout{
-        padding: 15px 20px 0;
+        padding: 20px;
     }
     .history-options{
-        font-size: 0px;
-        .history-host-filter,
-        .history-date-range {
-            width: 260px !important;
-            display: inline-block;
-            vertical-align: top;
-        }
+        height: 36px;
+        line-height: 36px;
+        font-size: 14px;
     }
     .history-table{
-        margin-top: 15px;
+        margin-top: 20px;
     }
+</style>
 
+<style lang="scss">
+    .history-date-range{
+        .range-action{
+            display: none;
+        }
+    }
 </style>

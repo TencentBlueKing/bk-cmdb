@@ -10,29 +10,6 @@
 
 import $http from '@/api'
 
-function createIdProperty (objId) {
-    const keyMap = {
-        biz: 'bk_biz_id',
-        host: 'bk_host_id'
-    }
-    return {
-        id: Date.now(),
-        bk_obj_id: objId,
-        bk_property_id: keyMap[objId] || 'bk_inst_id',
-        bk_property_name: 'ID',
-        bk_property_index: -1,
-        bk_property_type: 'int',
-        isonly: true,
-        ispre: true,
-        bk_isapi: true,
-        bk_issystem: true,
-        isreadonly: true,
-        editable: false,
-        bk_property_group: null,
-        _is_inject_: true
-    }
-}
-
 const state = {
 
 }
@@ -43,7 +20,7 @@ const getters = {
 
 const actions = {
     /**
-     * 创建对象模型属性
+     * 创建分组基本信息
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
@@ -51,19 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObjectAttribute ({ commit, state, dispatch }, { params, config }) {
-        return $http.post('create/objectattr', params, config)
-    },
-
-    /**
-     * 业务下创建对象模型属性
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    createBizObjectAttribute ({ commit, state, dispatch }, { bizId, params, config }) {
-        return $http.post(`/create/objectattr/biz/${bizId}`, params, config)
+        return $http.post(`object/attr`, params, config)
     },
 
     /**
@@ -75,7 +40,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObjectAttribute ({ commit, state, dispatch }, { id, config }) {
-        return $http.delete(`delete/objectattr/${id}`, config)
+        return $http.delete(`object/attr/${id}`, config)
     },
 
     /**
@@ -88,20 +53,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectAttribute ({ commit, state, dispatch }, { id, params, config }) {
-        return $http.put(`update/objectattr/${id}`, params, config)
-    },
-
-    /**
-     * 业务下更新对象属性模型
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} id 被删除的数据记录的唯一标识id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    updateBizObjectAttribute ({ commit, state, dispatch }, { bizId, id, params, config }) {
-        return $http.put(`update/objectattr/biz/${bizId}/id/${id}`, params, config)
+        return $http.put(`object/attr/${id}`, params, config)
     },
 
     /**
@@ -112,18 +64,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectAttribute ({ commit, state, dispatch }, { params, config, injectId = false }) {
-        return $http.post('find/objectattr', params, config).then(data => {
-            if (injectId !== params.bk_obj_id) {
-                return data
-            }
-            const alreadyInject = data.some(property => property._is_inject_)
-            if (alreadyInject) {
-                return data
-            }
-            data.unshift(createIdProperty(injectId))
-            return data
-        })
+    searchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`object/attr/search`, params, config)
     },
 
     /**
@@ -134,22 +76,14 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    batchSearchObjectAttribute ({ commit, state, dispatch }, { params, config, injectId = false }) {
-        return $http.post(`find/objectattr`, params, config).then(properties => {
+    batchSearchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`object/attr/search`, params, config).then(properties => {
             const result = {}
-            params.bk_obj_id.$in.forEach(objId => {
+            params['bk_obj_id']['$in'].forEach(objId => {
                 result[objId] = []
             })
             properties.forEach(property => {
                 result[property['bk_obj_id']].push(property)
-            })
-            Object.keys(result).forEach(objId => {
-                if (injectId === objId) {
-                    const alreadyInject = result[objId].some(property => property._is_inject_)
-                    if (!alreadyInject) {
-                        result[objId].unshift(createIdProperty(objId))
-                    }
-                }
             })
             return result
         })

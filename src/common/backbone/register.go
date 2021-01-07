@@ -13,59 +13,62 @@
 package backbone
 
 import (
-	"encoding/json"
+    "time"
+    "fmt"
 
-	"configcenter/src/common/backbone/service_mange/zk"
-	"configcenter/src/common/registerdiscover"
-	"configcenter/src/common/types"
-	"configcenter/src/framework/core/errors"
+    "configcenter/src/common/types"
+    regd "configcenter/src/common/RegisterDiscover"
+    "github.com/gin-gonic/gin/json"
+    "configcenter/src/framework/core/errors"
 )
 
-type ServiceRegisterInterface interface {
-	// Ping to ping server
-	Ping() error
-	// register local server info, it can only be called for once.
-	Register(path string, c types.ServerInfo) error
-	// Cancel to stop server register and discover
-	Cancel()
-	// ClearRegisterPath to delete server register path from zk
-	ClearRegisterPath() error
+type ServiceDiscoverInterface interface {
+    // Ping to check if this service discovery service is health.
+    Ping() error
+    
+    // stop the service discover service
+    Stop() error
+    
+    // register local server info, it can only be called for once.
+    Register(path string, c types.ServerInfo) error
 }
 
-func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
-	s := new(serviceRegister)
-	s.client = registerdiscover.NewRegDiscoverEx(client)
-	return s, nil
+func NewServcieDiscovery(zkAddr string)(ServiceDiscoverInterface, error) {
+    s := new(serviceDiscovery)
+    s.client = regd.NewRegDiscoverEx(zkAddr, 5 * time.Second)
+    if err := s.client.Start(); nil != err {
+        return nil, fmt.Errorf("start service discovery failed, err: %v", err)
+    }
+    return s, nil
 }
 
-type serviceRegister struct {
-	client *registerdiscover.RegDiscover
+type serviceDiscovery struct {
+    client *regd.RegDiscover
 }
 
-func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
-	if c.RegisterIP == "0.0.0.0" {
-		return errors.New("register ip can not be 0.0.0.0")
-	}
-
-	js, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	return s.client.RegisterAndWatchService(path, js)
+func (s *serviceDiscovery) Ping() error {
+    return s.client.Ping()
 }
 
-// Ping to ping server
-func (s *serviceRegister) Ping() error {
-	return s.client.Ping()
+func (s *serviceDiscovery) Stop() error {
+    return s.client.Stop()
 }
 
-// Cancel to stop server register and discover
-func (s *serviceRegister) Cancel() {
-	s.client.Cancel()
+func (s *serviceDiscovery) Register(path string, c types.ServerInfo) error {
+    if c.IP == "0.0.0.0" {
+        return errors.New("register ip can not be 0.0.0.0")
+    }
+    
+    js, err := json.Marshal(c)
+    if err != nil {
+        return err
+    }
+    
+    return s.client.RegisterAndWatchService(path ,js)    
 }
 
-// ClearRegisterPath to delete server register path from zk
-func (s *serviceRegister) ClearRegisterPath() error {
-	return s.client.ClearRegisterPath()
-}
+
+
+
+
+

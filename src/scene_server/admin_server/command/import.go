@@ -18,33 +18,25 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-)
-
-var (
-	defaultinitUserName = "bk_init_user"
 )
 
 func backup(ctx context.Context, db dal.RDB, opt *option) error {
 	dir := filepath.Dir(opt.position)
 	now := time.Now().Format("2006_01_02_15_04_05")
 	file := filepath.Join(dir, "backup_bk_biz_"+now+".json")
-	exportOpt := *opt
-	exportOpt.position = file
-	exportOpt.mini = false
-	exportOpt.scope = "all"
-	err := export(ctx, db, &exportOpt)
+	err := export(ctx, db, &option{position: file, OwnerID: opt.OwnerID})
 	if nil != err {
 		return err
 	}
-	fmt.Println("%s business has been backup to \033[35m"+file+"\033[0m", opt.bizName)
+	fmt.Println("blueking business has been backup to \033[35m" + file + "\033[0m")
 	return nil
 }
 
@@ -55,753 +47,541 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 	}
 	defer file.Close()
 
-	importJSON := BKTopo{}
-	err = json.NewDecoder(file).Decode(&importJSON)
+	tar := new(Topo)
+	json.NewDecoder(file).Decode(tar)
 	if nil != err {
 		return err
 	}
 
-	bizID, err := getBKBizID(ctx, db)
+	cur, err := getBKTopo(ctx, db, opt)
 	if err != nil {
-		return err
+		return fmt.Errorf("get src topo faile %s", err.Error())
 	}
 
-	setParentID, err := getSetParentID(ctx, bizID, db)
+	err = backup(ctx, db, opt)
 	if err != nil {
-		return err
+		return fmt.Errorf("backup faile %s", err)
 	}
 
-	if err := allowInit(ctx, bizID, db, opt); err != nil {
-		return err
-	}
-	importer := NewImporterBizTopo(importJSON, db, opt)
-	if err := importer.FilterBKTopo(ctx, bizID, setParentID); err != nil {
-		return err
-	}
-
-	if err := importer.ClearBKTopo(ctx, bizID); err != nil {
-		return err
-	}
-
-	if err := importer.InitBKTopo(ctx, bizID, setParentID); err != nil {
-		return err
-	}
-	if err := recordInitLog(ctx, db); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// aloowInit 是否允许初始化
-func allowInit(ctx context.Context, bizID int64, db dal.DB, opt *option) error {
-
-	// 是否已经初始化过
-	initFlagCond := map[string]interface{}{"cc_init_bk_biz_init": mapstr.MapStr{"$exists": true}}
-	cnt, err := db.Table(common.BKTableNameSystem).Find(initFlagCond).Count(ctx)
-	if err != nil {
-		return fmt.Errorf("find cc_init_bk_biz_init flag from db error. err:%s ", err.Error())
-	}
-	if cnt != 0 {
-		return fmt.Errorf("no duplicat import allowed")
-	}
-
-	// 是否已经有主机
-	hostInfo := map[string]interface{}{common.BKAppIDField: bizID}
-	cnt, err = db.Table(common.BKTableNameModuleHostConfig).Find(hostInfo).Count(ctx)
-	if err != nil {
-		return fmt.Errorf("find blueking business host error. err:%s", err.Error())
-	}
-	if cnt != 0 {
-		return fmt.Errorf("host already exists")
-	}
-	return nil
-}
-
-func recordInitLog(ctx context.Context, db dal.DB) error {
-	doc := map[string]interface{}{
-		"cc_init_bk_biz_init": time.Now(),
-	}
-	err := db.Table(common.BKTableNameSystem).Insert(ctx, doc)
-	if err != nil {
-		return fmt.Errorf("record business blueking topology operation log error. err:%s", err.Error())
-	}
-	return nil
-}
-
-type importerBizTopo struct {
-	// file json content
-	importJSON BKTopo
-	db         dal.DB
-	opt        *option
-
-	// first handle data. 检查json合法后的数据
-	procProcNameInfoMap  map[string]metadata.ProcessTemplate
-	serviceTemplateMap   map[string]BKServiceTemplate
-	setNameInfoMap       map[string]map[string]interface{}
-	moduleSetNameInfoMap map[string]map[string]BKBizModule
-
-	procUUIDInfoMap map[string]metadata.ProcessTemplate
-	//  create topo info
-	newServiceTemplateMap map[string]int64
-	newSetTemplate        map[string]int64
-
-	// cache
-	// 缓存业务下服务分类 map[level1 category name]catorgy id
-	serviceCategoryL1CacheInfo map[string]int64
-	// 缓存业务下服务分类 map[level1 category id ][level2]catorgy id
-	serviceCategoryL2CacheInfo map[int64]map[string]int64
-}
-
-func NewImporterBizTopo(importJSON BKTopo, db dal.DB, opt *option) *importerBizTopo {
-	return &importerBizTopo{
-		importJSON:                 importJSON,
-		db:                         db,
-		opt:                        opt,
-		procProcNameInfoMap:        make(map[string]metadata.ProcessTemplate, 0),
-		serviceTemplateMap:         make(map[string]BKServiceTemplate, 0),
-		setNameInfoMap:             make(map[string]map[string]interface{}, 0),
-		moduleSetNameInfoMap:       make(map[string]map[string]BKBizModule, 0),
-		newServiceTemplateMap:      make(map[string]int64),
-		newSetTemplate:             make(map[string]int64, 0),
-		serviceCategoryL1CacheInfo: make(map[string]int64, 0),
-		serviceCategoryL2CacheInfo: make(map[int64]map[string]int64, 0),
-		procUUIDInfoMap:            make(map[string]metadata.ProcessTemplate, 0),
-	}
-}
-
-func (ibt *importerBizTopo) FilterBKTopo(ctx context.Context, bizID, setParentID int64) error {
-
-	// 检查用户配置服务分类是否存在
-	if err := ibt.cacheServiceCategory(ctx, bizID); err != nil {
-		return err
-	}
-
-	if err := ibt.filterBKTopoProc(ctx, bizID); err != nil {
-		return err
-	}
-
-	if err := ibt.filterBKTopoServiceTemplate(ctx); err != nil {
-		return err
-	}
-
-	if err := ibt.filterBKTopoSet(ctx, bizID, setParentID); err != nil {
-		return err
-	}
-
-	if err := ibt.filterBKTopoModule(ctx); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ibt *importerBizTopo) filterBKTopoProc(ctx context.Context, bizID int64) error {
-	for idx, proc := range ibt.importJSON.Proc {
-		funcName, ok := proc[common.BKFuncName].(string)
-		if !ok || funcName == "" {
-			return fmt.Errorf("process info index %d, field %s value not string", idx, common.BKFuncName)
+	if tar.BizTopo != nil {
+		//topo check
+		if !compareSlice(tar.Mainline, cur.Mainline) {
+			return fmt.Errorf("different topo mainline found, your expecting import topo is [%s], but the existing topo is [%s]",
+				strings.Join(tar.Mainline, "->"), strings.Join(cur.Mainline, "->"))
 		}
 
-		procName, ok := proc[common.BKProcessNameField].(string)
-		if !ok || procName == "" {
-			return fmt.Errorf("process info index %d, field %s value not string", idx, common.BKProcessNameField)
-		}
+		// walk blueking biz and get difference
+		ipt := newImporter(ctx, db, opt)
+		ipt.walk(true, tar.BizTopo)
 
-		if _, ok := ibt.procProcNameInfoMap[procName]; ok {
-			return fmt.Errorf("process info index %d,  %s  duplicate", idx, common.BKFuncName)
-		}
-		procUUID, ok := proc["uuid"].(string)
-		if ok {
-			delete(proc, "uuid")
-			if _, ok := ibt.procUUIDInfoMap[procUUID]; ok {
-				return fmt.Errorf("process info index %d,  %s  duplicate", idx, "uuid")
+		// walk to create new node
+		tar.BizTopo.walk(func(node *Node) error {
+			if node.mark == actionCreate {
+				fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+				if !opt.dryrun {
+
+					err := db.Table(common.GetInstTableName(node.ObjID)).Insert(ctx, node.Data)
+					if nil != err {
+						return fmt.Errorf("insert to %s, data:%+v, error: %s", node.ObjID, node.Data, err.Error())
+					}
+				}
+			}
+			if node.mark == actionUpdate {
+				// fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+				if !opt.dryrun {
+					instID, err := node.getInstID()
+					if nil != err {
+						return err
+					}
+					updateCondition := map[string]interface{}{
+						common.GetInstIDField(node.ObjID): instID,
+					}
+
+					err = db.Table(common.GetInstTableName(node.ObjID)).Update(ctx, updateCondition, node.Data)
+					if nil != err {
+						return fmt.Errorf("update to %s by %+v data:%+v, error: %s", node.ObjID, updateCondition, node.Data, err.Error())
+					}
+				}
+			}
+			return nil
+		})
+
+		// walk to delete unuse node
+		for objID, sdeletes := range ipt.sdelete {
+			for _, sdelete := range sdeletes {
+				// fmt.Printf("\n--- \033[36mdelete parent node %s %+v\033[0m\n", objID, sdelete)
+
+				instID, err := getInt64(sdelete[common.GetInstIDField(objID)])
+				if nil != err {
+					return err
+				}
+
+				cur.BizTopo.walk(func(node *Node) error {
+					nodeID, err := node.getInstID()
+					if nil != err {
+						return err
+					}
+					if node.ObjID == objID && nodeID == instID {
+						node.walk(func(child *Node) error {
+							childID, err := child.getInstID()
+							if nil != err {
+								return err
+							}
+							if child.ObjID == common.BKInnerObjIDModule {
+								// if should delete module then check whether it has host
+								modulehostcondition := map[string]interface{}{
+									common.BKModuleIDField: childID,
+								}
+								count, err := db.Table(common.BKTableNameModuleHostConfig).Find(modulehostcondition).Count(ctx)
+								if nil != err {
+									return fmt.Errorf("get host count error: %s", err.Error())
+								}
+								if count > 0 {
+									return fmt.Errorf("there are %d hosts binded to module %v, please unbind them first and try again ", node.Data[common.BKModuleNameField], err.Error())
+								}
+							}
+
+							deleteconition := map[string]interface{}{
+								common.GetInstIDField(child.ObjID): childID,
+							}
+							switch child.ObjID {
+							case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
+							default:
+								deleteconition[common.BKObjIDField] = child.ObjID
+							}
+							fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteconition)
+							if !opt.dryrun {
+
+								err = db.Table(common.GetInstTableName(child.ObjID)).Delete(ctx, deleteconition)
+								if nil != err {
+									return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteconition, err.Error())
+								}
+							}
+							return nil
+						})
+						return fmt.Errorf("break")
+					}
+					return nil
+				})
+
 			}
 		}
-
-		procTemp := metadata.ProcessTemplate{
-			// 	set value befor insert data to db
-			ID:          0,
-			ProcessName: procName,
-			// set value  after create template,
-			ServiceTemplateID: 0,
-			BizID:             bizID,
-			Creator:           defaultinitUserName,
-			Modifier:          defaultinitUserName,
-			CreateTime:        time.Now().UTC(),
-			LastTime:          time.Now().UTC(),
-			SupplierAccount:   ibt.opt.OwnerID,
-			Property:          nil,
-		}
-		var err error
-		procTemp.Property, err = convProcTemplateProperty(ctx, proc)
-		if err != nil {
-			return fmt.Errorf("process index %d, name:%s, %s", idx, funcName, err.Error())
-		}
-
-		if procUUID != "" {
-			ibt.procUUIDInfoMap[procUUID] = procTemp
-		} else {
-			ibt.procProcNameInfoMap[procName] = procTemp
-		}
-	}
-	return nil
-}
-
-func (ibt *importerBizTopo) filterBKTopoServiceTemplate(ctx context.Context) error {
-
-	for idx, srvTemp := range ibt.importJSON.ServiceTemplateArr {
-		for _, procName := range srvTemp.BindProcess {
-			if _, ok := ibt.procProcNameInfoMap[procName]; !ok {
-				return fmt.Errorf("service template  index %d, name:%s, bind process name[%s] not found", idx, srvTemp.Name, procName)
-			}
-		}
-		for _, procUUID := range srvTemp.BindProcessUUID {
-			if _, ok := ibt.procUUIDInfoMap[procUUID]; !ok {
-				return fmt.Errorf("service template  index %d, name:%s, bind process uuid[%s] not found", idx, srvTemp.Name, procUUID)
-			}
-		}
-		if len(srvTemp.ServiceCategoryName) == 0 {
-			srvTemp.ServiceCategoryName = []string{common.DefaultServiceCategoryName, common.DefaultServiceCategoryName}
-		}
-		if len(srvTemp.ServiceCategoryName) != 2 {
-			return fmt.Errorf("ervice template  index %d, name:%s, service category must be tow level. not %d", idx, srvTemp.Name, len(srvTemp.ServiceCategoryName))
-		}
-		srvTempL1ID, ok := ibt.serviceCategoryL1CacheInfo[srvTemp.ServiceCategoryName[0]]
-		if !ok {
-			return fmt.Errorf("ervice template  index %d, name:%s, service category  level1 name[%s] not found", idx, srvTemp.Name, srvTemp.ServiceCategoryName[0])
-		}
-		srvTempL2ID, ok := ibt.serviceCategoryL2CacheInfo[srvTempL1ID][srvTemp.ServiceCategoryName[1]]
-		if !ok {
-			return fmt.Errorf("ervice template  index %d, name:%s, service category level2 name[%s] not found", idx, srvTemp.Name, srvTemp.ServiceCategoryName[1])
-		}
-
-		srvTemp.ServiceCategoryID = srvTempL2ID
-		ibt.serviceTemplateMap[srvTemp.Name] = srvTemp
-	}
-	return nil
-}
-
-func (ibt *importerBizTopo) filterBKTopoSet(ctx context.Context, bizID, setParentID int64) error {
-	for idx, setInfo := range ibt.importJSON.Topo.SetArr {
-		setName, ok := setInfo[common.BKSetNameField].(string)
-		if !ok {
-			return fmt.Errorf("set info index %d, field %s value not string", idx, common.BKSetNameField)
-		}
-		ibt.setNameInfoMap[setName] = setInfo
-	}
-	return nil
-}
-
-func (ibt *importerBizTopo) filterBKTopoModule(ctx context.Context) error {
-	for idx, module := range ibt.importJSON.Topo.ModuleArr {
-
-		if _, ok := ibt.setNameInfoMap[module.SetName]; !ok {
-			return fmt.Errorf("module info index:%d, set name[%s] not found", idx, module.SetName)
-		}
-		if _, ok := ibt.moduleSetNameInfoMap[module.SetName]; !ok {
-			ibt.moduleSetNameInfoMap[module.SetName] = make(map[string]BKBizModule, 0)
-		}
-		if _, ok := ibt.serviceTemplateMap[module.ServiceTemplate]; !ok {
-			return fmt.Errorf("module info index:%d, service template[%s] not found", idx, module.ServiceTemplate)
-		}
-		ibt.moduleSetNameInfoMap[module.SetName][module.ServiceTemplate] = module
-	}
-	return nil
-}
-
-func (ibt *importerBizTopo) ClearBKTopo(ctx context.Context, bizID int64) error {
-
-	// clear process template
-	deleteProcTempCond := condition.CreateCondition()
-	deleteProcTempCond.Field(common.BKAppIDField).Eq(bizID)
-	err := ibt.db.Table(common.BKTableNameProcessTemplate).Delete(ctx, deleteProcTempCond.ToMapStr())
-	if err != nil {
-		return fmt.Errorf("clear business topology error. delete service template error. err:%s", err.Error())
-	}
-	// clear set
-	deleteSetTempCond := condition.CreateCondition()
-	deleteSetTempCond.Field(common.BKAppIDField).Eq(bizID)
-	deleteSetTempCond.Field(common.BKDefaultField).Eq(common.NormalSetDefaultFlag)
-	err = ibt.db.Table(common.BKTableNameBaseSet).Delete(ctx, deleteSetTempCond.ToMapStr())
-	if err != nil {
-		return fmt.Errorf("clear business topology error. delete set template error. err:%s", err.Error())
 	}
 
-	// clear service template
-	deleteSrvTempCond := condition.CreateCondition()
-	deleteSrvTempCond.Field(common.BKAppIDField).Eq(bizID)
-	err = ibt.db.Table(common.BKTableNameServiceTemplate).Delete(ctx, deleteSrvTempCond.ToMapStr())
-	if err != nil {
-		return fmt.Errorf("clear business topology error. delete service template error. err:%s", err.Error())
-	}
-	// clear module
-	deleteModuleTempCond := condition.CreateCondition()
-	deleteModuleTempCond.Field(common.BKAppIDField).Eq(bizID)
-	deleteModuleTempCond.Field(common.BKDefaultField).Eq(common.NormalModuleFlag)
-	err = ibt.db.Table(common.BKTableNameBaseModule).Delete(ctx, deleteModuleTempCond.ToMapStr())
-	if err != nil {
-		return fmt.Errorf("clear business topology error. delete module template error. err:%s", err.Error())
-	}
-
-	return nil
-}
-
-func (ibt *importerBizTopo) InitBKTopo(ctx context.Context, bizID, setParentID int64) error {
-	if err := ibt.initBKServiceCategory(ctx, bizID); err != nil {
+	bizID, err := cur.BizTopo.getInstID()
+	if nil != err {
 		return err
 	}
 
-	if err := ibt.initBKTopoSet(ctx, bizID, setParentID); err != nil {
-		return err
-	}
-
-	if err := ibt.initBKTopoModule(ctx, bizID); err != nil {
-		return err
-	}
-	return nil
+	return importProcess(ctx, db, opt, cur.ProcTopos, tar.ProcTopos, bizID)
 }
 
-func (ibt *importerBizTopo) initBKServiceCategory(ctx context.Context, bizID int64) error {
-	if len(ibt.serviceTemplateMap) == 0 {
+func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *ProcessTopo, bizID uint64) (err error) {
+	if tar == nil {
 		return nil
 	}
 
-	var srvTempArr []interface{}
-	var procTempArr []interface{}
-
-	nextSrvTempIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameServiceTemplate, len(ibt.serviceTemplateMap))
-	if err != nil {
-		return fmt.Errorf("init service template, get next service template ids error. err: %s", err.Error())
+	curProcs := map[string]*Process{}
+	for _, topo := range cur.Procs {
+		curProcs[topo.Data[common.BKProcessNameField].(string)] = topo
 	}
-	srvTempIndex := 0
+	tarProcs := map[string]*Process{}
+	for _, topo := range tar.Procs {
+		tarProcs[topo.Data[common.BKProcessNameField].(string)] = topo
 
-	for _, srvTemp := range ibt.serviceTemplateMap {
-		nextSrvTempID := nextSrvTempIDs[srvTempIndex]
-		srvTempIndex++
-
-		ibt.newServiceTemplateMap[srvTemp.Name] = int64(nextSrvTempID)
-		srvTempArr = append(srvTempArr, metadata.ServiceTemplate{
-			BizID:             bizID,
-			ID:                int64(nextSrvTempID),
-			Name:              srvTemp.Name,
-			ServiceCategoryID: srvTemp.ServiceCategoryID,
-			Creator:           defaultinitUserName,
-			Modifier:          defaultinitUserName,
-			CreateTime:        time.Now().UTC(),
-			LastTime:          time.Now().UTC(),
-			SupplierAccount:   ibt.opt.OwnerID,
-		})
-
-		bindProcessLen := len(srvTemp.BindProcess)
-		nextProcTempIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameProcessTemplate, bindProcessLen+len(srvTemp.BindProcessUUID))
-		if err != nil {
-			return fmt.Errorf("init service template, get next process template ids error. err: %s", err.Error())
-		}
-
-		for procIndex, procName := range srvTemp.BindProcess {
-			nextProcTempID := nextProcTempIDs[procIndex]
-			procTemp := ibt.procProcNameInfoMap[procName]
-			procTemp.ServiceTemplateID = int64(nextProcTempID)
-			procTemp.ID = int64(nextProcTempID)
-			procTempArr = append(procTempArr, procTemp)
-		}
-
-		for uuidIndex, uuid := range srvTemp.BindProcessUUID {
-			nextProcTempID := nextProcTempIDs[uuidIndex+bindProcessLen]
-			procTemp := ibt.procUUIDInfoMap[uuid]
-			procTemp.ServiceTemplateID = int64(nextProcTempID)
-			procTemp.ID = int64(nextProcTempID)
-			procTempArr = append(procTempArr, procTemp)
-		}
-	}
-
-	err = ibt.db.Table(common.BKTableNameServiceTemplate).Insert(ctx, srvTempArr)
-	if err != nil {
-		return fmt.Errorf("init service template error. err:%s", err.Error())
-	}
-	err = ibt.db.Table(common.BKTableNameProcessTemplate).Insert(ctx, procTempArr)
-	if err != nil {
-		return fmt.Errorf("init process template error. err:%s", err.Error())
-	}
-	return nil
-}
-
-func (ibt *importerBizTopo) initBKTopoSet(ctx context.Context, bizID, setParentID int64) error {
-	var setArr []interface{}
-
-	nextSetIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameBaseSet, len(ibt.setNameInfoMap))
-	if err != nil {
-		return fmt.Errorf("init service template, get next set ids error. err: %s", err.Error())
-	}
-	setIndex := 0
-
-	for name, setInfo := range ibt.setNameInfoMap {
-		nextSetID := nextSetIDs[setIndex]
-		setIndex++
-
-		ibt.newSetTemplate[name] = int64(nextSetID)
-		setInfo[common.BKSetNameField] = name
-		setInfo[common.BKSetIDField] = int64(nextSetID)
-		setInfo[common.BKParentIDField] = setParentID
-		setInfo[common.BKAppIDField] = bizID
-		setInfo[common.BKDefaultField] = common.NormalSetDefaultFlag
-		setInfo[common.CreateTimeField] = time.Now().UTC()
-		setInfo[common.LastTimeField] = time.Now().UTC()
-		setInfo[common.BKOwnerIDField] = ibt.opt.OwnerID
-		setArr = append(setArr, setInfo)
-	}
-
-	err = ibt.db.Table(common.BKTableNameBaseSet).Insert(ctx, setArr)
-	if err != nil {
-		return fmt.Errorf("init set  error. err:%s", err.Error())
-	}
-	return nil
-}
-
-func (ibt *importerBizTopo) initBKTopoModule(ctx context.Context, bizID int64) error {
-
-	var moduleArr []interface{}
-	for setName, moduleNameMap := range ibt.moduleSetNameInfoMap {
-		setID := ibt.newSetTemplate[setName]
-
-		nextModuleIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameBaseModule, len(moduleNameMap))
-		if err != nil {
-			return fmt.Errorf("init service template, get next module ids error. err: %s", err.Error())
-		}
-		moduleIndex := 0
-
-		for _, moduleTemp := range moduleNameMap {
-			nextModuleID := nextModuleIDs[moduleIndex]
-			moduleIndex++
-
-			srvTempID := ibt.newServiceTemplateMap[moduleTemp.ServiceTemplate]
-			srvTempInfo := ibt.serviceTemplateMap[moduleTemp.ServiceTemplate]
-
-			moduleInfo := make(map[string]interface{}, 0)
-			for key, val := range moduleTemp.Info {
-				moduleInfo[key] = val
+		topo.Data[common.BKAppIDField] = bizID
+		topo.Data[common.BKOwnerIDField] = opt.OwnerID
+		curTopo := curProcs[topo.Data[common.BKProcessNameField].(string)]
+		if curTopo != nil {
+			procID, err := getInt64(curTopo.Data[common.BKProcessIDField])
+			if nil != err {
+				return fmt.Errorf("cur process has no bk_process_id field, %s", err.Error())
 			}
-			moduleInfo[common.BKModuleNameField] = moduleTemp.ServiceTemplate
-			moduleInfo[common.BKModuleIDField] = int64(nextModuleID)
-			moduleInfo[common.BKSetIDField] = setID
-			moduleInfo[common.BKParentIDField] = setID
-			moduleInfo[common.BKAppIDField] = bizID
-			moduleInfo[common.BKDefaultField] = common.NormalModuleFlag
-			moduleInfo[common.CreateTimeField] = time.Now().UTC()
-			moduleInfo[common.LastTimeField] = time.Now().UTC()
-			moduleInfo[common.BKOwnerIDField] = ibt.opt.OwnerID
-			moduleInfo[common.BKServiceCategoryIDField] = srvTempInfo.ServiceCategoryID
-			moduleInfo[common.BKServiceTemplateIDField] = srvTempID
-			if _, ok := moduleInfo[common.BKModuleTypeField]; !ok {
-				moduleInfo[common.BKModuleTypeField] = "1"
+
+			topo.Data[common.BKProcessIDField] = procID
+			condition := getModifyCondition(topo.Data, []string{common.BKProcessIDField})
+			// fmt.Printf("--- \033[36mupdate process by %+v, data: %+v\033[0m\n", condition, topo.Data)
+			if !opt.dryrun {
+				err = db.Table(common.BKTableNameBaseProcess).Update(ctx, condition, topo.Data)
+				if nil != err {
+					return fmt.Errorf("insert process data: %+v, error: %s", topo.Data, err.Error())
+				}
 			}
-			moduleArr = append(moduleArr, moduleInfo)
-		}
-	}
-	err := ibt.db.Table(common.BKTableNameBaseModule).Insert(ctx, moduleArr)
-	if err != nil {
-		return fmt.Errorf("init module error. err:%s", err)
-	}
 
-	return nil
+			// add missing module
+			for _, modulename := range topo.Modules {
+				if inSlice(modulename, curTopo.Modules) {
+					continue
+				}
+				procmod := ProModule{}
+				procmod.ModuleName = modulename
+				procmod.BizID = bizID
+				procmod.ProcessID = procID
+				procmod.OwnerID = opt.OwnerID
+				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procmod)
+				if !opt.dryrun {
+					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
+					if nil != err {
+						return fmt.Errorf("insert process module data: %+v, error: %s", topo.Data, err.Error())
+					}
+				}
+			}
+			// delete unused moduel map
+			for _, curmodule := range curTopo.Modules {
+				if inSlice(curmodule, topo.Modules) {
+					continue
+				}
+				delcondition := map[string]interface{}{
+					common.BKModuleNameField: curmodule,
+					common.BKProcessIDField:  procID,
+				}
+				fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
+				if !opt.dryrun {
+					err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
+					if nil != err {
+						return fmt.Errorf("delete process module by %+v, error: %s", delcondition, err.Error())
+					}
+				}
+			}
 
-}
-
-func (ibt *importerBizTopo) cacheServiceCategory(ctx context.Context, bizID int64) error {
-
-	// find build in service  category
-	searchBuindInCond := condition.CreateCondition()
-	searchBuindInCond.Field("is_built_in").Eq(true)
-	serviceCategoryArr := make([]metadata.ServiceCategory, 0)
-	err := ibt.db.Table(common.BKTableNameServiceCategory).Find(searchBuindInCond.ToMapStr()).All(ctx, &serviceCategoryArr)
-	if err != nil {
-		return fmt.Errorf("find build-in service category error. err:%s", err.Error())
-	}
-	for _, serviceCategory := range serviceCategoryArr {
-		if serviceCategory.ParentID == 0 {
-			ibt.serviceCategoryL1CacheInfo[serviceCategory.Name] = serviceCategory.ID
 		} else {
-			if _, ok := ibt.serviceCategoryL2CacheInfo[serviceCategory.ParentID]; !ok {
-				ibt.serviceCategoryL2CacheInfo[serviceCategory.ParentID] = make(map[string]int64, 0)
+			nid, err := db.NextSequence(ctx, common.BKTableNameBaseProcess)
+			if nil != err {
+				return fmt.Errorf("GetIncID for prcess faile, error: %s ", err.Error())
 			}
-			ibt.serviceCategoryL2CacheInfo[serviceCategory.ParentID][serviceCategory.Name] = serviceCategory.ID
+			topo.Data[common.BKProcessIDField] = nid
+			fmt.Printf("--- \033[34minsert process data: %+v\033[0m\n", topo.Data)
+			if !opt.dryrun {
+				err = db.Table(common.BKTableNameBaseProcess).Insert(ctx, topo.Data)
+				if nil != err {
+					return fmt.Errorf("insert process data: %+v, error: %s", topo.Data, err.Error())
+				}
+			}
+			for _, modulename := range topo.Modules {
+				procmod := ProModule{}
+				procmod.ModuleName = modulename
+				procmod.BizID = bizID
+				procmod.ProcessID = nid
+				procmod.OwnerID = opt.OwnerID
+				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", topo.Data)
+				if !opt.dryrun {
+					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
+					if nil != err {
+						return fmt.Errorf("insert process module data: %+v, error: %s", topo.Data, err.Error())
+					}
+				}
+			}
 		}
 	}
 
-	// find build in service  category
-	searchCond := condition.CreateCondition()
-	searchCond.Field(common.BKAppIDField).Eq(bizID)
-	serviceCategoryArr = make([]metadata.ServiceCategory, 0)
-	err = ibt.db.Table(common.BKTableNameServiceCategory).Find(searchCond.ToMapStr()).All(ctx, &serviceCategoryArr)
-	if err != nil {
-		return fmt.Errorf("find business service category error. err:%s", err.Error())
-	}
-	for _, serviceCategory := range serviceCategoryArr {
-		if serviceCategory.ParentID == 0 {
-			ibt.serviceCategoryL1CacheInfo[serviceCategory.Name] = serviceCategory.ID
-		} else {
-			if _, ok := ibt.serviceCategoryL2CacheInfo[serviceCategory.ParentID]; !ok {
-				ibt.serviceCategoryL2CacheInfo[serviceCategory.ParentID] = make(map[string]int64, 0)
+	// remove unused process
+	for key, proc := range curProcs {
+		if tarProcs[key] == nil {
+			delcondition := map[string]interface{}{
+				common.BKProcessIDField: proc.Data[common.BKProcessIDField],
 			}
-			ibt.serviceCategoryL2CacheInfo[serviceCategory.ParentID][serviceCategory.Name] = serviceCategory.ID
+			fmt.Printf("--- \033[31mdelete process by %+v\033[0m\n", delcondition)
+			if !opt.dryrun {
+				err = db.Table(common.BKTableNameBaseProcess).Delete(ctx, delcondition)
+				if nil != err {
+					return fmt.Errorf("delete process by %+v, error: %s", delcondition, err.Error())
+				}
+			}
+			fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
+			if !opt.dryrun {
+				err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
+				if nil != err {
+					return fmt.Errorf("delete process module by %+v, error: %s", delcondition, err.Error())
+				}
+			}
 		}
 	}
 
 	return nil
 }
 
-func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) (*metadata.ProcessProperty, error) {
-	processProperty := &metadata.ProcessProperty{}
-	blTrue := true
-	for key, val := range proc {
-		switch key {
-		case "proc_num":
-			procNum, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.ProcNum.Value = &procNum
-			processProperty.ProcNum.AsDefaultValue = &blTrue
-			if err := processProperty.ProcNum.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "stop_cmd":
-			stopCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.StopCmd.Value = &stopCmd
-			processProperty.StopCmd.AsDefaultValue = &blTrue
-			if err := processProperty.StopCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "restart_cmd":
-			restartCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.RestartCmd.Value = &restartCmd
-			processProperty.RestartCmd.AsDefaultValue = &blTrue
-			if err := processProperty.RestartCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "face_stop_cmd":
-			restartCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.RestartCmd.Value = &restartCmd
-			processProperty.RestartCmd.AsDefaultValue = &blTrue
-			if err := processProperty.RestartCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_func_name":
-			funcName, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.FuncName.Value = &funcName
-			processProperty.FuncName.AsDefaultValue = &blTrue
-			if err := processProperty.FuncName.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "work_path":
-			workPath, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.WorkPath.Value = &workPath
-			processProperty.WorkPath.AsDefaultValue = &blTrue
-			if err := processProperty.WorkPath.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bind_ip":
-			/* bindIP, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			bindIPAlias := metadata.SocketBindType(bindIP)
-			processProperty.BindIP.Value = &bindIPAlias
-			processProperty.BindIP.AsDefaultValue = &blTrue
-			if err := processProperty.BindIP.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			} */
-		case "priority":
-			priority, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.Priority.Value = &priority
-			processProperty.Priority.AsDefaultValue = &blTrue
-			if err := processProperty.Priority.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "reload_cmd":
-			reloadCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.ReloadCmd.Value = &reloadCmd
-			processProperty.ReloadCmd.AsDefaultValue = &blTrue
-			if err := processProperty.ReloadCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_process_name":
-			procName, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.ProcessName.Value = &procName
-			processProperty.ProcessName.AsDefaultValue = &blTrue
-			if err := processProperty.ProcessName.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "port":
-		/* 	port, ok := val.(string)
-		if !ok {
-			return nil, fmt.Errorf("%s not string. val:%s", key, val)
+func getModifyCondition(data map[string]interface{}, keys []string) map[string]interface{} {
+	condition := map[string]interface{}{}
+	for _, key := range keys {
+		condition[key] = data[key]
+	}
+	return condition
+}
+
+var ignoreKeys = map[string]bool{
+	"_id":                   true,
+	"create_time":           true,
+	common.BKInstParentStr:  true,
+	"default":               true,
+	common.BKAppIDField:     true,
+	common.BKSetIDField:     true,
+	common.BKProcessIDField: true,
+	common.BKInstIDField:    true,
+}
+
+func getUpdateData(n *Node) map[string]interface{} {
+	data := map[string]interface{}{}
+	for key, value := range n.Data {
+		if ignoreKeys[key] {
+			continue
 		}
-		processProperty.Port.Value = &port
-		processProperty.Port.AsDefaultValue = &blTrue
-		if err := processProperty.Port.Validate(); err != nil {
-			return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-		} */
-		case "pid_file":
-			pidFile, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.PidFile.Value = &pidFile
-			processProperty.PidFile.AsDefaultValue = &blTrue
-			if err := processProperty.PidFile.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "auto_start":
-			autoStart, ok := val.(bool)
-			if !ok {
-				return nil, fmt.Errorf("%s not boolean. val:%s", key, val)
-			}
-			processProperty.AutoStart.Value = &autoStart
-			processProperty.AutoStart.AsDefaultValue = &blTrue
-			if err := processProperty.AutoStart.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_start_check_secs":
-			startCheckSecs, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.StartCheckSecs.Value = &startCheckSecs
-			processProperty.StartCheckSecs.AsDefaultValue = &blTrue
-			if err := processProperty.StartCheckSecs.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "start_cmd":
-			startCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.StartCmd.Value = &startCmd
-			processProperty.StartCmd.AsDefaultValue = &blTrue
-			if err := processProperty.StartCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "user":
-			user, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.User.Value = &user
-			processProperty.User.AsDefaultValue = &blTrue
-			if err := processProperty.User.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "timeout":
-			timeout, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.TimeoutSeconds.Value = &timeout
-			processProperty.TimeoutSeconds.AsDefaultValue = &blTrue
-			if err := processProperty.TimeoutSeconds.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "protocol":
-		/* 	protocol, ok := val.(string)
-		if !ok {
-			return nil, fmt.Errorf("%s not string. val:%s", key, val)
+		data[key] = value
+	}
+	return data
+}
+
+// compareSlice returns whether slice a,b exactly equal
+func compareSlice(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for index := range a {
+		if a[index] != b[index] {
+			return false
 		}
-		protocalAlias := metadata.ProtocolType(protocol)
-		processProperty.Protocol.Value = &protocalAlias
-		processProperty.Protocol.AsDefaultValue = &blTrue
-		if err := processProperty.Protocol.Validate(); err != nil {
-			return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-		} */
-		case "description":
-			desc, ok := val.(string)
+	}
+	return true
+}
+
+type importer struct {
+	screate  map[string][]*Node
+	supdate  map[string][]*Node
+	sdelete  map[string][]map[string]interface{}
+	bizID    uint64
+	setID    uint64
+	parentID uint64
+	ownerID  string
+
+	ctx context.Context
+	db  dal.RDB
+	opt *option
+}
+
+func newImporter(ctx context.Context, db dal.RDB, opt *option) *importer {
+	return &importer{
+		screate:  map[string][]*Node{},
+		supdate:  map[string][]*Node{},
+		sdelete:  map[string][]map[string]interface{}{},
+		bizID:    0,
+		setID:    0,
+		parentID: 0,
+		ownerID:  "",
+
+		ctx: ctx,
+		db:  db,
+		opt: opt,
+	}
+}
+
+func (ipt *importer) walk(includeRoot bool, node *Node) error {
+	if node.mark != "" {
+		return nil
+	}
+	if includeRoot {
+		switch node.ObjID {
+		case common.BKInnerObjIDApp:
+			condition := getModifyCondition(node.Data, []string{common.BKAppNameField})
+			app := map[string]interface{}{}
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &app)
+			if nil != err {
+				return fmt.Errorf("get blueking business by %+v error: %s", condition, err.Error())
+			}
+			bizID, err := getInt64(app[common.BKAppIDField])
+			if nil != err {
+				return fmt.Errorf("get blueking bizID faile, data: %+v, error: %s", app, err.Error())
+			}
+			ownerID, ok := app[common.BKOwnerIDField].(string)
 			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
+				return fmt.Errorf("get blueking nk_suppplier_account faile, data: %+v, error: %s", app, err.Error())
 			}
-			processProperty.Description.Value = &desc
-			processProperty.Description.AsDefaultValue = &blTrue
-			if err := processProperty.Description.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
+			node.Data[common.BKAppIDField] = bizID
+			node.Data[common.BKOwnerIDField] = ownerID
+			ipt.bizID = bizID
+			ipt.parentID = bizID
+			ipt.ownerID = ownerID
+			node.mark = actionUpdate
+		case common.BKInnerObjIDSet:
+			node.Data[common.BKOwnerIDField] = ipt.ownerID
+			node.Data[common.BKAppIDField] = ipt.bizID
+			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
+			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
+			set := map[string]interface{}{}
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &set)
+			if nil != err && !ipt.db.IsNotFoundError(err) {
+				return fmt.Errorf("get set by %+v error: %s", condition, err.Error())
 			}
-		case "bk_start_param_regex":
-			regex, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
+			if ipt.db.IsNotFoundError(err) {
+				node.mark = actionCreate
+				nid, err := ipt.db.NextSequence(ipt.ctx, common.GetInstTableName(node.ObjID))
+				if nil != err {
+					return fmt.Errorf("GetIncID error: %s", err.Error())
+				}
+				node.Data[common.BKSetIDField] = nid
+				ipt.parentID = nid
+				ipt.setID = nid
+			} else {
+				node.mark = actionUpdate
+				setID, err := getInt64(set[common.BKSetIDField])
+				if nil != err {
+					return fmt.Errorf("get setID faile, data: %+v, error: %s", set, err.Error())
+				}
+				node.Data[common.BKSetIDField] = setID
+				ipt.parentID = setID
+				ipt.setID = setID
 			}
-			processProperty.StartParamRegex.Value = &regex
-			processProperty.StartParamRegex.AsDefaultValue = &blTrue
-			if err := processProperty.StartParamRegex.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
+		case common.BKInnerObjIDModule:
+			node.Data[common.BKOwnerIDField] = ipt.ownerID
+			node.Data[common.BKAppIDField] = ipt.bizID
+			node.Data[common.BKSetIDField] = ipt.setID
+			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
+			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
+			module := map[string]interface{}{}
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &module)
+			if nil != err && !ipt.db.IsNotFoundError(err) {
+				return fmt.Errorf("get module by %+v error: %s", condition, err.Error())
+			}
+			if ipt.db.IsNotFoundError(err) {
+				node.mark = actionCreate
+				nid, err := ipt.db.NextSequence(ipt.ctx, common.GetInstTableName(node.ObjID))
+				if nil != err {
+					return fmt.Errorf("GetIncID error: %s", err.Error())
+				}
+				node.Data[common.BKModuleIDField] = nid
+			} else {
+				node.mark = actionUpdate
+				moduleID, err := getInt64(module[common.BKModuleIDField])
+				if nil != err {
+					return fmt.Errorf("get moduleID faile, data: %+v, error: %s", module, err.Error())
+				}
+				node.Data[common.BKModuleIDField] = moduleID
 			}
 		default:
-			return nil, fmt.Errorf("%s illegal. val:%s", key, val)
+			node.Data[common.BKOwnerIDField] = ipt.ownerID
+			node.Data[common.BKInstParentStr] = ipt.parentID
+			condition := getModifyCondition(node.Data, []string{node.getInstNameField(), common.BKInstParentStr})
+			condition[common.BKObjIDField] = node.ObjID
+			inst := map[string]interface{}{}
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &inst)
+			if nil != err && !ipt.db.IsNotFoundError(err) {
+				return fmt.Errorf("get inst by %+v error: %s", condition, err.Error())
+			}
+			if ipt.db.IsNotFoundError(err) {
+				node.mark = actionCreate
+				nid, err := ipt.db.NextSequence(ipt.ctx, common.GetInstTableName(node.ObjID))
+				if nil != err {
+					return fmt.Errorf("GetIncID error: %s", err.Error())
+				}
+				node.Data[common.GetInstIDField(node.ObjID)] = nid
+				ipt.parentID = nid
+			} else {
+				node.mark = actionUpdate
+				instID, err := getInt64(inst[common.GetInstIDField(node.ObjID)])
+				if nil != err {
+					return fmt.Errorf("get instID faile, data: %+v, error: %s", inst, err.Error())
+				}
+				node.Data[common.GetInstIDField(node.ObjID)] = instID
+				ipt.parentID = instID
+			}
 		}
 
+		// fetch datas that should delete
+		if node.ObjID != common.BKInnerObjIDModule {
+			childtablename := common.GetInstTableName(node.getChildObjID())
+			instID, err := node.getInstID()
+			if nil != err {
+				return fmt.Errorf("get instID faile, data: %+v, error: %v", node, err)
+			}
+
+			childCondition := condition.CreateCondition()
+			childCondition.Field(common.BKInstParentStr).Eq(instID)
+			childCondition.Field(node.getChilDInstNameField()).NotIn(node.getChilDInstNames())
+			switch node.getChildObjID() {
+			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
+				childCondition.Field(common.BKDefaultField).NotGt(0)
+			default:
+				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
+			}
+			shouldDelete := []map[string]interface{}{}
+			err = ipt.db.Table(childtablename).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
+			if nil != err {
+				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
+			}
+			if len(shouldDelete) > 0 {
+				// fmt.Printf("found %d should delete %s by %+v\n, parent %+v \n", len(shouldDelete), node.getChildObjID(), childCondition, node.Data)
+				ipt.sdelete[node.getChildObjID()] = append(ipt.sdelete[node.getChildObjID()], shouldDelete...)
+			}
+		}
+
+		if node.mark == actionCreate {
+			ipt.screate[node.getChildObjID()] = append(ipt.screate[node.getChildObjID()], node)
+			parentID := ipt.parentID
+			bizID := ipt.bizID
+			setID := ipt.setID
+			err := ipt.walk(false, node)
+			if nil != err {
+				return nil
+			}
+			ipt.parentID = parentID
+			ipt.bizID = bizID
+			ipt.setID = setID
+		}
+		if node.mark == actionUpdate {
+			ipt.supdate[node.getChildObjID()] = append(ipt.supdate[node.getChildObjID()], node)
+		}
 	}
 
-	if field, err := processProperty.Validate(); err != nil {
-		return nil, fmt.Errorf("process illegal. field:%s, err:%s", field, err.Error())
+	parentID := ipt.parentID
+	bizID := ipt.bizID
+	setID := ipt.setID
+	for _, child := range node.Childs {
+		if err := ipt.walk(true, child); nil != err {
+			return err
+		}
+		ipt.parentID = parentID
+		ipt.bizID = bizID
+		ipt.setID = setID
 	}
-	return processProperty, nil
 
+	return nil
 }
 
-// getSetParentID 获取set的parent id， 多个层级这个值不是业务id
-func getSetParentID(ctx context.Context, bizID int64, db dal.DB) (int64, error) {
-
-	searchCond := condition.CreateCondition()
-	searchCond.Field(common.BKAppIDField).Eq(bizID)
-	searchCond.Field(common.BKDefaultField).Eq(common.NormalModuleFlag)
-
-	result := make(map[string]int64, 0)
-	err := db.Table(common.BKTableNameBaseSet).Find(searchCond.ToMapStr()).Fields(common.BKParentIDField).One(ctx, &result)
-	if err != nil {
-		return 0, fmt.Errorf("find set parent id error. err:%s", err.Error())
+// getModelAttributes returns the model attributes
+func getModelAttributes(ctx context.Context, db dal.RDB, opt *option, objIDs []string) (modelAttributes map[string][]metadata.Attribute, modelKeys map[string][]string, err error) {
+	condition := map[string]interface{}{
+		common.BKObjIDField: map[string]interface{}{
+			"$in": objIDs,
+		},
 	}
 
-	if result[common.BKParentIDField] == 0 {
-		return 0, fmt.Errorf("set parent id = 0. illegal")
+	attributes := []metadata.Attribute{}
+	err = db.Table("cc_ObjAttDes").Find(condition).All(ctx, &attributes)
+	if nil != err {
+		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", objIDs, err.Error())
 	}
 
-	return result[common.BKParentIDField], nil
+	modelAttributes = map[string][]metadata.Attribute{}
+	modelKeys = map[string][]string{}
+	for _, att := range attributes {
+		if att.IsRequired {
+			modelKeys[att.ObjectID] = append(modelKeys[att.ObjectID], att.PropertyID)
+		}
+		modelAttributes[att.ObjectID] = append(modelAttributes[att.ObjectID], att)
+	}
 
+	for index := range modelKeys {
+		sort.Strings(modelKeys[index])
+	}
+
+	return modelAttributes, modelKeys, nil
 }
 
-// getBkBizID 获取蓝鲸业务的business id
-func getBKBizID(ctx context.Context, db dal.DB) (int64, error) {
-	searchCond := condition.CreateCondition()
-	searchCond.Field(common.BKAppNameField).Eq(common.BKAppName)
-	result := make(map[string]int64, 0)
-	err := db.Table(common.BKTableNameBaseApp).Find(searchCond.ToMapStr()).Fields(common.BKAppIDField).One(ctx, &result)
-	if err != nil {
-		return 0, fmt.Errorf("find 蓝鲸 business id error. err:%s", err.Error())
+func inSlice(sub string, slice []string) bool {
+	for _, s := range slice {
+		if s == sub {
+			return true
+		}
 	}
-
-	return result[common.BKAppIDField], nil
-
+	return false
 }

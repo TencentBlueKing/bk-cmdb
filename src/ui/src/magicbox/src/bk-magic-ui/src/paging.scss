@@ -1,0 +1,121 @@
+@charset "utf-8";
+@import "./conf";
+
+.bk-page {
+    height: 36px;
+    display: inline-block;
+    .bk-icon {
+        font-size: 14px;
+    }
+    > ul {
+        margin: 0;
+        padding: 0;
+        display: inline-block;
+        overflow: hidden;
+        height: 36px;
+    }
+    a {
+        text-decoration: none;
+    }
+
+    &.bk-page-small {
+        height: 32px;
+        > ul {
+            height: 32px;
+        }
+        .page-item {
+            height: 32px;
+            min-width: 32px;
+            line-height: 32px;
+            margin-right: 4px;
+            .page-button {
+                line-height: 32px;
+            }
+        }
+        .bk-icon {
+            font-size: 10px;
+        }
+    }
+    &.bk-page-compact {
+        .page-item {
+            margin-right: -1px;
+            border-radius: 0;
+            &:hover {
+                position: relative;
+                z-index: 1;
+            }
+            &:first-child {
+                border-radius: 2px 0 0 2px;
+            }
+            &:last-child {
+                border-radius: 0 2px 2px 0;
+            }
+            &.cur-page {
+                position: relative;
+                z-index: 1;
+            }
+        }
+    }
+
+    .page-item {
+        min-width: 36px;
+        height: 36px;
+        line-height: 36px;
+        text-align: center;
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 14px;
+        float: left;
+        margin-right: 10px;
+        border: 1px solid $borderColor;
+        box-sizing: border-box;
+        border-radius: 2px;
+        overflow: hidden;
+
+        &:hover {
+            border-color: $primaryColor;
+        }
+
+        &.disabled {
+            border-color: $borderColor;
+            .page-button {
+                cursor: not-allowed;
+                background: #fafafa;
+                color: #ebf0f5;
+                &:hover {
+                    color: #ebf0f5;
+                }
+            }
+        }
+
+        &.page-omit {
+            border: none;
+            min-width: auto;
+            line-height: 28px;
+            > span {
+                margin-top: -5px;
+                display: inline-block;
+            }
+        }
+        .page-button {
+            display: block;
+            color: $fnMainColor;
+            background: #fff;
+            cursor: pointer;
+            &:hover {
+                color: $primaryColor;
+            }
+        }
+
+        &.cur-page {
+            border-color: $primaryColor;
+            .page-button {
+                background: $primaryColor;
+                color: #fff;
+            }
+        }
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}

@@ -14,6 +14,7 @@ package object
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -26,7 +27,7 @@ func (t *object) CreatePropertyGroup(ctx context.Context, h http.Header, dat met
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -40,7 +41,7 @@ func (t *object) UpdatePropertyGroup(ctx context.Context, h http.Header, cond *m
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(cond).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -49,26 +50,26 @@ func (t *object) UpdatePropertyGroup(ctx context.Context, h http.Header, cond *m
 
 func (t *object) DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/groupid/%s"
+	subPath := fmt.Sprintf("/objectatt/group/groupid/%s", groupID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, groupID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data metadata.PropertyGroupObjectAtt) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/objectatt/group/property"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -77,12 +78,12 @@ func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header
 
 func (t *object) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID string, objID string, propertyID string, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s"
+	subPath := fmt.Sprintf("/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s", ownerID, objID, propertyID, groupID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, ownerID, objID, propertyID, groupID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -91,12 +92,12 @@ func (t *object) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID strin
 
 func (t *object) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectatt/group/property/owner/%s/object/%s"
+	subPath := fmt.Sprintf("/objectatt/group/property/owner/%s/object/%s", ownerID, objID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, ownerID, objID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

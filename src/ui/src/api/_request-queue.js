@@ -14,13 +14,8 @@ export default class RequestQueue {
         }
     }
 
-    delete (id, symbol) {
-        let target
-        if (symbol) {
-            target = this.queue.find(request => request.requestSymbol === symbol)
-        } else {
-            target = this.queue.find(request => request.requestId === id)
-        }
+    delete (id) {
+        const target = this.queue.find(request => request.requestId === id)
         if (target) {
             const index = this.queue.indexOf(target)
             this.queue.splice(index, 1)
@@ -46,8 +41,7 @@ export default class RequestQueue {
         }
         try {
             cancelQueue.forEach(request => {
-                request.cancelExcutor(request)
-                this.delete(request.requestId)
+                request.cancelExcutor(msg)
             })
             return Promise.resolve(requestIds)
         } catch (error) {

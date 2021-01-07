@@ -1,0 +1,103 @@
+@charset "utf-8";
+@import "./conf";
+
+@mixin getTheme ($theme) {
+    background-color: $theme;
+    border-color: $theme;
+    color: #fff;
+}
+
+.bk-badge {
+    position: relative;
+    display: inline-block;
+    min-width: 18px;
+    height: 18px;
+    line-height: 16px;
+    padding: 0 2px;
+    border: 1px solid $borderColor;
+    border-radius: 18px;
+    background-color: #fff;
+    font-size: 12px;
+    text-align: center;
+    .bk-icon {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        margin-top: 0;
+        transform: translate(-50%, -50%);
+    }
+    &.bk-danger {
+        @include getTheme($dangerColor);
+    }
+    &.bk-warning {
+        @include getTheme($warningColor);
+    }
+    &.bk-success {
+        @include getTheme($successColor);
+    }
+    &.bk-primary {
+        @include getTheme($primaryColor);
+    }
+    &.bk-info {
+        @include getTheme($infoColor);
+    }
+    &-wrapper {
+        position: relative;
+        display: inline-block;
+        .bk-badge {
+            &.pinned {
+                position: absolute;
+                &.top-right {
+                    top: 0;
+                    right: 0;
+                    transform: translate(50%, -50%) scale(1, 1);
+                    &.fade-center-enter,
+                    &.fade-center-leave-active {
+                        opacity: 0;
+                        transform: translate(50%, -50%) scale(0, 0);
+                    }
+                }
+                &.bottom-right {
+                    bottom: 0;
+                    right: 0;
+                    transform: translate(50%, 50%) scale(1, 1);
+                    &.fade-center-enter,
+                    &.fade-center-leave-active {
+                        opacity: 0;
+                        transform: translate(50%, 50%) scale(0, 0);
+                    }
+                }
+                &.top-left {
+                    top: 0;
+                    left: 0;
+                    transform: translate(-50%, -50%) scale(1, 1);
+                    &.fade-center-enter,
+                    &.fade-center-leave-active {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0, 0);
+                    }
+                }
+                &.bottom-left {
+                    bottom: 0;
+                    left: 0;
+                    transform: translate(-50%, 50%) scale(1, 1);
+                    &.fade-center-enter,
+                    &.fade-center-leave-active {
+                        opacity: 0;
+                        transform: translate(-50%, 50%) scale(0, 0);
+                    }
+                }
+            }
+            &.dot {
+                width: 8px;
+                height: 8px;
+                min-width: 8px;
+            }
+            .bk-icon {
+                display: block;
+                transform: scale(.8);
+                line-height: 18px;
+            }
+        }
+    }
+}

@@ -73,7 +73,7 @@ func (client *HttpClient) SetTlsVerity(caFile, certFile, keyFile, passwd string)
 	client.keyFile = keyFile
 
 	// load cert
-	tlsConf, err := ssl.ClientTLSConfVerity(caFile, certFile, keyFile, passwd)
+	tlsConf, err := ssl.ClientTslConfVerity(caFile, certFile, keyFile, passwd)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,6 @@ func (client *HttpClient) SetTlsVerityConfig(tlsConf *tls.Config) {
 
 func (client *HttpClient) NewTransPort() *http.Transport {
 	return &http.Transport{
-		Proxy:               http.ProxyFromEnvironment,
 		TLSHandshakeTimeout: 5 * time.Second,
 		Dial: (&net.Dialer{
 			Timeout:   5 * time.Second,
@@ -222,7 +221,8 @@ func (client *HttpClient) RequestEx(url, method string, header http.Header, data
 }
 
 func (client *HttpClient) DoWithTimeout(timeout time.Duration, req *http.Request) (*http.Response, error) {
-	ctx, _ := context.WithTimeout(req.Context(), timeout)
+	ctx, cancel := context.WithTimeout(req.Context(), timeout)
+	defer cancel()
 	req = req.WithContext(ctx)
 	return client.httpCli.Do(req)
 }

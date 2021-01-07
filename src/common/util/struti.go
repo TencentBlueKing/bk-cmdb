@@ -14,35 +14,31 @@ package util
 
 import (
 	"regexp"
-	"strings"
 	"time"
 )
 
 const (
-	// chinaMobilePattern = `^1[34578][0-9]{9}$`
-	charPattern    = `^[a-zA-Z]*$`
-	numCharPattern = `^[a-zA-Z0-9]*$`
-	// mailPattern     = `^[a-z0-9A-Z]+([\-_\.][a-z0-9A-Z]+)*@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)*\.)+[a-zA-Z]{2,4}$`
-	datePattern     = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}$`
-	dateTimePattern = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[\s]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
-	// timeZonePattern    = `^[a-zA-Z]+/[a-z\-\_+\-A-Z]+$`
+	chinaMobilePattern = `^1[34578][0-9]{9}$`
+	charPattern        = `^[a-zA-Z]*$`
+	numCharPattern     = `^[a-zA-Z0-9]*$`
+	mailPattern        = `^[a-z0-9A-Z]+([\-_\.][a-z0-9A-Z]+)*@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)*\.)+[a-zA-Z]{2,4}$`
+	datePattern        = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}$`
+	dateTimePattern    = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[\s]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
+	//timeZonePattern    = `^[a-zA-Z]+/[a-z\-\_+\-A-Z]+$`
 	timeZonePattern = `^[a-zA-Z0-9\-−_\/\+]+$`
-	//userPattern the user names regex expression
-	userPattern = `^(\d|[a-zA-Z])([a-zA-Z0-9\@.,_-])*$`
 )
 
 var (
-	// chinaMobileRegexp = regexp.MustCompile(chinaMobilePattern)
-	charRegexp    = regexp.MustCompile(charPattern)
-	numCharRegexp = regexp.MustCompile(numCharPattern)
-	// mailRegexp        = regexp.MustCompile(mailPattern)
-	dateRegexp     = regexp.MustCompile(datePattern)
-	dateTimeRegexp = regexp.MustCompile(dateTimePattern)
-	timeZoneRegexp = regexp.MustCompile(timeZonePattern)
-	userRegexp     = regexp.MustCompile(userPattern)
+	chinaMobileRegexp = regexp.MustCompile(chinaMobilePattern)
+	charRegexp        = regexp.MustCompile(charPattern)
+	numCharRegexp     = regexp.MustCompile(numCharPattern)
+	mailRegexp        = regexp.MustCompile(mailPattern)
+	dateRegexp        = regexp.MustCompile(datePattern)
+	dateTimeRegexp    = regexp.MustCompile(dateTimePattern)
+	timeZoneRegexp    = regexp.MustCompile(timeZonePattern)
 )
 
-// 字符串输入长度
+//字符串输入长度
 func CheckLen(sInput string, min, max int) bool {
 	if len(sInput) >= min && len(sInput) <= max {
 		return true
@@ -50,37 +46,32 @@ func CheckLen(sInput string, min, max int) bool {
 	return false
 }
 
-// 是否大、小写字母组合
+//是否大、小写字母组合
 func IsChar(sInput string) bool {
 	return charRegexp.MatchString(sInput)
 }
 
-// 是否字母、数字组合
+//是否字母、数字组合
 func IsNumChar(sInput string) bool {
 	return numCharRegexp.MatchString(sInput)
 }
 
-// 是否日期
+//是否日期
 func IsDate(sInput string) bool {
 	return dateRegexp.MatchString(sInput)
 }
 
-// 是否时间
+//是否时间
 func IsTime(sInput string) bool {
 	return dateTimeRegexp.MatchString(sInput)
 }
 
-// 是否时区
+//是否时区
 func IsTimeZone(sInput string) bool {
 	return timeZoneRegexp.MatchString(sInput)
 }
 
-// 是否用户
-func IsUser(sInput string) bool {
-	return userRegexp.MatchString(sInput)
-}
-
-// str2time
+//str2time
 func Str2Time(timeStr string) time.Time {
 	fTime, err := time.ParseInLocation("2006-01-02 15:04:05", timeStr, time.Local)
 	if nil != err {
@@ -98,19 +89,4 @@ func FirstNotEmptyString(strs ...string) string {
 		}
 	}
 	return ""
-}
-
-func ContainsAnyString(s string, subs ...string) bool {
-	for index := range subs {
-		if strings.Contains(s, subs[index]) {
-			return true
-		}
-	}
-	return false
-}
-
-// Normalize to trim space of the str and get it's upper format
-// for example, Normalize(" hello world") ==> "HELLO WORLD"
-func Normalize(str string) string {
-	return strings.ToUpper(strings.TrimSpace(str))
 }

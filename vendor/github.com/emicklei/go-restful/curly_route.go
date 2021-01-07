@@ -11,44 +11,44 @@ type curlyRoute struct {
 	staticCount int
 }
 
-// sortableCurlyRoutes orders by most parameters and path elements first.
-type sortableCurlyRoutes []curlyRoute
-
-func (s *sortableCurlyRoutes) add(route curlyRoute) {
-	*s = append(*s, route)
+type sortableCurlyRoutes struct {
+	candidates []*curlyRoute
 }
 
-func (s sortableCurlyRoutes) routes() (routes []Route) {
-	routes = make([]Route, 0, len(s))
-	for _, each := range s {
+func (s *sortableCurlyRoutes) add(route *curlyRoute) {
+	s.candidates = append(s.candidates, route)
+}
+
+func (s *sortableCurlyRoutes) routes() (routes []Route) {
+	for _, each := range s.candidates {
 		routes = append(routes, each.route) // TODO change return type
 	}
 	return routes
 }
 
-func (s sortableCurlyRoutes) Len() int {
-	return len(s)
+func (s *sortableCurlyRoutes) Len() int {
+	return len(s.candidates)
 }
-func (s sortableCurlyRoutes) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+func (s *sortableCurlyRoutes) Swap(i, j int) {
+	s.candidates[i], s.candidates[j] = s.candidates[j], s.candidates[i]
 }
-func (s sortableCurlyRoutes) Less(i, j int) bool {
-	a := s[j]
-	b := s[i]
+func (s *sortableCurlyRoutes) Less(i, j int) bool {
+	ci := s.candidates[i]
+	cj := s.candidates[j]
 
 	// primary key
-	if a.staticCount < b.staticCount {
+	if ci.staticCount < cj.staticCount {
 		return true
 	}
-	if a.staticCount > b.staticCount {
+	if ci.staticCount > cj.staticCount {
 		return false
 	}
 	// secundary key
-	if a.paramCount < b.paramCount {
+	if ci.paramCount < cj.paramCount {
 		return true
 	}
-	if a.paramCount > b.paramCount {
+	if ci.paramCount > cj.paramCount {
 		return false
 	}
-	return a.route.Path < b.route.Path
+	return ci.route.Path < cj.route.Path
 }

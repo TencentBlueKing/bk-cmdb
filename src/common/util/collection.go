@@ -12,26 +12,18 @@
 
 package util
 
-import "strings"
-
-func CalSliceDiff(oldSlice, newSlice []string) (subs, plugs []string) {
-	subs = make([]string, 0)
-	plugs = make([]string, 0)
-	for _, a := range oldSlice {
-		if !Contains(newSlice, a) {
+func CalSliceDiff(oldslice, newslice []string) (subs, plugs []string) {
+	for _, a := range oldslice {
+		if !Contains(newslice, a) {
 			subs = append(subs, a)
 		}
 	}
-	for _, b := range newSlice {
-		if !Contains(oldSlice, b) {
+	for _, b := range newslice {
+		if !Contains(oldslice, b) {
 			plugs = append(plugs, b)
 		}
 	}
 	return
-}
-
-func CaseInsensitiveContains(s string, substr string) bool {
-	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
 
 // Contains if string target in array
@@ -64,19 +56,16 @@ func ContainsInt(set []int64, sub int64) bool {
 	return false
 }
 
-func CalSliceInt64Diff(oldSlice, newSlice []int64) (subs, inter, plugs []int64) {
-	subs = make([]int64, 0)
-	inter = make([]int64, 0)
-	plugs = make([]int64, 0)
-	for _, a := range oldSlice {
-		if !ContainsInt64(newSlice, a) {
+func CalSliceInt64Diff(oldslice, newslice []int64) (subs, inter, plugs []int64) {
+	for _, a := range oldslice {
+		if !ContainsInt64(newslice, a) {
 			subs = append(subs, a)
 		} else {
 			inter = append(inter, a)
 		}
 	}
-	for _, b := range newSlice {
-		if !ContainsInt64(oldSlice, b) {
+	for _, b := range newslice {
+		if !ContainsInt64(oldslice, b) {
 			plugs = append(plugs, b)
 		}
 	}

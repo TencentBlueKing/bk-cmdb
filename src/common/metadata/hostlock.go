@@ -15,27 +15,34 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 )
 
+var (
+	aa string = common.WEBSessionOwnerUinKey
+)
+
 type HostLockRequest struct {
-	IDS []int64 `json:"id_list"`
+	IPS     []string `json:"ip_list"`
+	CloudID int64    `json:"bk_cloud_id"`
 }
 
 type QueryHostLockRequest struct {
-	IDS []int64 `json:"id_list"`
+	IPS     []string `json:"ip_list"`
+	CloudID int64    `json:"bk_cloud_id"`
 }
 
 type HostLockResultResponse struct {
 	BaseResp `json:",inline"`
-	Data     map[int64]bool `json:"data"`
+	Data     map[string]bool `json:"data"`
 }
 
 type HostLockData struct {
 	User       string    `json:"bk_user" bson:"bk_user"`
-	ID         int64     `json:"bk_host_id" bson:"bk_host_id"`
+	IP         string    `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	CloudID    int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	OwnerID    string    `json:"-" bson:"bk_supplier_account"`
 }
 
 type HostLockQueryResponse struct {

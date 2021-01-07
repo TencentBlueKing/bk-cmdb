@@ -16,19 +16,17 @@ import (
 	"fmt"
 )
 
-// CCVersion describes version
-// CCTag show the git tag for this version
-// CCBuildTime show the compile time
+//CCVersion discribes version
+//CCTag show the git tag for this version
+//CCBuildTime show the compile time
 var (
 	CCVersion       = "17.03.28"
 	CCTag           = "2017-03-28 Release"
-	CCBRANCH        = ""
 	CCBuildTime     = "2017-03-28 19:50:00"
 	CCGitHash       = "unknown"
-	CCRunMode       = "product"   // product, test, dev
-	CCDistro        = "community" // enterprise, community
+	CCRunMode       = "product" // product, test, dev
+	CCDistro        = "enterprise"
 	CCDistroVersion = "9999.9999.9999"
-	ServiceName     = "unknown"
 )
 
 // CCRunMode enumeration
@@ -38,30 +36,13 @@ var (
 	CCRunModeDev     = "dev"
 )
 
-var (
-	CCDistrEnterprise = "enterprise"
-	CCDistrCommunity  = "community"
-)
-
-var (
-	// CanCreateSetModuleWithoutTemplate means whether user can create set and module without template
-	CanCreateSetModuleWithoutTemplate = true
-)
-
-// ShowVersion is the default handler which match the --version flag
+//ShowVersion is the default handler which match the --version flag
 func ShowVersion() {
 	fmt.Printf("%s", GetVersion())
 }
 
 // GetVersion return the version info
 func GetVersion() string {
-	version := fmt.Sprintf(`Version     : %s
-Tag         : %s
-BuildTime   : %s
-GitHash     : %s
-RunMode     : %s
-Distribution: %s
-ServiceName : %s
-`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, CCDistro, ServiceName)
+	version := fmt.Sprintf("Version  :%s\nTag      :%s\nBuildTime:  %s\nGitHash:    %s\nRunMode:    %s\n", CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode)
 	return version
 }

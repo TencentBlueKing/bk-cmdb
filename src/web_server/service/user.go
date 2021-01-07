@@ -18,16 +18,24 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	webcom "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
-
-	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
+
+const BkAccountUrl = "site.bk_account_url"
+
+type userResult struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+	Code    string      `json:"code"`
+	Result  bool        `json:"result"`
+}
 
 type userDataResult struct {
 	Message string      `json:"bk_error_msg"`
@@ -36,32 +44,22 @@ type userDataResult struct {
 	Result  bool        `json:"result"`
 }
 
+var getUserFailData = userDataResult{
+	Result:  false,
+	Message: "get user list false",
+	Code:    "",
+	Data:    nil,
+}
+
 // GetUserList get user list
 func (s *Service) GetUserList(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	rspBody := metadata.LonginSystemUserListResult{}
-
-	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-	userList, rawErr := userManger.GetUserList(c)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
-	if rawErr != nil && rawErr.ErrCode != 0 {
-		blog.Error("GetUserList failed, err: %s, rid: %s", rawErr.ToCCError(defErr).Error(), rid)
-		rspBody.Code = rawErr.ErrCode
-		rspBody.ErrMsg = rawErr.ToCCError(defErr).Error()
-		rspBody.Result = false
-		c.JSON(http.StatusInternalServerError, rspBody)
-		return
-	}
-
-	rspBody.Result = true
-	rspBody.Data = userList
-
-	c.JSON(http.StatusOK, rspBody)
+	user := user.NewUser(s.Config, s.Engine, s.CacheCli)
+	code, data := user.GetUserList(c)
+	c.JSON(code, data)
 	return
 }
 
 func (s *Service) UpdateUserLanguage(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 	language := c.Param("language")
 
@@ -69,7 +67,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 	err := session.Save()
 
 	if nil != err {
-		blog.Errorf("user update language error:%s, rid: %s", err.Error(), rid)
+		blog.Errorf("user update language error:%s", err.Error())
 		c.JSON(200, userDataResult{
 			Result:  false,
 			Message: "user update language error",
@@ -91,7 +89,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 }
 
 func (s *Service) UserInfo(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+
 	session := sessions.Default(c)
 	resultData := metadata.LoginUserInfoResult{}
 	resultData.Result = true
@@ -112,7 +110,7 @@ func (s *Service) UserInfo(c *gin.Context) {
 		ownerUinList := make([]metadata.LoginUserInfoOwnerUinList, 0)
 		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
 		if nil != err {
-			blog.Errorf("[UserInfo] json unmarshal error:%s, rid: %s", err.Error(), rid)
+			blog.Errorf("[UserInfo] json unmarshal error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
 		} else {
 			resultData.Data.OwnerUinArr = ownerUinList
 		}
@@ -134,12 +132,10 @@ func (s *Service) UserInfo(c *gin.Context) {
 
 func (s *Service) UpdateSupplier(c *gin.Context) {
 
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 
 	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)
 	if "" == strOwnerUinList {
-		blog.ErrorJSON("session not owner info, rid:%s", rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result: false,
 			Code:   common.CCErrCommNotFound,
@@ -151,7 +147,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	if ok {
 		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
 		if nil != err {
-			blog.Errorf("[UserInfo] json unmarshal error:%s, rid: %s", err.Error(), rid)
+			blog.Errorf("[UserInfo] json unmarshal error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
 			c.JSON(http.StatusBadRequest, metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrCommJSONUnmarshalFailed,
@@ -159,6 +155,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 			})
 			return
 		}
+
 	}
 
 	ownerID := c.Param("id")
@@ -170,7 +167,6 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	}
 
 	if nil == supplier {
-		blog.ErrorJSON("session not owner info. owner:%s, ownerlist:%s, rid:%s", ownerID, ownerUinList, rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result: false,
 			Code:   common.CCErrCommNotFound,
@@ -180,29 +176,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	}
 	session.Set(common.WEBSessionOwnerUinKey, supplier.OwnerID)
 	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(supplier.Role, 10))
-	if err := session.Save(); err != nil {
-		blog.Errorf("save session failed, err: %+v, rid: %s", err, rid)
-	}
-
-	// not user, notice not privilege
-	uin, _ := session.Get(common.WEBSessionUinKey).(string)
-	language := webcom.GetLanguageByHTTPRequest(c)
-
-	ownerM := user.NewOwnerManager(uin, supplier.OwnerID, language)
-	ownerM.CacheCli = s.CacheCli
-	ownerM.Engine = s.Engine
-	permissions, err := ownerM.InitOwner()
-	if nil != err {
-		blog.Errorf("InitOwner error: %v, rid:%s", err, rid)
-		c.JSON(http.StatusBadRequest, metadata.BaseResp{
-			Result:      false,
-			Code:        err.GetCode(),
-			ErrMsg:      err.Error(),
-			Permissions: permissions,
-		})
-		return
-	}
-
+	session.Save()
 	ret := metadata.LoginChangeSupplierResult{}
 	ret.Result = true
 	ret.Data.ID = ownerID

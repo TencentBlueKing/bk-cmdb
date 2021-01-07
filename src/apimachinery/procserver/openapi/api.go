@@ -17,12 +17,11 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
 type OpenAPIClientInterface interface {
-	GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat []mapstr.MapStr) (resp *metadata.Response, err error)
+	GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat []map[string]interface{}) (resp *metadata.Response, err error)
 	GetProcessPortByIP(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 }
 

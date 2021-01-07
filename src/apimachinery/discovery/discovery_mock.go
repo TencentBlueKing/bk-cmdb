@@ -62,52 +62,12 @@ func (d *MockDiscovery) ProcCtrl() Interface {
 	return &mockServer{}
 }
 
-func (d *MockDiscovery) GseProcServer() Interface {
+func (d *MockDiscovery) GseProcServ() Interface {
 	return &mockServer{}
-}
-
-func (d *MockDiscovery) OperationServer() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) CoreService() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) TaskServer() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) CloudServer() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) AuthServer() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) CacheService() Interface {
-	return &mockServer{}
-}
-
-func (d *MockDiscovery) IsMaster() bool {
-	return true
-}
-
-func (d *MockDiscovery) Server(name string) Interface {
-	return emptyServerInst
 }
 
 type mockServer struct{}
 
 func (*mockServer) GetServers() ([]string, error) {
 	return []string{"http://127.0.0.1:8080"}, nil
-}
-
-func (*mockServer) IsMaster(string) bool {
-	return true
-}
-
-func (s *mockServer) GetServersChan() chan []string {
-	return nil
 }

@@ -15,15 +15,13 @@ package metadata
 import (
 	"net/http"
 
-	"configcenter/src/common/errors"
-
 	"github.com/gin-gonic/gin"
 )
 
 type LoginUserInfoOwnerUinList struct {
-	OwnerID    string `json:"id"`
-	OwnerName  string `json:"name"`
-	Role       int64  `json:"role"`
+	OwnerID   string `json:"id"`
+	OwnerName string `json:"name"`
+	Role      int64  `json:"role"`
 }
 
 type LoginUserInfo struct {
@@ -43,8 +41,9 @@ type LoginUserInfo struct {
 }
 
 type LoginPluginInfo struct {
-	Name       string // plugin info
-	Version    string // In what version is used
+	Name    string // plugin info
+	Version string // In what version is used
+	//CookieEnv string // Reserved word, not used now,  When the cookie has the current key, it is used preferentially.
 	HandleFunc LoginUserPluginInerface
 }
 
@@ -57,8 +56,8 @@ type LoginUserPluginParams struct {
 
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *LoginUserInfo, loginSucc bool)
+	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, error)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
-	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
 }
 
 type LoginSystemUserInfo struct {
@@ -67,18 +66,8 @@ type LoginSystemUserInfo struct {
 }
 
 type LonginSystemUserListResult struct {
-	BaseResp `json:",inline"`
+	BaseResp `json",inline"`
 	Data     []*LoginSystemUserInfo `json:"data"`
-}
-
-type DepartmentResult struct {
-	BaseResp `json:",inline"`
-	Data     *DepartmentData `json:"data"`
-}
-
-type DepartmentProfileResult struct {
-	BaseResp `json:",inline"`
-	Data     *DepartmentProfileData `json:"data"`
 }
 
 type LoginUserInfoDetail struct {
@@ -91,19 +80,19 @@ type LoginUserInfoDetail struct {
 }
 
 type LoginUserInfoResult struct {
-	BaseResp `json:",inline"`
+	BaseResp `json",inline"`
 	Data     LoginUserInfoDetail `json:"data"`
 }
 
 type LoginChangeSupplierResult struct {
-	BaseResp `json:",inline"`
+	BaseResp `json",inline"`
 	Data     struct {
 		ID string `json:"bk_supplier_account"`
 	} `json:"data"`
 }
 
 type LogoutResult struct {
-	BaseResp `json:",inline"`
+	BaseResp `json",inline"`
 	Data     struct {
 		LogoutURL string `json:"url"`
 	} `json:"data"`
@@ -111,21 +100,4 @@ type LogoutResult struct {
 
 type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
-}
-
-type ExcelAssocationOperate int
-
-const (
-	_ ExcelAssocationOperate = iota
-	ExcelAssocationOperateError
-	ExcelAssocationOperateAdd
-	//ExcelAssocationOperateUpdate
-	ExcelAssocationOperateDelete
-)
-
-type ExcelAssocation struct {
-	ObjectAsstID string                 `json:"bk_obj_asst_id"`
-	Operate      ExcelAssocationOperate `json:"operate"`
-	SrcPrimary   string                 `json:"src_primary_key"`
-	DstPrimary   string                 `json:"dst_primary_key"`
 }

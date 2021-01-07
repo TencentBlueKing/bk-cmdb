@@ -14,6 +14,7 @@ package object
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -26,7 +27,7 @@ func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metada
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(obj).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -40,7 +41,7 @@ func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, d
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -49,12 +50,12 @@ func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, d
 
 func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr/%s"
+	subPath := fmt.Sprintf("/objectattr/%s", objID)
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, objID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -63,12 +64,12 @@ func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Heade
 
 func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/objectattr/%s"
+	subPath := fmt.Sprintf("/objectattr/%s", objID)
 
-	err = t.client.Delete().
+	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, objID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

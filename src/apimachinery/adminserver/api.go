@@ -14,9 +14,10 @@ package adminserver
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
-	"configcenter/src/common/metadata"
+    "configcenter/src/common/metadata"
 )
 
 func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
@@ -26,7 +27,7 @@ func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *m
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -35,12 +36,12 @@ func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *m
 
 func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/migrate/system/hostcrossbiz/%s"
+	subPath := fmt.Sprintf("/migrate/system/hostcrossbiz/%s", ownerID)
 
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, ownerID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -49,12 +50,12 @@ func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (r
 
 func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/migrate/%s/%s"
+	subPath := fmt.Sprintf("/migrate/%s/%s", distribution, ownerID)
 
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, distribution, ownerID).
+		SubResource(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
