@@ -241,11 +241,11 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, processData map[string]in
 // it works to find the different attribute value between the process instance and it's bounded process template.
 // return with the changed attribute's details.
 func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, host map[string]interface{},
-	attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+	attrMap map[string]metadata.Attribute) ([]metadata.ProcessChangedAttribute,error) {
 
 	changes := make([]metadata.ProcessChangedAttribute, 0)
 	if t == nil || i == nil {
-		return changes
+		return changes,nil
 	}
 
 	if metadata.IsAsDefaultValue(t.ProcNum.AsDefaultValue) {
@@ -331,9 +331,11 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	}
 
 	if metadata.IsAsDefaultValue(t.BindInfo.AsDefaultValue) {
-		newBindInfo, change := t.BindInfo.DiffWithProcessTemplate(i.BindInfo, host)
+		newBindInfo, change,err := t.BindInfo.DiffWithProcessTemplate(i.BindInfo, host)
+		if err!=nil {
+			return nil, err
+		}
 		if change {
-
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap[common.BKProcBindInfo].ID,
 				PropertyID:            common.BKProcBindInfo,
@@ -499,5 +501,5 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
-	return changes
+	return changes,nil
 }

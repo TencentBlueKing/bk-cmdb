@@ -581,41 +581,41 @@ func (p *SocketBindType) NeedIPFromHost() bool {
 	}
 }
 
-func (p *SocketBindType) IP(host map[string]interface{}) string {
+func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
 	if p == nil {
-		return ""
+		return "", errors.New("process template bind info ip is not set or is empty")
 	}
 
 	var ip string
 
 	switch *p {
 	case BindLocalHost:
-		return "127.0.0.1"
+		return "127.0.0.1", nil
 	case BindAll:
-		return "0.0.0.0"
+		return "0.0.0.0", nil
 	case BindInnerIP:
 		if host == nil {
-			return ""
+			return "", errors.New("process host is not specified to get bind inner ip")
 		}
 		ip = util.GetStrByInterface(host[common.BKHostInnerIPField])
 	case BindOuterIP:
 		if host == nil {
-			return ""
+			return "", errors.New("process host is not specified to get bind outer ip")
 		}
 		ip = util.GetStrByInterface(host[common.BKHostOuterIPField])
 	default:
-		return ""
+		return "", errors.New("process template bind info ip is invalid")
 	}
 
 	if ip == "" {
-		return "127.0.0.1"
+		return "127.0.0.1", nil
 	}
 
 	index := strings.Index(strings.Trim(ip, ","), ",")
 	if index == -1 {
-		return ip
+		return ip, nil
 	}
-	return ip[:index]
+	return ip[:index], nil
 }
 
 func (p *SocketBindType) String() string {
@@ -844,7 +844,7 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 	return false
 }
 
-func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host map[string]interface{}) *Process {
+func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host map[string]interface{}) (*Process, error) {
 	now := time.Now()
 	processInstance := &Process{
 		LastTime:        now,
@@ -855,95 +855,31 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string, host 
 
 	property := pt.Property
 
-	processName := ""
-	processInstance.ProcessName = &processName
-	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) {
-		processInstance.ProcessName = property.ProcessName.Value
+	processInstance.ProcessName = property.ProcessName.Value
+	processInstance.ProcNum = property.ProcNum.Value
+	processInstance.StopCmd = property.StopCmd.Value
+	processInstance.RestartCmd = property.RestartCmd.Value
+	processInstance.ForceStopCmd = property.ForceStopCmd.Value
+	processInstance.FuncName = property.FuncName.Value
+	processInstance.WorkPath = property.WorkPath.Value
+	processInstance.Priority = property.Priority.Value
+	processInstance.ReloadCmd = property.ReloadCmd.Value
+	processInstance.PidFile = property.PidFile.Value
+	processInstance.AutoStart = property.AutoStart.Value
+	processInstance.StartCheckSecs = property.StartCheckSecs.Value
+	processInstance.StartCmd = property.StartCmd.Value
+	processInstance.User = property.User.Value
+	processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
+	processInstance.Description = property.Description.Value
+	processInstance.StartParamRegex = property.StartParamRegex.Value
+
+	var err error
+	processInstance.BindInfo, err = property.BindInfo.NewProcBindInfo(host)
+	if err != nil {
+		return nil, err
 	}
 
-	processInstance.ProcNum = nil
-	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) {
-		processInstance.ProcNum = property.ProcNum.Value
-	}
-
-	processInstance.StopCmd = nil
-	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) {
-		processInstance.StopCmd = property.StopCmd.Value
-	}
-
-	processInstance.RestartCmd = nil
-	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) {
-		processInstance.RestartCmd = property.RestartCmd.Value
-	}
-
-	processInstance.ForceStopCmd = nil
-	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) {
-		processInstance.ForceStopCmd = property.ForceStopCmd.Value
-	}
-
-	processInstance.FuncName = nil
-	if IsAsDefaultValue(property.FuncName.AsDefaultValue) {
-		processInstance.FuncName = property.FuncName.Value
-	}
-
-	processInstance.WorkPath = nil
-	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) {
-		processInstance.WorkPath = property.WorkPath.Value
-	}
-
-	processInstance.Priority = nil
-	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
-		processInstance.Priority = property.Priority.Value
-	}
-
-	processInstance.ReloadCmd = nil
-	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) {
-		processInstance.ReloadCmd = property.ReloadCmd.Value
-	}
-
-	processInstance.PidFile = nil
-	if IsAsDefaultValue(property.PidFile.AsDefaultValue) {
-		processInstance.PidFile = property.PidFile.Value
-	}
-
-	processInstance.AutoStart = nil
-	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) {
-		processInstance.AutoStart = property.AutoStart.Value
-	}
-
-	processInstance.StartCheckSecs = nil
-	if IsAsDefaultValue(property.StartCheckSecs.AsDefaultValue) {
-		processInstance.StartCheckSecs = property.StartCheckSecs.Value
-	}
-
-	processInstance.StartCmd = nil
-	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {
-		processInstance.StartCmd = property.StartCmd.Value
-	}
-
-	processInstance.User = nil
-	if IsAsDefaultValue(property.User.AsDefaultValue) {
-		processInstance.User = property.User.Value
-	}
-
-	processInstance.TimeoutSeconds = nil
-	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) {
-		processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
-	}
-
-	processInstance.Description = nil
-	if IsAsDefaultValue(property.Description.AsDefaultValue) {
-		processInstance.Description = property.Description.Value
-	}
-
-	processInstance.StartParamRegex = nil
-	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) {
-		processInstance.StartParamRegex = property.StartParamRegex.Value
-	}
-
-	processInstance.BindInfo = property.BindInfo.NewProcBindInfo(host)
-
-	return processInstance
+	return processInstance, nil
 }
 
 func FilterValidFields(fields []string) []string {
@@ -990,11 +926,11 @@ func GetAllProcessPropertyFields() []string {
 }
 
 // ExtractChangeInfo get changes that will be applied to process instance
-func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interface{}) (mapstr.MapStr, bool) {
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interface{}) (mapstr.MapStr, bool, error) {
 	t := pt.Property
 	var changed bool
 	if t == nil || i == nil {
-		return nil, false
+		return nil, false, nil
 	}
 
 	process := make(mapstr.MapStr)
@@ -1219,18 +1155,20 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interfa
 		}
 	}
 
-	bindInfo, bindInfoChanged, bindInfoIsNamePortChanged := t.BindInfo.ExtractChangeInfoBindInfo(i, host)
+	bindInfo, bindInfoChanged, bindInfoIsNamePortChanged, err := t.BindInfo.ExtractChangeInfoBindInfo(i, host)
+	if err != nil {
+		return nil, false, err
+	}
+
 	process[common.BKProcBindInfo] = bindInfo
 	if bindInfoChanged {
 		changed = true
-
 	}
 	if bindInfoIsNamePortChanged {
 		bindInfoIsNamePortChanged = true
-
 	}
 
-	return process, changed
+	return process, changed, nil
 }
 
 // FilterEditableFields only return editable fields
@@ -1309,7 +1247,9 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 }
 
 // InstanceUpdate is used for update instance's value
-func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) map[string]interface{} {
+func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) (
+	map[string]interface{}, error) {
+
 	data := make(map[string]interface{})
 	property := pt.Property
 	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == false {
@@ -1402,9 +1342,13 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[st
 	}
 
 	// bind info 每次都是全量更新
-	data[common.BKProcBindInfo] = pt.Property.BindInfo.ExtractInstanceUpdateData(input, host)
+	var err error
+	data[common.BKProcBindInfo], err = pt.Property.BindInfo.ExtractInstanceUpdateData(input, host)
+	if err != nil {
+		return nil, err
+	}
 
-	return data
+	return data, nil
 }
 
 type ProcessProperty struct {
@@ -1638,36 +1582,35 @@ type PropertyPort struct {
 }
 
 func (ti *PropertyPort) Validate() error {
-	if ti.Value != nil {
-		if len(*ti.Value) == 0 {
-			return nil
-		}
-		if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
-			return fmt.Errorf("port format invalid")
-		}
-		var tmpPortArr []propertyPortItem
-		strPortItemArr := strings.Split(*ti.Value, ",")
-		for _, strPortItem := range strPortItemArr {
-			portArr := strings.Split(strPortItem, "-")
-			var start, end int64
-			start, _ = util.GetInt64ByInterface(portArr[0])
-			if len(portArr) > 1 {
-				end, _ = util.GetInt64ByInterface(portArr[1])
-			} else {
-				end = start
-			}
-			if start > end {
-				return fmt.Errorf("port format invalid, start > end")
-			}
-			for _, tmpItem := range tmpPortArr {
-				if !(end < tmpItem.start || start > tmpItem.end) {
-					return fmt.Errorf("port format invalid,  port duplicate:" + strPortItem)
-				}
-			}
-			tmpPortArr = append(tmpPortArr, propertyPortItem{start: start, end: end})
-		}
-
+	if ti.Value == nil && len(*ti.Value) == 0 {
+		return errors.New("port is not set or is empty")
 	}
+
+	if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
+		return fmt.Errorf("port format invalid")
+	}
+	var tmpPortArr []propertyPortItem
+	strPortItemArr := strings.Split(*ti.Value, ",")
+	for _, strPortItem := range strPortItemArr {
+		portArr := strings.Split(strPortItem, "-")
+		var start, end int64
+		start, _ = util.GetInt64ByInterface(portArr[0])
+		if len(portArr) > 1 {
+			end, _ = util.GetInt64ByInterface(portArr[1])
+		} else {
+			end = start
+		}
+		if start > end {
+			return fmt.Errorf("port format invalid, start > end")
+		}
+		for _, tmpItem := range tmpPortArr {
+			if !(end < tmpItem.start || start > tmpItem.end) {
+				return fmt.Errorf("port format invalid,  port duplicate:" + strPortItem)
+			}
+		}
+		tmpPortArr = append(tmpPortArr, propertyPortItem{start: start, end: end})
+	}
+
 	return nil
 }
 
@@ -1683,10 +1626,12 @@ type PropertyBindIP struct {
 }
 
 func (ti *PropertyBindIP) Validate() error {
-	if ti.Value != nil && len(*ti.Value) != 0 {
-		if err := ti.Value.Validate(); err != nil {
-			return err
-		}
+	if ti.Value == nil && len(*ti.Value) == 0 {
+		return errors.New("ip is not set or is empty")
+	}
+
+	if err := ti.Value.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -1697,10 +1642,12 @@ type PropertyProtocol struct {
 }
 
 func (ti *PropertyProtocol) Validate() error {
-	if ti.Value != nil {
-		if err := ti.Value.Validate(); err != nil {
-			return err
-		}
+	if ti.Value == nil && len(*ti.Value) == 0 {
+		return errors.New("protocol is not set or is empty")
+	}
+
+	if err := ti.Value.Validate(); err != nil {
+		return err
 	}
 	return nil
 }

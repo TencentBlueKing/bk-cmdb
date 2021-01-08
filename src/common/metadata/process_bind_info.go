@@ -13,6 +13,7 @@ package metadata
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"configcenter/src/common"
@@ -169,7 +170,8 @@ func (pbi *ProcPropertyBindInfo) Validate() (string, error) {
 	return "", nil
 }
 
-func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[string]interface{}) ([]ProcBindInfo, bool, bool) {
+func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[string]interface{}) ([]ProcBindInfo,
+	bool, bool, error) {
 	var changed, isNamePortChanged bool
 
 	procBindInfoMap := make(map[int64]ProcBindInfo, len(i.BindInfo))
@@ -190,48 +192,59 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[
 		inputProcBindInfo.Std.TemplateRowID = row.Std.RowID
 
 		if IsAsDefaultValue(row.Std.IP.AsDefaultValue) {
-			if row.Std.IP.Value == nil && inputProcBindInfo.Std.IP != nil {
-				inputProcBindInfo.Std.IP = nil
-				changed = true
-			} else if row.Std.IP.Value != nil && inputProcBindInfo.Std.IP == nil {
-				ip := row.Std.IP.Value.IP(host)
-				inputProcBindInfo.Std.IP = &ip
-				changed = true
-			} else if row.Std.IP.Value != nil && inputProcBindInfo.Std.IP != nil && row.Std.IP.Value.IP(host) != *inputProcBindInfo.Std.IP {
-				ip := row.Std.IP.Value.IP(host)
-				inputProcBindInfo.Std.IP = &ip
-				changed = true
+			if row.Std.IP.Value != nil || inputProcBindInfo.Std.IP != nil {
+				if row.Std.IP.Value == nil || len(*row.Std.IP.Value) == 0 {
+					return nil, false, false, errors.New("process template bind ip is not set or is empty")
+				}
+
+				ip, err := row.Std.IP.Value.IP(host)
+				if err != nil {
+					return nil, false, false, err
+				}
+
+				if inputProcBindInfo.Std.IP == nil {
+					inputProcBindInfo.Std.IP = &ip
+					changed = true
+				} else if inputProcBindInfo.Std.IP != nil && ip != *inputProcBindInfo.Std.IP {
+					inputProcBindInfo.Std.IP = &ip
+					changed = true
+				}
 			}
 		}
 
 		if IsAsDefaultValue(row.Std.Port.AsDefaultValue) {
-			if row.Std.Port.Value == nil && inputProcBindInfo.Std.Port != nil {
-				inputProcBindInfo.Std.Port = nil
-				changed = true
-				isNamePortChanged = true
-			} else if row.Std.Port.Value != nil && inputProcBindInfo.Std.Port == nil {
-				inputProcBindInfo.Std.Port = row.Std.Port.Value
-				changed = true
-				isNamePortChanged = true
-			} else if row.Std.Port.Value != nil && inputProcBindInfo.Std.Port != nil && *row.Std.Port.Value != *inputProcBindInfo.Std.Port {
-				inputProcBindInfo.Std.Port = row.Std.Port.Value
-				changed = true
-				isNamePortChanged = true
+			if row.Std.Port.Value != nil || inputProcBindInfo.Std.Port != nil {
+				if row.Std.Port.Value == nil || len(*row.Std.Port.Value) == 0 {
+					return nil, false, false, errors.New("process template bind port is not set or is empty")
+				}
+
+				if inputProcBindInfo.Std.Port == nil {
+					inputProcBindInfo.Std.Port = row.Std.Port.Value
+					changed = true
+					isNamePortChanged = true
+				} else if inputProcBindInfo.Std.Port != nil && *row.Std.Port.Value != *inputProcBindInfo.Std.Port {
+					inputProcBindInfo.Std.Port = row.Std.Port.Value
+					changed = true
+					isNamePortChanged = true
+				}
 			}
 		}
 
 		if IsAsDefaultValue(row.Std.Protocol.AsDefaultValue) {
-			if row.Std.Protocol.Value == nil && inputProcBindInfo.Std.Protocol != nil {
-				inputProcBindInfo.Std.Protocol = nil
-				changed = true
-			} else if row.Std.Protocol.Value != nil && inputProcBindInfo.Std.Protocol == nil {
-				protocol := string(*row.Std.Protocol.Value)
-				inputProcBindInfo.Std.Protocol = &protocol
-				changed = true
-			} else if row.Std.Protocol.Value != nil && inputProcBindInfo.Std.Protocol != nil && string(*row.Std.Protocol.Value) != *inputProcBindInfo.Std.Protocol {
-				protocol := string(*row.Std.Protocol.Value)
-				inputProcBindInfo.Std.Protocol = &protocol
-				changed = true
+			if row.Std.Protocol.Value != nil || inputProcBindInfo.Std.Protocol != nil {
+				if row.Std.Protocol.Value == nil || len(*row.Std.Protocol.Value) == 0 {
+					return nil, false, false, errors.New("process template bind protocol is not set or is empty")
+				}
+
+				if inputProcBindInfo.Std.Protocol == nil {
+					protocol := string(*row.Std.Protocol.Value)
+					inputProcBindInfo.Std.Protocol = &protocol
+					changed = true
+				} else if inputProcBindInfo.Std.Protocol != nil && string(*row.Std.Protocol.Value) != *inputProcBindInfo.Std.Protocol {
+					protocol := string(*row.Std.Protocol.Value)
+					inputProcBindInfo.Std.Protocol = &protocol
+					changed = true
+				}
 			}
 		}
 
@@ -261,16 +274,18 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[
 		procBindInfoArr = append(procBindInfoArr, inputProcBindInfo)
 	}
 
-	return procBindInfoArr, changed, isNamePortChanged
+	return procBindInfoArr, changed, isNamePortChanged, nil
 
 }
 
-func (pbi *ProcPropertyBindInfo) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) []ProcBindInfo {
+func (pbi *ProcPropertyBindInfo) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) ([]ProcBindInfo,
+	error) {
 	return pbi.changeInstanceBindInfo(input.BindInfo, host)
 }
 
 // changeInstanceBindInfo 根据模板和进程中的绑定信息来组成真正的进程绑定信息
-func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindInfo, host map[string]interface{}) []ProcBindInfo {
+func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindInfo, host map[string]interface{}) (
+	[]ProcBindInfo, error) {
 	procBindInfoMap := make(map[int64]ProcBindInfo, 0)
 
 	for _, item := range bindInfoArr {
@@ -293,25 +308,29 @@ func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindIn
 		/*** 处理标准字段 ***/
 
 		if IsAsDefaultValue(row.Std.IP.AsDefaultValue) == true {
-			if row.Std.IP.Value == nil {
-				inputProcBindInfo.Std.IP = nil
-			} else {
-				ip := row.Std.IP.Value.IP(host)
-				inputProcBindInfo.Std.IP = &ip
+			if row.Std.IP.Value == nil || len(*row.Std.IP.Value) == 0 {
+				return nil, errors.New("process template bind ip is not set or is empty")
 			}
+			ip, err := row.Std.IP.Value.IP(host)
+			if err != nil {
+				return nil, err
+			}
+			inputProcBindInfo.Std.IP = &ip
 		}
 
 		if IsAsDefaultValue(row.Std.Port.AsDefaultValue) == true {
+			if row.Std.Port.Value == nil || len(*row.Std.Port.Value) == 0 {
+				return nil, errors.New("process template bind port is not set or is empty")
+			}
 			inputProcBindInfo.Std.Port = row.Std.Port.Value
 		}
 
 		if IsAsDefaultValue(row.Std.Protocol.AsDefaultValue) == true {
-			if row.Std.Protocol.Value == nil {
-				inputProcBindInfo.Std.Protocol = nil
-			} else {
-				protocol := string(*row.Std.Protocol.Value)
-				inputProcBindInfo.Std.Protocol = &protocol
+			if row.Std.Protocol.Value == nil || len(*row.Std.Protocol.Value) == 0 {
+				return nil, errors.New("process template bind protocol is not set or is empty")
 			}
+			protocol := string(*row.Std.Protocol.Value)
+			inputProcBindInfo.Std.Protocol = &protocol
 		}
 
 		if IsAsDefaultValue(row.Std.Enable.AsDefaultValue) == true {
@@ -329,7 +348,7 @@ func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindIn
 		procBindInfoArr = append(procBindInfoArr, inputProcBindInfo)
 	}
 
-	return procBindInfoArr
+	return procBindInfoArr, nil
 }
 
 // Update  bind info 每次更新采用的是全量更新
@@ -368,9 +387,14 @@ func cloneProcBindInfoArr(procBindInfoArr []ProcBindInfo) (newData []ProcBindInf
 }
 
 // Compare 对比模板和实例数据，发现数据是否变化
-func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcBindInfo, host map[string]interface{}) (newBindInfoArr []ProcBindInfo, change bool) {
+func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcBindInfo, host map[string]interface{}) (
+	newBindInfoArr []ProcBindInfo, change bool, err error) {
+
 	tmpBindInfoArr := cloneProcBindInfoArr(procBindInfoArr)
-	newBindInfoArr = pbi.changeInstanceBindInfo(tmpBindInfoArr, host)
+	newBindInfoArr, err = pbi.changeInstanceBindInfo(tmpBindInfoArr, host)
+	if err != nil {
+		return nil, false, err
+	}
 
 	if len(procBindInfoArr) != len(newBindInfoArr) {
 		change = true
@@ -458,7 +482,7 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 }
 
 // NewProcBindInfo 通过模板生成进程的时候使用
-func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) []ProcBindInfo {
+func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) ([]ProcBindInfo, error) {
 	var procBindInfoArr []ProcBindInfo
 
 	for _, row := range pbi.Value {
@@ -472,44 +496,36 @@ func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) []P
 		procBindInfo.Std.TemplateRowID = row.Std.RowID
 
 		/*** 处理标准字段 ***/
-
-		if IsAsDefaultValue(row.Std.IP.AsDefaultValue) == true {
-			if row.Std.IP.Value == nil {
-				procBindInfo.Std.IP = nil
-			} else {
-				ip := row.Std.IP.Value.IP(host)
-				procBindInfo.Std.IP = &ip
-			}
+		if row.Std.IP.Value == nil || len(*row.Std.IP.Value) == 0 {
+			return nil, errors.New("process bind info ip is not set or is empty")
 		}
-
-		if IsAsDefaultValue(row.Std.Port.AsDefaultValue) == true {
-			procBindInfo.Std.Port = row.Std.Port.Value
+		ip, err := row.Std.IP.Value.IP(host)
+		if err != nil {
+			return nil, err
 		}
+		procBindInfo.Std.IP = &ip
 
-		if IsAsDefaultValue(row.Std.Protocol.AsDefaultValue) == true {
-			if row.Std.Protocol.Value == nil {
-				procBindInfo.Std.Protocol = nil
-			} else {
-				protocol := string(*row.Std.Protocol.Value)
-				procBindInfo.Std.Protocol = &protocol
-			}
+		if row.Std.Port.Value == nil || len(*row.Std.Port.Value) == 0 {
+			return nil, errors.New("process bind info port is not set or is empty")
 		}
+		procBindInfo.Std.Port = row.Std.Port.Value
 
-		if IsAsDefaultValue(row.Std.Enable.AsDefaultValue) == true {
-			if row.Std.Enable.Value == nil {
-				procBindInfo.Std.Enable = nil
-			} else {
-				procBindInfo.Std.Enable = row.Std.Enable.Value
-			}
+		if row.Std.Protocol.Value == nil || len(*row.Std.Protocol.Value) == 0 {
+			return nil, errors.New("process bind info protocol is not set or is empty")
 		}
+		protocol := string(*row.Std.Protocol.Value)
+		procBindInfo.Std.Protocol = &protocol
+
+		procBindInfo.Std.Enable = row.Std.Enable.Value
 
 		if row.extra != nil {
 			procBindInfo.extra = row.extra.NewProcBindInfo()
 		}
 
+		procBindInfo.Std.TemplateRowID = row.Std.RowID
 		procBindInfoArr = append(procBindInfoArr, procBindInfo)
 	}
-	return procBindInfoArr
+	return procBindInfoArr, nil
 }
 
 // allFieldValIsNil 判断所有的字段是否为nil

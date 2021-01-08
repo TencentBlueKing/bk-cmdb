@@ -133,17 +133,16 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 		filter := map[string]interface{}{common.BKHostIDField: instance.HostID}
 
 		for _, processTemplate := range listProcTplResult.Info {
-			if !metadata.IsAsDefaultValue(processTemplate.Property.BindInfo.AsDefaultValue) {
+			if len(processTemplate.Property.BindInfo.Value) == 0 {
 				continue
 			}
 
 			needIP := false
 			for _, value := range processTemplate.Property.BindInfo.Value {
-				if metadata.IsAsDefaultValue(value.Std.IP.AsDefaultValue) && value.Std.IP.Value.NeedIPFromHost() {
+				if value.Std.IP.Value.NeedIPFromHost() {
 					needIP = true
 					break
 				}
-
 			}
 
 			if !needIP {
@@ -158,7 +157,13 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 		}
 
 		for _, processTemplate := range listProcTplResult.Info {
-			processData := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+			processData, err := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+			if err != nil {
+				blog.ErrorJSON("create service instance, but generate process instance by template "+
+					"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
+				return nil, errors.New(common.CCErrCommParamsInvalid, err.Error())
+			}
+
 			process, ccErr := p.dependence.CreateProcessInstance(kit, processData)
 			if ccErr != nil {
 				blog.Errorf("CreateServiceInstance failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, kit.Rid)
@@ -742,7 +747,13 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			serviceInstanceName := util.GetStrByInterface(host[common.BKHostInnerIPField])
 
 			for index, processTemplate := range processTemplates {
-				processData := processTemplate.NewProcess(processTemplate.BizID, kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(processTemplate.BizID, kit.SupplierAccount, host)
+				if err != nil {
+					blog.ErrorJSON("create service instance, but generate process instance by template "+
+						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
+					return errors.New(common.CCErrCommParamsInvalid, err.Error())
+				}
+
 				process, ccErr := p.dependence.CreateProcessInstance(kit, processData)
 				if ccErr != nil {
 					blog.Errorf("CreateServiceInstance failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, kit.Rid)

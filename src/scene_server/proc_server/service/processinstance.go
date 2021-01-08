@@ -41,7 +41,7 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		processIDs, err = ps.createProcessInstances(ctx, input)
 		if err != nil {
 			blog.Errorf("create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v", input.ServiceInstanceID, input, err)
-			return ctx.Kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
+			return err
 		}
 		return nil
 	})
@@ -322,7 +322,12 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 				blog.Errorf("update process instance failed, process related template not found, relation: %+v, err: %v, rid: %s", relation, err, rid)
 				return nil, err
 			}
-			processData = processTemplate.ExtractInstanceUpdateData(&process, hostMap[relation.HostID])
+			var compareErr error
+			processData, compareErr = processTemplate.ExtractInstanceUpdateData(&process, hostMap[relation.HostID])
+			if compareErr != nil {
+				blog.ErrorJSON("extract process(%s) update data failed, err: %s, rid: %s", process, err, rid)
+				return nil, errors.New(common.CCErrCommParamsInvalid, compareErr.Error())
+			}
 			clearFields = processTemplate.GetEditableFields(clearFields)
 		}
 		// set field value as nil
@@ -454,6 +459,20 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	if processInfo.FuncName != nil && (len(*processInfo.FuncName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
 	}
+
+	// validate that process bind info must have ip and port and protocol
+	for _, bindInfo := range processInfo.BindInfo {
+		if bindInfo.Std.IP == nil || len(*bindInfo.Std.IP) == 0 {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
+		}
+		if bindInfo.Std.Port == nil || len(*bindInfo.Std.Port) == 0 {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
+		}
+		if bindInfo.Std.Protocol == nil || len(*bindInfo.Std.Protocol) == 0 {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
+		}
+	}
+
 	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
 	if err != nil {
 		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, rid)
