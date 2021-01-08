@@ -119,7 +119,9 @@
                                 Object.keys(info).forEach(infoKey => {
                                     if (infoKey === 'ip') {
                                         infoValue[infoKey] = this.getBindIp(instance, info)
-                                    } else {
+                                    } else if (infoKey === 'row_id') {
+                                        infoValue.template_row_id = info.row_id
+                                    } else if (typeof info[infoKey] === 'object') {
                                         infoValue[infoKey] = info[infoKey].value
                                     }
                                 })

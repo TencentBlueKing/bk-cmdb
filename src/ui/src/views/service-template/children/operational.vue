@@ -498,46 +498,21 @@
                 }
             },
             formatSubmitData (data = {}) {
-                const keys = Object.keys(data)
-                for (const key of keys) {
+                Object.keys(data).forEach(key => {
                     const property = this.properties.find(property => property.bk_property_id === key)
-                    if (property
-                        && ['enum', 'int', 'float', 'list'].includes(property.bk_property_type)
-                        && (!data[key].value || !data[key].as_default_value)) {
-                        data[key].value = null
-                    } else if (property && property.bk_property_type === 'bool' && !data[key].as_default_value) {
-                        data[key].value = null
-                    } else if (property && property.bk_property_type === 'table') {
-                        // 过滤掉无效数据行
-                        const values = data[key].value || []
-                        const formattedValues = values.map(row => {
-                            const rawValues = {}
-                            Object.keys(row).forEach(rowKey => {
-                                rawValues[rowKey] = row[rowKey].value
-                            })
-                            return this.$tools.formatValues(rawValues, property.option)
-                        })
-                        const newValues = values.map((row, rowIndex) => {
-                            const newRowValues = {}
+                    if (property && property.bk_property_type === 'table') {
+                        (data[key].value || []).forEach(row => {
                             Object.keys(row).forEach(rowKey => {
                                 if (typeof row[rowKey] === 'object') {
-                                    const originalValue = values[rowIndex][rowKey].value
-                                    const formattedValue = formattedValues[rowIndex][rowKey]
-                                    newRowValues[rowKey] = {
-                                        value: originalValue === formattedValue ? originalValue : formattedValue,
-                                        as_default_value: values[rowIndex][rowKey].as_default_value
-                                    }
-                                } else {
-                                    newRowValues[rowKey] = row[rowKey]
+                                    const columnProperty = (property.option || []).find(columnProperty => columnProperty.bk_property_id === rowKey) || {}
+                                    row[rowKey].value = this.$tools.formatValue(row[rowKey].value, columnProperty)
                                 }
                             })
-                            return newRowValues
                         })
-                        data[key].value = newValues
-                    } else if (!data[key].as_default_value) {
-                        data[key].value = ''
+                    } else {
+                        data[key].value = this.$tools.formatValue(data[key].value, property)
                     }
-                }
+                })
                 return data
             },
             handleSaveProcess (values, changedValues, type) {

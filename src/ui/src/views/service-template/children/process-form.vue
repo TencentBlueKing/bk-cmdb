@@ -1,6 +1,5 @@
 <template>
     <div class="form-layout">
-        <cmdb-tips class="process-tips">{{$t('添加进程提示')}}</cmdb-tips>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -15,13 +14,7 @@
                                     v-if="checkEditable(property)"
                                     :key="propertyIndex">
                                     <div class="property-name clearfix" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
-                                        <bk-checkbox class="form-checkbox"
-                                            v-if="property['isLocking'] !== undefined"
-                                            v-model="values[property['bk_property_id']]['as_default_value']"
-                                            @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
-                                            <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                        </bk-checkbox>
-                                        <span v-else class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                         <i class="property-name-tooltips icon-cc-tips"
                                             v-if="property['placeholder']"
                                             v-bk-tooltips="{
@@ -30,7 +23,7 @@
                                             }">
                                         </i>
                                     </div>
-                                    <div class="property-value">
+                                    <div :class="['property-value', { 'is-lock': values[property.bk_property_id].as_default_value }]">
                                         <component class="form-component" ref="formComponent"
                                             :is="getComponentType(property)"
                                             :disabled="getPropertyEditStatus(property)"
@@ -45,6 +38,19 @@
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]['value']">
                                         </component>
+                                        <span class="property-lock-state"
+                                            v-if="allowLock(property)"
+                                            v-bk-tooltips="{
+                                                placement: 'top',
+                                                interactive: false,
+                                                content: isLocked(property) ? $t('取消锁定') : $t('进程模板锁定提示语'),
+                                                delay: [100, 0]
+                                            }"
+                                            tabindex="-1"
+                                            @click="toggleLockState(property)">
+                                            <i class="icon-cc-lock-fill" v-if="values[property.bk_property_id].as_default_value"></i>
+                                            <i class="icon-cc-lock-line" v-else></i>
+                                        </span>
                                         <span class="form-error">{{getFormError(property)}}</span>
                                     </div>
                                 </li>
@@ -131,21 +137,13 @@
                 },
                 refrenceValues: {},
                 scrollbar: false,
-                invisibleNameProperties: ['bind_info']
+                invisibleNameProperties: ['bind_info'],
+                defaultLocked: ['bk_func_name', 'bk_process_name', 'bind_info']
             }
         },
         computed: {
             groupedProperties () {
-                const properties = this.$groupedProperties.map(properties => {
-                    const filterProperties = properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
-                    filterProperties.map(property => {
-                        if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
-                            property.isLocking = false
-                        }
-                    })
-                    return filterProperties
-                })
-                return properties
+                return this.$groupedProperties
             }
         },
         watch: {
@@ -175,6 +173,15 @@
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
+            isLocked (property) {
+                return this.values[property.bk_property_id].as_default_value
+            },
+            allowLock (property) {
+                return !this.defaultLocked.includes(property.bk_property_id)
+            },
+            toggleLockState (property) {
+                this.values[property.bk_property_id].as_default_value = !this.isLocked(property)
+            },
             getComponentType (property) {
                 const type = property.bk_property_type
                 if (type === 'table') {
@@ -184,8 +191,7 @@
             },
             getPropertyEditStatus (property) {
                 const uneditable = ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']) && !this.isCreatedService
-                return (this.type === 'update' && uneditable)
-                    || !this.values[property['bk_property_id']]['as_default_value']
+                return this.type === 'update' && uneditable
             },
             changedValues () {
                 const changedValues = {}
@@ -219,7 +225,7 @@
                 Object.keys(formValues).forEach(key => {
                     if (!this.inst.hasOwnProperty(key)) {
                         restValues[key] = {
-                            as_default_value: ['bk_func_name', 'bk_process_name', 'bind_info'].includes(key),
+                            as_default_value: this.defaultLocked.includes(key),
                             value: formValues[key]
                         }
                     }
@@ -332,18 +338,6 @@
                 } else {
                     this.$emit('on-cancel')
                 }
-            },
-            handleResetValue (status, property) {
-                if (!status) {
-                    const type = property['bk_property_type']
-                    if (['bool'].includes(type)) {
-                        this.values[property['bk_property_id']]['value'] = false
-                    } else if (['int'].includes(type)) {
-                        this.values[property['bk_property_id']]['value'] = null
-                    } else {
-                        this.values[property['bk_property_id']]['value'] = ''
-                    }
-                }
             }
         }
     }
@@ -422,24 +416,63 @@
                 font-size: 16px;
                 color: #c3cdd7;
             }
-            .property-value {
-                font-size: 0;
-                position: relative;
-                /deep/ .control-append-group {
-                    .bk-input-text {
-                        flex: 1;
-                    }
-                }
-            }
-            .form-checkbox {
-                outline: 0;
-            }
-
+            
             &.flex {
                 flex: 1;
                 padding-right: 0;
                 width: 100%;
             }
+        }
+    }
+    @mixin property-lock-state-visible {
+        width: 24px;
+        border: 1px solid #c4c6cc;
+        border-left: none;
+    }
+    @mixin no-right-radius {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    .property-value {
+        font-size: 0;
+        position: relative;
+        display: flex;
+        &:hover,
+        &.is-lock {
+            .property-lock-state {
+               @include property-lock-state-visible;
+            }
+            .form-component /deep/ {
+                .bk-form-input,
+                .bk-form-textarea,
+                .bk-textarea-wrapper {
+                     @include no-right-radius;
+                }
+            }
+        }
+        .form-component {
+            flex: 1;
+            &.control-active /deep/ {
+                .bk-form-input,
+                .bk-form-textarea,
+                .bk-textarea-wrapper {
+                     @include no-right-radius;
+                }
+            }
+            &.control-active ~ .property-lock-state {
+                @include property-lock-state-visible;
+            }
+        }
+        .property-lock-state {
+            width: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f2f4f8;
+            font-size: 14px;
+            overflow: hidden;
+            transition: width .1s linear;
+            cursor: pointer;
         }
     }
     .form-options {
