@@ -14,6 +14,7 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -335,6 +336,17 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			processData[field] = nil
 		}
 
+		processInfo := new(metadata.Process)
+		if err := mapstr.DecodeFromMapStr(&processInfo, processData); err != nil {
+			blog.ErrorJSON("parse update process data failed, data: %s, err: %v, rid: %s", processData, err, rid)
+			return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		if err := ps.validateProcessInstance(ctx.Kit, processInfo); err != nil {
+			blog.ErrorJSON("validate update process failed, err: %s, data: %s, rid: %s", err, processInfo, rid)
+			return nil, err
+		}
+
 		if err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, processData); err != nil {
 			blog.Errorf("update process failed, processID: %d, process: %+v, err: %v, rid: %s", process.ProcessID, process, err, rid)
 			return nil, err
@@ -445,6 +457,47 @@ func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*meta
 	return moduleInsts, nil
 }
 
+var (
+	ipRegex   = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
+	portRegex = `^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$`
+)
+
+func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.Process) errors.CCErrorCoder {
+	if process.ProcessName != nil && (len(*process.ProcessName) == 0 || len(*process.ProcessName) > common.NameFieldMaxLength) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
+	}
+	if process.FuncName != nil && (len(*process.FuncName) == 0 || len(*process.ProcessName) > common.NameFieldMaxLength) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
+	}
+
+	// validate that process bind info must have ip and port and protocol
+	for _, bindInfo := range process.BindInfo {
+		if bindInfo.Std.IP == nil || len(*bindInfo.Std.IP) == 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
+		}
+		matched, err := regexp.MatchString(ipRegex, *bindInfo.Std.IP)
+		if err != nil || !matched {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKIP)
+		}
+
+		if bindInfo.Std.Port == nil || len(*bindInfo.Std.Port) == 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
+		}
+		if matched, err := regexp.MatchString(portRegex, *bindInfo.Std.Port); err != nil || !matched {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKPort)
+		}
+
+		if bindInfo.Std.Protocol == nil || len(*bindInfo.Std.Protocol) == 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
+		}
+		if *bindInfo.Std.Protocol != string(metadata.ProtocolTypeTCP) && *bindInfo.Std.Protocol != string(metadata.ProtocolTypeUDP) {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKProtocol)
+		}
+	}
+
+	return nil
+}
+
 func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstanceID int64, processData map[string]interface{}) errors.CCErrorCoder {
 	rid := ctx.Kit.Rid
 
@@ -453,29 +506,15 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		blog.ErrorJSON("validateRawInstanceUnique failed, Decode2Struct failed, process: %s, err: %s, rid: %s", processData, err.Error(), rid)
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
-	if processInfo.ProcessName != nil && (len(*processInfo.ProcessName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
-	}
-	if processInfo.FuncName != nil && (len(*processInfo.FuncName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
-	}
 
-	// validate that process bind info must have ip and port and protocol
-	for _, bindInfo := range processInfo.BindInfo {
-		if bindInfo.Std.IP == nil || len(*bindInfo.Std.IP) == 0 {
-			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
-		}
-		if bindInfo.Std.Port == nil || len(*bindInfo.Std.Port) == 0 {
-			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
-		}
-		if bindInfo.Std.Protocol == nil || len(*bindInfo.Std.Protocol) == 0 {
-			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
-		}
+	if err := ps.validateProcessInstance(ctx.Kit, &processInfo); err != nil {
+		blog.ErrorJSON("validate process instance failed, err: %s, process: %s, rid: %s", err, processInfo, rid)
+		return err
 	}
 
 	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
 	if err != nil {
-		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, rid)
+		blog.Errorf("get service instance by id(%d) failed, err: %v, rid: %s", serviceInstanceID, err, rid)
 		return err
 	}
 
