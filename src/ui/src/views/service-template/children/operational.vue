@@ -939,7 +939,7 @@
                 .template-name {
                     @include inlineBlock;
                     @include ellipsis;
-                    max-width: calc(100% - 20px);
+                    max-width: calc(100% - 24px);
                     line-height: 36px;
                 }
                 .bk-select {

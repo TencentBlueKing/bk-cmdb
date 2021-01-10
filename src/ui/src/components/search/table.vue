@@ -1,5 +1,5 @@
 <template>
-    <bk-tag-input
+    <bk-tag-input ref="tagInput"
         allow-create
         allow-auto-match
         v-if="multiple"
@@ -40,6 +40,26 @@
                     this.$emit('input', value)
                     this.$emit('change', value)
                 }
+            }
+        },
+        mounted () {
+            this.addPasteEvent()
+        },
+        beforeDestroy () {
+            this.removePasteEvent()
+        },
+        methods: {
+            addPasteEvent () {
+                this.$refs.tagInput.$refs.input.addEventListener('paste', this.handlePaste)
+            },
+            removePasteEvent () {
+                this.$refs.tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
+            },
+            handlePaste (event) {
+                const text = event.clipboardData.getData('text')
+                const values = text.split(/,|;|\n/).map(value => value.trim()).filter(value => value.length)
+                const value = [...new Set([...this.localValue, ...values])]
+                this.localValue = value
             }
         }
     }
