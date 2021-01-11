@@ -19,6 +19,7 @@
             placement="bottom-start"
             theme="light select-dropdown"
             animation="slide-toggle"
+            :disabled="disabled"
             :z-index="zIndex"
             :arrow="false"
             :offset="-1"
@@ -437,13 +438,15 @@
             }
         }
         &.is-disabled {
-            background-color: #fafafa;
+            background-color: #fafbfd;
+            border-color: #dcdee5;
             color: #c4c6cc;
             cursor: not-allowed;
         }
         &.is-readonly,
         &.is-loading {
-            background-color: #fafafa;
+            background-color: #fafbfd;
+            border-color: #dcdee5;
             cursor: default;
         }
 

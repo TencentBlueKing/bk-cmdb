@@ -26,7 +26,10 @@
                                         </bk-checkbox>
                                         <i class="property-name-tooltips icon icon-cc-tips"
                                             v-if="property['placeholder']"
-                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                            v-bk-tooltips="{
+                                                trigger: 'click',
+                                                content: htmlEncode(property['placeholder'])
+                                            }">
                                         </i>
                                     </cmdb-auth>
                                     <div class="property-value">

@@ -489,6 +489,9 @@
                         params: {
                             bk_module_id: this.assign.id,
                             bk_host_id: this.table.checked
+                        },
+                        config: {
+                            requestId: this.assign.requestId
                         }
                     })
                     Bus.$emit('refresh-dir-count')
@@ -510,6 +513,9 @@
                         const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
                         const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
                         return `${cloud}:${ip}`
+                    }
+                    if (property.bk_property_type === 'topology') {
+                        return data.__bk_host_topology__.join(',').replace(/\s\/\s/g, '')
                     }
                     const value = modelData[property.bk_property_id]
                     return this.$tools.getPropertyCopyValue(value, property)
