@@ -1285,12 +1285,61 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *Service) ip2hostID(ctx *rest.Contexts, ip string, cloudID int64) (hostID int64, err error) {
-	_, hostID, err = s.Logic.IPCloudToHost(ctx.Kit, ip, cloudID)
-	return hostID, err
+func (s *Service) ip2hostID(kit *rest.Kit, ips []string, cloudID int64) (map[string]int64, error) {
+	if len(ips) == 0 {
+		return make(map[string]int64), nil
+	}
+
+	cond := meta.QueryCondition{
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: ips},
+			common.BKCloudIDField:     cloudID,
+		},
+	}
+
+	hosts, err := s.Logic.SearchHostInfo(kit, cond)
+	if err != nil {
+		blog.ErrorJSON("search hosts failed, err: %s, input: %s, rid: %s", err, cond, kit.Rid)
+		return nil, err
+	}
+
+	ipMap := make(map[string]struct{})
+	for _, ip := range ips {
+		ipMap[ip] = struct{}{}
+	}
+
+	hostIP2IDMap := make(map[string]int64)
+	for _, host := range hosts {
+		hostID, err := host.Int64(common.BKHostIDField)
+		if err != nil {
+			blog.ErrorJSON("parse host id failed, err: %s, host: %s, rid: %s", err, host, kit.Rid)
+			return nil, err
+		}
+
+		hostIP, err := host.String(common.BKHostInnerIPField)
+		if err != nil {
+			blog.ErrorJSON("parse host ip failed, err: %s, host: %s, rid: %s", err, host, kit.Rid)
+			return nil, err
+		}
+
+		ipArr := strings.Split(hostIP, ",")
+		for _, slicedIP := range ipArr {
+			if _, exists := ipMap[slicedIP]; exists {
+				hostIP2IDMap[slicedIP] = hostID
+			}
+		}
+	}
+
+	return hostIP2IDMap, err
 }
 
 // CloneHostProperty clone host property from src host to dst host
+// can only clone editable fields that are not in host model unique rules.
+// origin ip and dest ip can only be one ip.
 func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 
 	input := &meta.CloneHostPropertyParams{}
@@ -1321,38 +1370,43 @@ func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 	}
 
 	// authorization check
-	srcHostID, err := s.ip2hostID(ctx, input.OrgIP, input.CloudID)
+	ip2IDMap, err := s.ip2hostID(ctx.Kit, []string{input.OrgIP, input.DstIP}, input.CloudID)
 	if err != nil {
-		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.OrgIP, input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "OrgIP"))
+		blog.ErrorJSON("get host id from ip failed, input: %s, rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
+
 	// check source host exist
+	srcHostID := ip2IDMap[input.OrgIP]
 	if srcHostID == 0 {
 		blog.Errorf("host not found. params:%s,rid:%s", input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostNotFound))
 		return
 	}
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, srcHostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", srcHostID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-		return
-	}
-	// step2. verify has permission to update dst host
-	dstHostID, err := s.ip2hostID(ctx, input.DstIP, input.CloudID)
-	if err != nil {
-		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.DstIP, input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "DstIP"))
-		return
-	}
+
 	// check whether destination host exist
+	dstHostID := ip2IDMap[input.DstIP]
 	if dstHostID == 0 {
 		blog.Errorf("host not found. params:%s,rid:%s", input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostNotFound))
 		return
 	}
 
+	// if both src ip and dst ip belongs to the same host, do not need to clone
+	if srcHostID == dstHostID {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, srcHostID); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", srcHostID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+		return
+	}
+
+	// step2. verify has permission to update dst host
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, dstHostID); err != nil {
 		if err != ac.NoAuthorizeError {
