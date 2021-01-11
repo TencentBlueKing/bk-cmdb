@@ -328,7 +328,8 @@
             },
             openAcrollBusinessModuleSelector () {
                 this.dialog.props = {
-                    title: this.$t('转移主机到其他业务')
+                    title: this.$t('转移主机到其他业务'),
+                    business: this.currentBusiness
                 }
                 this.dialog.width = 830
                 this.dialog.height = 600
