@@ -845,6 +845,9 @@ const (
 
 	ExcelFirstColumnAssociationAttribute = "excel_association_attribute"
 	ExcelFirstColumnFieldDescription     = "excel_field_description"
+
+	// the value of ignored excel cell
+	ExcelCellIgnoreValue = "--"
 )
 
 const (
