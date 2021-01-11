@@ -161,8 +161,7 @@
                 dialog: {
                     show: false,
                     props: {
-                        width: 1100,
-                        showCloseIcon: false
+                        width: 1100
                     },
                     component: null,
                     componentProps: {}

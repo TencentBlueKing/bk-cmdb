@@ -527,7 +527,6 @@
                 display: flex;
                 flex: 1;
                 width: 100%;
-                align-items: center;
                 overflow: hidden;
                 .auth-box {
                     width: 100%;
@@ -559,6 +558,10 @@
                         .main-name {
                             @include ellipsis;
                         }
+                        .main-name {
+                            height: 20px;
+                            line-height: 20px;
+                        }
                     }
                     &.is-built-in {
                         max-width: calc(100% - 40px);
@@ -580,9 +583,9 @@
                 }
                 .built-in-sign {
                     display: inline-block;
-                    height: 19px;
-                    line-height: 18px;
-                    margin: 0 0 0 4px;
+                    height: 20px;
+                    line-height: 20px;
+                    margin: 2px 0 0 4px;
                     padding: 0 6px;
                     font-size: 12px;
                     color: #ffffff;
