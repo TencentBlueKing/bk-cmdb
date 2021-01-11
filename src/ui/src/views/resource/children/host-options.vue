@@ -511,6 +511,9 @@
                         const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
                         return `${cloud}:${ip}`
                     }
+                    if (property.bk_property_type === 'topology') {
+                        return data.__bk_host_topology__.join(',').replace(/\s\/\s/g, '')
+                    }
                     const value = modelData[property.bk_property_id]
                     return this.$tools.getPropertyCopyValue(value, property)
                 })

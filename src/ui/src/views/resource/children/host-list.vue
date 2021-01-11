@@ -322,6 +322,7 @@
                     _t: Date.now()
                 })
             },
+            // 拓扑路径写入数据中，用于复制
             handlePathReady (row, paths) {
                 row.__bk_host_topology__ = paths
             },
