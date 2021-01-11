@@ -489,6 +489,9 @@
                         params: {
                             bk_module_id: this.assign.id,
                             bk_host_id: this.table.checked
+                        },
+                        config: {
+                            requestId: this.assign.requestId
                         }
                     })
                     Bus.$emit('refresh-dir-count')
