@@ -31,7 +31,7 @@ func (s *Service) CreateObjectAssociation(ctx *rest.Contexts) {
 	}
 
 	var association *metadata.Association
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		association, err = s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc)
 		if nil != err {
@@ -126,7 +126,7 @@ func (s *Service) DeleteObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.AssociationOperation().DeleteAssociationWithPreCheck(ctx.Kit, id)
 		if err != nil {
 			return err
@@ -156,7 +156,7 @@ func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.AssociationOperation().UpdateAssociation(ctx.Kit, *data, id)
 		if err != nil {
 			return err
@@ -182,7 +182,7 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 	}
 
 	var ret metadata.ResponeImportAssociationData
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		ret, err = s.Core.AssociationOperation().ImportInstAssociation(ctx.Kit.Ctx, ctx.Kit, objID, request.AssociationInfoMap, s.Language)
 		if err != nil {

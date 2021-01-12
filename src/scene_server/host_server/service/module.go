@@ -52,7 +52,7 @@ func (s *Service) TransferHostModule(ctx *rest.Contexts) {
 	}
 
 	var result *metadata.OperaterException
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		result, err = s.CoreAPI.CoreService().Host().TransferToNormalModule(ctx.Kit.Ctx, ctx.Kit.Header, config)
 		if err != nil {
@@ -104,7 +104,7 @@ func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 	}
 
 	var exceptionArr []metadata.ExceptionResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		exceptionArr, err = s.Logic.MoveHostToResourcePool(ctx.Kit, conf)
 		if err != nil {
@@ -131,7 +131,7 @@ func (s *Service) AssignHostToApp(ctx *rest.Contexts) {
 	}
 
 	var exceptionArr []metadata.ExceptionResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		exceptionArr, err = s.Logic.AssignHostToApp(ctx.Kit, conf)
 		if err != nil {
@@ -193,7 +193,7 @@ func (s *Service) TransferHostAcrossBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logic.TransferHostAcrossBusiness(ctx.Kit, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleID)
 		if err != nil {
 			blog.Errorf("TransferHostAcrossBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, ctx.Kit.Rid)
@@ -222,7 +222,7 @@ func (s *Service) DeleteHostFromBusiness(ctx *rest.Contexts) {
 	}
 
 	var exceptionArr []metadata.ExceptionResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		exceptionArr, err = s.Logic.DeleteHostFromBusiness(ctx.Kit, data.AppID, data.HostIDArr)
 		if err != nil {
@@ -289,7 +289,7 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 	}
 
 	var result *metadata.OperaterException
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		transferInput := &metadata.TransferHostToInnerModule{
 			ApplicationID: conf.ApplicationID,

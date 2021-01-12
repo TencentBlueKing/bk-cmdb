@@ -165,7 +165,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		}
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		for _, delConds := range delCondsArr {
 			delRsp, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header,
 				&meta.DeleteOption{Condition: map[string]interface{}{common.BKDBOR: delConds}})
@@ -453,7 +453,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		_, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
 			ctx.Kit.SupplierAccount, hostList.HostInfo, hostList.InputType)
 		if err != nil {
@@ -515,7 +515,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount, hostList.HostInfo, s.EnableTxn)
+	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount, hostList.HostInfo)
 	retData["success"] = success
 	retData["error"] = errRow
 	if err != nil {
@@ -596,7 +596,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	addHost[1] = agents.HostInfo
 	var success, updateErrRow, errRow []string
 	retData := make(map[string]interface{})
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
 			common.BKDefaultOwnerID, addHost, "")
@@ -797,7 +797,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 	// for audit log.
 	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false
 
 		// 功能开关：更新主机属性时是否剔除自动应用字段
@@ -939,7 +939,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		auditContexts := make([]meta.AuditLog, 0)
 		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
@@ -1079,7 +1079,7 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 
 	retData := make(map[string]interface{})
 	var success, updateErrRow, errRow []string
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, hostList.ApplicationID,
 			hostList.ModuleID, ctx.Kit.SupplierAccount, hostList.HostInfo, common.InputTypeApiNewHostSync)
@@ -1188,7 +1188,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), hostIDArr)
 
 	var exceptionArr []meta.ExceptionResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		hmInput := &meta.HostModuleRelationRequest{
 			ApplicationID: data.ApplicationID,
@@ -1423,7 +1423,7 @@ func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Logic.CloneHostProperty(ctx.Kit, input.AppID, srcHostID, dstHostID)
 		if nil != err {
 			blog.Errorf("CloneHostProperty  error , err: %v, input:%#v, rid:%s", err, input, ctx.Kit.Rid)
@@ -1514,7 +1514,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 	auditContexts := make([]meta.AuditLog, 0)
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false
 		// 功能开关：更新主机属性时是否剔除自动应用字段
 		ccLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))

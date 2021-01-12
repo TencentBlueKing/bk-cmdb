@@ -59,7 +59,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	// do with transaction
 	var business inst.Inst
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
 		if err != nil {
@@ -110,7 +110,7 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, bizID); err != nil {
 			return err
 		}
@@ -146,7 +146,7 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, data, obj, bizID)
 		if err != nil {
 			return err
@@ -234,7 +234,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj, bizID)
 		if err != nil {
 			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
@@ -576,7 +576,7 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 	data.Set(common.BKDefaultField, common.DefaultAppFlag)
 
 	var business inst.Inst
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
 		if err != nil {

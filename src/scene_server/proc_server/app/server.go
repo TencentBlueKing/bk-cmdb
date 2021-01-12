@@ -78,7 +78,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
 	}
-	procSvr.EnableTxn = op.EnableTxn
 
 	err = backbone.StartServer(ctx, cancel, engine, procSvr.WebService(), true)
 	if err != nil {
