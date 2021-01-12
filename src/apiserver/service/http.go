@@ -16,11 +16,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
@@ -41,11 +43,23 @@ func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
 
+const maxToleranceLatencyTime = 10 * time.Second
+
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	start := time.Now()
 	url := fmt.Sprintf("%s://%s%s", req.Request.URL.Scheme, req.Request.URL.Host, req.Request.RequestURI)
 	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
 	if err != nil {
+
+		if time.Since(start) >= maxToleranceLatencyTime {
+			if !strings.Contains(req.Request.RequestURI, "/watch/resource/") {
+				// except resource watch api
+				blog.Warnf("request exceeded max latency time, %s, %s, cost: %d ms, rid: %s", req.Request.Method, url,
+					time.Since(start)/time.Millisecond, rid)
+			}
+		}
+
 		blog.Errorf("new proxy request[%s] failed, err: %v", url, err)
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
@@ -55,6 +69,14 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 			blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
 		}
 		return
+	}
+
+	if time.Since(start) >= maxToleranceLatencyTime {
+		if !strings.Contains(req.Request.RequestURI, "/watch/resource/") {
+			// except resource watch api
+			blog.Warnf("request exceeded max latency time, %s, %s, cost: %d ms, rid: %s", req.Request.Method, url,
+				time.Since(start)/time.Millisecond, rid)
+		}
 	}
 
 	for k, v := range req.Request.Header {
