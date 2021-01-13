@@ -11,7 +11,7 @@
                 :data="list"
                 :max-height="193"
                 class="permission-table">
-                <bk-table-column prop="name" :label="$t('需要申请的权限')"></bk-table-column>
+                <bk-table-column prop="name" :label="$t('需要申请的权限')" width="250"></bk-table-column>
                 <bk-table-column prop="resource" :label="$t('关联的资源实例')">
                     <template slot-scope="{ row }">
                         <div v-if="row.relations.length" style="overflow: auto;">
@@ -19,7 +19,7 @@
                                 v-for="(relation, index) in row.relations"
                                 v-bk-overflow-tips
                                 :key="index">
-                                {{relation}}
+                                <permission-resource-name :relations="relation" />
                             </div>
                         </div>
                         <span v-else>--</span>
@@ -44,18 +44,19 @@
     </div>
 </template>
 <script>
+    import { IAM_ACTIONS, IAM_VIEWS_NAME } from '@/dictionary/iam-auth'
+    import PermissionResourceName from './permission-resource-name.vue'
     export default {
+        components: {
+            PermissionResourceName
+        },
         props: {
-            list: {
-                type: Array,
-                default () {
-                    return []
-                }
-            },
+            permission: Object,
             applied: Boolean
         },
         data () {
             return {
+                list: [],
                 i18n: {
                     permissionTitle: this.$t('没有权限访问或操作此资源'),
                     system: this.$t('系统'),
@@ -69,7 +70,35 @@
                 }
             }
         },
+        watch: {
+            permission (v) {
+                this.setList()
+            }
+        },
+        created () {
+            this.setList()
+        },
         methods: {
+            setList () {
+                const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
+                this.list = this.permission.actions.map(action => {
+                    const { id: actionId, related_resource_types: relatedResourceTypes = [] } = action
+                    const definition = Object.values(IAM_ACTIONS).find(definition => definition.id === actionId)
+                    const allRelationPath = []
+                    relatedResourceTypes.forEach(({ type, instances = [] }) => {
+                        instances.forEach(fullPaths => {
+                            // 数据格式[type, id, label]
+                            const topoPath = fullPaths.map(pathData => [pathData.type, pathData.id, IAM_VIEWS_NAME[pathData.type][languageIndex]])
+                            allRelationPath.push(topoPath)
+                        })
+                    })
+                    return {
+                        id: actionId,
+                        name: definition.name[languageIndex],
+                        relations: allRelationPath
+                    }
+                })
+            },
             handleClose () {
                 this.$emit('close')
             },
