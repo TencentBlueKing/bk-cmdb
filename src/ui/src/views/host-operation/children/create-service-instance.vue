@@ -39,6 +39,7 @@
             :source-processes="getSourceProcesses(instance)"
             :class="{ 'is-first': index === 0 }"
             :instance="instance"
+            :biz-id="bizId"
             @edit-name="handleEditName(instance)"
             @confirm-edit-name="handleConfirmEditName(instance, ...arguments)"
             @cancel-edit-name="handleCancelEditName(instance)">
@@ -48,6 +49,7 @@
 
 <script>
     import ServiceInstanceTable from '@/components/service/instance-table'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'create-service-instance',
         components: {
@@ -64,6 +66,9 @@
                 sort: 'module',
                 instances: []
             }
+        },
+        computed: {
+            ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
             info: {

@@ -224,6 +224,12 @@
     vertical-align: middle;
 }
 
+.bk-form-control.control-disable {
+    .bk-textarea-wrapper {
+        border-color: #dcdee5;
+    }
+}
+
 // 覆盖人员选择器的样式，避免影响magicbox
 .tippy-tooltip {
     .tippy-arrow {

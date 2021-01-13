@@ -117,7 +117,8 @@
                 const directive = {
                     name: 'bkTooltips',
                     content: property.placeholder,
-                    placement: 'top'
+                    placement: 'top',
+                    trigger: 'click'
                 }
                 const style = {
                     'text-decoration': 'underline',

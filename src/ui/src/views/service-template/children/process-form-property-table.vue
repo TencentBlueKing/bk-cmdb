@@ -186,7 +186,7 @@
 
 <style lang="scss" scoped>
     @mixin property-lock-state-visible {
-        width: 24px;
+        display: inline-flex;
         border: 1px solid #c4c6cc;
         border-left: none;
     }
@@ -211,6 +211,9 @@
                         @include no-right-radius;
                     }
                 }
+                .content-value.bk-select {
+                    @include no-right-radius;
+                }
             }
             .content-value {
                 flex: 1;
@@ -224,6 +227,9 @@
                 &.control-active ~ .property-lock-state {
                     @include property-lock-state-visible;
                 }
+                &.is-focus {
+                    @include no-right-radius;
+                }
                 &.form-bool {
                     flex: none;
                     & ~ .property-lock-state {
@@ -234,9 +240,9 @@
                 }
             }
             .property-lock-state {
-                width: 0;
+                display: none;
+                width: 24px;
                 height: 26px;
-                display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 background-color: #f2f4f8;

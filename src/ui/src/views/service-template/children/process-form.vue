@@ -425,7 +425,7 @@
         }
     }
     @mixin property-lock-state-visible {
-        width: 24px;
+        display: inline-flex;
         border: 1px solid #c4c6cc;
         border-left: none;
     }
@@ -449,6 +449,9 @@
                      @include no-right-radius;
                 }
             }
+            .form-component.bk-select {
+                @include no-right-radius;
+            }
         }
         .form-component {
             flex: 1;
@@ -459,19 +462,21 @@
                      @include no-right-radius;
                 }
             }
+            &.is-focus {
+                @include no-right-radius;
+            }
             &.control-active ~ .property-lock-state {
                 @include property-lock-state-visible;
             }
         }
         .property-lock-state {
-            width: 0;
-            display: inline-flex;
+            display: none;
+            width: 24px;
             align-items: center;
             justify-content: center;
             background-color: #f2f4f8;
             font-size: 14px;
             overflow: hidden;
-            transition: width .1s linear;
             cursor: pointer;
         }
     }
