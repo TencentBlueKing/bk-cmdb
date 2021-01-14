@@ -134,15 +134,30 @@ func newClient(uri string, mode mgo.Mode, pool int, timeout, socketTimeoutIntVal
 	return client, nil
 }
 
+// 获取db 连接， 如果发现session 中 conn 对象已经dead， 刷新下连接
 func (c *Mongo) getSession(ctx context.Context) *mgo.Session {
 	var sess *mgo.Session
 	if isSecondary(ctx) {
 		rand.Seed(time.Now().UnixNano())
 		sess = c.secondary[rand.Intn(secondaryCnt)].Clone()
 	} else {
-		sess = c.dbc.Clone()
+		return c.cloneDBSess()
 	}
 
+	return c.refreshDBSess(sess)
+}
+
+// 拷贝db 连接， 如果发现session 中 conn 对象已经dead， 刷新下连接
+func (c *Mongo) cloneDBSess() *mgo.Session {
+	sess := c.dbc.Clone()
+	return c.refreshDBSess(sess)
+}
+
+//  如果发现session 中 conn 对象已经dead， 刷新下连接
+func (c *Mongo) refreshDBSess(sess *mgo.Session) *mgo.Session {
+	if sess.IsDead() {
+		sess.Refresh()
+	}
 	return sess
 }
 
@@ -313,7 +328,7 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	err := sess.DB(c.dbname).C(c.collName).Insert(util.ConverToInterfaceSlice(docs)...)
 	sess.Close()
 	blog.V(4).InfoDepthf(1, "mongo insert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
@@ -324,7 +339,7 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	data := bson.M{"$set": doc}
 	_, err := sess.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
 	sess.Close()
@@ -337,7 +352,7 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	data := bson.M{"$set": doc}
 	_, err := sess.DB(c.dbname).C(c.collName).Upsert(filter, data)
 	sess.Close()
@@ -358,7 +373,7 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	_, err := sess.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
 	sess.Close()
 	blog.V(4).InfoDepthf(1, "mongo update-multi-model cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
@@ -370,7 +385,7 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	_, err := sess.DB(c.dbname).C(c.collName).RemoveAll(filter)
 	sess.Close()
 	blog.V(4).InfoDepthf(1, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
@@ -381,7 +396,7 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	coll := sess.DB(c.dbname).C("cc_idgenerator")
 	change := mgo.Change{
 		Update: bson.M{
@@ -431,7 +446,7 @@ func (c *Mongo) TxnInfo() *types.Transaction {
 
 // HasTable 判断是否存在集合
 func (c *Mongo) HasTable(collName string) (bool, error) {
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	defer sess.Close()
 	colls, err := sess.DB(c.dbname).CollectionNames()
 	if err != nil {
@@ -448,14 +463,14 @@ func (c *Mongo) HasTable(collName string) (bool, error) {
 
 // DropTable 移除集合
 func (c *Mongo) DropTable(collName string) error {
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	defer sess.Close()
 	return sess.DB(c.dbname).C(collName).DropCollection()
 }
 
 // CreateTable 创建集合
 func (c *Mongo) CreateTable(collName string) error {
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	defer sess.Close()
 	return sess.DB(c.dbname).C(collName).Create(&mgo.CollectionInfo{})
 }
@@ -478,21 +493,21 @@ func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
 		Unique:     index.Unique,
 		Background: index.Background,
 	}
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	defer sess.Close()
 	return sess.DB(c.dbname).C(c.collName).EnsureIndex(i)
 }
 
 // DropIndex remove index by name
 func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	defer sess.Close()
 	return sess.DB(c.dbname).C(c.collName).DropIndexName(indexName)
 }
 
 // Indexes get all indexes for the collection
 func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	defer sess.Close()
 	dbindexs, err := sess.DB(c.dbname).C(c.collName).Indexes()
 	if err != nil {
@@ -525,7 +540,7 @@ func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 
 	selector := types.Document{column: types.Document{"$exists": false}}
 	datac := types.Document{"$set": types.Document{column: value}}
@@ -539,7 +554,7 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
 	_, err := sess.DB(c.dbname).C(c.collName).UpdateAll(types.Document{}, datac)
 	sess.Close()
@@ -551,7 +566,7 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	datac := types.Document{"$unset": types.Document{field: ""}}
 	_, err := sess.DB(c.dbname).C(c.collName).UpdateAll(types.Document{}, datac)
 	sess.Close()
@@ -567,7 +582,7 @@ func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter da
 		blog.V(4).InfoDepthf(2, "mongo drop-docs-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	// 查询条件为空时候，mongodb 不返回数据
 	if filter == nil {
 		filter = bson.M{}
@@ -583,7 +598,7 @@ func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter da
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	err := sess.DB(c.dbname).C(c.collName).Pipe(pipeline).All(result)
 	sess.Close()
 	blog.V(4).InfoDepthf(1, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
@@ -594,7 +609,7 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	err := sess.DB(c.dbname).C(c.collName).Pipe(pipeline).One(result)
 	sess.Close()
 	blog.V(4).InfoDepthf(1, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
@@ -616,7 +631,7 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter dal.Filt
 		filter = bson.M{}
 	}
 
-	sess := c.dbc.Clone()
+	sess := c.cloneDBSess()
 	err := sess.DB(c.dbname).C(c.collName).Find(filter).Distinct(field, result)
 	if err != nil {
 		return err

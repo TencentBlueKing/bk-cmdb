@@ -4493,6 +4493,29 @@ func (s *Session) unsetSocket() {
 	s.slaveSocket = nil
 }
 
+// bk-cmdb 2021年01月14日 12:33:08 新加
+// 发现session 中连接是否已经dead
+func (s *Session) IsDead() bool {
+	if s.masterSocket != nil {
+		s.masterSocket.Lock()
+		if s.masterSocket.dead != nil {
+			s.masterSocket.Unlock()
+			return true
+		}
+		s.masterSocket.Unlock()
+	}
+	if s.slaveSocket != nil {
+		s.slaveSocket.Lock()
+		if s.slaveSocket.dead != nil {
+			s.slaveSocket.Unlock()
+			return true
+		}
+		s.slaveSocket.Unlock()
+	}
+
+	return false
+}
+
 func (iter *Iter) replyFunc() replyFunc {
 	return func(err error, op *replyOp, docNum int, docData []byte) {
 		iter.m.Lock()
