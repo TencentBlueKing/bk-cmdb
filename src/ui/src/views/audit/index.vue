@@ -144,13 +144,14 @@
                     page,
                     limit,
                     sort,
-                    tab
+                    tab,
+                    _e: isEvent
                 }) => {
                     this.active = tab || 'host'
                     this.table.pagination.current = parseInt(page || this.table.pagination.current, 10)
                     this.table.pagination.limit = parseInt(limit || this.table.pagination.limit, 10)
                     this.table.sort = sort || this.table.sort
-                    this.$nextTick(this.getAuditList)
+                    this.$nextTick(() => this.getAuditList(isEvent))
                 })
             },
             teardownQueryWatcher () {
@@ -159,7 +160,8 @@
             async getAuditDictionary () {
                 try {
                     this.dictionary = await this.$store.dispatch('audit/getDictionary', {
-                        fromCache: true
+                        fromCache: true,
+                        globalPermission: false
                     })
                 } catch (error) {
                     this.dictionary = []
@@ -189,7 +191,7 @@
                 }
                 this.condition = usefulCondition
             },
-            async getAuditList (params) {
+            async getAuditList (eventTrigger) {
                 try {
                     const params = {
                         condition: this.condition,
@@ -198,11 +200,24 @@
                             sort: this.table.sort
                         }
                     }
-                    const { info, count } = await this.$store.dispatch('audit/getList', { params, config: { requestId: this.request.list } })
+                    const { info, count } = await this.$store.dispatch('audit/getList', {
+                        params,
+                        config: {
+                            requestId: this.request.list,
+                            globalPermission: false
+                        }
+                    })
+
+                    this.table.stuff.type = eventTrigger ? 'search' : 'default'
                     this.table.pagination.count = count
                     this.table.list = info
-                } catch (error) {
-                    console.error(error)
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 }
             },
             handlePageChange (current) {

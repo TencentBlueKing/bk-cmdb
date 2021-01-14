@@ -2,10 +2,9 @@
     <div class="permission-main">
         <div class="permission-content">
             <div class="permission-header">
-                <span class="title-icon">
-                    <img src="../../assets/images/lock-closed02.svg" class="locked-icon" alt="locked-icon" />
-                </span>
-                <h3>{{i18n.permissionTitle}}</h3>
+                <bk-exception type="403" scene="part">
+                    <h3>{{i18n.permissionTitle}}</h3>
+                </bk-exception>
             </div>
             <bk-table ref="table"
                 :data="list"
@@ -119,7 +118,7 @@
         margin-top: -26px;
         padding: 3px 24px 26px;
         .permission-header {
-            padding-top: 34px;
+            padding-top: 16px;
             text-align: center;
             .locked-icon {
                 height: 66px;
@@ -129,6 +128,12 @@
                 color: #63656e;
                 font-size: 24px;
                 font-weight: normal;
+            }
+
+            /deep/ {
+                .bk-exception-img .exception-image {
+                    height: 130px;
+                }
             }
         }
     }

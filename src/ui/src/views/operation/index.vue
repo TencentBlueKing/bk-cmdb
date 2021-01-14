@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-bkloading="{ isLoading: fetching || $loading(request.chart) }">
         <cmdb-tips style="margin: 10px 20px"
             v-if="site.disableOperationStatistic">
             {{$t('运营统计停止统计提示')}}
@@ -233,17 +233,23 @@
                     }
                 },
                 existedCharts: [],
-                updateAuth: false
+                updateAuth: false,
+                request: {
+                    chart: Symbol('chart')
+                },
+                fetching: false
             }
         },
         computed: {
             ...mapGetters(['site'])
         },
         async created () {
+            this.fetching = true
             const [plotly, plotlyCn] = await Promise.all([
                 import('plotly.js'),
                 import('plotly.js/lib/locales/zh-cn.js')
             ])
+            this.fetching = false
             Plotly = plotly
             PlotlyCN = plotlyCn
             this.getChartList()
@@ -256,18 +262,27 @@
                 'updateChartPosition'
             ]),
             async getChartList () {
-                const res = await this.getCountedCharts({})
-                this.hostData.disList = res.info.host
-                this.instData.disList = res.info.inst
-                res.info.nav.forEach(item => {
-                    this.getNavData(item, 'nav')
-                })
-                this.hostData.disList.forEach((item) => {
-                    this.getNavData(item, 'host')
-                })
-                this.instData.disList.forEach((item) => {
-                    this.getNavData(item, 'inst')
-                })
+                try {
+                    const res = await this.getCountedCharts({
+                        config: {
+                            requestId: this.request.chart,
+                            globalPermission: false
+                        }
+                    })
+                    this.hostData.disList = res.info.host
+                    this.instData.disList = res.info.inst
+                    res.info.nav.forEach(item => {
+                        this.getNavData(item, 'nav')
+                    })
+                    this.hostData.disList.forEach((item) => {
+                        this.getNavData(item, 'host')
+                    })
+                    this.instData.disList.forEach((item) => {
+                        this.getNavData(item, 'inst')
+                    })
+                } catch ({ permission }) {
+                    this.$route.meta.view = 'permission'
+                }
             },
             async getNavData (item, type) {
                 const res = await this.getCountedChartsData({
@@ -275,7 +290,8 @@
                         config_id: item.config_id
                     },
                     config: {
-                        globalError: false
+                        globalError: false,
+                        globalPermission: false
                     }
                 })
                 if (type === 'nav') {

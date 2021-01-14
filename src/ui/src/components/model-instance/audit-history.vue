@@ -30,6 +30,7 @@
                     {{$tools.formatTime(row['operation_time'])}}
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
     </div>
 </template>
@@ -62,6 +63,12 @@
                     resource_id: this.resourceId,
                     resource_type: this.resourceType
                 },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
+                },
                 pagination: {
                     count: 0,
                     current: 1,
@@ -78,7 +85,8 @@
             async getAuditDictionary () {
                 try {
                     this.dictionary = await this.$store.dispatch('audit/getDictionary', {
-                        fromCache: true
+                        fromCache: true,
+                        globalPermission: false
                     })
                 } catch (error) {
                     this.dictionary = []
@@ -95,13 +103,19 @@
                             }
                         },
                         config: {
-                            requestId: this.requestId
+                            requestId: this.requestId,
+                            globalPermission: false
                         }
                     })
                     this.pagination.count = count
                     this.history = info
-                } catch (error) {
-                    console.error(error)
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                     this.history = []
                 }
             },
