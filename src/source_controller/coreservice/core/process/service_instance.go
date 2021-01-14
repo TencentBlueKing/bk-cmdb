@@ -201,7 +201,7 @@ func (p *processOperation) CreateServiceInstances(kit *rest.Kit, instances []*me
 	var lock sync.RWMutex
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 10)
-	idxInstanceMap := make(map[int]*metadata.ServiceInstance)
+	insts := make([]*metadata.ServiceInstance, len(instances))
 
 	for idx := range instances {
 		pipeline <- true
@@ -219,10 +219,11 @@ func (p *processOperation) CreateServiceInstances(kit *rest.Kit, instances []*me
 				if firstErr == nil {
 					firstErr = err
 				}
+				return
 			}
 
 			lock.Lock()
-			idxInstanceMap[idx] = inst
+			insts[idx] = inst
 			lock.Unlock()
 
 		}(idx, instances[idx])
@@ -232,11 +233,6 @@ func (p *processOperation) CreateServiceInstances(kit *rest.Kit, instances []*me
 
 	if firstErr != nil {
 		return nil, firstErr
-	}
-
-	insts := make([]*metadata.ServiceInstance, len(instances))
-	for idx := 0; idx < len(instances); idx++ {
-		insts[idx] = idxInstanceMap[idx]
 	}
 
 	return insts, nil

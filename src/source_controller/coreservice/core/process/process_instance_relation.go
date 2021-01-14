@@ -27,7 +27,7 @@ func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit, relation
 		return nil, err
 	}
 	relation.SupplierAccount = kit.SupplierAccount
-	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx, &relation); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx, relation); nil != err {
 		blog.Errorf("CreateProcessInstanceRelation failed, mongodb failed, table: %s, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, relation, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}

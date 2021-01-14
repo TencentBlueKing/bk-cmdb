@@ -39,8 +39,8 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx context.Context, header http.Hea
 		blog.Errorf("CreateHostApplyRule failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -64,8 +64,8 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx context.Context, header http.Hea
 		blog.Errorf("UpdateHostApplyRule failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -88,8 +88,8 @@ func (p *hostApplyRule) DeleteHostApplyRule(ctx context.Context, header http.Hea
 		blog.Errorf("DeleteHostApplyRule failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -112,8 +112,8 @@ func (p *hostApplyRule) GetHostApplyRule(ctx context.Context, header http.Header
 		blog.Errorf("GetHostApplyRule failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -137,8 +137,8 @@ func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Heade
 		blog.Errorf("ListHostApplyRule failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -162,8 +162,8 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header htt
 		blog.Errorf("BatchUpdateHostApplyRule failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -187,8 +187,8 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Heade
 		blog.Errorf("GenerateApplyPlan failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -215,8 +215,8 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header htt
 		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -240,8 +240,8 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Hea
 		blog.Errorf("RunHostApplyOnHosts failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 	return ret.Data, nil
 }

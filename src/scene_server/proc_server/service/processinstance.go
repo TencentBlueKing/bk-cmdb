@@ -366,6 +366,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 				if firstErr == nil {
 					firstErr = err
 				}
+				return
 			}
 
 		}(processID, processDataMap[processID])
@@ -560,7 +561,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 			if process.StartParamRegex != nil {
 				originalStartParamRegex = *process.StartParamRegex
 			}
-			if funcName+startParamRegex == *process.FuncName+originalStartParamRegex {
+			if funcName == *process.FuncName && startParamRegex == originalStartParamRegex {
 				blog.Errorf("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstance: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
 				return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startParamRegex)
 			}
@@ -577,6 +578,7 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 	processNamesMap := make(map[string]bool)
 	processFuncNamesMap := make(map[string]bool)
 	originalProcessIDs := make([]int64, 0)
+	joinStr := "*_*"
 
 	for _, processData := range processDatas {
 		process := new(metadata.Process)
@@ -605,7 +607,7 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 		if process.StartParamRegex != nil {
 			startParamRegex = *process.StartParamRegex
 		}
-		funcNameUnique := *process.FuncName + startParamRegex
+		funcNameUnique := *process.FuncName + joinStr + startParamRegex
 		if processFuncNamesMap[funcNameUnique] == true {
 			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, *process.FuncName, startParamRegex)
 		}
@@ -666,10 +668,10 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, procName)
 		}
 
-		// check funcName+startParamRegex unique
+		// check funcName && startParamRegex unique
 		funcName, _ := proc.String(common.BKFuncName)
 		startParamRegex, _ := proc.String(common.BKStartParamRegex)
-		if processFuncNamesMap[funcName+startParamRegex] {
+		if processFuncNamesMap[funcName+joinStr+startParamRegex] {
 			blog.Errorf("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstance: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startParamRegex)
 		}

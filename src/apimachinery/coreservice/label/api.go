@@ -45,8 +45,8 @@ func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string, o
 		blog.Errorf("AddLabel failed, http request failed, err: %+v, rid: %s", err, rid)
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -73,8 +73,8 @@ func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string
 		blog.Errorf("RemoveLabel failed, http request failed, err: %+v, rid: %s", err, rid)
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil

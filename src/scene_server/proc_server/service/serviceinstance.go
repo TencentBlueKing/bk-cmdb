@@ -116,12 +116,14 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 					blog.ErrorJSON("createServiceInstances failed, createProcessInstances failed, input: %s, err: %s, rid: %s", createProcessInput, err.Error(), rid)
 					return nil, err
 				}
-				if err := ps.updateServiceInstanceName(ctx, serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData); err != nil {
-					blog.ErrorJSON("createServiceInstances failed, updateServiceInstanceName failed, serviceInstanceID: %s, hostID: %s, processData: %s, err: %s, rid: %s",
-						serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData, err.Error(), rid)
-					return nil, err
+				// if no service instance name is set and have processes under it, update it
+				if inst.ServiceInstanceName == "" {
+					if err := ps.updateServiceInstanceName(ctx, serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData); err != nil {
+						blog.ErrorJSON("createServiceInstances failed, updateServiceInstanceName failed, serviceInstanceID: %s, hostID: %s, processData: %s, err: %s, rid: %s",
+							serviceInstance.ID, inst.HostID, inst.Processes[0].ProcessData, err.Error(), rid)
+						return nil, err
+					}
 				}
-
 			} else {
 				instanceIDsUpdate = append(instanceIDsUpdate, serviceInstance.ID)
 				instanceProcessesUpdateMap[serviceInstance.ID] = inst.Processes

@@ -36,8 +36,8 @@ func (st *SetTemplate) CreateSetTemplate(ctx context.Context, header http.Header
 		blog.Errorf("CreateSetTemplate failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret, nil
@@ -59,8 +59,8 @@ func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header
 		blog.Errorf("UpdateSetTemplate failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret, nil
@@ -84,8 +84,8 @@ func (st *SetTemplate) DeleteSetTemplate(ctx context.Context, header http.Header
 		blog.Errorf("DeleteSetTemplate failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -107,8 +107,8 @@ func (st *SetTemplate) GetSetTemplate(ctx context.Context, header http.Header, b
 		return nil, errors.CCHttpError
 	}
 
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret, nil
@@ -131,8 +131,8 @@ func (st *SetTemplate) ListSetTemplate(ctx context.Context, header http.Header, 
 		return nil, errors.CCHttpError
 	}
 
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -155,8 +155,8 @@ func (st *SetTemplate) ListSetTemplateWeb(ctx context.Context, header http.Heade
 		return nil, errors.CCHttpError
 	}
 
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -180,8 +180,8 @@ func (st *SetTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.
 		blog.Errorf("ListSetTplRelatedSvcTpl failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -206,8 +206,8 @@ func (st *SetTemplate) ListSetTplRelatedSetsWeb(ctx context.Context, header http
 		blog.Errorf("ListSetTplRelatedSetsWeb failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -232,8 +232,8 @@ func (st *SetTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		blog.Errorf("DiffSetTplWithInst failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
