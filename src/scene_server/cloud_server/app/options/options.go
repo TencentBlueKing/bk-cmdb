@@ -23,8 +23,6 @@ import (
 type ServerOption struct {
 	ServConf      *config.CCAPIConfig
 	EnableCryptor bool
-	// enable transaction or not.
-	EnableTxn bool
 }
 
 // NewServerOption create a ServerOption object
@@ -43,7 +41,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
-	fs.BoolVar(&s.EnableTxn, "enable-txn", true, "enable transaction or not")
 	fs.BoolVar(&s.EnableCryptor, "enable-cryptor", true, "enable cryptor or not")
 }
 

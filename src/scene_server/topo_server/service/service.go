@@ -36,7 +36,6 @@ type Service struct {
 	Es          *elasticsearch.EsSrv
 	Error       errors.CCErrorIf
 	Language    language.CCLanguageIf
-	EnableTxn   bool
 }
 
 // WebService the web service

@@ -185,8 +185,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	return hostIDs, successMsg, updateErrMsg, errMsg, nil
 }
 
-func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string, hostInfos map[int64]map[string]interface{},
-	enableTxn bool) (hostIDs []int64, successMsg, errMsg []string, err error) {
+func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string, hostInfos map[int64]map[string]interface{}) (
+	hostIDs []int64, successMsg, errMsg []string, err error) {
 	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
 	if err != nil {
 		blog.Errorf("AddHostByExcel failed, GetModuleIDAndIsInternal err:%s, appID:%d, moduleID:%d", err, appID, moduleID)
@@ -219,7 +219,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 
 		// use new transaction, need a new header
 		kit.Header = kit.NewHeader()
-		lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, enableTxn, kit.Header, func() error {
+		lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			intHostID, err := instance.addHostInstance(common.BKDefaultDirSubArea, index, appID, []int64{moduleID}, toInternalModule, host)
 			if err != nil {
 				blog.Errorf("addHostInstance failed, err: %v, index:%d, bizID: %d, moduleID:%d, toInternalModule:%t, host:%v, rid: %s",

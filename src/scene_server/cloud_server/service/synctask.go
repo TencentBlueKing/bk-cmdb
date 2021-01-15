@@ -54,7 +54,7 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 	}
 
 	var result *metadata.CloudSyncTask
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		result, err = s.Logics.CreateSyncTask(ctx.Kit, task)
 		if err != nil {
@@ -117,7 +117,7 @@ func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.UpdateSyncTask(ctx.Kit, taskID, option)
 		if err != nil {
 			blog.Errorf("UpdateSyncTask failed, err:%s, taskID:%d, option:%#v, rid:%s", err, taskID, option, ctx.Kit.Rid)
@@ -142,7 +142,7 @@ func (s *Service) DeleteSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.DeleteSyncTask(ctx.Kit, taskID)
 		if err != nil {
 			blog.Errorf("DeleteSyncTask failed, err:%s, taskID:%d, rid:%s", err, taskID, ctx.Kit.Rid)

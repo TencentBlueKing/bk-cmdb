@@ -37,7 +37,6 @@ type Service struct {
 	disc        discovery.DiscoveryInterface
 	CacheDB     redis.Client
 	AuthManager *extensions.AuthManager
-	EnableTxn   bool
 	Logic       *logics.Logics
 }
 
