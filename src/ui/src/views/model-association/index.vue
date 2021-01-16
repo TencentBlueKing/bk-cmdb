@@ -3,7 +3,7 @@
         <cmdb-tips
             class="mb10"
             tips-key="associationTips"
-            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'">
+            more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/ModelRelationType.md">
             {{$t('关联关系提示')}}
         </cmdb-tips>
         <p class="operation-box clearfix">
