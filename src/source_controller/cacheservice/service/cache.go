@@ -286,25 +286,6 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 	ctx.RespString(&inst)
 }
 
-// TODO: delete this api
-// SearchTopologyNodePath is to search biz instance topology node's parent path. eg:
-// from itself up to the biz instance, but not contains the node itself.
-func (s *cacheService) SearchTopologyNodePath(ctx *rest.Contexts) {
-	opt := new(topo_tree.SearchNodePathOption)
-	if err := ctx.DecodeInto(&opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(paths)
-}
-
 // SearchBizTopologyNodePath is to search biz instance topology node's parent path. eg:
 // from itself up to the biz instance, but not contains the node itself.
 func (s *cacheService) SearchBizTopologyNodePath(ctx *rest.Contexts) {
