@@ -13,6 +13,7 @@
 package instances
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -65,7 +66,9 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 	if nil != err {
 		return nil, err
 	}
-	if len(uniqueAttrs) == 0 {
+
+	// process model do not have the unique rules, so we ignore it's attribute's unique check
+	if len(uniqueAttrs) == 0 && objID != common.BKProcessObjectName {
 		blog.Errorf("[validUpdateUnique] there're not unique constraint for %s, return, rid: %s", valid.objID, kit.Rid)
 		uniqueAttrs = make([]metadata.ObjectUnique, 0)
 	}
