@@ -587,6 +587,8 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 }
 
 // ConstructServiceInstanceName construct service instance name
+// if no service instance name is defined, use the following rule to construct service name:
+// hostInnerIP(if exist) + firstProcessName(if exist) + firstProcessPort(if exist)
 func (p *processOperation) ConstructServiceInstanceName(kit *rest.Kit, instanceID int64, host map[string]interface{}, process *metadata.Process) errors.CCErrorCoder {
 	serviceInstanceName := util.GetStrByInterface(host[common.BKHostInnerIPField])
 
@@ -617,6 +619,10 @@ func (p *processOperation) ReconstructServiceInstanceName(kit *rest.Kit, instanc
 }
 
 func (p *processOperation) updateServiceInstanceName(kit *rest.Kit, instanceID int64, serviceInstanceName string) errors.CCErrorCoder {
+	if serviceInstanceName == "" {
+		return nil
+	}
+
 	filter := map[string]interface{}{
 		common.BKFieldID: instanceID,
 	}

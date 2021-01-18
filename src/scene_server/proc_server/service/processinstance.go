@@ -578,6 +578,8 @@ func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceI
 	processNamesMap := make(map[string]bool)
 	processFuncNamesMap := make(map[string]bool)
 	originalProcessIDs := make([]int64, 0)
+	// joinStr is used to join processFuncName and startParamRegex as a unique key
+	// to prevent misjudgment, consider the scene: 'aa'+ 'bb' == 'aaa' + 'b', but 'aa' + '*_*' + 'b' != 'aa'+ '*_*' + 'bb'
 	joinStr := "*_*"
 
 	for _, processData := range processDatas {

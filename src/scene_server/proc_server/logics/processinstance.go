@@ -255,7 +255,6 @@ func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[strin
 		return nil, errors.CCHttpError
 	}
 	if !result.Result {
-		blog.Errorf("CreateProcessInstances failed, err: %+v, rid: %s", err, kit.Rid)
 		blog.Errorf("CreateProcessInstances failed, http request failed, err: %+v, inputParam:%#v, rid: %s", result.ErrMsg, inputParam, kit.Rid)
 		return nil, errors.New(result.Code, result.ErrMsg)
 	}
