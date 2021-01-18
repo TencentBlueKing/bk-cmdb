@@ -196,6 +196,11 @@ func (a *attribute) Create() error {
 		return a.kit.CCError.New(int(exception.Code), exception.Message)
 	}
 
+	if len(rsp.Data.Repeated) > 0 {
+		blog.ErrorJSON("create model attrs failed, the attr is duplicated, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.kit.Rid)
+		return a.kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
+	}
+
 	if len(rsp.Data.Created) != 1 {
 		blog.ErrorJSON("create model attrs created amount error, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.kit.Rid)
 		return a.kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
@@ -332,7 +337,7 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 	}
 
 	if 0 == len(rsp.Data.Info) {
-		return CreateGroup(a.kit, a.clientSet, []metadata.Group{metadata.Group{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
+		return CreateGroup(a.kit, a.clientSet, []metadata.Group{{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
 	}
 
 	return CreateGroup(a.kit, a.clientSet, rsp.Data.Info)[0], nil // should be one group
