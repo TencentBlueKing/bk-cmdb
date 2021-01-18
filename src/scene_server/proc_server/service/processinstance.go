@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
@@ -41,7 +42,7 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		processIDs, err = ps.createProcessInstances(ctx, input)
 		if err != nil {
 			blog.Errorf("create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v", input.ServiceInstanceID, input, err)
-			return ctx.Kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
+			return err
 		}
 		return nil
 	})
@@ -61,7 +62,7 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	}
 	if serviceInstance.BizID != input.BizID {
 		blog.Errorf("create process instance with raw, biz id from input not equal with service instance, rid: %s", ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.MetadataField)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 	if serviceInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		blog.Errorf("create process instance failed, create process instance on service instance initialized by template forbidden, serviceInstanceID: %d, err: %v, rid: %s", input.ServiceInstanceID, err, ctx.Kit.Rid)
@@ -69,7 +70,8 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	}
 
 	processIDs := make([]int64, 0)
-	for _, item := range input.Processes {
+	processDatas := make([]map[string]interface{}, len(input.Processes))
+	for idx, item := range input.Processes {
 		now := time.Now()
 		item.ProcessData[common.BKProcessIDField] = int64(0)
 		item.ProcessData[common.BKAppIDField] = input.BizID
@@ -77,16 +79,22 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 		item.ProcessData[common.CreateTimeField] = now
 		item.ProcessData[common.LastTimeField] = now
 
-		if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, item.ProcessData); err != nil {
-			return nil, err
-		}
+		processDatas[idx] = item.ProcessData
+	}
 
-		processID, err := ps.Logic.CreateProcessInstance(ctx.Kit, item.ProcessData)
-		if err != nil {
-			blog.Errorf("create process instance failed, create process failed, serviceInstanceID: %d, process: %+v, err: %v, rid: %s", input.ServiceInstanceID, item, err, ctx.Kit.Rid)
-			return nil, err
-		}
+	if err := ps.validateManyRawInstanceUnique(ctx, serviceInstance, processDatas); err != nil {
+		blog.Errorf("create process instance failed, validateManyRawInstanceUnique err:%v, rid: %s", err, ctx.Kit.Rid)
+		return nil, err
+	}
 
+	processIDs, err = ps.Logic.CreateProcessInstances(ctx.Kit, processDatas)
+	if err != nil {
+		blog.Errorf("create process instance failed, create process failed, serviceInstanceID: %d, processDatas: %+v, err: %v, rid: %s", input.ServiceInstanceID, processDatas, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
+	relations := make([]*metadata.ProcessInstanceRelation, len(processIDs))
+	for idx, processID := range processIDs {
 		relation := &metadata.ProcessInstanceRelation{
 			BizID:             input.BizID,
 			ProcessID:         processID,
@@ -94,13 +102,12 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 			ServiceInstanceID: serviceInstance.ID,
 			HostID:            serviceInstance.HostID,
 		}
-
-		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relation)
-		if err != nil {
-			blog.Errorf("create service instance relations, create process instance relation failed, serviceInstanceID: %d, relation: %+v, err: %v, rid: %s", input.ServiceInstanceID, relation, err, ctx.Kit.Rid)
-			return nil, err
-		}
-		processIDs = append(processIDs, processID)
+		relations[idx] = relation
+	}
+	_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelations(ctx.Kit.Ctx, ctx.Kit.Header, relations)
+	if err != nil {
+		blog.ErrorJSON("create service instance relations, CreateProcessInstanceRelations err: %s, relations:%s, rid: %s", err, relations, ctx.Kit.Rid)
+		return nil, err
 	}
 
 	return processIDs, nil
@@ -278,7 +285,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		return nil, err
 	}
 
-	var processTemplate *metadata.ProcessTemplate
+	processDataMap := make(map[int64]map[string]interface{})
 	for idx, process := range input.Processes {
 		// 单独提取需要被重置成 nil 的字段
 		raw := input.Raw[idx]
@@ -307,7 +314,13 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 				blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s, err: %+v, rid: %s", processData, err, ctx.Kit.Rid)
 				return nil, ctx.Kit.CCError.CCError(common.CCErrCommJsonDecode)
 			}
-			if err := ps.validateRawInstanceUnique(ctx, serviceInstanceID, processData); err != nil {
+
+			serviceInstance, ccErr := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
+			if err != nil {
+				blog.Errorf("UpdateProcessInstances failed, get service instance failed, serviceInstanceID: %d, err: %v, rid: %s", serviceInstanceID, err, rid)
+				return nil, ccErr
+			}
+			if err := ps.validateRawInstanceUnique(ctx, serviceInstance, processData); err != nil {
 				blog.Errorf("update process instance failed, serviceInstanceID: %d, process: %+v, err: %v, rid: %s", serviceInstanceID, process, err, rid)
 				return nil, err
 			}
@@ -316,7 +329,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			delete(processData, common.LastTimeField)
 			delete(processData, common.CreateTimeField)
 		} else {
-			processTemplate, exist = processTemplateMap[relation.ProcessTemplateID]
+			processTemplate, exist := processTemplateMap[relation.ProcessTemplateID]
 			if !exist {
 				err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
 				blog.Errorf("update process instance failed, process related template not found, relation: %+v, err: %v, rid: %s", relation, err, rid)
@@ -330,10 +343,39 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			processData[field] = nil
 		}
 
-		if err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, processData); err != nil {
-			blog.Errorf("update process failed, processID: %d, process: %+v, err: %v, rid: %s", process.ProcessID, process, err, rid)
-			return nil, err
-		}
+		processDataMap[process.ProcessID] = processData
+	}
+
+	var wg sync.WaitGroup
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 10)
+
+	for processID := range processDataMap {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(processID int64, processData map[string]interface{}) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, processData)
+			if err != nil {
+				blog.ErrorJSON("UpdateProcessInstance failed, processID: %s, process: %s, err: %s, rid: %s", processID, processData, err, rid)
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
+			}
+
+		}(processID, processDataMap[processID])
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
 	}
 
 	return processIDs, nil
@@ -440,24 +482,23 @@ func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*meta
 	return moduleInsts, nil
 }
 
-func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstanceID int64, processData map[string]interface{}) errors.CCErrorCoder {
+func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstance *metadata.ServiceInstance, processData map[string]interface{}) errors.CCErrorCoder {
 	rid := ctx.Kit.Rid
 
-	processInfo := metadata.Process{}
-	if err := mapstr.DecodeFromMapStr(&processInfo, processData); err != nil {
+	process := metadata.Process{}
+	if err := mapstr.DecodeFromMapStr(&process, processData); err != nil {
 		blog.ErrorJSON("validateRawInstanceUnique failed, Decode2Struct failed, process: %s, err: %s, rid: %s", processData, err.Error(), rid)
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
-	if processInfo.ProcessName != nil && (len(*processInfo.ProcessName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
+
+	if process.ProcessName == nil && process.FuncName == nil {
+		return nil
+	}
+	if process.ProcessName != nil && (len(*process.ProcessName) == 0 || len(*process.ProcessName) > common.NameFieldMaxLength) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
 	}
-	if processInfo.FuncName != nil && (len(*processInfo.FuncName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
+	if process.FuncName != nil && (len(*process.FuncName) == 0 || len(*process.FuncName) > common.NameFieldMaxLength) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
-	}
-	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
-	if err != nil {
-		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, rid)
-		return err
 	}
 
 	// find process under service instance
@@ -473,74 +514,171 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 	if err != nil {
-		blog.Errorf("validateRawInstanceUnique failed, get relation under service instance failed, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
+		blog.Errorf("validateRawInstanceUnique failed, get relation under service instance failed, serviceInstanceID: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
 		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	existProcessIDs := make([]int64, 0)
 	for _, relation := range relations.Info {
 		existProcessIDs = append(existProcessIDs, relation.ProcessID)
 	}
-	otherProcessIDs := existProcessIDs
-	if processInfo.ProcessID != 0 {
-		otherProcessIDs = make([]int64, 0)
-		for _, processID := range existProcessIDs {
-			if processID != processInfo.ProcessID {
-				otherProcessIDs = append(otherProcessIDs, processID)
-			}
-		}
-	}
-	// process name unique
-	processNameFilter := map[string]interface{}{
+
+	filter := map[string]interface{}{
 		common.BKProcessIDField: map[string]interface{}{
-			common.BKDBIN: otherProcessIDs,
+			common.BKDBIN: existProcessIDs,
 		},
-		common.BKProcessNameField: processInfo.ProcessName,
 	}
-	processNameFilterCond := &metadata.QueryCondition{
-		Condition: mapstr.MapStr(processNameFilter),
-	}
-	listResult, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKProcessObjectName, processNameFilterCond)
-	if e != nil {
-		blog.Errorf("validateRawInstanceUnique failed, search process with bk_process_name failed, filter: %+v, err: %v, rid: %s", processNameFilter, e, ctx.Kit.Rid)
-		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if listResult.Data.Count > 0 {
-		blog.Errorf("validateRawInstanceUnique failed, bk_process_name duplicated under service instance, bk_biz_id: %d, err: %v, rid: %s", serviceInstance.BizID, err, ctx.Kit.Rid)
-		processName := ""
-		if processInfo.ProcessName != nil {
-			processName = *processInfo.ProcessName
+	if process.ProcessID != 0 {
+		filter[common.BKProcessIDField] = map[string]interface{}{
+			common.BKDBNE: process.ProcessID,
 		}
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processName)
 	}
 
-	// func name unique
-	funcNameFilter := map[string]interface{}{
-		common.BKProcessIDField: map[string]interface{}{
-			common.BKDBIN: otherProcessIDs,
-		},
-		common.BKStartParamRegex: processInfo.StartParamRegex,
-		common.BKFuncName:        processInfo.FuncName,
+	filterCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr(filter),
+		Fields:    []string{common.BKProcessNameField, common.BKFuncName, common.BKStartParamRegex},
 	}
-	funcNameFilterCond := &metadata.QueryCondition{
-		Condition: mapstr.MapStr(funcNameFilter),
-	}
-	listFuncNameResult, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKProcessObjectName, funcNameFilterCond)
+
+	listResult, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKProcessObjectName, filterCond)
 	if e != nil {
-		blog.Errorf("validateRawInstanceUnique failed, search process with func name failed, filter: %+v, err: %v, rid: %s", funcNameFilterCond, e, ctx.Kit.Rid)
+		blog.Errorf("validateManyRawInstanceUnique failed, search process with bk_process_name failed, filter: %+v, err: %v, rid: %s", filter, e, ctx.Kit.Rid)
 		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if listFuncNameResult.Data.Count > 0 {
-		blog.Errorf("validateRawInstanceUnique failed, bk_func_name and bk_start_param_regex duplicated under service instance, filter: %+v err: %v, rid: %s", funcNameFilterCond, err, ctx.Kit.Rid)
-		startParamRegex := ""
-		if processInfo.StartParamRegex != nil {
-			startParamRegex = *processInfo.StartParamRegex
+
+	for _, proc := range listResult.Data.Info {
+		// check process name unique
+		if process.ProcessName != nil {
+			if procName, _ := proc.String(common.BKProcessNameField); procName == *process.ProcessName {
+				blog.Errorf("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstance: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, procName)
+			}
 		}
-		processName := ""
-		if processInfo.FuncName != nil {
-			processName = *processInfo.FuncName
+
+		// check funcName+startParamRegex unique
+		if process.FuncName != nil {
+			funcName, _ := proc.String(common.BKFuncName)
+			startParamRegex, _ := proc.String(common.BKStartParamRegex)
+			originalStartParamRegex := ""
+			if process.StartParamRegex != nil {
+				originalStartParamRegex = *process.StartParamRegex
+			}
+			if funcName == *process.FuncName && startParamRegex == originalStartParamRegex {
+				blog.Errorf("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstance: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startParamRegex)
+			}
 		}
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, processName, startParamRegex)
+
 	}
+
+	return nil
+}
+
+func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceInstance *metadata.ServiceInstance, processDatas []map[string]interface{}) errors.CCErrorCoder {
+	rid := ctx.Kit.Rid
+
+	processNamesMap := make(map[string]bool)
+	processFuncNamesMap := make(map[string]bool)
+	originalProcessIDs := make([]int64, 0)
+	// joinStr is used to join processFuncName and startParamRegex as a unique key
+	// to prevent misjudgment, consider the scene: 'aa'+ 'bb' == 'aaa' + 'b', but 'aa' + '*_*' + 'b' != 'aa'+ '*_*' + 'bb'
+	joinStr := "*_*"
+
+	for _, processData := range processDatas {
+		process := new(metadata.Process)
+		if err := mapstr.DecodeFromMapStr(process, processData); err != nil {
+			blog.ErrorJSON("validateManyRawInstanceUnique failed, Decode2Struct failed, process: %s, err: %s, rid: %s", processData, err.Error(), rid)
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		if process.ProcessName == nil && process.FuncName == nil {
+			continue
+		}
+		if process.ProcessName != nil && (len(*process.ProcessName) == 0 || len(*process.ProcessName) > common.NameFieldMaxLength) {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
+		}
+		if process.FuncName != nil && (len(*process.FuncName) == 0 || len(*process.FuncName) > common.NameFieldMaxLength) {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
+		}
+
+		// check if original process data contains duplicate name
+		if processNamesMap[*process.ProcessName] == true {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, *process.ProcessName)
+		}
+		processNamesMap[*process.ProcessName] = true
+
+		startParamRegex := ""
+		if process.StartParamRegex != nil {
+			startParamRegex = *process.StartParamRegex
+		}
+		funcNameUnique := *process.FuncName + joinStr + startParamRegex
+		if processFuncNamesMap[funcNameUnique] == true {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, *process.FuncName, startParamRegex)
+		}
+		processFuncNamesMap[funcNameUnique] = true
+
+		if process.ProcessID != 0 {
+			originalProcessIDs = append(originalProcessIDs, process.ProcessID)
+		}
+	}
+
+	// find process under service instance
+	bizID := serviceInstance.BizID
+	relationOption := &metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: []int64{serviceInstance.ID},
+		ProcessTemplateID:  common.ServiceTemplateIDNotSet,
+		HostID:             serviceInstance.HostID,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
+	if err != nil {
+		blog.Errorf("validateManyRawInstanceUnique failed, get relation under service instance failed, serviceInstanceID: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
+		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	existProcessIDs := make([]int64, 0)
+	for _, relation := range relations.Info {
+		existProcessIDs = append(existProcessIDs, relation.ProcessID)
+	}
+
+	filter := map[string]interface{}{
+		common.BKProcessIDField: map[string]interface{}{
+			common.BKDBIN: existProcessIDs,
+		},
+	}
+	if len(originalProcessIDs) > 0 {
+		filter[common.BKProcessIDField] = map[string]interface{}{
+			common.BKDBNIN: originalProcessIDs,
+		}
+	}
+
+	filterCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr(filter),
+		Fields:    []string{common.BKProcessNameField, common.BKFuncName, common.BKStartParamRegex},
+	}
+
+	listResult, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKProcessObjectName, filterCond)
+	if e != nil {
+		blog.Errorf("validateManyRawInstanceUnique failed, search process with bk_process_name failed, filter: %+v, err: %v, rid: %s", filter, e, ctx.Kit.Rid)
+		return ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	for _, proc := range listResult.Data.Info {
+		// check process name unique
+		if procName, _ := proc.String(common.BKProcessNameField); processNamesMap[procName] {
+			blog.Errorf("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstanceID: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, procName)
+		}
+
+		// check funcName && startParamRegex unique
+		funcName, _ := proc.String(common.BKFuncName)
+		startParamRegex, _ := proc.String(common.BKStartParamRegex)
+		if processFuncNamesMap[funcName+joinStr+startParamRegex] {
+			blog.Errorf("validateManyRawInstanceUnique failed, bk_process_name duplicated under service instance, serviceInstance: %d, err: %v, rid: %s", serviceInstance.ID, err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startParamRegex)
+		}
+	}
+
 	return nil
 }
 

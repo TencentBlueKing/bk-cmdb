@@ -1816,3 +1816,9 @@ type LabelAggregationOption struct {
 	BizID    int64  `json:"bk_biz_id"`
 	ModuleID *int64 `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
 }
+
+type SrvInstNameParams struct {
+	ServiceInstanceID int64                  `json:"service_instance_id"`
+	Host              map[string]interface{} `json:"host"`
+	Process           *Process               `json:"process"`
+}

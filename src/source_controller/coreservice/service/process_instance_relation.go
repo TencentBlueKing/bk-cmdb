@@ -40,6 +40,22 @@ func (s *coreService) CreateProcessInstanceRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+func (s *coreService) CreateProcessInstanceRelations(ctx *rest.Contexts) {
+	relations := make([]*metadata.ProcessInstanceRelation, 0)
+	if err := ctx.DecodeInto(&relations); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.ProcessOperation().CreateProcessInstanceRelations(ctx.Kit, relations)
+	if err != nil {
+		blog.Errorf("CreateProcessInstanceRelations failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
+
 func (s *coreService) GetProcessInstanceRelation(ctx *rest.Contexts) {
 	processInstanceIDStr := ctx.Request.PathParameter(common.BKProcIDField)
 	if len(processInstanceIDStr) == 0 {
@@ -181,4 +197,33 @@ func (s *coreService) CreateProcessInstance(kit *rest.Kit, process *metadata.Pro
 	}
 	process.ProcessID = int64(result.Created.ID)
 	return process, nil
+}
+
+func (s *coreService) CreateProcessInstances(kit *rest.Kit, processes []*metadata.Process) ([]*metadata.Process, errors.CCErrorCoder) {
+	processesBytes, err := json.Marshal(processes)
+	if err != nil {
+		return nil, kit.CCError.CCError(common.CCErrCommJsonEncode)
+	}
+	mData := []mapstr.MapStr{}
+	if err := json.Unmarshal(processesBytes, &mData); nil != err && 0 != len(processesBytes) {
+		return nil, kit.CCError.CCError(common.CCErrCommJsonDecode)
+	}
+	inputParam := metadata.CreateManyModelInstance{
+		Datas: mData,
+	}
+	result, err := s.core.InstanceOperation().CreateManyModelInstance(kit, common.BKProcessObjectName, inputParam)
+	if err != nil {
+		blog.Errorf("CreateProcessInstances failed, CreateManyModelInstance failed, inputParam: %#v, err: %v, rid: %s", inputParam, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
+	}
+	if len(processes) != len(result.Created) {
+		blog.Errorf("CreateProcessInstances failed, len(processes) != len(result.Created), inputParam: %#v, rid: %s", inputParam, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
+	}
+
+	for idx, created := range result.Created {
+		processes[idx].ProcessID = int64(created.ID)
+	}
+
+	return processes, nil
 }
