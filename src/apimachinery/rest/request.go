@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
@@ -226,6 +227,25 @@ func (r *Request) WrapURL() *url.URL {
 	return finalUrl
 }
 
+const maxToleranceLatencyTime = 2 * time.Second
+
+func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string) {
+	if time.Since(*start) < maxToleranceLatencyTime {
+		return
+	}
+
+	if strings.Contains(url, "/watch/resource/") || strings.Contains(url, "/watch/cache/event") ||
+		strings.Contains(url, "/cache/event/node/with_start_from") {
+		// except resource watch api.
+		return
+	}
+
+	// request time larger than the maxToleranceLatencyTime time, then log the request
+	blog.Warnf("[apimachinery] request exceeded max latency time. code: %s, user: %s, %s, url: %s cost: %d ms,"+
+		" body: %s, rid: %s", r.headers.Get(common.BKHTTPRequestAppCode), r.headers.Get(common.BKHTTPHeaderUser),
+		r.verb, url, time.Since(*start)/time.Millisecond, r.body, rid)
+}
+
 func (r *Request) Do() *Result {
 	result := new(Result)
 
@@ -303,7 +323,8 @@ func (r *Request) Do() *Result {
 				// Which means that we can retry it. And so does the GET operation.
 				// While the other "write" operation can not simply retry it again, because they are not idempotent.
 
-				blog.Errorf("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
+				blog.Errorf("[apimachinery] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
+				r.checkToleranceLatency(&start, url, rid)
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
 					result.Rid = rid
@@ -316,6 +337,9 @@ func (r *Request) Do() *Result {
 
 			}
 
+			// record latency if needed
+			r.checkToleranceLatency(&start, url, rid)
+
 			var body []byte
 			if resp.Body != nil {
 				data, err := ioutil.ReadAll(resp.Body)
@@ -327,13 +351,19 @@ func (r *Request) Do() *Result {
 					}
 					result.Err = err
 					result.Rid = rid
-					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
+					blog.Errorf("[apimachinery] %s %s with body %s, err: %v, rid: %s", string(r.verb), url, r.body,
+						err, rid)
 					return result
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s, response status: %s, response body: %s, rid: %s",
-				time.Since(start).Nanoseconds()/int64(time.Millisecond), string(r.verb), url, r.body, resp.Status, body, rid)
+
+			if blog.V(4) {
+				blog.V(4).InfoDepthf(2, "[apimachinery] cost: %dms, %s %s with body %s, response status: %s, "+
+					"response body: %s, rid: %s", time.Since(start)/time.Millisecond,
+					string(r.verb), url, r.body, resp.Status, body, rid)
+			}
+
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status

@@ -9,7 +9,7 @@
                 <br place="breakRow">
             </i18n>
         </div>
-        <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': !isLoading }]">
+        <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': uploaded }]">
             <div class="upload-file-name" :title="fileInfo.name">{{fileInfo.name}}</div>
             <div class="upload-file-size fr">{{fileInfo.size}}</div>
             <div class="upload-file-status" hidden>{{fileInfo.status}}</div>
@@ -393,12 +393,17 @@
         &.uploading {
             &:before {
                 background: #e3f5eb;
-                width: 100%;
-                transition: width 30s;
+                width: 90%;
+                transition: width 20s;
             }
         }
 
         &.uploaded {
+            &:before {
+                background: #e3f5eb;
+                width: 100%;
+                transition: width 1s;
+            }
             background: #e3f5eb;
         }
 

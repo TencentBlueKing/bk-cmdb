@@ -158,7 +158,7 @@
                         this.gotoTransferPage(...arguments)
                     }
                 } else if (this.dialog.component === MoveToResourceConfirm.name) {
-                    this.moveHostToResource()
+                    this.moveHostToResource(...arguments)
                 }
             },
             async transferDirectly (modules) {
@@ -202,12 +202,13 @@
                 })
                 HostStore.clear()
             },
-            async moveHostToResource () {
+            async moveHostToResource (directoryId) {
                 try {
                     await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
                         params: {
                             bk_biz_id: HostStore.uniqueBusiness.bk_biz_id,
-                            bk_host_id: HostStore.getSelected().map(item => item.host.bk_host_id)
+                            bk_host_id: HostStore.getSelected().map(item => item.host.bk_host_id),
+                            bk_module_id: directoryId
                         },
                         config: {
                             requestId: this.request.moveToResource

@@ -165,7 +165,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		}
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		for _, delConds := range delCondsArr {
 			delRsp, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header,
 				&meta.DeleteOption{Condition: map[string]interface{}{common.BKDBOR: delConds}})
@@ -453,7 +453,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		_, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
 			ctx.Kit.SupplierAccount, hostList.HostInfo, hostList.InputType)
 		if err != nil {
@@ -515,7 +515,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount, hostList.HostInfo, s.EnableTxn)
+	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount, hostList.HostInfo)
 	retData["success"] = success
 	retData["error"] = errRow
 	if err != nil {
@@ -596,7 +596,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	addHost[1] = agents.HostInfo
 	var success, updateErrRow, errRow []string
 	retData := make(map[string]interface{})
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
 			common.BKDefaultOwnerID, addHost, "")
@@ -797,7 +797,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 	// for audit log.
 	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false
 
 		// 功能开关：更新主机属性时是否剔除自动应用字段
@@ -939,7 +939,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		auditContexts := make([]meta.AuditLog, 0)
 		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
@@ -1079,7 +1079,7 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 
 	retData := make(map[string]interface{})
 	var success, updateErrRow, errRow []string
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, hostList.ApplicationID,
 			hostList.ModuleID, ctx.Kit.SupplierAccount, hostList.HostInfo, common.InputTypeApiNewHostSync)
@@ -1188,7 +1188,7 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	audit := auditlog.NewHostModuleLog(s.CoreAPI.CoreService(), hostIDArr)
 
 	var exceptionArr []meta.ExceptionResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		hmInput := &meta.HostModuleRelationRequest{
 			ApplicationID: data.ApplicationID,
@@ -1285,12 +1285,61 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *Service) ip2hostID(ctx *rest.Contexts, ip string, cloudID int64) (hostID int64, err error) {
-	_, hostID, err = s.Logic.IPCloudToHost(ctx.Kit, ip, cloudID)
-	return hostID, err
+func (s *Service) ip2hostID(kit *rest.Kit, ips []string, cloudID int64) (map[string]int64, error) {
+	if len(ips) == 0 {
+		return make(map[string]int64), nil
+	}
+
+	cond := meta.QueryCondition{
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: ips},
+			common.BKCloudIDField:     cloudID,
+		},
+	}
+
+	hosts, err := s.Logic.SearchHostInfo(kit, cond)
+	if err != nil {
+		blog.ErrorJSON("search hosts failed, err: %s, input: %s, rid: %s", err, cond, kit.Rid)
+		return nil, err
+	}
+
+	ipMap := make(map[string]struct{})
+	for _, ip := range ips {
+		ipMap[ip] = struct{}{}
+	}
+
+	hostIP2IDMap := make(map[string]int64)
+	for _, host := range hosts {
+		hostID, err := host.Int64(common.BKHostIDField)
+		if err != nil {
+			blog.ErrorJSON("parse host id failed, err: %s, host: %s, rid: %s", err, host, kit.Rid)
+			return nil, err
+		}
+
+		hostIP, err := host.String(common.BKHostInnerIPField)
+		if err != nil {
+			blog.ErrorJSON("parse host ip failed, err: %s, host: %s, rid: %s", err, host, kit.Rid)
+			return nil, err
+		}
+
+		ipArr := strings.Split(hostIP, ",")
+		for _, slicedIP := range ipArr {
+			if _, exists := ipMap[slicedIP]; exists {
+				hostIP2IDMap[slicedIP] = hostID
+			}
+		}
+	}
+
+	return hostIP2IDMap, err
 }
 
 // CloneHostProperty clone host property from src host to dst host
+// can only clone editable fields that are not in host model unique rules.
+// origin ip and dest ip can only be one ip.
 func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 
 	input := &meta.CloneHostPropertyParams{}
@@ -1321,38 +1370,43 @@ func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 	}
 
 	// authorization check
-	srcHostID, err := s.ip2hostID(ctx, input.OrgIP, input.CloudID)
+	ip2IDMap, err := s.ip2hostID(ctx.Kit, []string{input.OrgIP, input.DstIP}, input.CloudID)
 	if err != nil {
-		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.OrgIP, input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "OrgIP"))
+		blog.ErrorJSON("get host id from ip failed, input: %s, rid:%s", input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
+
 	// check source host exist
+	srcHostID := ip2IDMap[input.OrgIP]
 	if srcHostID == 0 {
 		blog.Errorf("host not found. params:%s,rid:%s", input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostNotFound))
 		return
 	}
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, srcHostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", srcHostID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-		return
-	}
-	// step2. verify has permission to update dst host
-	dstHostID, err := s.ip2hostID(ctx, input.DstIP, input.CloudID)
-	if err != nil {
-		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.DstIP, input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "DstIP"))
-		return
-	}
+
 	// check whether destination host exist
+	dstHostID := ip2IDMap[input.DstIP]
 	if dstHostID == 0 {
 		blog.Errorf("host not found. params:%s,rid:%s", input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostNotFound))
 		return
 	}
 
+	// if both src ip and dst ip belongs to the same host, do not need to clone
+	if srcHostID == dstHostID {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, srcHostID); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", srcHostID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+		return
+	}
+
+	// step2. verify has permission to update dst host
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, dstHostID); err != nil {
 		if err != ac.NoAuthorizeError {
@@ -1369,7 +1423,7 @@ func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Logic.CloneHostProperty(ctx.Kit, input.AppID, srcHostID, dstHostID)
 		if nil != err {
 			blog.Errorf("CloneHostProperty  error , err: %v, input:%#v, rid:%s", err, input, ctx.Kit.Rid)
@@ -1460,7 +1514,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 	auditContexts := make([]meta.AuditLog, 0)
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		hasHostUpdateWithoutHostApplyFiled := false
 		// 功能开关：更新主机属性时是否剔除自动应用字段
 		ccLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))

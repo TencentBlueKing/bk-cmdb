@@ -79,6 +79,10 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	}
 	for index, name := range sheet.Rows[headerRow-1].Cells {
 		strName := name.Value
+		// skip the ignored cell field
+		if strName == common.ExcelCellIgnoreValue {
+			continue
+		}
 		field, ok := fields[strName]
 		if true == ok {
 			field.ExcelColIndex = index
@@ -92,8 +96,7 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	// excel three row  values  exceeding 1/2 does not appear in the field array,
 	// indicating that the third line of the excel template was deleted
 	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
-		// web_import_field_not_found
-		blog.Errorf(defLang.Languagef("web_import_field_not_found, rid: %s", strings.Join(errCells, ",")), rid)
+		blog.Errorf("err:%s, no found fields %s, rid:%s", defLang.Language("web_import_field_not_found"), strings.Join(errCells, ","), rid)
 		return ret, errors.New(defLang.Language("web_import_field_not_found"))
 	}
 	return ret, nil

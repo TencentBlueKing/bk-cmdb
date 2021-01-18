@@ -11,11 +11,6 @@
         <div v-bkloading="{ isLoading: !ready }">
             <div class="property-tips" v-show="!isEmpty">
                 <span class="tips-text">{{$t('请选择导出字段')}}:</span>
-                <bk-checkbox class="property-all"
-                    :checked="isAllChecked"
-                    @change="handleToggleAll">
-                    {{$t('全选')}}
-                </bk-checkbox>
             </div>
             <bk-exception class="search-empty"
                 v-if="isEmpty"
@@ -39,6 +34,11 @@
                     :key="group.id">
                     <h2 class="group-title">
                         {{group.name}}
+                        <bk-checkbox class="property-all"
+                            :checked="isGroupAllChecked[group.id]"
+                            @change="handleGroupToggleAll(group.id)">
+                            {{$t('全选')}}
+                        </bk-checkbox>
                     </h2>
                     <ul class="property-list clearfix">
                         <li class="property-item fl"
@@ -149,6 +149,13 @@
             },
             isEmpty () {
                 return this.ready && !this.visibleProperties.length
+            },
+            isGroupAllChecked () {
+                const isGroupAllChecked = {}
+                this.renderGroups.forEach(group => {
+                    isGroupAllChecked[group.id] = group.properties.every(property => this.selected.includes(property))
+                })
+                return isGroupAllChecked
             }
         },
         watch: {
@@ -207,6 +214,18 @@
                     this.selected = this.isAllChecked ? [] : [...this.visibleProperties]
                 }
             },
+            handleGroupToggleAll (groupId) {
+                const group = this.renderGroups.find(group => group.id === groupId)
+                const isGroupAllChecked = this.isGroupAllChecked[groupId]
+                if (isGroupAllChecked) {
+                    this.selected = this.selected.filter(property => {
+                        return !group.properties.includes(property)
+                    })
+                } else {
+                    const newSelected = group.properties.filter(property => !this.selected.includes(property))
+                    this.selected = this.selected.concat(newSelected)
+                }
+            },
             confirm () {
                 this.handler(this.selected)
                 this.close()
@@ -254,8 +273,11 @@
     .group {
         margin-bottom: 15px;
         .group-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             position: relative;
-            padding: 0 0 0 15px;
+            padding: 0 24px 0 15px;
             line-height: 20px;
             font-size: 15px;
             font-weight: bold;
@@ -268,6 +290,9 @@
                 width: 4px;
                 height: 14px;
                 background-color: #C4C6CC;
+            }
+            .property-all {
+                font-weight: normal;
             }
         }
     }

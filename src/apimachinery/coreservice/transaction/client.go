@@ -37,18 +37,13 @@ type Transaction interface {
 	autoRun(ctx context.Context, h http.Header, run func() error) error
 }
 
-func (t *txn) NewTransaction(enableTxn bool, h http.Header, opts ...metadata.TxnOption) (Transaction, error) {
-	if !enableTxn {
-		return new(transaction), nil
-	}
-
+func (t *txn) NewTransaction(h http.Header, opts ...metadata.TxnOption) (Transaction, error) {
 	cap, err := local.GenTxnCableAndSetHeader(h, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	transaction := &transaction{
-		enableTxn: enableTxn,
 		sessionID: cap.SessionID,
 		timeout:   cap.Timeout,
 		client:    t.client,
@@ -56,17 +51,13 @@ func (t *txn) NewTransaction(enableTxn bool, h http.Header, opts ...metadata.Txn
 	return transaction, nil
 }
 
-func (t *txn) AutoRunTxn(ctx context.Context, enableTxn bool, h http.Header, run func() error, opts ...metadata.TxnOption) error {
-	if !enableTxn {
-		return run()
-	}
-
+func (t *txn) AutoRunTxn(ctx context.Context, h http.Header, run func() error, opts ...metadata.TxnOption) error {
 	// to avoid nested txn
 	if h.Get(common.TransactionIdHeader) != "" {
 		return run()
 	}
 
-	txn, err := t.NewTransaction(enableTxn, h, opts...)
+	txn, err := t.NewTransaction(h, opts...)
 	if err != nil {
 		return ccErr.New(common.CCErrCommStartTransactionFailed, err.Error())
 	}
@@ -94,10 +85,6 @@ func (t *transaction) CommitTransaction(ctx context.Context, h http.Header) erro
 		panic("invalid transaction usage.")
 	}
 	t.locked = true
-
-	if !t.enableTxn {
-		return nil
-	}
 
 	subPath := "/update/transaction/commit"
 	body := metadata.TxnCapable{
@@ -130,10 +117,6 @@ func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) error
 		panic("invalid transaction usage.")
 	}
 	t.locked = true
-
-	if !t.enableTxn {
-		return nil
-	}
 
 	subPath := "/update/transaction/abort"
 	body := metadata.TxnCapable{
@@ -185,13 +168,6 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	if t.locked {
 		panic("invalid transaction usage.")
 	}
-	t.locked = true
-
-	if !t.enableTxn {
-		return run()
-	}
-	// revise the locked to false, so that we can commit or abort the transaction.
-	t.locked = false
 
 	runErr := run()
 	if runErr != nil {

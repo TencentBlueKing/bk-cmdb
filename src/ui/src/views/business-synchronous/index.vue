@@ -48,7 +48,10 @@
                                 v-bk-overflow-tips>
                                 {{changed.property.bk_property_name}}：
                                 <span class="info-item-value">
-                                    <cmdb-property-value
+                                    <span v-if="changed.property.bk_property_id === 'bind_info' && !changed.template_property_value.length">
+                                        {{$t('移除所有进程监听信息')}}
+                                    </span>
+                                    <cmdb-property-value v-else
                                         :value="getChangedValue(changed)"
                                         :property="changed.property">
                                     </cmdb-property-value>

@@ -35,8 +35,8 @@ func (e *event) Subscribe(ctx context.Context, h http.Header, subscription *meta
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -57,8 +57,8 @@ func (e *event) UnSubscribe(ctx context.Context, h http.Header, subscribeID int6
 	if err != nil {
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -79,8 +79,8 @@ func (e *event) UpdateSubscription(ctx context.Context, h http.Header, subscribe
 	if err != nil {
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -101,8 +101,8 @@ func (e *event) ListSubscriptions(ctx context.Context, h http.Header, data *meta
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil

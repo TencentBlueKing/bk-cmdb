@@ -33,7 +33,7 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 	}
 
 	var rsp model.GroupInterface
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		rsp, err = s.Core.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithModelBizID.Data, dataWithModelBizID.ModelBizID)
 		if nil != err {
@@ -59,7 +59,7 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
 		if nil != err {
 			return err
@@ -97,7 +97,7 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
 		if nil != err {
 			return err
@@ -129,7 +129,7 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.ModelBizID)
 		if nil != err {
 			return err
@@ -147,7 +147,7 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 
 func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_object_id"), ctx.Request.PathParameter("property_id"), ctx.Request.PathParameter("group_id"))
 		if nil != err {
 			return err

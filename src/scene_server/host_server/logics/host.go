@@ -512,32 +512,99 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 // CloneHostProperty clone host info and host and module relation in same application
 func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64, dstHostID int64) errors.CCErrorCoder {
 
-	// source host belong app
-	ok, err := lgc.IsHostExistInApp(kit, appID, srcHostID)
-	if err != nil {
-		blog.Errorf("IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), srcHostID, kit.Rid)
+	// check if source host and destination host both belong to biz
+	relReq := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{appID},
+		HostIDArr:        []int64{srcHostID, dstHostID},
+	}
+
+	relRsp, relErr := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relReq)
+	if relErr != nil {
+		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", relErr, relReq, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if err := relRsp.CCError(); err != nil {
+		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", err, relReq, kit.Rid)
 		return err
 	}
-	if !ok {
+
+	isSrcHostInBiz, isDstHostInBiz := false, false
+	for _, hostID := range relRsp.Data.IDArr {
+		if hostID == srcHostID {
+			isSrcHostInBiz = true
+		}
+		if hostID == dstHostID {
+			isDstHostInBiz = true
+		}
+	}
+
+	if !isSrcHostInBiz {
 		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, srcHostID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrHostNotINAPPFail, srcHostID)
 	}
 
-	// destination host belong app
-	ok, err = lgc.IsHostExistInApp(kit, appID, dstHostID)
-	if err != nil {
-		blog.Errorf("IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), dstHostID, kit.Rid)
-		return err
-	}
-	if !ok {
+	if !isDstHostInBiz {
 		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, dstHostID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrHostNotINAPPFail, dstHostID)
 	}
 
-	hostInfoArr, err := lgc.GetHostInfoByConds(kit, map[string]interface{}{common.BKHostIDField: srcHostID})
+	attrCond := make(map[string]interface{})
+	util.AddModelBizIDConditon(attrCond, appID)
+	hostAttributes, attrErr := lgc.GetHostAttributes(kit, attrCond)
+	if attrErr != nil {
+		blog.Errorf("get host attributes failed, err: %v, biz id: %d, rid: %s", attrErr, appID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrTopoObjectAttributeSelectFailed)
+	}
+
+	uniqueReq := metadata.QueryCondition{
+		Condition: map[string]interface{}{common.BKObjIDField: common.BKInnerObjIDHost},
+	}
+	uniqueRsp, uniqueErr := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(kit.Ctx, kit.Header, uniqueReq)
+	if uniqueErr != nil {
+		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", relErr, relReq, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	attrIDUniqueMap := make(map[uint64]struct{})
+	for _, unique := range uniqueRsp.Data.Info {
+		for _, key := range unique.Keys {
+			attrIDUniqueMap[key.ID] = struct{}{}
+		}
+	}
+
+	hostFields := make([]string, 0)
+	for _, attr := range hostAttributes {
+		if !attr.IsEditable {
+			continue
+		}
+		if _, exists := attrIDUniqueMap[uint64(attr.ID)]; exists {
+			continue
+		}
+		hostFields = append(hostFields, attr.PropertyID)
+	}
+
+	if len(hostFields) == 0 {
+		blog.Infof("there are no host fields can be cloned, skip, rid: %s", kit.Rid)
+		return nil
+	}
+
+	cond := metadata.QueryCondition{
+		Fields: hostFields,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKHostIDField: srcHostID,
+		},
+	}
+
+	hostInfoArr, err := lgc.SearchHostInfo(kit, cond)
 	if err != nil {
+		blog.ErrorJSON("search hosts failed, err: %s, input: %s, rid: %s", err, cond, kit.Rid)
 		return err
 	}
+
 	if len(hostInfoArr) == 0 {
 		blog.Errorf("host not found. hostID:%s, rid:%s", srcHostID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrHostNotFound)
@@ -546,67 +613,14 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 
 	delete(srcHostInfo, common.BKHostIDField)
 	delete(srcHostInfo, common.CreateTimeField)
-	delete(srcHostInfo, common.BKHostInnerIPField)
-	delete(srcHostInfo, common.BKHostOuterIPField)
-	delete(srcHostInfo, common.BKAssetIDField)
-	delete(srcHostInfo, common.BKSNField)
-	delete(srcHostInfo, common.BKImportFrom)
 
-	// get source host and module relation
-	hostModuleRelationCond := metadata.HostModuleRelationRequest{
-		ApplicationID: appID,
-		HostIDArr:     []int64{srcHostID},
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-			Start: 0,
-		},
-	}
-	relationArr, err := lgc.GetHostModuleRelation(kit, hostModuleRelationCond)
-	if err != nil {
-		return err
-	}
-	var moduleIDArr []int64
-	for _, relation := range relationArr.Info {
-		moduleIDArr = append(moduleIDArr, relation.ModuleID)
-	}
-
-	exist, err := lgc.ExistInnerModule(kit, moduleIDArr)
-	if err != nil {
-		return err
-	}
-	if exist {
-		if len(moduleIDArr) != 1 {
-			return kit.CCError.CCErrorf(common.CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed)
-		}
-		dstModuleHostRelation := &metadata.TransferHostToInnerModule{
-			ApplicationID: appID,
-			HostID:        []int64{dstHostID},
-			ModuleID:      moduleIDArr[0],
-		}
-		relationRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToInnerModule(kit.Ctx, kit.Header, dstModuleHostRelation)
-		if doErr != nil {
-			blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, relationRet, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := relationRet.CCError(); err != nil {
-			return err
-		}
-	} else {
-		// destination host new module relation
-		dstModuleHostRelation := &metadata.HostsModuleRelation{
-			ApplicationID: appID,
-			HostID:        []int64{dstHostID},
-			ModuleID:      moduleIDArr,
-			IsIncrement:   false,
-		}
-		relationRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(kit.Ctx, kit.Header, dstModuleHostRelation)
-		if doErr != nil {
-			blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, relationRet, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := relationRet.CCError(); err != nil {
-			return err
-		}
+	// generate audit log
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(srcHostInfo)
+	auditLog, auditErr := audit.GenerateAuditLog(auditParam, dstHostID, appID, "", nil)
+	if auditErr != nil {
+		blog.Errorf("generate audit log failed, err: %v, host id: %d, rid: %s", err, dstHostID, kit.Rid)
+		return kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
 
 	input := &metadata.UpdateOption{
@@ -625,6 +639,11 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 		return err
 	}
 
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed, err: %v, host id: %d, rid: %s", err, dstHostID, kit.Rid)
+		return kit.CCError.CCError(common.CCErrAuditSaveLogFailed)
+	}
+
 	return nil
 }
 
@@ -634,7 +653,7 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 	ipArr := strings.Split(ip, ",")
 	condition := mapstr.MapStr{
 		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBAll:  ipArr,
+			common.BKDBAll: ipArr,
 		},
 		common.BKCloudIDField: cloudID,
 	}

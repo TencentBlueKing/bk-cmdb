@@ -26,7 +26,7 @@ var _ = Describe("Transaction Test", func() {
 
 			By("create transaction object with transaction")
 			// use transaction to create transaction model and it's attributes.
-			err := clientSet.CoreService().Txn().AutoRunTxn(ctx, true, h, func() error {
+			err := clientSet.CoreService().Txn().AutoRunTxn(ctx, h, func() error {
 				// create model transaction
 				inputTxn := metadata.CreateModel{
 					Spec: metadata.Object{
@@ -54,14 +54,15 @@ var _ = Describe("Transaction Test", func() {
 			By("pretend to delete start property in transaction object, and let the transaction failed.")
 			// delete "start" attributes, and then failed.
 			pretendErr := errors.New("pretend failed")
-			err = clientSet.CoreService().Txn().AutoRunTxn(ctx, true, h, func() error {
+			pretendHeader := util.CCHeader(h)
+			err = clientSet.CoreService().Txn().AutoRunTxn(ctx, pretendHeader, func() error {
 				// pretend to delete a attribute
 				opt := metadata.DeleteOption{
 					Condition: mapstr.MapStr{
 						common.BKObjIDField: objectID,
 					},
 				}
-				result, err := clientSet.CoreService().Model().DeleteModel(ctx, h, &opt)
+				result, err := clientSet.CoreService().Model().DeleteModel(ctx, pretendHeader, &opt)
 				Expect(err).Should(BeNil())
 				Expect(result.Result).Should(BeTrue())
 				// now we really delete the attribute from db in this transaction
@@ -92,7 +93,7 @@ var _ = Describe("Transaction Test", func() {
 			// create a new txnHeader to deliver the transaction info.
 			txnHeader := util.CloneHeader(h)
 			// create a new transaction
-			txn, err := clientSet.CoreService().Txn().NewTransaction(true, txnHeader, ops)
+			txn, err := clientSet.CoreService().Txn().NewTransaction(txnHeader, ops)
 			Expect(err).Should(BeNil())
 
 			attributeTxn := metadata.CreateModelAttributes{

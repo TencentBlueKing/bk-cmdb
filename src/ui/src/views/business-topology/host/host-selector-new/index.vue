@@ -41,7 +41,10 @@
                             </div>
                             <ul slot="content" class="host-list">
                                 <li class="host-item" v-for="(row, index) in selected" :key="index">
-                                    <span class="ip">{{row.host.bk_host_innerip}}</span>
+                                    <div class="ip">
+                                        {{row.host.bk_host_innerip}}
+                                        <span class="repeat-tag" v-if="repeatSelected.includes(row)" v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">{{$t('IP重复')}}</span>
+                                    </div>
                                     <i class="bk-icon icon-close-line" @click="handleRemove(row)"></i>
                                 </li>
                             </ul>
@@ -209,6 +212,9 @@
                 names.forEach(name => {
                     this.$set(this.collapse.expanded, name, true)
                 })
+            },
+            foreignkey (value) {
+                return foreignkey(value)
             }
         }
     }
@@ -340,6 +346,16 @@
                     text-overflow: ellipsis;
                     white-space: nowrap;
                     word-break: break-all;
+
+                    .repeat-tag {
+                        height: 16px;
+                        line-height: 16px;
+                        background: #FFE8C3;
+                        color: #FE9C00;
+                        font-size: 12px;
+                        padding: 0 4px;
+                        border-radius: 2px;
+                    }
                 }
                 .icon-close-line {
                     display: none;

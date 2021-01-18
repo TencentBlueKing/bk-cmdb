@@ -196,6 +196,7 @@ func (query Query) toEsBoolQueryAndIndexs() (elastic.Query, []string) {
 	qBool.MustNot(qSupplierMatch)
 
 	qString := elastic.NewQueryStringQuery(query.QueryString)
+	qString.Escape(true)
 	qBool.Must(qString)
 
 	if query.BkObjId == "" {

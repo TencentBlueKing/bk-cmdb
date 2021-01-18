@@ -109,12 +109,6 @@
             },
             getSourceProcesses (instance) {
                 const templates = this.getServiceTemplates(instance)
-                const ipMap = {
-                    '1': '127.0.0.1',
-                    '2': '0.0.0.0',
-                    '3': this.$t('第一内网IP'),
-                    '4': this.$t('第一外网IP')
-                }
                 return templates.map(template => {
                     const value = {}
                     Object.keys(template.property).forEach(key => {
@@ -124,7 +118,7 @@
                                 const infoValue = {}
                                 Object.keys(info).forEach(infoKey => {
                                     if (infoKey === 'ip') {
-                                        infoValue[infoKey] = ipMap[info[infoKey].value]
+                                        infoValue[infoKey] = this.getBindIp(instance, info)
                                     } else {
                                         infoValue[infoKey] = info[infoKey].value
                                     }
@@ -137,6 +131,24 @@
                     })
                     return value
                 })
+            },
+            getBindIp (instance, info) {
+                const ipValue = info.ip.value
+                const mapping = {
+                    1: '127.0.0.1',
+                    2: '0.0.0.0'
+                }
+                if (mapping.hasOwnProperty(ipValue)) {
+                    return mapping[ipValue]
+                }
+                const { host } = this.$parent.hostInfo.find(data => data.host.bk_host_id === instance.bk_host_id)
+                // 第一内网IP
+                if (ipValue === '3') {
+                    const [innerIP] = host.bk_host_innerip.split(',')
+                    return innerIP || mapping[1]
+                }
+                const [outerIP] = host.bk_host_outerip.split(',')
+                return outerIP || mapping[1]
             },
             getServiceInstanceOptions () {
                 return this.instances.map((instance, index) => {
