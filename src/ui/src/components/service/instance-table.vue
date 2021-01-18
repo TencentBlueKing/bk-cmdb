@@ -233,6 +233,7 @@
                         Object.assign(raw, changedValues)
                     }
                 })
+                this.$emit('edit-process', rowIndex)
             },
             handleDeleteProcess (rowIndex) {
                 this.processList.splice(rowIndex, 1)
