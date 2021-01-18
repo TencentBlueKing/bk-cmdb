@@ -1594,9 +1594,16 @@ func (ti *PropertyPort) Validate() error {
 	for _, strPortItem := range strPortItemArr {
 		portArr := strings.Split(strPortItem, "-")
 		var start, end int64
-		start, _ = util.GetInt64ByInterface(portArr[0])
+		var err error
+		start, err = util.GetInt64ByInterface(portArr[0])
+		if err != nil {
+			return fmt.Errorf("parse start port to int failed, err: %v", err)
+		}
 		if len(portArr) > 1 {
-			end, _ = util.GetInt64ByInterface(portArr[1])
+			end, err = util.GetInt64ByInterface(portArr[1])
+			if err != nil {
+				return fmt.Errorf("parse end port to int failed, err: %v", err)
+			}
 		} else {
 			end = start
 		}
