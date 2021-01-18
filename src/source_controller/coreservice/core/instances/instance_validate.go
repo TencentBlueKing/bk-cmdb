@@ -171,6 +171,12 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		return err
 	}
 
+	err := hooks.ValidateBizBsTopoHook(kit, objID, instanceData, nil, common.ValidCreate, m.clientSet)
+	if err != nil {
+		blog.Errorf("validate biz bk_bs_topo attribute failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db
@@ -279,6 +285,12 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 	}
 
 	if err := m.validMainlineInstanceName(kit, objID, updateData); err != nil {
+		return err
+	}
+
+	err := hooks.ValidateBizBsTopoHook(kit, objID, instanceData, updateData, common.ValidUpdate, m.clientSet)
+	if err != nil {
+		blog.Errorf("validate biz bk_bs_topo attribute failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
