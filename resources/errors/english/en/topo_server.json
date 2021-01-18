@@ -127,6 +127,7 @@
 	"1101105": "Resource dir is being used in cloud sync task",
 	"1101106": "model not found",
 	"1101107": "the same attribute unique id exist",
+	"1101108": "the same set name exist",
 
     "": "" 
 }

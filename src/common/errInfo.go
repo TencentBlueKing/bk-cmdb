@@ -472,6 +472,7 @@ const (
 	CCErrorModelNotFound = 1101106
 
 	CCErrorAttributeNameDuplicated = 1101107
+	CCErrorSetNameDuplicated       = 1101108
 
 	// object controller 1102XXX
 
