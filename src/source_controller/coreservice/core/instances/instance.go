@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -33,13 +34,15 @@ var _ core.InstanceOperation = (*instanceManager)(nil)
 type instanceManager struct {
 	dependent OperationDependences
 	language  language.CCLanguageIf
+	clientSet apimachinery.ClientSetInterface
 }
 
 // New create a new instance manager instance
-func New(dependent OperationDependences, language language.CCLanguageIf) core.InstanceOperation {
+func New(dependent OperationDependences, language language.CCLanguageIf, clientSet apimachinery.ClientSetInterface) core.InstanceOperation {
 	return &instanceManager{
 		dependent: dependent,
 		language:  language,
+		clientSet: clientSet,
 	}
 }
 
