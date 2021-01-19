@@ -469,7 +469,11 @@ const (
 	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
 	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
 
-	CCErrorModelNotFound = 1101102
+	CCErrorModelNotFound = 1101106
+
+	CCErrorAttributeNameDuplicated = 1101107
+	CCErrorSetNameDuplicated       = 1101108
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
