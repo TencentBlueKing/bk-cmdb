@@ -270,9 +270,9 @@ func (h *HostSnap) needToUpdate(src map[string]interface{}, toCompare *HostInst)
 func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interface{} {
 	var cpumodule = val.Get("data.cpu.cpuinfo.0.modelName").String()
 	cpumodule = strings.TrimSpace(cpumodule)
-	var cupnum int64
+	var cpunum int64
 	for _, core := range val.Get("data.cpu.cpuinfo.#.cores").Array() {
-		cupnum += core.Int()
+		cpunum += core.Int()
 	}
 	var CPUMhz = val.Get("data.cpu.cpuinfo.0.mhz").Int()
 	var disk uint64
@@ -325,53 +325,78 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	osbit = strings.TrimSpace(osbit)
 
 	mem = mem >> 10 >> 10
-	setter := map[string]interface{}{
-		"bk_cpu":                            cupnum,
-		"bk_cpu_module":                     cpumodule,
-		"bk_cpu_mhz":                        CPUMhz,
-		"bk_disk":                           disk,
-		"bk_mem":                            mem,
-		"bk_os_type":                        ostype,
-		"bk_os_name":                        osname,
-		"bk_os_version":                     version,
-		"bk_host_name":                      hostname,
-		"bk_outer_mac":                      OuterMAC,
-		"bk_mac":                            InnerMAC,
-		"bk_os_bit":                         osbit,
+	setter := make(map[string]interface{})
+
+	if cpunum <= 0 {
+		blog.V(4).Infof("bk_cpu not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu"] = cpunum
 	}
 
-	if cupnum <= 0 {
-		blog.Infof("bk_cpu not found in message for %s", innerIP)
-	}
 	if cpumodule == "" {
-		blog.Infof("bk_cpu_module not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_cpu_module not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu_module"] = cpumodule
 	}
+
 	if CPUMhz <= 0 {
-		blog.Infof("bk_cpu_mhz not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_cpu_mhz not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu_mhz"] = CPUMhz
 	}
+
 	if disk <= 0 {
-		blog.Infof("bk_disk not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_disk not found in message for %s", innerIP)
+	} else {
+		setter["bk_disk"] = disk
 	}
+
 	if mem <= 0 {
-		blog.Infof("bk_mem not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_mem not found in message for %s", innerIP)
+	} else {
+		setter["bk_mem"] = mem
 	}
+
 	if ostype == "" {
-		blog.Infof("bk_os_type not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_os_type not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_type"] = ostype
 	}
+
 	if osname == "" {
-		blog.Infof("bk_os_name not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_os_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_name"] = osname
 	}
+
 	if version == "" {
-		blog.Infof("bk_os_version not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_os_version not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_version"] = version
 	}
+
 	if hostname == "" {
-		blog.Infof("bk_host_name not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_host_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_host_name"] = hostname
 	}
+
 	if outerIP != "" && OuterMAC == "" {
-		blog.Infof("bk_outer_mac not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_outer_mac not found in message for %s", innerIP)
+	} else {
+		setter["bk_outer_mac"] = OuterMAC
 	}
+
 	if InnerMAC == "" {
-		blog.Infof("bk_mac not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
+	} else {
+		setter["bk_mac"] = InnerMAC
+	}
+
+	if osbit == "" {
+		blog.V(4).Infof("bk_os_bit not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_bit"] = osbit
 	}
 
 	return setter
