@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/tools"
 	"configcenter/src/storage/driver/redis"
 )
@@ -165,7 +166,7 @@ func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHos
 // ListHostIDsWithPage get host id list sorted with host id with forward sort.
 // this id list has a ttl life cycle, and triggered with update with user's request.
 func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWithPage) (int64, []string, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if len(opt.HostIDs) != 0 {
 		// find with host id directly.
@@ -203,7 +204,7 @@ func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWi
 	}
 
 	// try to refresh host id list in cache.
-	c.tryRefreshHostIDList(ctx)
+	c.tryRefreshHostIDList(rid)
 
 	// check details and find those which needs to be refreshed
 	all := make([]string, 0)

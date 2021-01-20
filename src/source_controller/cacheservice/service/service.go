@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
@@ -122,8 +123,11 @@ func (s *cacheService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
 
+	getErrFunc := func() errors.CCErrorIf { return s.err }
+
 	api := new(restful.WebService)
-	api.Path("/cache/v3").Filter(s.engine.Metric().RestfulMiddleWare).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	api.Path("/cache/v3").Filter(s.engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).
+		Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)
