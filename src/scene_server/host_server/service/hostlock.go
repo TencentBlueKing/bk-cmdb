@@ -52,7 +52,7 @@ func (s *Service) LockHost(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logic.LockHost(ctx.Kit, input)
 		if nil != err {
 			blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)
@@ -98,7 +98,7 @@ func (s *Service) UnlockHost(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logic.UnlockHost(ctx.Kit, input)
 		if nil != err {
 			blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, ctx.Kit.Rid)

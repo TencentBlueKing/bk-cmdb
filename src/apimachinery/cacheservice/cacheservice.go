@@ -15,6 +15,7 @@ package cacheservice
 import (
 	"fmt"
 
+	"configcenter/src/apimachinery/cacheservice/cache/event"
 	"configcenter/src/apimachinery/cacheservice/cache/host"
 	"configcenter/src/apimachinery/cacheservice/cache/topology"
 	"configcenter/src/apimachinery/rest"
@@ -24,6 +25,7 @@ import (
 type Cache interface {
 	Host() host.Interface
 	Topology() topology.Interface
+	Event() event.Interface
 }
 
 type CacheServiceClientInterface interface {
@@ -57,4 +59,8 @@ func (c *cache) Host() host.Interface {
 
 func (c *cache) Topology() topology.Interface {
 	return topology.NewCacheClient(c.restCli)
+}
+
+func (c *cache) Event() event.Interface {
+	return event.NewCacheClient(c.restCli)
 }

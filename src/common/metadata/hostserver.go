@@ -59,6 +59,7 @@ const (
 
 type HostList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
+	ModuleID      int64                            `json:"bk_module_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
 	InputType     HostInputType                    `json:"input_type"`
 }
@@ -133,13 +134,6 @@ type SetCommonSearch struct {
 	AppID     int64             `json:"bk_biz_id,omitempty"`
 	Condition []SearchCondition `json:"condition"`
 	Page      BasePage          `json:"page"`
-}
-
-type HostModuleFind struct {
-	ModuleIDS []int64  `json:"bk_module_ids"`
-	AppID     int64    `json:"bk_biz_id"`
-	Fields    []string `json:"fields"`
-	Page      BasePage `json:"page"`
 }
 
 type FindHostsBySrvTplOpt struct {

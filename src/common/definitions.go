@@ -50,6 +50,9 @@ const (
 	// BKAuditLogPageLimit the audit log page limit
 	BKAuditLogPageLimit = 200
 
+	// BKMaxExportRecord the limit to export
+	BKMaxExportLimit = 10000
+
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 
@@ -607,6 +610,11 @@ const (
 	BKAttributeIDField = "bk_attribute_id"
 
 	BKSubscribeID = "subscribeID"
+
+	BKTokenField       = "token"
+	BKCursorField      = "cursor"
+	BKClusterTimeField = "cluster_time"
+	BKEventTypeField   = "type"
 )
 
 const (
@@ -837,6 +845,9 @@ const (
 
 	ExcelFirstColumnAssociationAttribute = "excel_association_attribute"
 	ExcelFirstColumnFieldDescription     = "excel_field_description"
+
+	// the value of ignored excel cell
+	ExcelCellIgnoreValue = "--"
 )
 
 const (
@@ -848,6 +859,9 @@ const (
 
 	// BatchHostAddMaxRow batch sync add host max row
 	BatchHostAddMaxRow = 128
+
+	// ExcelImportMaxRow excel import max row
+	ExcelImportMaxRow = 1000
 )
 
 const (
@@ -926,7 +940,6 @@ func (r ReadPreferenceMode) String() string {
 // BKHTTPReadRefernceMode constants  这个位置对应的是mongodb 的read preference 的mode，如果driver 没有变化这里是不需要变更的，
 // 新增mode 需要修改src/storage/dal/mongo/local/mongo.go 中的getCollectionOption 方法来支持
 const (
-
 	// NilMode not set
 	NilMode ReadPreferenceMode = ""
 	// PrimaryMode indicates that only a primary is

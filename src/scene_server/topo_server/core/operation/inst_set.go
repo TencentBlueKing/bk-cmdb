@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -30,7 +31,7 @@ import (
 // SetOperationInterface set operation methods
 type SetOperationInterface interface {
 	CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapstr.MapStr) (inst.Inst, error)
-	DeleteSet(kit *rest.Kit, obj model.Object, bizID int64, setIDS []int64) error
+	DeleteSet(kit *rest.Kit, bizID int64, setIDS []int64) error
 	FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID int64) error
 
@@ -121,7 +122,11 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(kit, obj, data)
 	if err != nil {
-		blog.Errorf("create set instance failed, object: %+v, data: %+v, err: %s, rid: %s", obj, data, err.Error(), kit.Rid)
+		blog.ErrorJSON("create set instance failed, object: %s, data: %s, err: %s, rid: %s", obj, data, err, kit.Rid)
+		// return this duplicate error for unique validation failed
+		if s.isSetDuplicateError(err) {
+			return setInstance, kit.CCError.CCError(common.CCErrorSetNameDuplicated)
+		}
 		return setInstance, err
 	}
 	if setTemplate.ID == 0 {
@@ -165,48 +170,51 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	return setInstance, nil
 }
 
-func (s *set) DeleteSet(kit *rest.Kit, setModel model.Object, bizID int64, setIDS []int64) error {
-
-	setCond := condition.CreateCondition()
-
-	// clear the sets
-
-	setCond.Field(common.BKAppIDField).Eq(bizID)
-	if nil != setIDS {
-		setCond.Field(common.BKSetIDField).In(setIDS)
+func (s *set) isSetDuplicateError(inputErr error) bool {
+	ccErr, ok := inputErr.(errors.CCErrorCoder)
+	if ok == false {
+		return false
 	}
 
-	exists, err := s.hasHost(kit, bizID, setIDS)
+	if ccErr.GetCode() == common.CCErrCommDuplicateItem {
+		return true
+	}
+
+	return false
+}
+
+func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
+	setCond := map[string]interface{}{common.BKAppIDField: bizID}
+	if nil != setIDs {
+		setCond[common.BKSetIDField] = map[string]interface{}{common.BKDBIN: setIDs}
+	}
+
+	exists, err := s.hasHost(kit, bizID, setIDs)
 	if nil != err {
 		blog.Errorf("[operation-set] failed to check the host, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 
 	if exists {
-		blog.Errorf("[operation-set] the sets(%#v) has some hosts, rid: %s", setIDS, kit.Rid)
+		blog.Errorf("[operation-set] the sets(%#v) has some hosts, rid: %s", setIDs, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoHasHostCheckFailed)
 	}
 
 	// clear the module belong to deleted sets
-	moduleObj, err := s.obj.FindSingleObject(kit, common.BKInnerObjIDModule)
-	if nil != err {
-		blog.Errorf("[operation-set] failed to find the object , error info is %s, rid: %s", err.Error(), kit.Rid)
+	err = s.inst.DeleteInst(kit, common.BKInnerObjIDModule, setCond, false)
+	if err != nil {
+		blog.Errorf("delete module failed, err: %v, cond: %#v, rid: %s", err, setCond, kit.Rid)
 		return err
 	}
 
-	if err = s.module.DeleteModule(kit, moduleObj, bizID, setIDS, nil); nil != err {
-		blog.Errorf("[operation-set] failed to delete the modules, error info is %s, rid: %s", err.Error(), kit.Rid)
-		return kit.CCError.New(common.CCErrTopoSetDeleteFailed, err.Error())
-	}
-
 	// clear set template sync status
-	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDS); ccErr != nil {
-		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDS, ccErr.Error(), kit.Rid)
+	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
+		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
 		return ccErr
 	}
 
 	// clear the sets
-	return s.inst.DeleteInst(kit, setModel, setCond, false)
+	return s.inst.DeleteInst(kit, common.BKInnerObjIDSet, setCond, false)
 }
 
 func (s *set) FindSet(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
@@ -226,5 +234,15 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 	data.Remove(common.BKSetTemplateIDField)
 	data.Remove(common.BKSetTemplateVersionField)
 
-	return s.inst.UpdateInst(kit, data, obj, innerCond, setID)
+	err := s.inst.UpdateInst(kit, data, obj, innerCond, setID)
+	if err != nil {
+		blog.ErrorJSON("update set instance failed, object: %s, data: %s, innerCond:%s, err: %s, rid: %s", obj, data, innerCond, err, kit.Rid)
+		// return this duplicate error for unique validation failed
+		if s.isSetDuplicateError(err) {
+			return kit.CCError.CCError(common.CCErrorSetNameDuplicated)
+		}
+		return err
+	}
+
+	return nil
 }

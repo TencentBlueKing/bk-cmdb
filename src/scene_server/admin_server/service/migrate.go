@@ -25,7 +25,10 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
+	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/source_controller/cacheservice/event"
+	daltypes "configcenter/src/storage/dal/types"
 
 	"github.com/emicklei/go-restful"
 )
@@ -39,6 +42,15 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		OwnerID:      ownerID,
 		User:         common.CCSystemOperatorUserName,
 		CCApiSrvAddr: s.ccApiSrvAddr,
+	}
+
+	if err := s.createWatchDBChainCollections(rid); err != nil {
+		blog.Errorf("create watch db chain collections failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
 	}
 
 	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, s.cache, updateCfg)
@@ -69,6 +81,103 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		FinishedVersions: finishedVersions,
 	}
 	resp.WriteEntity(result)
+}
+
+// dbChainTTLTime the ttl time seconds of the db event chain, used to set the ttl index of mongodb
+const dbChainTTLTime = 5 * 24 * 60 * 60
+
+func (s *Service) createWatchDBChainCollections(rid string) error {
+	// create watch token table to store the last watch token info for every collections
+	exists, err := s.watchDB.HasTable(s.ctx, common.BKTableNameWatchToken)
+	if err != nil {
+		blog.Errorf("check if table %s exists failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, rid)
+		return err
+	}
+
+	if !exists {
+		if err = s.watchDB.CreateTable(s.ctx, common.BKTableNameWatchToken); err != nil && !s.watchDB.IsDuplicatedError(err) {
+			blog.Errorf("create table %s failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, rid)
+			return err
+		}
+	}
+
+	// create watch chain node table and init the last token info as empty for all collections
+	cursorTypes := watch.ListCursorTypes()
+	for _, cursorType := range cursorTypes {
+		key, err := event.GetResourceKeyWithCursorType(cursorType)
+		if err != nil {
+			blog.Errorf("get resource key with cursor type %s failed, err: %v, rid: %s", cursorType, err, rid)
+			return err
+		}
+
+		exists, err := s.watchDB.HasTable(s.ctx, key.ChainCollection())
+		if err != nil {
+			blog.Errorf("check if table %s exists failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+			return err
+		}
+
+		if !exists {
+			if err = s.watchDB.CreateTable(s.ctx, key.ChainCollection()); err != nil && !s.watchDB.IsDuplicatedError(err) {
+				blog.Errorf("create table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+				return err
+			}
+		}
+
+		indexes := []daltypes.Index{
+			{Name: "index_id", Keys: map[string]int32{common.BKFieldID: -1}, Background: true, Unique: true},
+			{Name: "index_cursor", Keys: map[string]int32{common.BKCursorField: -1}, Background: true, Unique: true},
+			{Name: "index_cluster_time", Keys: map[string]int32{common.BKClusterTimeField: -1}, Background: true,
+				ExpireAfterSeconds: dbChainTTLTime},
+		}
+
+		existIndexArr, err := s.watchDB.Table(key.ChainCollection()).Indexes(s.ctx)
+		if err != nil {
+			blog.Errorf("get exist indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+			return err
+		}
+
+		existIdxMap := make(map[string]bool)
+		for _, index := range existIndexArr {
+			existIdxMap[index.Name] = true
+		}
+
+		for _, index := range indexes {
+			if _, exist := existIdxMap[index.Name]; exist {
+				continue
+			}
+
+			err = s.watchDB.Table(key.ChainCollection()).CreateIndex(s.ctx, index)
+			if err != nil && !s.watchDB.IsDuplicatedError(err) {
+				blog.Errorf("create indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+				return err
+			}
+		}
+
+		filter := map[string]interface{}{
+			"_id": key.Collection(),
+		}
+
+		count, err := s.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Count(s.ctx)
+		if err != nil {
+			blog.Errorf("check if last watch token exists failed, err: %v, filter: %+v", err, filter)
+			return err
+		}
+
+		if count > 0 {
+			continue
+		}
+
+		data := watch.LastChainNodeData{
+			Coll:  key.Collection(),
+			Token: "",
+		}
+		if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+			blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Response) {

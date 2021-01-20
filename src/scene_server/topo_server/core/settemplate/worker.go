@@ -48,7 +48,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	moduleID := moduleDiff.ModuleID
 	switch moduleDiff.DiffType {
 	case metadata.ModuleDiffRemove:
-		err := bw.ModuleOperation.DeleteModule(kit, moduleObj, set.BizID, []int64{setID}, []int64{moduleID})
+		err := bw.ModuleOperation.DeleteModule(kit, set.BizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
 			blog.ErrorJSON("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err

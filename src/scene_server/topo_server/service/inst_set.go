@@ -70,7 +70,7 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		var result interface{}
 		// to avoid judging to be nested transaction, need a new header
 		ctx.Kit.Header = ctx.Kit.NewHeader()
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 			var err error
 			result, err = s.createSet(ctx.Kit, bizID, obj, set)
 			if err != nil && firstErr == nil {
@@ -118,7 +118,7 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 	}
 
 	var resp interface{}
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		resp, err = s.createSet(ctx.Kit, bizID, obj, data)
 		if err != nil {
@@ -200,14 +200,6 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
-
-	if nil != err {
-		blog.Errorf("failed to search the set, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	setIDs := data.Delete.InstID
 	// 检查是否时内置集群
 	if err := s.CheckIsBuiltInSet(ctx.Kit, setIDs...); err != nil {
@@ -215,8 +207,8 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err = s.Core.SetOperation().DeleteSet(ctx.Kit, bizID, data.Delete.InstID)
 		if err != nil {
 			return err
 
@@ -252,22 +244,14 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDSet)
-
-	if nil != err {
-		blog.Errorf("delete set failed, failed to search the set, %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	// 检查是否时内置集群
 	if err := s.CheckIsBuiltInSet(ctx.Kit, setID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID})
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err = s.Core.SetOperation().DeleteSet(ctx.Kit, bizID, []int64{setID})
 		if err != nil {
 			blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -311,7 +295,7 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.SetOperation().UpdateSet(ctx.Kit, data, obj, bizID, setID)
 		if err != nil {
 			blog.Errorf("update set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)

@@ -43,7 +43,6 @@ type ProcServer struct {
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
-	EnableTxn          bool
 }
 
 func (ps *ProcServer) WebService() *restful.Container {

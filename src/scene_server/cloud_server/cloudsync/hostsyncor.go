@@ -18,8 +18,7 @@ import (
 
 // 云主机同步器
 type HostSyncor struct {
-	logics    *logics.Logics
-	enableTxn bool
+	logics *logics.Logics
 	// readKit used for read operation
 	readKit *rest.Kit
 	// writeKit used for write operation
@@ -29,8 +28,7 @@ type HostSyncor struct {
 // 创建云主机同步器
 func NewHostSyncor(logics *logics.Logics) *HostSyncor {
 	return &HostSyncor{
-		logics:    logics,
-		enableTxn: true,
+		logics: logics,
 	}
 }
 
@@ -77,7 +75,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	syncResult := new(metadata.SyncResult)
 	syncResult.FailInfo.IPError = make(map[string]string)
 
-	txnErr := h.logics.CoreAPI.CoreService().Txn().AutoRunTxn(h.readKit.Ctx, h.enableTxn, h.readKit.Header, func() error {
+	txnErr := h.logics.CoreAPI.CoreService().Txn().AutoRunTxn(h.readKit.Ctx, h.readKit.Header, func() error {
 		// 让writeKit的header含有同样的事务信息，以保证同一个事务里写操作后的数据能够被读到
 		ccom.CopyHeaderTxnInfo(h.readKit.Header, h.writeKit.Header)
 		if len(hostResource.DestroyedVpcs) > 0 {

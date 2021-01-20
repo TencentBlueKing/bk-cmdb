@@ -46,6 +46,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 	process.Config.MongoDB = mongoConf
+
+	watchDBConf, err := cc.Mongo("watch")
+	if err != nil {
+		return err
+	}
+	process.Config.WatchDB = watchDBConf
+
 	redisConf, err := cc.Redis("redis")
 	if err != nil {
 		return err
@@ -105,6 +112,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
+
+		watchDB, err := local.NewMgo(process.Config.WatchDB.GetMongoConf(), time.Minute)
+		if err != nil {
+			return fmt.Errorf("connect watch mongo server failed, err: %v", err)
+		}
+		process.Service.SetWatchDB(watchDB)
+
 		cache, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
 			return fmt.Errorf("connect redis server failed, err: %s", err.Error())

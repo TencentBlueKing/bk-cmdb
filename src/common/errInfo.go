@@ -469,7 +469,11 @@ const (
 	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
 	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
 
-	CCErrorModelNotFound = 1101102
+	CCErrorModelNotFound = 1101106
+
+	CCErrorAttributeNameDuplicated = 1101107
+	CCErrorSetNameDuplicated       = 1101108
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -509,6 +513,9 @@ const (
 	CCErrEventSubscribeTelnetFailed = 1103005
 	// CCErrEventOperateSuccessBUtSentEventFailed failed to sent event
 	CCErrEventPushEventFailed = 1103006
+
+	CCErrEventChainNodeNotExist = 1103007
+	CCErrEventDetailNotExist    = 1103008
 
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000
@@ -702,6 +709,7 @@ const (
 	CCErrWebUserinfoFormatWrong         = 1111016
 	CCErrWebUnknownLoginVersion         = 1111017
 	CCErrWebGetUsernameMapFail          = 1111018
+	CCErrWebHostCheckFail               = 1111019
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

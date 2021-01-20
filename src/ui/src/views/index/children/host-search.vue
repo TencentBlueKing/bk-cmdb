@@ -104,6 +104,7 @@
                             }
                         }
                     })
+                    console.log(IPList, IPWithCloudList, assetList, cloudIdSet)
                     // 判断是否存在IP、固资编号混合搜搜
                     if ((IPList.length || IPWithCloudList.length) && assetList.length) {
                         return this.$warn(this.$t('不支持混合搜索'))
@@ -121,7 +122,7 @@
                         return this.handleIPSearch(IPList)
                     }
                     // 不同云区域+IP的混合搜索
-                    if (cloudIdSet.length > 1) {
+                    if (cloudIdSet.size > 1) {
                         return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
                     }
                     this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)

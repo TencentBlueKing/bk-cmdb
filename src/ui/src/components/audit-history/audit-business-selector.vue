@@ -7,7 +7,7 @@
             v-for="biz in businessList"
             :key="biz.bk_biz_id"
             :id="biz.bk_biz_id"
-            :name="biz.bk_biz_name">
+            :name="`[${biz.bk_biz_id}] ${biz.bk_biz_name}`">
         </bk-option>
     </bk-select>
     <span v-else>{{bizName}}</span>
@@ -53,7 +53,7 @@
         methods: {
             async getFullAmountBusiness () {
                 try {
-                    const data = await this.$http.get('biz/simplify?sort=bk_biz_name', {
+                    const data = await this.$http.get('biz/simplify?sort=bk_biz_id', {
                         requestId: 'auditBusinessSelector',
                         fromCache: true
                     })

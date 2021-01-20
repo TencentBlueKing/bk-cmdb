@@ -22,11 +22,22 @@
                 }
                 return null
             },
-            from () {
-                const record = this.$route.query.hasOwnProperty('_f') && window.sessionStorage.getItem('history')
-                if (record) {
+            latest () {
+                let latest
+                if (this.$route.query.hasOwnProperty('_f')) {
                     try {
-                        return JSON.parse(Base64.decode(record))
+                        const historyList = JSON.parse(window.sessionStorage.getItem('history'))
+                        latest = historyList.pop()
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+                return latest
+            },
+            from () {
+                if (this.latest) {
+                    try {
+                        return JSON.parse(Base64.decode(this.latest))
                     } catch (error) {
                         return this.defaultFrom
                     }
@@ -36,7 +47,7 @@
         },
         methods: {
             async handleClick () {
-                this.$routerActions.redirect(this.from)
+                this.$routerActions.redirect({ ...this.from, back: true })
             }
         }
     }

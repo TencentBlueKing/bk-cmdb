@@ -17,7 +17,7 @@
             <bk-table-column v-for="property in tableHeader"
                 :show-overflow-tooltip="property.bk_property_type !== 'topology'"
                 :min-width="getColumnMinWidth(property)"
-                :key="property.bk_property_id"
+                :key="property.id"
                 :sortable="isPropertySortable(property) ? 'custom' : false"
                 :prop="property.bk_property_id"
                 :fixed="['bk_host_id'].includes(property.bk_property_id)"
@@ -322,6 +322,7 @@
                     _t: Date.now()
                 })
             },
+            // 拓扑路径写入数据中，用于复制
             handlePathReady (row, paths) {
                 row.__bk_host_topology__ = paths
             },

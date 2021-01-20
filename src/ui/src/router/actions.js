@@ -1,10 +1,27 @@
 import router from './index'
 import { Base64 } from 'js-base64'
 import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
-export const redirect = function ({ name, params = {}, query = {}, history = false, reload = false }) {
+export const redirect = function ({ name, params = {}, query = {}, history = false, reload = false, back = false }) {
     const queryBackup = { ...query }
+    const currentRoute = router.app.$route
+
+    // 当前页非history模式则先清空历史记录
+    if (!currentRoute.query.hasOwnProperty('_f')) {
+        window.sessionStorage.setItem('history', JSON.stringify([]))
+    }
+
+    // 先取得history列表
+    let historyList = []
+    try {
+        historyList = JSON.parse(window.sessionStorage.getItem('history')) || []
+        if (!Array.isArray(historyList)) {
+            historyList = [historyList]
+        }
+    } catch (e) {
+        historyList = []
+    }
+
     if (history) {
-        const currentRoute = router.app.$route
         const data = {
             name: currentRoute.name,
             params: { ...currentRoute.params },
@@ -12,8 +29,25 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
         }
         const base64 = Base64.encode(JSON.stringify(data))
         queryBackup['_f'] = '1'
-        window.sessionStorage.setItem('history', base64)
+
+        historyList.push(base64)
+        window.sessionStorage.setItem('history', JSON.stringify(historyList))
+    } else if (back) {
+        // 后退操作会注入back，此时从历史记录中删除当前记录
+        try {
+            const index = historyList.findIndex(item => {
+                const history = JSON.parse(Base64.decode(item))
+                return history.name === name
+            })
+            if (index !== -1) {
+                historyList.splice(index, 1)
+                window.sessionStorage.setItem('history', JSON.stringify(historyList))
+            }
+        } catch (e) {
+            // ignore
+        }
     }
+
     const to = {
         name,
         params,
@@ -35,11 +69,19 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
 }
 
 export const back = function () {
-    const record = router.app.$route.query.hasOwnProperty('_f') && window.sessionStorage.getItem('history')
+    let record
+    if (router.app.$route.query.hasOwnProperty('_f')) {
+        try {
+            const historyList = JSON.parse(window.sessionStorage.getItem('history')) || []
+            record = historyList.pop()
+        } catch (e) {
+            // ignore
+        }
+    }
     if (record) {
         try {
             const route = JSON.parse(Base64.decode(record))
-            redirect(route)
+            redirect({ ...route, back: true })
         } catch (error) {
             router.go(-1)
         }

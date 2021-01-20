@@ -183,12 +183,24 @@ func (valid *validator) validUniqueByCond(kit *rest.Kit, instanceManager *instan
 // hasUniqueFields judge if the update data has any unique fields
 func (valid *validator) hasUniqueFields(updateData mapstr.MapStr, uniqueOpts []validUniqueOption) (has bool, uniqueFields []string) {
 	for _, opt := range uniqueOpts {
+		if len(opt.UniqueKeys) == 0 {
+			continue
+		}
+
+		keyCnt := 0
+		// opt.UniqueKeys may have many keys as a union unique key
+		// eg: for module, opt.UniqueKeys is [bk_biz_id, bk_set_id, bk_module_name]
 		for _, key := range opt.UniqueKeys {
-			if _, ok := updateData[key]; ok {
-				return true, opt.UniqueKeys
+			if _, ok := updateData[key]; !ok {
+				continue
 			}
+			keyCnt++
+		}
+		if keyCnt == len(opt.UniqueKeys) {
+			return true, opt.UniqueKeys
 		}
 	}
+
 	return false, make([]string, 0)
 }
 

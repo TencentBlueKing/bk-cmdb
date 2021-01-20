@@ -13,6 +13,7 @@
 package hooks
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 )
@@ -20,6 +21,17 @@ import (
 // IsSkipValidateHook is a hook to check if a insert or update option is need to validate or not.
 // and check the resource's insert/operate data is valid.
 func IsSkipValidateHook(kit *rest.Kit, objID string, data mapstr.MapStr) (bool, error) {
-
 	return false, nil
+}
+
+// ValidUpdateCloudIDHook is a hook to check if an update operation on host cloud ID field is valid or not
+func ValidUpdateCloudIDHook(kit *rest.Kit, objID string, originInst mapstr.MapStr, updateData mapstr.MapStr) error {
+	return nil
+}
+
+// ValidateBizBsTopoHook is a hook to check if biz bk_bs_topo field is valid or not
+func ValidateBizBsTopoHook(kit *rest.Kit, objID string, originData mapstr.MapStr, updateData mapstr.MapStr,
+	validType string, clientSet apimachinery.ClientSetInterface) error {
+
+	return nil
 }

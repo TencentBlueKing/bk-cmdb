@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 )
 
 type Interface interface {
@@ -29,8 +28,6 @@ type Interface interface {
 	SearchModule(ctx context.Context, h http.Header, moduleID int64) (jsonString string, err error)
 	ListModules(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonArray string, err error)
 	SearchCustomLayer(ctx context.Context, h http.Header, objID string, instID int64) (jsonString string, err error)
-	SearchTopologyNodePath(ctx context.Context, h http.Header, opts *topo_tree.SearchNodePathOption) ([]topo_tree.
-		NodePaths, error)
 }
 
 func NewCacheClient(client rest.ClientInterface) Interface {

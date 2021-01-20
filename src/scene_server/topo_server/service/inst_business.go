@@ -59,7 +59,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	// do with transaction
 	var business inst.Inst
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
 		if err != nil {
@@ -103,13 +103,6 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 
 // DeleteBusiness delete the business
 func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
@@ -117,8 +110,8 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, obj, bizID); err != nil {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, bizID); err != nil {
 			return err
 		}
 		return nil
@@ -153,7 +146,7 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, data, obj, bizID)
 		if err != nil {
 			return err
@@ -209,7 +202,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 	updateData := mapstr.New()
 	switch common.DataStatusFlag(ctx.Request.PathParameter("flag")) {
 	case common.DataStatusDisabled:
-		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj, obj.Object().ObjectID, bizID); nil != err {
+		if err := s.Core.AssociationOperation().CheckAssociation(ctx.Kit, obj.Object().ObjectID, bizID); nil != err {
 			ctx.RespAutoError(err)
 			return
 		}
@@ -241,7 +234,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj, bizID)
 		if err != nil {
 			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
@@ -583,7 +576,7 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 	data.Set(common.BKDefaultField, common.DefaultAppFlag)
 
 	var business inst.Inst
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data)
 		if err != nil {

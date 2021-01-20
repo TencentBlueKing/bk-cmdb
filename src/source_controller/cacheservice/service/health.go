@@ -23,7 +23,6 @@ import (
 	"configcenter/src/storage/driver/redis"
 
 	"github.com/emicklei/go-restful"
-
 )
 
 func (s *cacheService) Healthz(req *restful.Request, resp *restful.Response) {

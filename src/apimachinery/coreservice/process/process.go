@@ -49,6 +49,7 @@ type ProcessInterface interface {
 
 	// service instance
 	CreateServiceInstance(ctx context.Context, h http.Header, template *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	CreateServiceInstances(ctx context.Context, h http.Header, instances []*metadata.ServiceInstance) ([]*metadata.ServiceInstance, errors.CCErrorCoder)
 	GetServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder
 	ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
@@ -58,6 +59,7 @@ type ProcessInterface interface {
 
 	// process instance relation
 	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	CreateProcessInstanceRelations(ctx context.Context, h http.Header, relations []*metadata.ProcessInstanceRelation) ([]*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder)
@@ -65,6 +67,7 @@ type ProcessInterface interface {
 	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder)
+	ConstructServiceInstanceName(ctx context.Context, h http.Header, params *metadata.SrvInstNameParams) errors.CCErrorCoder
 	ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder
 }
 

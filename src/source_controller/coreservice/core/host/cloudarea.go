@@ -85,7 +85,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 		innerIPArr := strings.Split(innerIP, ",")
 		ipCond[index] = map[string]interface{}{
 			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBIN:  innerIPArr,
+				common.BKDBIN: innerIPArr,
 			},
 		}
 	}
@@ -153,6 +153,7 @@ func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.Clou
 				if firstErr == nil {
 					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 				}
+				return
 			}
 
 			lock.Lock()

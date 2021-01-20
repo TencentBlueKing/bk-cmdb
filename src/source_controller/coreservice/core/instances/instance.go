@@ -16,9 +16,9 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -34,13 +34,15 @@ var _ core.InstanceOperation = (*instanceManager)(nil)
 type instanceManager struct {
 	dependent OperationDependences
 	language  language.CCLanguageIf
+	clientSet apimachinery.ClientSetInterface
 }
 
 // New create a new instance manager instance
-func New(dependent OperationDependences, language language.CCLanguageIf) core.InstanceOperation {
+func New(dependent OperationDependences, language language.CCLanguageIf, clientSet apimachinery.ClientSetInterface) core.InstanceOperation {
 	return &instanceManager{
 		dependent: dependent,
 		language:  language,
+		clientSet: clientSet,
 	}
 }
 
@@ -57,7 +59,7 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	inputParam.Data.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	bizID, err := m.getBizIDFromInstance(kit, objID, inputParam.Data, common.ValidCreate, 0)
 	if err != nil {
-		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err:%v, objID:%s, data:%#v, rid:%s", err,objID, inputParam.Data, kit.Rid)
+		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err:%v, objID:%s, data:%#v, rid:%s", err, objID, inputParam.Data, kit.Rid)
 		return nil, err
 	}
 	validator, err := m.newValidator(kit, objID, bizID)
@@ -82,10 +84,13 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 }
 
 func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
-	var newIDs []uint64
 	dataResult := &metadata.CreateManyDataResult{}
 	allValidators := make(map[int64]*validator)
-	for itemIdx, item := range inputParam.Datas {
+	for _, item := range inputParam.Datas {
+		if item == nil {
+			blog.ErrorJSON("the model instance data can't be empty, input data:%s rid:%s", inputParam.Datas, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
+		}
 		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
 		bizID, err := m.getBizIDFromInstance(kit, objID, item, common.ValidCreate, 0)
 		if err != nil {
@@ -103,31 +108,19 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 
 		err = m.validCreateInstanceData(kit, objID, item, allValidators[bizID])
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
-			continue
+			blog.Errorf("CreateManyModelInstance failed, validCreateInstanceData err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
+			return nil, err
 		}
 
 		id, err := m.save(kit, objID, item)
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
-			continue
+			blog.Errorf("CreateManyModelInstance failed, save err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
+			return nil, err
 		}
 
 		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
 			ID: id,
 		})
-		newIDs = append(newIDs, id)
-
 	}
 
 	return dataResult, nil

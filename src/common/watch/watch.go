@@ -13,6 +13,7 @@
 package watch
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -68,6 +69,37 @@ type WatchEventDetail struct {
 	EventType EventType  `json:"bk_event_type"`
 	// Default instance is JsonString type
 	Detail DetailInterface `json:"bk_detail"`
+}
+
+type jsonWatchEventDetail struct {
+	Cursor    string          `json:"bk_cursor"`
+	Resource  CursorType      `json:"bk_resource"`
+	EventType EventType       `json:"bk_event_type"`
+	Detail    json.RawMessage `json:"bk_detail"`
+}
+
+func (w *WatchEventDetail) UnmarshalJSON(data []byte) error {
+	watchEventDetail := jsonWatchEventDetail{}
+	if err := json.Unmarshal(data, &watchEventDetail); err != nil {
+		return err
+	}
+
+	w.Cursor = watchEventDetail.Cursor
+	w.EventType = watchEventDetail.EventType
+	w.Resource = watchEventDetail.Resource
+
+	if watchEventDetail.Detail == nil {
+		return nil
+	}
+
+	if w.Detail == nil {
+		w.Detail = JsonString("watchEventDetail.Detail")
+	}
+	switch w.Detail.Name() {
+	case "JsonString":
+		w.Detail = JsonString("watchEventDetail.Detail")
+	}
+	return nil
 }
 
 type DetailInterface interface {

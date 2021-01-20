@@ -42,8 +42,8 @@
             return {
                 isShow: false,
                 dialog: {
-                    width: 720,
-                    height: 460,
+                    width: 830,
+                    height: 600,
                     show: false,
                     component: null,
                     props: {}
@@ -65,7 +65,7 @@
             },
             validateSameBiz () {
                 if (!HostStore.isSameBiz) {
-                    this.$error(this.$t('该功能仅支持对相同业务下的主机进行操作'))
+                    this.$error(this.$t('仅支持对相同业务下的主机进行操作'))
                     return false
                 }
                 return true
@@ -76,7 +76,7 @@
                     return false
                 }
                 if (HostStore.isAllResourceHost) {
-                    this.$error(this.$t('该功能仅支持对业务下的主机进行操作'))
+                    this.$error(this.$t('仅支持对业务下的主机进行操作'))
                     return false
                 }
                 const props = {
@@ -85,8 +85,8 @@
                     title: this.$t('转移主机到空闲模块')
                 }
                 this.dialog.props = props
-                this.dialog.width = 720
-                this.dialog.height = 460
+                this.dialog.width = 830
+                this.dialog.height = 600
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },
@@ -96,7 +96,7 @@
                     return false
                 }
                 if (HostStore.isAllResourceHost) {
-                    this.$error(this.$t('该功能仅支持对业务下的主机进行操作'))
+                    this.$error(this.$t('仅支持对业务下的主机进行操作'))
                     return false
                 }
                 const props = {
@@ -115,8 +115,8 @@
                     props.previousModules = firstSelectionModules
                 }
                 this.dialog.props = props
-                this.dialog.width = 720
-                this.dialog.height = 460
+                this.dialog.width = 830
+                this.dialog.height = 600
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },
@@ -131,7 +131,7 @@
                 }
                 const isAllIdleModule = HostStore.isAllIdleModule
                 if (!isAllIdleModule) {
-                    this.$error(this.$t('该功能仅支持对空闲机模块下的主机进行操作'))
+                    this.$error(this.$t('仅支持对空闲机模块下的主机进行操作'))
                     return false
                 }
                 this.dialog.props = {
@@ -158,7 +158,7 @@
                         this.gotoTransferPage(...arguments)
                     }
                 } else if (this.dialog.component === MoveToResourceConfirm.name) {
-                    this.moveHostToResource()
+                    this.moveHostToResource(...arguments)
                 }
             },
             async transferDirectly (modules) {
@@ -202,12 +202,13 @@
                 })
                 HostStore.clear()
             },
-            async moveHostToResource () {
+            async moveHostToResource (directoryId) {
                 try {
                     await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
                         params: {
                             bk_biz_id: HostStore.uniqueBusiness.bk_biz_id,
-                            bk_host_id: HostStore.getSelected().map(item => item.host.bk_host_id)
+                            bk_host_id: HostStore.getSelected().map(item => item.host.bk_host_id),
+                            bk_module_id: directoryId
                         },
                         config: {
                             requestId: this.request.moveToResource

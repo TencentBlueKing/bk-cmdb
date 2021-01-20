@@ -74,8 +74,15 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	if headerRow > len(sheet.Rows) {
 		return ret, errors.New(defLang.Language("web_excel_not_data"))
 	}
+	if headerRow+common.ExcelImportMaxRow < len(sheet.Rows) {
+		return ret, errors.New(defLang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow))
+	}
 	for index, name := range sheet.Rows[headerRow-1].Cells {
 		strName := name.Value
+		// skip the ignored cell field
+		if strName == common.ExcelCellIgnoreValue {
+			continue
+		}
 		field, ok := fields[strName]
 		if true == ok {
 			field.ExcelColIndex = index
@@ -89,9 +96,8 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	// excel three row  values  exceeding 1/2 does not appear in the field array,
 	// indicating that the third line of the excel template was deleted
 	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
-		// web_import_field_not_found
-		blog.Errorf(defLang.Languagef("web_import_field_not_found, rid: %s", strings.Join(errCells, ",")), rid)
-		return ret, errors.New(defLang.Languagef("web_import_field_not_found", errCells[0]+"..."))
+		blog.Errorf("err:%s, no found fields %s, rid:%s", defLang.Language("web_import_field_not_found"), strings.Join(errCells, ","), rid)
+		return ret, errors.New(defLang.Language("web_import_field_not_found"))
 	}
 	return ret, nil
 
@@ -129,7 +135,7 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 			var cellVal string
 			arrVal, ok := property.Option.([]interface{})
 			strEnumID, enumIDOk := val.(string)
-			if true == ok || true == enumIDOk {
+			if true == ok && true == enumIDOk {
 				cellVal = getEnumNameByID(strEnumID, arrVal)
 				cell.SetString(cellVal)
 			}
@@ -409,14 +415,8 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 				cellName := sheet.Cell(0, index)
 				cellName.Value = field.Name + isRequire
 				cellName.SetStyle(cellStyle)
-
-				cellType := sheet.Cell(1, index)
-				cellType.Value = "--"
-				cellType.SetStyle(cellStyle)
-
-				cellEnName := sheet.Cell(2, index)
-				cellEnName.Value = "--"
-				cellEnName.SetStyle(cellStyle)
+				setExcelCellIgnored(sheet, cellStyle, 1, index)
+				setExcelCellIgnored(sheet, cellStyle, 2, index)
 
 				// 给业务拓扑和业务列剩下的空格设置颜色
 				for i := 3; i < 1000; i++ {
@@ -425,6 +425,12 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 				}
 				sheet.Col(index).SetType(xlsx.CellTypeString)
 			}
+
+			if field.ID == common.BKCloudIDField {
+				setExcelCellIgnored(sheet, styleCell, 1, index)
+				setExcelCellIgnored(sheet, styleCell, 2, index)
+			}
+
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 		}
 	}

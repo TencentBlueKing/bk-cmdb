@@ -32,7 +32,7 @@ import (
 // ModuleOperationInterface module operation methods
 type ModuleOperationInterface interface {
 	CreateModule(kit *rest.Kit, obj model.Object, bizID, setID int64, data mapstr.MapStr) (inst.Inst, error)
-	DeleteModule(kit *rest.Kit, obj model.Object, bizID int64, setID, moduleIDS []int64) error
+	DeleteModule(kit *rest.Kit, bizID int64, setID, moduleIDS []int64) error
 	FindModule(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (count int, results []mapstr.MapStr, err error)
 	UpdateModule(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
 
@@ -275,9 +275,9 @@ func (m *module) IsModuleNameDuplicateError(kit *rest.Kit, bizID, setID int64, m
 	return false, nil
 }
 
-func (m *module) DeleteModule(kit *rest.Kit, moduleModel model.Object, bizID int64, setIDs, moduleIDS []int64) error {
+func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []int64) error {
 
-	exists, err := m.hasHost(kit, bizID, setIDs, moduleIDS)
+	exists, err := m.hasHost(kit, bizID, setIDs, moduleIDs)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to delete the modules, err: %s, rid: %s", err.Error(), kit.Rid)
 		return err
@@ -288,18 +288,17 @@ func (m *module) DeleteModule(kit *rest.Kit, moduleModel model.Object, bizID int
 		return kit.CCError.Error(common.CCErrTopoHasHost)
 	}
 
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
+	innerCond := map[string]interface{}{common.BKAppIDField: bizID}
 	if nil != setIDs {
-		innerCond.Field(common.BKSetIDField).In(setIDs)
+		innerCond[common.BKSetIDField] = map[string]interface{}{common.BKDBIN: setIDs}
 	}
 
-	if nil != moduleIDS {
-		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
+	if nil != moduleIDs {
+		innerCond[common.BKModuleIDField] = map[string]interface{}{common.BKDBIN: moduleIDs}
 	}
 
 	// module table doesn't have metadata field
-	err = m.inst.DeleteInst(kit, moduleModel, innerCond, false)
+	err = m.inst.DeleteInst(kit, common.BKInnerObjIDModule, innerCond, false)
 	if err != nil {
 		blog.Errorf("delete module failed, DeleteInst failed, err: %+v, rid: %s", err, kit.Rid)
 		return err

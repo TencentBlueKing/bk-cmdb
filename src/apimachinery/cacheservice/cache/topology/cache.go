@@ -163,25 +163,3 @@ type broker struct {
 	metadata.BaseResp `json:",inline"`
 	Data              []topo_tree.NodePaths `json:"data"`
 }
-
-func (b *baseCache) SearchTopologyNodePath(ctx context.Context, h http.Header,
-	opts *topo_tree.SearchNodePathOption) ([]topo_tree.NodePaths, error) {
-
-	resp := new(broker)
-	err := b.client.Post().
-		WithContext(ctx).
-		Body(opts).
-		SubResourcef("/find/cache/topo/node_path").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if !resp.Result {
-		return nil, errors.New(resp.Code, resp.ErrMsg)
-	}
-	return resp.Data, nil
-}

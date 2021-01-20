@@ -50,7 +50,7 @@ func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 	}
 
 	var id *metadata.RspID
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		id, err = s.Core.UniqueOperation().Create(ctx.Kit, objectID, request)
 		if err != nil {
@@ -109,7 +109,7 @@ func (s *Service) UpdateObjectUnique(ctx *rest.Contexts) {
 		}
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.UniqueOperation().Update(ctx.Kit, objectID, id, request)
 		if err != nil {
 			blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v, rid: %s", objectID, id, err, request, ctx.Kit.Rid)
@@ -159,7 +159,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.UniqueOperation().Delete(ctx.Kit, objectID, id)
 		if err != nil {
 			blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v, rid: %s", objectID, id, err, ctx.Kit.Rid)

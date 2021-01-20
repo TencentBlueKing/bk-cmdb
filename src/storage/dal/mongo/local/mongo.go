@@ -211,12 +211,23 @@ type Collection struct {
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *Collection) Find(filter types.Filter) types.Find {
-	return &Find{
+func (c *Collection) Find(filter types.Filter, opts ...types.FindOpts) types.Find {
+	find := &Find{
 		Collection: c,
 		filter:     filter,
-		projection: map[string]int{"_id": 0},
+		projection: make(map[string]int),
 	}
+
+	if len(opts) == 0 {
+		find.projection["_id"] = 0
+		return find
+	}
+
+	if !opts[0].WithObjectID {
+		find.projection["_id"] = 0
+		return find
+	}
+	return find
 }
 
 // Find define a find operation
@@ -590,6 +601,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		archives[idx] = metadata.DeleteArchive{
 			Oid:    doc.Lookup("_id").ObjectID().Hex(),
 			Detail: doc.Delete("_id"),
+			Coll:   c.collName,
 		}
 	}
 
@@ -713,6 +725,10 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	}
 	if index.Name != "" {
 		createIndexOpt.Name = &index.Name
+	}
+
+	if index.ExpireAfterSeconds != 0 {
+		createIndexOpt.SetExpireAfterSeconds(index.ExpireAfterSeconds)
 	}
 
 	createIndexInfo := mongo.IndexModel{

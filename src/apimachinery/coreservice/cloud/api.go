@@ -35,8 +35,8 @@ func (c *cloud) CreateAccount(ctx context.Context, h http.Header, account *metad
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -57,8 +57,8 @@ func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metada
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -79,8 +79,8 @@ func (c *cloud) UpdateAccount(ctx context.Context, h http.Header, accountID int6
 	if err != nil {
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -100,8 +100,8 @@ func (c *cloud) DeleteAccount(ctx context.Context, h http.Header, accountID int6
 	if err != nil {
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -122,8 +122,8 @@ func (c *cloud) SearchAccountConf(ctx context.Context, h http.Header, option *me
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -144,8 +144,8 @@ func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header, account *meta
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -166,8 +166,8 @@ func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header, option *metad
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -188,8 +188,8 @@ func (c *cloud) UpdateSyncTask(ctx context.Context, h http.Header, taskID int64,
 	if err != nil {
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -209,8 +209,8 @@ func (c *cloud) DeleteSyncTask(ctx context.Context, h http.Header, taskID int64)
 	if err != nil {
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -231,8 +231,8 @@ func (c *cloud) CreateSyncHistory(ctx context.Context, h http.Header, history *m
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -253,8 +253,8 @@ func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *me
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -275,8 +275,8 @@ func (c *cloud) DeleteDestroyedHostRelated(ctx context.Context, h http.Header, o
 	if err != nil {
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil

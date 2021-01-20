@@ -41,7 +41,7 @@
             </bk-button>
             <ul class="dropdown-list" slot="dropdown-content">
                 <template v-for="button in available">
-                    <li class="dropdown-item" v-if="button.auth" :key="button.id">
+                    <li class="dropdown-item" v-if="button.auth" :key="button.id" v-bk-tooltips="getTooltips(button.tooltips)">
                         <slot :name="button.id">
                             <cmdb-auth style="display: block;" :auth="button.auth">
                                 <bk-button slot-scope="{ disabled }"
@@ -55,7 +55,7 @@
                             </cmdb-auth>
                         </slot>
                     </li>
-                    <li class="dropdown-item" v-else :key="button.id">
+                    <li class="dropdown-item" v-else :key="button.id" v-bk-tooltips="getTooltips(button.tooltips)">
                         <slot :name="button.id">
                             <bk-button text theme="primary"
                                 class="dropdown-item-btn"
@@ -110,6 +110,21 @@
             },
             toggleDropdownState (state) {
                 this.isDropdownShow = state
+            },
+            getTooltips (tooltips) {
+                let tooltipsSettings = { disabled: true }
+                if (tooltips) {
+                    tooltipsSettings.disabled = false
+                    tooltipsSettings.interactive = true
+                    tooltipsSettings.boundary = 'window'
+                    const type = Object.prototype.toString.call(tooltips)
+                    if (type === '[object String]') {
+                        tooltipsSettings.content = tooltips
+                    } else if (type === '[object Object]') {
+                        tooltipsSettings = { ...tooltipsSettings, ...tooltips }
+                    }
+                }
+                return tooltipsSettings
             }
         }
     }

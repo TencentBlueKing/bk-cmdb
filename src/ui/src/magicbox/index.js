@@ -27,7 +27,7 @@ Vue.use(magicbox, {
 })
 
 export const $error = (message, delay = 3000) => {
-    magicbox.bkMessage({
+    return magicbox.bkMessage({
         message,
         delay,
         theme: 'error'
@@ -35,7 +35,7 @@ export const $error = (message, delay = 3000) => {
 }
 
 export const $success = (message, delay = 3000) => {
-    magicbox.bkMessage({
+    return magicbox.bkMessage({
         message,
         delay,
         theme: 'success'
@@ -43,7 +43,7 @@ export const $success = (message, delay = 3000) => {
 }
 
 export const $info = (message, delay = 3000) => {
-    magicbox.bkMessage({
+    return magicbox.bkMessage({
         message,
         delay,
         theme: 'primary'
@@ -51,7 +51,7 @@ export const $info = (message, delay = 3000) => {
 }
 
 export const $warn = (message, delay = 3000) => {
-    magicbox.bkMessage({
+    return magicbox.bkMessage({
         message,
         delay,
         theme: 'warning',

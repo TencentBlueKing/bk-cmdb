@@ -110,7 +110,7 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	// do create action now.
-	if err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, autoRunTxnFunc); err != nil {
+	if err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, autoRunTxnFunc); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -242,7 +242,7 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	// do update action now.
-	if err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, autoRunTxnFunc); err != nil {
+	if err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, autoRunTxnFunc); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -301,7 +301,7 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	// do delete action now.
-	if err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, autoRunTxnFunc); err != nil {
+	if err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, autoRunTxnFunc); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

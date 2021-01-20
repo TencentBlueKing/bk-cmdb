@@ -73,7 +73,7 @@
             <div class="update-alert-layout">
                 <i class="bk-icon icon-check-1"></i>
                 <h3>{{$t('修改成功')}}</h3>
-                <p class="update-success-tips">{{$t('集群模板修改成功提示')}}</p>
+                <p class="update-success-tips">{{$t(serviceChange ? '集群模板修改成功并需要同步提示' : '集群模板修改成功提示')}}</p>
                 <div class="btns">
                     <bk-button class="mr10" theme="primary"
                         v-if="isApplied && serviceChange"

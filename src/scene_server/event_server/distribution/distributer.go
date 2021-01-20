@@ -59,6 +59,9 @@ type Distributor struct {
 	// db is cc main database.
 	db dal.RDB
 
+	// watchDB is cc event watch database.
+	watchDB dal.DB
+
 	// cache is cc redis client.
 	cache redis.Client
 
@@ -349,23 +352,23 @@ func (d *Distributor) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 	defer blog.Info("stop watching and distribute for resource[%+v] with opts[%+v]", cursorType, opts)
 
 	// build a resource watcher.
-	watcher := ewatcher.NewWatcher(d.ctx, d.cache)
+	header := util.BuildHeader(common.GetIdentification(), common.BKDefaultOwnerID)
+	watcher := ewatcher.NewWatcher(d.ctx, header, d.cache, d.engine.CoreAPI.CacheService().Cache())
 
 	// start from this cursor.
 	startCursor := opts.Cursor
 
 	// can't find target old cursor, try to watch from last event node.
 	if startCursor == watch.NoEventCursor {
-		node, _, err := watcher.GetLatestEventDetail(key)
+		node, err := watcher.GetLatestEvent(cursorType)
 		if err != nil {
-			if err != ewatcher.TailNodeNotExistError && err != ewatcher.NoEventsError && err != ewatcher.TailNodeTargetNotExistError {
+			if err != ewatcher.NoEventsError && err != ewatcher.TailNodeTargetNotExistError {
 				return err
 			}
-			// event chain list is empty, which means no event and not be initialized, just watch and wait from head node.
-			startCursor = key.HeadKey()
+			// event chain list is empty, which means no event, just watch and wait from the first node.
 			blog.Info("watching for resource[%+v] from lastest event node, but no events now, try to watch from head node", cursorType)
 		} else {
-			// watch from lastest event node.
+			// watch from latest event node.
 			startCursor = node.Cursor
 			blog.Info("watching for resource[%+v] from cursor[%+v]", cursorType, startCursor)
 		}
@@ -382,19 +385,13 @@ func (d *Distributor) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 		// new watching round.
 		cost := time.Now()
 		blog.Info("watching for resource[%+v] from cursor[%+v] now!", cursorType, startCursor)
-		targetNodes, err := watcher.GetNodesFromCursor(defaultWatchEventStepSize, startCursor, key)
+		targetNodes, err := watcher.GetNodesFromCursor(defaultWatchEventStepSize, startCursor, opts.Resource)
 
 		d.watchAndDistributeDuration.WithLabelValues("WatchWithCursor").Observe(time.Since(cost).Seconds())
 		if err != nil {
-			if err == ewatcher.HeadNodeNotExistError {
-				// no origin events.
-				time.Sleep(defaultWatchEventLoopInterval)
-				continue
-			}
-
 			if err == ewatcher.StartCursorNotExistError {
 				// target cursor not exist, re-watch from head event node.
-				startCursor = key.HeadKey()
+				startCursor = watch.NoEventCursor
 				time.Sleep(defaultWatchEventLoopInterval)
 				continue
 			}
@@ -422,7 +419,7 @@ func (d *Distributor) watchAndDistributeWithCursor(cursorType watch.CursorType, 
 
 		// get final hit event datas.
 		cost = time.Now()
-		eventDetailStrs, err := watcher.GetEventDetailsWithCursorNodes(hitNodes, key)
+		eventDetailStrs, err := watcher.GetEventDetailsWithCursorNodes(opts.Resource, hitNodes)
 		d.watchAndDistributeDuration.WithLabelValues("GetEventDetailsWithCursor").Observe(time.Since(cost).Seconds())
 
 		if err != nil {

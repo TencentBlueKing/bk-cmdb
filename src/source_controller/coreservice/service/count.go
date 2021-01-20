@@ -58,6 +58,7 @@ func (s *coreService) GetCountByFilter(ctx *rest.Contexts) {
 				if firstErr == nil {
 					firstErr = ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 				}
+				return
 			}
 
 			lock.Lock()

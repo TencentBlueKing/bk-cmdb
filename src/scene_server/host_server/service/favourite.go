@@ -93,7 +93,7 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 	}
 
 	var result *metadata.IDResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		result, err = s.CoreAPI.CoreService().Host().AddHostFavourite(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header, param)
 		if err != nil {
@@ -162,7 +162,7 @@ func (s *Service) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 		}
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		result, err := s.CoreAPI.CoreService().Host().UpdateHostFavouriteByID(ctx.Kit.Ctx, ctx.Kit.User, ID, ctx.Kit.Header, data)
 		if err != nil {
 			blog.Errorf("UpdateHostFavouriteByID http do error,err:%s,input:%+v,rid:%s", err.Error(), data, ctx.Kit.Rid)
@@ -192,7 +192,7 @@ func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		result, err := s.CoreAPI.CoreService().Host().DeleteHostFavouriteByID(ctx.Kit.Ctx, ctx.Kit.User, ID, ctx.Kit.Header)
 		if err != nil {
 			blog.Errorf("DeleteHostFavouriteByID http do error,err:%s,input:%+v,rid:%s", err.Error(), ID, ctx.Kit.Rid)
@@ -236,7 +236,7 @@ func (s *Service) IncrHostFavouritesCount(ctx *rest.Contexts) {
 	count := result.Data.Count + 1
 	data := map[string]interface{}{"count": count}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		uResult, err := s.CoreAPI.CoreService().Host().UpdateHostFavouriteByID(ctx.Kit.Ctx, ctx.Kit.User, ID, ctx.Kit.Header, data)
 		if err != nil {
 			blog.Errorf("IncrHostFavouritesCount UpdateHostFavouriteByID http do error,err:%s,input:%+v,rid:%s", err.Error(), data, ctx.Kit.Rid)

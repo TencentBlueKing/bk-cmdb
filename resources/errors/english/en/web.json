@@ -3,7 +3,7 @@
     "1111002": "Failed to save file %s",
     "1111003": "Failed to open file %s",
     "1111004": "The contents of the file cannot be empty, %s",
-    "1111005": "Failed to get file contents, %s",
+    "1111005": "Failed to get file contents %s",
     "1111006": "Failed to get host data, error: %s",
     "1111007": "Failed to create EXCEL file, error: %",
     "1111008": "Failed to get instance data, error: %s",
@@ -17,6 +17,7 @@
     "1111016": "The format of user name and password are wrong, please check session.user_info in config file common.conf",
     "1111017": "Unknown login version %s",
     "1111018": "Failed to get the EN/CN-username map of instance objuser attribute, error: %s",
+    "1111019": "No hosts are imported, Failed to validate host %s",
      
     "": ""	   
 }

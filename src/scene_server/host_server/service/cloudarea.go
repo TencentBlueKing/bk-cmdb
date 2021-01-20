@@ -130,7 +130,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 	}
 
 	result := make([]metadata.CreateManyCloudAreaElem, len(input.Data))
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		res, err := s.CoreAPI.CoreService().Instance().CreateManyInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, instInfo)
 		if nil != err {
@@ -235,7 +235,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 	}
 
 	var res *metadata.CreatedOneOptionResult
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		res, err = s.CoreAPI.CoreService().Instance().CreateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, instInfo)
 		if nil != err {
@@ -355,7 +355,7 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		res, err := s.CoreAPI.CoreService().Instance().DeleteInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, delCond)
 		if nil != err {
 			blog.Errorf("DelPlat do error: %v, input:%d,rid:%s", err, platID, ctx.Kit.Rid)
@@ -450,7 +450,7 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 	}
 
 	// to update.
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		res, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDPlat, updateOption)
 		if nil != err {
 			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption, err.Error(), ctx.Kit.Rid)
@@ -493,7 +493,7 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(ctx.Kit.Ctx, ctx.Kit.Header, input)
 		if ccErr != nil {
 			blog.ErrorJSON("UpdateHostCloudAreaField failed, core service UpdateHostCloudAreaField failed, input: %s, err: %s, rid: %s", input, ccErr.Error(), rid)

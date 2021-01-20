@@ -26,6 +26,7 @@ var hostFields = []string{common.BKHostIDField, common.BKHostInnerIPField, commo
 
 var HostKey = Key{
 	namespace:  watchCacheNamespace + "host",
+	collection: common.BKTableNameBaseHost,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, hostFields...)
@@ -40,10 +41,14 @@ var HostKey = Key{
 		fields := gjson.GetManyBytes(doc, hostFields...)
 		return fields[1].String() + ":" + fields[2].String()
 	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKHostIDField).Int()
+	},
 }
 
 var ModuleHostRelationKey = Key{
 	namespace:  watchCacheNamespace + "host_relation",
+	collection: common.BKTableNameModuleHostConfig,
 	ttlSeconds: 6 * 60 * 60,
 	instName: func(doc []byte) string {
 		fields := gjson.GetManyBytes(doc, "bk_module_id", "bk_host_id")
@@ -54,6 +59,7 @@ var ModuleHostRelationKey = Key{
 var bizFields = []string{common.BKAppIDField, common.BKAppNameField}
 var BizKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDApp,
+	collection: common.BKTableNameBaseApp,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, bizFields...)
@@ -68,11 +74,15 @@ var BizKey = Key{
 		fields := gjson.GetManyBytes(doc, bizFields...)
 		return fields[1].String()
 	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKAppIDField).Int()
+	},
 }
 
 var setFields = []string{common.BKSetIDField, common.BKSetNameField}
 var SetKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDSet,
+	collection: common.BKTableNameBaseSet,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, setFields...)
@@ -87,11 +97,15 @@ var SetKey = Key{
 		fields := gjson.GetManyBytes(doc, setFields...)
 		return fields[1].String()
 	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKSetIDField).Int()
+	},
 }
 
 var moduleFields = []string{common.BKModuleIDField, common.BKModuleNameField}
 var ModuleKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDModule,
+	collection: common.BKTableNameBaseModule,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, moduleFields...)
@@ -106,11 +120,15 @@ var ModuleKey = Key{
 		fields := gjson.GetManyBytes(doc, moduleFields...)
 		return fields[1].String()
 	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKModuleIDField).Int()
+	},
 }
 
 var setTemplateFields = []string{common.BKFieldID, common.BKFieldName}
 var SetTemplateKey = Key{
 	namespace:  watchCacheNamespace + "set_template",
+	collection: common.BKTableNameSetTemplate,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, setTemplateFields...)
@@ -130,6 +148,7 @@ var SetTemplateKey = Key{
 var objectBaseFields = []string{common.BKInstIDField, common.BKInstNameField}
 var ObjectBaseKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDObject,
+	collection: common.BKTableNameBaseInst,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, objectBaseFields...)
@@ -144,11 +163,15 @@ var ObjectBaseKey = Key{
 		fields := gjson.GetManyBytes(doc, objectBaseFields...)
 		return fields[1].String()
 	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKInstIDField).Int()
+	},
 }
 
 var processFields = []string{common.BKProcessIDField, common.BKProcessNameField}
 var ProcessKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDProc,
+	collection: common.BKTableNameBaseProcess,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, processFields...)
@@ -163,11 +186,15 @@ var ProcessKey = Key{
 		fields := gjson.GetManyBytes(doc, processFields...)
 		return fields[1].String()
 	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKProcessIDField).Int()
+	},
 }
 
 var processInstanceRelationFields = []string{common.BKProcessIDField, common.BKServiceInstanceIDField, common.BKHostIDField}
 var ProcessInstanceRelationKey = Key{
 	namespace:  watchCacheNamespace + "process_instance_relation",
+	collection: common.BKTableNameProcessInstanceRelation,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, processInstanceRelationFields...)
@@ -186,6 +213,8 @@ var ProcessInstanceRelationKey = Key{
 
 type Key struct {
 	namespace string
+	// the watching db collection name
+	collection string
 	// the valid event's life time.
 	// if the event is exist longer than this, it will be deleted.
 	// if use's watch start from value is older than time.Now().Unix() - startFrom value,
@@ -198,19 +227,9 @@ type Key struct {
 
 	// instance name returns a name which can describe the event's instances
 	instName func(doc []byte) string
-}
 
-// MainKey is the hashmap key
-func (k Key) MainHashKey() string {
-	return k.namespace + ":chain"
-}
-
-func (k Key) HeadKey() string {
-	return "head"
-}
-
-func (k Key) TailKey() string {
-	return "tail"
+	// instID returns the event's corresponding instance id,
+	instID func(doc []byte) int64
 }
 
 // Note: do not change the format, it will affect the way in event server to
@@ -242,6 +261,18 @@ func (k Key) Name(doc []byte) string {
 	return ""
 }
 
-func (k Key) LockKey() string {
-	return k.namespace + ":lock"
+func (k Key) InstanceID(doc []byte) int64 {
+	if k.instID != nil {
+		return k.instID(doc)
+	}
+	return 0
+}
+
+func (k Key) Collection() string {
+	return k.collection
+}
+
+// ChainCollection returns the event chain db collection name
+func (k Key) ChainCollection() string {
+	return k.collection + "WatchChain"
 }

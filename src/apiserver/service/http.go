@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -41,6 +42,8 @@ func (s *service) Post(req *restful.Request, resp *restful.Response) {
 func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
+
+const maxToleranceLatencyTime = 10 * time.Second
 
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
@@ -68,6 +71,14 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
 	response, err := s.client.Do(proxyReq)
 	if err != nil {
+		if time.Since(start) >= maxToleranceLatencyTime {
+			if !strings.Contains(req.Request.RequestURI, "/watch/resource/") {
+				// except resource watch api
+				blog.Warnf("request exceeded max latency time, %s, %s, cost: %d ms, rid: %s", req.Request.Method, url,
+					time.Since(start)/time.Millisecond, rid)
+			}
+		}
+
 		blog.Errorf("*failed do request[%s url: %s] , err: %v, rid: %s", req.Request.Method, url, err, rid)
 
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
@@ -78,6 +89,14 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 			blog.Errorf("response request[%s url: %s] failed, err: %v, rid: %s", req.Request.Method, url, err, rid)
 		}
 		return
+	}
+
+	if time.Since(start) >= maxToleranceLatencyTime {
+		if !strings.Contains(req.Request.RequestURI, "/watch/resource/") {
+			// except resource watch api
+			blog.Warnf("request exceeded max latency time, %s, %s, cost: %d ms, rid: %s", req.Request.Method, url,
+				time.Since(start)/time.Millisecond, rid)
+		}
 	}
 
 	for k, v := range response.Header {

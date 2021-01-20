@@ -40,8 +40,8 @@ func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header,
 		blog.Errorf("CreateSetTemplate failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -66,8 +66,8 @@ func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header,
 		blog.Errorf("UpdateSetTemplate failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -91,8 +91,8 @@ func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header,
 		blog.Errorf("DeleteSetTemplate failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -116,8 +116,8 @@ func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bi
 		blog.Errorf("GetSetTemplate failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -139,8 +139,8 @@ func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, b
 		blog.Errorf("ListSetTemplate failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return &ret.Data, nil
@@ -165,8 +165,8 @@ func (p *setTemplate) CountSetTplInstances(ctx context.Context, header http.Head
 		blog.Errorf("CountSetTplInstances failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	data := make(map[int64]int64)
@@ -196,8 +196,8 @@ func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, heade
 		blog.Errorf("ListSetServiceTemplateRelations failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -221,8 +221,8 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 		blog.Errorf("ListSetTplRelatedSvcTpl failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -246,8 +246,8 @@ func (p *setTemplate) UpdateSetTemplateSyncStatus(ctx context.Context, header ht
 		blog.Errorf("UpdateSetTemplateSyncStatus failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -275,8 +275,8 @@ func (p *setTemplate) DeleteSetTemplateSyncStatus(ctx context.Context, header ht
 		blog.Errorf("DeleteSetTemplateSyncStatus failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.CCError()
 	}
 
 	return nil
@@ -301,8 +301,8 @@ func (p *setTemplate) ListSetTemplateSyncStatus(ctx context.Context, header http
 		blog.Errorf("ListSetTemplateSyncStatus failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil
@@ -327,8 +327,8 @@ func (p *setTemplate) ListSetTemplateSyncHistory(ctx context.Context, header htt
 		blog.Errorf("ListSetTemplateSyncHistory failed, http request failed, err: %+v", err)
 		return ret.Data, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return ret.Data, ret.CCError()
 	}
 
 	return ret.Data, nil

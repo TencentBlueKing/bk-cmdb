@@ -37,7 +37,6 @@
                                 v-for="(instance, index) in instances"
                                 ref="serviceInstanceTable"
                                 deletable
-                                expanded
                                 :key="instance.bk_host_id"
                                 :index="index"
                                 :id="instance.bk_host_id"
@@ -306,12 +305,6 @@
                 return []
             },
             getSourceProcesses (instance) {
-                const ipMap = {
-                    '1': '127.0.0.1',
-                    '2': '0.0.0.0',
-                    '3': this.$t('第一内网IP'),
-                    '4': this.$t('第一外网IP')
-                }
                 const templates = this.getServiceTemplates(instance)
                 return templates.map(template => {
                     const value = {}
@@ -321,7 +314,7 @@
                             value[key].forEach(row => {
                                 Object.keys(row).forEach(field => {
                                     if (field === 'ip') {
-                                        row[field] = ipMap[row[field].value]
+                                        row[field] = this.getBindIp(instance, row)
                                     } else if (field === 'row_id') {
                                         // 实例数据中使用 template_row_id
                                         row['template_row_id'] = row[field]
@@ -337,6 +330,24 @@
                     })
                     return value
                 })
+            },
+            getBindIp (instance, row) {
+                const ipValue = row.ip.value
+                const mapping = {
+                    1: '127.0.0.1',
+                    2: '0.0.0.0'
+                }
+                if (mapping.hasOwnProperty(ipValue)) {
+                    return mapping[ipValue]
+                }
+                const { host } = this.hosts.find(data => data.host.bk_host_id === instance.bk_host_id)
+                // 第一内网IP
+                if (ipValue === '3') {
+                    const [innerIP] = host.bk_host_innerip.split(',')
+                    return innerIP || mapping[1]
+                }
+                const [outerIP] = host.bk_host_outerip.split(',')
+                return outerIP || mapping[1]
             },
             getEditState (instance) {
                 return instance.editing

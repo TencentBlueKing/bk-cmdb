@@ -49,7 +49,7 @@
                         })
                     })
                 })
-                return displayModelList
+                return displayModelList.filter(item => item.bk_objects.length > 0)
             }
         },
         created () {

@@ -31,9 +31,9 @@ type txn struct {
 // Transaction interface
 type Interface interface {
 	// StartTransaction 开启新事务
-	NewTransaction(enableTxn bool, h http.Header, opts ...metadata.TxnOption) (Transaction, error)
+	NewTransaction(h http.Header, opts ...metadata.TxnOption) (Transaction, error)
 	// AutoRun is a transaction wrapper. it will automatically commit or abort the
 	// transaction depend on the f(), if f() returns with an error, then abort the
 	// transaction, otherwise, it will commit the transaction.
-	AutoRunTxn(ctx context.Context, enableTxn bool, h http.Header, run func() error, opts ...metadata.TxnOption) error
+	AutoRunTxn(ctx context.Context, h http.Header, run func() error, opts ...metadata.TxnOption) error
 }

@@ -23,8 +23,8 @@ import (
 )
 
 func (s *coreService) CreateServiceInstance(ctx *rest.Contexts) {
-	instance := metadata.ServiceInstance{}
-	if err := ctx.DecodeInto(&instance); err != nil {
+	instance := new(metadata.ServiceInstance)
+	if err := ctx.DecodeInto(instance); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -36,6 +36,37 @@ func (s *coreService) CreateServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(result)
+}
+
+func (s *coreService) CreateServiceInstances(ctx *rest.Contexts) {
+	instances := []*metadata.ServiceInstance{}
+	if err := ctx.DecodeInto(&instances); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.ProcessOperation().CreateServiceInstances(ctx.Kit, instances)
+	if err != nil {
+		blog.Errorf("CreateServiceInstances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
+
+func (s *coreService) ConstructServiceInstanceName(ctx *rest.Contexts) {
+	params := new(metadata.SrvInstNameParams)
+	if err := ctx.DecodeInto(params); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := s.core.ProcessOperation().ConstructServiceInstanceName(ctx.Kit, params.ServiceInstanceID, params.Host, params.Process); err != nil {
+		blog.Errorf("ConstructServiceInstanceName failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 func (s *coreService) ReconstructServiceInstanceName(ctx *rest.Contexts) {

@@ -67,7 +67,6 @@ func (s *Service) initFindhost(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/modulehost", Handler: s.FindModuleHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/module_relation/bk_biz_id/{bk_biz_id}", Handler: s.FindModuleHostRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_service_templates/biz/{bk_biz_id}", Handler: s.FindHostsByServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/by_set_templates/biz/{bk_biz_id}", Handler: s.FindHostsBySetTemplates})
@@ -94,6 +93,7 @@ func (s *Service) initHost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/snapshot/{bk_host_id}", Handler: s.HostSnapInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/snapshot/batch", Handler: s.HostSnapInfoBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add", Handler: s.AddHost})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/excel/add", Handler: s.AddHostByExcel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/resource", Handler: s.AddHostToResourcePool})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search", Handler: s.SearchHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search/asstdetail", Handler: s.SearchHostWithAsstDetail})

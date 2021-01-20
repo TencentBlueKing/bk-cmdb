@@ -86,7 +86,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	blog.Infof("srv conf: %+v", svrInfo)
-	blog.Infof("enableTxn is %t", op.EnableTxn)
 
 	server := new(TopoServer)
 	server.Service = new(service.Service)
@@ -140,7 +139,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
-		EnableTxn:   op.EnableTxn,
 		Config:      server.Config,
 	}
 

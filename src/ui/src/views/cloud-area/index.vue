@@ -302,20 +302,22 @@
                 })
             },
             linkAgent () {
-                const agent = window.Site.agent
-                if (agent) {
-                    const topWindow = window.top
-                    const isPaasConsole = topWindow !== window
-                    if (isPaasConsole) {
-                        topWindow.postMessage(JSON.stringify({
-                            action: 'open_other_app',
-                            app_code: 'bk_nodeman'
-                        }), '*')
-                    } else {
-                        window.open(agent)
-                    }
+                const topWindow = window.top
+                const isPaasConsole = topWindow !== window
+                const urlSuffix = '#/cloud-manager'
+                if (isPaasConsole) {
+                    topWindow.postMessage(JSON.stringify({
+                        action: 'open_other_app',
+                        app_code: 'bk_nodeman',
+                        app_url: urlSuffix
+                    }), '*')
                 } else {
-                    this.$warn(this.$t('未配置Agent安装APP地址'))
+                    const agentAppUrl = window.CMDB_CONFIG.site.agent
+                    if (agentAppUrl) {
+                        window.open(agentAppUrl + urlSuffix)
+                    } else {
+                        this.$warn(this.$t('未配置节点管理地址'))
+                    }
                 }
             }
         }

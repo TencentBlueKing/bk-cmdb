@@ -71,8 +71,9 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 
-	for index, host := range hostInfos {
-		if nil == host {
+	for _, index := range util.SortedMapInt64Keys(hostInfos) {
+		host := hostInfos[index]
+		if host == nil {
 			continue
 		}
 
@@ -182,6 +183,77 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	}
 
 	return hostIDs, successMsg, updateErrMsg, errMsg, nil
+}
+
+func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string, hostInfos map[int64]map[string]interface{}) (
+	hostIDs []int64, successMsg, errMsg []string, err error) {
+	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
+	if err != nil {
+		blog.Errorf("AddHostByExcel failed, GetModuleIDAndIsInternal err:%s, appID:%d, moduleID:%d", err, appID, moduleID)
+		return nil, nil, nil, err
+	}
+
+	instance := NewImportInstance(kit, ownerID, lgc)
+
+	// for audit log
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+
+	for _, index := range util.SortedMapInt64Keys(hostInfos) {
+		host := hostInfos[index]
+		if host == nil {
+			continue
+		}
+
+		innerIP, isOk := host[common.BKHostInnerIPField].(string)
+		if isOk == false || "" == innerIP {
+			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
+			continue
+		}
+
+		// the bk_cloud_id is directly connected area
+		host[common.BKCloudIDField] = common.BKDefaultDirSubArea
+
+		// remove unchangeable fields
+		delete(host, common.BKHostIDField)
+
+		// use new transaction, need a new header
+		kit.Header = kit.NewHeader()
+		lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+			intHostID, err := instance.addHostInstance(common.BKDefaultDirSubArea, index, appID, []int64{moduleID}, toInternalModule, host)
+			if err != nil {
+				blog.Errorf("addHostInstance failed, err: %v, index:%d, bizID: %d, moduleID:%d, toInternalModule:%t, host:%v, rid: %s",
+					err, index, appID, moduleID, toInternalModule, host, kit.Rid)
+				errMsg = append(errMsg, fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
+				return err
+			}
+			host[common.BKHostIDField] = intHostID
+
+			// to generate audit log.
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+			auditLog, err := audit.GenerateAuditLog(generateAuditParameter, intHostID, appID, innerIP, nil)
+			if err != nil {
+				blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
+					intHostID, appID, err, kit.Rid)
+				errMsg = append(errMsg, err.Error())
+				return err
+			}
+
+			// add current host operate result to batch add result
+			successMsg = append(successMsg, strconv.FormatInt(index, 10))
+
+			// add audit log
+			if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+				blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+				errMsg = append(errMsg, kit.CCError.Error(common.CCErrAuditSaveLogFailed).Error())
+				return err
+			}
+			hostIDs = append(hostIDs, intHostID)
+			return nil
+		})
+	}
+
+	return hostIDs, successMsg, errMsg, nil
 }
 
 func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHostToResourcePoolHostList) ([]int64, *metadata.AddHostToResourcePoolResult, error) {
@@ -478,7 +550,7 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 		innerIPArr := strings.Split(innerIP, ",")
 		ipCond[index] = map[string]interface{}{
 			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBIN:   innerIPArr,
+				common.BKDBIN: innerIPArr,
 			},
 		}
 	}
