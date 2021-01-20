@@ -35,7 +35,6 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
-	DeleteBusiness(kit *rest.Kit, bizID int64) error
 	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
 	UpdateBusiness(kit *rest.Kit, data mapstr.MapStr, obj model.Object, bizID int64) error
@@ -256,16 +255,6 @@ func (b *business) CreateBusiness(kit *rest.Kit, obj model.Object, data mapstr.M
 	}
 
 	return bizInst, nil
-}
-
-func (b *business) DeleteBusiness(kit *rest.Kit, bizID int64) error {
-	if err := b.set.DeleteSet(kit, bizID, nil); nil != err {
-		blog.Errorf("[operation-biz] failed to delete the set, error info is %s, rid: %s", err.Error(), kit.Rid)
-		return kit.CCError.New(common.CCErrTopoAppDeleteFailed, err.Error())
-	}
-
-	innerCond := map[string]interface{}{common.BKAppIDField: bizID}
-	return b.inst.DeleteInst(kit, common.BKInnerObjIDApp, innerCond, true)
 }
 
 func (b *business) FindBusiness(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {

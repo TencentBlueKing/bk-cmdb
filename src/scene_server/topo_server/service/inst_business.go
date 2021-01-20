@@ -101,29 +101,6 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	ctx.RespEntity(business)
 }
 
-// DeleteBusiness delete the business
-func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
-		return
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, bizID); err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
 // UpdateBusiness update the business
 func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 	data := mapstr.MapStr{}
