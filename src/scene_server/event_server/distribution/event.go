@@ -166,8 +166,8 @@ func (h *EventHandler) SetDistributer(distributer *Distributor) {
 // handle host identifier infos. Handler would find all relate subscribers and send event message
 // to target subscribers by callback.
 func (h *EventHandler) Handle(nodes []*watch.ChainNode, eventDetailStrs []string, opts *watch.WatchEventOptions) error {
-	blog.Info("handle new events now, count[%d]", len(eventDetailStrs))
-	defer blog.Info("handle new events done, count[%d]", len(eventDetailStrs))
+	blog.V(4).Infof("handle new events now, count[%d]", len(eventDetailStrs))
+	defer blog.V(4).Infof("handle new events done, count[%d]", len(eventDetailStrs))
 
 	for idx, eventDetailStr := range eventDetailStrs {
 		updateFields := []string{}
@@ -315,7 +315,7 @@ func (h *EventHandler) popEvent() (*metadata.EventInst, error) {
 		h.eventHandleTotal.WithLabelValues("ExpireEventNum").Inc()
 		return nil, nil
 	}
-	blog.Info("pop new event, %s", eventStr)
+	blog.V(4).Infof("pop new event, %s", eventStr)
 
 	return eventInst, nil
 }
@@ -356,8 +356,8 @@ func (h *EventHandler) sendToPusher(subid int64, dist *metadata.DistInst) error 
 
 // handleEvent handles target event.
 func (h *EventHandler) handleEvent(event *metadata.EventInst) error {
-	blog.Infof("handle event inst, %+v", event)
-	defer blog.Infof("handle event inst done, %+v", event)
+	blog.V(4).Infof("handle event inst, %+v", event)
+	defer blog.V(4).Infof("handle event inst done, %+v", event)
 
 	// find all subscribers on this event type.
 	subscribers := h.distributer.FindSubscribers(event.GetType())

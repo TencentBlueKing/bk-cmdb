@@ -44,7 +44,7 @@ func init() {
 		panic("initial NoEventCursor failed")
 	}
 	// cursor should be:
-	// MQ0xDTENMQ01ZWE2ZDNmMzk0YzFmNWQ5ODZlOWJkODY=
+	// MQ0xDTVlYTZkM2YzOTRjMWY1ZDk4NmU5YmQ4Ng0xDTE=
 	NoEventCursor = cursor
 }
 

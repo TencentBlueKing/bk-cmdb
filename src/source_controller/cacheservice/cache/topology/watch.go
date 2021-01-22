@@ -214,9 +214,7 @@ func (t *Topology) watchCustom() error {
 					common.BKDBGT: 0,
 				},
 				common.BKParentIDField: mapstr.MapStr{
-					common.BKDBExists: mapstr.MapStr{
-						common.BKDBGT: 0,
-					},
+					common.BKDBGT: 0,
 				},
 				common.BKObjIDField: mapstr.MapStr{
 					common.BKDBExists: true,
