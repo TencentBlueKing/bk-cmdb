@@ -20,7 +20,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "switch_1",
 			"bk_sn":        "201",
 		}
-		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
+		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -38,7 +38,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "switch_2",
 			"bk_sn":        "202",
 		}
-		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
+		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -56,7 +56,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "router_1",
 			"bk_sn":        "201",
 		}
-		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_router", header, input)
+		rsp, err := instClient.CreateInst(context.Background(), "bk_router", header, input)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))

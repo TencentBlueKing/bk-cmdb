@@ -275,7 +275,7 @@ func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, re
 
 func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID string, input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error) {
 	resp = new(metadata.ResponeImportAssociation)
-	subPath := "/inst/association/action/%s/import"
+	subPath := "/import/instassociation/%s"
 
 	err = a.client.Post().
 		WithContext(ctx).

@@ -20,7 +20,7 @@ import (
 
 func (asst *Association) SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
 	resp = new(metadata.SearchAssociationTypeResult)
-	subPath := "/topo/association/type/action/search"
+	subPath := "/find/associationtype"
 
 	err = asst.client.Post().
 		WithContext(ctx).
@@ -35,7 +35,7 @@ func (asst *Association) SearchType(ctx context.Context, h http.Header, request 
 
 func (asst *Association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
 	resp = new(metadata.CreateAssociationTypeResult)
-	subPath := "/topo/association/type/action/create"
+	subPath := "/create/associationtype"
 
 	err = asst.client.Post().
 		WithContext(ctx).
@@ -49,7 +49,7 @@ func (asst *Association) CreateType(ctx context.Context, h http.Header, request 
 }
 func (asst *Association) UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
 	resp = new(metadata.UpdateAssociationTypeResult)
-	subPath := "/topo/association/type/%d/action/update"
+	subPath := "/update/associationtype/%d"
 
 	err = asst.client.Put().
 		WithContext(ctx).
@@ -63,7 +63,7 @@ func (asst *Association) UpdateType(ctx context.Context, h http.Header, asstType
 
 func (asst *Association) DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
 	resp = new(metadata.DeleteAssociationTypeResult)
-	subPath := "/topo/association/type/%d/action/delete"
+	subPath := "/delete/associationtype/%d"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
@@ -78,7 +78,7 @@ func (asst *Association) DeleteType(ctx context.Context, h http.Header, asstType
 
 func (asst *Association) SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
 	resp = new(metadata.SearchAssociationObjectResult)
-	subPath := "/object/association/action/search"
+	subPath := "/find/objectassociation"
 
 	err = asst.client.Post().
 		WithContext(ctx).
@@ -93,7 +93,7 @@ func (asst *Association) SearchObject(ctx context.Context, h http.Header, reques
 
 func (asst *Association) CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
 	resp = new(metadata.CreateAssociationObjectResult)
-	subPath := "/object/association/action/create"
+	subPath := "/create/objectassociation"
 
 	err = asst.client.Post().
 		WithContext(ctx).
@@ -108,7 +108,7 @@ func (asst *Association) CreateObject(ctx context.Context, h http.Header, reques
 
 func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
 	resp = new(metadata.UpdateAssociationObjectResult)
-	subPath := "/object/association/%d/action/update"
+	subPath := "/update/objectassociation/%d"
 
 	err = asst.client.Put().
 		WithContext(ctx).
@@ -123,7 +123,7 @@ func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID
 
 func (asst *Association) DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
 	resp = new(metadata.DeleteAssociationObjectResult)
-	subPath := "/object/association/%d/action/delete"
+	subPath := "/delete/objectassociation/%d"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
@@ -137,7 +137,7 @@ func (asst *Association) DeleteObject(ctx context.Context, h http.Header, asstID
 }
 func (asst *Association) SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
-	subPath := "/inst/association/action/search"
+	subPath := "/find/instassociation"
 
 	err = asst.client.Post().
 		WithContext(ctx).
@@ -149,9 +149,10 @@ func (asst *Association) SearchInst(ctx context.Context, h http.Header, request 
 
 	return
 }
+
 func (asst *Association) SearchAssociationRelatedInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
-	subPath := "/inst/association/related/action/search"
+	subPath := "/find/instassociation/related"
 
 	err = asst.client.Post().
 		WithContext(ctx).
@@ -163,9 +164,10 @@ func (asst *Association) SearchAssociationRelatedInst(ctx context.Context, h htt
 
 	return
 }
+
 func (asst *Association) CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	resp = new(metadata.CreateAssociationInstResult)
-	subPath := "/inst/association/action/create"
+	subPath := "/create/instassociation"
 
 	err = asst.client.Post().
 		WithContext(ctx).
@@ -179,7 +181,7 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 }
 func (asst *Association) DeleteInst(ctx context.Context, h http.Header, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
 	resp = new(metadata.DeleteAssociationInstResult)
-	subPath := "/inst/association/%d/action/delete"
+	subPath := "/delete/instassociation/%d"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
@@ -194,7 +196,7 @@ func (asst *Association) DeleteInst(ctx context.Context, h http.Header, assoID i
 
 func (asst *Association) DeleteInstBatch(ctx context.Context, h http.Header, assoIDs *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error) {
 	resp = new(metadata.DeleteAssociationInstBatchResult)
-	subPath := "/inst/association/batch/action/delete"
+	subPath := "/delete/instassociation/batch"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
@@ -209,7 +211,7 @@ func (asst *Association) DeleteInstBatch(ctx context.Context, h http.Header, ass
 
 func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error) {
 	resp = new(metadata.ListAssociationsWithAssociationKindResult)
-	subPath := "/topo/association/type/action/search/batch"
+	subPath := "/find/topoassociationtype"
 
 	err = asst.client.Post().
 		WithContext(ctx).

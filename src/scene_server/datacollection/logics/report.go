@@ -341,7 +341,7 @@ func (lgc *Logics) findInstAssociation(header http.Header, objectID string, inst
 	option := &metadata.SearchAssociationInstRequest{
 		Condition: cond.ToMapStr(),
 	}
-	resp, err := lgc.CoreAPI.TopoServer().Association().SearchInst(context.Background(), header, option)
+	resp, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(context.Background(), header, option)
 	if err != nil {
 		blog.Errorf("[NetDevice][findInstAssociation] by %+v failed, err: %v, rid: %s", cond.ToMapStr(), err, rid)
 		return nil, err
@@ -466,7 +466,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 			return 0, err
 		}
 
-		resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetOwnerID(header), report.ObjectID, instID, header, data)
+		resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), report.ObjectID, instID, header, data)
 		if err != nil {
 			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v, rid: %s", err, data, rid)
 			return attrCount, err
@@ -476,7 +476,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 			return attrCount, fmt.Errorf(resp.ErrMsg)
 		}
 	} else {
-		resp, err := lgc.CoreAPI.TopoServer().Instance().CreateInst(context.Background(), util.GetOwnerID(header), report.ObjectID, header, data)
+		resp, err := lgc.CoreAPI.TopoServer().Instance().CreateInst(context.Background(), report.ObjectID, header, data)
 		if err != nil {
 			blog.Errorf("[NetDevice][ConfirmReport] create inst to %s error: %v, %+v, rid: %s", report.ObjectID, err, data, rid)
 			return attrCount, err

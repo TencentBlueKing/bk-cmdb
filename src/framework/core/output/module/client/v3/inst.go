@@ -57,7 +57,7 @@ func (m *CommonInst) CreateCommonInst(data types.MapStr) (int, error) {
 
 	data.Remove(ObjectID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID)
+	targetURL := fmt.Sprintf("%s/api/v3/create/instance/object/%s", m.cli.GetAddress(), objID)
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -92,7 +92,7 @@ func (m *CommonInst) DeleteCommonInst(cond common.Condition) error {
 		return errors.New("the object id is not set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s/%d", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID, instID)
+	targetURL := fmt.Sprintf("%s/api/v3/delete/instance/object/%s/inst/%d", m.cli.GetAddress(), objID, instID)
 
 	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -130,7 +130,7 @@ func (m *CommonInst) UpdateCommonInst(data types.MapStr, cond common.Condition) 
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s/%d", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID, instID)
+	targetURL := fmt.Sprintf("%s/api/v3/update/instance/object/%s/inst/%d", m.cli.GetAddress(), objID, instID)
 
 	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -157,7 +157,7 @@ func (m *CommonInst) SearchInst(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New("the object id is not set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/search/owner/%s/object/%s", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID)
+	targetURL := fmt.Sprintf("%s/api/v3/find/instance/object/%s", m.cli.GetAddress(), objID)
 
 	// convert to the condition
 	condInner := types.MapStr{
