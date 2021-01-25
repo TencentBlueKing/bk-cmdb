@@ -380,7 +380,7 @@ func (c *DataCollection) discoverMessageTopic(defaultAppID string) []string {
 func (c *DataCollection) netcollectMessageTopic(defaultAppID string) []string {
 	return []string{
 		// current netcollect topic name.
-		fmt.Sprintf("netdevice2"),
+		fmt.Sprintf("netdevice%s", defaultAppID),
 	}
 }
 
