@@ -38,8 +38,6 @@ const (
 var (
 	findBizBriefTopologyRegexp = regexp.MustCompile(`^/api/v3/cache/find/cache/topo/brief/biz/[0-9]+/?$`)
 	findBizTopoNodePathRegexp  = regexp.MustCompile(`^/api/v3/cache/find/cache/topo/node_path/biz/[0-9]+/?$`)
-	// TODO: remove this after api moved.
-	findBusinessTopoNodePathRegexp = regexp.MustCompile(`^/api/v3/find/topo/cache/topo/node_path/biz/[0-9]+/?$`)
 )
 
 func (ps *parseStream) cacheTopology() *parseStream {
@@ -62,19 +60,6 @@ func (ps *parseStream) cacheTopology() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.BizTopology,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	// TODO: remove this
-	if ps.hitRegexp(findBusinessTopoNodePathRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
 				Basic: meta.Basic{
 					Type:   meta.BizTopology,
 					Action: meta.Find,

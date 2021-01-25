@@ -45,10 +45,12 @@ func (s *coreService) initProcess(web *restful.WebService) {
 
 	// service instance
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/process/service_instance", Handler: s.CreateServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/process/service_instance", Handler: s.CreateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/service_instance/{service_instance_id}", Handler: s.GetServiceInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_instance", Handler: s.ListServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/process/service_instance/biz/{bk_biz_id}", Handler: s.UpdateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/service_instance", Handler: s.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/process/service_instance_name", Handler: s.ConstructServiceInstanceName})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/process/service_instance_name/{service_instance_id}", Handler: s.ReconstructServiceInstanceName})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_instance/details", Handler: s.ListServiceInstanceDetail})
 
@@ -62,6 +64,7 @@ func (s *coreService) initProcess(web *restful.WebService) {
 
 	// process instance relation
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/process/process_instance_relation", Handler: s.CreateProcessInstanceRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/process/process_instance_relation", Handler: s.CreateProcessInstanceRelations})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/process_instance_relation/{process_instance_id}", Handler: s.GetProcessInstanceRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/process_instance_relation", Handler: s.ListProcessInstanceRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/host_process_relation", Handler: s.ListHostProcessRelation})

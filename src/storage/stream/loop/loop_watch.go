@@ -41,6 +41,11 @@ type LoopsWatch struct {
 
 // WithOne allows users to watch events one by one.
 func (lw *LoopsWatch) WithOne(opts *types.LoopOneOptions) error {
+	if err := opts.Validate(); err != nil {
+		blog.Errorf("run loop watch, but option is invalid, err: %v", err)
+		return err
+	}
+
 	startToken, err := opts.TokenHandler.GetStartWatchToken(context.Background())
 	if err != nil {
 		blog.Errorf("%s job, run loop watch %s, but get start token failed, err: %v", opts.Name,
@@ -85,9 +90,14 @@ func (lw *LoopsWatch) WithOne(opts *types.LoopOneOptions) error {
 
 // WithBatch allows users to watch events with batch.
 func (lw *LoopsWatch) WithBatch(opts *types.LoopBatchOptions) error {
+	if err := opts.Validate(); err != nil {
+		blog.Errorf("run loop watch batch, but option is invalid, err: %v", err)
+		return err
+	}
+
 	startToken, err := opts.TokenHandler.GetStartWatchToken(context.Background())
 	if err != nil {
-		blog.Errorf("%s job, run loop watch batch %s, but get start token failed, err: %v",
+		blog.Errorf("%s job, run loop watch batch %s, but get start token failed, err: %v", opts.Name,
 			opts.WatchOpt.Collection, err)
 		return err
 	}

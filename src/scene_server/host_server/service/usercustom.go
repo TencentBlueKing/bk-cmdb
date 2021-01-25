@@ -42,7 +42,7 @@ func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
 	}
 
 	var res *metadata.BaseResp
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		if len(result.Data) == 0 {
 			res, err = s.CoreAPI.CoreService().Host().AddUserCustom(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header, params)
@@ -139,7 +139,7 @@ func (s *Service) SaveModelDefaultCustom(ctx *rest.Contexts) {
 	}
 
 	var result *metadata.BaseResp
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		result, err = s.CoreAPI.CoreService().Host().UpdateDefaultUserCustom(ctx.Kit.Ctx, ctx.Kit.Header, userCustomInput)
 		if err != nil {

@@ -33,8 +33,6 @@ func (s *Service) initAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/{owner_id}/{bk_biz_id}", Handler: s.SearchBusinessTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/tree/brief/biz/{bk_biz_id}", Handler: s.SearchBriefBizTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/cache/topo/node_path/biz/{bk_biz_id}",
-		Handler: s.SearchTopologyNodePath})
 
 	// TODO: delete this api, it's not used by front.
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", Handler: s.SearchMainLineChildInstTopo})
@@ -91,7 +89,6 @@ func (s *Service) initBusiness(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/search/{owner_id}", Handler: s.SearchBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/{owner_id}", Handler: s.CreateBusiness})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/app/{owner_id}/{app_id}", Handler: s.DeleteBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/app/{owner_id}/{app_id}", Handler: s.UpdateBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/app/status/{flag}/{owner_id}/{app_id}", Handler: s.UpdateBusinessStatus})
 	// utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/search/{owner_id}", Handler: s.SearchBusiness})

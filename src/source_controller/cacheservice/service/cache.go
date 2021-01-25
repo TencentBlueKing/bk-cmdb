@@ -14,12 +14,16 @@ package service
 
 import (
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/driver/redis"
 )
 
@@ -282,25 +286,6 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 	ctx.RespString(&inst)
 }
 
-// TODO: delete this api
-// SearchTopologyNodePath is to search biz instance topology node's parent path. eg:
-// from itself up to the biz instance, but not contains the node itself.
-func (s *cacheService) SearchTopologyNodePath(ctx *rest.Contexts) {
-	opt := new(topo_tree.SearchNodePathOption)
-	if err := ctx.DecodeInto(&opt); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(paths)
-}
-
 // SearchBizTopologyNodePath is to search biz instance topology node's parent path. eg:
 // from itself up to the biz instance, but not contains the node itself.
 func (s *cacheService) SearchBizTopologyNodePath(ctx *rest.Contexts) {
@@ -349,4 +334,182 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 	}
 
 	ctx.RespString(topo)
+}
+
+func (s *cacheService) GetLatestEvent(ctx *rest.Contexts) {
+	opt := new(metadata.GetLatestEventOption)
+	if err := ctx.DecodeInto(opt); nil != err {
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	node, err := s.cacheSet.Event.GetLatestEvent(ctx.Kit, opt)
+	if err != nil {
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	ctx.RespEntity(node)
+}
+
+func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
+	opt := new(metadata.SearchEventNodesOption)
+	if err := ctx.DecodeInto(opt); nil != err {
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	nodes, err := s.cacheSet.Event.SearchFollowingEventChainNodes(ctx.Kit, opt)
+	if err != nil {
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	ctx.RespEntity(nodes)
+}
+
+func (s *cacheService) SearchEventDetails(ctx *rest.Contexts) {
+	opt := new(metadata.SearchEventDetailsOption)
+	if err := ctx.DecodeInto(opt); nil != err {
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	details, err := s.cacheSet.Event.SearchEventDetails(ctx.Kit, opt)
+	if err != nil {
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	ctx.RespEntity(details)
+}
+
+func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
+	var err error
+	// sleep for a while if an error occurred to avoid others using wrong input to request too frequently
+	defer func() {
+		if err != nil {
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
+
+	options := new(watch.WatchEventOptions)
+	if err = ctx.DecodeInto(&options); err != nil {
+		blog.Errorf("watch event, but decode request body failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	if err = options.Validate(); err != nil {
+		blog.Errorf("watch event, but got invalid request options, err: %v, rid: %s", err, ctx.Kit.Rid)
+
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	key, err := event.GetResourceKeyWithCursorType(options.Resource)
+	if err != nil {
+		blog.Errorf("watch event, but get resource key with cursor type failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	// read all data from db in case secondary node's latency causes data inconsistency
+	util.SetDBReadPreference(ctx.Kit.Ctx, common.PrimaryMode)
+
+	// watch with cursor
+	if len(options.Cursor) != 0 {
+		events, err := s.cacheSet.Event.WatchWithCursor(ctx.Kit, key, options)
+		if err != nil {
+			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, ctx.Kit.Rid)
+			ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+			return
+		}
+
+		// if not events is hit, then we return user's cursor, so that they can watch with this cursor again.
+		ctx.RespEntity(s.generateWatchEventResp(options.Cursor, options.Resource, events))
+		return
+	}
+
+	// watch with start from
+	if options.StartFrom != 0 {
+		events, err := s.cacheSet.Event.WatchWithStartFrom(ctx.Kit, key, options)
+		if err != nil {
+			blog.Errorf("watch event with start from: %s failed, err: %v, rid: %s",
+				time.Unix(options.StartFrom, 0).Format(time.RFC3339), err, ctx.Kit.Rid)
+			ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+			return
+		}
+
+		ctx.RespEntity(s.generateWatchEventResp("", options.Resource, events))
+		return
+	}
+
+	// watch from now
+	events, err := s.cacheSet.Event.WatchFromNow(ctx.Kit, key, options)
+	if err != nil {
+		blog.Errorf("watch event from now failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		return
+	}
+
+	ctx.RespEntity(s.generateWatchEventResp("", options.Resource, []*watch.WatchEventDetail{events}))
+}
+
+func (s *cacheService) generateWatchEventResp(startCursor string, rsc watch.CursorType,
+	events []*watch.WatchEventDetail) *watch.WatchResp {
+
+	result := new(watch.WatchResp)
+	if len(events) == 0 {
+		result.Watched = false
+		if len(startCursor) == 0 {
+			result.Events = []*watch.WatchEventDetail{
+				{
+					Cursor:   watch.NoEventCursor,
+					Resource: rsc,
+				},
+			}
+		} else {
+			// if user's watch with a start cursor, but we do not find event after this cursor,
+			// then we return this start cursor directly, so that they can watch with this cursor for next round.
+			result.Events = []*watch.WatchEventDetail{
+				{
+					Cursor:   startCursor,
+					Resource: rsc,
+				},
+			}
+		}
+	} else {
+		if events[0].Cursor == watch.NoEventCursor {
+			result.Watched = false
+
+			if len(startCursor) == 0 {
+				// user watch with start form time, or watch from now, then return with NoEventCursor cursor.
+				result.Events = []*watch.WatchEventDetail{
+					{
+						Cursor:   watch.NoEventCursor,
+						Resource: rsc,
+					},
+				}
+			} else {
+				// if user's watch with a start cursor, but hit a NoEventCursor cursor,
+				// then we return this start cursor directly, so that they can watch with this cursor for next round.
+				result.Events = []*watch.WatchEventDetail{
+					{
+						Cursor:   startCursor,
+						Resource: rsc,
+					},
+				}
+			}
+		} else if events[0].Detail == nil {
+			// compatible for event happens but not hit(with different event type), last cursor is returned with no detail
+			result.Watched = false
+			result.Events = []*watch.WatchEventDetail{events[0]}
+		} else {
+			result.Watched = true
+			result.Events = events
+		}
+	}
+
+	return result
 }

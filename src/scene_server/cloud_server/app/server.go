@@ -92,7 +92,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	process.Service.SetEncryptor(accountCryptor)
-	process.Service.EnableTxn = op.EnableTxn
 
 	authorizer := iam.NewAuthorizer(engine.CoreAPI)
 	service.SetAuthorizer(authorizer)

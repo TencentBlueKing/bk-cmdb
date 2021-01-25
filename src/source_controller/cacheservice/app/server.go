@@ -110,6 +110,12 @@ func initResource(cacheSvr *CacheServer) error {
 	if err != nil {
 		return err
 	}
+
+	cacheSvr.Config.WatchMongo, err = cacheSvr.Core.WithMongo("watch")
+	if err != nil {
+		return err
+	}
+
 	cacheSvr.Config.Redis, err = cacheSvr.Core.WithRedis()
 	if err != nil {
 		return err

@@ -15,29 +15,35 @@
                 </bk-button>
             </cmdb-auth>
             <div class="filter-text fr">
-                <cmdb-selector
-                    class="fl"
+                <bk-select class="fl"
                     font-size="medium"
                     :placeholder="$t('所有一级分类')"
-                    :auto-select="false"
                     :allow-clear="true"
                     :searchable="true"
-                    :list="mainList"
-                    v-model="filter['mainClassification']"
-                    @on-selected="handleSelect">
-                </cmdb-selector>
-                <cmdb-selector
-                    class="fl"
+                    v-model="filter.mainClassification"
+                    @selected="handleSelect"
+                    @clear="() => handleSelect()">
+                    <bk-option v-for="category in mainList"
+                        :key="category.id"
+                        :id="category.id"
+                        :name="category.name">
+                    </bk-option>
+                </bk-select>
+                <bk-select class="fl"
                     font-size="medium"
                     :placeholder="$t('所有二级分类')"
-                    :auto-select="false"
                     :allow-clear="true"
                     :searchable="true"
-                    :list="secondaryList"
-                    v-model="filter['secondaryClassification']"
                     :empty-text="emptyText"
-                    @on-selected="handleSelectSecondary">
-                </cmdb-selector>
+                    v-model="filter.secondaryClassification"
+                    @selected="handleSelectSecondary"
+                    @clear="() => handleSelectSecondary()">
+                    <bk-option v-for="category in secondaryList"
+                        :key="category.id"
+                        :id="category.id"
+                        :name="category.name">
+                    </bk-option>
+                </bk-select>
                 <bk-input type="text"
                     class="filter-search fl"
                     :placeholder="$t('请输入xx', { name: $t('模板名称') })"
@@ -282,14 +288,14 @@
                 this.mainList = this.classificationList.filter(classification => !classification['bk_parent_id'])
                 this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
             },
-            handleSelect (id, data) {
+            handleSelect (id = '') {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
-                this.filter.secondaryClassification = ''
                 this.maincategoryId = id
-                this.getTableData(true)
+                this.handleSelectSecondary()
             },
-            handleSelectSecondary (id) {
+            handleSelectSecondary (id = '') {
                 this.categoryId = id
+                this.filter.secondaryClassification = id
                 this.getTableData(true)
             },
             operationTemplate (id, type) {

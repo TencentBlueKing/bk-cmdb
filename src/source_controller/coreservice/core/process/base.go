@@ -29,6 +29,7 @@ type processOperation struct {
 // OperationDependence methods definition
 type OperationDependence interface {
 	CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder)
+	CreateProcessInstances(kit *rest.Kit, processes []*metadata.Process) ([]*metadata.Process, errors.CCErrorCoder)
 	TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) error
 }
 

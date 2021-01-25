@@ -29,7 +29,7 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                show-overflow-tooltip>
+                :show-overflow-tooltip="column.property.bk_property_type !== 'table'">
                 <template slot-scope="{ row }">
                     <cmdb-property-value v-if="column.id !== 'bind_info'"
                         :value="row[column.id]"

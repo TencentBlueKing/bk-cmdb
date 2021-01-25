@@ -36,7 +36,7 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	}
 
 	var ret mapstr.MapStr
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		ret, err = s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, *data)
 		if err != nil {
@@ -78,7 +78,7 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 	}
 
 	var rsp model.Object
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, *data)
 		if nil != err {
@@ -169,7 +169,7 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.ObjectOperation().UpdateObject(ctx.Kit, data, id)
 		if err != nil {
 			return err
@@ -195,7 +195,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 	}
 
 	//delete model
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true)
 		if err != nil {
 			return err

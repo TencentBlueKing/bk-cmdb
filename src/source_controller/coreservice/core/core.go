@@ -235,18 +235,21 @@ type ProcessOperation interface {
 	DeleteProcessTemplate(kit *rest.Kit, processTemplateID int64) errors.CCErrorCoder
 
 	// service instance
-	CreateServiceInstance(kit *rest.Kit, template metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
-	GetServiceInstance(kit *rest.Kit, templateID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	CreateServiceInstance(kit *rest.Kit, instance *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	CreateServiceInstances(kit *rest.Kit, instances []*metadata.ServiceInstance) ([]*metadata.ServiceInstance, errors.CCErrorCoder)
+	GetServiceInstance(kit *rest.Kit, instanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 	UpdateServiceInstances(kit *rest.Kit, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder
 	ListServiceInstance(kit *rest.Kit, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
 	ListServiceInstanceDetail(kit *rest.Kit, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 	DeleteServiceInstance(kit *rest.Kit, serviceInstanceIDs []int64) errors.CCErrorCoder
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID int64) errors.CCErrorCoder
+	ConstructServiceInstanceName(kit *rest.Kit, instanceID int64, host map[string]interface{}, process *metadata.Process) errors.CCErrorCoder
 	ReconstructServiceInstanceName(kit *rest.Kit, instanceID int64) errors.CCErrorCoder
 
 	// process instance relation
 	CreateProcessInstanceRelation(kit *rest.Kit, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	CreateProcessInstanceRelations(kit *rest.Kit, relations []*metadata.ProcessInstanceRelation) ([]*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	GetProcessInstanceRelation(kit *rest.Kit, processInstanceID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	UpdateProcessInstanceRelation(kit *rest.Kit, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	ListProcessInstanceRelation(kit *rest.Kit, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder)

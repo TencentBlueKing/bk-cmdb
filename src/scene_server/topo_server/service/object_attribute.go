@@ -57,7 +57,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	var attrInfo []*metadata.ObjAttDes
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, modelBizID)
 		if nil != err {
@@ -172,7 +172,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	data.Remove(common.BKPropertyIndexField)
 	data.Remove(common.BKPropertyGroupField)
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
 		if err != nil {
 			return err
@@ -261,7 +261,7 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 	}
 
 	var result *metadata.UpdateAttrIndexData
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		result, err = s.Core.AttributeOperation().UpdateObjectAttributeIndex(ctx.Kit, objID, data, id)
 		if err != nil {

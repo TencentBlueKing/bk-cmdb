@@ -43,7 +43,7 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	ids := make([]int64, 0)
-	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		for _, process := range input.Processes {
 			t := &metadata.ProcessTemplate{
 				BizID:             input.BizID,
@@ -100,7 +100,7 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := ps.CoreAPI.CoreService().Process().DeleteProcessTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
 		if err != nil {
 			blog.Errorf("delete process template: %v failed", input.ProcessTemplates)
@@ -152,7 +152,7 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	var template *metadata.ProcessTemplate
-	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		template, err = ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, input.Property)
 		if err != nil {

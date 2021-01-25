@@ -15,10 +15,8 @@ package event
 import (
 	"fmt"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
-	"configcenter/src/storage/stream"
 )
 
 // get resource key
@@ -49,14 +47,7 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 	return key, nil
 }
 
-type FlowOptions struct {
-	Collection string
-	key        Key
-	watch      stream.Interface
-	isMaster   discovery.ServiceManageInterface
-}
-
-type hostArchive struct {
+type HostArchive struct {
 	Oid    string              `bson:"oid"`
 	Detail metadata.HostMapStr `bson:"detail"`
 }

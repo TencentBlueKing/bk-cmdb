@@ -200,6 +200,6 @@ func replaceEnName(rowMap mapstr.MapStr, usernameMap map[string]string, property
 // setExcelCellIgnore set the excel cell to be ignored
 func setExcelCellIgnored(sheet *xlsx.Sheet, style *xlsx.Style, row int, col int) {
 	cell := sheet.Cell(row, col)
-	cell.Value = "--"
+	cell.Value = common.ExcelCellIgnoreValue
 	cell.SetStyle(style)
 }

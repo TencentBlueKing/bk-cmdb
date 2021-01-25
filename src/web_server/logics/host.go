@@ -571,14 +571,17 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 	}
 
 	// step2. query host info by innerIPs
-	rules := make([]querybuilder.Rule, len(ipArr))
-	for index, innerIP := range ipArr {
+	innerIPs := make([]string, 0)
+	for _, innerIP := range ipArr {
 		innerIPArr := strings.Split(innerIP, ",")
-		rules[index] = querybuilder.AtomRule{
+		innerIPs = append(innerIPs, innerIPArr...)
+	}
+	rules := []querybuilder.Rule{
+		querybuilder.AtomRule{
 			Field:    common.BKHostInnerIPField,
 			Operator: querybuilder.OperatorIn,
-			Value:    innerIPArr,
-		}
+			Value:    innerIPs,
+		},
 	}
 
 	option := metadata.ListHostsWithNoBizParameter{

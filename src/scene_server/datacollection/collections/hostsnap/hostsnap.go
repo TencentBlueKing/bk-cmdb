@@ -346,93 +346,120 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	osbit := val.Get("data.system.info.systemtype").String()
 	osbit = strings.TrimSpace(osbit)
 	mem = mem >> 10 >> 10
-	setter := map[string]interface{}{
-		"bk_cpu":        cpunum,
-		"bk_cpu_module": cpumodule,
-		"bk_cpu_mhz":    CPUMhz,
-		"bk_disk":       disk,
-		"bk_mem":        mem,
-		"bk_os_type":    ostype,
-		"bk_os_name":    osname,
-		"bk_os_version": version,
-		"bk_host_name":  hostname,
-		"bk_outer_mac":  OuterMAC,
-		"bk_mac":        InnerMAC,
-		"bk_os_bit":     osbit,
-	}
 
+	setter := make(map[string]interface{})
 	raw := strings.Builder{}
 	raw.WriteByte('{')
-	raw.WriteString("\"bk_cpu\":")
-	raw.WriteString(strconv.FormatInt(cpunum, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_cpu_module\":")
-	raw.Write([]byte("\"" + cpumodule + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_cpu_mhz\":")
-	raw.WriteString(strconv.FormatInt(CPUMhz, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_disk\":")
-	raw.WriteString(strconv.FormatUint(disk, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_mem\":")
-	raw.WriteString(strconv.FormatUint(mem, 10))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_type\":")
-	raw.Write([]byte("\"" + ostype + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_name\":")
-	raw.Write([]byte("\"" + osname + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_version\":")
-	raw.Write([]byte("\"" + version + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_host_name\":")
-	raw.Write([]byte("\"" + hostname + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_outer_mac\":")
-	raw.Write([]byte("\"" + OuterMAC + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_mac\":")
-	raw.Write([]byte("\"" + InnerMAC + "\""))
-	raw.WriteString(",")
-	raw.WriteString("\"bk_os_bit\":")
-	raw.Write([]byte("\"" + osbit + "\""))
-	raw.WriteByte('}')
 
 	if cpunum <= 0 {
 		blog.V(4).Infof("bk_cpu not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu"] = cpunum
+		raw.WriteString("\"bk_cpu\":")
+		raw.WriteString(strconv.FormatInt(cpunum, 10))
+
 	}
+
 	if cpumodule == "" {
 		blog.V(4).Infof("bk_cpu_module not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu_module"] = cpumodule
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_module\":")
+		raw.Write([]byte("\"" + cpumodule + "\""))
 	}
+
 	if CPUMhz <= 0 {
 		blog.V(4).Infof("bk_cpu_mhz not found in message for %s", innerIP)
+	} else {
+		setter["bk_cpu_mhz"] = CPUMhz
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_mhz\":")
+		raw.WriteString(strconv.FormatInt(CPUMhz, 10))
 	}
+
 	if disk <= 0 {
 		blog.V(4).Infof("bk_disk not found in message for %s", innerIP)
+	} else {
+		setter["bk_disk"] = disk
+		raw.WriteString(",")
+		raw.WriteString("\"bk_disk\":")
+		raw.WriteString(strconv.FormatUint(disk, 10))
 	}
+
 	if mem <= 0 {
 		blog.V(4).Infof("bk_mem not found in message for %s", innerIP)
+	} else {
+		setter["bk_mem"] = mem
+		raw.WriteString(",")
+		raw.WriteString("\"bk_mem\":")
+		raw.WriteString(strconv.FormatUint(mem, 10))
 	}
+
 	if ostype == "" {
 		blog.V(4).Infof("bk_os_type not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_type"] = ostype
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_type\":")
+		raw.Write([]byte("\"" + ostype + "\""))
 	}
+
 	if osname == "" {
 		blog.V(4).Infof("bk_os_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_name"] = osname
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_name\":")
+		raw.Write([]byte("\"" + osname + "\""))
 	}
+
 	if version == "" {
 		blog.V(4).Infof("bk_os_version not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_version"] = version
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_version\":")
+		raw.Write([]byte("\"" + version + "\""))
 	}
+
 	if hostname == "" {
 		blog.V(4).Infof("bk_host_name not found in message for %s", innerIP)
+	} else {
+		setter["bk_host_name"] = hostname
+		raw.WriteString(",")
+		raw.WriteString("\"bk_host_name\":")
+		raw.Write([]byte("\"" + hostname + "\""))
 	}
+
 	if outerIP != "" && OuterMAC == "" {
 		blog.V(4).Infof("bk_outer_mac not found in message for %s", innerIP)
+	} else {
+		setter["bk_outer_mac"] = OuterMAC
+		raw.WriteString(",")
+		raw.WriteString("\"bk_outer_mac\":")
+		raw.Write([]byte("\"" + OuterMAC + "\""))
 	}
+
 	if InnerMAC == "" {
 		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
+	} else {
+		setter["bk_mac"] = InnerMAC
+		raw.WriteString(",")
+		raw.WriteString("\"bk_mac\":")
+		raw.Write([]byte("\"" + InnerMAC + "\""))
 	}
+
+	if osbit == "" {
+		blog.V(4).Infof("bk_os_bit not found in message for %s", innerIP)
+	} else {
+		setter["bk_os_bit"] = osbit
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_bit\":")
+		raw.Write([]byte("\"" + osbit + "\""))
+	}
+
+	raw.WriteByte('}')
 
 	return setter, raw.String()
 }

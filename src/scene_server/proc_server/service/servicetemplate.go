@@ -39,7 +39,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	}
 
 	var tpl *metadata.ServiceTemplate
-	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		tpl, err = ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, newTemplate)
 		if err != nil {
@@ -119,7 +119,7 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	}
 
 	var tpl *metadata.ServiceTemplate
-	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		tpl, err = ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, option.ID, updateParam)
 		if err != nil {
@@ -251,7 +251,7 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
 		if err != nil {
 			blog.Errorf("delete service template: %d failed", input.ServiceTemplateID)

@@ -50,7 +50,7 @@ func (s *Service) BKSystemInstall(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logic.NewSpecial(ctx.Kit).BkSystemInstall(ctx.Kit.Ctx, common.BKAppName, input)
 		if err != nil {
 			blog.Errorf("BkSystemInstall handle err: %v, rid:%s", err, ctx.Kit.Rid)

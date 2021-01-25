@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -121,7 +122,11 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(kit, obj, data)
 	if err != nil {
-		blog.Errorf("create set instance failed, object: %+v, data: %+v, err: %s, rid: %s", obj, data, err.Error(), kit.Rid)
+		blog.ErrorJSON("create set instance failed, object: %s, data: %s, err: %s, rid: %s", obj, data, err, kit.Rid)
+		// return this duplicate error for unique validation failed
+		if s.isSetDuplicateError(err) {
+			return setInstance, kit.CCError.CCError(common.CCErrorSetNameDuplicated)
+		}
 		return setInstance, err
 	}
 	if setTemplate.ID == 0 {
@@ -163,6 +168,19 @@ func (s *set) CreateSet(kit *rest.Kit, obj model.Object, bizID int64, data mapst
 	}
 
 	return setInstance, nil
+}
+
+func (s *set) isSetDuplicateError(inputErr error) bool {
+	ccErr, ok := inputErr.(errors.CCErrorCoder)
+	if ok == false {
+		return false
+	}
+
+	if ccErr.GetCode() == common.CCErrCommDuplicateItem {
+		return true
+	}
+
+	return false
 }
 
 func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
@@ -216,5 +234,15 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, obj model.Object, biz
 	data.Remove(common.BKSetTemplateIDField)
 	data.Remove(common.BKSetTemplateVersionField)
 
-	return s.inst.UpdateInst(kit, data, obj, innerCond, setID)
+	err := s.inst.UpdateInst(kit, data, obj, innerCond, setID)
+	if err != nil {
+		blog.ErrorJSON("update set instance failed, object: %s, data: %s, innerCond:%s, err: %s, rid: %s", obj, data, innerCond, err, kit.Rid)
+		// return this duplicate error for unique validation failed
+		if s.isSetDuplicateError(err) {
+			return kit.CCError.CCError(common.CCErrorSetNameDuplicated)
+		}
+		return err
+	}
+
+	return nil
 }

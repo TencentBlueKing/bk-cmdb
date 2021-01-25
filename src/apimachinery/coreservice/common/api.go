@@ -37,8 +37,8 @@ func (p *common) GetDistinctField(ctx context.Context, h http.Header, option *me
 		blog.Errorf("CreateServiceCategory failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret.Data, nil

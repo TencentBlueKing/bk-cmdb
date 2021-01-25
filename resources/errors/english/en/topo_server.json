@@ -118,15 +118,16 @@
     "1101096": "sync set template task is running",
     "1101097": "forbidden add/remove module on set initialized by set template",
     "1101098": "forbidden remove built in set or module",
-    "1101099": "instance of a mainline model, which is not allowed to be operated by excel import",
-
+    "1101099": "the same module name exist",
 	"1101100": "parse url params failed",
 	"1101101": "Query model attributes failed, please refresh the page",
-    "1101102": "model not found",
 	"1101102": "Only resource pool directory name can be update",
 	"1101103": "Fail to %s resource pool directory, directory not exist",
 	"1101104": "Idle machine directory is not allowed to delete",
 	"1101105": "Resource dir is being used in cloud sync task",
+	"1101106": "model not found",
+	"1101107": "the same attribute unique id exist",
+	"1101108": "the same set name exist",
 
     "": "" 
 }
