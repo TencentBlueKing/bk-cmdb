@@ -67,7 +67,6 @@ func (s *coreService) initProcess(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/process/process_instance_relation", Handler: s.CreateProcessInstanceRelations})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/process_instance_relation/{process_instance_id}", Handler: s.GetProcessInstanceRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/process_instance_relation", Handler: s.ListProcessInstanceRelation})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/host_process_relation", Handler: s.ListHostProcessRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/process/process_instance_relation/{process_instance_id}", Handler: s.UpdateProcessInstanceRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/process_instance_relation", Handler: s.DeleteProcessInstanceRelation})
 

@@ -763,29 +763,6 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 	return &ret.Data, nil
 }
 
-func (p *process) ListHostProcessRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstancesWithHostOption) (*metadata.MultipleHostProcessRelation, errors.CCErrorCoder) {
-	ret := new(metadata.MultipleHostProcessRelationResult)
-	subPath := "/findmany/process/host_process_relation"
-
-	err := p.client.Post().
-		WithContext(ctx).
-		Body(option).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("ListProcessInstanceRelation failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
-	}
-
-	return &ret.Data, nil
-}
-
 func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder) {
 	ret := new(metadata.BusinessDefaultSetModuleInfoResult)
 	subPath := "/find/process/business_default_set_module_info/%d"
