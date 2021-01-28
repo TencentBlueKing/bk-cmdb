@@ -1048,6 +1048,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		for idx := range records {
 			item := metadata.ServiceDifferenceDetails{
 				ServiceInstance: metadata.SrvInstBriefInfo{
+					ID:   records[idx].ServiceInstance.ID,
 					Name: records[idx].ServiceInstance.Name,
 				},
 				Process: records[idx].Process,
@@ -1070,6 +1071,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, record := range records {
 			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
+				ID:   record.ServiceInstance.ID,
 				Name: record.ServiceInstance.Name,
 			}})
 		}
@@ -1089,6 +1091,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		for _, record := range records {
 			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{
 				ServiceInstance: metadata.SrvInstBriefInfo{
+					ID:   record.ServiceInstance.ID,
 					Name: record.ServiceInstance.Name,
 				},
 				ChangedAttributes: record.ChangedAttribute,
@@ -1106,6 +1109,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		sInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, s := range records {
 			sInstances = append(sInstances, metadata.ServiceDifferenceDetails{ServiceInstance: metadata.SrvInstBriefInfo{
+				ID:   s.ServiceInstance.ID,
 				Name: s.ServiceInstance.Name,
 			}})
 		}
@@ -1353,6 +1357,9 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 	// step 6:
 	// compare the difference between process instance and process template from one service instance to another.
 	removedProcessIDs := make([]int64, 0)
+	var wg sync.WaitGroup
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 10)
 	for serviceInstanceID, processes := range serviceInstance2ProcessMap {
 		for _, process := range processes {
 			processTemplateID := processInstanceWithTemplateMap[process.ProcessID]
@@ -1366,16 +1373,38 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 			// this process's bounded is still exist, need to check whether this process instance
 			// need to be updated or not.
-			proc, changed := template.ExtractChangeInfo(process, hostMap[serviceInstance2HostMap[serviceInstanceID]])
-			if !changed {
-				continue
-			}
-			if err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, proc); err != nil {
-				blog.Errorf("syncServiceInstanceByTemplate failed, UpdateProcessInstance failed, processID:%d, err: %s, rid:%s", process.ProcessID, err.Error(), rid)
-				return err
-			}
+			pipeline <- true
+			wg.Add(1)
+
+			go func(process *metadata.Process, host map[string]interface{}) {
+				defer func() {
+					wg.Done()
+					<-pipeline
+				}()
+
+				proc, changed := template.ExtractChangeInfo(process, host)
+				if !changed {
+					return
+				}
+
+				err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, proc)
+				if err != nil {
+					blog.ErrorJSON("UpdateProcessInstance failed, processID: %s, process: %s, err: %s, rid: %s", process.ProcessID, proc, err, rid)
+					if firstErr == nil {
+						firstErr = err
+					}
+					return
+				}
+
+			}(process, hostMap[serviceInstance2HostMap[serviceInstanceID]])
 		}
 	}
+
+	wg.Wait()
+	if firstErr != nil {
+		return firstErr
+	}
+
 	// remove processes whose template has been removed
 	if len(removedProcessIDs) != 0 {
 		if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, removedProcessIDs); err != nil {
@@ -1394,6 +1423,8 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 	// step 7:
 	// check if a new process is added to the service template.
 	// if true, then create a new process instance for every service instance with process template's default value.
+	processDatas := make([]map[string]interface{}, 0)
+	procInstRelations := make([]*metadata.ProcessInstanceRelation, 0)
 	for processTemplateID, processTemplate := range processTemplateMap {
 		for svcID, templates := range serviceInstanceWithTemplateMap {
 			if processTemplate.ServiceTemplateID != serviceInstanceTemplateMap[svcID] {
@@ -1406,27 +1437,37 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
 			newProcess := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount, hostMap[serviceInstance2HostMap[svcID]])
-			processData := newProcess.Map()
-			newProcessID, err := ps.Logic.CreateProcessInstance(ctx.Kit, processData)
-			if err != nil {
-				blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstance failed, option: %s, err: %s, rid: %s", processData, err.Error(), rid)
-				return err
-			}
-
-			relation := &metadata.ProcessInstanceRelation{
+			processDatas = append(processDatas, newProcess.Map())
+			procInstRelations = append(procInstRelations, &metadata.ProcessInstanceRelation{
 				BizID:             bizID,
-				ProcessID:         newProcessID,
 				ServiceInstanceID: svcID,
 				ProcessTemplateID: processTemplateID,
 				HostID:            serviceInstance2HostMap[svcID],
-			}
+			})
+		}
+	}
 
-			// create service instance relation, so that the process instance created upper can be related to this service instance.
-			_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relation)
-			if err != nil {
-				blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstanceRelation failed, relation: %s, err: %s, rid: %s", relation, err.Error(), rid)
-				return err
-			}
+	if len(processDatas) > 0 {
+		// create process instances in batch
+		processIDs, err := ps.Logic.CreateProcessInstances(ctx.Kit, processDatas)
+		if err != nil {
+			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstances err: %s, processDatas: %s, rid: %s", err, processDatas, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrSyncServiceInstanceByTemplateFailed)
+		}
+
+		if len(processIDs) != len(procInstRelations) {
+			blog.Error("syncServiceInstanceByTemplate failed, the count of processIDs must be equal with the count of procInstRelations")
+			return nil
+		}
+
+		// create process instance relations in batch
+		for idx, processID := range processIDs {
+			procInstRelations[idx].ProcessID = processID
+		}
+		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelations(ctx.Kit.Ctx, ctx.Kit.Header, procInstRelations)
+		if err != nil {
+			blog.ErrorJSON("syncServiceInstanceByTemplate failed, CreateProcessInstanceRelations err: %s, relations: %s, rid: %s", err, procInstRelations, ctx.Kit.Rid)
+			return err
 		}
 	}
 

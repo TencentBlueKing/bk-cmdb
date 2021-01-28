@@ -254,7 +254,8 @@ type ServiceDifferenceDetails struct {
 }
 
 type SrvInstBriefInfo struct {
-	Name string `field:"name" json:"name" bson:"name"`
+	ID   int64  `field:"id" json:"id"`
+	Name string `field:"name" json:"name"`
 }
 
 type CreateServiceInstanceOption struct {
