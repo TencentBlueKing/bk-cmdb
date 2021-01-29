@@ -384,12 +384,6 @@ type ListProcessInstancesOption struct {
 	ServiceInstanceID int64 `json:"service_instance_id"`
 }
 
-type ListProcessInstancesWithHostOption struct {
-	BizID   int64    `json:"bk_biz_id"`
-	HostIDs []int64  `json:"bk_host_ids"`
-	Page    BasePage `json:"page"`
-}
-
 type ListProcessInstancesNameIDsOption struct {
 	BizID       int64    `json:"bk_biz_id"`
 	ModuleID    int64    `json:"bk_module_id"`
@@ -1773,14 +1767,6 @@ func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 type HostProcessRelation struct {
 	HostID    int64 `json:"bk_host_id" bson:"bk_host_id"`
 	ProcessID int64 `json:"bk_process_id" bson:"bk_process_id"`
-}
-
-type HostProcessInstance struct {
-	HostID    int64        `json:"bk_host_id"`
-	ProcessID int64        `json:"bk_process_id"`
-	BindIP    string       `json:"bind_ip"`
-	Port      string       `json:"port"`
-	Protocol  ProtocolType `json:"protocol"`
 }
 
 type ProcessInstanceNameIDs struct {

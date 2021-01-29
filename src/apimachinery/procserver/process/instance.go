@@ -63,20 +63,6 @@ func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header, data
 	return
 }
 
-func (p *process) ListProcessInstancesWithHost(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/findmany/proc/process_instance/with_host"
-
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (p *process) ListProcessRelatedInfo(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessRelatedInfoOption) (resp *metadata.ListProcessRelatedInfoResponse, err error) {
 	resp = new(metadata.ListProcessRelatedInfoResponse)
 	subPath := "/findmany/proc/process_related_info/biz/%d"
