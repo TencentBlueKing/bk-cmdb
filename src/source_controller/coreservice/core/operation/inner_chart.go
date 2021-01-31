@@ -222,7 +222,10 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 // BizHostCount 统计业务下主机数量
 func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
 	// 查询所有业务信息 （排除归档业务和资源池）
-	cond := mapstr.MapStr{"bk_data_status": M{common.BKDBNE: "disabled"}, common.BKAppIDField: M{common.BKDBNE: 1}}
+	cond := mapstr.MapStr{
+		"bk_data_status":      M{common.BKDBNE: "disabled"},
+		common.BKDefaultField: M{common.BKDBNE: common.DefaultAppFlag},
+	}
 	bizInfos := []map[string]interface{}{}
 	fields := []string{common.BKAppIDField, common.BKAppNameField}
 	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Fields(fields...).All(kit.Ctx, &bizInfos); err != nil {
@@ -231,7 +234,7 @@ func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount
 	}
 
 	// 判断是否存在业务主机
-	condition := mapstr.MapStr{common.BKAppIDField: M{common.BKDBNE: 1}}
+	condition := mapstr.MapStr{}
 	count, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condition).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("BizHostCount count: biz' host count fail, err: %v, rid: %v", err, kit.Rid)
@@ -302,13 +305,6 @@ func (m *operationManager) HostBizChartData(kit *rest.Kit, inputParam metadata.C
 	bizHost, err := m.BizHostCount(kit)
 	if err != nil {
 		blog.Error("search biz's host data fail, err: %v, rid: %v", err, kit.Rid)
-		return nil, err
-	}
-
-	opt := mapstr.MapStr{"bk_data_status": M{common.BKDBNE: "disabled"}, common.BKAppIDField: M{common.BKDBNE: 1}}
-	bizInfo := make([]metadata.BizInst, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(opt).All(kit.Ctx, &bizInfo); err != nil {
-		blog.Errorf("HostBizChartData, get biz info fail, err: %v, rid: %v ", err, kit.Rid)
 		return nil, err
 	}
 

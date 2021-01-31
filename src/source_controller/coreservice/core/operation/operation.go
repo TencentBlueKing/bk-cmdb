@@ -74,13 +74,26 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 	filterCondition := fmt.Sprintf("$%s", inputParam.Field)
 
 	if inputParam.ObjID == common.BKInnerObjIDHost {
-		pipeline := []M{{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
+		pipeline := []M{
+			{common.BKDBMatch: M{common.BKDBAND: []M{
+				{inputParam.Field: M{common.BKDBExists: true}},
+				{inputParam.Field: M{common.BKDBNE: nil}},
+			}}},
+			{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}},
+		}
 		if err := mongodb.Client().Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
 			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, kit.Rid)
 			return nil, err
 		}
 	} else {
-		pipeline := []M{{common.BKDBMatch: M{common.BKObjIDField: inputParam.ObjID}}, {common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
+		pipeline := []M{
+			{common.BKDBMatch: M{common.BKDBAND: []M{
+				{inputParam.Field: M{common.BKDBExists: true}},
+				{inputParam.Field: M{common.BKDBNE: nil}},
+				{common.BKDBMatch: M{common.BKObjIDField: inputParam.ObjID}},
+			}}},
+			{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}},
+		}
 		if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
 			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
 			return nil, err
