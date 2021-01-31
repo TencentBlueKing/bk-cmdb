@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@blueking/paas-login": "0.0.9",
-    "@blueking/user-selector": "^1.0.5-beta.2",
+    "@blueking/user-selector": "^1.0.6",
     "@icon-cool/bk-icon-cmdb": "^0.1.2",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "axios": "0.18.0",
