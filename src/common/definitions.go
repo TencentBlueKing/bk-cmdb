@@ -199,6 +199,12 @@ const (
 
 	// BKDBAll matches arrays that contain all elements specified in the query.
 	BKDBAll = "$all"
+
+	// BKDBProject passes along the documents with the requested fields to the next stage in the pipeline
+	BKDBProject = "$project"
+
+	// BKDBSize counts and returns the total number of items in an array
+	BKDBSize = "$size"
 )
 
 const (
