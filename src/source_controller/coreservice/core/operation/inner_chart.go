@@ -221,9 +221,38 @@ func (m *operationManager) BizHostCountChange(kit *rest.Kit, wg *sync.WaitGroup)
 
 // BizHostCount 统计业务下主机数量
 func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
+	// 获取需要统计的业务ID和业务名对应关系 （排除归档业务和资源池）
+	cond := mapstr.MapStr{
+		"bk_data_status":      M{common.BKDBNE: "disabled"},
+		common.BKDefaultField: M{common.BKDBNE: common.DefaultAppFlag},
+	}
+	bizInfos := []map[string]interface{}{}
+	fields := []string{common.BKAppIDField, common.BKAppNameField}
+	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Fields(fields...).All(kit.Ctx, &bizInfos); err != nil {
+		blog.Errorf("BizHostCount failed, find err: %v, cond:%#v, rid: %v ", err, cond, kit.Rid)
+		return nil, err
+	}
+	if len(bizInfos) == 0 {
+		return []metadata.StringIDCount{}, nil
+	}
+
+	bizIDs := make([]int64, len(bizInfos))
+	bizIDNameMap := make(map[int64]string)
+	for idx, bizInfo := range bizInfos {
+		bizID, err := util.GetInt64ByInterface(bizInfo[common.BKAppIDField])
+		if err != nil {
+			blog.Errorf("BizHostCount failed, GetInt64ByInterface err: %v, bizInfo:%#v, rid: %v ", err, bizInfo, kit.Rid)
+			return nil, err
+		}
+		bizIDs[idx] = bizID
+		bizName := util.GetStrByInterface(bizInfo[common.BKAppNameField])
+		bizIDNameMap[bizID] = bizName
+	}
+
 	// 统计各个业务下的主机数量
 	bizCountArr := make([]metadata.IntIDCount, 0)
 	pipeline := []M{
+		{common.BKDBMatch: M{common.BKAppIDField: M{common.BKDBIN: bizIDs}}},
 		{common.BKDBGroup: M{"_id": "$bk_biz_id", "uniqueHosts": M{common.BKDBAddToSet: "$bk_host_id"}}},
 		{common.BKDBProject: M{
 			"_id":   1,
@@ -243,26 +272,8 @@ func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount
 		bizHostCntMap[bizCount.ID] = bizCount.Count
 	}
 
-	// 获取需要统计的业务ID和业务名对应关系 （排除归档业务和资源池）
-	cond := mapstr.MapStr{
-		"bk_data_status":      M{common.BKDBNE: "disabled"},
-		common.BKDefaultField: M{common.BKDBNE: common.DefaultAppFlag},
-	}
-	bizInfos := []map[string]interface{}{}
-	fields := []string{common.BKAppIDField, common.BKAppNameField}
-	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Fields(fields...).All(kit.Ctx, &bizInfos); err != nil {
-		blog.Errorf("BizHostCount failed, find err: %v, cond:%#v, rid: %v ", err, cond, kit.Rid)
-		return nil, err
-	}
-
 	ret := make([]metadata.StringIDCount, 0)
-	for _, bizInfo := range bizInfos {
-		bizID, err := util.GetInt64ByInterface(bizInfo[common.BKAppIDField])
-		if err != nil {
-			blog.Errorf("BizHostCount failed, GetInt64ByInterface err: %v, bizInfo:%#v, rid: %v ", err, bizInfo, kit.Rid)
-			return nil, err
-		}
-		bizName := util.GetStrByInterface(bizInfo[common.BKAppNameField])
+	for bizID, bizName := range bizIDNameMap {
 		ret = append(ret, metadata.StringIDCount{
 			ID:    bizName,
 			Count: bizHostCntMap[bizID],
@@ -274,7 +285,7 @@ func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount
 
 func (m *operationManager) HostCloudChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	commonCount := make([]metadata.IntIDCount, 0)
-	filterCondition := fmt.Sprintf("$%s", inputParam.Field)
+	groupField := fmt.Sprintf("$%s", inputParam.Field)
 
 	respData := make([]metadata.StringIDCount, 0)
 	opt := mapstr.MapStr{}
@@ -283,7 +294,7 @@ func (m *operationManager) HostCloudChartData(kit *rest.Kit, inputParam metadata
 		blog.Errorf("hostCloudChartData, search cloud mapping fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
-	pipeline := []M{{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
+	pipeline := []M{{common.BKDBGroup: M{"_id": groupField, "count": M{common.BKDBSum: 1}}}}
 	if err := mongodb.Client().Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
 		blog.Errorf("hostCloudChartData, aggregate: model's instance count fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err

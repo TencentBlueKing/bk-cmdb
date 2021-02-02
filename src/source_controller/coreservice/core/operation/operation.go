@@ -89,7 +89,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 	// get model instances' count group by its field
 	// eg: get host count group by bk_os_type
 	groupCountArr := make([]metadata.StringIDCount, 0)
-	filterCondition := fmt.Sprintf("$%s", inputParam.Field)
+	groupField := fmt.Sprintf("$%s", inputParam.Field)
 	instCount := uint64(0)
 	cond := M{}
 	var countErr error
@@ -105,7 +105,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 					{inputParam.Field: M{common.BKDBExists: true}},
 					{inputParam.Field: M{common.BKDBNE: nil}},
 				}}},
-				{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}},
+				{common.BKDBGroup: M{"_id": groupField, "count": M{common.BKDBSum: 1}}},
 			}
 			if err := mongodb.Client().Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &groupCountArr); err != nil {
 				blog.Errorf("model's instance count aggregate failed, chartName: %v, err: %v, rid: %v", inputParam.Name, err, kit.Rid)
@@ -125,7 +125,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 					{inputParam.Field: M{common.BKDBNE: nil}},
 					{common.BKDBMatch: M{common.BKObjIDField: inputParam.ObjID}},
 				}}},
-				{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}},
+				{common.BKDBGroup: M{"_id": groupField, "count": M{common.BKDBSum: 1}}},
 			}
 			if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &groupCountArr); err != nil {
 				blog.Errorf("model's instance count aggregate failed, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)

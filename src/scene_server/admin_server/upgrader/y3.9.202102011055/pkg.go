@@ -29,7 +29,7 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 
 	err = addOsTypeIndex(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202102011055] addCloudIDIndex failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202102011055] addOsTypeIndex failed, error  %s", err.Error())
 		return err
 	}
 
