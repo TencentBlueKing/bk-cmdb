@@ -138,7 +138,8 @@
                 default () {
                     return {}
                 }
-            }
+            },
+            bizId: Number
         },
         data () {
             return {
@@ -213,6 +214,7 @@
                     type: 'create',
                     title: this.$t('添加进程'),
                     hostId: this.id,
+                    bizId: this.bizId,
                     submitHandler: values => {
                         this.processList.push(values)
                     }
@@ -226,10 +228,12 @@
                     serviceTemplateId: this.templates[rowIndex] ? this.templates[rowIndex].service_template_id : 0,
                     processTemplateId: this.templates[rowIndex] ? this.templates[rowIndex].id : 0,
                     hostId: this.id,
+                    bizId: this.bizId,
                     submitHandler: (values, changedValues, raw) => {
                         Object.assign(raw, changedValues)
                     }
                 })
+                this.$emit('edit-process', rowIndex)
             },
             handleDeleteProcess (rowIndex) {
                 this.processList.splice(rowIndex, 1)

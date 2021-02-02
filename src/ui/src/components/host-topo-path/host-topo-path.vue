@@ -17,7 +17,8 @@
                     class="path-count"
                     v-bk-tooltips="{
                         content: $refs.tooltipContent,
-                        interactive: true
+                        interactive: true,
+                        boundary: 'window'
                     }">
                     {{`+${modules.length - 1}`}}
                 </span>
@@ -164,6 +165,10 @@
             border-radius: 8px;
             white-space: nowrap;
             background-color: #dcdee5;
+        }
+        // 初始化时设置为隐藏，避免影响表格行高计算
+        .path-tooltip-content {
+            display: none;
         }
     }
     .path-tooltip-content {

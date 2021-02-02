@@ -508,10 +508,14 @@ type SetHostConfigParams struct {
 }
 
 type CloneHostPropertyParams struct {
-	AppID   int64  `json:"bk_biz_id"`
-	OrgIP   string `json:"bk_org_ip"`
-	DstIP   string `json:"bk_dst_ip"`
-	CloudID int64  `json:"bk_cloud_id"`
+	AppID int64 `json:"bk_biz_id"`
+	// source and destination host inner ip
+	OrgIP string `json:"bk_org_ip"`
+	DstIP string `json:"bk_dst_ip"`
+	// source and destination host id
+	OrgID   int64 `json:"bk_org_id"`
+	DstID   int64 `json:"bk_dst_id"`
+	CloudID int64 `json:"bk_cloud_id"`
 }
 
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter

@@ -248,9 +248,14 @@ type ServiceInstanceDifference struct {
 
 // ServiceDifferenceDetails 服务实例与模板差异信息
 type ServiceDifferenceDetails struct {
-	ServiceInstance   ServiceInstance           `json:"service_instance"`
+	ServiceInstance   SrvInstBriefInfo          `json:"service_instance"`
 	Process           *Process                  `json:"process"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+}
+
+type SrvInstBriefInfo struct {
+	ID   int64  `field:"id" json:"id"`
+	Name string `field:"name" json:"name"`
 }
 
 type CreateServiceInstanceOption struct {
@@ -382,12 +387,6 @@ type ListServiceInstancesWithHostInput struct {
 type ListProcessInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ServiceInstanceID int64 `json:"service_instance_id"`
-}
-
-type ListProcessInstancesWithHostOption struct {
-	BizID   int64    `json:"bk_biz_id"`
-	HostIDs []int64  `json:"bk_host_ids"`
-	Page    BasePage `json:"page"`
 }
 
 type ListProcessInstancesNameIDsOption struct {
@@ -1773,14 +1772,6 @@ func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 type HostProcessRelation struct {
 	HostID    int64 `json:"bk_host_id" bson:"bk_host_id"`
 	ProcessID int64 `json:"bk_process_id" bson:"bk_process_id"`
-}
-
-type HostProcessInstance struct {
-	HostID    int64        `json:"bk_host_id"`
-	ProcessID int64        `json:"bk_process_id"`
-	BindIP    string       `json:"bind_ip"`
-	Port      string       `json:"port"`
-	Protocol  ProtocolType `json:"protocol"`
 }
 
 type ProcessInstanceNameIDs struct {

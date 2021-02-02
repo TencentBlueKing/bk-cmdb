@@ -15,6 +15,11 @@ export function getBindProps (property) {
             options: property.option || []
         }
     }
+    if (type === 'objuser') {
+        return {
+            fastSelect: true
+        }
+    }
     return {}
 }
 

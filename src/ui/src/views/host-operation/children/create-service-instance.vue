@@ -39,6 +39,8 @@
             :source-processes="getSourceProcesses(instance)"
             :class="{ 'is-first': index === 0 }"
             :instance="instance"
+            :biz-id="bizId"
+            @edit-process="handleEditProcess(instance, ...arguments)"
             @edit-name="handleEditName(instance)"
             @confirm-edit-name="handleConfirmEditName(instance, ...arguments)"
             @cancel-edit-name="handleCancelEditName(instance)">
@@ -48,6 +50,7 @@
 
 <script>
     import ServiceInstanceTable from '@/components/service/instance-table'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'create-service-instance',
         components: {
@@ -62,8 +65,12 @@
         data () {
             return {
                 sort: 'module',
-                instances: []
+                instances: [],
+                processChangeState: {}
             }
+        },
+        computed: {
+            ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
             info: {
@@ -119,7 +126,9 @@
                                 Object.keys(info).forEach(infoKey => {
                                     if (infoKey === 'ip') {
                                         infoValue[infoKey] = this.getBindIp(instance, info)
-                                    } else {
+                                    } else if (infoKey === 'row_id') {
+                                        infoValue.template_row_id = info.row_id
+                                    } else if (typeof info[infoKey] === 'object') {
                                         infoValue[infoKey] = info[infoKey].value
                                     }
                                 })
@@ -157,12 +166,41 @@
                         bk_module_id: instance.bk_module_id,
                         bk_host_id: instance.bk_host_id,
                         service_instance_name: instance.name,
-                        processes: component.processList.map((process, listIndex) => ({
-                            process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
-                            process_info: process
-                        }))
+                        processes: this.getChangedProcessList(instance, component)
                     }
                 })
+            },
+            /**
+             * 解决后端性能问题: 用服务模板生成的实例仅传递有被用户主动触发过编辑的进程信息
+             */
+            getChangedProcessList (instance, component) {
+                if (instance.service_template) {
+                    const processes = []
+                    const stateKey = `${instance.bk_module_id}-${instance.bk_host_id}`
+                    const changedState = this.processChangeState[stateKey] || new Set()
+                    component.processList.forEach((process, listIndex) => {
+                        if (!changedState.has(listIndex)) return
+                        processes.push({
+                            process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
+                            process_info: process
+                        })
+                    })
+                    return processes
+                }
+                return component.processList.map((process, listIndex) => ({
+                    process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
+                    process_info: process
+                }))
+            },
+            /**
+             * 解决后端性能问题: 记录用服务模板生成的实例是否触发编辑动作
+             */
+            handleEditProcess (instance, processIndex) {
+                if (!instance.service_template) return
+                const key = `${instance.bk_module_id}-${instance.bk_host_id}`
+                const state = this.processChangeState[key] || new Set()
+                state.add(processIndex)
+                this.processChangeState[key] = state
             },
             handleEditName (instance) {
                 this.instances.forEach(instance => (instance.editing.name = false))

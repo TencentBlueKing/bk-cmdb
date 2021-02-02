@@ -1,27 +1,5 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
-import i18n from '@/i18n'
-
-/**
- * 拍平列表
- * @param {Array} properties - 模型属性
- * @param {Array} list - 模型实例列表
- * @return {Array} 拍平后的模型实例列表
- */
-
-export function getFullName (names) {
-    if (!names) return ''
-    const userList = window.CMDB_USER_LIST || [] // set in setup/preload.js
-    const enNames = String(names).split(',')
-    const fullNames = enNames.map(enName => {
-        const user = userList.find(user => user['english_name'] === enName)
-        if (user) {
-            return `${user['english_name']}(${user['chinese_name']})`
-        }
-        return enName
-    })
-    return fullNames.join(',')
-}
 
 /**
  * 获取实例中某个属性的展示值
@@ -45,13 +23,8 @@ export function getPropertyText (property, item) {
         const options = Array.isArray(property.option) ? property.option : []
         const enumOption = options.find(option => option.id === propertyValue)
         propertyValue = enumOption ? enumOption.name : '--'
-    } else if (['singleasst', 'multiasst'].includes(propertyType)) {
-        const values = Array.isArray(propertyValue) ? propertyValue : []
-        propertyValue = values.map(inst => inst['bk_inst_name']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
         propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-    } else if (propertyType === 'objuser') {
-        propertyValue = getFullName(propertyValue)
     } else if (propertyType === 'foreignkey') {
         if (Array.isArray(propertyValue)) {
             propertyValue = propertyValue.map(inst => inst['bk_inst_name']).join(',')
@@ -111,20 +84,38 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
     return { ...inst, ...values }
 }
 
+export function isEmptyValue (value) {
+    return value === '' || value === null || value === void 0
+}
+
+export function formatValue (value, property) {
+    if (!(isEmptyValue(value) && property)) {
+        return value
+    }
+    const type = property.bk_property_type
+    let formattedValue = value
+    switch (type) {
+        case 'enum':
+        case 'int':
+        case 'float':
+        case 'list':
+            formattedValue = null
+            break
+        case 'bool':
+            formattedValue = false
+            break
+        default:
+            break
+    }
+    return formattedValue
+}
+
 export function formatValues (values, properties) {
     const formatted = { ...values }
-    const defaultValueMap = {
-        enum: null,
-        int: null,
-        float: null,
-        list: null,
-        bool: false
-    }
-    const convertProperties = properties.filter(property => Object.keys(defaultValueMap).includes(property.bk_property_type))
-    convertProperties.forEach(property => {
+    properties.forEach(property => {
         const key = property.bk_property_id
-        if (formatted.hasOwnProperty(key) && ['', undefined, null].includes(formatted[key])) {
-            formatted[key] = defaultValueMap[property.bk_property_type]
+        if (formatted.hasOwnProperty(key)) {
+            formatted[key] = formatValue(formatted[key], property)
         }
     })
     return formatted
@@ -353,27 +344,6 @@ export function sort (data, compareKey) {
     return [...data].sort((A, B) => A[compareKey] - B[compareKey])
 }
 
-export function createTopologyProperty () {
-    return {
-        bk_biz_id: 0,
-        bk_isapi: true,
-        bk_issystem: false,
-        bk_obj_id: 'host',
-        bk_property_group: undefined,
-        bk_property_group_name: undefined,
-        bk_property_id: '__bk_host_topology__',
-        bk_property_index: Infinity,
-        bk_property_name: i18n.t('业务拓扑'),
-        bk_property_type: 'topology',
-        editable: false,
-        id: Date.now(),
-        ispre: true,
-        isonly: true,
-        isreadonly: true,
-        isrequired: true
-    }
-}
-
 export function getPropertyCopyValue (originalValue, propertyType) {
     if (
         originalValue === ''
@@ -418,6 +388,7 @@ export default {
     formatTime,
     clone,
     getInstFormValues,
+    formatValue,
     formatValues,
     getValidateRules,
     getSort,
@@ -427,6 +398,5 @@ export default {
     getPageParams,
     localSort,
     sort,
-    createTopologyProperty,
     getPropertyCopyValue
 }

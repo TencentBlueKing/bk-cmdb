@@ -298,6 +298,9 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 			// save the event token now.
 		}
 
+		// reset retry counter so that the previous retry count will not affect the next event
+		retryObserver.resetRetryCounter()
+
 		last := batchEvents[len(batchEvents)-1]
 		// update the last watched token for resume usage.
 		if err := opts.TokenHandler.SetLastWatchToken(ctxWithCancel, last.Token.Data); err != nil {
@@ -366,6 +369,9 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 				opts.WatchOpt.Collection, one.String(), one.ID())
 			// save the event token now.
 		}
+
+		// reset retry counter so that the previous retry count will not affect the next event
+		retryObserver.resetRetryCounter()
 
 		// update the last watched token for resume usage.
 		if err := opts.TokenHandler.SetLastWatchToken(ctxWithCancel, one.Token.Data); err != nil {
@@ -443,6 +449,10 @@ func (r *retryHandler) canStillRetry() bool {
 	}
 
 	return true
+}
+
+func (r *retryHandler) resetRetryCounter() {
+	r.retryCounter = 0
 }
 
 type observer struct {

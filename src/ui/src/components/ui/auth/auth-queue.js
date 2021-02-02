@@ -54,12 +54,17 @@ function unique (data) {
 
 export const AuthRequestId = Symbol('auth_request_id')
 
+const authEnable = window.Site.authscheme === 'iam'
 let afterVerifyQueue = []
 export function afterVerify (func, once = true) {
-    afterVerifyQueue.push({
-        handler: func,
-        once
-    })
+    if (authEnable) {
+        afterVerifyQueue.push({
+            handler: func,
+            once
+        })
+    } else {
+        func()
+    }
 }
 function execAfterVerify (authData) {
     afterVerifyQueue.forEach(({ handler }) => handler(authData))

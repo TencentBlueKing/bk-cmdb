@@ -1422,5 +1422,9 @@
     "移除所有进程监听信息": "Remove all process monitoring information",
     "IP重复": "IP duplicate",
     "申请业务访问权限": "Apply for business access",
-    "创建业务": "Create a business"
+    "创建业务": "Create a business",
+    "新增主机到模块": "Add host to module",
+    "跳转失败，服务模板已经被删除": "Failed to route service template, template was deleted",
+    "跳转失败，集群模板已经被删除": "Failed to route set template, template was deleted",
+    "进程模板锁定提示语": "Click to lock, after locking, cannot be modified in service instance"
 }

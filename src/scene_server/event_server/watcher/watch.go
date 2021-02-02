@@ -17,8 +17,10 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/cacheservice"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/storage/dal/redis"
 )
@@ -92,4 +94,14 @@ func (w *Watcher) GetHitNodeWithEventType(nodes []*watch.ChainNode, typs []watch
 		}
 	}
 	return hitNodes
+}
+
+// ResetRequestID reset a new request id for watcher's header
+func (w *Watcher) ResetRequestID() {
+	w.header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
+}
+
+// GetRid get request id from watcher's header
+func (w *Watcher) GetRid() string {
+	return w.header.Get(common.BKHTTPCCRequestID)
 }

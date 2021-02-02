@@ -319,7 +319,8 @@
             },
             openResourceConfirm () {
                 this.dialog.props = {
-                    count: this.table.selection.length
+                    count: this.table.selection.length,
+                    bizId: this.bizId
                 }
                 this.dialog.width = 400
                 this.dialog.height = 250

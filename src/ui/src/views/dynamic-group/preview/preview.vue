@@ -20,7 +20,7 @@
                 show-overflow-tooltip
                 sortable="custom"
                 :key="property.bk_property_id"
-                :label="$tools.getHeaderPropertyName(property)"
+                :render-header="h => renderHeader(h, property)"
                 :prop="property.bk_property_id">
                 <template slot-scope="{ row }">
                     <cmdb-property-value
@@ -147,6 +147,31 @@
                 this.table.sort = this.$tools.getSort(sort, '-create_time')
                 this.preview()
             },
+            renderHeader (h, property) {
+                if (!this.table.pagination.count || property.bk_property_id !== 'bk_host_innerip') {
+                    return this.$tools.getHeaderPropertyName(property)
+                }
+                const attrs = {
+                    [this.$options._scopeId]: true
+                }
+                return (
+                    <span class="custom-header" {...{ attrs }}>
+                        <span>{ this.$tools.getHeaderPropertyName(property) }</span>
+                        <i class="icon-cc-copy" v-bk-tooltips="复制IP" {...{ attrs }} on-click={ this.handleCopyIP }></i>
+                    </span>
+                )
+            },
+            async handleCopyIP (event) {
+                event.stopPropagation()
+                const IP = this.table.list.map(item => item.bk_host_innerip)
+                try {
+                    await this.$copyText(IP.join('\n'))
+                    this.$success(this.$t('复制成功'))
+                } catch (error) {
+                    console.error(error)
+                    this.$error(this.$t('复制失败'))
+                }
+            },
             show () {
                 this.isShow = true
                 setTimeout(this.$refs.table.doLayout, 50)
@@ -161,5 +186,17 @@
 <style lang="scss" scoped>
     .preview-table {
         margin-top: -20px;
+    }
+    .custom-header {
+        display: inline-flex;
+        align-items: center;
+        .icon-cc-copy {
+            cursor: pointer;
+            margin: 1px 0 0 4px;
+            color: #c0c4cc;
+            &:hover {
+                color: #63656e;
+            }
+        }
     }
 </style>
