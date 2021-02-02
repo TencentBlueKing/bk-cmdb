@@ -89,6 +89,7 @@
                                         :auth="{ type: $OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] }">
                                     </cmdb-auth-option>
                                 </bk-select>
+                                <p class="form-item-tips" v-show="importInst.showTips && !importInst.directory">{{$t('请先选择主机池目录')}}</p>
                             </bk-form-item>
                         </bk-form>
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
@@ -174,7 +175,7 @@
                             :id="option.id"
                             :name="option.name"
                             :disabled="option.disabled">
-                            <cmdb-auth style="display: block;" ignore :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
+                            <cmdb-auth style="display: block;" :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
                         </bk-option>
                     </bk-select>
                 </div>
@@ -227,7 +228,8 @@
                     templdateAvailable: true,
                     directory: '',
                     payload: {},
-                    error: null
+                    error: null,
+                    showTips: false
                 },
                 businessList: [],
                 objectUnique: [],
@@ -358,6 +360,7 @@
                     this.importInst.type = 'new'
                     this.importInst.active = 'import'
                     this.importInst.error = null
+                    this.importInst.showTips = false
                 } else {
                     this.importInst.directory = this.directoryId
                 }
@@ -371,6 +374,7 @@
             },
             'importInst.active' () {
                 this.importInst.error = null
+                this.importInst.showTips = false
             }
         },
         async created () {
@@ -416,6 +420,21 @@
                 }
             },
             handleAssignHosts (id) {
+                let directoryId = this.directoryId
+                if (!directoryId) {
+                    const hosts = HostStore.getSelected()
+                    directoryId = hosts[0].module[0].bk_module_id
+                    const isSameModule = hosts.every(host => {
+                        const [module] = host.module
+                        return module.bk_module_id === directoryId
+                    })
+                    if (!isSameModule) {
+                        this.$error(this.$t('仅支持对相同目录下的主机进行操作'))
+                        this.closeAssignDialog()
+                        return false
+                    }
+                }
+
                 if (id === 'toBusiness') {
                     this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
                     this.assign.label = this.$t('业务列表')
@@ -425,10 +444,11 @@
                     this.assign.label = this.$t('目录列表')
                     this.assign.title = this.$t('分配到主机池其他目录')
                 }
-                this.setAssignOptions()
+
+                this.setAssignOptions(directoryId)
                 this.assign.show = true
             },
-            setAssignOptions () {
+            setAssignOptions (directoryId) {
                 if (this.assign.curSelected === 'toBusiness') {
                     this.assignOptions = this.businessList.map(item => ({
                         id: item.bk_biz_id,
@@ -436,17 +456,17 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
-                            relation: [[[this.directoryId || '*'], [item.bk_biz_id]]]
+                            relation: [[[directoryId], [item.bk_biz_id]]]
                         }
                     }))
                 } else {
-                    this.assignOptions = this.directoryList.filter(item => item.bk_module_id !== (this.activeDirectory || {}).bk_module_id).map(item => ({
+                    this.assignOptions = this.directoryList.filter(item => item.bk_module_id !== directoryId).map(item => ({
                         id: item.bk_module_id,
                         name: item.bk_module_name,
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
-                            relation: [[[this.directoryId || '*'], [item.bk_module_id]]]
+                            relation: [[[directoryId], [item.bk_module_id]]]
                         }
                     }))
                 }
@@ -690,8 +710,9 @@
                 this.importInst.error = error
             },
             handleBeforeUpload () {
+                this.importInst.showTips = false
                 if (!this.importInst.directory) {
-                    this.$error(this.$t('请先选择主机池目录'))
+                    this.importInst.showTips = true
                     return false
                 }
             }
@@ -724,6 +745,7 @@
         /deep/ {
             .bk-form-item {
                 display: flex;
+                margin-bottom: 8px;
             }
             .bk-label {
                 width: auto !important;
@@ -732,6 +754,11 @@
                 flex: 1;
                 margin-left: auto !important;
             }
+        }
+        .form-item-tips {
+            position: absolute;
+            color: #EA3636;
+            font-size: 12px;
         }
     }
     .automatic-import{

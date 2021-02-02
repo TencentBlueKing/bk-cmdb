@@ -3,7 +3,7 @@
         <cmdb-tips
             class="mb10"
             tips-key="eventPushTips"
-            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'">
+            more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/EventPush.md">
             {{$t('事件推送顶部提示')}}
         </cmdb-tips>
         <div class="btn-wrapper clearfix">

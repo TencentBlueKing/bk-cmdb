@@ -1,6 +1,6 @@
 <template>
     <div class="audit-layout">
-        <bk-tab
+        <bk-tab v-show="!$loading(request.list)"
             class="audit-tab"
             type="unborder-card"
             :active.sync="active">
@@ -10,10 +10,11 @@
                 :key="panel.id">
             </bk-tab-panel>
         </bk-tab>
-        <div class="audit-options">
+        <div class="audit-options" v-show="!$loading(request.list)">
             <component :is="optionsComponent" @condition-change="handleConditionChange"></component>
         </div>
         <bk-table
+            v-show="!$loading(request.list)"
             v-bkloading="{ isLoading: $loading(request.list) }"
             :data="table.list"
             :pagination="table.pagination"
@@ -144,13 +145,14 @@
                     page,
                     limit,
                     sort,
-                    tab
+                    tab,
+                    _e: isEvent
                 }) => {
                     this.active = tab || 'host'
                     this.table.pagination.current = parseInt(page || this.table.pagination.current, 10)
                     this.table.pagination.limit = parseInt(limit || this.table.pagination.limit, 10)
                     this.table.sort = sort || this.table.sort
-                    this.$nextTick(this.getAuditList)
+                    this.$nextTick(() => this.getAuditList(isEvent))
                 })
             },
             teardownQueryWatcher () {
@@ -159,7 +161,8 @@
             async getAuditDictionary () {
                 try {
                     this.dictionary = await this.$store.dispatch('audit/getDictionary', {
-                        fromCache: true
+                        fromCache: true,
+                        globalPermission: false
                     })
                 } catch (error) {
                     this.dictionary = []
@@ -189,7 +192,7 @@
                 }
                 this.condition = usefulCondition
             },
-            async getAuditList (params) {
+            async getAuditList (eventTrigger) {
                 try {
                     const params = {
                         condition: this.condition,
@@ -198,11 +201,19 @@
                             sort: this.table.sort
                         }
                     }
-                    const { info, count } = await this.$store.dispatch('audit/getList', { params, config: { requestId: this.request.list } })
+                    const { info, count } = await this.$store.dispatch('audit/getList', {
+                        params,
+                        config: {
+                            requestId: this.request.list,
+                            globalPermission: false
+                        }
+                    })
+
+                    this.table.stuff.type = eventTrigger ? 'search' : 'default'
                     this.table.pagination.count = count
                     this.table.list = info
-                } catch (error) {
-                    console.error(error)
+                } catch ({ permission }) {
+                    this.$route.meta.view = 'permission'
                 }
             },
             handlePageChange (current) {

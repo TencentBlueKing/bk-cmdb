@@ -63,7 +63,7 @@
             <td></td>
             <td>
                 <div class="options-button">
-                    <bk-button class="mr10" theme="primary" @click="handleSearch">{{$t('查询')}}</bk-button>
+                    <bk-button class="mr10" theme="primary" @click="handleSearch(1)">{{$t('查询')}}</bk-button>
                     <bk-button theme="default" @click="handleReset">{{$t('清空')}}</bk-button>
                 </div>
             </td>
@@ -121,12 +121,13 @@
             this.handleSearch()
         },
         methods: {
-            handleSearch () {
+            handleSearch (isEvent) {
                 this.$emit('condition-change', this.condition)
                 RouterQuery.set({
                     tab: 'other',
                     page: 1,
-                    _t: Date.now()
+                    _t: Date.now(),
+                    _e: isEvent
                 })
             },
             handleReset () {

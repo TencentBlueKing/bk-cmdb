@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getCountedCharts ({ commit, state, dispatch }, { params, config }) {
-        return $http.get(`findmany/operation/chart`, params, config)
+        return $http.get(`findmany/operation/chart`, config)
     },
 
     /**

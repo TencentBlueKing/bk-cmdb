@@ -35,6 +35,7 @@
                     <cmdb-form-objuser :value="row.user" type="info"></cmdb-form-objuser>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
     </div>
 </template>
@@ -52,6 +53,12 @@
                     operation_time: [today, today],
                     resource_name: '',
                     action: ['delete']
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 requestId: Symbol('getHistory')
             }
@@ -84,7 +91,8 @@
             async getAuditDictionary () {
                 try {
                     this.dictionary = await this.$store.dispatch('audit/getDictionary', {
-                        fromCache: true
+                        fromCache: true,
+                        globalPermission: false
                     })
                 } catch (error) {
                     this.dictionary = []
@@ -101,13 +109,19 @@
                             }
                         },
                         config: {
-                            requestId: this.requestId
+                            requestId: this.requestId,
+                            globalPermission: false
                         }
                     })
                     this.pagination.count = count
                     this.history = info
-                } catch (error) {
-                    console.error(error)
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                     this.history = []
                 }
             },

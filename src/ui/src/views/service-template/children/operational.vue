@@ -34,7 +34,14 @@
                             </template>
                             <template v-else-if="!isCreateMode">
                                 <span class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
-                                <i class="icon-cc-edit" v-if="!isCreateMode" @click="handleEditName"></i>
+                                <cmdb-auth :auth="auth">
+                                    <bk-button slot-scope="{ disabled }" text
+                                        theme="primary"
+                                        :disabled="disabled"
+                                        @click="handleEditName">
+                                        <i class="icon-cc-edit"></i>
+                                    </bk-button>
+                                </cmdb-auth>
                             </template>
                         </div>
                     </template>
@@ -105,7 +112,14 @@
                         <span class="info-content" :title="getServiceCategory()">
                             {{getServiceCategory()}}
                         </span>
-                        <i class="icon-cc-edit" @click="handleEditCategory"></i>
+                        <cmdb-auth :auth="auth">
+                            <bk-button slot-scope="{ disabled }" text
+                                theme="primary"
+                                :disabled="disabled"
+                                @click="handleEditCategory">
+                                <i class="icon-cc-edit" @click="handleEditCategory"></i>
+                            </bk-button>
+                        </cmdb-auth>
                     </template>
                 </div>
             </div>
@@ -849,7 +863,6 @@
                         display: inline-block;
                         vertical-align: middle;
                         margin-left: 5px;
-                        color: $primaryColor;
                         cursor: pointer;
                         &:hover {
                             color: #1964e1;

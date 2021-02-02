@@ -8,7 +8,7 @@
             <cmdb-tips
                 class="mb10"
                 tips-key="modelTips"
-                :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'">
+                more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/Model.md">
                 {{$t('模型顶部提示')}}
             </cmdb-tips>
             <div class="fl">
