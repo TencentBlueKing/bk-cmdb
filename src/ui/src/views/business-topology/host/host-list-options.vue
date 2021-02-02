@@ -241,6 +241,7 @@
                 this.$refs.editMultipleHost.handleMultipleEdit()
             },
             handleAddHost () {
+                this.dialog.componentProps.title = this.$t('新增主机到模块')
                 this.dialog.component = HostSelector.name
                 this.dialog.show = true
             },

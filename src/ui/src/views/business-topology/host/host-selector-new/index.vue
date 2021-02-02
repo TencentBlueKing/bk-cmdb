@@ -1,7 +1,7 @@
 <template>
     <div class="host-selector-layout">
         <div class="layout-header">
-            <h2 class="title">{{$t('选择主机')}}</h2>
+            <h2 class="title">{{title || $t('选择主机')}}</h2>
         </div>
         <div class="layout-content">
             <div class="topo-table">
@@ -85,7 +85,8 @@
             confirmText: {
                 type: String,
                 default: ''
-            }
+            },
+            title: String
         },
         data () {
             return {
