@@ -994,7 +994,13 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 				continue
 			}
 
-			changedAttributes := ps.Logic.DiffWithProcessTemplate(property.Property, process, hostMap[serviceInstance.HostID], attributeMap)
+			changedAttributes, diffErr := ps.Logic.DiffWithProcessTemplate(property.Property, process, hostMap[serviceInstance.HostID], attributeMap)
+			if diffErr != nil {
+				blog.Errorf("diff with process template failed, process ID: %d  err: %v, rid: %s",
+					relation.ProcessID, err, rid)
+				return nil, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
+			}
+
 			if len(changedAttributes) == 0 {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
@@ -1370,9 +1376,6 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 				removedProcessIDs = append(removedProcessIDs, process.ProcessID)
 				continue
 			}
-
-			// this process's bounded is still exist, need to check whether this process instance
-			// need to be updated or not.
 			pipeline <- true
 			wg.Add(1)
 
@@ -1382,14 +1385,25 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 					<-pipeline
 				}()
 
-				proc, changed := template.ExtractChangeInfo(process, host)
+				// this process's bounded is still exist, need to check whether this process instance
+				// need to be updated or not.
+				proc, changed, err := template.ExtractChangeInfo(process, host)
+				if err != nil {
+					blog.ErrorJSON("sync service instance, but extract process change info failed, err: %s, "+
+						"process: %s, rid: %s", err, process, rid)
+					if firstErr == nil {
+						firstErr = errors.New(common.CCErrCommParamsInvalid, err.Error())
+					}
+					return
+				}
+
 				if !changed {
 					return
 				}
 
-				err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, proc)
-				if err != nil {
-					blog.ErrorJSON("UpdateProcessInstance failed, processID: %s, process: %s, err: %s, rid: %s", process.ProcessID, proc, err, rid)
+				if err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, proc); err != nil {
+					blog.ErrorJSON("UpdateProcessInstance failed, processID: %s, process: %s, err: %s, rid: %s",
+						process.ProcessID, proc, err, rid)
 					if firstErr == nil {
 						firstErr = err
 					}
@@ -1436,7 +1450,13 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 
 			// we can not find this process template in all this service instance,
 			// which means that a new process template need to be added to this service instance
-			newProcess := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount, hostMap[serviceInstance2HostMap[svcID]])
+			newProcess, generateErr := processTemplate.NewProcess(bizID, ctx.Kit.SupplierAccount,
+				hostMap[serviceInstance2HostMap[svcID]])
+			if generateErr != nil {
+				blog.ErrorJSON("sync service instance by template, but generate process instance by template "+
+					"%s failed, err: %s, rid: %s", processTemplate, generateErr, rid)
+				return errors.New(common.CCErrCommParamsInvalid, generateErr.Error())
+			}
 			processDatas = append(processDatas, newProcess.Map())
 			procInstRelations = append(procInstRelations, &metadata.ProcessInstanceRelation{
 				BizID:             bizID,

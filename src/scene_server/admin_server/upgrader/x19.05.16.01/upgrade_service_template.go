@@ -353,7 +353,10 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 								}
 							}
 
-							bindIP := tplBindIP.IP(hostMap[moduleHost.HostID])
+							bindIP, err := tplBindIP.IP(hostMap[moduleHost.HostID])
+							if err != nil {
+								return err
+							}
 
 							*inst.BindIP = bindIP
 						} else {

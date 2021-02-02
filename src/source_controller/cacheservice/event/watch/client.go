@@ -98,7 +98,8 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 	node := new(watch.ChainNode)
 	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).One(kit.Ctx, node)
 	if err != nil {
-		blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
+		blog.ErrorJSON("get chain node from mongo failed, err: %s, collection: %s, filter: %s, rid: %s", err,
+			key.ChainCollection(), filter, kit.Rid)
 		if !c.watchDB.IsNotFoundError(err) {
 			return nil, false, fmt.Errorf("get first chain node from mongo failed, err: %v", err)
 		}

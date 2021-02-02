@@ -14,6 +14,7 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -316,7 +317,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			}
 
 			serviceInstance, ccErr := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
-			if err != nil {
+			if ccErr != nil {
 				blog.Errorf("UpdateProcessInstances failed, get service instance failed, serviceInstanceID: %d, err: %v, rid: %s", serviceInstanceID, err, rid)
 				return nil, ccErr
 			}
@@ -335,7 +336,12 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 				blog.Errorf("update process instance failed, process related template not found, relation: %+v, err: %v, rid: %s", relation, err, rid)
 				return nil, err
 			}
-			processData = processTemplate.ExtractInstanceUpdateData(&process, hostMap[relation.HostID])
+			var compareErr error
+			processData, compareErr = processTemplate.ExtractInstanceUpdateData(&process, hostMap[relation.HostID])
+			if compareErr != nil {
+				blog.ErrorJSON("extract process(%s) update data failed, err: %s, rid: %s", process, err, rid)
+				return nil, errors.New(common.CCErrCommParamsInvalid, compareErr.Error())
+			}
 			clearFields = processTemplate.GetEditableFields(clearFields)
 		}
 		// set field value as nil
@@ -343,6 +349,16 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			processData[field] = nil
 		}
 
+		processInfo := new(metadata.Process)
+		if err := mapstr.DecodeFromMapStr(&processInfo, processData); err != nil {
+			blog.ErrorJSON("parse update process data failed, data: %s, err: %v, rid: %s", processData, err, rid)
+			return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		if err := ps.validateProcessInstance(ctx.Kit, processInfo); err != nil {
+			blog.ErrorJSON("validate update process failed, err: %s, data: %s, rid: %s", err, processInfo, rid)
+			return nil, err
+		}
 		processDataMap[process.ProcessID] = processData
 	}
 
@@ -482,7 +498,50 @@ func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*meta
 	return moduleInsts, nil
 }
 
-func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstance *metadata.ServiceInstance, processData map[string]interface{}) errors.CCErrorCoder {
+var (
+	ipRegex   = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
+	portRegex = `^([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$`
+)
+
+func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.Process) errors.CCErrorCoder {
+	if process.ProcessName != nil && (len(*process.ProcessName) == 0 || len(*process.ProcessName) > common.NameFieldMaxLength) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
+	}
+	if process.FuncName != nil && (len(*process.FuncName) == 0 || len(*process.ProcessName) > common.NameFieldMaxLength) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
+	}
+
+	// validate that process bind info must have ip and port and protocol
+	for _, bindInfo := range process.BindInfo {
+		if bindInfo.Std.IP == nil || len(*bindInfo.Std.IP) == 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
+		}
+		matched, err := regexp.MatchString(ipRegex, *bindInfo.Std.IP)
+		if err != nil || !matched {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKIP)
+		}
+
+		if bindInfo.Std.Port == nil || len(*bindInfo.Std.Port) == 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
+		}
+		if matched, err := regexp.MatchString(portRegex, *bindInfo.Std.Port); err != nil || !matched {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKPort)
+		}
+
+		if bindInfo.Std.Protocol == nil || len(*bindInfo.Std.Protocol) == 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
+		}
+		if *bindInfo.Std.Protocol != string(metadata.ProtocolTypeTCP) && *bindInfo.Std.Protocol != string(metadata.ProtocolTypeUDP) {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKProtocol)
+		}
+	}
+
+	return nil
+}
+
+func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstance *metadata.ServiceInstance,
+	processData map[string]interface{}) errors.CCErrorCoder {
+
 	rid := ctx.Kit.Rid
 
 	process := metadata.Process{}
@@ -491,14 +550,9 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	if process.ProcessName == nil && process.FuncName == nil {
-		return nil
-	}
-	if process.ProcessName != nil && (len(*process.ProcessName) == 0 || len(*process.ProcessName) > common.NameFieldMaxLength) {
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
-	}
-	if process.FuncName != nil && (len(*process.FuncName) == 0 || len(*process.FuncName) > common.NameFieldMaxLength) {
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
+	if err := ps.validateProcessInstance(ctx.Kit, &process); err != nil {
+		blog.ErrorJSON("validate process instance failed, err: %s, process: %s, rid: %s", err, process, rid)
+		return err
 	}
 
 	// find process under service instance
@@ -566,13 +620,14 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 				return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startParamRegex)
 			}
 		}
-
 	}
 
 	return nil
 }
 
-func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceInstance *metadata.ServiceInstance, processDatas []map[string]interface{}) errors.CCErrorCoder {
+func (ps *ProcServer) validateManyRawInstanceUnique(ctx *rest.Contexts, serviceInstance *metadata.ServiceInstance,
+	processDatas []map[string]interface{}) errors.CCErrorCoder {
+
 	rid := ctx.Kit.Rid
 
 	processNamesMap := make(map[string]bool)
@@ -1113,7 +1168,8 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 }
 
 // listProcessRelatedInfo list process related info according to process info
-func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, processIDs []int64, processDetailMap map[int64]interface{}, totalCnt int64) {
+func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, processIDs []int64,
+	processDetailMap map[int64]interface{}, totalCnt int64) {
 
 	// objID array
 	srvinstArr := make([]int64, 0)

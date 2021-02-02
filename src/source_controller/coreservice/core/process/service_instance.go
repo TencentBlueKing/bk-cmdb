@@ -138,12 +138,45 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 			return nil, ccErr
 		}
 
+		// get host data for bind IP if needed
+		host := metadata.HostMapStr{}
+		filter := map[string]interface{}{common.BKHostIDField: instance.HostID}
+
+		for _, processTemplate := range listProcTplResult.Info {
+			if len(processTemplate.Property.BindInfo.Value) == 0 {
+				continue
+			}
+
+			needIP := false
+			for _, value := range processTemplate.Property.BindInfo.Value {
+				if value.Std.IP.Value.NeedIPFromHost() {
+					needIP = true
+					break
+				}
+			}
+
+			if !needIP {
+				continue
+			}
+
+			if err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
+				common.BKHostOuterIPField).One(kit.Ctx, &host); err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			break
+		}
+
 		if len(listProcTplResult.Info) > 0 {
 			processes := make([]*metadata.Process, len(listProcTplResult.Info))
 			relations := make([]*metadata.ProcessInstanceRelation, len(listProcTplResult.Info))
 			templateIDs := make([]int64, len(listProcTplResult.Info))
 			for idx, processTemplate := range listProcTplResult.Info {
-				processData := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+				if err != nil {
+					blog.ErrorJSON("create service instance, but generate process instance by template "+
+						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
+					return nil, errors.New(common.CCErrCommParamsInvalid, err.Error())
+				}
 				processes[idx] = processData
 				templateIDs[idx] = processTemplate.ID
 			}
@@ -811,7 +844,12 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 				relations := make([]*metadata.ProcessInstanceRelation, len(processTemplates))
 				templateIDs := make([]int64, len(processTemplates))
 				for idx, processTemplate := range processTemplates {
-					processData := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+					processData, err := processTemplate.NewProcess(module.BizID, kit.SupplierAccount, host)
+					if err != nil {
+						blog.ErrorJSON("create service instance, but generate process instance by template "+
+							"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
+						return errors.New(common.CCErrCommParamsInvalid, err.Error())
+					}
 					processes[idx] = processData
 					templateIDs[idx] = processTemplate.ID
 				}
@@ -842,7 +880,13 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			}
 
 			for index, processTemplate := range processTemplates {
-				processData := processTemplate.NewProcess(processTemplate.BizID, kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(processTemplate.BizID, kit.SupplierAccount, host)
+				if err != nil {
+					blog.ErrorJSON("create service instance, but generate process instance by template "+
+						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
+					return errors.New(common.CCErrCommParamsInvalid, err.Error())
+				}
+
 				process, ccErr := p.dependence.CreateProcessInstance(kit, processData)
 				if ccErr != nil {
 					blog.Errorf("CreateServiceInstance failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, kit.Rid)

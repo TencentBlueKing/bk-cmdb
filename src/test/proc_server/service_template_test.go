@@ -626,7 +626,7 @@ var _ = Describe("service template test", func() {
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
-			Expect(data[0].Property["bk_start_param_regex"]).Should(BeNil())
+			Expect(data[0].Property["bk_start_param_regex"]).To(Equal("123"))
 			Expect(data[0].Relation.HostID).To(Equal(hostId2))
 			processId, err = commonutil.GetInt64ByInterface(data[0].Property["bk_process_id"])
 			Expect(err).NotTo(HaveOccurred())
