@@ -165,6 +165,7 @@
                 this.reset()
 
                 if (this.beforeUpload && this.beforeUpload() === false) {
+                    this.$refs.fileInput.value = ''
                     return
                 }
 

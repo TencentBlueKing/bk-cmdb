@@ -89,6 +89,7 @@
                                         :auth="{ type: $OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] }">
                                     </cmdb-auth-option>
                                 </bk-select>
+                                <p class="form-item-tips" v-show="importInst.showTips && !importInst.directory">{{$t('请先选择主机池目录')}}</p>
                             </bk-form-item>
                         </bk-form>
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
@@ -227,7 +228,8 @@
                     templdateAvailable: true,
                     directory: '',
                     payload: {},
-                    error: null
+                    error: null,
+                    showTips: false
                 },
                 businessList: [],
                 objectUnique: [],
@@ -358,6 +360,7 @@
                     this.importInst.type = 'new'
                     this.importInst.active = 'import'
                     this.importInst.error = null
+                    this.importInst.showTips = false
                 } else {
                     this.importInst.directory = this.directoryId
                 }
@@ -371,6 +374,7 @@
             },
             'importInst.active' () {
                 this.importInst.error = null
+                this.importInst.showTips = false
             }
         },
         async created () {
@@ -706,8 +710,9 @@
                 this.importInst.error = error
             },
             handleBeforeUpload () {
+                this.importInst.showTips = false
                 if (!this.importInst.directory) {
-                    this.$error(this.$t('请先选择主机池目录'))
+                    this.importInst.showTips = true
                     return false
                 }
             }
@@ -740,6 +745,7 @@
         /deep/ {
             .bk-form-item {
                 display: flex;
+                margin-bottom: 8px;
             }
             .bk-label {
                 width: auto !important;
@@ -748,6 +754,11 @@
                 flex: 1;
                 margin-left: auto !important;
             }
+        }
+        .form-item-tips {
+            position: absolute;
+            color: #EA3636;
+            font-size: 12px;
         }
     }
     .automatic-import{
