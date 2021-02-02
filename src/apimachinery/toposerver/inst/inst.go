@@ -159,3 +159,17 @@ func (t *instanceClient) SelectAssociationTopo(ctx context.Context, ownerID stri
 		Into(resp)
 	return
 }
+
+func (t *instanceClient) SearchInstsNames(ctx context.Context, h http.Header, s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error) {
+	resp = new(metadata.ArrayResponse)
+	subPath := "/findmany/object/instances/names"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

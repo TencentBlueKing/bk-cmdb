@@ -634,6 +634,59 @@ func (s *Service) SearchInstByInstID(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchInstsNames search instances names
+// 只供前端使用，用于在业务的查询主机高级筛选页面根据集群名或者模块名模糊匹配获取相应的实例列表
+func (s *Service) SearchInstsNames(ctx *rest.Contexts) {
+	defErr := ctx.Kit.CCError
+	option := &metadata.SearchInstsNamesOption{}
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.ErrorJSON("SearchInstsNames failed, Validate err: %s, option: %s, rid:%s", rawErr.ToCCError(defErr), option, ctx.Kit.Rid)
+		ctx.RespAutoError(rawErr.ToCCError(defErr))
+		return
+	}
+
+	filter := map[string]interface{}{
+		common.BKAppIDField: option.BizID,
+	}
+
+	switch option.ObjID {
+	case common.BKInnerObjIDSet:
+		filter[common.BKSetNameField] = map[string]interface{}{
+			common.BKDBLIKE: paraparse.SpecialCharChange(option.Name),
+			"$options":      "i",
+		}
+	case common.BKInnerObjIDModule:
+		filter[common.BKModuleNameField] = map[string]interface{}{
+			common.BKDBLIKE: paraparse.SpecialCharChange(option.Name),
+			"$options":      "i",
+		}
+	default:
+		blog.Errorf("SearchInstsNames failed, unsupported obj: %s, rid: %s", option.ObjID, ctx.Kit.Rid)
+		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, "bk_obj_id"))
+		return
+	}
+
+	distinctOpt := &metadata.DistinctFieldOption{
+		TableName: common.GetInstTableName(option.ObjID),
+		Field:     metadata.GetInstNameFieldName(option.ObjID),
+		Filter:    filter,
+	}
+	names, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, distinctOpt)
+	if err != nil {
+		blog.ErrorJSON("GetDistinctField failed, err: %s, distinctOpt: %s, rid: %s", err, distinctOpt, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(names)
+}
+
 // SearchInstChildTopo search the child inst topo for a inst
 func (s *Service) SearchInstChildTopo(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
