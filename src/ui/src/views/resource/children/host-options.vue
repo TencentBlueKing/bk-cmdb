@@ -174,7 +174,7 @@
                             :id="option.id"
                             :name="option.name"
                             :disabled="option.disabled">
-                            <cmdb-auth style="display: block;" ignore :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
+                            <cmdb-auth style="display: block;" :auth="option.auth" @update-auth="handleUpdateAssignAuth(option, ...arguments)">{{option.name}}</cmdb-auth>
                         </bk-option>
                     </bk-select>
                 </div>
@@ -416,6 +416,21 @@
                 }
             },
             handleAssignHosts (id) {
+                let directoryId = this.directoryId
+                if (!directoryId) {
+                    const hosts = HostStore.getSelected()
+                    directoryId = hosts[0].module[0].bk_module_id
+                    const isSameModule = hosts.every(host => {
+                        const [module] = host.module
+                        return module.bk_module_id === directoryId
+                    })
+                    if (!isSameModule) {
+                        this.$error(this.$t('仅支持对相同目录下的主机进行操作'))
+                        this.closeAssignDialog()
+                        return false
+                    }
+                }
+
                 if (id === 'toBusiness') {
                     this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
                     this.assign.label = this.$t('业务列表')
@@ -425,10 +440,11 @@
                     this.assign.label = this.$t('目录列表')
                     this.assign.title = this.$t('分配到主机池其他目录')
                 }
-                this.setAssignOptions()
+
+                this.setAssignOptions(directoryId)
                 this.assign.show = true
             },
-            setAssignOptions () {
+            setAssignOptions (directoryId) {
                 if (this.assign.curSelected === 'toBusiness') {
                     this.assignOptions = this.businessList.map(item => ({
                         id: item.bk_biz_id,
@@ -436,17 +452,17 @@
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
-                            relation: [[[this.directoryId || '*'], [item.bk_biz_id]]]
+                            relation: [[[directoryId], [item.bk_biz_id]]]
                         }
                     }))
                 } else {
-                    this.assignOptions = this.directoryList.filter(item => item.bk_module_id !== (this.activeDirectory || {}).bk_module_id).map(item => ({
+                    this.assignOptions = this.directoryList.filter(item => item.bk_module_id !== directoryId).map(item => ({
                         id: item.bk_module_id,
                         name: item.bk_module_name,
                         disabled: true,
                         auth: {
                             type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
-                            relation: [[[this.directoryId || '*'], [item.bk_module_id]]]
+                            relation: [[[directoryId], [item.bk_module_id]]]
                         }
                     }))
                 }

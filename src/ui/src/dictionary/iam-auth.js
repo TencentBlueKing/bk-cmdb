@@ -522,26 +522,26 @@ export const IAM_ACTIONS = {
         name: ['主机池主机分配到业务', 'Transfer Resource Pool Host To Business'],
         cmdb_action: 'hostInstance.moveResPoolHostToBizIdleModule',
         relation: [{
-            view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
-            instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
+            view: IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY,
+            instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]
         }, {
             view: IAM_VIEWS.BIZ,
             instances: [IAM_VIEWS.BIZ]
         }],
         transform: (cmdbAction, relationIds) => {
-            const [hostRelationIds, bizRelationIds] = relationIds
+            const [[hostRelationIds, bizRelationIds]] = relationIds
             const [directoryId] = hostRelationIds
+            const [bizId] = bizRelationIds
             const hostVerifyMeta = basicTransform(cmdbAction, {
                 parent_layers: [{
                     resource_type: 'resourcePoolDirectory',
                     resource_id: directoryId
+                }, {
+                    resource_type: 'business',
+                    resource_id: bizId
                 }]
             })
-            const [bizId] = bizRelationIds
-            const bizVerifyMeta = basicTransform('hostInstance.create', {
-                bk_biz_id: bizId
-            })
-            return [hostVerifyMeta, bizVerifyMeta]
+            return hostVerifyMeta
         }
     },
     TRANSFER_HOST_TO_DIRECTORY: {
@@ -556,15 +556,17 @@ export const IAM_ACTIONS = {
             instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
         }],
         transform: (cmdbAction, relationIds) => {
-            const [[currentDirectoryId], [targetDirectoryId]] = relationIds
+            const [[[currentDirectoryId], [targetDirectoryId]]] = relationIds
             const hostVerifyMeta = basicTransform(cmdbAction, {
                 parent_layers: [{
                     resource_type: 'resourcePoolDirectory',
                     resource_id: currentDirectoryId
+                }, {
+                    resource_type: 'resourcePoolDirectory',
+                    resource_id: targetDirectoryId
                 }]
             })
-            const directoryVerifyMeta = IAM_ACTIONS.C_RESOURCE_HOST.transform(IAM_ACTIONS.C_RESOURCE_HOST.cmdb_action, [targetDirectoryId])
-            return [hostVerifyMeta, directoryVerifyMeta]
+            return hostVerifyMeta
         }
     },
 
