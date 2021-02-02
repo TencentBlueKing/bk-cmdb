@@ -1,7 +1,7 @@
-import ProcessFormTips from './process-form-tips.vue'
+import ProcessFormAppend from './process-form-append.vue'
 
 export default function (h, { serviceTemplateId, bizId, property }) {
-    return h(ProcessFormTips, {
+    return h(ProcessFormAppend, {
         props: {
             serviceTemplateId,
             bizId,

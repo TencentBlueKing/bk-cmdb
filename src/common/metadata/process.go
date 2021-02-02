@@ -248,9 +248,14 @@ type ServiceInstanceDifference struct {
 
 // ServiceDifferenceDetails 服务实例与模板差异信息
 type ServiceDifferenceDetails struct {
-	ServiceInstance   ServiceInstance           `json:"service_instance"`
+	ServiceInstance   SrvInstBriefInfo          `json:"service_instance"`
 	Process           *Process                  `json:"process"`
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+}
+
+type SrvInstBriefInfo struct {
+	ID   int64  `field:"id" json:"id"`
+	Name string `field:"name" json:"name"`
 }
 
 type CreateServiceInstanceOption struct {

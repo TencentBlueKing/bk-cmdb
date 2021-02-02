@@ -7,17 +7,12 @@
             v-for="column in options"
             slot-scope="rowProps"
             :slot="column.bk_property_id"
-            :key="`row-${rowProps.index}-${column.bk_property_id}`">
-            <bk-checkbox class="content-checkbox"
-                size="small"
-                :value="getLockState(rowProps)"
-                @change="setLockState(rowProps, ...arguments)">
-            </bk-checkbox>
+            :key="`row-${rowProps.index}-${column.bk_property_id}`"
+            :class="{ 'is-lock': isLocked(rowProps) }">
             <component class="content-value"
                 size="small"
                 font-size="small"
                 v-validate="getRules(rowProps, column)"
-                :disabled="!getLockState(rowProps)"
                 :data-vv-name="column.bk_property_id"
                 :data-vv-as="column.bk_property_name"
                 :data-vv-scope="column.bk_property_group || 'bind_info'"
@@ -28,6 +23,18 @@
                 :auto-select="false"
                 @input="handleColumnValueChange(rowProps, ...arguments)">
             </component>
+            <span class="property-lock-state"
+                v-bk-tooltips="{
+                    placement: 'top',
+                    interactive: false,
+                    content: isLocked(rowProps) ? $t('取消锁定') : $t('进程模板锁定提示语'),
+                    delay: [100, 0]
+                }"
+                tabindex="-1"
+                @click="setLockState(rowProps)">
+                <i class="icon-cc-lock-fill" v-if="isLocked(rowProps)"></i>
+                <i class="icon-cc-lock-line" v-else></i>
+            </span>
         </div>
     </cmdb-form-table>
 </template>
@@ -98,12 +105,13 @@
             }
         },
         methods: {
-            getLockState ({ row, column, index }) {
+            isLocked ({ row, column, index }) {
                 return this.lockStates[index][column.property]
             },
-            setLockState ({ row, column, index }, value) {
+            setLockState (rowProps) {
+                const { column, index } = rowProps
                 const lockState = { ...(this.lockStates[index] || {}) }
-                lockState[column.property] = value
+                lockState[column.property] = !this.isLocked(rowProps)
                 const newStates = [...this.lockStates]
                 newStates.splice(index, 1, lockState)
                 this.lockStates = newStates
@@ -119,10 +127,6 @@
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             getRules (rowProps, property) {
-                const isLocked = this.getLockState(rowProps)
-                if (!isLocked) {
-                    return {}
-                }
                 const rules = this.$tools.getValidateRules(property)
                 rules.required = true
                 // IP字段在模板上被构造为枚举，无法通过ip的正则，此处忽略IP正则
@@ -166,11 +170,7 @@
                         if (['process_id', 'row_id'].includes(key)) {
                             templateRowValue[key] = row[key]
                         } else {
-                            const stateChanged = row[key] !== this.lockStates[rowIndex][key]
-                            let value = this.localValue[rowIndex][key]
-                            if (stateChanged) {
-                                value = row[key] ? this.defaultRowValue.locked[key] : this.defaultRowValue.unlocked[key]
-                            }
+                            const value = this.localValue[rowIndex][key]
                             templateRowValue[key] = {
                                 value: value,
                                 as_default_value: row[key]
@@ -185,17 +185,71 @@
 </script>
 
 <style lang="scss" scoped>
+    @mixin property-lock-state-visible {
+        display: inline-flex;
+        border: 1px solid #c4c6cc;
+        border-left: none;
+    }
+    @mixin no-right-radius {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
     .cmdb-form-process-table {
         .process-table-content {
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            .content-checkbox {
-                flex: 16px 0 0;
-                margin-right: 4px;
+            &:hover,
+            &.is-lock {
+                .property-lock-state {
+                    @include property-lock-state-visible;
+                }
+                .content-value /deep/ {
+                    .bk-form-input,
+                    .bk-form-textarea,
+                    .bk-textarea-wrapper {
+                        @include no-right-radius;
+                    }
+                }
+                .content-value.bk-select {
+                    @include no-right-radius;
+                }
             }
             .content-value {
-                max-width: calc(100% - 20px);
+                flex: 1;
+                &.control-active /deep/ {
+                    .bk-form-input,
+                    .bk-form-textarea,
+                    .bk-textarea-wrapper {
+                        @include no-right-radius;
+                    }
+                }
+                &.control-active ~ .property-lock-state {
+                    @include property-lock-state-visible;
+                }
+                &.is-focus {
+                    @include no-right-radius;
+                }
+                &.form-bool {
+                    flex: none;
+                    & ~ .property-lock-state {
+                        border: none;
+                        background-color: transparent;
+                        transition: none;
+                    }
+                }
+            }
+            .property-lock-state {
+                display: none;
+                width: 24px;
+                height: 26px;
+                align-items: center;
+                justify-content: center;
+                background-color: #f2f4f8;
+                font-size: 14px;
+                overflow: hidden;
+                transition: width .1s linear;
+                cursor: pointer;
             }
         }
     }

@@ -615,6 +615,8 @@ const (
 
 	CCErrHostTransferFinalModuleConflict = 1108044
 
+	CCErrSyncServiceInstanceByTemplateFailed = 1108045
+
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
 	CCErrAuditTakeSnapshotFailed = 1109002

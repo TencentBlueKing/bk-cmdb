@@ -65,8 +65,8 @@
                 } else {
                     value = intValue
                 }
-                this.$refs.input.curValue = value
                 this.localValue = value
+                this.$refs.input.curValue = this.localValue
             },
             handleChange () {
                 this.$emit('on-change', this.localValue)
