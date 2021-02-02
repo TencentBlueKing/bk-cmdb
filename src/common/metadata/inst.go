@@ -16,6 +16,8 @@ import (
 	"encoding/json"
 	"sort"
 
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 )
 
@@ -178,4 +180,42 @@ type SearchHostIdentifierResult struct {
 type SearchHostIdentifierData struct {
 	Count int              `json:"count"`
 	Info  []HostIdentifier `json:"info"`
+}
+
+// SearchInstsNamesOption search instances names option
+type SearchInstsNamesOption struct {
+	ObjID string `json:"bk_obj_id"`
+	BizID int64  `json:"bk_biz_id"`
+	Name  string `json:"name"`
+}
+
+var ObjsForSearchName = map[string]bool{
+	common.BKInnerObjIDSet:    true,
+	common.BKInnerObjIDModule: true,
+}
+
+// Validate verify the SearchInstsNamesOption
+func (o *SearchInstsNamesOption) Validate() (rawError errors.RawErrorInfo) {
+	if _, ok := ObjsForSearchName[o.ObjID]; !ok {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_obj_id"},
+		}
+	}
+
+	if o.BizID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if o.Name == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"name"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

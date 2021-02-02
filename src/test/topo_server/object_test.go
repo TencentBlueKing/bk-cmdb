@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
@@ -1344,6 +1345,24 @@ var _ = Describe("object test", func() {
 			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data.Info[rsp.Data.Count-1]["bk_biz_id"])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bizIdRes).To(Equal(bizIdInt))
+		})
+
+		It("search object instances names info", func() {
+			bizIDInt, _ := strconv.ParseInt(bizId, 10, 64)
+			input := &metadata.SearchInstsNamesOption{
+				ObjID: common.BKInnerObjIDSet,
+				BizID: bizIDInt,
+				Name:  "test",
+			}
+			rsp, err := instClient.SearchInstsNames(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			nameMap := make(map[string]bool)
+			for _, name := range rsp.Data {
+				nameMap[commonutil.GetStrByInterface(name)] = true
+			}
+			Expect(nameMap["new_test"]).To(Equal(true))
 		})
 
 		It("search set batch", func() {

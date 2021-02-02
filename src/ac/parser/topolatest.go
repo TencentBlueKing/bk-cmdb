@@ -810,6 +810,7 @@ var (
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
+	findObjectInstancesNamesRegexp            = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
 )
 
 func (ps *parseStream) objectInstanceLatest() *parseStream {
@@ -1097,6 +1098,24 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 	if ps.hitRegexp(findObjectInstancesLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find object's instance list, but got invalid url")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find object instances' brief info
+	if ps.hitRegexp(findObjectInstancesNamesRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find object instances' brief info, but got invalid url")
 			return ps
 		}
 
