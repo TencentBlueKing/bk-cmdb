@@ -67,25 +67,30 @@
                         </i>
                         <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
                             <div class="dot-content">
-                                <bk-button
-                                    class="menu-btn"
-                                    :text="true"
-                                    @click="handleResetName(dir)">
-                                    {{$t('重命名')}}
-                                </bk-button>
-                                <div
-                                    v-bk-tooltips.right="{
-                                        content: $t('主机不为空，不能删除'),
-                                        disabled: !dir.host_count
-                                    }">
-                                    <bk-button
+                                <cmdb-auth :auth="{ type: $OPERATION.U_RESOURCE_DIRECTORY, relation: [dir.bk_module_id] }">
+                                    <bk-button slot-scope="{ disabled }"
                                         class="menu-btn"
                                         :text="true"
-                                        :disabled="!!dir.host_count"
-                                        @click="handleDelete(dir, index)">
-                                        {{$t('删除')}}
+                                        :disabled="disabled"
+                                        @click="handleResetName(dir)">
+                                        {{$t('重命名')}}
                                     </bk-button>
-                                </div>
+                                </cmdb-auth>
+                                <cmdb-auth :auth="{ type: $OPERATION.D_RESOURCE_DIRECTORY, relation: [dir.bk_module_id] }">
+                                    <div slot-scope="{ disabled }"
+                                        v-bk-tooltips.right="{
+                                            content: $t('主机不为空，不能删除'),
+                                            disabled: !dir.host_count
+                                        }">
+                                        <bk-button
+                                            class="menu-btn"
+                                            :text="true"
+                                            :disabled="!!dir.host_count || disabled"
+                                            @click="handleDelete(dir, index)">
+                                            {{$t('删除')}}
+                                        </bk-button>
+                                    </div>
+                                </cmdb-auth>
                             </div>
                         </cmdb-dot-menu>
                     </template>
