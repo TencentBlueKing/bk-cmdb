@@ -26,7 +26,7 @@
                 :disabled-properties="bindedProperties"
                 :invisible-name-properties="invisibleNameProperties"
                 :flex-properties="flexProperties"
-                :render-tips="renderTips"
+                :render-append="renderAppend"
                 :custom-validator="validateCustomComponent"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleCancel">
@@ -48,7 +48,7 @@
         processPropertyRequestId,
         processPropertyGroupsRequestId
     } from './symbol'
-    import RenderTips from './process-form-tips-render'
+    import RenderAppend from './process-form-append-render'
     import ProcessFormPropertyTable from './process-form-property-table'
     export default {
         components: {
@@ -281,9 +281,9 @@
                 }
                 return Promise.resolve(true)
             },
-            renderTips (h, { property, type }) {
+            renderAppend (h, { property, type }) {
                 if (this.bindedProperties.includes(property.bk_property_id)) {
-                    return RenderTips(h, {
+                    return RenderAppend(h, {
                         serviceTemplateId: this.serviceTemplateId,
                         property: property,
                         bizId: this.bizId

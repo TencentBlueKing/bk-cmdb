@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -164,33 +163,6 @@ func (p *processOperation) ListProcessInstanceRelation(kit *rest.Kit, option met
 		Info:  relations,
 	}
 	return result, nil
-}
-
-func (p *processOperation) ListHostProcessRelation(kit *rest.Kit, option *metadata.ListProcessInstancesWithHostOption) (*metadata.MultipleHostProcessRelation, errors.CCErrorCoder) {
-	filter := map[string]interface{}{
-		common.BKAppIDField: option.BizID,
-	}
-	if option.HostIDs != nil && len(option.HostIDs) > 0 {
-		filter[common.BKHostIDField] = map[string]interface{}{
-			common.BKDBIN: option.HostIDs,
-		}
-	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
-	count, err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Count(kit.Ctx)
-	if err != nil {
-		blog.ErrorJSON("ListHostProcessRelation count mongodb failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	relations := make([]metadata.HostProcessRelation, 0)
-	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
-		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &relations); err != nil {
-		blog.ErrorJSON("ListHostProcessRelation select mongodb failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameProcessInstanceRelation, filter, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	return &metadata.MultipleHostProcessRelation{
-		Count: count,
-		Info:  relations,
-	}, nil
 }
 
 func (p *processOperation) DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder {

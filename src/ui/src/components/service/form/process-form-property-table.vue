@@ -10,26 +10,27 @@
                 slot-scope="rowProps"
                 :slot="column.bk_property_id"
                 :key="`row-${rowProps.index}-${column.bk_property_id}`">
-                <bk-popover class="content-value" :disabled="!isLocked(rowProps)">
-                    <component
-                        size="small"
-                        font-size="small"
-                        v-validate="$tools.getValidateRules(column)"
-                        :disabled="isLocked(rowProps)"
-                        :data-vv-name="column.bk_property_id"
-                        :data-vv-as="column.bk_property_name"
-                        :data-vv-scope="column.bk_property_group || 'bind_info'"
-                        :is="getComponentType(column)"
-                        :options="column.option || []"
-                        :placeholder="getPlaceholder(column)"
-                        :value="localValue[rowProps.index][column.bk_property_id]"
-                        :auto-select="false"
-                        @input="handleColumnValueChange(rowProps, ...arguments)">
-                    </component>
-                    <i18n path="进程表单锁定提示" slot="content">
-                        <bk-link theme="primary" @click="handleRedirect" place="link">{{$t('跳转服务模板')}}</bk-link>
-                    </i18n>
-                </bk-popover>
+                <component class="content-value"
+                    size="small"
+                    font-size="small"
+                    v-validate="$tools.getValidateRules(column)"
+                    :disabled="isLocked(rowProps)"
+                    :data-vv-name="column.bk_property_id"
+                    :data-vv-as="column.bk_property_name"
+                    :data-vv-scope="column.bk_property_group || 'bind_info'"
+                    :is="getComponentType(column)"
+                    :options="column.option || []"
+                    :placeholder="getPlaceholder(column)"
+                    :value="localValue[rowProps.index][column.bk_property_id]"
+                    :auto-select="false"
+                    @input="handleColumnValueChange(rowProps, ...arguments)">
+                </component>
+                <process-form-append class="content-lock"
+                    v-if="isLocked(rowProps)"
+                    :property="column"
+                    :service-template-id="serviceTemplateId"
+                    :biz-id="bizId">
+                </process-form-append>
             </div>
         </cmdb-form-table>
         <span class="form-error" v-if="validateMsg">{{validateMsg}}</span>
@@ -38,9 +39,11 @@
 
 <script>
     import ProcessFormPropertyIp from './process-form-property-ip'
+    import ProcessFormAppend from './process-form-append'
     export default {
         components: {
-            ProcessFormPropertyIp
+            ProcessFormPropertyIp,
+            ProcessFormAppend
         },
         props: {
             value: {
@@ -75,8 +78,14 @@
                     return state
                 })
             },
+            serviceTemplateId () {
+                return this.form.serviceTemplateId
+            },
+            bizId () {
+                return this.form.bizId
+            },
             mode () {
-                return this.form.serviceTemplateId ? 'info' : 'update'
+                return this.serviceTemplateId ? 'info' : 'update'
             },
             validateMsg () {
                 const hasError = this.errors.items.some(item => item.scope === 'bind_info')
@@ -122,17 +131,20 @@
 <style lang="scss" scoped>
     .cmdb-form-process-table {
         position: relative;
+        width: 100%;
         .process-table-content {
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            .content-value {
-                width: 100%;
-                /deep/ {
-                    .bk-tooltip-ref {
-                        width: 100%;
-                    }
-                }
+            .content-value:not(.bk-switcher) {
+                flex: 1;
+            }
+            .content-value.bk-switcher ~ .content-lock {
+                background-color: transparent;
+                border: none;
+            }
+            .content-lock {
+                height: 26px;
             }
         }
         .form-error {

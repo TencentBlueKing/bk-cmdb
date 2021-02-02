@@ -14,7 +14,7 @@ package host
 
 import (
 	"context"
-	"math"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 
@@ -46,8 +47,8 @@ func (c *Client) tryRefreshHostDetail(hostID int64, ips string, cloudID int64, d
 	}()
 }
 
-func (c *Client) tryRefreshHostIDList(ctx context.Context) {
-	rid := ctx.Value(common.ContextRequestIDField)
+func (c *Client) tryRefreshHostIDList(rid string) {
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
 
 	// get local lock
 	if !c.lock.CanRefresh(hostKey.HostIDListLockKey()) {
@@ -58,34 +59,43 @@ func (c *Client) tryRefreshHostIDList(ctx context.Context) {
 	c.lock.SetRefreshing(hostKey.HostIDListLockKey())
 	defer c.lock.SetUnRefreshing(hostKey.HostIDListLockKey())
 
-	expire, err := redis.Client().Get(context.Background(), hostKey.HostIDListExpireKey()).Result()
+	forceRefresh := false
+	expire, err := redis.Client().Get(ctx, hostKey.HostIDListExpireKey()).Result()
 	if err != nil {
 		if !redis.IsNilErr(err) {
 			blog.Errorf("get host id list expire key failed, err: %v, rid :%v", err, rid)
 			return
 		} else {
 			// force refresh
-			expire = strconv.FormatInt(math.MaxInt64, 10)
+			forceRefresh = true
 		}
 	}
 
-	expireAt, err := strconv.ParseInt(expire, 10, 64)
-	if err != nil {
-		blog.Errorf("parse host id list expire time failed, err: %v, rid: %v", err, rid)
-		return
+	if !forceRefresh {
+		expireAt, err := strconv.ParseInt(expire, 10, 64)
+		if err != nil {
+			blog.Errorf("parse host id list expire time failed, err: %v, rid: %v", err, rid)
+			return
+		}
+
+		if time.Now().Unix()-expireAt > 0 && (time.Now().Unix()-expireAt <= hostKey.HostIDListKeyExpireSeconds()) {
+			// not expired
+			return
+		}
 	}
 
-	if time.Now().Unix()-expireAt <= hostKey.HostIDListKeyExpireSeconds() {
-		// not expired
-		return
-	}
+	// set expire key with a value which can will enforce the host id list key expire in a minute, which will
+	// help us block the refresh request in the following one minute. this policy is used to avoid refresh key
+	// when the redis in high pressure or not well performed.
+	redis.Client().Set(ctx, hostKey.HostIDListExpireKey(), time.Now().Unix()+60,
+		time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second)
 
 	// expired, we refresh it now.
-	blog.V(4).Infof("host id list key: %s is expired, refresh it now. rid: %v", hostKey.HostIDListKey(), rid)
+	blog.Infof("host id list key: %s is expired, refresh it now. rid: %v", hostKey.HostIDListKey(), rid)
 
 	// then get distribute lock.
-	locked, err := redis.Client().SetNX(context.Background(), hostKey.HostIDListLockKey(), true, time.Duration(hostKey.HostIDListKeyExpireSeconds())*
-		time.Second).Result()
+	locked, err := redis.Client().SetNX(ctx, hostKey.HostIDListLockKey(), true,
+		time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second).Result()
 
 	if err != nil {
 		blog.Errorf("get host id list key lock failed, err: %v, rid: %v", err, rid)
@@ -99,9 +109,9 @@ func (c *Client) tryRefreshHostIDList(ctx context.Context) {
 
 	go func() {
 		// already get lock, force refresh host id list now.
-		c.refreshHostIDListCache(ctx)
+		c.refreshHostIDListCache(rid)
 
-		if err := redis.Client().Del(context.Background(), hostKey.HostIDListLockKey()).Err(); err != nil {
+		if err := redis.Client().Del(ctx, hostKey.HostIDListLockKey()).Err(); err != nil {
 			blog.Errorf("delete host id list lock key: %s failed, err: %v, rid: %v", hostKey.HostIDListLockKey(),
 				err, rid)
 		}
@@ -110,7 +120,7 @@ func (c *Client) tryRefreshHostIDList(ctx context.Context) {
 }
 
 func (c *Client) forceRefreshHostIDList(ctx context.Context) {
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// get local lock
 	if !c.lock.CanRefresh(hostKey.HostIDListLockKey()) {
@@ -122,8 +132,8 @@ func (c *Client) forceRefreshHostIDList(ctx context.Context) {
 	defer c.lock.SetUnRefreshing(hostKey.HostIDListLockKey())
 
 	// then get distribute lock.
-	locked, err := redis.Client().SetNX(context.Background(), hostKey.HostIDListLockKey(), true, time.Duration(hostKey.HostIDListKeyExpireSeconds())*
-		time.Second).Result()
+	locked, err := redis.Client().SetNX(context.Background(), hostKey.HostIDListLockKey(), true,
+		time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second).Result()
 
 	if err != nil {
 		blog.Errorf("get host id list key lock failed, err: %v, rid: %v", err, rid)
@@ -134,11 +144,11 @@ func (c *Client) forceRefreshHostIDList(ctx context.Context) {
 		return
 	}
 
-	blog.V(4).Infof("start force fresh host id list key: %s. rid: %v", hostKey.HostIDListKey(), rid)
+	blog.Infof("start force fresh host id list key: %s. rid: %v", hostKey.HostIDListKey(), rid)
 
 	go func() {
 		// already get lock, force refresh host id list now.
-		c.refreshHostIDListCache(ctx)
+		c.refreshHostIDListCache(rid)
 
 		if err := redis.Client().Del(context.Background(), hostKey.HostIDListLockKey()).Err(); err != nil {
 			blog.Errorf("delete host id list lock key: %s failed, err: %v, rid: %v", hostKey.HostIDListLockKey(),
@@ -154,14 +164,11 @@ type hostID struct {
 
 const (
 	// step to list host ids from mongodb
-	listStep = 100000
-
-	// step to set host ids to redis cache
-	zsetStep = 100000
+	listStep = 50000
 )
 
-func (c *Client) refreshHostIDListCache(ctx context.Context) error {
-	rid := ctx.Value(common.ContextRequestIDField)
+func (c *Client) refreshHostIDListCache(rid string) error {
+	ctx := context.Background()
 
 	// get all host id list at first
 	total, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(nil).Count(ctx)
@@ -170,37 +177,31 @@ func (c *Client) refreshHostIDListCache(ctx context.Context) error {
 		return err
 	}
 
-	allID := make([]hostID, 0)
+	tempIDListKey := fmt.Sprintf("%s-%s", hostKey.HostIDListTempKey(), rid)
+	blog.Infof("try to refresh host id list with temp key: %s, rid: %s", tempIDListKey, rid)
+
 	for start := 0; start < int(total); start += listStep {
 		stepID := make([]hostID, 0)
 		if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(nil).Start(uint64(start)).
-			Limit(uint64(listStep)).All(ctx, &stepID); err != nil {
+			Limit(uint64(listStep)).Fields(common.BKHostIDField).All(ctx, &stepID); err != nil {
 			blog.Errorf("refresh host id list, but get host id list failed, err: %v, rid: %v", err, rid)
 			return err
 		}
-		allID = append(allID, stepID...)
-	}
-
-	count := len(allID)
-	for start := 0; start < count; start += zsetStep {
-		end := start + zsetStep
-		if end > count {
-			end = count
-		}
-
-		keys := make([]*rawRedis.Z, end-start)
-		for idx := 0; idx < end-start; idx++ {
-			keys[idx] = &rawRedis.Z{
-				// set zset score with host id, so we can sort with host id
-				Score: float64(allID[idx+start].ID),
-				// set zset member with host id, so that we can get host id with score directly.
-				Member: allID[idx+start].ID,
-			}
-		}
 
 		pip := redis.Client().Pipeline()
-		// write to the temp key
-		pip.ZAdd(hostKey.HostIDListTempKey(), keys...)
+		// because the temp key is a random key, so we set a expire time so that it can be gc,
+		// but we will reset expire to unlimited when this key is renamed to a normal key.
+		pip.Expire(tempIDListKey, time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second)
+		for _, h := range stepID {
+			key := &rawRedis.Z{
+				// set zset score with host id, so we can sort with host id
+				Score: float64(h.ID),
+				// set zset member with host id, so that we can get host id with score directly.
+				Member: h.ID,
+			}
+			// write to the temp key
+			pip.ZAdd(tempIDListKey, key)
+		}
 
 		// it cost about 600ms to zadd 100000 host id to redis from test case.
 		_, err := pip.Exec()
@@ -212,7 +213,9 @@ func (c *Client) refreshHostIDListCache(ctx context.Context) error {
 
 	pipe := redis.Client().Pipeline()
 	// rename temp key to real key
-	pipe.Rename(hostKey.HostIDListTempKey(), hostKey.HostIDListKey())
+	pipe.Rename(tempIDListKey, hostKey.HostIDListKey())
+	// reset id_list key's expire time to a new one.
+	pipe.Expire(hostKey.HostIDListKey(), 48*time.Hour)
 	// set expire key with unix time seconds now value.
 	pipe.Set(hostKey.HostIDListExpireKey(), time.Now().Unix(),
 		time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second)
@@ -223,7 +226,7 @@ func (c *Client) refreshHostIDListCache(ctx context.Context) error {
 		return err
 	}
 
-	blog.V(4).Infof("fresh host id list key: %s success. rid: %v", hostKey.HostIDListKey(), rid)
+	blog.Infof("fresh host id list key: %s success, count: %d. rid: %v", hostKey.HostIDListKey(), total, rid)
 
 	return nil
 }

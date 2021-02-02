@@ -1285,56 +1285,77 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *Service) ip2hostID(kit *rest.Kit, ips []string, cloudID int64) (map[string]int64, error) {
-	if len(ips) == 0 {
-		return make(map[string]int64), nil
-	}
+func (s *Service) ip2hostID(kit *rest.Kit, input *meta.CloneHostPropertyParams) (src int64, dst int64, err error) {
 
 	cond := meta.QueryCondition{
 		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 		Page: meta.BasePage{
 			Limit: common.BKNoLimit,
 		},
-		Condition: map[string]interface{}{
-			common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: ips},
-			common.BKCloudIDField:     cloudID,
-		},
+	}
+
+	useIP := false
+	if len(input.OrgIP) != 0 {
+		// use host inner ip
+		cond.Condition = map[string]interface{}{
+			common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: []string{input.OrgIP, input.DstIP}},
+			common.BKCloudIDField:     input.CloudID,
+		}
+		useIP = true
+	} else {
+		// use host id
+		cond.Condition = map[string]interface{}{
+			common.BKHostIDField:  map[string]interface{}{common.BKDBIN: []int64{input.OrgID, input.DstID}},
+			common.BKCloudIDField: input.CloudID,
+		}
 	}
 
 	hosts, err := s.Logic.SearchHostInfo(kit, cond)
 	if err != nil {
 		blog.ErrorJSON("search hosts failed, err: %s, input: %s, rid: %s", err, cond, kit.Rid)
-		return nil, err
+		return 0, 0, err
 	}
 
-	ipMap := make(map[string]struct{})
-	for _, ip := range ips {
-		ipMap[ip] = struct{}{}
+	if !useIP {
+		if len(hosts) != 2 {
+			return 0, 0, errors.New(common.CCErrCommParamsInvalid, "src or dst id is not exists")
+		}
+
+		return input.OrgID, input.DstID, nil
 	}
 
-	hostIP2IDMap := make(map[string]int64)
+	// use ip
+	orgID, dstID := int64(0), int64(0)
 	for _, host := range hosts {
 		hostID, err := host.Int64(common.BKHostIDField)
 		if err != nil {
 			blog.ErrorJSON("parse host id failed, err: %s, host: %s, rid: %s", err, host, kit.Rid)
-			return nil, err
+			return 0, 0, err
 		}
 
 		hostIP, err := host.String(common.BKHostInnerIPField)
 		if err != nil {
 			blog.ErrorJSON("parse host ip failed, err: %s, host: %s, rid: %s", err, host, kit.Rid)
-			return nil, err
+			return 0, 0, err
 		}
 
 		ipArr := strings.Split(hostIP, ",")
 		for _, slicedIP := range ipArr {
-			if _, exists := ipMap[slicedIP]; exists {
-				hostIP2IDMap[slicedIP] = hostID
+			if slicedIP == input.OrgIP {
+				orgID = hostID
+			}
+
+			if slicedIP == input.DstIP {
+				dstID = hostID
 			}
 		}
 	}
 
-	return hostIP2IDMap, err
+	if orgID == 0 || dstID == 0 {
+		return 0, 0, errors.New(common.CCErrCommParamsInvalid, "invalid org or dst data")
+	}
+
+	return orgID, dstID, nil
 }
 
 // CloneHostProperty clone host property from src host to dst host
@@ -1342,79 +1363,90 @@ func (s *Service) ip2hostID(kit *rest.Kit, ips []string, cloudID int64) (map[str
 // origin ip and dest ip can only be one ip.
 func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 
-	input := &meta.CloneHostPropertyParams{}
+	input := new(meta.CloneHostPropertyParams)
 	if err := ctx.DecodeInto(&input); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if input.OrgIP == input.DstIP {
+	if input.AppID <= 0 {
+		blog.Errorf("invalid bk_biz_id: %d ,rid: %s", input.AppID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "bk_biz_id"))
+		return
+	}
+
+	if input.CloudID < 0 {
+		blog.Errorf("invalid bk_cloud_id: %d ,rid: %s", input.CloudID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "bk_cloud_id"))
+		return
+	}
+
+	// can only use ip or id for one.
+	if (len(input.OrgIP) != 0 || len(input.DstIP) != 0) && (input.OrgID > 0 || input.DstID > 0) {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid org/dst ip or id")
+		return
+	}
+
+	if (len(input.OrgIP) == 0 && len(input.DstIP) == 0) && (input.OrgID <= 0 && input.DstID <= 0) {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid org/dst ip or id")
+		return
+	}
+
+	if (len(input.OrgIP) != 0 || len(input.DstIP) != 0) && (len(input.OrgIP) == 0 || len(input.DstIP) == 0) {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "no parameter")
+		return
+	}
+
+	if input.OrgID < 0 || input.DstID < 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid org/dst id")
+		return
+	}
+
+	if (input.OrgID > 0 || input.DstID > 0) && (input.OrgID <= 0 || input.DstID <= 0) {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid org/dst id")
+		return
+	}
+
+	if (len(input.OrgIP) != 0 && len(input.DstIP) != 0) && (input.OrgIP == input.DstIP) {
 		ctx.RespEntity(nil)
 		return
 	}
 
-	if 0 == input.AppID {
-		blog.Errorf("CloneHostProperty, application not found input:%+v,rid:%s", input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "ApplicationID"))
-		return
-	}
-	if input.OrgIP == "" {
-		blog.Errorf("CloneHostProperty, OrgIP not found input:%+v,rid:%s", input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_org_ip"))
-		return
-	}
-	if input.DstIP == "" {
-		blog.Errorf("CloneHostProperty, OrgIP not found input:%+v,rid:%s", input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_dst_ip"))
+	if (input.OrgID > 0 && input.DstID > 0) && (input.OrgID == input.DstID) {
+		ctx.RespEntity(nil)
 		return
 	}
 
 	// authorization check
-	ip2IDMap, err := s.ip2hostID(ctx.Kit, []string{input.OrgIP, input.DstIP}, input.CloudID)
+	orgID, dstID, err := s.ip2hostID(ctx.Kit, input)
 	if err != nil {
-		blog.ErrorJSON("get host id from ip failed, input: %s, rid:%s", input, ctx.Kit.Rid)
+		blog.ErrorJSON("get host id from ip failed, input: %s, err: %s, rid:%s", input, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	// check source host exist
-	srcHostID := ip2IDMap[input.OrgIP]
-	if srcHostID == 0 {
-		blog.Errorf("host not found. params:%s,rid:%s", input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostNotFound))
-		return
-	}
-
-	// check whether destination host exist
-	dstHostID := ip2IDMap[input.DstIP]
-	if dstHostID == 0 {
-		blog.Errorf("host not found. params:%s,rid:%s", input, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostNotFound))
-		return
-	}
-
 	// if both src ip and dst ip belongs to the same host, do not need to clone
-	if srcHostID == dstHostID {
+	if orgID == dstID {
 		ctx.RespEntity(nil)
 		return
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, srcHostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", srcHostID, err, ctx.Kit.Rid)
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, orgID); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", orgID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 		return
 	}
 
 	// step2. verify has permission to update dst host
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, dstHostID); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, dstID); err != nil {
 		if err != ac.NoAuthorizeError {
-			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, ctx.Kit.Rid)
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstID, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, []int64{dstHostID})
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, []int64{dstID})
 		if err != nil {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
@@ -1424,7 +1456,7 @@ func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err = s.Logic.CloneHostProperty(ctx.Kit, input.AppID, srcHostID, dstHostID)
+		err = s.Logic.CloneHostProperty(ctx.Kit, input.AppID, orgID, dstID)
 		if nil != err {
 			blog.Errorf("CloneHostProperty  error , err: %v, input:%#v, rid:%s", err, input, ctx.Kit.Rid)
 			return err
