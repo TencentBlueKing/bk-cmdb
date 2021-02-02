@@ -121,12 +121,13 @@
                 <i18n path="业务列表提示语" class="table-empty-tips">
                     <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
                     <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS }" place="create">
-                        <bk-link slot-scope="{ disabled }"
+                        <bk-button slot-scope="{ disabled }" text
                             theme="primary"
+                            class="text-btn"
                             :disabled="disabled"
                             @click="handleCreate">
                             {{$t('立即创建')}}
-                        </bk-link>
+                        </bk-button>
                     </cmdb-auth>
                 </i18n>
             </cmdb-table-empty>
@@ -586,5 +587,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        .text-btn {
+            font-size: 14px;
+        }
     }
 </style>

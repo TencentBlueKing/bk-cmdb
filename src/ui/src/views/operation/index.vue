@@ -1,10 +1,10 @@
 <template>
     <div v-bkloading="{ isLoading: fetching || $loading(request.chart) }">
-        <cmdb-tips style="margin: 10px 20px"
+        <cmdb-tips style="margin: 10px 20px" v-show="!(fetching || $loading(request.chart))"
             v-if="site.disableOperationStatistic">
             {{$t('运营统计停止统计提示')}}
         </cmdb-tips>
-        <div class="operate-menus">
+        <div class="operate-menus" v-show="!(fetching || $loading(request.chart))">
             <div class="menu-items menu-items-blue" @click="goRouter(MENU_RESOURCE_BUSINESS)">
                 <div class="item-left">
                     <span v-if="navData.biz">{{ navData.biz }}</span>
@@ -53,7 +53,7 @@
                 </div>
             </div>
         </div>
-        <div class="main">
+        <div class="main" v-show="!(fetching || $loading(request.chart))">
             <div class="operation-top">
                 <span class="operation-title">{{$t('主机统计')}}</span>
                 <cmdb-auth :auth="{ type: $OPERATION.U_STATISTICAL_REPORT }" @update-auth="handleReceiveAuth">
