@@ -39,5 +39,7 @@
     "1108042": "unbound template on module disabled",
     "1108043": "search service category failed",
     "1108044": "host transfer failed, final module shouldn't contains' inner module and other modules",
+    "1108045": "sync service instance by template failed",
+
     "": ""
 }
