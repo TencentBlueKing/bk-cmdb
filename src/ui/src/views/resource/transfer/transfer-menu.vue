@@ -134,8 +134,10 @@
                     this.$error(this.$t('仅支持对空闲机模块下的主机进行操作'))
                     return false
                 }
+                const [bizId] = HostStore.bizSet
                 this.dialog.props = {
-                    count: HostStore.getSelected().length
+                    count: HostStore.getSelected().length,
+                    bizId: bizId
                 }
                 this.dialog.width = 400
                 this.dialog.height = 231
