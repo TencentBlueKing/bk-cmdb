@@ -27,33 +27,49 @@ import (
 )
 
 func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
-	cond := metadata.QueryCondition{}
-	data := make([]metadata.StringIDCount, 0)
-	target := [2]string{common.BKInnerObjIDApp, common.BKInnerObjIDHost}
-
-	for _, obj := range target {
-		if obj == common.BKInnerObjIDApp {
-			cond = metadata.QueryCondition{
-				Condition: mapstr.MapStr{"bk_data_status": mapstr.MapStr{"$ne": "disabled"}},
-			}
-		}
-		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj, &cond)
-		if err != nil {
-			blog.Errorf("search %v count failed, err: %v, rid: %v", obj, err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
-		}
-		info := metadata.StringIDCount{}
-		if obj == common.BKInnerObjIDApp {
-			info.ID = obj
-			info.Count = int64(result.Data.Count) - 1
-		} else {
-			info.ID = obj
-			info.Count = int64(result.Data.Count)
-		}
-		data = append(data, info)
+	// get biz count
+	bizFilter := []map[string]interface{}{{
+		"bk_data_status": map[string]interface{}{
+			common.BKDBNE: "disabled",
+		},
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBNE: common.DefaultAppFlag,
+		},
+	}}
+	BizResult, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseApp, bizFilter)
+	if err != nil {
+		blog.ErrorJSON("search biz count failed, err: %s, filter: %s, rid: %s", err, bizFilter, kit.Rid)
+		return nil, err
+	}
+	if len(BizResult) != 1 {
+		blog.ErrorJSON("search biz count failed, the length of count result must be 1, filter: %s, rid: %s", bizFilter, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 	}
 
-	return data, nil
+	// get host count
+	hostFilter := []map[string]interface{}{{}}
+	hostResult, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseHost, hostFilter)
+	if err != nil {
+		blog.ErrorJSON("search host count failed, err: %s, filter: %s, rid: %s", err, hostFilter, kit.Rid)
+		return nil, err
+	}
+	if len(hostResult) != 1 {
+		blog.ErrorJSON("search host count failed, the length of count result must be 1, filter: %s, rid: %s", hostFilter, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
+	}
+
+	ret := []metadata.StringIDCount{
+		{
+			ID:    common.BKInnerObjIDApp,
+			Count: BizResult[0],
+		},
+		{
+			ID:    common.BKInnerObjIDHost,
+			Count: hostResult[0],
+		},
+	}
+
+	return ret, nil
 }
 
 func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
