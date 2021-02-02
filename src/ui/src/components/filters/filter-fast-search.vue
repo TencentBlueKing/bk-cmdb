@@ -2,12 +2,14 @@
     <bk-input class="filter-fast-search"
         v-model.trim="value"
         :placeholder="$t('请输入IP或固资编号')"
-        @enter="handleSearch">
+        @enter="handleSearch"
+        @paste="handlePaste">
     </bk-input>
 </template>
 
 <script>
     import FilterStore from './store'
+    import IS_IP from 'validator/es/lib/isIP'
     export default {
         data () {
             return {
@@ -16,20 +18,34 @@
         },
         methods: {
             async handleSearch () {
-                const { valid: isIP } = await this.$validator.verify(this.value, 'ip')
-                if (isIP) {
+                this.dispatchFilter(this.value)
+            },
+            handlePaste (value, event) {
+                event.preventDefault()
+                const text = event.clipboardData.getData('text').trim()
+                this.dispatchFilter(text)
+            },
+            dispatchFilter (currentValue) {
+                const values = currentValue.trim().split(/,|;|\n/g).map(text => text.trim()).filter(text => text.length)
+                const IP = []
+                const assets = []
+                values.forEach(text => {
+                    IS_IP(text) ? IP.push(text) : assets.push(text)
+                })
+                if (IP.length) {
                     FilterStore.updateIP({
-                        text: this.value,
+                        text: IP.join('\n'),
                         exact: true,
                         inner: true,
                         outer: true
                     })
-                } else {
+                }
+                if (assets.length) {
                     FilterStore.createOrUpdateCondition([{
                         field: 'bk_asset_id',
                         model: 'host',
                         operator: '$in',
-                        value: this.value
+                        value: assets
                     }])
                 }
                 this.value = ''

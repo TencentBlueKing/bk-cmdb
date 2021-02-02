@@ -300,7 +300,7 @@
             }
         }
         .wrapper-right {
-            padding: 57px 23px 0;
+            padding: 12px 23px 0;
             background: #f5f6fa;
             overflow: hidden;
         }

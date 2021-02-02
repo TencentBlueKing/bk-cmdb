@@ -34,14 +34,14 @@
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
     export default {
         name: 'cmdb-move-to-resource-confirm',
         props: {
             count: {
                 type: Number,
                 default: 0
-            }
+            },
+            bizId: Number
         },
         data () {
             return {
@@ -51,9 +51,6 @@
                     list: Symbol('list')
                 }
             }
-        },
-        computed: {
-            ...mapGetters('objectBiz', ['bizId'])
         },
         created () {
             this.getDirectories()
@@ -72,7 +69,6 @@
                         }
                     })
                     this.directories = info
-                    this.target = info.length ? info[0].bk_module_id : ''
                 } catch (error) {
                     console.error(error)
                 }

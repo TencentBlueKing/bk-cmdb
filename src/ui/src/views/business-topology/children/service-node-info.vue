@@ -701,7 +701,21 @@
                     history: true
                 })
             },
-            goServiceTemplate () {
+            async goServiceTemplate () {
+                try {
+                    const data = await this.$store.dispatch('serviceTemplate/findServiceTemplate', {
+                        id: this.instance.service_template_id,
+                        config: {
+                            globalError: false
+                        }
+                    })
+                    if (!data) {
+                        return this.$error(this.$t('跳转失败，服务模板已经被删除'))
+                    }
+                } catch (error) {
+                    console.error(error)
+                    this.$error(error.message)
+                }
                 this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
@@ -715,7 +729,22 @@
                     history: true
                 })
             },
-            goSetTemplate () {
+            async goSetTemplate () {
+                try {
+                    const data = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
+                        setTemplateId: this.instance.set_template_id,
+                        bizId: this.business,
+                        config: {
+                            globalError: false
+                        }
+                    })
+                    if (!data) {
+                        return this.$error(this.$t('跳转失败，集群模板已经被删除'))
+                    }
+                } catch (error) {
+                    console.error(error)
+                    this.$error(error.message)
+                }
                 this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
