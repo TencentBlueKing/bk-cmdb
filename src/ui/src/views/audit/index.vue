@@ -1,6 +1,6 @@
 <template>
     <div class="audit-layout">
-        <bk-tab
+        <bk-tab v-show="!$loading(request.list)"
             class="audit-tab"
             type="unborder-card"
             :active.sync="active">
@@ -10,10 +10,11 @@
                 :key="panel.id">
             </bk-tab-panel>
         </bk-tab>
-        <div class="audit-options">
+        <div class="audit-options" v-show="!$loading(request.list)">
             <component :is="optionsComponent" @condition-change="handleConditionChange"></component>
         </div>
         <bk-table
+            v-show="!$loading(request.list)"
             v-bkloading="{ isLoading: $loading(request.list) }"
             :data="table.list"
             :pagination="table.pagination"
@@ -212,12 +213,7 @@
                     this.table.pagination.count = count
                     this.table.list = info
                 } catch ({ permission }) {
-                    if (permission) {
-                        this.table.stuff = {
-                            type: 'permission',
-                            payload: { permission }
-                        }
-                    }
+                    this.$route.meta.view = 'permission'
                 }
             },
             handlePageChange (current) {
