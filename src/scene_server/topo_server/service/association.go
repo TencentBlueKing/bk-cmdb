@@ -462,33 +462,6 @@ func (s *Service) constructBizTopo(setDetail, moduleDetail, hostDetail map[int64
 	return bizTopo
 }
 
-// SearchMainLineChildInstTopo search the child inst topo by a inst
-func (s *Service) SearchMainLineChildInstTopo(ctx *rest.Contexts) {
-
-	// {obj_id}/{app_id}/{inst_id}
-	objID := ctx.Request.PathParameter("obj_id")
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "app_id"))
-		return
-	}
-
-	// get the instance id of this object.
-	instID, err := strconv.ParseInt(ctx.Request.PathParameter("inst_id"), 10, 64)
-	if nil != err {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "inst_id"))
-		return
-	}
-	_ = bizID
-
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, objID, instID, false, false)
-	if nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(resp)
-}
-
 func (s *Service) SearchAssociationType(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationTypeRequest{}
 	if err := ctx.DecodeInto(request); err != nil {

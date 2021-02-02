@@ -87,24 +87,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/module/"):
 		from, to, isHit = rootPath, topoRoot, true
 
-		// Attention:
-		// do not change the check sequences.
-	case string(*u) == rootPath+"/object":
-		from, to, isHit = rootPath, topoRoot, true
-
-	case string(*u) == rootPath+"/objects":
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/object/attr"):
-		from, to, isHit = rootPath+"/object/attr", topoRoot+"/objectattr", true
-
 	case strings.HasPrefix(string(*u), rootPath+"/object/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/objects/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/objectatt/"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/set/"):
@@ -118,10 +101,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 	case strings.Contains(string(*u), "/objectattr"):
 		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/object"):
-		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.Contains(string(*u), "/objectunique"):
 		from, to, isHit = rootPath, topoRoot, true
 

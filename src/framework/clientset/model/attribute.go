@@ -34,7 +34,7 @@ type attribute struct {
 
 func (a *attribute) CreateAttribute(ctx *types.CreateAttributeCtx) (int64, error) {
 	resp := new(types.CreateAttributeResult)
-	subPath := "/object/attr"
+	subPath := "/create/objectattr"
 	err := a.client.Post().
 		WithContext(ctx.Ctx).
 		Body(ctx.Attribute).
@@ -55,7 +55,7 @@ func (a *attribute) CreateAttribute(ctx *types.CreateAttributeCtx) (int64, error
 
 func (a *attribute) DeleteAttribute(ctx *types.DeleteAttributeCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/attr/%d", ctx.AttributeID)
+	subPath := fmt.Sprintf("/delete/objectattr/%d", ctx.AttributeID)
 	err := a.client.Delete().
 		WithContext(ctx.Ctx).
 		Body(nil).
@@ -76,7 +76,7 @@ func (a *attribute) DeleteAttribute(ctx *types.DeleteAttributeCtx) error {
 
 func (a *attribute) UpdateAttribute(ctx *types.UpdateAttributeCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/attr/%d", ctx.AttributeID)
+	subPath := fmt.Sprintf("/update/objectattr/%d", ctx.AttributeID)
 	err := a.client.Put().
 		WithContext(ctx.Ctx).
 		Body(ctx.Attribute).
@@ -97,7 +97,7 @@ func (a *attribute) UpdateAttribute(ctx *types.UpdateAttributeCtx) error {
 
 func (a *attribute) GetAttribute(ctx *types.GetAttributeCtx) ([]types.Attribute, error) {
 	resp := new(types.GetAttributeResult)
-	subPath := "/object/attr/search"
+	subPath := "/find/objectattr"
 	err := a.client.Post().
 		WithContext(ctx.Ctx).
 		Body(ctx.Filter).

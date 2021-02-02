@@ -210,14 +210,14 @@ var _ = Describe("object test", func() {
 		})
 
 		It("delete mainline object bk_obj_id = 'test_object'", func() {
-			rsp, err := objectClient.DeleteModel(context.Background(), "0", "test_object", header)
+			rsp, err := objectClient.DeleteModel(context.Background(), "test_object", header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("delete mainline object twice", func() {
-			rsp, err := objectClient.DeleteModel(context.Background(), "0", "test_object", header)
+			rsp, err := objectClient.DeleteModel(context.Background(), "test_object", header)
 			util.RegisterResponse(rsp)
 			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
@@ -251,7 +251,7 @@ var _ = Describe("object test", func() {
 		})
 
 		It("search mainline object", func() {
-			rsp, err := objectClient.SelectModel(context.Background(), "0", header)
+			rsp, err := objectClient.SelectModel(context.Background(), header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -290,7 +290,7 @@ var _ = Describe("object test", func() {
 
 	Describe("instance topo test", func() {
 		It("search instance topo", func() {
-			rsp, err := objectClient.SelectInst(context.Background(), "0", bizId, header)
+			rsp, err := objectClient.SelectInst(context.Background(), bizIdInt, header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -311,21 +311,6 @@ var _ = Describe("object test", func() {
 			childInstIdInt, err = commonutil.GetInt64ByInterface(child["bk_inst_id"])
 			Expect(err).NotTo(HaveOccurred())
 			childInstId = strconv.FormatInt(childInstIdInt, 10)
-		})
-
-		It("search instance topo child", func() {
-			rsp, err := objectClient.SelectInstChild(context.Background(), "0", "cc_test_object", bizId, childInstId, header)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			j, err := json.Marshal(rsp.Data)
-			data := []map[string]interface{}{}
-			json.Unmarshal(j, &data)
-			child := data[0]
-			Expect(child["bk_inst_name"].(string)).To(Equal("cc_test_object"))
-			Expect(child["bk_obj_id"].(string)).To(Equal("cc_test_object"))
-			Expect(child["bk_obj_name"].(string)).To(Equal("cc_test_object"))
-			Expect(len(child["child"].([]interface{}))).To(Equal(0))
 		})
 
 		It("search instance topo", func() {
@@ -567,7 +552,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_classification_id": "cc_class",
 			}
-			rsp, err := objectClient.SelectClassificationWithObjects(context.Background(), "0", header, input)
+			rsp, err := objectClient.SelectClassificationWithObjects(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -649,7 +634,7 @@ var _ = Describe("object test", func() {
 
 		It("update object topo graphics", func() {
 			input := map[string]interface{}{
-				"data": []map[string]interface{}{
+				"origin": []map[string]interface{}{
 					{
 						"bk_obj_id":  "cc_obj",
 						"bk_inst_id": 0,
@@ -812,7 +797,7 @@ var _ = Describe("object test", func() {
 
 			It("search group bk_obj_id='cc_obj'", func() {
 				input := map[string]interface{}{}
-				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "0", "cc_obj", header, input)
+				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "cc_obj", header, input)
 				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
@@ -1123,7 +1108,7 @@ var _ = Describe("object test", func() {
 
 			It("search group bk_obj_id='cc_obj'", func() {
 				input := map[string]interface{}{}
-				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "0", "cc_obj", header, input)
+				rsp, err := objectClient.SelectPropertyGroupByObjectID(context.Background(), "cc_obj", header, input)
 				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))

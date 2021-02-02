@@ -21,7 +21,7 @@ import (
 
 func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *metadata.Classification) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/classification"
+	subPath := "/create/objectclassification"
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -33,14 +33,14 @@ func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *m
 	return
 }
 
-func (t *object) SelectClassificationWithObjects(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) SelectClassificationWithObjects(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/classification/%s/objects"
+	subPath := "/find/classificationobject"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, ownerID).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -48,7 +48,7 @@ func (t *object) SelectClassificationWithObjects(ctx context.Context, ownerID st
 }
 func (t *object) SelectClassificationWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/classifications"
+	subPath := "/find/objectclassification"
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -61,7 +61,7 @@ func (t *object) SelectClassificationWithParams(ctx context.Context, h http.Head
 }
 func (t *object) UpdateClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/classification/%s"
+	subPath := "/update/objectclassification/%s"
 
 	err = t.client.Put().
 		WithContext(ctx).
@@ -74,7 +74,7 @@ func (t *object) UpdateClassification(ctx context.Context, classID string, h htt
 }
 func (t *object) DeleteClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/object/classification/%s"
+	subPath := "/delete/objectclassification/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
