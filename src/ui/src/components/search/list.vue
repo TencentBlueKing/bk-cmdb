@@ -14,7 +14,7 @@
 </template>
 
 <script>
-    import activeMixin from './mixin-active'
+    import activeMixin from './mixins/active'
     export default {
         name: 'cmdb-search-list',
         mixins: [activeMixin],
