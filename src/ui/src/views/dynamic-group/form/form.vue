@@ -8,7 +8,7 @@
         <bk-form slot="content"
             class="dynamic-group-form"
             form-type="vertical"
-            v-bkloading="{ isLoading: $loading() }">
+            v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
             <bk-form-item :label="$t('业务')" required>
                 <cmdb-business-selector class="form-item"
                     disabled
@@ -63,6 +63,7 @@
                 <bk-button class="mr10" slot-scope="{ disabled }"
                     theme="primary"
                     :disabled="disabled"
+                    :loading="$loading([request.create, request.update])"
                     @click="handleConfirm">
                     {{isCreateMode ? $t('提交') : $t('保存')}}
                 </bk-button>
@@ -101,7 +102,10 @@
                 selectedProperties: [],
                 request: Object.freeze({
                     mainline: Symbol('mainline'),
-                    property: Symbol('property')
+                    property: Symbol('property'),
+                    details: Symbol('details'),
+                    create: Symbol('create'),
+                    update: Symbol('update')
                 }),
                 availableModelIds: Object.freeze(['host', 'module', 'set']),
                 availableModels: [],
@@ -189,7 +193,10 @@
                 try {
                     const details = await this.$store.dispatch('dynamicGroup/details', {
                         bizId: this.bizId,
-                        id: this.id
+                        id: this.id,
+                        config: {
+                            requestId: this.request.details
+                        }
                     })
                     const transformedDetails = this.transformDetails(details)
                     this.formData.name = transformedDetails.name
@@ -314,6 +321,9 @@
                         info: {
                             condition: this.getSubmitCondition()
                         }
+                    },
+                    config: {
+                        requestId: this.request.update
                     }
                 })
             },
@@ -326,6 +336,9 @@
                         info: {
                             condition: this.getSubmitCondition()
                         }
+                    },
+                    config: {
+                        requestId: this.request.create
                     }
                 })
             },
