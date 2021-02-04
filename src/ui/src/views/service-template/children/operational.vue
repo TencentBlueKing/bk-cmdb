@@ -838,7 +838,7 @@
                 .form-info {
                     float: left;
                     .cmdb-form-item{
-                        width: 200px;
+                        width: 300px;
                     }
                     .info-content {
                         display: inline-block;
@@ -1060,7 +1060,7 @@
         }
     }
     .cmdb-form-input.is-edit-name {
-        width: 120px;
+        width: 220px;
     }
     .bk-option-name {
         .category-id {
