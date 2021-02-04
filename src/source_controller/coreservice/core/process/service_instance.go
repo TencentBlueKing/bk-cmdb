@@ -879,38 +879,6 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 				}
 			}
 
-			for index, processTemplate := range processTemplates {
-				processData, err := processTemplate.NewProcess(processTemplate.BizID, kit.SupplierAccount, host)
-				if err != nil {
-					blog.ErrorJSON("create service instance, but generate process instance by template "+
-						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
-					return errors.New(common.CCErrCommParamsInvalid, err.Error())
-				}
-
-				process, ccErr := p.dependence.CreateProcessInstance(kit, processData)
-				if ccErr != nil {
-					blog.Errorf("CreateServiceInstance failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, kit.Rid)
-					return ccErr
-				}
-				relation := &metadata.ProcessInstanceRelation{
-					BizID:             module.BizID,
-					ProcessID:         process.ProcessID,
-					ServiceInstanceID: int64(id),
-					ProcessTemplateID: processTemplate.ID,
-					HostID:            hostID,
-					SupplierAccount:   kit.SupplierAccount,
-				}
-				relation, ccErr = p.CreateProcessInstanceRelation(kit, relation)
-				if ccErr != nil {
-					blog.Errorf("CreateServiceInstance failed, create process relation failed, relation: %+v, err: %+v, rid: %s", relation, ccErr, kit.Rid)
-					return ccErr
-				}
-
-				if index == 0 {
-					firstTemplateProcess = process
-				}
-			}
-
 			if err := p.ConstructServiceInstanceName(kit, int64(id), host, firstTemplateProcess); err != nil {
 				blog.Errorf("AutoCreateServiceInstanceModuleHost failed,  construct service instance name err: %v, instance id: %d, rid: %s", err, id, kit.Rid)
 				return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
