@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strings"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -207,10 +206,10 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !authorized {
-			blog.V(4).Infof("iam.AdoptPermissions attribute: %+v, rid: %s", attribute, rid)
-			permissions, err := iam.AdoptPermissions(req.Request.Header, attribute.Resources)
+			blog.V(4).Infof("GetPermissionToApply attribute: %+v, rid: %s", attribute, rid)
+			permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header, attribute.Resources)
 			if err != nil {
-				blog.Errorf("adopt permission failed, err: %v, rid: %s", err, rid)
+				blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
 				rsp := metadata.BaseResp{
 					Code:   common.CCErrCommCheckAuthorizeFailed,
 					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
@@ -219,12 +218,12 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 				resp.WriteAsJson(rsp)
 				return
 			}
-			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permissions: %s, rid: %s", path, attribute, permissions, rid)
+			blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute, permission, rid)
 			rsp := metadata.BaseResp{
 				Code:        common.CCNoPermission,
 				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
 				Result:      false,
-				Permissions: permissions,
+				Permissions: permission,
 			}
 			resp.WriteAsJson(rsp)
 			return

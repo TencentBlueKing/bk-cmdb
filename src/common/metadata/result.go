@@ -69,25 +69,31 @@ type CntInfoString struct {
 }
 
 type IamPermission struct {
-	SystemID string      `json:"system_id"`
-	Actions  []IamAction `json:"actions"`
+	SystemID   string      `json:"system_id"`
+	SystemName string      `json:"system_name"`
+	Actions    []IamAction `json:"actions"`
 }
 
 type IamAction struct {
 	ID                   string            `json:"id"`
+	Name                 string            `json:"name"`
 	RelatedResourceTypes []IamResourceType `json:"related_resource_types"`
 }
 
 type IamResourceType struct {
 	SystemID   string                  `json:"system_id"`
+	SystemName string                  `json:"system_name"`
 	Type       string                  `json:"type"`
+	TypeName   string                  `json:"type_name"`
 	Instances  [][]IamResourceInstance `json:"instances,omitempty"`
 	Attributes []IamResourceAttribute  `json:"attributes,omitempty"`
 }
 
 type IamResourceInstance struct {
-	Type string `json:"type"`
-	ID   string `json:"id"`
+	Type     string `json:"type"`
+	TypeName string `json:"type_name"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
 }
 
 type IamResourceAttribute struct {

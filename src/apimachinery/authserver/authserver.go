@@ -29,6 +29,7 @@ type AuthServerClientInterface interface {
 	AuthorizeAnyBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error)
 	ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error)
 	GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error)
+	GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error)
 	RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
 	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (

@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
-func genIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
+func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
 	// skip actions do not need to relate to resources
 	if act == Skip {
 		return genSkipResource(act, rscType, a)
