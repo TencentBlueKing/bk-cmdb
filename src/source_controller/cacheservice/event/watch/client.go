@@ -165,7 +165,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			byt, err := json.Marshal(doc.Detail)
 			if err != nil {
 				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-					key.Collection(), doc.Oid, err)
+					key.Collection(), node.Oid, err)
 				return nil, false, fmt.Errorf("marshal detail failed, err: %v", err)
 			}
 			detail := string(byt)
@@ -185,7 +185,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
 			if err != nil {
 				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-					key.Collection(), doc.Lookup("oid").String(), err)
+					key.Collection(), node.Oid, err)
 				return nil, false, fmt.Errorf("marshal detail failed, err: %v", err)
 			}
 			detail := string(byt)
@@ -525,11 +525,13 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, deletedOids []string, fields []string,
 	oidIndexMap map[string][]int, oidDetailMap map[int]string) (map[int]string, error) {
 
-	detailFields := make([]string, len(fields))
-	for index, field := range fields {
-		detailFields[index] = "detail." + field
+	detailFields := make([]string, 0)
+	if len(fields) > 0 {
+		for _, field := range fields {
+			detailFields = append(detailFields, "detail."+field)
+		}
+		detailFields = append(detailFields, "oid")
 	}
-	detailFields = append(detailFields, "oid")
 
 	deleteFilter := map[string]interface{}{
 		"oid":  map[string]interface{}{common.BKDBIN: deletedOids},
