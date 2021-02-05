@@ -48,6 +48,7 @@
 <script>
     import HostListOptions from './host-list-options.vue'
     import ModuleSelector from './module-selector.vue'
+    import AcrossBusinessConfirm from './across-business-confirm.vue'
     import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
@@ -67,6 +68,7 @@
             HostListOptions,
             HostFilterTag,
             [ModuleSelector.name]: ModuleSelector,
+            [AcrossBusinessConfirm.name]: AcrossBusinessConfirm,
             [AcrossBusinessModuleSelector.name]: AcrossBusinessModuleSelector,
             [MoveToResourceConfirm.name]: MoveToResourceConfirm
         },
@@ -286,7 +288,7 @@
                 const actionMap = {
                     idle: this.openModuleSelector,
                     business: this.openModuleSelector,
-                    acrossBusiness: this.openAcrollBusinessModuleSelector,
+                    acrossBusiness: this.openAcrossBusiness,
                     resource: this.openResourceConfirm
                 }
                 actionMap[type] && actionMap[type](type)
@@ -318,16 +320,39 @@
                 this.dialog.show = true
             },
             openResourceConfirm () {
+                const invalidList = this.validteIdleHost()
+                if (!invalidList) return
                 this.dialog.props = {
                     count: this.table.selection.length,
-                    bizId: this.bizId
+                    bizId: this.bizId,
+                    invalidList: invalidList
                 }
-                this.dialog.width = 400
-                this.dialog.height = 250
+                const hasInvalid = !!invalidList.length
+                this.dialog.width = hasInvalid ? 640 : 460
+                this.dialog.height = hasInvalid ? undefined : 250
                 this.dialog.component = MoveToResourceConfirm.name
                 this.dialog.show = true
             },
-            openAcrollBusinessModuleSelector () {
+            openAcrossBusiness () {
+                const invalidList = this.validteIdleHost()
+                if (!invalidList) return
+                if (invalidList.length) {
+                    this.openAcrossBusinessConfirm(invalidList)
+                } else {
+                    this.openAcrossBusinessModuleSelector()
+                }
+            },
+            openAcrossBusinessConfirm (invalidList) {
+                this.dialog.props = {
+                    invalidList,
+                    count: this.table.selection.length
+                }
+                this.dialog.width = 640
+                this.dialog.height = undefined
+                this.dialog.component = AcrossBusinessConfirm.name
+                this.dialog.show = true
+            },
+            openAcrossBusinessModuleSelector () {
                 this.dialog.props = {
                     title: this.$t('转移主机到其他业务'),
                     business: this.currentBusiness
@@ -336,6 +361,17 @@
                 this.dialog.height = 600
                 this.dialog.component = AcrossBusinessModuleSelector.name
                 this.dialog.show = true
+            },
+            validteIdleHost () {
+                const invalidList = this.table.selection.filter(item => {
+                    const [module] = item.module
+                    return module.default !== 1
+                }).map(item => item.host.bk_host_innerip)
+                if (invalidList.length === this.table.selection.length) {
+                    this.$warn(this.$t('主机不属于空闲机提示'))
+                    return false
+                }
+                return invalidList
             },
             handleDialogCancel () {
                 this.dialog.show = false
@@ -360,6 +396,8 @@
                     this.moveHostToResource(...arguments)
                 } else if (this.dialog.component === AcrossBusinessModuleSelector.name) {
                     this.moveHostToOtherBusiness(...arguments)
+                } else if (this.dialog.component === AcrossBusinessConfirm.name) {
+                    this.openAcrossBusinessModuleSelector()
                 }
             },
             async transferDirectly (modules) {
@@ -412,10 +450,14 @@
             },
             async moveHostToResource (directoryId) {
                 try {
+                    const validList = this.table.selection.filter(item => {
+                        const [module] = item.module
+                        return module.default === 1
+                    })
                     await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
                         params: {
                             bk_biz_id: this.bizId,
-                            bk_host_id: this.table.selection.map(item => item.host.bk_host_id),
+                            bk_host_id: validList.map(item => item.host.bk_host_id),
                             bk_module_id: directoryId
                         },
                         config: {
@@ -430,10 +472,14 @@
             async moveHostToOtherBusiness (modules, targetBizId) {
                 try {
                     const [targetModule] = modules
+                    const validList = this.table.selection.filter(item => {
+                        const [module] = item.module
+                        return module.default === 1
+                    })
                     await this.$http.post('hosts/modules/across/biz', {
                         src_bk_biz_id: this.bizId,
                         dst_bk_biz_id: targetBizId,
-                        bk_host_id: this.table.selection.map(({ host }) => host.bk_host_id),
+                        bk_host_id: validList.map(({ host }) => host.bk_host_id),
                         bk_module_id: targetModule.data.bk_inst_id
                     })
                     this.refreshHost()

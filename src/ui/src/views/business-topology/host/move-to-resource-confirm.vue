@@ -1,7 +1,11 @@
 <template>
-    <div class="confirm-wrapper">
+    <div :class="['confirm-wrapper', { 'has-invalid': hasInvalid }]">
         <h2 class="title">{{$t('确认归还主机池')}}</h2>
-        <i18n tag="p" path="确认归还主机池主机数量" class="content">
+        <i18n tag="p" path="确认归还主机池忽略主机数量" class="content" v-if="hasInvalid">
+            <span class="count" place="count">{{count}}</span>
+            <span class="invalid" place="invalid">{{invalidList.length}}</span>
+        </i18n>
+        <i18n tag="p" path="确认归还主机池主机数量" class="content" v-else>
             <span class="count" place="count">{{count}}</span>
         </i18n>
         <p class="content">{{$t('归还主机池提示')}}</p>
@@ -9,7 +13,6 @@
             {{$t('归还至目录')}}
             <bk-select class="directory-selector ml10"
                 v-model="target"
-                size="small"
                 searchable
                 :clearable="false"
                 :loading="$loading(request.list)"
@@ -24,6 +27,7 @@
                 </cmdb-auth-option>
             </bk-select>
         </div>
+        <invalid-list :title="$t('以下主机不能移除')" :list="invalidList"></invalid-list>
         <div class="options">
             <bk-button class="mr10" theme="primary"
                 :disabled="!target"
@@ -34,14 +38,22 @@
 </template>
 
 <script>
+    import InvalidList from './invalid-list'
     export default {
         name: 'cmdb-move-to-resource-confirm',
+        components: {
+            InvalidList
+        },
         props: {
             count: {
                 type: Number,
                 default: 0
             },
-            bizId: Number
+            bizId: Number,
+            invalidList: {
+                type: Array,
+                default: () => ([])
+            }
         },
         data () {
             return {
@@ -50,6 +62,11 @@
                 request: {
                     list: Symbol('list')
                 }
+            }
+        },
+        computed: {
+            hasInvalid () {
+                return !!this.invalidList.length
             }
         },
         created () {
@@ -86,6 +103,19 @@
 <style lang="scss" scoped>
     .confirm-wrapper {
         text-align: center;
+        &.has-invalid {
+            .content {
+                padding: 0 26px;
+                text-align: left;
+            }
+            .directory {
+                padding: 0 0 0 26px;
+                justify-content: flex-start;
+                .directory-selector {
+                    width: 514px;
+                }
+            }
+        }
     }
     .title {
         margin: 45px 0 17px;
@@ -100,7 +130,12 @@
         color: $textColor;
         .count {
             font-weight: bold;
-            color: #EA3536;
+            color: $successColor;
+            padding: 0 4px;
+        }
+        .invalid {
+            font-weight: bold;
+            color: $dangerColor;
             padding: 0 4px;
         }
     }
@@ -111,8 +146,8 @@
         font-size: 14px;
         margin-top: 10px;
         .directory-selector {
+            width: 305px;
             margin-left: 10px;
-            width: 150px;
             text-align: left;
         }
     }

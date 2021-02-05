@@ -14,12 +14,6 @@
                 @click="handleMultipleEdit">
                 {{$t('编辑')}}
             </bk-button>
-            <cmdb-clipboard-selector class="options-clipboard ml10"
-                label-key="bk_property_name"
-                :list="clipboardList"
-                :disabled="!hasSelection"
-                @on-copy="handleCopy">
-            </cmdb-clipboard-selector>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="medium"
                 :disabled="!hasSelection"
@@ -27,7 +21,7 @@
                 @hide="isTransferMenuOpen = false">
                 <bk-button slot="dropdown-trigger"
                     :disabled="!hasSelection">
-                    <span>{{$t('转移到')}}</span>
+                    <span>{{$t('转移')}}</span>
                     <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
                 </bk-button>
                 <ul class="bk-dropdown-list" slot="dropdown-content">
@@ -38,7 +32,7 @@
                             { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
                         ]"
                         @click="handleTransfer($event, 'idle', false)">
-                        {{$t('空闲模块')}}
+                        {{$t('至空闲模块')}}
                     </cmdb-auth>
                     <cmdb-auth tag="li" class="bk-dropdown-item"
                         :auth="[
@@ -47,26 +41,48 @@
                             { type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }
                         ]"
                         @click="handleTransfer($event, 'business', false)">
-                        {{$t('业务模块')}}
+                        {{$t('至业务模块')}}
                     </cmdb-auth>
-                    <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]"
-                        v-bk-tooltips="{
-                            disabled: isIdleSetModules,
-                            content: $t('仅空闲模块主机才能转移到其他业务')
+                </ul>
+            </bk-dropdown-menu>
+            <bk-dropdown-menu class="option ml10" trigger="click"
+                v-show="showRemoveMenu"
+                font-size="medium"
+                :disabled="!hasSelection"
+                @show="isRemoveMenuOpen = true"
+                @hide="isRemoveMenuOpen = false">
+                <bk-button slot="dropdown-trigger"
+                    :disabled="!hasSelection">
+                    <span>{{$t('移除')}}</span>
+                    <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
+                </bk-button>
+                <ul class="bk-dropdown-list" slot="dropdown-content">
+                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
+                        v-bk-tooltips.right="{
+                            disabled: hasSelection,
+                            content: $t('请先选择主机'),
+                            boundary: 'window'
                         }"
-                        @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
-                        {{$t('其他业务')}}
+                        @click="handleTransfer($event, 'resource', !hasSelection)">
+                        {{$t('至主机池')}}
                     </li>
-                    <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]"
-                        v-bk-tooltips="{
-                            disabled: isIdleModule,
-                            content: $t('仅空闲机模块才能转移到主机池')
+                    <li :class="['bk-dropdown-item', { disabled: !hasSelection }]"
+                        v-bk-tooltips.right="{
+                            disabled: hasSelection,
+                            content: $t('请先选择主机'),
+                            boundary: 'window'
                         }"
-                        @click="handleTransfer($event, 'resource', !isIdleModule)">
-                        {{$t('主机池')}}
+                        @click="handleTransfer($event, 'acrossBusiness', !hasSelection)">
+                        {{$t('至其他业务')}}
                     </li>
                 </ul>
             </bk-dropdown-menu>
+            <cmdb-clipboard-selector class="options-clipboard ml10"
+                label-key="bk_property_name"
+                :list="clipboardList"
+                :disabled="!hasSelection"
+                @on-copy="handleCopy">
+            </cmdb-clipboard-selector>
             <bk-dropdown-menu class="option ml10" trigger="click"
                 font-size="medium"
                 @show="isMoreMenuOpen = true"
@@ -157,6 +173,7 @@
         data () {
             return {
                 isTransferMenuOpen: false,
+                isRemoveMenuOpen: false,
                 isMoreMenuOpen: false,
                 dialog: {
                     show: false,
@@ -210,11 +227,20 @@
                     return data.module.every(module => module.default >= 1)
                 })
             },
+            showRemoveMenu () {
+                if (!this.selectedNode) return false
+                const data = this.selectedNode.data
+                return data.is_idle_set || data.default === 1 || data.bk_obj_id === 'biz'
+            },
+            /**
+             * 暂时屏蔽从当前模块移出主机的功能
+             */
             showRemove () {
-                return this.selectedNode
-                    && !this.selectedNode.data.is_idle_set
-                    && this.selectedNode.data.bk_obj_id === 'module'
-                    && this.selectedNode.data.default !== 1
+                return false
+                // return this.selectedNode
+                //     && !this.selectedNode.data.is_idle_set
+                //     && this.selectedNode.data.bk_obj_id === 'module'
+                //     && this.selectedNode.data.default !== 1
             },
             clipboardList () {
                 const IPWithCloud = FilterUtils.defineProperty({
