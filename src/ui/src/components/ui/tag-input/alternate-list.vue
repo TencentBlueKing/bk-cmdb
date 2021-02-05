@@ -1,5 +1,5 @@
 <template>
-    <div class="tag-input-alternate-list-wrapper"
+    <div class="cmdb-tag-input-alternate-list-wrapper"
         :class="{
             'is-loading': loading
         }"
@@ -105,3 +105,114 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+.cmdb-tag-input-alternate-list-wrapper {
+    width: 190px;
+    color: #63656E;
+    position: relative;
+    background-color: #fff;
+    &.is-loading {
+        min-height: 32px;
+        &:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, .7);
+            z-index: 1;
+        }
+        &:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            margin-left: -30px;
+            border-radius: 50%;
+            // transform: translate3d(-50%, -50%, 0);
+            background-color: transparent;
+            box-shadow: 12px 0px 0px 0px #fd6154,
+                        24px 0px 0px 0px #ffb726,
+                        36px 0px 0px 0px #4cd084,
+                        48px 0px 0px 0px #57a3f1;
+            animation: tag-input-loading 1s linear infinite;
+        }
+    }
+    .alternate-list{
+        margin: 0;
+        padding: 0;
+        max-height: 162px;
+        font-size: 12px;
+        line-height: 32px;
+        background: #fff;
+        overflow-y: auto;
+        &::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+            &-thumb {
+                border-radius: 2px;
+                background: #C4C6CC;
+                box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
+            }
+        }
+    }
+    .alternate-group {
+        padding: 0 11px;
+        color: #979BA5;
+        @include ellipsis;
+    }
+    .alternate-empty {
+        padding: 0;
+        margin: 0;
+        text-align: center;
+        line-height: 44px;
+        font-size: 12px;
+    }
+}
+@keyframes tag-input-loading {
+   0%{
+        box-shadow: 12px 0px 0px 0px #fd6154,
+                    24px 0px 0px 0px #ffb726,
+                    36px 0px 0px 0px #4cd084,
+                    48px 0px 0px 0px #57a3f1;
+      }
+    14%{
+        box-shadow: 12px 0px 0px 1px #fd6154,
+                    24px 0px 0px 0px #ffb726,
+                    36px 0px 0px 0px #4cd084,
+                    48px 0px 0px 0px #57a3f1;
+    }
+    28% {
+        box-shadow: 12px 0px 0px 2px #fd6154,
+                    24px 0px 0px 1px #ffb726,
+                    36px 0px 0px 0px #4cd084,
+                    48px 0px 0px 0px #57a3f1;
+    }
+    42% {
+        box-shadow: 12px 0px 0px 1px #fd6154,
+                    24px 0px 0px 2px #ffb726,
+                    36px 0px 0px 1px #4cd084,
+                    48px 0px 0px 0px #57a3f1;
+    }
+    56%{
+        box-shadow: 12px 0px 0px 0px #fd6154,
+                    24px 0px 0px 1px #ffb726,
+                    36px 0px 0px 2px #4cd084,
+                    48px 0px 0px 1px #57a3f1;
+    }
+    70% {
+        box-shadow: 12px 0px 0px 0px #fd6154,
+                    24px 0px 0px 0px #ffb726,
+                    36px 0px 0px 1px #4cd084,
+                    48px 0px 0px 2px #57a3f1;
+    }
+    84% {
+        box-shadow: 12px 0px 0px 0px #fd6154,
+                    24px 0px 0px 0px #ffb726,
+                    36px 0px 0px 0px #4cd084,
+                    48px 0px 0px 1px #57a3f1;
+    }
+}
+</style>

@@ -13,7 +13,7 @@
                         @change="handleOperatorChange(property, ...arguments)">
                     </form-operator-selector>
                     <component class="item-value"
-                        :is="`cmdb-search-${property.bk_property_type}`"
+                        :is="getComponentType(property)"
                         :placeholder="getPlaceholder(property)"
                         :data-vv-name="property.bk_property_id"
                         :data-vv-as="property.bk_property_name"
@@ -43,6 +43,9 @@
             }
         },
         computed: {
+            bizId () {
+                return this.dynamicGroupForm.bizId
+            },
             properties () {
                 return this.dynamicGroupForm.selectedProperties
             },
@@ -139,10 +142,42 @@
             handleRemove (property) {
                 this.$emit('remove', property)
             },
+            getComponentType (property) {
+                const {
+                    bk_obj_id: modelId,
+                    bk_property_id: propertyId,
+                    bk_property_type: propertyType
+                } = property
+                const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+                const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+                if (isSetName || isModuleName) {
+                    return `cmdb-search-${modelId}`
+                }
+                return `cmdb-search-${propertyType}`
+            },
             getBindProps (property) {
-                if (['list', 'enum'].includes(property.bk_property_type)) {
+                const props = this.getNormalProps(property)
+                const {
+                    bk_obj_id: modelId,
+                    bk_property_id: propertyId
+                } = property
+                const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+                const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+                if (isSetName || isModuleName) {
+                    return Object.assign(props, { bizId: this.bizId })
+                }
+                return props
+            },
+            getNormalProps (property) {
+                const type = property.bk_property_type
+                if (['list', 'enum'].includes(type)) {
                     return {
                         options: property.option || []
+                    }
+                }
+                if (type === 'objuser') {
+                    return {
+                        fastSelect: true
                     }
                 }
                 return {}

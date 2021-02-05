@@ -1,5 +1,5 @@
 <template>
-    <div class="tag-input"
+    <div class="cmdb-tag-input"
         :style="{
             height: fixedHeight ? inputHeight + 'px' : 'auto'
         }"
@@ -69,6 +69,7 @@
     import AlternateList from './alternate-list'
     import Vue from 'vue'
     import Tippy from 'bk-magic-vue/lib/utils/tippy'
+    import Axios from 'axios'
     export default {
         name: 'cmdb-tag-input',
         components: {
@@ -223,7 +224,7 @@
                     this.updateScroller()
                     this.scheduleSearch(value)
                 } else if (this.isFocus) {
-                    this.search()
+                    this.scheduleSearch()
                 }
             },
             isFocus (isFocus) {
@@ -273,15 +274,19 @@
                     alternateContent.loading = !!value
                     const { results: data, next: nextPage } = await new Promise(async (resolve, reject) => {
                         if (value) {
-                            const promise = [(this.fuzzySearchMethod || this.defaultFuzzySearchMethod)(value, next)]
-                            if (this.searchFromDefaultAlternate) {
-                                promise.push(this.getDefaultAlternateData(value))
+                            try {
+                                const promise = [(this.fuzzySearchMethod || this.defaultFuzzySearchMethod)(value, next)]
+                                if (this.searchFromDefaultAlternate) {
+                                    promise.push(this.getDefaultAlternateData(value))
+                                }
+                                const [fuzzySearchData, defaultAlternateData] = await Promise.all(promise)
+                                if (defaultAlternateData) {
+                                    fuzzySearchData.results.unshift(...defaultAlternateData.results)
+                                }
+                                resolve(fuzzySearchData)
+                            } catch (error) {
+                                reject(error)
                             }
-                            const [fuzzySearchData, defaultAlternateData] = await Promise.all(promise)
-                            if (defaultAlternateData) {
-                                fuzzySearchData.results.unshift(...defaultAlternateData.results)
-                            }
-                            resolve(fuzzySearchData)
                         } else {
                             const defaultAlternateData = this.getDefaultAlternateData()
                             resolve(defaultAlternateData)
@@ -303,12 +308,12 @@
                     alternateContent.matchedData = this.matchedData
                     alternateContent.loading = false
                 } catch (e) {
-                    if (e.type === 'reset') {
+                    console.error(e)
+                    if (e.message === 'expire' || Axios.isCancel(e)) {
                         return
                     }
                     this.matchedData = []
                     this.flattenedData = []
-                    console.error(e)
                 }
             },
             async getDefaultAlternateData (keyword) {
@@ -421,7 +426,8 @@
                         boundary: 'window',
                         onHide: () => {
                             this.handlePopoverHide()
-                        }
+                        },
+                        onShow: () => this.isFocus
                     })
                 }
                 return this.popoverInstance
@@ -935,5 +941,6 @@
         color: #63656E;
         font-size: 12px;
         line-height: 24px;
+        padding: 0;
     }
 </style>

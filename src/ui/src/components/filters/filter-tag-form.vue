@@ -14,9 +14,9 @@
                     @toggle="handleActiveChange">
                 </operator-selector>
                 <component class="form-value"
-                    :is="`cmdb-search-${property.bk_property_type}`"
-                    :placeholder="getPlaceholder(property)"
-                    v-bind="getBindProps(property)"
+                    :is="getComponentType()"
+                    :placeholder="getPlaceholder()"
+                    v-bind="getBindProps()"
                     v-model.trim="value"
                     @active-change="handleActiveChange">
                 </component>
@@ -82,8 +82,37 @@
             getPlaceholder () {
                 return Utils.getPlaceholder(this.property)
             },
+            getComponentType () {
+                const {
+                    bk_obj_id: modelId,
+                    bk_property_id: propertyId,
+                    bk_property_type: propertyType
+                } = this.property
+                const normal = `cmdb-search-${propertyType}`
+                if (!FilterStore.bizId) {
+                    return normal
+                }
+                const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+                const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+                if (isSetName || isModuleName) {
+                    return `cmdb-search-${modelId}`
+                }
+                return normal
+            },
             getBindProps () {
                 const props = Utils.getBindProps(this.property)
+                if (!FilterStore.bizId) {
+                    return props
+                }
+                const {
+                    bk_obj_id: modelId,
+                    bk_property_id: propertyId
+                } = this.property
+                const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+                const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+                if (isSetName || isModuleName) {
+                    return Object.assign(props, { bizId: FilterStore.bizId })
+                }
                 return props
             },
             resetCondition () {

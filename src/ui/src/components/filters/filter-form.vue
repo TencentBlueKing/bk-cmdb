@@ -56,7 +56,7 @@
                             @change="handleOperatorChange(property, ...arguments)">
                         </operator-selector>
                         <component class="item-value"
-                            :is="`cmdb-search-${property.bk_property_type}`"
+                            :is="getComponentType(property)"
                             :placeholder="getPlaceholder(property)"
                             :ref="`component-${property.id}`"
                             v-bind="getBindProps(property)"
@@ -228,8 +228,38 @@
                 const model = this.getModelById(property.bk_obj_id)
                 return model ? model.bk_obj_name : model.bk_obj_id
             },
+            getComponentType (property) {
+                const {
+                    bk_obj_id: modelId,
+                    bk_property_id: propertyId,
+                    bk_property_type: propertyType
+                } = property
+                const normal = `cmdb-search-${propertyType}`
+                if (!FilterStore.bizId) {
+                    return normal
+                }
+                const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+                const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+                if (isSetName || isModuleName) {
+                    return `cmdb-search-${modelId}`
+                }
+                return normal
+            },
             getBindProps (property) {
-                return Utils.getBindProps(property)
+                const props = Utils.getBindProps(property)
+                if (!FilterStore.bizId) {
+                    return props
+                }
+                const {
+                    bk_obj_id: modelId,
+                    bk_property_id: propertyId
+                } = property
+                const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
+                const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
+                if (isSetName || isModuleName) {
+                    return Object.assign(props, { bizId: FilterStore.bizId })
+                }
+                return props
             },
             getPlaceholder (property) {
                 return Utils.getPlaceholder(property)

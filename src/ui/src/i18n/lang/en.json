@@ -1060,6 +1060,10 @@
     "请编辑": "Please edit",
     "确认归还主机池": "Transfer to host pool confirm",
     "确认归还主机池主机数量": "Confirm transfer {count} idle host(s) to host pool?",
+    "确认归还主机池忽略主机数量": "{invalid} of {count} selected host aren't belong to idle module will ignore automatically",
+    "确认跨业务转移忽略主机数量": "{invalid} of {count} selected host aren't belong to idle module will ignore automatically",
+    "主机不属于空闲机提示": "The selected host not belong to idle module, cannot be removed",
+    "以下主机不能移除": "The following hosts cannot be removed",
     "已选主机": "Host Count",
     "N台主机": "{count}",
     "删除服务实例": "Deleted Service Instance",
@@ -1426,5 +1430,10 @@
     "新增主机到模块": "Add host to module",
     "跳转失败，服务模板已经被删除": "Failed to route service template, template was deleted",
     "跳转失败，集群模板已经被删除": "Failed to route set template, template was deleted",
-    "进程模板锁定提示语": "Click to lock, after locking, cannot be modified in service instance"
+    "进程模板锁定提示语": "Click to lock, after locking, cannot be modified in service instance",
+    "至空闲模块": "To idel module",
+    "至业务模块": "to business module",
+    "至主机池": "to host pool",
+    "至其他业务": "to other business",
+    "请先选择主机": "Please select host"
 }

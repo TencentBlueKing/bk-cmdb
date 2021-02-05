@@ -14,7 +14,7 @@
 </template>
 
 <script>
-    import activeMixin from './mixin-active'
+    import activeMixin from './mixins/active'
     import TimeZones from '../ui/form/timezone.json'
     export default {
         name: 'cmdb-search-timezone',

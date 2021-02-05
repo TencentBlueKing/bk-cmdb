@@ -38,7 +38,7 @@
             getItemContent () {
                 let displayText = this.tag.text || this.tag.value
                 if (this.keyword) {
-                    displayText = displayText.replace(new RegExp(this.keyword, 'g'), `<span>${this.keyword}</span>`)
+                    displayText = displayText.replace(new RegExp(this.keyword, 'ig'), `<span ${this.$options._scopeId}>$&</span>`)
                 }
                 return displayText
             },
@@ -48,3 +48,26 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+.alternate-item {
+    padding: 0 10px;
+    justify-content: space-between;
+    cursor: pointer;
+    &.highlight,
+    &:hover{
+        background-color: #f1f7ff;
+    }
+    &.disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+    .item-name {
+        display: block;
+        @include ellipsis;
+        span {
+            color: #3A84FF;
+        }
+    }
+}
+</style>

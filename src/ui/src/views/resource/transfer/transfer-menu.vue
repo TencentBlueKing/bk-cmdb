@@ -139,8 +139,8 @@
                     count: HostStore.getSelected().length,
                     bizId: bizId
                 }
-                this.dialog.width = 400
-                this.dialog.height = 231
+                this.dialog.width = 460
+                this.dialog.height = 250
                 this.dialog.component = MoveToResourceConfirm.name
                 this.dialog.show = true
             },

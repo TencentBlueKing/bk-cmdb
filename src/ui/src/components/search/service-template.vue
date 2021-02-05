@@ -21,7 +21,7 @@
 </template>
 
 <script>
-    import activeMixin from './mixin-active'
+    import activeMixin from './mixins/active'
     import { mapGetters } from 'vuex'
     const requestId = Symbol('serviceTemplate')
     export default {
