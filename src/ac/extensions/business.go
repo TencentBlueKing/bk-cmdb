@@ -101,7 +101,7 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
 }
 
-func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenFindBusinessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
 	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
 	if err != nil {
 		return nil, err
@@ -112,15 +112,15 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 	permission := &metadata.IamPermission{
 		SystemID: iam.SystemIDCMDB,
 		Actions: []metadata.IamAction{{
-			ID: string(iam.FindAuditLog),
+			ID: string(iam.FindBusiness),
 			RelatedResourceTypes: []metadata.IamResourceType{{
 				SystemID: iam.SystemIDCMDB,
-				Type:     string(iam.SysAuditLog),
+				Type:     string(iam.Business),
 				Instances: [][]metadata.IamResourceInstance{{{
 					Type: string(iam.Business),
 					ID:   strconv.FormatInt(businessID, 10),
 				}, {
-					Type: string(iam.SysAuditLog),
+					Type: string(iam.Business),
 				}}},
 			}},
 		}},
