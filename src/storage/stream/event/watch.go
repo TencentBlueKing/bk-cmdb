@@ -40,6 +40,27 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 		Collection(opts.Collection).
 		Watch(ctx, pipeline, streamOptions)
 
+	if err != nil && isFatalError(err) {
+		// TODO: send alarm immediately.
+		blog.Errorf("mongodb watch collection: %s got a fatal error, skip resume token and retry, err: %v",
+			opts.Collection, err)
+		// reset the resume token, because we can not use the former resume token to watch success for now.
+		streamOptions.StartAfter = nil
+		// cause we have already got a fatal error, we can not try to watch from where we lost.
+		// so re-watch from 1 minutes ago to avoid lost events.
+		// Note: apparently, we may got duplicate events with this re-watch
+		streamOptions.StartAtOperationTime = &primitive.Timestamp{
+			T: uint32(time.Now().Unix()) - 60,
+			I: 0,
+		}
+
+		stream, err = e.client.
+			Database(e.database).
+			Collection(opts.Collection).
+			Watch(ctx, pipeline, streamOptions)
+
+	}
+
 	if err != nil {
 		blog.Errorf("mongodb watch failed with conf: %+v, err: %v", *opts, err)
 		return nil, fmt.Errorf("watch collection: %s failed, err: %v", opts.Collection, err)
