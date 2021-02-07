@@ -339,13 +339,13 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 func (s *cacheService) GetLatestEvent(ctx *rest.Contexts) {
 	opt := new(metadata.GetLatestEventOption)
 	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
 	node, err := s.cacheSet.Event.GetLatestEvent(ctx.Kit, opt)
 	if err != nil {
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -355,13 +355,13 @@ func (s *cacheService) GetLatestEvent(ctx *rest.Contexts) {
 func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
 	opt := new(metadata.SearchEventNodesOption)
 	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
 	nodes, err := s.cacheSet.Event.SearchFollowingEventChainNodes(ctx.Kit, opt)
 	if err != nil {
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -371,13 +371,13 @@ func (s *cacheService) SearchFollowingEventChainNodes(ctx *rest.Contexts) {
 func (s *cacheService) SearchEventDetails(ctx *rest.Contexts) {
 	opt := new(metadata.SearchEventDetailsOption)
 	if err := ctx.DecodeInto(opt); nil != err {
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
 	details, err := s.cacheSet.Event.SearchEventDetails(ctx.Kit, opt)
 	if err != nil {
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -396,21 +396,20 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	options := new(watch.WatchEventOptions)
 	if err = ctx.DecodeInto(&options); err != nil {
 		blog.Errorf("watch event, but decode request body failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
 	if err = options.Validate(); err != nil {
 		blog.Errorf("watch event, but got invalid request options, err: %v, rid: %s", err, ctx.Kit.Rid)
-
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
 	key, err := event.GetResourceKeyWithCursorType(options.Resource)
 	if err != nil {
 		blog.Errorf("watch event, but get resource key with cursor type failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -422,7 +421,7 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 		events, err := s.cacheSet.Event.WatchWithCursor(ctx.Kit, key, options)
 		if err != nil {
 			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, ctx.Kit.Rid)
-			ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+			ctx.RespAutoError(err)
 			return
 		}
 
@@ -437,7 +436,7 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("watch event with start from: %s failed, err: %v, rid: %s",
 				time.Unix(options.StartFrom, 0).Format(time.RFC3339), err, ctx.Kit.Rid)
-			ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+			ctx.RespAutoError(err)
 			return
 		}
 
@@ -449,7 +448,7 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	events, err := s.cacheSet.Event.WatchFromNow(ctx.Kit, key, options)
 	if err != nil {
 		blog.Errorf("watch event from now failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.Response(&metadata.Response{BaseResp: metadata.BaseResp{Result: false, Code: -1, ErrMsg: err.Error()}})
+		ctx.RespAutoError(err)
 		return
 	}
 
