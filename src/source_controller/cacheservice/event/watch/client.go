@@ -258,8 +258,22 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 			return false, nil, 0, err
 		}
 
+		// if the first cursor is not a valid event, returns node not exist with the last event id to start from
 		if !exists {
-			return false, make([]*watch.ChainNode, 0), 0, nil
+			filter := map[string]interface{}{
+				"_id": key.Collection(),
+			}
+
+			data := new(watch.LastChainNodeData)
+			err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
+			if err != nil {
+				if !c.watchDB.IsNotFoundError(err) {
+					blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
+					return false, nil, 0, err
+				}
+				return false, nil, 0, nil
+			}
+			return false, make([]*watch.ChainNode, 0), data.ID, nil
 		}
 
 		nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, types, key)
