@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 )
 
@@ -114,58 +113,25 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 	dbFields = append(dbFields, instIDKey)
 
 	insts := make([]mapstr.MapStr, 0)
-	switch objID {
-	case common.BKInnerObjIDHost:
-		option := metadata.ListHostsWithNoBizParameter{
-			HostPropertyFilter: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionOr,
-					Rules: []querybuilder.Rule{
-						querybuilder.AtomRule{
-							Field:    common.BKHostIDField,
-							Operator: querybuilder.OperatorIn,
-							Value:    instIDArr,
-						},
-					},
-				},
+	option := mapstr.MapStr{
+		"condition": mapstr.MapStr{
+			instIDKey: mapstr.MapStr{
+				common.BKDBIN: instIDArr,
 			},
-			Fields: dbFields,
-		}
-
-		resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
-		if err != nil {
-			blog.ErrorJSON(" fetchInstAssocationData failed, ListHostWithoutApp err:%s, option: %s, rid: %s", err, option, rid)
-			return nil, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !resp.Result {
-			blog.ErrorJSON(" fetchInstAssocationData failed, ListHostWithoutApp resp:%s, option: %s, rid: %s", resp, option, rid)
-			return nil, resp.CCError()
-		}
-
-		for _, inst := range resp.Data.Info {
-			insts = append(insts, mapstr.NewFromMap(inst))
-		}
-	default:
-		option := mapstr.MapStr{
-			"condition": mapstr.MapStr{
-				instIDKey: mapstr.MapStr{
-					common.BKDBIN: instIDArr,
-				},
-			},
-			"fields": dbFields,
-		}
-
-		resp, err := lgc.CoreAPI.ApiServer().GetInstDetail(ctx, header, objID, option)
-		if err != nil {
-			blog.ErrorJSON(" fetchInstAssocationData failed, GetInstDetail err:%v, option: %s, rid: %s", err, option, rid)
-			return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !resp.Result {
-			blog.ErrorJSON(" fetchInstAssocationData failed, GetInstDetail resp:%s, option: %s, rid: %s", resp, option, rid)
-			return nil, resp.CCError()
-		}
-		insts = resp.Data.Info
+		},
+		"fields": dbFields,
 	}
+
+	resp, err := lgc.CoreAPI.ApiServer().GetInstUniqueFields(ctx, header, objID, option)
+	if err != nil {
+		blog.ErrorJSON(" fetchInstAssocationData failed, GetInstUniqueFields err:%v, option: %s, rid: %s", err, option, rid)
+		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result {
+		blog.ErrorJSON(" fetchInstAssocationData failed, GetInstUniqueFields resp:%s, option: %s, rid: %s", resp, option, rid)
+		return nil, resp.CCError()
+	}
+	insts = resp.Data.Info
 
 	retAsstInstInfo := make(map[int64][]PropertyPrimaryVal, 0)
 	for _, inst := range insts {

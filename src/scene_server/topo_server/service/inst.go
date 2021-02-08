@@ -518,6 +518,99 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchInstUniqueFields search the instances' unique fields and including instances' id field
+// no need to auth because it only get the unique fields
+func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// get must check unique to judge if the instance exists
+	cond := map[string]interface{}{
+		common.BKObjIDField: objID,
+		"must_check":        true,
+	}
+	uniqueResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		blog.Errorf("search model unique failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !uniqueResp.Result {
+		blog.Errorf("search model unique failed, cond: %s, error message: %s, rid: %s", cond, uniqueResp.ErrMsg, ctx.Kit.Rid)
+		ctx.RespAutoError(uniqueResp.Error())
+		return
+	}
+	if uniqueResp.Data.Count != 1 {
+		blog.Errorf("model %s has wrong must_check unique field count", objID)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
+		return
+	}
+
+	keyIDs := make([]int64, 0)
+	for _, key := range uniqueResp.Data.Info[0].Keys {
+		keyIDs = append(keyIDs, int64(key.ID))
+	}
+
+	cond = map[string]interface{}{
+		common.BKObjIDField: objID,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: keyIDs,
+		},
+	}
+	attrResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, objID, &metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		blog.Errorf("search model attribute failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !attrResp.Result {
+		blog.Errorf("search model attribute failed, cond: %s, error message: %s, rid: %s", cond, attrResp.ErrMsg, ctx.Kit.Rid)
+		ctx.RespAutoError(attrResp.Error())
+		return
+	}
+	if attrResp.Data.Count <= 0 {
+		blog.Errorf("unique model attribute count illegal, cond: %s, rid: %s", cond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
+		return
+	}
+
+	instIDKey := metadata.GetInstIDFieldByObjID(objID)
+	keys := []string{instIDKey}
+	for _, attr := range attrResp.Data.Info {
+		keys = append(keys, attr.PropertyID)
+	}
+
+	data := struct {
+		paraparse.SearchParams `json:",inline"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// construct the query inst condition
+	queryCond := data.SearchParams
+	if queryCond.Condition == nil {
+		queryCond.Condition = mapstr.New()
+	}
+	page := metadata.ParsePage(queryCond.Page)
+
+	query := &metadata.QueryInput{}
+	query.Condition = queryCond.Condition
+	// just get the unique fields
+	query.Fields = strings.Join(keys, ",")
+	query.Limit = page.Limit
+	query.Sort = page.Sort
+	query.Start = page.Start
+
+	result, err := s.Core.InstOperation().FindOriginInst(ctx.Kit, objID, query)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", ctx.Request.PathParameter("bk_obj_id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
+
 // SearchInstByObject search the inst of the object
 func (s *Service) SearchInstByObject(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
