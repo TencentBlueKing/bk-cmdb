@@ -44,6 +44,12 @@ const (
 	// DynamicGroupOperatorGTE gte operator.
 	DynamicGroupOperatorGTE = "$gte"
 
++       // DynamicGroupOperatorGT gt operator.
++       DynamicGroupOperatorGT = "$gt"
++
++       // DynamicGroupOperatorLT lt operator.
++       DynamicGroupOperatorLT = "$lt"
+	
 	// DynamicGroupOperatorLIKE like operator.
 	DynamicGroupOperatorLIKE = "$regex"
 )
@@ -58,6 +64,8 @@ var (
 		DynamicGroupOperatorLTE:  DynamicGroupOperatorLTE,
 		DynamicGroupOperatorGTE:  DynamicGroupOperatorGTE,
 		DynamicGroupOperatorLIKE: DynamicGroupOperatorLIKE,
++               DynamicGroupOperatorGT:   DynamicGroupOperatorGT,
++               DynamicGroupOperatorLT:   DynamicGroupOperatorLT,
 	}
 
 	// DynamicGroupConditionTypes all condition object types of dynamic group.
