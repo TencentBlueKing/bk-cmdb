@@ -79,6 +79,14 @@ func (f *Flow) RunFlow(ctx context.Context) error {
 
 	f.tokenHandler = NewFlowTokenHandler(f.key, f.watchDB, f.metrics)
 
+	startAtTime, err := f.tokenHandler.getStartWatchTime(ctx)
+	if err != nil {
+		blog.Errorf("get start watch time for %s failed, err: %v", f.key.Collection(), err)
+		return err
+	}
+	watchOpts.StartAtTime = startAtTime
+	watchOpts.WatchFatalErrorCallback = f.tokenHandler.resetWatchToken
+
 	opts := &types.LoopBatchOptions{
 		LoopOptions: types.LoopOptions{
 			Name:         f.key.Namespace(),
@@ -144,6 +152,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		// collect event's basic metrics
 		f.metrics.collectBasic(e)
 		lastTokenData[common.BKTokenField] = e.Token.Data
+		lastTokenData[common.BKStartAtTimeField] = e.ClusterTime
 
 		switch e.OperationType {
 		case types.Insert, types.Update, types.Replace, types.Delete:
@@ -240,6 +249,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		lastNode := chainNodes[len(chainNodes)-1]
 		lastTokenData[common.BKFieldID] = lastNode.ID
 		lastTokenData[common.BKCursorField] = lastNode.Cursor
+		lastTokenData[common.BKStartAtTimeField] = lastNode.ClusterTime
 		if err := f.tokenHandler.setLastWatchToken(sc, lastTokenData); err != nil {
 			f.metrics.collectMongoError()
 			_ = session.AbortTransaction(context.Background())
@@ -393,4 +403,40 @@ func (f *flowTokenHandler) GetStartWatchToken(ctx context.Context) (token string
 	}
 
 	return data.Token, nil
+}
+
+// resetWatchToken set watch token to empty and set the start watch time to the given one for next watch
+func (f *flowTokenHandler) resetWatchToken(startAtTime *types.TimeStamp) error {
+	data := map[string]interface{}{
+		common.BKTokenField:       "",
+		common.BKStartAtTimeField: startAtTime,
+	}
+
+	filter := map[string]interface{}{
+		"_id": f.key.Collection(),
+	}
+
+	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(context.Background(), filter, data); err != nil {
+		blog.ErrorJSON("clear watch token failed, err: %s, data: %s", err, data)
+		return err
+	}
+	return nil
+}
+
+func (f *flowTokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeStamp, error) {
+	filter := map[string]interface{}{
+		"_id": f.key.Collection(),
+	}
+
+	data := new(watch.LastChainNodeData)
+	err := f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKStartAtTimeField).One(ctx, data)
+	if err != nil {
+		if !f.watchDB.IsNotFoundError(err) {
+			f.metrics.collectMongoError()
+			blog.ErrorJSON("run flow, but get start watch time failed, err: %v, filter: %+v", err, filter)
+			return nil, err
+		}
+		return nil, nil
+	}
+	return data.StartAtTime, nil
 }

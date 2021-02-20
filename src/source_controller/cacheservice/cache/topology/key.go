@@ -25,6 +25,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	drvRedis "configcenter/src/storage/driver/redis"
+	"configcenter/src/storage/stream/types"
 )
 
 func newTokenHandler(object string) *tokenHandler {
@@ -66,7 +67,7 @@ func (w *tokenHandler) GetStartWatchToken(ctx context.Context) (token string, er
 	filter := map[string]interface{}{"_id": w.doc}
 	for try := 0; try < 5; try++ {
 		tokenData := make(map[string]string)
-		err = w.db.Table(common.BKTableNameSystem).Find(filter).One(ctx, &tokenData)
+		err = w.db.Table(common.BKTableNameSystem).Find(filter).Fields(w.key).One(ctx, &tokenData)
 		if err != nil {
 			blog.Errorf("get %s start token failed, err: %v", w.key, err)
 			if !w.db.IsNotFoundError(err) {
@@ -79,6 +80,32 @@ func (w *tokenHandler) GetStartWatchToken(ctx context.Context) (token string, er
 	}
 
 	return "", err
+}
+
+// resetWatchToken set watch token to empty and set the start watch time to the given one for next watch
+func (w *tokenHandler) resetWatchToken(startAtTime *types.TimeStamp) error {
+	filter := map[string]interface{}{"_id": w.doc}
+	tokenData := mapstr.MapStr{
+		w.key:                 "",
+		w.key + "_start_time": startAtTime,
+	}
+
+	return w.db.Table(common.BKTableNameSystem).Upsert(context.Background(), filter, tokenData)
+}
+
+func (w *tokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeStamp, error) {
+	filter := map[string]interface{}{"_id": w.doc}
+
+	data := make(map[string]*types.TimeStamp)
+	err := w.db.Table(common.BKTableNameSystem).Find(filter).Fields(w.key+"_start_time").One(ctx, &data)
+	if err != nil {
+		if !w.db.IsNotFoundError(err) {
+			blog.Errorf("get %s start time failed, err: %v", w.key, err)
+			return nil, err
+		}
+		return nil, nil
+	}
+	return data[w.key+"_start_time"], nil
 }
 
 func newTopologyKey() *cacheKey {

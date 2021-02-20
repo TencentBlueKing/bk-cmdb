@@ -17,8 +17,8 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
-// AddModelBizIDConditon add model bizID condition according to bizID value
-func AddModelBizIDConditon(cond mapstr.MapStr, modelBizID int64) {
+// AddModelBizIDCondition add model bizID condition according to bizID value
+func AddModelBizIDCondition(cond mapstr.MapStr, modelBizID int64) {
 	var modelBizIDOrCondArr []mapstr.MapStr
 	if modelBizID > 0 {
 		// special business model and global shared model
@@ -35,11 +35,10 @@ func AddModelBizIDConditon(cond mapstr.MapStr, modelBizID int64) {
 		}
 	}
 
-	if orCond, exists := cond[common.BKDBOR]; !exists {
+	if _, exists := cond[common.BKDBOR]; !exists {
 		cond[common.BKDBOR] = modelBizIDOrCondArr
 	} else {
 		andCondArr := []map[string]interface{}{
-			{common.BKDBOR: orCond},
 			{common.BKDBOR: modelBizIDOrCondArr},
 		}
 

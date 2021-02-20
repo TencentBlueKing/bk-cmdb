@@ -550,7 +550,7 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	}
 
 	attrCond := make(map[string]interface{})
-	util.AddModelBizIDConditon(attrCond, appID)
+	util.AddModelBizIDCondition(attrCond, appID)
 	hostAttributes, attrErr := lgc.GetHostAttributes(kit, attrCond)
 	if attrErr != nil {
 		blog.Errorf("get host attributes failed, err: %v, biz id: %d, rid: %s", attrErr, appID, kit.Rid)
