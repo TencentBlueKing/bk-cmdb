@@ -1059,6 +1059,10 @@ func validHostType(collection string, projection map[string]int, result interfac
 			return nil
 		}
 
+		if elem.Kind() == reflect.Ptr {
+			elem = elem.Elem()
+		}
+
 		if elem.Kind() != reflect.Struct {
 			blog.Errorf("host query result type(%v) not struct pointer type or map type", resType)
 			return fmt.Errorf("host query result type invalid")

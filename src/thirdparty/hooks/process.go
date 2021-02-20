@@ -28,5 +28,10 @@ func SetVIPInfoForProcessHook(kit *rest.Kit, processes []mapstr.MapStr, fields [
 // ParseVIPFieldsForProcessHook parse process vip fields for process
 func ParseVIPFieldsForProcessHook(fields []string, table string) ([]string, []string) {
 
-	return fields, make([]string,0)
+	return fields, make([]string, 0)
+}
+
+// UpdateProcessBindInfoHook if process need to update bind info, only update the specified fields
+func UpdateProcessBindInfoHook(kit *rest.Kit, objID string, data mapstr.MapStr) error {
+	return nil
 }
