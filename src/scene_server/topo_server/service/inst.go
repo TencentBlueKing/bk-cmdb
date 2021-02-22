@@ -530,12 +530,12 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 	uniqueResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, metadata.QueryCondition{Condition: cond})
 	if err != nil {
-		blog.Errorf("search model unique failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
+		blog.ErrorJSON("search model unique failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
 	if !uniqueResp.Result {
-		blog.Errorf("search model unique failed, cond: %s, error message: %s, rid: %s", cond, uniqueResp.ErrMsg, ctx.Kit.Rid)
+		blog.ErrorJSON("search model unique failed, cond: %s, error message: %s, rid: %s", cond, uniqueResp.ErrMsg, ctx.Kit.Rid)
 		ctx.RespAutoError(uniqueResp.Error())
 		return
 	}
@@ -558,17 +558,17 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 	attrResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, objID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
-		blog.Errorf("search model attribute failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
+		blog.ErrorJSON("search model attribute failed, cond: %s, error: %s, rid: %s", cond, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
 	if !attrResp.Result {
-		blog.Errorf("search model attribute failed, cond: %s, error message: %s, rid: %s", cond, attrResp.ErrMsg, ctx.Kit.Rid)
+		blog.ErrorJSON("search model attribute failed, cond: %s, error message: %s, rid: %s", cond, attrResp.ErrMsg, ctx.Kit.Rid)
 		ctx.RespAutoError(attrResp.Error())
 		return
 	}
 	if attrResp.Data.Count <= 0 {
-		blog.Errorf("unique model attribute count illegal, cond: %s, rid: %s", cond, ctx.Kit.Rid)
+		blog.ErrorJSON("unique model attribute count illegal, cond: %s, rid: %s", cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed))
 		return
 	}
@@ -579,22 +579,18 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		keys = append(keys, attr.PropertyID)
 	}
 
-	data := struct {
-		paraparse.SearchParams `json:",inline"`
-	}{}
-	if err := ctx.DecodeInto(&data); nil != err {
+	// construct the query inst condition
+	queryCond := new(paraparse.SearchParams)
+	if err := ctx.DecodeInto(queryCond); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	// construct the query inst condition
-	queryCond := data.SearchParams
 	if queryCond.Condition == nil {
 		queryCond.Condition = mapstr.New()
 	}
 	page := metadata.ParsePage(queryCond.Page)
 
-	query := &metadata.QueryInput{}
+	query := new(metadata.QueryInput)
 	query.Condition = queryCond.Condition
 	// just get the unique fields
 	query.Fields = strings.Join(keys, ",")
