@@ -1508,9 +1508,13 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 			errMsg = append(errMsg, CCLang.Languagef("import_update_host_hostID_not_int", index))
 			continue
 		}
-		// bk_host_innerip, bk_cloud_id should not update
+
+		// remove unchangeable fields
 		delete(hostInfo, common.BKHostInnerIPField)
 		delete(hostInfo, common.BKCloudIDField)
+		delete(hostInfo, common.BKImportFrom)
+		delete(hostInfo, common.CreateTimeField)
+
 		hostIDArr = append(hostIDArr, intHostID)
 		hosts[index] = hostInfo
 		indexHostIDMap[index] = intHostID

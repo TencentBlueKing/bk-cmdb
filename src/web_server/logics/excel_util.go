@@ -44,7 +44,7 @@ var (
 func getFilterFields(objID string) []string {
 	switch objID {
 	case common.BKInnerObjIDHost:
-		return []string{"create_time", "import_from", "bk_agent_status", "bk_agent_version", "bk_set_name", "bk_module_name", "bk_biz_name"}
+		return []string{"bk_agent_status", "bk_agent_version", "bk_set_name", "bk_module_name", "bk_biz_name"}
 	default:
 		return []string{"create_time"}
 	}
