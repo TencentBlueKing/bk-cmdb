@@ -42,8 +42,7 @@
             this.addListener()
         },
         beforeDestroy () {
-            ConfirmStore.uninstall(this)
-            this.removeListener()
+            this.destroy()
         },
         methods: {
             show () {
@@ -61,6 +60,7 @@
                         closeIcon: false,
                         confirmFn: () => {
                             this.confirmResolve(this.reverse)
+                            this.destroy()
                         },
                         cancelFn: () => {
                             this.confirmResolve(!this.reverse)
@@ -69,6 +69,10 @@
                 } else {
                     this.confirmPromise = Promise.resolve(true)
                 }
+            },
+            destroy () {
+                ConfirmStore.uninstall(this)
+                this.removeListener()
             },
             addListener () {
                 window.addEventListener('beforeunload', this.unloadHandler)
