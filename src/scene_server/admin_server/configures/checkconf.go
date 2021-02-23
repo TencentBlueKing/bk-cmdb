@@ -31,8 +31,17 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 	split := strings.Split(file, ".")
 	fileName := split[0]
 	v := viper.New()
-	v.SetConfigName(fileName)
-	v.AddConfigPath(path.Dir(confFilePath))
+	if runtime.GOOS == "windows" {
+		nameWithPointList := strings.Split(file, `\`)
+		nameWithPoint := nameWithPointList[len(nameWithPointList)-1]
+		name := strings.Split(nameWithPoint, ".")
+		filePath := strings.TrimSuffix(confFilePath, nameWithPoint)
+		v.SetConfigName(name)
+		v.AddConfigPath(filePath)
+	} else {
+		v.SetConfigName(fileName)
+		v.AddConfigPath(path.Dir(confFilePath))
+	}
 	err := v.ReadInConfig()
 	if err != nil {
 		blog.Errorf("fail to read configure from %s ", file)
