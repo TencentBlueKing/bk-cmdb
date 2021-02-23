@@ -258,15 +258,15 @@ func (s *Service) moveHostToDefaultModule(ctx *rest.Contexts, defaultModuleFlag 
 	if defaultModuleFlag == common.DefaultResModuleFlag {
 		// 空闲机
 		moduleFilter[common.BKDefaultField] = common.DefaultResModuleFlag
-		moduleFilter[common.BKModuleNameField] = common.DefaultResModuleName
+		//moduleFilter[common.BKModuleNameField] = common.DefaultResModuleName
 	} else if defaultModuleFlag == common.DefaultFaultModuleFlag {
 		// 故障机器
 		moduleFilter[common.BKDefaultField] = common.DefaultFaultModuleFlag
-		moduleFilter[common.BKModuleNameField] = common.DefaultFaultModuleName
+		//moduleFilter[common.BKModuleNameField] = common.DefaultFaultModuleName
 	} else if defaultModuleFlag == common.DefaultRecycleModuleFlag {
 		// 待回收
 		moduleFilter[common.BKDefaultField] = common.DefaultRecycleModuleFlag
-		moduleFilter[common.BKModuleNameField] = common.DefaultRecycleModuleName
+		//moduleFilter[common.BKModuleNameField] = common.DefaultRecycleModuleName
 	} else {
 		blog.Errorf("move host to default module failed, unexpected flag, bizID: %d, defaultModuleFlag: %d, rid: %s", bizID, defaultModuleFlag, ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server"))
