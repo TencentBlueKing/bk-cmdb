@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -34,7 +35,7 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 	if runtime.GOOS == "windows" {
 		nameWithPointList := strings.Split(file, `\`)
 		nameWithPoint := nameWithPointList[len(nameWithPointList)-1]
-		name := strings.Split(nameWithPoint, ".")
+		name := strings.Split(nameWithPoint, ".")[0]
 		filePath := strings.TrimSuffix(confFilePath, nameWithPoint)
 		v.SetConfigName(name)
 		v.AddConfigPath(filePath)
