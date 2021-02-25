@@ -130,14 +130,6 @@
                 return this.info.host || {}
             }
         },
-        watch: {
-            host: {
-                immediate: true,
-                handler (host) {
-                    host.bk_host_id && this.getHostRelatedRules()
-                }
-            }
-        },
         methods: {
             setFocus (id, focus) {
                 const item = this.$el.querySelector(id)
