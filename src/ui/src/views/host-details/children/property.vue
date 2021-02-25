@@ -131,8 +131,11 @@
             }
         },
         watch: {
-            host () {
-                this.getHostRelatedRules()
+            host: {
+                immediate: true,
+                handler (host) {
+                    host.bk_host_id && this.getHostRelatedRules()
+                }
             }
         },
         methods: {
@@ -156,7 +159,7 @@
             async getHostRelatedRules () {
                 try {
                     const defaultType = this.$tools.getValue(this.info, 'biz.0.default')
-                    if (defaultType) { // 为0时非业务模块，不存在属性自动应用
+                    if (defaultType) { // 为0时为主机池未分配主机，不存在属性自动应用
                         this.hostRelatedRules = []
                     } else {
                         const data = await this.$store.dispatch('hostApply/getHostRelatedRules', {
