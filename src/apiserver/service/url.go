@@ -126,6 +126,12 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/topopath"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.Contains(string(*u), "/object"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/instassttopo"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	case strings.Contains(string(*u), "/topoassociationtype"):
 		from, to, isHit = rootPath, topoRoot, true
 
