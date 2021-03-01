@@ -68,8 +68,9 @@ type ChainNode struct {
 }
 
 type LastChainNodeData struct {
-	Coll   string `json:"_id" bson:"_id"`
-	ID     uint64 `json:"id" bson:"id"`
-	Token  string `json:"token" bson:"token"`
-	Cursor string `json:"cursor" bson:"cursor"`
+	Coll        string           `json:"_id" bson:"_id"`
+	ID          uint64           `json:"id" bson:"id"`
+	Token       string           `json:"token" bson:"token"`
+	Cursor      string           `json:"cursor" bson:"cursor"`
+	StartAtTime *types.TimeStamp `json:"start_at_time" bson:"start_at_time"`
 }

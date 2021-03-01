@@ -132,7 +132,7 @@ func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
 
 func (g *group) FindObjectGroup(kit *rest.Kit, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error) {
 	fCond := cond.ToMapStr()
-	util.AddModelBizIDConditon(fCond, modelBizID)
+	util.AddModelBizIDCondition(fCond, modelBizID)
 
 	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, metadata.QueryCondition{Condition: fCond})
 	if nil != err {
@@ -150,7 +150,7 @@ func (g *group) FindObjectGroup(kit *rest.Kit, cond condition.Condition, modelBi
 
 func (g *group) FindGroupByObject(kit *rest.Kit, objID string, cond condition.Condition, modelBizID int64) ([]model.GroupInterface, error) {
 	fCond := cond.ToMapStr()
-	util.AddModelBizIDConditon(fCond, modelBizID)
+	util.AddModelBizIDCondition(fCond, modelBizID)
 
 	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(kit.Ctx, kit.Header, objID, metadata.QueryCondition{Condition: fCond})
 	if nil != err {

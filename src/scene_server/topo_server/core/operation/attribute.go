@@ -292,7 +292,7 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 	sort := cond.GetSort()
 	start := cond.GetStart()
 	fCond := cond.ToMapStr()
-	util.AddModelBizIDConditon(fCond, modelBizID)
+	util.AddModelBizIDCondition(fCond, modelBizID)
 
 	opt := &metadata.QueryCondition{
 		Condition: fCond,
@@ -315,7 +315,7 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 
 func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
 	cond := make(map[string]interface{})
-	util.AddModelBizIDConditon(cond, modelBizID)
+	util.AddModelBizIDCondition(cond, modelBizID)
 
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())

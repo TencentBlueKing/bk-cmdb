@@ -175,6 +175,10 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 				err, objID, inputParam.Data, origin, kit.Rid)
 			return nil, err
 		}
+
+		if err := hooks.UpdateProcessBindInfoHook(kit, objID, inputParam.Data); err != nil {
+			return nil, err
+		}
 	}
 
 	err = m.update(kit, objID, inputParam.Data, inputParam.Condition)

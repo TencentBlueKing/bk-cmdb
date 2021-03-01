@@ -138,6 +138,10 @@ type Options struct {
 
 	// Ensures that this watch will provide events that occurred after this timestamp.
 	StartAtTime *TimeStamp
+
+	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
+	// reset the resume token and set the start time for next watch in case it use the mistaken token again
+	WatchFatalErrorCallback func(startAtTime *TimeStamp) error `json:"-"`
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -179,6 +183,11 @@ func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bsonx.Time(time.Unix(int64(t.Sec), int64(t.Nano))).MarshalBSONValue()
 }
 
+type timeStampCopy struct {
+	Sec  uint32 `json:"sec",bson:"sec"`
+	Nano uint32 `json:"nano",bson:"nano"`
+}
+
 func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 	if typo == bsontype.DateTime {
 		timeStamp := bson.RawValue{Type: bsontype.DateTime, Value: raw}.Time()
@@ -187,7 +196,15 @@ func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 		return nil
 	}
 
-	return bson.Unmarshal(raw, t)
+	tt := timeStampCopy{}
+	err := bson.Unmarshal(raw, &tt)
+	if err != nil {
+		return err
+	}
+
+	t.Sec = tt.Sec
+	t.Nano = tt.Nano
+	return nil
 }
 
 type WatchOptions struct {
