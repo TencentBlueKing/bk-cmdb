@@ -1130,10 +1130,14 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 		fields = append(fields, common.BKFuncIDField)
 	}
 
+	sort := input.Page.Sort
+	if sort == "" {
+		sort = common.BKProcessIDField
+	}
 	reqParam := &metadata.QueryCondition{
 		Fields: fields,
 		Page: metadata.BasePage{
-			Sort:  common.BKProcessIDField,
+			Sort:  sort,
 			Limit: input.Page.Limit,
 			Start: input.Page.Start,
 		},
