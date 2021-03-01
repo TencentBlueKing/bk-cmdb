@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -164,7 +163,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, header, 0, usernameMap, propertyList)
+	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, 0, usernameMap, propertyList)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

@@ -84,6 +84,20 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID stri
 	return
 }
 
+func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+
+	resp = new(metadata.QueryInstResult)
+	subPath := "/find/instance/object/%s/unique_fields"
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/objectattr"
