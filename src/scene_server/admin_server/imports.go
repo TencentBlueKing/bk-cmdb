@@ -67,4 +67,5 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/x20.08.11.10"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x20.08.24.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x20.10.16.11"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x21.02.26.11"
 )
