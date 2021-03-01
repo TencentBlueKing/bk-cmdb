@@ -470,7 +470,7 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 			// now we check if he has this authority.
 			for _, bizID := range bizIDs {
 				if !util.InArray(bizID, appList) {
-					noAuthResp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
+					noAuthResp, err := s.AuthManager.GenFindBusinessNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
 					if err != nil {
 						ctx.RespErrorCodeOnly(common.CCErrTopoAppSearchFailed, "")
 						return
