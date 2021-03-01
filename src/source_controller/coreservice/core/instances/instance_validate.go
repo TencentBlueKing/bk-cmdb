@@ -175,6 +175,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		return err
 	}
 
+	if err := hooks.ValidateHostBsInfoHook(kit, objID, instanceData); err != nil {
+		blog.Errorf("validate host attribute hook failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db
@@ -289,6 +294,11 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 	err := hooks.ValidateBizBsTopoHook(kit, objID, instanceData, updateData, common.ValidUpdate, m.clientSet)
 	if err != nil {
 		blog.Errorf("validate biz bk_bs_topo attribute failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := hooks.ValidateHostBsInfoHook(kit, objID, updateData); err != nil {
+		blog.Errorf("validate host bk_bs_info attribute failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 

@@ -35,3 +35,8 @@ func ValidateBizBsTopoHook(kit *rest.Kit, objID string, originData mapstr.MapStr
 
 	return nil
 }
+
+// ValidateHostBsInfoHook is a hook to check if host bk_bs_info field is valid or not
+func ValidateHostBsInfoHook(kit *rest.Kit, objID string, data mapstr.MapStr) error {
+	return nil
+}
