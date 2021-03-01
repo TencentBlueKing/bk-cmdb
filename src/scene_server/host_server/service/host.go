@@ -644,7 +644,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(*host)
+	ctx.RespEntity(host)
 
 }
 
@@ -671,7 +671,7 @@ func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(*host)
+	ctx.RespEntity(host)
 }
 
 func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {

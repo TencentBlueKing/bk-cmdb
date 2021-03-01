@@ -178,7 +178,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 	}
 
 	if err := hooks.ValidateHostBsInfoHook(kit, objID, instanceData); err != nil {
-		blog.Errorf("validate host bk_bs_info attribute failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("validate host attribute hook failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
