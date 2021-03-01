@@ -205,6 +205,10 @@ const (
 
 	// BKDBSize counts and returns the total number of items in an array
 	BKDBSize = "$size"
+
+	// BKDBType selects documents where the value of the field is an instance of the specified BSON type(s).
+	// Querying by data type is useful when dealing with highly unstructured data where data types are not predictable.
+	BKDBType = "$type"
 )
 
 const (
@@ -1260,4 +1264,8 @@ const (
 // configcenter
 const (
 	BKDefaultConfigCenter = "zookeeper"
+)
+
+const (
+	CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 )
