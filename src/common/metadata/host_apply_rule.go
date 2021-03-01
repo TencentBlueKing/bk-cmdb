@@ -24,8 +24,6 @@ import (
 
 const (
 	TopoNodeKeyword = "keyword"
-	// 主机更新时是否剔除绑定了主机属性自动应用的字段
-	HostUpdateWithoutHostApplyFiled = true
 )
 
 // HostApplyRule represent one rule of host property auto apply

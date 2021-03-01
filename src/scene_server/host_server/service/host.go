@@ -674,68 +674,6 @@ func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(*host)
 }
 
-func (s *Service) getHostApplyRelatedFields(ctx *rest.Contexts, hostIDArr []int64) (hostProperties map[int64][]string, hasRules bool, ccErr errors.CCErrorCoder) {
-	// filter fields locked by host apply rule
-	listRuleOption := meta.ListHostRelatedApplyRuleOption{
-		HostIDs: hostIDArr,
-		Page: meta.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	hostRules, ccErr := s.listHostRelatedApplyRule(ctx, 0, listRuleOption)
-	if ccErr != nil {
-		blog.Errorf("update host batch, listHostRelatedApplyRule failed, option: %+v, err: %v, rid: %s", listRuleOption, ccErr, ctx.Kit.Rid)
-		return nil, false, ccErr
-	}
-	attributeIDs := make([]int64, 0)
-	for _, rules := range hostRules {
-		for _, rule := range rules {
-			attributeIDs = append(attributeIDs, rule.AttributeID)
-		}
-	}
-	if len(attributeIDs) == 0 {
-		return nil, false, nil
-	}
-	hostAttributesFilter := &meta.QueryCondition{
-		Fields: []string{common.BKPropertyIDField, common.BKFieldID},
-		Page: meta.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Condition: map[string]interface{}{
-			common.BKFieldID: map[string]interface{}{
-				common.BKDBIN: attributeIDs,
-			},
-		},
-	}
-	attributeResult, err := s.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, hostAttributesFilter)
-	if err != nil {
-		blog.Errorf("UpdateHostBatch failed, ReadModelAttr failed, param: %+v, err: %+v, rid:%s", hostAttributesFilter, err, ctx.Kit.Rid)
-		return nil, true, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if ccErr := attributeResult.CCError(); ccErr != nil {
-		blog.Errorf("UpdateHostBatch failed, ReadModelAttr failed, param: %+v, output: %+v, rid:%s", hostAttributesFilter, attributeResult, ctx.Kit.Rid)
-		return nil, true, ccErr
-	}
-	attributeMap := make(map[int64]meta.Attribute)
-	for _, item := range attributeResult.Data.Info {
-		attributeMap[item.ID] = item
-	}
-	hostProperties = make(map[int64][]string)
-	for hostID, rules := range hostRules {
-		if _, exist := hostProperties[hostID]; exist == false {
-			hostProperties[hostID] = make([]string, 0)
-		}
-		for _, rule := range rules {
-			attribute, ok := attributeMap[rule.AttributeID]
-			if ok == false {
-				continue
-			}
-			hostProperties[hostID] = append(hostProperties[hostID], attribute.PropertyID)
-		}
-	}
-	return hostProperties, true, nil
-}
-
 func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 
 	data := mapstr.New()
@@ -798,97 +736,38 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		hasHostUpdateWithoutHostApplyFiled := false
-
-		// 功能开关：更新主机属性时是否剔除自动应用字段
-		if meta.HostUpdateWithoutHostApplyFiled == true {
-			hostProperties, hasRules, err := s.getHostApplyRelatedFields(ctx, hostIDArr)
+		// generator audit log.
+		auditLogs := make([]meta.AuditLog, len(hostIDArr))
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(data)
+		for i, hostID := range hostIDArr {
+			tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, "", nil)
 			if err != nil {
-				blog.Errorf("UpdateHostBatch failed, getHostApplyRelatedFields failed, hostIDArr: %+v, err: %v, rid:%s", hostIDArr, err, ctx.Kit.Rid)
+				blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 				return err
 			}
-			// get host attributes
-			if hasRules == true {
-				hasHostUpdateWithoutHostApplyFiled = true
-				for _, hostID := range hostIDArr {
-					updateData := make(map[string]interface{})
-					for key, value := range data {
-						properties, ok := hostProperties[hostID]
-						if ok == true && util.InStrArr(properties, key) {
-							continue
-						}
-						updateData[key] = value
-					}
-
-					// generator audit log.
-					generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updateData)
-					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, "", nil)
-					if err != nil {
-						blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s",
-							hostID, err, ctx.Kit.Rid)
-						return err
-					}
-
-					// to update data.
-					opt := &meta.UpdateOption{
-						Condition: mapstr.MapStr{common.BKHostIDField: hostID},
-						Data:      mapstr.NewFromMap(updateData),
-					}
-					result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
-					if err != nil {
-						blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, ctx.Kit.Rid)
-						return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-					}
-					if !result.Result {
-						blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-						return result.CCError()
-					}
-
-					// save audit log.
-					if err := audit.SaveAuditLog(ctx.Kit, *auditLog); err != nil {
-						blog.Errorf("save host audit log failed after update host, hostID: %d, err: %v, rid: %s",
-							hostID, err, ctx.Kit.Rid)
-						return err
-					}
-				}
-			}
+			auditLogs[i] = *tmpAuditLog
 		}
 
-		if hasHostUpdateWithoutHostApplyFiled == false {
-			// 退化到批量编辑
-			// generator audit log.
-			auditLogs := make([]meta.AuditLog, len(hostIDArr))
-			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(data)
-			for i, hostID := range hostIDArr {
-				tmpAuditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, "", nil)
-				if err != nil {
-					blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
-					return err
-				}
-				auditLogs[i] = *tmpAuditLog
-			}
+		// to update host.
+		opt := &meta.UpdateOption{
+			Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDArr}},
+			Data:      mapstr.NewFromMap(data),
+		}
+		result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
+		if err != nil {
+			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v, input: %+v, param: %+v, rid: %s",
+				err, data, opt, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !result.Result {
+			blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
+			return result.CCError()
+		}
 
-			// to update host.
-			opt := &meta.UpdateOption{
-				Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDArr}},
-				Data:      mapstr.NewFromMap(data),
-			}
-			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
-			if err != nil {
-				blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v, input: %+v, param: %+v, rid: %s",
-					err, data, opt, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if !result.Result {
-				blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-				return result.CCError()
-			}
-
-			// save audit log.
-			if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-				blog.Errorf("save host audit log failed after update host, err: %v, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save host audit log failed after update host, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
 		}
 
 		return nil
@@ -1547,98 +1426,40 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	auditContexts := make([]meta.AuditLog, 0)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		hasHostUpdateWithoutHostApplyFiled := false
-		// 功能开关：更新主机属性时是否剔除自动应用字段
 		ccLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
-		if meta.HostUpdateWithoutHostApplyFiled == true {
-			hostProperties, hasRules, err := s.getHostApplyRelatedFields(ctx, hostIDArr)
+		for _, index := range util.SortedMapInt64Keys(hosts) {
+			hostInfo := hosts[index]
+			delete(hostInfo, common.BKHostIDField)
+			intHostID := indexHostIDMap[index]
+
+			// generate audit log.
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(hostInfo)
+			auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, intHostID, "", nil)
 			if err != nil {
-				blog.Errorf("UpdateImportHosts failed, getHostApplyRelatedFields failed, hostIDArr: %+v, err: %v, rid:%s", hostIDArr, err, ctx.Kit.Rid)
-				return err
+				blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
+				errMsg = append(errMsg, err.Error())
+				continue
 			}
-			// get host attributes
-			if hasRules == true {
-				hasHostUpdateWithoutHostApplyFiled = true
-				for _, index := range util.SortedMapInt64Keys(hosts) {
-					hostInfo := hosts[index]
-					delete(hostInfo, common.BKHostIDField)
-					intHostID := indexHostIDMap[index]
-					updateData := make(map[string]interface{})
-					for key, value := range hostInfo {
-						properties, ok := hostProperties[intHostID]
-						if ok == true && util.InStrArr(properties, key) {
-							continue
-						}
-						updateData[key] = value
-					}
 
-					// generate audit log.
-					generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updateData)
-					auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, intHostID, "", nil)
-					if err != nil {
-						blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
-						errMsg = append(errMsg, err.Error())
-						continue
-					}
-
-					// to update data.
-					opt := &meta.UpdateOption{
-						Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
-						Data:      mapstr.NewFromMap(updateData),
-					}
-					result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
-					if err != nil {
-						blog.Errorf("UpdateImportHosts UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, ctx.Kit.Rid)
-						errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, err.Error()))
-						continue
-					}
-					if !result.Result {
-						blog.ErrorJSON("UpdateImportHosts failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-						errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
-						continue
-					}
-
-					successMsg = append(successMsg, strconv.FormatInt(index, 10))
-					auditContexts = append(auditContexts, *auditLog)
-				}
+			// to update data.
+			opt := &meta.UpdateOption{
+				Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
+				Data:      mapstr.NewFromMap(hostInfo),
 			}
-		}
-
-		if hasHostUpdateWithoutHostApplyFiled == false {
-			for _, index := range util.SortedMapInt64Keys(hosts) {
-				hostInfo := hosts[index]
-				delete(hostInfo, common.BKHostIDField)
-				intHostID := indexHostIDMap[index]
-
-				// generate audit log.
-				generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(hostInfo)
-				auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, intHostID, "", nil)
-				if err != nil {
-					blog.Errorf("generate host audit log failed before update host, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
-					errMsg = append(errMsg, err.Error())
-					continue
-				}
-
-				// to update data.
-				opt := &meta.UpdateOption{
-					Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
-					Data:      mapstr.NewFromMap(hostInfo),
-				}
-				result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
-				if err != nil {
-					blog.ErrorJSON("UpdateImportHosts UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, ctx.Kit.Rid)
-					errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, err.Error()))
-					continue
-				}
-				if !result.Result {
-					blog.ErrorJSON("UpdateImportHosts failed, UpdateInstance failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
-					errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
-					continue
-				}
-
-				successMsg = append(successMsg, strconv.FormatInt(index, 10))
-				auditContexts = append(auditContexts, *auditLog)
+			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, opt)
+			if err != nil {
+				blog.ErrorJSON("UpdateImportHosts UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, ctx.Kit.Rid)
+				errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, err.Error()))
+				continue
 			}
+			if !result.Result {
+				blog.ErrorJSON("UpdateImportHosts failed, UpdateInstance failed, param:%s, response: %s, rid:%s", opt, result, ctx.Kit.Rid)
+				errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
+				continue
+			}
+
+			successMsg = append(successMsg, strconv.FormatInt(index, 10))
+			auditContexts = append(auditContexts, *auditLog)
 		}
 
 		// save audit log.
