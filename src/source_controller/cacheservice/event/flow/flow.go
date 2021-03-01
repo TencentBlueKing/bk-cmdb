@@ -417,7 +417,7 @@ func (f *flowTokenHandler) resetWatchToken(startAtTime *types.TimeStamp) error {
 	}
 
 	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(context.Background(), filter, data); err != nil {
-		blog.ErrorJSON("clear watch token failed, err: %s, data: %s", err, data)
+		blog.ErrorJSON("clear watch token failed, err: %s, collection: %s, data: %s", err, f.key.Collection(), data)
 		return err
 	}
 	return nil
@@ -436,7 +436,7 @@ func (f *flowTokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeSt
 			blog.ErrorJSON("run flow, but get start watch time failed, err: %v, filter: %+v", err, filter)
 			return nil, err
 		}
-		return nil, nil
+		return new(types.TimeStamp), nil
 	}
 	return data.StartAtTime, nil
 }

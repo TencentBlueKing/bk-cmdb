@@ -103,7 +103,7 @@ func (w *tokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeStamp,
 			blog.Errorf("get %s start time failed, err: %v", w.key, err)
 			return nil, err
 		}
-		return nil, nil
+		return new(types.TimeStamp), nil
 	}
 	return data[w.key+"_start_time"], nil
 }
