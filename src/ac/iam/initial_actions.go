@@ -38,6 +38,84 @@ var (
 	}
 )
 
+var ActionIDNameMap = map[ActionID]string{
+	EditBusinessHost:                    "业务主机编辑",
+	BusinessHostTransferToResourcePool:  "主机归还主机池",
+	HostTransferAcrossBusiness:          "主机转移到其他业务",
+	CreateBusinessCustomQuery:           "动态分组新建",
+	EditBusinessCustomQuery:             "动态分组编辑",
+	DeleteBusinessCustomQuery:           "动态分组删除",
+	EditBusinessCustomField:             "业务自定义字段编辑",
+	CreateBusinessServiceCategory:       "服务分类新建",
+	EditBusinessServiceCategory:         "服务分类编辑",
+	DeleteBusinessServiceCategory:       "服务分类删除",
+	CreateBusinessServiceInstance:       "服务实例新建",
+	EditBusinessServiceInstance:         "服务实例编辑",
+	DeleteBusinessServiceInstance:       "服务实例删除",
+	CreateBusinessServiceTemplate:       "服务模板新建",
+	EditBusinessServiceTemplate:         "服务模板编辑",
+	DeleteBusinessServiceTemplate:       "服务模板删除",
+	CreateBusinessSetTemplate:           "集群模板新建",
+	EditBusinessSetTemplate:             "集群模板编辑",
+	DeleteBusinessSetTemplate:           "集群模板删除",
+	CreateBusinessTopology:              "业务拓扑新建",
+	EditBusinessTopology:                "业务拓扑编辑",
+	DeleteBusinessTopology:              "业务拓扑删除",
+	EditBusinessHostApply:               "主机自动应用编辑",
+	CreateResourcePoolHost:              "主机池主机创建",
+	EditResourcePoolHost:                "主机池主机编辑",
+	DeleteResourcePoolHost:              "主机池主机删除",
+	ResourcePoolHostTransferToBusiness:  "主机池主机分配到业务",
+	ResourcePoolHostTransferToDirectory: "主机池主机分配到目录",
+	CreateResourcePoolDirectory:         "主机池目录创建",
+	EditResourcePoolDirectory:           "主机池目录编辑",
+	DeleteResourcePoolDirectory:         "主机池目录删除",
+	CreateBusiness:                      "业务创建",
+	EditBusiness:                        "业务编辑",
+	ArchiveBusiness:                     "业务归档",
+	FindBusiness:                        "业务查询",
+	ViewBusinessResource:                "业务访问",
+	CreateCloudArea:                     "云区域创建",
+	EditCloudArea:                       "云区域编辑",
+	DeleteCloudArea:                     "云区域删除",
+	CreateSysInstance:                   "实例创建",
+	EditSysInstance:                     "实例编辑",
+	DeleteSysInstance:                   "实例删除",
+	CreateEventPushing:                  "事件订阅新建",
+	EditEventPushing:                    "事件订阅编辑",
+	DeleteEventPushing:                  "事件订阅删除",
+	FindEventPushing:                    "事件订阅查询",
+	CreateCloudAccount:                  "云账户新建",
+	EditCloudAccount:                    "云账户编辑",
+	DeleteCloudAccount:                  "云账户删除",
+	FindCloudAccount:                    "云账户查询",
+	CreateCloudResourceTask:             "云资源任务新建",
+	EditCloudResourceTask:               "云资源任务编辑",
+	DeleteCloudResourceTask:             "云资源任务删除",
+	FindCloudResourceTask:               "云资源任务查询",
+	CreateSysModel:                      "模型新建",
+	EditSysModel:                        "模型编辑",
+	DeleteSysModel:                      "模型删除",
+	CreateAssociationType:               "关联类型新建",
+	EditAssociationType:                 "关联类型编辑",
+	DeleteAssociationType:               "关联类型删除",
+	CreateModelGroup:                    "模型分组新建",
+	EditModelGroup:                      "模型分组编辑",
+	DeleteModelGroup:                    "模型分组删除",
+	EditBusinessLayer:                   "业务层级编辑",
+	EditModelTopologyView:               "模型拓扑视图编辑",
+	FindOperationStatistic:              "运营统计查询",
+	EditOperationStatistic:              "运营统计编辑",
+	FindAuditLog:                        "操作审计查询",
+	WatchHostEvent:                      "主机事件监听",
+	WatchHostRelationEvent:              "主机关系事件监听",
+	WatchBizEvent:                       "业务事件监听",
+	WatchSetEvent:                       "集群事件监听",
+	WatchModuleEvent:                    "模块数据监听",
+	WatchSetTemplateEvent:               "集群模板数据监听",
+	GlobalSettings:                      "全局设置",
+}
+
 // GenerateActions generate all the actions registered to IAM.
 func GenerateActions() []ResourceAction {
 	resourceActionList := make([]ResourceAction, 0)
@@ -94,7 +172,7 @@ func genBusinessHostActions() []ResourceAction {
 	// edit business's host actions
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessHost,
-		Name:                 "业务主机编辑",
+		Name:                 ActionIDNameMap[EditBusinessHost],
 		NameEn:               "Edit Business Hosts",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -105,7 +183,7 @@ func genBusinessHostActions() []ResourceAction {
 	// business host transfer to resource pool actions
 	actions = append(actions, ResourceAction{
 		ID:                   BusinessHostTransferToResourcePool,
-		Name:                 "主机归还主机池",
+		Name:                 ActionIDNameMap[BusinessHostTransferToResourcePool],
 		NameEn:               "Return Hosts To Pool",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource, resourcePoolDirResource},
@@ -128,7 +206,7 @@ func genBusinessHostActions() []ResourceAction {
 	// business host transfer to another business actions
 	actions = append(actions, ResourceAction{
 		ID:                   HostTransferAcrossBusiness,
-		Name:                 "主机转移到其他业务",
+		Name:                 ActionIDNameMap[HostTransferAcrossBusiness],
 		NameEn:               "Assigned Host To Other Business",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessHostResource, businessResource},
@@ -159,7 +237,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessCustomQuery,
-		Name:                 "动态分组新建",
+		Name:                 ActionIDNameMap[CreateBusinessCustomQuery],
 		NameEn:               "Create Dynamic Grouping",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -169,7 +247,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessCustomQuery,
-		Name:                 "动态分组编辑",
+		Name:                 ActionIDNameMap[EditBusinessCustomQuery],
 		NameEn:               "Edit Dynamic Grouping",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -179,7 +257,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteBusinessCustomQuery,
-		Name:                 "动态分组删除",
+		Name:                 ActionIDNameMap[DeleteBusinessCustomQuery],
 		NameEn:               "Delete Dynamic Grouping",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -195,7 +273,7 @@ func genBusinessCustomFieldActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessCustomField,
-		Name:                 "业务自定义字段编辑",
+		Name:                 ActionIDNameMap[EditBusinessCustomField],
 		NameEn:               "Edit Custom Field",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -211,7 +289,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessServiceCategory,
-		Name:                 "服务分类新建",
+		Name:                 ActionIDNameMap[CreateBusinessServiceCategory],
 		NameEn:               "Create Service Category",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -221,7 +299,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessServiceCategory,
-		Name:                 "服务分类编辑",
+		Name:                 ActionIDNameMap[EditBusinessServiceCategory],
 		NameEn:               "Edit Service Category",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -231,7 +309,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteBusinessServiceCategory,
-		Name:                 "服务分类删除",
+		Name:                 ActionIDNameMap[DeleteBusinessServiceCategory],
 		NameEn:               "Delete Service Category",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -247,7 +325,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessServiceInstance,
-		Name:                 "服务实例新建",
+		Name:                 ActionIDNameMap[CreateBusinessServiceInstance],
 		NameEn:               "Create Service Instance",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -257,7 +335,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessServiceInstance,
-		Name:                 "服务实例编辑",
+		Name:                 ActionIDNameMap[EditBusinessServiceInstance],
 		NameEn:               "Edit Service Instance",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -267,7 +345,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteBusinessServiceInstance,
-		Name:                 "服务实例删除",
+		Name:                 ActionIDNameMap[DeleteBusinessServiceInstance],
 		NameEn:               "Delete Service Instance",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -299,7 +377,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessServiceTemplate,
-		Name:                 "服务模板新建",
+		Name:                 ActionIDNameMap[CreateBusinessServiceTemplate],
 		NameEn:               "Create Service Template",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -309,7 +387,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessServiceTemplate,
-		Name:                 "服务模板编辑",
+		Name:                 ActionIDNameMap[EditBusinessServiceTemplate],
 		NameEn:               "Edit Service Template",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -319,7 +397,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteBusinessServiceTemplate,
-		Name:                 "服务模板删除",
+		Name:                 ActionIDNameMap[DeleteBusinessServiceTemplate],
 		NameEn:               "Delete Service Template",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -351,7 +429,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessSetTemplate,
-		Name:                 "集群模板新建",
+		Name:                 ActionIDNameMap[CreateBusinessSetTemplate],
 		NameEn:               "Create Set Template",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -361,7 +439,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessSetTemplate,
-		Name:                 "集群模板编辑",
+		Name:                 ActionIDNameMap[EditBusinessSetTemplate],
 		NameEn:               "Edit Set Template",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -371,7 +449,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteBusinessSetTemplate,
-		Name:                 "集群模板删除",
+		Name:                 ActionIDNameMap[DeleteBusinessSetTemplate],
 		NameEn:               "Delete Set Template",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -387,7 +465,7 @@ func genBusinessTopologyActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusinessTopology,
-		Name:                 "业务拓扑新建",
+		Name:                 ActionIDNameMap[CreateBusinessTopology],
 		NameEn:               "Create Business Topo",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -397,7 +475,7 @@ func genBusinessTopologyActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessTopology,
-		Name:                 "业务拓扑编辑",
+		Name:                 ActionIDNameMap[EditBusinessTopology],
 		NameEn:               "Edit Business Topo",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -407,7 +485,7 @@ func genBusinessTopologyActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteBusinessTopology,
-		Name:                 "业务拓扑删除",
+		Name:                 ActionIDNameMap[DeleteBusinessTopology],
 		NameEn:               "Delete Business Topo",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -423,7 +501,7 @@ func genBusinessHostApplyActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessHostApply,
-		Name:                 "主机自动应用编辑",
+		Name:                 ActionIDNameMap[EditBusinessHostApply],
 		NameEn:               "Edit Host Apply",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -453,7 +531,7 @@ func genResourcePoolHostActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   CreateResourcePoolHost,
-		Name:                 "主机池主机创建",
+		Name:                 ActionIDNameMap[CreateResourcePoolHost],
 		NameEn:               "Create Pool Hosts",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
@@ -463,7 +541,7 @@ func genResourcePoolHostActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditResourcePoolHost,
-		Name:                 "主机池主机编辑",
+		Name:                 ActionIDNameMap[EditResourcePoolHost],
 		NameEn:               "Edit Pool Hosts",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -473,7 +551,7 @@ func genResourcePoolHostActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteResourcePoolHost,
-		Name:                 "主机池主机删除",
+		Name:                 ActionIDNameMap[DeleteResourcePoolHost],
 		NameEn:               "Delete Pool Hosts",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -496,7 +574,7 @@ func genResourcePoolHostActions() []ResourceAction {
 	transferToBusinessRelatedResource := append(relatedHostResource, businessResource)
 	actions = append(actions, ResourceAction{
 		ID:                   ResourcePoolHostTransferToBusiness,
-		Name:                 "主机池主机分配到业务",
+		Name:                 ActionIDNameMap[ResourcePoolHostTransferToBusiness],
 		NameEn:               "Assigned Pool Hosts To Business",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToBusinessRelatedResource,
@@ -507,7 +585,7 @@ func genResourcePoolHostActions() []ResourceAction {
 	transferToDirectoryRelatedResource := append(relatedHostResource, resourcePoolDirResource)
 	actions = append(actions, ResourceAction{
 		ID:                   ResourcePoolHostTransferToDirectory,
-		Name:                 "主机池主机分配到目录",
+		Name:                 ActionIDNameMap[ResourcePoolHostTransferToDirectory],
 		NameEn:               "Assigned Pool Hosts To Directory",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToDirectoryRelatedResource,
@@ -522,7 +600,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateResourcePoolDirectory,
-		Name:                 "主机池目录创建",
+		Name:                 ActionIDNameMap[CreateResourcePoolDirectory],
 		NameEn:               "Create Pool Directory",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -532,7 +610,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditResourcePoolDirectory,
-		Name:                 "主机池目录编辑",
+		Name:                 ActionIDNameMap[EditResourcePoolDirectory],
 		NameEn:               "Edit Pool Directory",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
@@ -542,7 +620,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteResourcePoolDirectory,
-		Name:                 "主机池目录删除",
+		Name:                 ActionIDNameMap[DeleteResourcePoolDirectory],
 		NameEn:               "Delete Pool Directory",
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
@@ -557,7 +635,7 @@ func genBusinessActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateBusiness,
-		Name:                 "业务创建",
+		Name:                 ActionIDNameMap[CreateBusiness],
 		NameEn:               "Create Business",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -567,7 +645,7 @@ func genBusinessActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusiness,
-		Name:                 "业务编辑",
+		Name:                 ActionIDNameMap[EditBusiness],
 		NameEn:               "Edit Business",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -577,7 +655,7 @@ func genBusinessActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   ArchiveBusiness,
-		Name:                 "业务归档",
+		Name:                 ActionIDNameMap[ArchiveBusiness],
 		NameEn:               "Archive Business",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -587,7 +665,7 @@ func genBusinessActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   FindBusiness,
-		Name:                 "业务查询",
+		Name:                 ActionIDNameMap[FindBusiness],
 		NameEn:               "View Business",
 		Type:                 View,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
@@ -597,7 +675,7 @@ func genBusinessActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:     ViewBusinessResource,
-		Name:   "业务访问",
+		Name:   ActionIDNameMap[ViewBusinessResource],
 		NameEn: "View Business Resource",
 		Type:   View,
 		// TODO add business collection resource
@@ -629,7 +707,7 @@ func genCloudAreaActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateCloudArea,
-		Name:                 "云区域创建",
+		Name:                 ActionIDNameMap[CreateCloudArea],
 		NameEn:               "Create Cloud Area",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -639,7 +717,7 @@ func genCloudAreaActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditCloudArea,
-		Name:                 "云区域编辑",
+		Name:                 ActionIDNameMap[EditCloudArea],
 		NameEn:               "Edit Cloud Area",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -649,7 +727,7 @@ func genCloudAreaActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteCloudArea,
-		Name:                 "云区域删除",
+		Name:                 ActionIDNameMap[DeleteCloudArea],
 		NameEn:               "Delete Cloud Area",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -680,7 +758,7 @@ func genModelInstanceActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:     CreateSysInstance,
-		Name:   "实例创建",
+		Name:   ActionIDNameMap[CreateSysInstance],
 		NameEn: "Create Instance",
 		Type:   Create,
 		RelatedResourceTypes: []RelateResourceType{
@@ -702,7 +780,7 @@ func genModelInstanceActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditSysInstance,
-		Name:                 "实例编辑",
+		Name:                 ActionIDNameMap[EditSysInstance],
 		NameEn:               "Edit Instance",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -712,7 +790,7 @@ func genModelInstanceActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteSysInstance,
-		Name:                 "实例删除",
+		Name:                 ActionIDNameMap[DeleteSysInstance],
 		NameEn:               "Delete Instance",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -722,7 +800,7 @@ func genModelInstanceActions() []ResourceAction {
 
 	// actions = append(actions, ResourceAction{
 	// 	ID:                   FindSysInstance,
-	// 	Name:                 "实例查询",
+	// 	Name:                 ActionIDNameMap[FindSysInstance],
 	// 	NameEn:               "View Instance",
 	// 	Type:                 View,
 	// 	RelatedResourceTypes: relatedResource,
@@ -753,7 +831,7 @@ func genEventPushingActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateEventPushing,
-		Name:                 "事件订阅新建",
+		Name:                 ActionIDNameMap[CreateEventPushing],
 		NameEn:               "Create Event Subscription",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -763,7 +841,7 @@ func genEventPushingActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditEventPushing,
-		Name:                 "事件订阅编辑",
+		Name:                 ActionIDNameMap[EditEventPushing],
 		NameEn:               "Edit Event Subscription",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -773,7 +851,7 @@ func genEventPushingActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteEventPushing,
-		Name:                 "事件订阅删除",
+		Name:                 ActionIDNameMap[DeleteEventPushing],
 		NameEn:               "Delete Event Subscription",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -783,7 +861,7 @@ func genEventPushingActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   FindEventPushing,
-		Name:                 "事件订阅查询",
+		Name:                 ActionIDNameMap[FindEventPushing],
 		NameEn:               "View Event Subscription",
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
@@ -814,7 +892,7 @@ func genCloudAccountActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateCloudAccount,
-		Name:                 "云账户新建",
+		Name:                 ActionIDNameMap[CreateCloudAccount],
 		NameEn:               "Create Cloud Account",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -824,7 +902,7 @@ func genCloudAccountActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditCloudAccount,
-		Name:                 "云账户编辑",
+		Name:                 ActionIDNameMap[EditCloudAccount],
 		NameEn:               "Edit Cloud Account",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -834,7 +912,7 @@ func genCloudAccountActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteCloudAccount,
-		Name:                 "云账户删除",
+		Name:                 ActionIDNameMap[DeleteCloudAccount],
 		NameEn:               "Delete Cloud Account",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -844,7 +922,7 @@ func genCloudAccountActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   FindCloudAccount,
-		Name:                 "云账户查询",
+		Name:                 ActionIDNameMap[FindCloudAccount],
 		NameEn:               "View Cloud Account",
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
@@ -875,7 +953,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateCloudResourceTask,
-		Name:                 "云资源任务新建",
+		Name:                 ActionIDNameMap[CreateCloudResourceTask],
 		NameEn:               "Create Cloud Resource Task",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -885,7 +963,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditCloudResourceTask,
-		Name:                 "云资源任务编辑",
+		Name:                 ActionIDNameMap[EditCloudResourceTask],
 		NameEn:               "Edit Cloud Resource Task",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -895,7 +973,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteCloudResourceTask,
-		Name:                 "云资源任务删除",
+		Name:                 ActionIDNameMap[DeleteCloudResourceTask],
 		NameEn:               "Delete Cloud Resource Task",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -905,7 +983,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   FindCloudResourceTask,
-		Name:                 "云资源任务查询",
+		Name:                 ActionIDNameMap[FindCloudResourceTask],
 		NameEn:               "View Cloud Resource Task",
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
@@ -936,7 +1014,7 @@ func genModelActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:     CreateSysModel,
-		Name:   "模型新建",
+		Name:   ActionIDNameMap[CreateSysModel],
 		NameEn: "Create Model",
 		Type:   Create,
 		RelatedResourceTypes: []RelateResourceType{
@@ -958,7 +1036,7 @@ func genModelActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditSysModel,
-		Name:                 "模型编辑",
+		Name:                 ActionIDNameMap[EditSysModel],
 		NameEn:               "Edit Model",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -968,7 +1046,7 @@ func genModelActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteSysModel,
-		Name:                 "模型删除",
+		Name:                 ActionIDNameMap[DeleteSysModel],
 		NameEn:               "Delete Model",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -999,7 +1077,7 @@ func genAssociationTypeActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateAssociationType,
-		Name:                 "关联类型新建",
+		Name:                 ActionIDNameMap[CreateAssociationType],
 		NameEn:               "Create Association Type",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -1009,7 +1087,7 @@ func genAssociationTypeActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditAssociationType,
-		Name:                 "关联类型编辑",
+		Name:                 ActionIDNameMap[EditAssociationType],
 		NameEn:               "Edit Association Type",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -1019,7 +1097,7 @@ func genAssociationTypeActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteAssociationType,
-		Name:                 "关联类型删除",
+		Name:                 ActionIDNameMap[DeleteAssociationType],
 		NameEn:               "Delete Association Type",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -1050,7 +1128,7 @@ func genModelGroupActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   CreateModelGroup,
-		Name:                 "模型分组新建",
+		Name:                 ActionIDNameMap[CreateModelGroup],
 		NameEn:               "Create Model Group",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
@@ -1060,7 +1138,7 @@ func genModelGroupActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditModelGroup,
-		Name:                 "模型分组编辑",
+		Name:                 ActionIDNameMap[EditModelGroup],
 		NameEn:               "Edit Model Group",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
@@ -1070,7 +1148,7 @@ func genModelGroupActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   DeleteModelGroup,
-		Name:                 "模型分组删除",
+		Name:                 ActionIDNameMap[DeleteModelGroup],
 		NameEn:               "Delete Model Group",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
@@ -1085,7 +1163,7 @@ func genBusinessLayerActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   EditBusinessLayer,
-		Name:                 "业务层级编辑",
+		Name:                 ActionIDNameMap[EditBusinessLayer],
 		NameEn:               "Edit Business Level",
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
@@ -1099,7 +1177,7 @@ func genModelTopologyViewActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   EditModelTopologyView,
-		Name:                 "模型拓扑视图编辑",
+		Name:                 ActionIDNameMap[EditModelTopologyView],
 		NameEn:               "Edit Model Topo View",
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
@@ -1113,7 +1191,7 @@ func genOperationStatisticActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   FindOperationStatistic,
-		Name:                 "运营统计查询",
+		Name:                 ActionIDNameMap[FindOperationStatistic],
 		NameEn:               "View Operational Statistics",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1123,7 +1201,7 @@ func genOperationStatisticActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   EditOperationStatistic,
-		Name:                 "运营统计编辑",
+		Name:                 ActionIDNameMap[EditOperationStatistic],
 		NameEn:               "Edit Operational Statistics",
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
@@ -1138,7 +1216,7 @@ func genAuditLogActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   FindAuditLog,
-		Name:                 "操作审计查询",
+		Name:                 ActionIDNameMap[FindAuditLog],
 		NameEn:               "View Operation Audit",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1152,7 +1230,7 @@ func genEventWatchActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   WatchHostEvent,
-		Name:                 "主机事件监听",
+		Name:                 ActionIDNameMap[WatchHostEvent],
 		NameEn:               "Host Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1162,7 +1240,7 @@ func genEventWatchActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   WatchHostRelationEvent,
-		Name:                 "主机关系事件监听",
+		Name:                 ActionIDNameMap[WatchHostRelationEvent],
 		NameEn:               "Host Relation Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1172,7 +1250,7 @@ func genEventWatchActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   WatchBizEvent,
-		Name:                 "业务事件监听",
+		Name:                 ActionIDNameMap[WatchBizEvent],
 		NameEn:               "Business Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1182,7 +1260,7 @@ func genEventWatchActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   WatchSetEvent,
-		Name:                 "集群事件监听",
+		Name:                 ActionIDNameMap[WatchSetEvent],
 		NameEn:               "Set Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1192,7 +1270,7 @@ func genEventWatchActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   WatchModuleEvent,
-		Name:                 "模块数据监听",
+		Name:                 ActionIDNameMap[WatchModuleEvent],
 		NameEn:               "Module Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1202,7 +1280,7 @@ func genEventWatchActions() []ResourceAction {
 
 	actions = append(actions, ResourceAction{
 		ID:                   WatchSetTemplateEvent,
-		Name:                 "集群模板数据监听",
+		Name:                 ActionIDNameMap[WatchSetTemplateEvent],
 		NameEn:               "Set Template Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
@@ -1216,7 +1294,7 @@ func genConfigAdminActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
 		ID:                   GlobalSettings,
-		Name:                 "全局设置",
+		Name:                 ActionIDNameMap[GlobalSettings],
 		NameEn:               "Global Settings",
 		Type:                 Edit,
 		RelatedResourceTypes: nil,

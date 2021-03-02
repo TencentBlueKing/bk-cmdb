@@ -14,7 +14,6 @@ package iam
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
 	"configcenter/src/ac/meta"
@@ -39,7 +38,7 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, er
 		return "", nil, err
 	}
 
-	resource, err := genIamResource(action, *rscType, a)
+	resource, err := GenIamResource(action, *rscType, a)
 	if err != nil {
 		return "", nil, err
 	}
@@ -455,74 +454,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 }
 
-// AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
-func AdoptPermissions(h http.Header, rs []meta.ResourceAttribute) (*metadata.IamPermission, error) {
-	permission := new(metadata.IamPermission)
-	permission.SystemID = SystemIDCMDB
-	// permissionMap maps ResourceActionID and ResourceTypeID to ResourceInstances
-	permissionMap := make(map[string]map[string][][]metadata.IamResourceInstance, 0)
-	for _, r := range rs {
-		actionID, err := ConvertResourceAction(r.Type, r.Action, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-
-		rscType, err := ConvertResourceType(r.Basic.Type, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-
-		resource, err := genIamResource(actionID, *rscType, &r)
-		if err != nil {
-			return nil, err
-		}
-
-		if _, ok := permissionMap[string(actionID)]; !ok {
-			permissionMap[string(actionID)] = make(map[string][][]metadata.IamResourceInstance, 0)
-		}
-
-		// generate iam resource instances by its paths and itself
-		for _, res := range resource {
-			if len(res.ID) == 0 && res.Attribute == nil {
-				permissionMap[string(actionID)][string(res.Type)] = nil
-				continue
-			}
-
-			instance := make([]metadata.IamResourceInstance, 0)
-			if res.Attribute != nil {
-				iamPath, ok := res.Attribute[types.IamPathKey].([]string)
-				if !ok {
-					return nil, fmt.Errorf("iam path(%v) is not string array type", res.Attribute[types.IamPathKey])
-				}
-				ancestors, err := parseIamPathToAncestors(iamPath)
-				if err != nil {
-					return nil, err
-				}
-				instance = append(instance, ancestors...)
-			}
-			instance = append(instance, metadata.IamResourceInstance{
-				Type: string(res.Type),
-				ID:   res.ID,
-			})
-			permissionMap[string(actionID)][string(res.Type)] = append(permissionMap[string(actionID)][string(res.Type)], instance)
-		}
-	}
-
-	for actionID, permissionTypeMap := range permissionMap {
-		action := metadata.IamAction{ID: actionID, RelatedResourceTypes: make([]metadata.IamResourceType, 0)}
-		for rscType, instances := range permissionTypeMap {
-			action.RelatedResourceTypes = append(action.RelatedResourceTypes, metadata.IamResourceType{
-				SystemID:  SystemIDCMDB,
-				Type:      rscType,
-				Instances: instances,
-			})
-		}
-		permission.Actions = append(permission.Actions, action)
-	}
-	return permission, nil
-}
-
-func parseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, error) {
+func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, error) {
 	instances := make([]metadata.IamResourceInstance, 0)
 	for _, path := range iamPath {
 		pathItemArr := strings.Split(strings.Trim(path, "/"), "/")
@@ -536,8 +468,9 @@ func parseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 				continue
 			}
 			instances = append(instances, metadata.IamResourceInstance{
-				Type: typeAndID[0],
-				ID:   id,
+				Type:     typeAndID[0],
+				TypeName: ResourceTypeIDMap[TypeID(typeAndID[0])],
+				ID:       id,
 			})
 		}
 	}
