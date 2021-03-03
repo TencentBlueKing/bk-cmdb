@@ -48,7 +48,6 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 
 	instTablePrefix := common.BKTableNameBaseInst + "_pub_"
 	instAsstTablePrefix := common.BKTableNameInstAsst + "_pub_"
-	fmt.Println(len(objs), "===")
 	for _, obj := range objs {
 		objInstTable := instTablePrefix + obj.ObjectID
 		objInstAsstTable := instAsstTablePrefix + obj.ObjectID
@@ -242,10 +241,12 @@ func findObjAttrsIDRelation(ctx context.Context, objID string, db dal.RDB) (map[
 	return attrIDMap, nil
 }
 
+const CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
+
 func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]metadata.Attribute) (types.Index, error) {
 
 	dbIdx := types.Index{
-		Name:                    fmt.Sprintf("%s%d", common.CCLogicUniqueIdxNamePrefix, idx.ID),
+		Name:                    fmt.Sprintf("%s%d", CCLogicUniqueIdxNamePrefix, idx.ID),
 		Unique:                  true,
 		Background:              true,
 		Keys:                    make(map[string]int32, len(idx.Keys)),
