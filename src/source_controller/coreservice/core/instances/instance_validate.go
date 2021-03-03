@@ -347,42 +347,51 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 }
 
 func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
-	mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
-	mainlineAsst := make([]*metadata.Association, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
-		blog.ErrorJSON("search mainline asst failed, err: %s, cond: %s, rid: %s", err.Error(), mainlineCond, kit.Rid)
-		return err
+	// judge whether it is an inner mainline model
+	isMainline := common.IsInnerMainlineModel(objID)
+
+	// if not inner mainline model, then judge whether it is a self defined mainline layer
+	if !isMainline {
+		mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
+		mainlineAsst := make([]*metadata.Association, 0)
+		if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
+			blog.ErrorJSON("search mainline asst failed, err: %s, cond: %s, rid: %s", err.Error(), mainlineCond, kit.Rid)
+			return err
+		}
+		for _, asst := range mainlineAsst {
+			if objID == asst.AsstObjID {
+				isMainline = true
+				break
+			}
+		}
 	}
-	nameField := metadata.GetInstNameFieldName(objID)
-	for _, asst := range mainlineAsst {
-		if objID == asst.AsstObjID {
-			// validate instance name
-			if nameVal, exist := instanceData[nameField]; exist {
-				name, ok := nameVal.(string)
-				if !ok {
-					return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
-				}
-				if common.NameFieldMaxLength < utf8.RuneCountInString(name) {
-					return kit.CCError.CCErrorf(common.CCErrCommValExceedMaxFailed, nameField, common.NameFieldMaxLength)
-				}
-				match, err := regexp.MatchString(common.FieldTypeMainlineRegexp, name)
-				if nil != err {
-					return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
-				}
-				if !match {
-					return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
-				}
-			}
 
-			// validate bk_parent_id
-			if instanceData.Exists(common.BKParentIDField) {
-				if parentID, err := instanceData.Int64(common.BKParentIDField); err != nil || parentID <= 0 {
-					blog.Errorf("invalid bk_parent_id value:%#v, err:%v, rid:%s", instanceData[common.BKParentIDField], err, kit.Rid)
-					return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
-				}
+	if isMainline {
+		// validate instance name
+		nameField := metadata.GetInstNameFieldName(objID)
+		if nameVal, exist := instanceData[nameField]; exist {
+			name, ok := nameVal.(string)
+			if !ok {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
 			}
+			if common.NameFieldMaxLength < utf8.RuneCountInString(name) {
+				return kit.CCError.CCErrorf(common.CCErrCommValExceedMaxFailed, nameField, common.NameFieldMaxLength)
+			}
+			match, err := regexp.MatchString(common.FieldTypeMainlineRegexp, name)
+			if nil != err {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
+			}
+			if !match {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
+			}
+		}
 
-			break
+		// validate bk_parent_id
+		if instanceData.Exists(common.BKParentIDField) {
+			if parentID, err := instanceData.Int64(common.BKParentIDField); err != nil || parentID <= 0 {
+				blog.Errorf("invalid bk_parent_id value:%#v, err:%v, rid:%s", instanceData[common.BKParentIDField], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
+			}
 		}
 	}
 
