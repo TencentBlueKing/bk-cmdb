@@ -32,6 +32,7 @@ import (
 var updateIgnoreKeys = []string{
 	common.BKOwnerIDField,
 	common.BKDefaultField,
+	common.BKInstParentStr,
 	common.BKAppIDField,
 	common.BKDataStatusField,
 	common.BKInstIDField,
@@ -40,6 +41,7 @@ var updateIgnoreKeys = []string{
 var createIgnoreKeys = []string{
 	common.BKOwnerIDField,
 	common.BKDefaultField,
+	common.BKInstParentStr,
 	common.BKAppIDField,
 	common.BKInstIDField,
 	common.BKDataStatusField,
@@ -165,7 +167,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		return err
 	}
 
-	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
+	if err := m.validMainlineInstanceData(kit, objID, instanceData); err != nil {
 		return err
 	}
 
@@ -287,7 +289,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
-	if err := m.validMainlineInstanceName(kit, objID, updateData); err != nil {
+	if err := m.validMainlineInstanceData(kit, objID, updateData); err != nil {
 		return err
 	}
 
@@ -344,7 +346,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 	return valid.validUpdateUnique(kit, updateData, instanceData, instID, m)
 }
 
-func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
+func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
 	mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
 	mainlineAsst := make([]*metadata.Association, 0)
 	if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
@@ -354,6 +356,7 @@ func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string,
 	nameField := metadata.GetInstNameFieldName(objID)
 	for _, asst := range mainlineAsst {
 		if objID == asst.AsstObjID {
+			// validate instance name
 			if nameVal, exist := instanceData[nameField]; exist {
 				name, ok := nameVal.(string)
 				if !ok {
@@ -370,9 +373,19 @@ func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string,
 					return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
 				}
 			}
+
+			// validate bk_parent_id
+			if instanceData.Exists(common.BKParentIDField) {
+				if parentID, err := instanceData.Int64(common.BKParentIDField); err != nil || parentID <= 0 {
+					blog.Errorf("invalid bk_parent_id value:%#v, err:%v, rid:%s", instanceData[common.BKParentIDField], err, kit.Rid)
+					return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
+				}
+			}
+
 			break
 		}
 	}
+
 	return nil
 }
 
