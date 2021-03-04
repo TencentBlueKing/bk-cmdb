@@ -1268,4 +1268,5 @@ const (
 
 const (
 	CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
+	CCLogicIndexNamePrefix     = "bkcc_idx_"
 )
