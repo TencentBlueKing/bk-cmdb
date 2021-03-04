@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202103011521
+package y3_9_202103041536
 
 import (
 	"context"
@@ -21,15 +21,15 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202103011521", upgrade)
+	upgrader.RegistUpgrader("y3.9.202103041536", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("y3.9.202103011521")
+	blog.Infof("y3.9.202103041536")
 
 	err = splitTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202103011521] migrate inst aplit table failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202103041536] migrate inst aplit table failed, error  %s", err.Error())
 		return err
 	}
 
