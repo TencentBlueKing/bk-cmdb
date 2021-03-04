@@ -153,6 +153,7 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		Page:              input.Page,
 		ServiceCategoryID: &input.ServiceCategoryID,
 		Search:            input.Search,
+		IsExact:           input.IsExact,
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {

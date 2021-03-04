@@ -52,7 +52,10 @@ type ListServiceTemplateInput struct {
 	// this field can be empty, it a optional condition.
 	ServiceCategoryID int64    `json:"service_category_id"`
 	Page              BasePage `json:"page"`
-	Search            string   `json:"search"`
+	// search service templates by name
+	Search string `json:"search"`
+	// used with search, means whether search service templates with exact name or not
+	IsExact bool `json:"is_exact"`
 }
 
 type DeleteServiceTemplatesInput struct {
