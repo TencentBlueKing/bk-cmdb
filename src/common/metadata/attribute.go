@@ -1065,7 +1065,6 @@ var HostApplyFieldMap = map[string]bool{
 	"bk_os_version":               false,
 	"bk_os_bit":                   false,
 	"bk_cpu":                      false,
-	"bk_cpu_mhz":                  false,
 	"bk_cpu_module":               false,
 	"bk_mem":                      false,
 	"bk_disk":                     false,

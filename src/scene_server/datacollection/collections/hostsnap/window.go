@@ -11,7 +11,7 @@
  */
 
 /*
- 主机快照属性，如cpu,bk_cpu_mhz,bk_disk,bk_mem等数据的处理时间窗口,用于限制在指定周期的前多少分钟可以让请求通过,超过限定时间将不会处理请求。
+ 主机快照属性，如cpu,bk_disk,bk_mem等数据的处理时间窗口,用于限制在指定周期的前多少分钟可以让请求通过,超过限定时间将不会处理请求。
  有三个参数，atTime,checkIntervalHours,windowMinute
 
  当不配置windowMinute，窗口不生效。当配置了windowMinute,至少配置atTime或者checkIntervalHours中的一个,否则不生效。
