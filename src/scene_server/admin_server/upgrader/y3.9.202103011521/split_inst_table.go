@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	commIdx "configcenter/src/common/index"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -33,18 +34,8 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 		return
 	}
 
-	// NOTICE: 使用原表索引可能会有问题， 索引名字没有做规范化
-	instIdxs, err := db.Table(common.BKTableNameBaseInst).Indexes(ctx)
-	if err != nil {
-		blog.Errorf("get inst table index list error. err: %s", err.Error())
-		return err
-	}
-	// NOTICE: 使用原表索引可能会有问题， 索引名字没有做规范化
-	instAsstIdxs, err := db.Table(common.BKTableNameInstAsst).Indexes(ctx)
-	if err != nil {
-		blog.Errorf("get inst association table index list error. err: %s", err.Error())
-		return err
-	}
+	instIdxs := instanceDefaultIndex
+	instAsstIdxs := assoicationDefaultIndex
 
 	instTablePrefix := common.BKTableNameBaseInst + "_pub_"
 	instAsstTablePrefix := common.BKTableNameInstAsst + "_pub_"
@@ -143,7 +134,7 @@ func createTableFunc(ctx context.Context, tableName string, db dal.DB) error {
 }
 
 func createTableIndex(ctx context.Context, tableName string, idxs []types.Index, db dal.RDB) error {
-	alreadyIdxNameMap, err := getTableAlreadyIndexs(ctx, tableName, db)
+	alreadyIdxNameMap, dbIndexList, err := getTableAlreadyIndexs(ctx, tableName, db)
 	if err != nil {
 		return err
 	}
@@ -155,32 +146,36 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 			continue
 		}
 		alreadyIdx, ok := alreadyIdxNameMap[idx.Name]
-		if !ok {
-			if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil {
-				return fmt.Errorf("create index(%s) error. err: %s", idx.Name, err.Error())
+		if ok {
+			if commIdx.IndexEqual(idx, alreadyIdx) {
+				continue
 			}
-		} else if diffIndex(idx, alreadyIdx) {
-			if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil {
-				return fmt.Errorf("create index(%s) error. err: %s", idx.Name, err.Error())
-			}
-
 		}
-
+		alreadyIdx, ok = commIdx.FindIndexByIndexFields(idx.Keys, dbIndexList)
+		if ok {
+			if commIdx.IndexEqual(idx, alreadyIdx) {
+				continue
+			}
+		}
+		if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil {
+			return fmt.Errorf("create index(%s) error. err: %s", idx.Name, err.Error())
+		}
 	}
 
 	return nil
 }
 
-func getTableAlreadyIndexs(ctx context.Context, tableName string, db dal.RDB) (map[string]types.Index, error) {
+func getTableAlreadyIndexs(ctx context.Context, tableName string,
+	db dal.RDB) (map[string]types.Index, []types.Index, error) {
 	alreadyIdxs, err := db.Table(tableName).Indexes(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("get collection(%s) index error. err: %s", tableName, err.Error())
+		return nil, nil, fmt.Errorf("get collection(%s) index error. err: %s", tableName, err.Error())
 	}
 	alreadyIdxNameMap := make(map[string]types.Index, len(alreadyIdxs))
 	for _, idx := range alreadyIdxs {
 		alreadyIdxNameMap[idx.Name] = idx
 	}
-	return alreadyIdxNameMap, nil
+	return alreadyIdxNameMap, alreadyIdxs, nil
 }
 
 func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName string, db dal.RDB) error {
@@ -193,7 +188,7 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 		return fmt.Errorf("get obj(%s) logic unique index error. err: %s", objID, err.Error())
 	}
 
-	alreadyIdxNameMap, err := getTableAlreadyIndexs(ctx, tableName, db)
+	alreadyIdxNameMap, _, err := getTableAlreadyIndexs(ctx, tableName, db)
 	if err != nil {
 		return err
 	}
@@ -266,32 +261,6 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]metadata.Attribute) (ty
 	}
 
 	return dbIdx, nil
-}
-
-func diffIndex(src, dst types.Index) bool {
-	if src.Background != dst.Background {
-		return true
-	}
-	if src.Unique != dst.Unique {
-		return true
-	}
-	if src.Name != dst.Name {
-		return true
-	}
-	if len(src.Keys) != len(dst.Keys) {
-		return true
-	}
-
-	for key, val := range src.Keys {
-		dstVal, exist := dst.Keys[key]
-		if !exist {
-			return true
-		}
-		if val != dstVal {
-			return true
-		}
-	}
-	return false
 }
 
 type object struct {
@@ -377,3 +346,63 @@ const (
 	// FieldTypeOrganization the organization field type
 	FieldTypeOrganization string = "organization"
 )
+
+var assoicationDefaultIndex = []types.Index{
+	{
+		Keys: map[string]int32{
+			common.BKOwnerIDField: 1,
+			common.BKInstIDField:  1,
+		},
+		Name:       "bkcc_idx_ObjID_InstID",
+		Background: true,
+	},
+	{
+		Keys: map[string]int32{
+			common.BKFieldID: 1,
+		},
+		Name:       "bkcc_unique_ID",
+		Unique:     true,
+		Background: true,
+	},
+	{
+		Keys: map[string]int32{
+			common.BKAsstObjIDField:  1,
+			common.BKAsstInstIDField: 1,
+		},
+		Name:       "bkcc_idx_AsstObjID_AsstInstID",
+		Unique:     true,
+		Background: true,
+	},
+}
+
+var instanceDefaultIndex = []types.Index{
+	{
+		Keys: map[string]int32{
+			common.BKObjIDField: 1,
+		},
+		Name:       "bkcc_idx_ObjID",
+		Background: true,
+	},
+	{
+		Keys: map[string]int32{
+			common.BKOwnerIDField: 1,
+		},
+		Name:       "bkcc_idx_supplierAccount",
+		Background: true,
+	},
+	{
+		Keys: map[string]int32{
+			common.BKInstIDField: 1,
+		},
+		Name:       "bkcc_idx_InstId",
+		Background: true,
+		Unique:     true,
+	},
+	{
+		Keys: map[string]int32{
+			common.BKInstNameField: 1,
+		},
+		Name:       "bkcc_idx_InstName",
+		Background: true,
+	},
+}
