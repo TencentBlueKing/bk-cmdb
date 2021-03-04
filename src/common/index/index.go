@@ -12,7 +12,11 @@
 
 package index
 
-import "configcenter/src/storage/dal/types"
+import (
+	"configcenter/src/common"
+	"configcenter/src/storage/dal/types"
+	"fmt"
+)
 
 func InstanceIndex() []types.Index {
 	return instanceDefaultIndex
@@ -20,4 +24,26 @@ func InstanceIndex() []types.Index {
 
 func InstanceAssoicationIndex() []types.Index {
 	return assoicationDefaultIndex
+}
+
+func CCFieldTypeToDBType(typ string) string {
+	switch typ {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+		return "string"
+	case common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum, common.FieldTypeUser, common.FieldTypeTimeZone,
+		common.FieldTypeList, common.FieldTypeOrganization:
+		return "number"
+	case common.FieldTypeDate, common.FieldTypeTime:
+		return "date"
+	case common.FieldTypeBool:
+		return "bool"
+
+	}
+
+	// other type not support
+	return ""
+}
+
+func GetUniqueIndexNameByID(id uint64) string {
+	return fmt.Sprintf("%s%d", common.CCLogicUniqueIdxNamePrefix, id)
 }

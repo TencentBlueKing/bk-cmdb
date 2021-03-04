@@ -799,6 +799,12 @@ const (
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
 	CCErrCoreServiceHostNotUnderAnyResourceDirectory = 11130034
+	// TODO: add json
+	// CCErrCoreServiceUniqueIndexPropertyType 唯一索引不支持的字段类型. 字段名: %s
+	CCErrCoreServiceUniqueIndexPropertyType = 11130035
+	// TODO: add json
+	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败
+	CCErrCoreServiceCreateDBUniqueIndex = 11130036
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
