@@ -18,9 +18,6 @@
                 <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
                     <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
                 </bk-tab-panel>
-                <bk-tab-panel name="status" :label="$t('实时状态')">
-                    <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
-                </bk-tab-panel>
                 <bk-tab-panel name="association" :label="$t('关联')">
                     <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
                 </bk-tab-panel>
@@ -41,7 +38,6 @@
     import cmdbHostInfo from './children/info.vue'
     import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
-    import cmdbHostStatus from './children/status.vue'
     import cmdbAuditHistory from '@/components/model-instance/audit-history'
     import cmdbHostService from './children/service-list.vue'
     import RouterQuery from '@/router/query'
@@ -50,7 +46,6 @@
             cmdbHostInfo,
             cmdbHostAssociation,
             cmdbHostProperty,
-            cmdbHostStatus,
             cmdbAuditHistory,
             cmdbHostService
         },
