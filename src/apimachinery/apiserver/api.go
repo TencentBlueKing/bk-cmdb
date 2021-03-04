@@ -58,7 +58,7 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID
 
 func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
 	resp = new(metadata.ObjectAttrBatchResult)
-	subPath := "object/search/batch"
+	subPath := "/findmany/object"
 
 	err = a.client.Post().
 		WithContext(ctx).

@@ -30,7 +30,7 @@
                     {{$tools.formatTime(row['operation_time'])}}
                 </template>
             </bk-table-column>
-            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff">{{$t('暂无数据')}}</cmdb-table-empty>
         </bk-table>
     </div>
 </template>

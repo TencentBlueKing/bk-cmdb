@@ -52,7 +52,10 @@ type ListServiceTemplateInput struct {
 	// this field can be empty, it a optional condition.
 	ServiceCategoryID int64    `json:"service_category_id"`
 	Page              BasePage `json:"page"`
-	Search            string   `json:"search"`
+	// search service templates by name
+	Search string `json:"search"`
+	// used with search, means whether search service templates with exact name or not
+	IsExact bool `json:"is_exact"`
 }
 
 type DeleteServiceTemplatesInput struct {
@@ -1581,7 +1584,7 @@ type PropertyPort struct {
 }
 
 func (ti *PropertyPort) Validate() error {
-	if ti.Value == nil && len(*ti.Value) == 0 {
+	if ti.Value == nil || len(*ti.Value) == 0 {
 		return errors.New("port is not set or is empty")
 	}
 
@@ -1632,7 +1635,7 @@ type PropertyBindIP struct {
 }
 
 func (ti *PropertyBindIP) Validate() error {
-	if ti.Value == nil && len(*ti.Value) == 0 {
+	if ti.Value == nil || len(*ti.Value) == 0 {
 		return errors.New("ip is not set or is empty")
 	}
 
@@ -1648,7 +1651,7 @@ type PropertyProtocol struct {
 }
 
 func (ti *PropertyProtocol) Validate() error {
-	if ti.Value == nil && len(*ti.Value) == 0 {
+	if ti.Value == nil || len(*ti.Value) == 0 {
 		return errors.New("protocol is not set or is empty")
 	}
 

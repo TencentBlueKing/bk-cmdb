@@ -12,6 +12,10 @@
 
 package common
 
+import (
+	"fmt"
+)
+
 // table names
 const (
 	// BKTableNamePropertyGroup the table name of the property group
@@ -97,7 +101,8 @@ const (
 	BKTableNameWatchToken = "cc_WatchToken"
 )
 
-// AllTables alltables
+// AllTables is all table names, not include the sharding tables which is created dynamically,
+// such as object instance sharding table 'cc_ObjectBase_pub_{objectID}'.
 var AllTables = []string{
 	BKTableNamePropertyGroup,
 	BKTableNameObjDes,
@@ -151,6 +156,31 @@ var AllTables = []string{
 	BKTableNameCloudSyncHistory,
 }
 
+// TableSpecifier is table specifier type which describes the metadata
+// access or classification level.
+type TableSpecifier string
+
+const (
+	// TableSpecifierPublic is public specifier for table.
+	TableSpecifierPublic TableSpecifier = "pub"
+)
+
+// GetObjectInstTableName return the object instance table name in sharding mode base on
+// the object ID. Format: cc_ObjectBase_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_pub_switch'.
+// NOTE: only one TableSpecifierPublic in system now, we would add more specifier type and return
+// table name dynamically in the future. On this version, return 'pub' fixedly.
+func GetObjectInstTableName(objID string) string {
+	return fmt.Sprintf("%s_%s_%s", BKTableNameBaseInst, TableSpecifierPublic, objID)
+}
+
+// GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
+// the object ID. Format: cc_InstAsst_{Specifier}_{ObjectID}, such as 'cc_InstAsst_pub_switch'.
+// NOTE: only one TableSpecifierPublic in system now, we would add more specifier type and return
+// table name dynamically in the future. On this version, return 'pub' fixedly.
+func GetObjectInstAsstTableName(objID string) string {
+	return fmt.Sprintf("%s_%s_%s", BKTableNameInstAsst, TableSpecifierPublic, objID)
+}
+
 // GetInstTableName returns inst data table name
 func GetInstTableName(objID string) string {
 	switch objID {
@@ -167,6 +197,6 @@ func GetInstTableName(objID string) string {
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
 	default:
-		return BKTableNameBaseInst
+		return GetObjectInstTableName(objID)
 	}
 }

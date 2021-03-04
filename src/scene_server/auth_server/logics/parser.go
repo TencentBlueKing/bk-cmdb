@@ -155,7 +155,7 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 		}
 		return map[string]interface{}{
 			attribute: map[string]interface{}{
-				common.BKDBNot: fmt.Sprintf(operatorRegexFmtMap[op], valueStr),
+				common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf(operatorRegexFmtMap[op], valueStr)},
 			},
 		}, nil
 	default:

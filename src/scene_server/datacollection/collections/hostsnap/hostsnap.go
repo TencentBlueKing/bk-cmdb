@@ -52,7 +52,7 @@ const (
 
 var (
 	// 需要参与变化对比的字段
-	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
+	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
 		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit"}
 	reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
 
@@ -278,8 +278,8 @@ func needToUpdate(src, toCompare string) bool {
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
 			compareField := compareFields[idx]
-			// tolerate bk_cpu, bk_cpu_mhz, bk_disk, bk_mem changes less than the set value
-			if compareField == "bk_cpu" || compareField == "bk_cpu_mhz" || compareField == "bk_disk" || compareField == "bk_mem" {
+			// tolerate bk_cpu, bk_disk, bk_mem changes less than the set value
+			if compareField == "bk_cpu" || compareField == "bk_disk" || compareField == "bk_mem" {
 				val := compareElements[idx].Float() * (float64(changeRangePercent) / 100.0)
 				diff := srcElements[idx].Float() - compareElements[idx].Float()
 				if -val < diff && diff < val {
@@ -303,7 +303,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	for _, core := range val.Get("data.cpu.cpuinfo.#.cores").Array() {
 		cpunum += core.Int()
 	}
-	var CPUMhz = val.Get("data.cpu.cpuinfo.0.mhz").Int()
 	var disk uint64
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
 		disk += disktotal.Uint() >> 10 >> 10 >> 10
@@ -378,15 +377,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		raw.WriteString(",")
 		raw.WriteString("\"bk_cpu_module\":")
 		raw.Write([]byte("\"" + cpumodule + "\""))
-	}
-
-	if CPUMhz <= 0 {
-		blog.V(4).Infof("bk_cpu_mhz not found in message for %s", innerIP)
-	} else {
-		setter["bk_cpu_mhz"] = CPUMhz
-		raw.WriteString(",")
-		raw.WriteString("\"bk_cpu_mhz\":")
-		raw.WriteString(strconv.FormatInt(CPUMhz, 10))
 	}
 
 	if disk <= 0 {

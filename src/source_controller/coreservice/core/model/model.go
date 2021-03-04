@@ -100,7 +100,6 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
 	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
-
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err.Error())
@@ -115,7 +114,6 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	modelNameUniqueFilter := map[string]interface{}{
 		common.BKObjNameField: inputParam.Spec.ObjectName,
 	}
-
 	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), kit.Rid)
@@ -126,6 +124,14 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
 	}
 
+	// check object instance and instance association table.
+	if err := m.createObjectShardingTables(kit.Ctx, inputParam.Spec.ObjectID); err != nil {
+		blog.Errorf("handle object sharding tables failed, object: %s name: %s, err: %s, rid: %s",
+			inputParam.Spec.ObjectID, inputParam.Spec.ObjectName, err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	// create new model after checking base informations and sharding table operation.
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	id, err := m.save(kit, &inputParam.Spec)
 	if nil != err {
@@ -133,6 +139,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return dataResult, err
 	}
 
+	// create initial phase model attributes.
 	if len(inputParam.Attributes) != 0 {
 		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
 		if nil != err {
@@ -140,7 +147,6 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 			return dataResult, err
 		}
 	}
-
 	dataResult.Created.ID = id
 	return dataResult, nil
 }
