@@ -266,7 +266,7 @@ func (m *modelManager) canCascadeDelete(kit *rest.Kit, targetObjIDS []string) (e
 }
 
 // createObjectShardingTables creates new collections for new model,
-// create new object instance and association collections, and fix missing indexes.
+// which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) error {
 	// collection names.
 	instTableName := common.GetObjectInstTableName(objID)
@@ -277,13 +277,13 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) e
 	instAsstTableIndexes := dbindex.InstanceAssoicationIndex()
 
 	// create object instance table.
-	err := m.createNewShardingTable(kit, instTableName, instTableIndexes)
+	err := m.createShardingTable(kit, instTableName, instTableIndexes)
 	if err != nil {
 		return fmt.Errorf("create object instance sharding table, %+v", err)
 	}
 
 	// create object instance association table.
-	err = m.createNewShardingTable(kit, instAsstTableName, instAsstTableIndexes)
+	err = m.createShardingTable(kit, instAsstTableName, instAsstTableIndexes)
 	if err != nil {
 		return fmt.Errorf("create object instance association sharding table, %+v", err)
 	}
@@ -291,27 +291,48 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) e
 	return nil
 }
 
-// createNewShardingTable creates a new collection, and fix missing indexes.
-func (m *modelManager) createNewShardingTable(kit *rest.Kit, tableName string, indexes []types.Index) error {
+// dropObjectShardingTables drops the collections of target model.
+func (m *modelManager) dropObjectShardingTables(kit *rest.Kit, objID string) error {
+	// collection names.
+	instTableName := common.GetObjectInstTableName(objID)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID)
+
+	// drop object instance table.
+	err := m.dropShardingTable(kit, instTableName)
+	if err != nil {
+		return fmt.Errorf("drop object instance sharding table, %+v", err)
+	}
+
+	// drop object instance association table.
+	err = m.dropShardingTable(kit, instAsstTableName)
+	if err != nil {
+		return fmt.Errorf("drop object instance association sharding table, %+v", err)
+	}
+
+	return nil
+}
+
+// createShardingTable creates a new collection with target name, and fix missing indexes base on given index list.
+func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, indexes []types.Index) error {
 	// check table existence.
 	tableExists, err := mongodb.Client().HasTable(kit.Ctx, tableName)
 	if err != nil {
-		return fmt.Errorf("check table existence failed, %+v", err)
+		return fmt.Errorf("check sharding table existence failed, %+v", err)
 	}
 	if !tableExists {
 		err = mongodb.Client().CreateTable(kit.Ctx, tableName)
 		if err != nil && !mongodb.Client().IsDuplicatedError(err) {
-			return fmt.Errorf("create table failed, %+v", err)
+			return fmt.Errorf("create sharding table failed, %+v", err)
 		}
 	}
 
-	// collections are exist, check the indexes now.
+	// target collection is exist, try to check and fix the missing indexes now.
 	missingIndexes := []types.Index{}
 
 	// get all created table indexes.
 	createdIndexes, err := mongodb.Client().Table(tableName).Indexes(kit.Ctx)
 	if err != nil {
-		return fmt.Errorf("get created table indexes failed, %+v", err)
+		return fmt.Errorf("get created sharding table indexes failed, %+v", err)
 	}
 
 	// find missing indexes.
@@ -320,16 +341,33 @@ func (m *modelManager) createNewShardingTable(kit *rest.Kit, tableName string, i
 		if !indexExists || !dbindex.IndexEqual(index, createdIndex) {
 			missingIndexes = append(missingIndexes, index)
 		}
-		// NOTE: DO NOT delete indexex, maybe it's created by other way.
+		// NOTE: DO NOT delete index, maybe it's created by other way.
 	}
 
 	// create missing indexes.
 	for _, index := range missingIndexes {
 		err = mongodb.Client().Table(tableName).CreateIndex(kit.Ctx, index)
 		if err != nil {
-			return fmt.Errorf("create table index failed, index: %+v, %+v", index, err)
+			return fmt.Errorf("create sharding table index failed, index: %+v, %+v", index, err)
 		}
 	}
 
+	return nil
+}
+
+// dropShardingTable drops the sharding table with target name.
+func (m *modelManager) dropShardingTable(kit *rest.Kit, tableName string) error {
+	err := mongodb.Client().Table(tableName).Find(common.KvMap{}).One(kit.Ctx, &common.KvMap{})
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
+		return fmt.Errorf("check data failed, can't drop the sharding table, %+v", err)
+	}
+	if err == nil {
+		return fmt.Errorf("can't drop the non-empty sharding table")
+	}
+
+	// drop the empty table.
+	if err := mongodb.Client().DropTable(kit.Ctx, tableName); err != nil {
+		return fmt.Errorf("drop sharding table failed, %+v", err)
+	}
 	return nil
 }
