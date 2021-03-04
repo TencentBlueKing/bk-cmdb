@@ -126,6 +126,14 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
 	}
 
+	// check object instance and instance association table.
+	if err := m.createObjectShardingTables(kit, inputParam.Spec.ObjectID); err != nil {
+		blog.Errorf("handle object sharding tables failed, object: %s name: %s, err: %s, rid: %s",
+			inputParam.Spec.ObjectID, inputParam.Spec.ObjectName, err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	// create new model after checking base informations and sharding table operation.
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	id, err := m.save(kit, &inputParam.Spec)
 	if nil != err {
