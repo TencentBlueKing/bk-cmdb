@@ -82,3 +82,13 @@ func GetObjByType(objType string) string {
 func IsInnerModel(objType string) bool {
 	return GetObjByType(objType) != BKInnerObjIDObject
 }
+
+// IsInnerMainlineModel judge if the object type is inner mainline model
+func IsInnerMainlineModel(objType string) bool {
+	switch objType {
+	case BKInnerObjIDApp, BKInnerObjIDSet, BKInnerObjIDModule:
+		return true
+	default:
+		return false
+	}
+}
