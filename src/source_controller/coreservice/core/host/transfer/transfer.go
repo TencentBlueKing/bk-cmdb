@@ -315,7 +315,8 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizID int64, 
 
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, relationCond)
 	if err != nil {
-		blog.Errorf("delete host, but remove host relations failed, biz ID: %d, host ID: %+v, rid: %s", bizID, hostIDs, kit.Rid)
+		blog.Errorf("delete host, but remove host relations failed, biz ID: %d, host ID: %+v, err: %v, rid: %s", bizID,
+			hostIDs, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 

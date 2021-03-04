@@ -219,7 +219,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*met
 
 	listResult, err := st.client.TaskServer().Task().ListTask(kit.Ctx, kit.Header, common.SyncSetTaskName, &listTaskOption)
 	if err != nil {
-		blog.ErrorJSON("list set sync tasks failed, option: %s, rid: %s", listTaskOption, kit.Rid)
+		blog.ErrorJSON("list set sync tasks failed, option: %s, err: %v, rid: %s", listTaskOption, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrTaskListTaskFail)
 	}
 	if listResult == nil || len(listResult.Data.Info) == 0 {
