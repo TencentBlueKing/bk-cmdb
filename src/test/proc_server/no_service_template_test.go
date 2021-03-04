@@ -897,6 +897,30 @@ var _ = Describe("no service template test", func() {
 			Expect(pName).To(Equal("p3"))
 		})
 
+		It("search process instances detail by condition", func() {
+			input := metadata.SearchProcessInstancesOption{
+				SetIDs:      []int64{setId},
+				ModuleNames: []string{"test"},
+				Fields:      []string{common.BKProcessIDField, common.BKProcessNameField},
+				Page:        metadata.BasePage{Limit: 10},
+			}
+			rsp, err := processClient.SearchProcessInstances(context.Background(), header, bizId, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			data := struct {
+				Count int64              `json:"count"`
+				Info  []metadata.Process `json:"info"`
+			}{}
+			j, err := json.Marshal(rsp.Data)
+			json.Unmarshal(j, &data)
+			processIDNameMap := map[int64]string{}
+			for _, proc := range data.Info {
+				processIDNameMap[proc.ProcessID] = *proc.ProcessName
+			}
+			Expect(processIDNameMap[processId]).To(Equal("p3"))
+		})
+
 		It("update process instances by their ids", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,

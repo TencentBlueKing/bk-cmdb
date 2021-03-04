@@ -89,6 +89,15 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
 	}, {
+		Name:           "searchProcessInstances",
+		Description:    "根据条件查询某业务下的进程详情",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/process_instance/detail/by_condition/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       8,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Find,
+	}, {
 		Name:           "listProcessInstancesDetailsByIDs",
 		Description:    "根据进程ID列表批量查询这些进程的详情及关系",
 		Pattern:        "/api/v3/findmany/proc/process_instance/detail/by_ids",

@@ -518,6 +518,25 @@ func (o *ListProcessInstancesDetailsOption) Validate() (rawError cErr.RawErrorIn
 	return cErr.RawErrorInfo{}
 }
 
+type SearchProcessInstancesOption struct {
+	SetIDs      []int64  `json:"bk_set_ids"`
+	ModuleNames []string `json:"bk_module_names"`
+	Fields      []string `json:"fields"`
+	Page        BasePage `json:"page"`
+}
+
+// Validate validates the input param
+func (o *SearchProcessInstancesOption) Validate() (rawError cErr.RawErrorInfo) {
+	if o.Page.IsIllegal() {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 type ListProcessInstancesDetailsByIDsOption struct {
 	BizID      int64    `json:"bk_biz_id"`
 	ProcessIDs []int64  `json:"process_ids"`

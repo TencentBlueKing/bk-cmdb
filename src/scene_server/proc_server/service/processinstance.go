@@ -1524,6 +1524,164 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 	ctx.RespEntity(processResult.Data.Info)
 }
 
+// SearchProcessInstances search process instances by condition
+func (ps *ProcServer) SearchProcessInstances(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("SearchProcessInstances failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		return
+	}
+
+	input := new(metadata.SearchProcessInstancesOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// get moduleIDs
+	var moduleIDs []interface{}
+	if len(input.SetIDs) > 0 || len(input.ModuleNames) > 0 {
+		filter := map[string]interface{}{
+			common.BKAppIDField: bizID,
+		}
+		if len(input.SetIDs) > 0 {
+			filter[common.BKSetIDField] = map[string]interface{}{
+				common.BKDBIN: input.SetIDs,
+			}
+		}
+		if len(input.ModuleNames) > 0 {
+			filter[common.BKModuleNameField] = map[string]interface{}{
+				common.BKDBIN: input.ModuleNames,
+			}
+		}
+
+		option := &metadata.DistinctFieldOption{
+			TableName: common.BKTableNameBaseModule,
+			Field:     common.BKModuleIDField,
+			Filter:    filter,
+		}
+
+		var err error
+		moduleIDs, err = ps.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, option)
+		if err != nil {
+			blog.Errorf("GetDistinctField failed, err:%s, option:%#v, rid:%s", err, *option, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if len(moduleIDs) == 0 {
+			ctx.RespEntityWithCount(0, []interface{}{})
+			return
+		}
+	}
+
+	// get processIDs
+	var processIDs []interface{}
+	if len(moduleIDs) > 0 {
+		// get serviceInstanceIDs first
+		filter := map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+		}
+
+		option := &metadata.DistinctFieldOption{
+			TableName: common.BKTableNameServiceInstance,
+			Field:     common.BKFieldID,
+			Filter:    filter,
+		}
+
+		serviceInstanceIDs, err := ps.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, option)
+		if err != nil {
+			blog.Errorf("GetDistinctField failed, err:%s, option:%#v, rid:%s", err, *option, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if len(serviceInstanceIDs) == 0 {
+			ctx.RespEntityWithCount(0, []interface{}{})
+			return
+		}
+
+		// get processIDs by serviceInstanceIDs
+		filter = map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKServiceInstanceIDField: map[string]interface{}{
+				common.BKDBIN: serviceInstanceIDs,
+			},
+		}
+
+		option = &metadata.DistinctFieldOption{
+			TableName: common.BKTableNameProcessInstanceRelation,
+			Field:     common.BKProcessIDField,
+			Filter:    filter,
+		}
+
+		processIDs, err = ps.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, option)
+		if err != nil {
+			blog.Errorf("GetDistinctField failed, err:%s, option:%#v, rid:%s", err, *option, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if len(processIDs) == 0 {
+			ctx.RespEntityWithCount(0, []interface{}{})
+			return
+		}
+	}
+
+	// get process instance detail
+	filter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+	}
+
+	if len(processIDs) > 0 {
+		filter[common.BKProcessIDField] = map[string]interface{}{
+			common.BKDBIN: processIDs,
+		}
+	}
+
+	fields := input.Fields
+	if len(fields) > 0 {
+		fields = append(fields, common.BKProcessIDField)
+	}
+
+	sort := input.Page.Sort
+	if sort == "" {
+		sort = common.BKProcessIDField
+	}
+	reqParam := &metadata.QueryCondition{
+		Fields: fields,
+		Page: metadata.BasePage{
+			Sort:  sort,
+			Limit: input.Page.Limit,
+			Start: input.Page.Start,
+		},
+		Condition: filter,
+	}
+
+	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, reqParam)
+	if nil != err {
+		blog.Errorf("SearchProcessInstances failed, coreservice http ReadInstance fail, reqParam: %v, err: %v, rid:%s", *reqParam, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !processResult.Result {
+		blog.Errorf("SearchProcessInstances failed, reqParam: %v, err: %v, rid:%s", *reqParam, err, ctx.Kit.Rid)
+		ctx.RespAutoError(processResult.CCError())
+	}
+
+	ctx.RespEntity(processResult.Data)
+}
+
 var UnbindServiceTemplateOnModuleEnable = true
 
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
