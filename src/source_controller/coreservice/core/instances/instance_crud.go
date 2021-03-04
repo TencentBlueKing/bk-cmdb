@@ -81,11 +81,14 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 
 func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr, err error) {
 	tableName := common.GetInstTableName(objID)
+
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.GetInstIDField(objID), Val: instID})
-	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
+
+	if common.IsObjectInstShardingTable(common.GetInstTableName(objID)) {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
+
 	if objID == common.BKInnerObjIDHost {
 		host := make(metadata.HostMapStr)
 		err = mongodb.Client().Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &host)
@@ -101,7 +104,8 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID in
 
 func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {
 	tableName := common.GetInstTableName(objID)
-	if tableName == common.BKTableNameBaseInst {
+
+	if common.IsObjectInstShardingTable(tableName) {
 		objIDCond, ok := cond[common.BKObjIDField]
 		if ok && objIDCond != objID {
 			blog.V(9).Infof("countInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)

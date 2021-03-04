@@ -14,6 +14,7 @@ package common
 
 import (
 	"fmt"
+	"strings"
 )
 
 // table names
@@ -179,6 +180,16 @@ func GetObjectInstTableName(objID string) string {
 // table name dynamically in the future. On this version, return 'pub' fixedly.
 func GetObjectInstAsstTableName(objID string) string {
 	return fmt.Sprintf("%s_%s_%s", BKTableNameInstAsst, TableSpecifierPublic, objID)
+}
+
+// IsObjectShardingTable returns if the target table is an object sharding table.
+func IsObjectInstShardingTable(tableName string) bool {
+	// check object instance table, cc_ObjectBase_{Specifier}_{ObjectID}
+	if strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameBaseInst)) {
+		return true
+	}
+	// check object instance association table, cc_InstAsst_{Specifier}_{ObjectID}
+	return strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameInstAsst))
 }
 
 // GetInstTableName returns inst data table name
