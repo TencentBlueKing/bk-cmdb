@@ -1581,7 +1581,7 @@ type PropertyPort struct {
 }
 
 func (ti *PropertyPort) Validate() error {
-	if ti.Value == nil && len(*ti.Value) == 0 {
+	if ti.Value == nil || len(*ti.Value) == 0 {
 		return errors.New("port is not set or is empty")
 	}
 
@@ -1632,7 +1632,7 @@ type PropertyBindIP struct {
 }
 
 func (ti *PropertyBindIP) Validate() error {
-	if ti.Value == nil && len(*ti.Value) == 0 {
+	if ti.Value == nil || len(*ti.Value) == 0 {
 		return errors.New("ip is not set or is empty")
 	}
 
@@ -1648,7 +1648,7 @@ type PropertyProtocol struct {
 }
 
 func (ti *PropertyProtocol) Validate() error {
-	if ti.Value == nil && len(*ti.Value) == 0 {
+	if ti.Value == nil || len(*ti.Value) == 0 {
 		return errors.New("protocol is not set or is empty")
 	}
 
