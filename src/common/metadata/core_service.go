@@ -333,7 +333,10 @@ type ListServiceTemplateOption struct {
 	ServiceCategoryID  *int64   `json:"service_category_id"`
 	ServiceTemplateIDs []int64  `json:"service_template_ids"`
 	Page               BasePage `json:"page,omitempty"`
-	Search             string   `json:"search"`
+	// search service templates by name
+	Search string `json:"search"`
+	// used with search, means whether search service templates with exact name or not
+	IsExact bool `json:"is_exact"`
 }
 
 type FindServiceTemplateCountInfoOption struct {
