@@ -13,12 +13,15 @@
 package model
 
 import (
+	"context"
 	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/index"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -93,6 +96,21 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	}
+
+	dbIndex, ccErr := m.toDBUniqueIndex(kit, id, inputParam.Data.Keys, properties)
+	if ccErr != nil {
+		blog.Errorf("[CreateObjectUnique] toDBUniqueIndex for %s with %#v err: %#v, rid: %s",
+			objID, inputParam, err, kit.Rid)
+		return 0, ccErr
+	}
+
+	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
+	objInstTable := common.GetInstTableName(objID)
+	if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
+		blog.Errorf("[CreateObjectUnique] create unique index for %s with %#v err: %#v, rid: %s",
+			objID, inputParam, err, kit.Rid)
+		return 0, kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
 	}
 
 	unique := metadata.ObjectUnique{
@@ -187,7 +205,59 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
+
 	return nil
+}
+
+func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique, newUnique metadata.ObjectUnique,
+	properties []metadata.Attribute) errors.CCErrorCoder {
+
+	if equalUniqueKey(oldUnique.Keys, newUnique.Keys) {
+		return nil
+	}
+
+	dbIndex, ccErr := m.toDBUniqueIndex(kit, oldUnique.ID, newUnique.Keys, properties)
+	if ccErr != nil {
+		blog.Errorf("[UpdateObjectUnique] toDBUniqueIndex for %s err: %#v, rid: %s",
+			oldUnique.ObjID, ccErr.Error(), kit.Rid)
+		return ccErr
+	}
+	objInstTable := common.GetInstTableName(oldUnique.ObjID)
+
+	// 删除原来的索引，
+	if err := mongodb.Table(objInstTable).DropIndex(context.Background(), dbIndex.Name); err != nil {
+		blog.Errorf("[UpdateObjectUnique] drop unique index name %s for %s err: %#v, rid: %s",
+			dbIndex.Name, oldUnique.ObjID, ccErr.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
+	}
+	// 新加索引， 新加失败 不能回滚事务，原因删除索引不能回滚
+	if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
+		blog.Errorf("[UpdateObjectUnique] create unique index name %s for %s err: %#v, rid: %s",
+			dbIndex.Name, oldUnique.ObjID, ccErr.Error(), kit.Rid)
+	}
+	return nil
+}
+
+func equalUniqueKey(src, dst []metadata.UniqueKey) bool {
+	if len(src) != len(dst) {
+		return false
+	}
+
+	dstIDMap := make(map[uint64]metadata.UniqueKey, len(dst))
+	for _, key := range dst {
+		dstIDMap[key.ID] = key
+	}
+
+	for _, key := range src {
+		dstKey, exists := dstIDMap[key.ID]
+		if !exists {
+			return false
+		}
+		if dstKey.Kind != key.Kind {
+			return false
+		}
+	}
+	return true
 }
 
 func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) error {
@@ -223,6 +293,15 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	if nil != err {
 		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v, rid: %s", err, fCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	}
+
+	indexName := index.GetUniqueIndexNameByID(id)
+	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
+	objInstTable := common.GetInstTableName(objID)
+	// 删除失败，忽略即可以,后需会有任务补偿
+	if err := mongodb.Table(objInstTable).DropIndex(context.Background(), indexName); err != nil {
+		blog.WarnJSON("[DeleteObjectUnique] Delete db unique index error, err: %s, index name: %s, rid: %s",
+			err.Error(), indexName, kit.Rid)
 	}
 
 	return nil
@@ -415,5 +494,33 @@ func getBasicDataType(propertyType string) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("unsupported type: %s", propertyType)
 	}
+
+}
+
+func (m *modelAttrUnique) toDBUniqueIndex(kit *rest.Kit, id uint64, keys []metadata.UniqueKey,
+	properties []metadata.Attribute) (types.Index, errors.CCErrorCoder) {
+	dbIndex := types.Index{
+		Background:              true,
+		Unique:                  true,
+		Name:                    index.GetUniqueIndexNameByID(id),
+		Keys:                    make(map[string]int32, 0),
+		PartialFilterExpression: make(map[string]interface{}),
+	}
+	propertiesIDMap := make(map[int64]metadata.Attribute, len(properties))
+	for _, property := range properties {
+		propertiesIDMap[property.ID] = property
+	}
+	for _, key := range keys {
+		attr := propertiesIDMap[int64(key.ID)]
+		dbType := index.CCFieldTypeToDBType(attr.PropertyType)
+		if dbType == "" {
+			blog.ErrorJSON("build unique index property type not support. property: %s, rid: %s", attr, kit.Rid)
+			return dbIndex, kit.CCError.CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyName)
+		}
+		dbIndex.Keys[attr.PropertyID] = int32(key.ID)
+		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
+	}
+
+	return dbIndex, nil
 
 }
