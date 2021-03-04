@@ -125,7 +125,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	}
 
 	// check object instance and instance association table.
-	if err := m.createObjectShardingTables(kit.Ctx, inputParam.Spec.ObjectID); err != nil {
+	if err := m.createObjectShardingTables(kit, inputParam.Spec.ObjectID); err != nil {
 		blog.Errorf("handle object sharding tables failed, object: %s name: %s, err: %s, rid: %s",
 			inputParam.Spec.ObjectID, inputParam.Spec.ObjectName, err.Error(), kit.Rid)
 		return nil, err

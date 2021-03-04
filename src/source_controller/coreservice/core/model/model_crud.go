@@ -13,17 +13,19 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/index"
+	dbindex "configcenter/src/common/index"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -267,46 +269,67 @@ func (m *modelManager) canCascadeDelete(kit *rest.Kit, targetObjIDS []string) (e
 // create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) error {
 	// collection names.
-	instTableName := common.GetInstTableName(objID)
-	instAsstTableName := common.GetInstAsstTableName(objID)
+	instTableName := common.GetObjectInstTableName(objID)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID)
 
-	// check object instance table existence.
-	isTableExists, err := mongodb.Client().HasTable(kit.Ctx, instTableName)
+	// collections indexes.
+	instTableIndexes := dbindex.InstanceIndex()
+	instAsstTableIndexes := dbindex.InstanceAssoicationIndex()
+
+	// create object instance table.
+	err := m.createNewShardingTable(kit, instTableName, instTableIndexes)
 	if err != nil {
-		return fmt.Errorf("check object instance table existence failed, %+v", err)
+		return fmt.Errorf("create object instance sharding table, %+v", err)
 	}
-	if !isTableExists {
-		err = mongodb.Client().CreateTable(kit.Ctx, instTableName)
+
+	// create object instance association table.
+	err = m.createNewShardingTable(kit, instAsstTableName, instAsstTableIndexes)
+	if err != nil {
+		return fmt.Errorf("create object instance association sharding table, %+v", err)
+	}
+
+	return nil
+}
+
+// createNewShardingTable creates a new collection, and fix missing indexes.
+func (m *modelManager) createNewShardingTable(kit *rest.Kit, tableName string, indexes []types.Index) error {
+	// check table existence.
+	tableExists, err := mongodb.Client().HasTable(kit.Ctx, tableName)
+	if err != nil {
+		return fmt.Errorf("check table existence failed, %+v", err)
+	}
+	if !tableExists {
+		err = mongodb.Client().CreateTable(kit.Ctx, tableName)
 		if err != nil && !mongodb.Client().IsDuplicatedError(err) {
-			return fmt.Errorf("create object instance table failed, %+v", err)
+			return fmt.Errorf("create table failed, %+v", err)
 		}
 	}
 
-	// check object instance association table existence.
-	isTableExists, err = mongodb.Client().HasTable(kit.Ctx, instAsstTableName)
+	// collections are exist, check the indexes now.
+	missingIndexes := []types.Index{}
+
+	// get all created table indexes.
+	createdIndexes, err := mongodb.Client().Table(tableName).Indexes(kit.Ctx)
 	if err != nil {
-		return fmt.Errorf("check object instance association table existence failed, %+v", err)
+		return fmt.Errorf("get created table indexes failed, %+v", err)
 	}
-	if !isTableExists {
-		err = mongodb.Client().CreateTable(kit.Ctx, instAsstTableName)
-		if err != nil && !mongodb.Client().IsDuplicatedError(err) {
-			return fmt.Errorf("create object instance association table failed, %+v", err)
+
+	// find missing indexes.
+	for _, index := range indexes {
+		createdIndex, indexExists := dbindex.FindIndexByIndexFields(index.Keys, createdIndexes)
+		if !indexExists || !dbindex.IndexEqual(index, createdIndex) {
+			missingIndexes = append(missingIndexes, index)
+		}
+		// NOTE: DO NOT delete indexex, maybe it's created by other way.
+	}
+
+	// create missing indexes.
+	for _, index := range missingIndexes {
+		err = mongodb.Client().Table(tableName).CreateIndex(kit.Ctx, index)
+		if err != nil {
+			return fmt.Errorf("create table index failed, index: %+v, %+v", index, err)
 		}
 	}
 
-	// object instance and association collections are exist, now check the indexes.
-	instTableIndexes := index.InstanceIndex()
-	instAsstTableIndexes := index.InstanceAssoicationIndex()
-
-	// check object instance table indexes.
-	createdIndexes, err := mongodb.Client().Table(instTableName).Indexes(kit.Ctx)
-	if err != nil {
-		return fmt.Errorf("get object instance table indexes failed, %+v", err)
-	}
-
-	// check object instance association table indexes.
-	createdIndexes, err = mongodb.Client().Table(instAsstTableName).Indexes(kit.Ctx)
-	if err != nil {
-		return fmt.Errorf("get object instance association table indexes failed, %+v", err)
-	}
+	return nil
 }
