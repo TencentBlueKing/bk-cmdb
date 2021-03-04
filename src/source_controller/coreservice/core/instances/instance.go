@@ -355,7 +355,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 
 	tableName := common.GetInstTableName(objID)
-	if tableName == common.BKTableNameBaseInst {
+	if common.IsObjectInstShardingTable(tableName) {
 		if inputParam.Condition == nil {
 			inputParam.Condition = mapstr.MapStr{}
 		}

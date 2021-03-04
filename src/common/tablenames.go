@@ -12,6 +12,11 @@
 
 package common
 
+import (
+	"fmt"
+	"strings"
+)
+
 // table names
 const (
 	// BKTableNamePropertyGroup the table name of the property group
@@ -149,6 +154,41 @@ var AllTables = []string{
 	BKTableNameCloudSyncTask,
 	BKTableNameCloudAccount,
 	BKTableNameCloudSyncHistory,
+}
+
+// TableSpecifier is table specifier type which describes the metadata
+// access or classification level.
+type TableSpecifier string
+
+const (
+	// TableSpecifierPublic is public specifier for table.
+	TableSpecifierPublic TableSpecifier = "pub"
+)
+
+// GetObjectInstTableName return the object instance table name in sharding mode base on
+// the object ID. Format: cc_ObjectBase_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_pub_switch'.
+// NOTE: only one TableSpecifierPublic in system now, we would add more specifier type and return
+// table name dynamically in the future. On this version, return 'pub' fixedly.
+func GetObjectInstTableName(objID string) string {
+	return fmt.Sprintf("%s_%s_%s", BKTableNameBaseInst, TableSpecifierPublic, objID)
+}
+
+// GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
+// the object ID. Format: cc_InstAsst_{Specifier}_{ObjectID}, such as 'cc_InstAsst_pub_switch'.
+// NOTE: only one TableSpecifierPublic in system now, we would add more specifier type and return
+// table name dynamically in the future. On this version, return 'pub' fixedly.
+func GetObjectInstAsstTableName(objID string) string {
+	return fmt.Sprintf("%s_%s_%s", BKTableNameInstAsst, TableSpecifierPublic, objID)
+}
+
+// IsObjectShardingTable returns if the target table is an object sharding table.
+func IsObjectInstShardingTable(tableName string) bool {
+	// check object instance table, cc_ObjectBase_{Specifier}_{ObjectID}
+	if strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameBaseInst)) {
+		return true
+	}
+	// check object instance association table, cc_InstAsst_{Specifier}_{ObjectID}
+	return strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameInstAsst))
 }
 
 // GetInstTableName returns inst data table name
