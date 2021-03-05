@@ -290,7 +290,7 @@ func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, inde
 
 // dropShardingTable drops the sharding table with target name.
 func (m *modelManager) dropShardingTable(kit *rest.Kit, tableName string) error {
-	if !common.IsObjectInstShardingTable(tableName) {
+	if !common.IsObjectShardingTable(tableName) {
 		return fmt.Errorf("not sharding table, can't drop it")
 	}
 

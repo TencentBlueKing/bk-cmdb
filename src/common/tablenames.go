@@ -178,12 +178,23 @@ func GetObjectInstAsstTableName(objID string) string {
 	return fmt.Sprintf("%s_%s_%s", BKTableNameInstAsst, TableSpecifierPublic, objID)
 }
 
-// IsObjectShardingTable returns if the target table is an object sharding table.
-func IsObjectInstShardingTable(tableName string) bool {
-	// check object instance table, cc_ObjectBase_{Specifier}_{ObjectID}
-	if strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameBaseInst)) {
+// IsObjectShardingTable returns if the target table is an object sharding table, include
+// object instance and association.
+func IsObjectShardingTable(tableName string) bool {
+	if IsObjectInstShardingTable(tableName) {
 		return true
 	}
+	return IsObjectInstAsstShardingTable(tableName)
+}
+
+// IsObjectInstShardingTable returns if the target table is an object instance sharding table.
+func IsObjectInstShardingTable(tableName string) bool {
+	// check object instance table, cc_ObjectBase_{Specifier}_{ObjectID}
+	return strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameBaseInst))
+}
+
+// IsObjectInstAsstShardingTable returns if the target table is an object instance association sharding table.
+func IsObjectInstAsstShardingTable(tableName string) bool {
 	// check object instance association table, cc_InstAsst_{Specifier}_{ObjectID}
 	return strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameInstAsst))
 }
