@@ -168,16 +168,12 @@ const (
 
 // GetObjectInstTableName return the object instance table name in sharding mode base on
 // the object ID. Format: cc_ObjectBase_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_pub_switch'.
-// NOTE: only one TableSpecifierPublic in system now, we would add more specifier type and return
-// table name dynamically in the future. On this version, return 'pub' fixedly.
 func GetObjectInstTableName(objID string) string {
 	return fmt.Sprintf("%s_%s_%s", BKTableNameBaseInst, TableSpecifierPublic, objID)
 }
 
 // GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
 // the object ID. Format: cc_InstAsst_{Specifier}_{ObjectID}, such as 'cc_InstAsst_pub_switch'.
-// NOTE: only one TableSpecifierPublic in system now, we would add more specifier type and return
-// table name dynamically in the future. On this version, return 'pub' fixedly.
 func GetObjectInstAsstTableName(objID string) string {
 	return fmt.Sprintf("%s_%s_%s", BKTableNameInstAsst, TableSpecifierPublic, objID)
 }
