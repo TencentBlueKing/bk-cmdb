@@ -72,5 +72,5 @@ type LastChainNodeData struct {
 	ID          uint64           `json:"id" bson:"id"`
 	Token       string           `json:"token" bson:"token"`
 	Cursor      string           `json:"cursor" bson:"cursor"`
-	StartAtTime *types.TimeStamp `json:"start_at_time" bson:"start_at_time"`
+	StartAtTime *types.TimeStamp `json:"start_at_time,omitempty" bson:"start_at_time,omitempty"`
 }
