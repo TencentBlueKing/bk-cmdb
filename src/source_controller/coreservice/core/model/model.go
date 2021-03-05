@@ -270,10 +270,9 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some instances, error info is %s", kit.Rid, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
-
 	if exists {
 		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some instances.", kit.Rid, targetObjIDS)
-		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete)
+		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
 	}
 
 	// check if the model is used: secondly to check association
@@ -282,10 +281,9 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some associations, error info is %s", kit.Rid, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
-
 	if exists {
 		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some associations.", kit.Rid, targetObjIDS)
-		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
+		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
 	}
 
 	// delete model self
@@ -295,23 +293,82 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 		return &metadata.DeletedCount{}, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
+	// delete object instance sharding table.
+	for _, objID := range targetObjIDS {
+		if err := m.dropObjectShardingTables(kit, objID); err != nil {
+			// there is a timed task to clean the tables if it's failed here.
+			blog.Warnf("drop object sharding tables failed, model: %s, err: %s, rid: %s", objID, err.Error(), kit.Rid)
+		}
+	}
+
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 // CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
-
+	// NOTE: just single model cascade delete action now.
 	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
 	deleteCond, _ := mongo.NewConditionFromMapStr(deleteCondMap)
 	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldID, Val: modelID})
 
-	// read all models by the deletion condition
-	cnt, err := m.cascadeDelete(kit, deleteCond)
-	if nil != err {
-		blog.ErrorJSON("CascadeDeleteModel failed, cascadeDelete failed, condition: %s, err: %s, rid: %s", deleteCond.ToMapStr(), err.Error(), kit.Rid)
-		return &metadata.DeletedCount{}, err
+	// NOTE: the func logics supports cascade delete models in batch mode.
+	// You can change the condition to index many models.
+	models, err := m.search(kit, deleteCond)
+	if err != nil {
+		blog.Errorf("cascade delete model, search target models failed, condition: %s, error: %s, rid: %s",
+			deleteCond.ToMapStr(), err.Error(), kit.Rid)
+		return nil, err
 	}
-	return &metadata.DeletedCount{Count: cnt}, err
+
+	objIDs := make([]string, 0)
+	for _, model := range models {
+		objIDs = append(objIDs, model.ObjectID)
+	}
+	if len(objIDs) == 0 {
+		return &metadata.DeletedCount{}, nil
+	}
+
+	// check object instances.
+	exists, err := m.dependent.HasInstance(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model, check object instance failed, objects: %+v, error: %s, rid: %s",
+			objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("cascade delete model failed, there are vestigital object instances, objects: %+v, rid: %s",
+			objIDs, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
+	}
+
+	// check model associations.
+	exists, err = m.dependent.HasAssociation(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model, check model associations failed, objects: %+v, error: %s, rid: %s",
+			objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("cascade delete model failed, there are vestigital model associations, objects: %+v, rid: %s",
+			objIDs, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
+	}
+
+	// cascade delete.
+	cnt, err := m.cascadeDelete(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model failed, objects: %+v, err: %s, rid: %s", objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	// delete object instance sharding table.
+	for _, objID := range objIDs {
+		if err := m.dropObjectShardingTables(kit, objID); err != nil {
+			// there is a timed task to clean the tables if it's failed here.
+			blog.Warnf("drop object sharding tables failed, model: %s, err: %s, rid: %s", objID, err.Error(), kit.Rid)
+		}
+	}
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {
