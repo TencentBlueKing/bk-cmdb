@@ -26,17 +26,11 @@
                 <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
             </bk-form-item>
             <bk-form-item :label="$t('查询对象')" required>
-                <bk-select class="form-item"
+                <form-target class="form-item"
                     v-model="formData.bk_obj_id"
-                    :clearable="false"
                     :disabled="!isCreateMode"
                     @change="handleModelChange">
-                    <bk-option v-for="model in searchTargetModels"
-                        :id="model.bk_obj_id"
-                        :name="model.bk_obj_name"
-                        :key="model.bk_obj_id">
-                    </bk-option>
-                </bk-select>
+                </form-target>
             </bk-form-item>
             <bk-form-item class="form-condition-tips"
                 desc-type="icon"
@@ -77,10 +71,12 @@
     import { mapGetters } from 'vuex'
     import FormPropertyList from './form-property-list.vue'
     import FormPropertySelector from './form-property-selector.js'
+    import FormTarget from './form-target.vue'
     import RouterQuery from '@/router/query'
     export default {
         components: {
-            FormPropertyList
+            FormPropertyList,
+            FormTarget
         },
         props: {
             id: [String, Number],
