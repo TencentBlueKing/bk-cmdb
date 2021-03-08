@@ -45,13 +45,13 @@ func TBModuleBase() types.Table {
 }
 
 // 模型实例数据表，TBInstance别名函数
-func TBModelInstance() types.Table {
-	return Table(common.BKTableNameBaseInst)
+func TBModelInstance(objID string) types.Table {
+	return Table(common.GetObjectInstTableName(objID))
 }
 
 // 模型实例数据表, TBModelInstance 别名函数
-func TBInstance() types.Table {
-	return Table(common.BKTableNameBaseInst)
+func TBInstance(objID string) types.Table {
+	return TBModelInstance(objID)
 }
 
 func TBCloudArea() types.Table {
@@ -88,13 +88,13 @@ func TBObjClassification() types.Table {
 }
 
 // 实例关系数据， TBInstAsst别名函数
-func TBInstnceAsst() types.Table {
-	return Table(common.BKTableNameInstAsst)
+func TBInstnceAsst(objID string) types.Table {
+	return Table(common.GetObjectInstAsstTableName(objID))
 }
 
 // 实例关系数据， TBInstnceAsst别名函数
-func TBInstAsst() types.Table {
-	return Table(common.BKTableNameInstAsst)
+func TBInstAsst(objID string) types.Table {
+	return TBInstnceAsst(objID)
 }
 
 func TBModuleHostConfig() types.Table {

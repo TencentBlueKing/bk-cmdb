@@ -146,7 +146,7 @@ func (t *Topology) listCustomInstance(ctx context.Context, biz int64, object str
 	start := uint64(0)
 	for {
 		oneStep := make([]*customBase, 0)
-		err := t.db.Table(common.BKTableNameBaseInst).Find(filter).Fields(customBaseFields...).Start(start).
+		err := t.db.Table(common.GetObjectInstTableName(object)).Find(filter).Fields(customBaseFields...).Start(start).
 			Limit(step).All(ctx, &oneStep)
 		if err != nil {
 			blog.Errorf("get biz: %d custom object: %s instance list failed, err: %v", biz, object, err)
