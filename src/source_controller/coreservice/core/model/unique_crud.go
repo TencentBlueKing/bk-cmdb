@@ -22,13 +22,18 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
-	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
+
+/*************
+
+TODO: 索引操作需要排它性， 需要加锁
+
+*************/
 
 func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
 	results = []metadata.ObjectUnique{}
@@ -101,7 +106,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	dbIndex, ccErr := m.toDBUniqueIndex(kit, id, inputParam.Data.Keys, properties)
 	if ccErr != nil {
 		blog.Errorf("[CreateObjectUnique] toDBUniqueIndex for %s with %#v err: %#v, rid: %s",
-			objID, inputParam, err, kit.Rid)
+			objID, inputParam, ccErr, kit.Rid)
 		return 0, ccErr
 	}
 
@@ -204,6 +209,11 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	}
+
+	if err := m.updateDBUnique(kit, oldUnique, unique, properties); err != nil {
+		blog.Errorf("[UpdateObjectUnique] updateDBUnique error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -338,9 +348,6 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 
 	pipeline = append(pipeline, mapstr.MapStr{common.BKDBCount: "unique_count"})
 
-	js, _ := json.Marshal(pipeline)
-	fmt.Println("pipeline: ", string(js))
-
 	result := struct {
 		UniqueCount uint64 `bson:"unique_count"`
 	}{}
@@ -446,8 +453,8 @@ func getBasicDataType(propertyType string) (interface{}, error) {
 
 }
 
-func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique, newUnique metadata.ObjectUnique,
-	properties []metadata.Attribute) errors.CCErrorCoder {
+func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.ObjectUnique,
+	newUnique metadata.UpdateUniqueRequest, properties []metadata.Attribute) errors.CCErrorCoder {
 
 	if equalUniqueKey(oldUnique.Keys, newUnique.Keys) {
 		return nil
@@ -461,18 +468,40 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique, newUnique met
 	}
 	objInstTable := common.GetInstTableName(oldUnique.ObjID)
 
-	// 删除原来的索引，
-	if err := mongodb.Table(objInstTable).DropIndex(context.Background(), dbIndex.Name); err != nil {
-		blog.Errorf("[UpdateObjectUnique] drop unique index name %s for %s err: %#v, rid: %s",
-			dbIndex.Name, oldUnique.ObjID, ccErr.Error(), kit.Rid)
-		return kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
+	dbInndexNameMap, _, ccErr := m.getTableIndexs(kit, objInstTable)
+	if ccErr != nil {
+		return ccErr
 	}
+
+	if _, exists := dbInndexNameMap[dbIndex.Name]; exists {
+		// 删除原来的索引，
+		if err := mongodb.Table(objInstTable).DropIndex(context.Background(), dbIndex.Name); err != nil {
+			blog.Errorf("[UpdateObjectUnique] drop unique index name %s for %s err: %#v, rid: %s",
+				dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
+			return kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
+		}
+	}
+
 	// 新加索引， 新加失败 不能回滚事务，原因删除索引不能回滚
 	if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
 		blog.Errorf("[UpdateObjectUnique] create unique index name %s for %s err: %#v, rid: %s",
-			dbIndex.Name, oldUnique.ObjID, ccErr.Error(), kit.Rid)
+			dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
 	}
 	return nil
+}
+
+func (m *modelAttrUnique) getTableIndexs(kit *rest.Kit,
+	tableName string) (map[string]types.Index, []types.Index, errors.CCErrorCoder) {
+	idxList, err := mongodb.Table(tableName).Indexes(context.Background())
+	if err != nil {
+		blog.Errorf("find db table %s index list error. err: %s, rid: %s", tableName, err.Error(), kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCoreServiceSearchDBUniqueIndex)
+	}
+	idxNameMap := make(map[string]types.Index, len(idxList))
+	for _, idx := range idxList {
+		idxNameMap[idx.Name] = idx
+	}
+	return idxNameMap, idxList, nil
 }
 
 func equalUniqueKey(src, dst []metadata.UniqueKey) bool {
@@ -517,7 +546,7 @@ func (m *modelAttrUnique) toDBUniqueIndex(kit *rest.Kit, id uint64, keys []metad
 			blog.ErrorJSON("build unique index property type not support. property: %s, rid: %s", attr, kit.Rid)
 			return dbIndex, kit.CCError.CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyName)
 		}
-		dbIndex.Keys[attr.PropertyID] = int32(key.ID)
+		dbIndex.Keys[attr.PropertyID] = 1
 		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
 

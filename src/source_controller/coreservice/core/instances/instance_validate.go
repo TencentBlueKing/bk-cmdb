@@ -234,7 +234,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
-	return valid.validCreateUnique(kit, instanceData, m)
+	return nil
 }
 
 func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
@@ -343,7 +343,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return nil
 	}
 
-	return valid.validUpdateUnique(kit, updateData, instanceData, instID, m)
+	return nil
 }
 
 func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
