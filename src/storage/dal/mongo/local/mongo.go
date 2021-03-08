@@ -238,7 +238,7 @@ type Find struct {
 	filter     types.Filter
 	start      int64
 	limit      int64
-	sort       map[string]interface{}
+	sort       bson.D
 }
 
 // Fields 查询字段
@@ -253,25 +253,27 @@ func (f *Find) Fields(fields ...string) types.Find {
 }
 
 // Sort 查询排序
+// sort支持多字段最左原则排序
+// sort值为"host_id, -host_name"和sort值为"host_id:1, host_name:-1"是一样的，都代表先按host_id递增排序，再按host_name递减排序
 func (f *Find) Sort(sort string) types.Find {
 	if sort != "" {
 		sortArr := strings.Split(sort, ",")
-		f.sort = make(map[string]interface{}, 0)
+		f.sort = bson.D{}
 		for _, sortItem := range sortArr {
-			sortItemArr := strings.Split(sortItem, ":")
+			sortItemArr := strings.Split(strings.TrimSpace(sortItem), ":")
 			sortKey := strings.TrimLeft(sortItemArr[0], "+-")
 			if len(sortItemArr) == 2 {
 				sortDescFlag := strings.TrimSpace(sortItemArr[1])
 				if sortDescFlag == "-1" {
-					f.sort[sortKey] = -1
+					f.sort = append(f.sort, bson.E{sortKey, -1})
 				} else {
-					f.sort[sortKey] = 1
+					f.sort = append(f.sort, bson.E{sortKey, 1})
 				}
 			} else {
 				if strings.HasPrefix(sortItemArr[0], "-") {
-					f.sort[sortKey] = -1
+					f.sort = append(f.sort, bson.E{sortKey, -1})
 				} else {
-					f.sort[sortKey] = 1
+					f.sort = append(f.sort, bson.E{sortKey, 1})
 				}
 			}
 		}
