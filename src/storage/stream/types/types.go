@@ -170,22 +170,25 @@ func (opts *Options) CheckSetDefault() error {
 
 type TimeStamp struct {
 	// the most significant 32 bits are a time_t value (seconds since the Unix epoch)
-	Sec uint32 `json:"sec",bson:"sec"`
+	Sec uint32 `json:"sec" bson:"sec"`
 	// the least significant 32 bits are an incrementing ordinal for operations within a given second.
-	Nano uint32 `json:"nano",bson:"nano"`
+	Nano uint32 `json:"nano" bson:"nano"`
 }
 
 func (t TimeStamp) String() string {
 	return time.Unix(int64(t.Sec), int64(t.Nano)).Format("2006-01-02/15:04:05")
 }
 
-func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
+func (t *TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	if t == nil {
+		return bsontype.Null, nil, nil
+	}
 	return bsonx.Time(time.Unix(int64(t.Sec), int64(t.Nano))).MarshalBSONValue()
 }
 
 type timeStampCopy struct {
-	Sec  uint32 `json:"sec",bson:"sec"`
-	Nano uint32 `json:"nano",bson:"nano"`
+	Sec  uint32 `json:"sec" bson:"sec"`
+	Nano uint32 `json:"nano" bson:"nano"`
 }
 
 func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
