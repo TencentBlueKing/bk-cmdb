@@ -256,7 +256,7 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]metadata.Attribute) (ty
 			blog.ErrorJSON("build unique index property id: %s type not support.", key.Kind)
 			return dbIdx, fmt.Errorf("build unique index property(%s) type not support.", key.Kind)
 		}
-		dbIdx.Keys[attr.PropertyID] = int32(key.ID)
+		dbIdx.Keys[attr.PropertyID] = 1
 		dbIdx.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
 
