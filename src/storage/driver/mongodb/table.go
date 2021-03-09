@@ -88,13 +88,13 @@ func TBObjClassification() types.Table {
 }
 
 // 实例关系数据， TBInstAsst别名函数
-func TBInstnceAsst(objID string) types.Table {
+func TBInstanceAsst(objID string) types.Table {
 	return Table(common.GetObjectInstAsstTableName(objID))
 }
 
-// 实例关系数据， TBInstnceAsst别名函数
+// 实例关系数据， TBInstanceAsst别名函数
 func TBInstAsst(objID string) types.Table {
-	return TBInstnceAsst(objID)
+	return TBInstanceAsst(objID)
 }
 
 func TBModuleHostConfig() types.Table {

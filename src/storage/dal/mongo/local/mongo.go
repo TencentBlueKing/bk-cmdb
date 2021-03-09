@@ -583,7 +583,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		// error message in order to find the wrong table name used in logics level.
 
 	default:
-		if !common.IsObjectShardingTable(c.collName) {
+		if !common.IsObjectInstShardingTable(c.collName) {
 			// do not archive the delete docs
 			return nil
 		}
