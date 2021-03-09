@@ -169,14 +169,14 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 			}
 		}
 
+		if err := hooks.UpdateProcessBindInfoHook(kit, objID, origin, inputParam.Data); err != nil {
+			return nil, err
+		}
+
 		err = m.validUpdateInstanceData(kit, objID, inputParam.Data, origin, allValidators[bizID], instID, inputParam.CanEditAll)
 		if nil != err {
 			blog.Errorf("update model instance validate error:%v, objID:%s, updateData: %#v, instData:%#v, rid:%s",
 				err, objID, inputParam.Data, origin, kit.Rid)
-			return nil, err
-		}
-
-		if err := hooks.UpdateProcessBindInfoHook(kit, objID, inputParam.Data); err != nil {
 			return nil, err
 		}
 	}
