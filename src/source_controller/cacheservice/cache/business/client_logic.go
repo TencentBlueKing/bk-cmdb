@@ -586,7 +586,7 @@ func (c *Client) getCustomLevelBaseFromMongodb(objID string, bizID int64) ([]Cus
 		common.MetadataField: meta.NewMetadata(bizID),
 	}
 	// count for paging use.
-	cnt, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).Count(context.Background())
+	cnt, err := mongodb.Client().Table(common.GetObjectInstTableName(objID)).Find(filter).Count(context.Background())
 	if err != nil {
 		blog.Errorf("get custom level object: %s, biz: %d, list keys, but count from mongodb failed, err: %v", objID, bizID, err)
 		return nil, err
@@ -594,7 +594,7 @@ func (c *Client) getCustomLevelBaseFromMongodb(objID string, bizID int64) ([]Cus
 	list := make([]CustomInstanceBase, 0)
 	for start := 0; start < int(cnt); start += step {
 		instances := make([]CustomInstanceBase, 0)
-		err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).
+		err = mongodb.Client().Table(common.GetObjectInstTableName(objID)).Find(filter).
 			Start(uint64(start)).Limit(uint64(step)).All(context.Background(), &instances)
 		if err != nil {
 			blog.Errorf("get custom level object: %s, biz: %d, list keys, but get from mongodb failed, err: %v", objID, bizID, err)
@@ -643,7 +643,7 @@ func (c *Client) getCustomLevelDetailCheckNotFound(objID string, instID int64) (
 		common.BKInstIDField: instID,
 	}
 	instance := make(map[string]interface{})
-	err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
+	err := mongodb.Client().Table(common.GetObjectInstTableName(objID)).Find(filter).One(context.Background(), &instance)
 
 	// if module is not found, returns not found flag
 	if mongodb.Client().IsNotFoundError(err) {
@@ -670,7 +670,7 @@ func (c *Client) listCustomLevelDetail(objID string, instIDs []int64) ([]string,
 	}
 
 	instance := make([]map[string]interface{}, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
+	err := mongodb.Client().Table(common.GetObjectInstTableName(objID)).Find(filter).One(context.Background(), &instance)
 	if err != nil {
 		blog.Errorf("get custom level object: %s, inst: %v from mongodb failed, err: %v", objID, instIDs, err)
 		return nil, err

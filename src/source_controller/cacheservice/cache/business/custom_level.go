@@ -137,7 +137,7 @@ func (m *customLevel) runCustomWatch(objID string) error {
 
 	opts := types.Options{
 		EventStruct: new(map[string]interface{}),
-		Collection:  common.BKTableNameBaseInst,
+		Collection:  common.GetObjectInstTableName(objID),
 		Filter: mapstr.MapStr{
 			common.BKObjIDField: objID,
 		},

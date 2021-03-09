@@ -574,12 +574,19 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameBaseSet:
 	case common.BKTableNameBaseModule:
 	case common.BKTableNameSetTemplate:
-	case common.BKTableNameBaseInst:
 	case common.BKTableNameBaseProcess:
 	case common.BKTableNameProcessInstanceRelation:
+
+	case common.BKTableNameBaseInst:
+		// NOTE: should not use the table name for archive, the object instance and association
+		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
+		// error message in order to find the wrong table name used in logics level.
+
 	default:
-		// do not archive the delete docs
-		return nil
+		if !common.IsObjectShardingTable(c.collName) {
+			// do not archive the delete docs
+			return nil
+		}
 	}
 
 	docs := make([]bsonx.Doc, 0)
@@ -609,8 +616,19 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	return err
 }
 
+func (c *Mongo) redirectTable(tableName string) string {
+	if common.IsObjectInstShardingTable(tableName) {
+		tableName = common.BKTableNameBaseInst
+	} else if common.IsObjectInstAsstShardingTable(tableName) {
+		tableName = common.BKTableNameInstAsst
+	}
+	return tableName
+}
+
 // NextSequence 获取新序列号(非事务)
 func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
+	sequenceName = c.redirectTable(sequenceName)
+
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -648,6 +666,7 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 	if num == 0 {
 		return make([]uint64, 0), nil
 	}
+	sequenceName = c.redirectTable(sequenceName)
 
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()

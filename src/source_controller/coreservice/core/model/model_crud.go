@@ -13,16 +13,19 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	dbindex "configcenter/src/common/index"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -163,29 +166,9 @@ func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint6
 }
 
 // cascadeDelete 删除模型的字段，分组，唯一校验。模型等。
-func (m *modelManager) cascadeDelete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
-
-	modelItems, err := m.search(kit, cond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a cascade model deletion operation by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
-		return 0, err
-	}
-
-	// 按照bk_obj_id删除的时候。业务下私有模型bk_obj_id相同。将会出现bug
-	targetObjIDS := make([]string, 0)
-	for _, modelItem := range modelItems {
-		targetObjIDS = append(targetObjIDS, modelItem.ObjectID)
-	}
-	if len(targetObjIDS) == 0 {
-		return 0, nil
-	}
-
-	if err := m.canCascadeDelete(kit, targetObjIDS); err != nil {
-		return 0, err
-	}
-
+func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, error) {
 	delCond := mongo.NewCondition()
-	delCond.Element(mongo.Field(common.BKObjIDField).In(targetObjIDS))
+	delCond.Element(mongo.Field(common.BKObjIDField).In(objIDs))
 	delCondMap := util.SetQueryOwner(delCond.ToMapStr(), kit.SupplierAccount)
 
 	// delete model property group
@@ -212,52 +195,117 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, cond universalsql.Condition)
 		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	return uint64(len(targetObjIDS)), nil
+	return uint64(len(objIDs)), nil
 }
 
-// canCascadeDelete 判断是否可以删除
-// 1. 检查是否内置模型
-// 2. 是否包含实例
-// 3. 是否有关联关系
-func (m *modelManager) canCascadeDelete(kit *rest.Kit, targetObjIDS []string) (err error) {
-	// notice inner model not can delete
-	for _, objID := range targetObjIDS {
-		if util.IsInnerObject(objID) {
-			return kit.CCError.Errorf(common.CCErrCoreServiceNotAllowDeleteErr, m.modelAttribute.getLangObjID(kit, objID))
+// createObjectShardingTables creates new collections for new model,
+// which create new object instance and association collections, and fix missing indexes.
+func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) error {
+	// collection names.
+	instTableName := common.GetObjectInstTableName(objID)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID)
+
+	// collections indexes.
+	instTableIndexes := dbindex.InstanceIndex()
+	instAsstTableIndexes := dbindex.InstanceAssoicationIndex()
+
+	// create object instance table.
+	err := m.createShardingTable(kit, instTableName, instTableIndexes)
+	if err != nil {
+		return fmt.Errorf("create object instance sharding table, %+v", err)
+	}
+
+	// create object instance association table.
+	err = m.createShardingTable(kit, instAsstTableName, instAsstTableIndexes)
+	if err != nil {
+		return fmt.Errorf("create object instance association sharding table, %+v", err)
+	}
+
+	return nil
+}
+
+// dropObjectShardingTables drops the collections of target model.
+func (m *modelManager) dropObjectShardingTables(kit *rest.Kit, objID string) error {
+	// collection names.
+	instTableName := common.GetObjectInstTableName(objID)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID)
+
+	// drop object instance table.
+	err := m.dropShardingTable(kit, instTableName)
+	if err != nil {
+		return fmt.Errorf("drop object instance sharding table, %+v", err)
+	}
+
+	// drop object instance association table.
+	err = m.dropShardingTable(kit, instAsstTableName)
+	if err != nil {
+		return fmt.Errorf("drop object instance association sharding table, %+v", err)
+	}
+
+	return nil
+}
+
+// createShardingTable creates a new collection with target name, and fix missing indexes base on given index list.
+func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, indexes []types.Index) error {
+	// check table existence.
+	tableExists, err := mongodb.Client().HasTable(kit.Ctx, tableName)
+	if err != nil {
+		return fmt.Errorf("check sharding table existence failed, %+v", err)
+	}
+	if !tableExists {
+		err = mongodb.Client().CreateTable(kit.Ctx, tableName)
+		if err != nil && !mongodb.Client().IsDuplicatedError(err) {
+			return fmt.Errorf("create sharding table failed, %+v", err)
 		}
 	}
 
-	// has instance
-	instanceFilter := map[string]interface{}{
-		common.BKObjIDField: map[string]interface{}{
-			common.BKDBIN: targetObjIDS,
-		},
-	}
-	instanceFilter = util.SetQueryOwner(instanceFilter, kit.SupplierAccount)
-	cnt, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(instanceFilter).Count(kit.Ctx)
+	// target collection is exist, try to check and fix the missing indexes now.
+	missingIndexes := []types.Index{}
+
+	// get all created table indexes.
+	createdIndexes, err := mongodb.Client().Table(tableName).Indexes(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("canCascadeDelete failed, count model instance failed, error. cond:%s, err:%s, rid:%s", instanceFilter, err.Error(), kit.Rid)
-		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
-	}
-	if cnt > 0 {
-		return kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
+		return fmt.Errorf("get created sharding table indexes failed, %+v", err)
 	}
 
-	// has model association, 不检查关联关系的是否有实例化。
-	asstCond := mongo.NewCondition()
-	asstCond.Or(
-		mongo.Field(common.BKObjIDField).In(targetObjIDS),
-		mongo.Field(common.BKAsstObjIDField).In(targetObjIDS),
-	)
-	asstCondMap := util.SetQueryOwner(asstCond.ToMapStr(), kit.SupplierAccount)
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).Find(asstCondMap).Count(kit.Ctx)
-	if err != nil {
-		blog.ErrorJSON("canCascadeDelete failed, count model association failed, cond:%s, err:%s, rid:%s", asstCondMap, err.Error(), kit.Rid)
-		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
-	}
-	if cnt > 0 {
-		return kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
+	// find missing indexes.
+	for _, index := range indexes {
+		createdIndex, indexExists := dbindex.FindIndexByIndexFields(index.Keys, createdIndexes)
+		if !indexExists || !dbindex.IndexEqual(index, createdIndex) {
+			missingIndexes = append(missingIndexes, index)
+		}
+		// NOTE: DO NOT delete index, maybe it's created by other way.
 	}
 
+	// create missing indexes.
+	for _, index := range missingIndexes {
+		err = mongodb.Client().Table(tableName).CreateIndex(kit.Ctx, index)
+		if err != nil {
+			return fmt.Errorf("create sharding table index failed, index: %+v, %+v", index, err)
+		}
+	}
+
+	return nil
+}
+
+// dropShardingTable drops the sharding table with target name.
+func (m *modelManager) dropShardingTable(kit *rest.Kit, tableName string) error {
+	if !common.IsObjectShardingTable(tableName) {
+		return fmt.Errorf("not sharding table, can't drop it")
+	}
+
+	// check remain data.
+	err := mongodb.Client().Table(tableName).Find(common.KvMap{}).One(kit.Ctx, &common.KvMap{})
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
+		return fmt.Errorf("check data failed, can't drop the sharding table, %+v", err)
+	}
+	if err == nil {
+		return fmt.Errorf("can't drop the non-empty sharding table")
+	}
+
+	// drop the empty table.
+	if err := mongodb.Client().DropTable(kit.Ctx, tableName); err != nil {
+		return fmt.Errorf("drop sharding table failed, %+v", err)
+	}
 	return nil
 }

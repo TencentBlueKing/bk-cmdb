@@ -32,6 +32,9 @@ func GetInstNameField(objID string) string {
 	case BKTableNameInstAsst:
 		return BKFieldID
 	default:
+		if IsObjectInstAsstShardingTable(objID) {
+			return BKFieldID
+		}
 		return BKInstNameField
 	}
 }
@@ -64,6 +67,9 @@ func GetInstIDField(objType string) string {
 	case BKTableNameProcessInstanceRelation:
 		return BKProcessIDField
 	default:
+		if IsObjectInstAsstShardingTable(objType) {
+			return BKFieldID
+		}
 		return BKInstIDField
 	}
 }
