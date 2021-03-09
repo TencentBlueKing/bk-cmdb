@@ -32,6 +32,6 @@ func ParseVIPFieldsForProcessHook(fields []string, table string) ([]string, []st
 }
 
 // UpdateProcessBindInfoHook if process need to update bind info, only update the specified fields
-func UpdateProcessBindInfoHook(kit *rest.Kit, objID string, data mapstr.MapStr) error {
+func UpdateProcessBindInfoHook(kit *rest.Kit, objID string, origin mapstr.MapStr, data mapstr.MapStr) error {
 	return nil
 }
