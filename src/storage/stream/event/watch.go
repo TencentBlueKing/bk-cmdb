@@ -56,7 +56,7 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 		}
 
 		if opts.WatchFatalErrorCallback != nil {
-			err := opts.WatchFatalErrorCallback(&types.TimeStamp{Sec: startAtTime})
+			err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})
 			if err != nil {
 				blog.Errorf("do watch fatal error callback for coll %s failed, err: %v", opts.Collection, err)
 			}
@@ -141,7 +141,7 @@ func (e *Event) loopWatch(ctx context.Context,
 					currentToken.Data = ""
 
 					if opts.WatchFatalErrorCallback != nil {
-						err := opts.WatchFatalErrorCallback(&types.TimeStamp{Sec: startAtTime})
+						err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})
 						if err != nil {
 							blog.Errorf("do watch fatal error callback for coll %s failed, err: %v", opts.Collection, err)
 						}
