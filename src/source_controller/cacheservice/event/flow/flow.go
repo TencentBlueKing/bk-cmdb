@@ -14,6 +14,7 @@ package flow
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -29,6 +30,8 @@ import (
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/stream"
 	"configcenter/src/storage/stream/types"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -221,6 +224,35 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		blog.Errorf("run flow, but insert details for %s failed, err: %v, oids: %+v", err, f.key.Collection(), oids)
 		return true
 	}
+
+	// remove the earlier chain nodes with the same cursor with a later one
+	noDupChainNodes := make([]*watch.ChainNode, 0)
+	duplicateCursors := make([]string, 0)
+	cursorMap := make(map[string]struct{})
+	for i := len(chainNodes) - 1; i >= 0; i-- {
+		chainNode := chainNodes[i]
+		if _, exists := cursorMap[chainNode.Cursor]; exists {
+			duplicateCursors = append(duplicateCursors, chainNode.Cursor)
+			continue
+		}
+
+		cursorMap[chainNode.Cursor] = struct{}{}
+		noDupChainNodes = append(noDupChainNodes, chainNode)
+	}
+
+	if len(duplicateCursors) > 0 {
+		monitor.Collect(&meta.Alarm{
+			RequestID: strings.Join(oids, ","),
+			Type:      meta.FlowFatalError,
+			Detail:    fmt.Sprintf("run flow, but cursor %+v is duplicate", duplicateCursors),
+			Module:    "cacheservice",
+		})
+	}
+
+	for i, j := 0, len(noDupChainNodes)-1; i < j; i, j = i+1, j-1 {
+		noDupChainNodes[i], noDupChainNodes[j] = noDupChainNodes[j], noDupChainNodes[i]
+	}
+	chainNodes = noDupChainNodes
 
 	watchDBClient := f.watchDB.GetDBClient()
 
