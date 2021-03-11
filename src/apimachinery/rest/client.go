@@ -14,6 +14,7 @@ package rest
 
 import (
 	"strings"
+	"time"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metrics"
@@ -35,6 +36,12 @@ func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
 		baseUrl = strings.Trim(baseUrl, "/")
 		baseUrl = "/" + baseUrl + "/"
 	}
+
+	if c.ToleranceLatencyTime <= 0 {
+		// set default tolerance latency time
+		c.ToleranceLatencyTime = 2 * time.Second
+	}
+
 	client := &RESTClient{
 		baseUrl:    baseUrl,
 		capability: c,
