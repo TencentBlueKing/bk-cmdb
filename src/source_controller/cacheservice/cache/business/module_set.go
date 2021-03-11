@@ -52,7 +52,7 @@ func (ms *moduleSet) Run() error {
 		}
 		// can not find list done key, do with list watch
 		page := 500
-		cap := &reflector.Capable{
+		capable := &reflector.Capable{
 			OnChange: reflector.OnChangeEvent{
 				OnLister:     ms.onUpsert,
 				OnAdd:        ms.onUpsert,
@@ -67,7 +67,7 @@ func (ms *moduleSet) Run() error {
 			PageSize: &page,
 		}
 		blog.Infof("do %s cache with list watch", ms.collection)
-		return ms.event.ListWatcher(context.Background(), listOpts, cap)
+		return ms.event.ListWatcher(context.Background(), listOpts, capable)
 	}
 
 	watchCap := &reflector.Capable{

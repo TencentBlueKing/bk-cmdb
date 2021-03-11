@@ -83,6 +83,12 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
+	gc := &gc{
+		ccDB:     ccDB,
+		isMaster: isMaster,
+	}
+	gc.cleanDelArchiveData(context.Background())
+
 	return nil
 }
 

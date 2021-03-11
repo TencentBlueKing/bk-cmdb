@@ -28,8 +28,8 @@ import (
 /* eventserver watcher defines, just created base on old service/watch.go */
 
 const (
-	// timeoutWatchLoopSeconds 25s timeout
-	timeoutWatchLoopSeconds = 25
+	// timeoutWatchLoopSeconds 20s timeout
+	timeoutWatchLoopSeconds = 20
 
 	// loopInternal watch loop internal duration
 	loopInternal = 250 * time.Millisecond

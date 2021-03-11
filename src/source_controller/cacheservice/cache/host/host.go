@@ -89,7 +89,9 @@ func (h *hostCache) Run() error {
 }
 
 func (h *hostCache) onUpsert(e *types.Event) {
-	blog.V(4).Infof("received host upsert event, oid: %s, doc: %s", e.Oid, e.DocBytes)
+	if blog.V(4) {
+		blog.Infof("received host upsert event, oid: %s, doc: %s", e.Oid, e.DocBytes)
+	}
 
 	hostID := gjson.GetBytes(e.DocBytes, "bk_host_id").Int()
 	if hostID <= 0 {
@@ -203,7 +205,9 @@ func refreshHostDetailCache(hostID int64, ips string, cloudID int64, hostDetail 
 		blog.Errorf("upsert host: %d, ip: %s cache, but upsert to redis failed, err: %v", hostID, ips, err)
 		return
 	}
-	blog.V(4).Infof("refresh host cache success, host id: %d, ips: %s, ttl: %ds", hostID, ips, ttl/time.Second)
+	if blog.V(4) {
+		blog.Infof("refresh host cache success, host id: %d, ips: %s, ttl: %ds", hostID, ips, ttl/time.Second)
+	}
 }
 
 func getHostDetailsFromMongoWithHostID(hostID int64) (ips string, cloudID int64, detail []byte, err error) {

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	types2 "configcenter/src/common/types"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
@@ -52,8 +53,6 @@ func newFlow(ctx context.Context, opts flowOptions) error {
 		metrics:     initialMetrics(opts.key.Collection()),
 	}
 
-	flow.cleanDelArchiveData(ctx)
-
 	return flow.RunFlow(ctx)
 }
 
@@ -68,10 +67,10 @@ const batchSize = 200
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 
-	event := make(map[string]interface{})
+	es := make(map[string]interface{})
 	watchOpts := &types.WatchOptions{
 		Options: types.Options{
-			EventStruct:     &event,
+			EventStruct:     &es,
 			Collection:      f.key.Collection(),
 			StartAfterToken: nil,
 		},
@@ -120,8 +119,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		return false
 	}
 
-	chainNodes := make([]*watch.ChainNode, 0)
-	oids := make([]string, eventLen)
+	rid := es[0].ID()
 	hasError := true
 
 	// collect event related metrics
@@ -138,19 +136,23 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 
 	oidDetailMap, retry, err := f.getDeleteEventDetails(es)
 	if err != nil {
-		blog.Errorf("get deleted event details failed, err: %v", err)
+		blog.Errorf("get deleted event details failed, err: %v, rid: %s", err, rid)
 		return retry
 	}
 
 	ids, err := f.watchDB.NextSequences(context.Background(), f.key.ChainCollection(), eventLen)
 	if err != nil {
-		blog.Errorf("get event ids for collection: %s failed, err: %v", f.key.ChainCollection(), err)
+		blog.Errorf("get %s event ids failed, err: %v, rid: %s", f.key.ChainCollection(), err, rid)
 		return true
 	}
 
+	chainNodes := make([]*watch.ChainNode, 0)
+	oids := make([]string, eventLen)
 	// process events into db chain nodes to store in db and details to store in redis
 	pipe := redis.Client().Pipeline()
 	lastTokenData := make(map[string]interface{})
+	cursorMap := make(map[string]struct{})
+	hitConflict := false
 	for index, e := range es {
 		// collect event's basic metrics
 		f.metrics.collectBasic(e)
@@ -160,21 +162,31 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		switch e.OperationType {
 		case types.Insert, types.Update, types.Replace, types.Delete:
 		case types.Invalidate:
-			blog.Errorf("loop flow, received invalid event operation type, doc: %s", e.DocBytes)
+			blog.Errorf("loop flow, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
 			continue
 		default:
-			blog.Errorf("loop flow, received unsupported event operation type, doc: %s", e.DocBytes)
+			blog.Errorf("loop flow, received unsupported event operation type, doc: %s, rid: %s", e.DocBytes, rid)
 			continue
 		}
 
-		oids[index] = e.Oid
+		oids[index] = e.ID()
 		id := ids[index]
 		name := f.key.Name(e.DocBytes)
 		currentCursor, err := watch.GetEventCursor(f.key.Collection(), e)
 		if err != nil {
-			blog.Errorf("get event cursor failed, name: %s, err: %v, oid: %s ", name, err, e.Oid)
+			blog.Errorf("get %s event cursor failed, name: %s, err: %v, oid: %s, rid: %s", f.key.Collection(), name,
+				err, e.ID(), rid)
 			return false
 		}
+
+		// validate if the cursor is already exists, this is happens when the concurrent operation is very high.
+		// which will generate the same operation event with same cluster time, and generate with the same cursor
+		// in the end. if this happens, the last event will be used finally, and the former events with the same
+		// cursor will be dropped, and it's acceptable.
+		if _, exists := cursorMap[currentCursor]; exists {
+			hitConflict = true
+		}
+		cursorMap[currentCursor] = struct{}{}
 
 		chainNode := &watch.ChainNode{
 			ID:          id,
@@ -202,10 +214,13 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		}
 		detailBytes, err := json.Marshal(detail)
 		if err != nil {
-			blog.Errorf("run flow, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s", name,
-				detail, err, e.Oid)
+			blog.Errorf("run flow, %s, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s, rid: %s",
+				f.key.Collection(), name, detail, err, e.ID(), rid)
 			return false
 		}
+
+		// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
+		// is not needed to remove the overlapped cursor node's detail again.
 		pipe.Set(f.key.DetailKey(currentCursor), string(detailBytes), time.Duration(f.key.TTLSeconds())*time.Second)
 	}
 
@@ -221,60 +236,97 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 	// store details at first, in case those watching cmdb events read chain when details are not inserted yet
 	if _, err := pipe.Exec(); err != nil {
 		f.metrics.collectRedisError()
-		blog.Errorf("run flow, but insert details for %s failed, err: %v, oids: %+v", err, f.key.Collection(), oids)
+		blog.Errorf("run flow, but insert details for %s failed, oids: %+v, err: %v, rid: %s,", f.key.Collection(),
+			oids, err, rid)
 		return true
 	}
 
-	// remove the earlier chain nodes with the same cursor with a later one
-	noDupChainNodes := make([]*watch.ChainNode, 0)
-	duplicateCursors := make([]string, 0)
-	cursorMap := make(map[string]struct{})
-	for i := len(chainNodes) - 1; i >= 0; i-- {
-		chainNode := chainNodes[i]
-		if _, exists := cursorMap[chainNode.Cursor]; exists {
-			duplicateCursors = append(duplicateCursors, chainNode.Cursor)
-			continue
+	if hitConflict {
+		// remove the earlier chain nodes with the same cursor with a later one
+		pickedChainNodes := make([]*watch.ChainNode, 0)
+		conflictNodes := make([]*watch.ChainNode, 0)
+		reminder := make(map[string]struct{})
+		for i := len(chainNodes) - 1; i >= 0; i-- {
+			chainNode := chainNodes[i]
+			if _, exists := reminder[chainNode.Cursor]; exists {
+				conflictNodes = append(conflictNodes, chainNode)
+				// skip this event, because it has been replaced the the one later.
+				continue
+			}
+
+			reminder[chainNode.Cursor] = struct{}{}
+			pickedChainNodes = append(pickedChainNodes, chainNode)
 		}
 
-		cursorMap[chainNode.Cursor] = struct{}{}
-		noDupChainNodes = append(noDupChainNodes, chainNode)
-	}
-
-	if len(duplicateCursors) > 0 {
 		monitor.Collect(&meta.Alarm{
-			RequestID: strings.Join(oids, ","),
+			RequestID: rid,
 			Type:      meta.FlowFatalError,
-			Detail:    fmt.Sprintf("run flow, but cursor %+v is duplicate", duplicateCursors),
-			Module:    "cacheservice",
+			Detail:    fmt.Sprintf("run event flow, but hit conflict %s cursor with chain nodes", f.key.Collection()),
+			Module:    types2.CC_MODULE_CACHESERVICE,
+			Dimension: map[string]string{"hit_conflict_nodes": "yes"},
 		})
+
+		// reverse the picked chain nodes to their origin order
+		for i, j := 0, len(pickedChainNodes)-1; i < j; i, j = i+1, j-1 {
+			pickedChainNodes[i], pickedChainNodes[j] = pickedChainNodes[j], pickedChainNodes[i]
+		}
+
+		blog.Warnf("got conflict got conflict cursor with chain nodes: %s, replaced with nodes: %s, rid: %s",
+			conflictNodes, pickedChainNodes, rid)
+
+		// update the chain nodes with picked chain nodes, so that we can handle them later.
+		chainNodes = pickedChainNodes
 	}
 
-	for i, j := 0, len(noDupChainNodes)-1; i < j; i, j = i+1, j-1 {
-		noDupChainNodes[i], noDupChainNodes[j] = noDupChainNodes[j], noDupChainNodes[i]
+	retry, err = f.doInsertEvents(chainNodes, lastTokenData, rid)
+	if err != nil {
+		return retry
 	}
-	chainNodes = noDupChainNodes
+
+	blog.Infof("insert watch event for %s success, oids: %v, rid: %s", f.key.Collection(), oids, rid)
+	hasError = false
+	return false
+}
+
+func (f *Flow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[string]interface{}, rid string) (
+	bool, error) {
+
+	count := len(chainNodes)
+
+	if count == 0 {
+		return false, nil
+	}
 
 	watchDBClient := f.watchDB.GetDBClient()
 
 	session, err := watchDBClient.StartSession()
 	if err != nil {
-		blog.Errorf("run flow, but start mongo session failed, err: %v, coll: %s", err, f.key.Collection())
-		return true
+		blog.Errorf("run flow, but start session failed, coll: %s, err: %v, rid: %s", f.key.Collection(), err, rid)
+		return true, err
 	}
 	defer session.EndSession(context.Background())
 
-	if txnErr := mongo.WithSession(context.Background(), session, func(sc mongo.SessionContext) error {
+	// retry insert the event node with remove the first event node,
+	// which means the first one's cursor is conflicted with the former's batch operation inserted nodes.
+	retryWithReduce := false
+
+	txnErr := mongo.WithSession(context.Background(), session, func(sc mongo.SessionContext) error {
 		if err = session.StartTransaction(); err != nil {
-			blog.Errorf("run flow, but start mongo transaction failed, err: %v, coll: %s", err, f.key.Collection())
+			blog.Errorf("run flow, but start transaction failed, coll: %s, err: %v, rid: %s", f.key.Collection(),
+				err, rid)
 			return err
 		}
 
 		if err := f.watchDB.Table(f.key.ChainCollection()).Insert(sc, chainNodes); err != nil {
-			blog.Errorf("run flow, but insert chain nodes for %s failed, err: %v, oids: %+v", f.key.Collection(), err, oids)
-			if !strings.Contains(err.Error(), "duplicate key error") {
-				f.metrics.collectMongoError()
-			}
+			blog.ErrorJSON("run flow, but insert chain nodes for %s failed, nodes: %s, err: %v, rid: %s",
+				f.key.Collection(), chainNodes, err, rid)
+			f.metrics.collectMongoError()
 			_ = session.AbortTransaction(context.Background())
+
+			if isConflictError(err) {
+				// set retry with reduce flag and retry later
+				retryWithReduce = true
+			}
 			return err
 		}
 
@@ -292,16 +344,48 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		// mongo.WithSession is changed to have a timeout.
 		if err = session.CommitTransaction(context.Background()); err != nil {
 			blog.Errorf("run flow, but commit mongo transaction failed, err: %v", err)
+			f.metrics.collectMongoError()
 			return err
 		}
 		return nil
-	}); txnErr != nil {
+	})
+
+	if txnErr != nil {
+		blog.Errorf("do insert flow events failed, err: %v, rid: %s", txnErr, rid)
+
+		rid = rid + ":" + chainNodes[0].Oid
+		if retryWithReduce && len(chainNodes) >= 1 {
+			monitor.Collect(&meta.Alarm{
+				RequestID: rid,
+				Type:      meta.FlowFatalError,
+				Detail:    fmt.Sprintf("run event flow, but got conflict %s cursor with chain nodes", f.key.Collection()),
+				Module:    types2.CC_MODULE_CACHESERVICE,
+				Dimension: map[string]string{"retry_conflict_nodes": "yes"},
+			})
+
+			// need do with retry with reduce
+			blog.ErrorJSON("run flow, insert %s event with reduce node %s, remain nodes: %s, rid: %s",
+				f.key.Collection(), chainNodes[0], chainNodes[1:], rid)
+
+			return f.doInsertEvents(chainNodes[1:], lastTokenData, rid)
+		}
+
 		// if an error occurred, roll back and re-watch again
+		return true, err
+	}
+
+	return false, nil
+}
+
+func isConflictError(err error) bool {
+	if strings.Contains(err.Error(), "duplicate key error") {
 		return true
 	}
 
-	blog.Infof("insert watch event for %s success, oids: %+v", f.key.Collection(), oids)
-	hasError = false
+	if strings.Contains(err.Error(), "index_cursor dup key") {
+		return true
+	}
+
 	return false
 }
 
@@ -399,7 +483,7 @@ func (f *flowTokenHandler) setLastWatchToken(ctx context.Context, data map[strin
 	filter := map[string]interface{}{
 		"_id": f.key.Collection(),
 	}
-	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(context.Background(), filter, data); err != nil {
+	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(ctx, filter, data); err != nil {
 		blog.Errorf("set last watch token failed, err: %v, data: %+v", err, data)
 		return err
 	}
