@@ -141,7 +141,7 @@ type Options struct {
 
 	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
 	// reset the resume token and set the start time for next watch in case it use the mistaken token again
-	WatchFatalErrorCallback func(startAtTime *TimeStamp) error `json:"-"`
+	WatchFatalErrorCallback func(startAtTime TimeStamp) error `json:"-"`
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -179,10 +179,7 @@ func (t TimeStamp) String() string {
 	return time.Unix(int64(t.Sec), int64(t.Nano)).Format("2006-01-02/15:04:05")
 }
 
-func (t *TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	if t == nil {
-		return bsontype.Null, nil, nil
-	}
+func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bsonx.Time(time.Unix(int64(t.Sec), int64(t.Nano))).MarshalBSONValue()
 }
 

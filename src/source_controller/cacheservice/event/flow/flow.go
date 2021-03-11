@@ -406,7 +406,7 @@ func (f *flowTokenHandler) GetStartWatchToken(ctx context.Context) (token string
 }
 
 // resetWatchToken set watch token to empty and set the start watch time to the given one for next watch
-func (f *flowTokenHandler) resetWatchToken(startAtTime *types.TimeStamp) error {
+func (f *flowTokenHandler) resetWatchToken(startAtTime types.TimeStamp) error {
 	data := map[string]interface{}{
 		common.BKTokenField:       "",
 		common.BKStartAtTimeField: startAtTime,
@@ -438,5 +438,5 @@ func (f *flowTokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeSt
 		}
 		return new(types.TimeStamp), nil
 	}
-	return data.StartAtTime, nil
+	return &data.StartAtTime, nil
 }
