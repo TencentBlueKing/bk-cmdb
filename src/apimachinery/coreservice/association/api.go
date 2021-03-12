@@ -271,7 +271,9 @@ func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Heade
 	return
 }
 
-func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadInstAssociationResult, err error) {
+func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstQueryCondition) (
+	resp *metadata.ReadInstAssociationResult, err error) {
+
 	resp = new(metadata.ReadInstAssociationResult)
 	subPath := "/read/instanceassociation"
 
@@ -285,7 +287,9 @@ func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header,
 	return
 }
 
-func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Header, input *metadata.InstAsstDeleteOption) (
+	resp *metadata.DeletedOptionResult, err error) {
+
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/instanceassociation"
 

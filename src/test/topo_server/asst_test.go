@@ -182,7 +182,8 @@ var _ = Describe("inst test", func() {
 	It("delete inst association batch", func() {
 		list := make([]int64, 501, 501)
 		input := &metadata.DeleteAssociationInstBatchRequest{
-			ID: list,
+			ID:    list,
+			ObjID: "bk_router",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
 		util.RegisterResponse(rsp)
@@ -192,7 +193,8 @@ var _ = Describe("inst test", func() {
 	//check "DeleteInstBatch" features available.
 	It("delete inst association batch", func() {
 		input := &metadata.DeleteAssociationInstBatchRequest{
-			ID: []int64{instAsst1, instAsst2},
+			ID:    []int64{instAsst1, instAsst2},
+			ObjID: "bk_router",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
 		util.RegisterResponse(rsp)
