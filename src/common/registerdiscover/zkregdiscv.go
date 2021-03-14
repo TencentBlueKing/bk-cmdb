@@ -51,6 +51,7 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 	blog.Infof("register server and watch it. path(%s), data(%s)", path, string(data))
 	go func() {
 		watchCtx := zkRD.rootCxt
+		var exist bool
 		for {
 
 			var watchEvn <-chan gozk.Event
@@ -70,18 +71,14 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 				// continue retry watch node
 				continue
 			} else {
-				_, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
+				exist, _, watchEvn, err = zkRD.zkcli.ExistW(zkRD.registerPath)
 				if err != nil {
 					blog.Errorf("fail to watch register node(%s), err:%s\n", zkRD.registerPath, err.Error())
 					switch err {
-					case gozk.ErrConnectionClosed:
+					case gozk.ErrConnectionClosed, gozk.ErrNoServer:
 						blog.Error("zk is closed, try to reconnect")
 						zkRD.reconnectZk()
 						continue
-					case gozk.ErrNoNode:
-						// special handle
-						// current node not exist, create node
-						zkRD.registerPath = ""
 					default:
 						// clear register path, so that it can register to a new path
 						zkRD.zkcli.Del(zkRD.registerPath, -1)
@@ -90,6 +87,12 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 						time.Sleep(time.Second * 1)
 						continue
 					}
+				}
+				if !exist {
+					// current node doesn't exist, reset the path to create a new one
+					blog.Errorf("node %s doesn't exist, try to create a new one", zkRD.registerPath)
+					zkRD.registerPath = ""
+					continue
 				}
 			}
 
