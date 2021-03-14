@@ -103,7 +103,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
-	dbIndex, ccErr := m.toDBUniqueIndex(kit, id, inputParam.Data.Keys, properties)
+	dbIndex, ccErr := m.toDBUniqueIndex(kit, objID, id, inputParam.Data.Keys, properties)
 	if ccErr != nil {
 		blog.Errorf("[CreateObjectUnique] toDBUniqueIndex for %s with %#v err: %#v, rid: %s",
 			objID, inputParam, ccErr, kit.Rid)
@@ -460,7 +460,7 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.Objec
 		return nil
 	}
 
-	dbIndex, ccErr := m.toDBUniqueIndex(kit, oldUnique.ID, newUnique.Keys, properties)
+	dbIndex, ccErr := m.toDBUniqueIndex(kit, oldUnique.ObjID, oldUnique.ID, newUnique.Keys, properties)
 	if ccErr != nil {
 		blog.Errorf("[UpdateObjectUnique] toDBUniqueIndex for %s err: %#v, rid: %s",
 			oldUnique.ObjID, ccErr.Error(), kit.Rid)
@@ -526,28 +526,13 @@ func equalUniqueKey(src, dst []metadata.UniqueKey) bool {
 	return true
 }
 
-func (m *modelAttrUnique) toDBUniqueIndex(kit *rest.Kit, id uint64, keys []metadata.UniqueKey,
+func (m *modelAttrUnique) toDBUniqueIndex(kit *rest.Kit, objID string, id uint64, keys []metadata.UniqueKey,
 	properties []metadata.Attribute) (types.Index, errors.CCErrorCoder) {
-	dbIndex := types.Index{
-		Background:              true,
-		Unique:                  true,
-		Name:                    index.GetUniqueIndexNameByID(id),
-		Keys:                    make(map[string]int32, 0),
-		PartialFilterExpression: make(map[string]interface{}),
-	}
-	propertiesIDMap := make(map[int64]metadata.Attribute, len(properties))
-	for _, property := range properties {
-		propertiesIDMap[property.ID] = property
-	}
-	for _, key := range keys {
-		attr := propertiesIDMap[int64(key.ID)]
-		dbType := index.CCFieldTypeToDBType(attr.PropertyType)
-		if dbType == "" {
-			blog.ErrorJSON("build unique index property type not support. property: %s, rid: %s", attr, kit.Rid)
-			return dbIndex, kit.CCError.CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyName)
-		}
-		dbIndex.Keys[attr.PropertyID] = 1
-		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
+
+	dbIndex, err := index.ToDBUniqueIndex(objID, id, keys, properties)
+	if err != nil {
+		blog.ErrorJSON("build unique index error. err: %s, rid: %s", err.Error(), kit.Rid)
+		return dbIndex, err
 	}
 
 	return dbIndex, nil
