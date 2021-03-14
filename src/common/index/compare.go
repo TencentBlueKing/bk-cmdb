@@ -13,8 +13,9 @@
 package index
 
 import (
-	"configcenter/src/storage/dal/types"
 	"reflect"
+
+	"configcenter/src/storage/dal/types"
 )
 
 // FindIndexByIndexFields 根据索引中用到的字段找db中对应的索引，
@@ -27,7 +28,7 @@ func FindIndexByIndexFields(keys map[string]int32, indexList []types.Index) (dbI
 		}
 		exists = true
 		for key := range idx.Keys {
-			if _, existsKey := keys[key]; !existsKey {
+			if _, keyExists := keys[key]; !keyExists {
 				exists = false
 				break
 			}
@@ -52,10 +53,11 @@ func IndexEqual(toDBIndex, dbIndex types.Index) bool {
 	if toDBIndex.ExpireAfterSeconds != dbIndex.ExpireAfterSeconds {
 		return false
 	}
-	if len(toDBIndex.Keys) != len(toDBIndex.Keys) {
+	if len(toDBIndex.Keys) != len(dbIndex.Keys) {
 		return false
 	}
-	if len(toDBIndex.PartialFilterExpression) != len(toDBIndex.PartialFilterExpression) {
+
+	if len(toDBIndex.PartialFilterExpression) != len(dbIndex.PartialFilterExpression) {
 		return false
 	}
 
