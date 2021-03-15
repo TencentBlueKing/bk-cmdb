@@ -134,7 +134,7 @@ func InitMonitor() error {
 	config.CheckAndCorrectCfg()
 	config.SetMonitorSourceIP()
 	if err := startMonitor(); err != nil {
-		blog.Infof("init monitor failed, startMonitor err: %v", err)
+		blog.Errorf("init monitor failed, startMonitor err: %v", err)
 		return err
 	}
 	blog.InfoJSON("init monitor successfully, cfg: %s", config.MonitorCfg)

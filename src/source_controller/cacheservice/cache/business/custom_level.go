@@ -61,7 +61,7 @@ func (m *customLevel) runMainlineTopology() error {
 			blog.Errorf("get biz list done redis key failed, err: %v", err)
 			return fmt.Errorf("get biz list done redis key failed, err: %v", err)
 		}
-		cap := &reflector.Capable{
+		capable := &reflector.Capable{
 			OnChange: reflector.OnChangeEvent{
 				OnLister:     m.onChange,
 				OnAdd:        m.onChange,
@@ -82,7 +82,7 @@ func (m *customLevel) runMainlineTopology() error {
 			PageSize: &page,
 		}
 		blog.Info("do mainline topology cache with list watch.")
-		return m.event.ListWatcher(context.Background(), opts, cap)
+		return m.event.ListWatcher(context.Background(), opts, capable)
 	}
 
 	watchCap := &reflector.Capable{
