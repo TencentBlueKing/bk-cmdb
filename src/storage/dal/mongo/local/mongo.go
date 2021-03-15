@@ -171,10 +171,10 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 		if strings.Contains(err.Error(), "IndexOptionsConflict") {
 			return true
 		}
-		if strings.Contains(err.Error(), "already exists with a different name") {
+		if strings.Contains(err.Error(), "all indexes already exist") {
 			return true
 		}
-		if strings.Contains(err.Error(), "already exists with different options") {
+		if strings.Contains(err.Error(), "already exists with a different name") {
 			return true
 		}
 	}
@@ -739,8 +739,11 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.CreateOne(ctx, createIndexInfo)
 	if err != nil {
-		// ignore the duplicated index error
-		if strings.Contains(err.Error(), "already exists") {
+		// ignore the following case
+		// 1.the new index is exactly the same as the existing one
+		// 2.the new index has same keys with the existing one, but its name is different
+		if strings.Contains(err.Error(), "all indexes already exist") ||
+			strings.Contains(err.Error(), "already exists with a different name") {
 			return nil
 		}
 	}
