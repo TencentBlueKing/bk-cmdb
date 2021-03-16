@@ -49,19 +49,14 @@ func (g *GseCmdline) Report(data string) error {
 
 // isAvailable judge whether the GseCmdline is available
 func (g *GseCmdline) isAvailable() bool {
-	cmd := exec.Command("gsecmdline", "-h")
+	cmd := exec.Command("gsecmdline", "-v")
 	tryCnt := 3
 	for i := 0; i < tryCnt; i++ {
-		if err := cmd.Start(); err != nil {
-			blog.Errorf("isAvailable failed, command err:%v", err)
+		if err := cmd.Run(); err != nil {
+			blog.Errorf("check gsecmdline is available failed, command err: %v", err)
 			continue
 		}
-		if err := cmd.Wait(); err != nil {
-			blog.Errorf("isAvailable failed, wait error:%v", err)
-			continue
-		} else {
-			return true
-		}
+		return true
 	}
 
 	return false
