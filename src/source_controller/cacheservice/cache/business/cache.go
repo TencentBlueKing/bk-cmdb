@@ -13,7 +13,6 @@
 package business
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
@@ -79,10 +78,8 @@ func NewCache(event reflector.Interface) error {
 	}
 
 	custom := &customLevel{
-		key:         customKey,
-		event:       event,
-		lock:        tools.NewRefreshingLock(),
-		customWatch: make(map[string]context.CancelFunc),
+		key:  customKey,
+		lock: tools.NewRefreshingLock(),
 	}
 	if err := custom.Run(); err != nil {
 		return fmt.Errorf("run biz custom level cache failed, err: %v", err)
