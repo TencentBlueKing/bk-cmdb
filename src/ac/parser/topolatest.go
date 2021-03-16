@@ -1155,6 +1155,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 const (
 	createObjectLatestPattern       = "/api/v3/create/object"
 	findObjectsLatestPattern        = "/api/v3/find/object"
+	findObjectBatchLatestPattern    = "/api/v3/findmany/object"
 	findObjectTopologyLatestPattern = "/api/v3/find/objecttopology"
 )
 
@@ -1277,6 +1278,26 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// get object operation.
 	if ps.hitPattern(findObjectsLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.Model,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// get object in batch operation.
+	if ps.hitPattern(findObjectBatchLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
 		if err != nil {
 			ps.err = err

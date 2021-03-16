@@ -14,6 +14,7 @@ package util
 
 import (
 	"fmt"
+	"time"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
@@ -35,6 +36,9 @@ type Capability struct {
 	Throttle flowctrl.RateLimiter
 	Mock     MockInfo
 	Reg      prometheus.Registerer
+	// the max tolerance api request latency time, if exceeded this time, then
+	// this request will be logged and warned.
+	ToleranceLatencyTime time.Duration
 }
 
 type MockInfo struct {

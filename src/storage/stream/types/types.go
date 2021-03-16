@@ -141,7 +141,7 @@ type Options struct {
 
 	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
 	// reset the resume token and set the start time for next watch in case it use the mistaken token again
-	WatchFatalErrorCallback func(startAtTime *TimeStamp) error `json:"-"`
+	WatchFatalErrorCallback func(startAtTime TimeStamp) error `json:"-"`
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -170,9 +170,9 @@ func (opts *Options) CheckSetDefault() error {
 
 type TimeStamp struct {
 	// the most significant 32 bits are a time_t value (seconds since the Unix epoch)
-	Sec uint32 `json:"sec",bson:"sec"`
+	Sec uint32 `json:"sec" bson:"sec"`
 	// the least significant 32 bits are an incrementing ordinal for operations within a given second.
-	Nano uint32 `json:"nano",bson:"nano"`
+	Nano uint32 `json:"nano" bson:"nano"`
 }
 
 func (t TimeStamp) String() string {
@@ -184,8 +184,8 @@ func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
 }
 
 type timeStampCopy struct {
-	Sec  uint32 `json:"sec",bson:"sec"`
-	Nano uint32 `json:"nano",bson:"nano"`
+	Sec  uint32 `json:"sec" bson:"sec"`
+	Nano uint32 `json:"nano" bson:"nano"`
 }
 
 func (t *TimeStamp) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {

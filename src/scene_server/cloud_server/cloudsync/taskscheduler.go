@@ -114,8 +114,8 @@ func (t *taskScheduler) watchTaskTable(ctx context.Context) error {
 			Collection:   common.BKTableNameCloudSyncTask,
 		},
 	}
-	cap := &reflector.Capable{
-		reflector.OnChangeEvent{
+	capable := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
 			OnAdd:        t.changeOnAdd,
 			OnUpdate:     t.changeOnUpdate,
 			OnDelete:     t.changeOnDelete,
@@ -124,7 +124,7 @@ func (t *taskScheduler) watchTaskTable(ctx context.Context) error {
 		},
 	}
 
-	return t.reflector.ListWatcher(ctx, opts, cap)
+	return t.reflector.ListWatcher(ctx, opts, capable)
 }
 
 // 表记录新增处理逻辑

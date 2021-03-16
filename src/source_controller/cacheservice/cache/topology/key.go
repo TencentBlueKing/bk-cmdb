@@ -83,7 +83,7 @@ func (w *tokenHandler) GetStartWatchToken(ctx context.Context) (token string, er
 }
 
 // resetWatchToken set watch token to empty and set the start watch time to the given one for next watch
-func (w *tokenHandler) resetWatchToken(startAtTime *types.TimeStamp) error {
+func (w *tokenHandler) resetWatchToken(startAtTime types.TimeStamp) error {
 	filter := map[string]interface{}{"_id": w.doc}
 	tokenData := mapstr.MapStr{
 		w.key:                 "",
@@ -96,7 +96,7 @@ func (w *tokenHandler) resetWatchToken(startAtTime *types.TimeStamp) error {
 func (w *tokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeStamp, error) {
 	filter := map[string]interface{}{"_id": w.doc}
 
-	data := make(map[string]*types.TimeStamp)
+	data := make(map[string]types.TimeStamp)
 	err := w.db.Table(common.BKTableNameSystem).Find(filter).Fields(w.key+"_start_time").One(ctx, &data)
 	if err != nil {
 		if !w.db.IsNotFoundError(err) {
@@ -105,7 +105,8 @@ func (w *tokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeStamp,
 		}
 		return new(types.TimeStamp), nil
 	}
-	return data[w.key+"_start_time"], nil
+	startTime := data[w.key+"_start_time"]
+	return &startTime, nil
 }
 
 func newTopologyKey() *cacheKey {
