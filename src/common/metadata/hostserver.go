@@ -40,16 +40,6 @@ type HostInstancePropertiesResult struct {
 	Data     []HostInstanceProperties `json:"data"`
 }
 
-type HostSnapResult struct {
-	BaseResp `json:",inline"`
-	Data     map[string]interface{} `json:"data"`
-}
-
-type HostSnapBatchResult struct {
-	BaseResp `json:",inline"`
-	Data     []map[string]interface{} `json:"data"`
-}
-
 type HostInputType string
 
 const (

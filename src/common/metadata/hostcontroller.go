@@ -15,8 +15,6 @@ package metadata
 import (
 	"time"
 
-	"configcenter/src/common"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -84,48 +82,6 @@ type HostInfo struct {
 type GetHostsResult struct {
 	BaseResp `json:",inline"`
 	Data     HostInfo `json:"data"`
-}
-
-type HostSnap struct {
-	Data string `json:"data"`
-}
-
-type GetHostSnapResult struct {
-	BaseResp `json:",inline"`
-	Data     HostSnap `json:"data"`
-}
-
-type HostSnapBatchOption struct {
-	IDs    []int64  `json:"bk_ids"`
-	Fields []string `json:"fields"`
-}
-
-func (h *HostSnapBatchOption) Validate() (rawError errors.RawErrorInfo) {
-	maxLimit := 200
-	if len(h.IDs) == 0 || len(h.IDs) > maxLimit {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrArrayLengthWrong,
-			Args:    []interface{}{"bk_ids", maxLimit},
-		}
-	}
-
-	if len(h.Fields) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"fields"},
-		}
-	}
-
-	return errors.RawErrorInfo{}
-}
-
-type HostSnapBatchInput struct {
-	HostIDs []int64 `json:"host_ids"`
-}
-
-type GetHostSnapBatchResult struct {
-	BaseResp `json:",inline"`
-	Data     map[int64]string `json:"data"`
 }
 
 type GetHostModuleIDsResult struct {
