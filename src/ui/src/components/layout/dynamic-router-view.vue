@@ -25,7 +25,7 @@
       dynamicNavigation,
       dynamicBreadcrumbs
     },
-    data () {
+    data() {
       return {
         refreshKey: Date.now(),
         meta: this.$route.meta,
@@ -35,23 +35,23 @@
     },
     computed: {
       ...mapGetters(['globalLoading']),
-      view () {
+      view() {
         return this.meta.view
       },
-      isEntry () {
+      isEntry() {
         const [topRoute] = this.$route.matched
         return topRoute && [MENU_ENTRY, MENU_ADMIN].includes(topRoute.name)
       },
-      showBreadcrumbs () {
+      showBreadcrumbs() {
         return this.$route.meta.layout && this.$route.meta.layout.breadcrumbs
       }
     },
     watch: {
-      $route (val) {
+      $route(val) {
         this.meta = this.$route.meta
       }
     },
-    created () {
+    created() {
       this.scrollerObserverHandler = throttle(() => {
         const scroller = this.$refs.scroller
         if (scroller) {
@@ -63,16 +63,16 @@
         }
       }, 300, { leading: false, trailing: true })
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
       this.addScrollerObserver()
     },
-    beforeDestory () {
+    beforeDestory() {
       removeResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
       this.scrollerObserver && this.scrollerObserver.disconnect()
     },
     methods: {
-      addScrollerObserver () {
+      addScrollerObserver() {
         this.scrollerObserver = new MutationObserver(this.scrollerObserverHandler)
         this.scrollerObserver.observe(this.$refs.scroller, {
           attributes: true,

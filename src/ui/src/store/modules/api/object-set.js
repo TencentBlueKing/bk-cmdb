@@ -28,11 +28,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createSet ({ commit, state, dispatch }, { bizId, params, config }) {
+  createSet({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`set/${bizId}`, params, config)
   },
 
-  createset ({ commit, state, dispatch }, { bizId, params, config }) {
+  createset({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`set/${bizId}/batch`, params, config)
   },
 
@@ -45,7 +45,7 @@ const actions = {
      * @param {Number} bkSetId 集群id
      * @return {promises} promises 对象
      */
-  deleteSet ({ commit, state, dispatch }, { bizId, setId, config }) {
+  deleteSet({ commit, state, dispatch }, { bizId, setId, config }) {
     return $http.delete(`set/${bizId}/${setId}`, config)
   },
 
@@ -59,7 +59,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateSet ({ commit, state, dispatch }, { bizId, setId, params, config }) {
+  updateSet({ commit, state, dispatch }, { bizId, setId, params, config }) {
     return $http.put(`set/${bizId}/${setId}`, params, config)
   },
 
@@ -73,7 +73,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchSet ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+  searchSet({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
     return $http.post(`set/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
   }
 }

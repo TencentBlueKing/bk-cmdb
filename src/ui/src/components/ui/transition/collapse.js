@@ -1,5 +1,5 @@
 const Transition = {
-  beforeEnter (el) {
+  beforeEnter(el) {
     el.classList.add('collapse-transition')
     if (!el.dataset) {
       el.dataset = {}
@@ -13,7 +13,7 @@ const Transition = {
     el.style.paddingBottom = 0
   },
 
-  enter (el) {
+  enter(el) {
     el.dataset.oldOverflow = el.style.overflow
     el.style.overflow = 'hidden'
     if (el.scrollHeight !== 0) {
@@ -27,13 +27,13 @@ const Transition = {
     }
   },
 
-  afterEnter (el) {
+  afterEnter(el) {
     el.classList.remove('collapse-transition')
     el.style.height = ''
     el.style.overflow = el.dataset.oldOverflow
   },
 
-  beforeLeave (el) {
+  beforeLeave(el) {
     if (!el.dataset) el.dataset = {}
     el.dataset.oldPaddingTop = el.style.paddingTop
     el.dataset.oldPaddingBottom = el.style.paddingBottom
@@ -43,7 +43,7 @@ const Transition = {
     el.style.overflow = 'hidden'
   },
 
-  leave (el) {
+  leave(el) {
     if (el.scrollHeight !== 0) {
       el.classList.add('collapse-transition')
       el.style.height = 0
@@ -52,7 +52,7 @@ const Transition = {
     }
   },
 
-  afterLeave (el) {
+  afterLeave(el) {
     el.classList.remove('collapse-transition')
     el.style.height = ''
     el.style.overflow = el.dataset.oldOverflow
@@ -70,7 +70,7 @@ const toCamelCase = function (str) {
 export default {
   name: 'cmdb-collapse-transition',
   functional: true,
-  render (h, context) {
+  render(h, context) {
     const events = context.data.on || {}
     const camelCaseEvents = {}
     const transitionEvents = {}

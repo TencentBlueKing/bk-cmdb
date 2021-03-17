@@ -27,7 +27,7 @@
     props: {
       row: Object
     },
-    data () {
+    data() {
       return {
         request: {
           update: Symbol('update')
@@ -36,21 +36,21 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      disabled () {
+      disabled() {
         return !this.row.process_count
       },
-      editing () {
+      editing() {
         return this.row.editing.name
       }
     },
     methods: {
-      handleEdit () {
+      handleEdit() {
         this.$emit('edit')
         this.$nextTick(() => {
           this.$refs.nameEditForm.focus()
         })
       },
-      async handleConfirm (value) {
+      async handleConfirm(value) {
         try {
           await this.$store.dispatch('serviceInstance/updateServiceInstance', {
             bizId: this.bizId,
@@ -69,7 +69,7 @@
           console.error(error)
         }
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       }
     }

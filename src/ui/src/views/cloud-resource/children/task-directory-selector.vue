@@ -61,7 +61,7 @@
         default: 'selector'
       }
     },
-    data () {
+    data() {
       return {
         loading: true,
         createMode: false,
@@ -76,33 +76,33 @@
     },
     computed: {
       selected: {
-        get () {
+        get() {
           return this.value
         },
-        set (value, oldValue) {
+        set(value, oldValue) {
           this.$emit('input', value)
           this.$emit('change', value, oldValue)
         }
       },
-      useIAM () {
+      useIAM() {
         return window.CMDB_CONFIG.site.authscheme === 'iam'
       }
     },
-    created () {
+    created() {
       this.getDirectories()
     },
     methods: {
-      getCursorData (directory) {
+      getCursorData(directory) {
         return {
           active: this.useIAM ? !directory.authorized : false,
           auth: { type: this.$OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] },
           onclick: this.hideSelectorPanel
         }
       },
-      hideSelectorPanel () {
+      hideSelectorPanel() {
         this.$refs.selector.close()
       },
-      async getDirectories () {
+      async getDirectories() {
         try {
           this.loading = true
           const { info } = await this.$store.dispatch('resource/directory/findMany', {
@@ -133,7 +133,7 @@
           this.loading = false
         }
       },
-      injectAuth (directories) {
+      injectAuth(directories) {
         return new Promise((resolve) => {
           const fakeComponent = {
             auth: directories.map(directory => ({ type: this.$OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] })),
@@ -151,15 +151,15 @@
           })
         })
       },
-      handleSelectToggle (isVisible) {
+      handleSelectToggle(isVisible) {
         if (!isVisible) {
           this.toggleCreate(false)
         }
       },
-      handleCreateDirectory () {
+      handleCreateDirectory() {
         this.toggleCreate(true)
       },
-      toggleCreate (isCreateMode) {
+      toggleCreate(isCreateMode) {
         this.createMode = isCreateMode
         if (isCreateMode) {
           this.$nextTick(() => {
@@ -170,7 +170,7 @@
           this.$refs.selector.close()
         }
       },
-      async handleConfirmCreate () {
+      async handleConfirmCreate() {
         if (!this.newDirectory.length) {
           return false
         }
@@ -194,7 +194,7 @@
           console.error(e)
         }
       },
-      getInfo () {
+      getInfo() {
         const directory = this.directories.find(directory => directory.bk_module_id === this.value)
         if (directory) {
           return directory.bk_module_name

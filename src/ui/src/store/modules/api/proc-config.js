@@ -28,7 +28,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createProcess ({ commit, state, dispatch, rootGetters }, { bizId, params }) {
+  createProcess({ commit, state, dispatch, rootGetters }, { bizId, params }) {
     return $http.post(`proc/${rootGetters.supplierAccount}/${bizId}`, params)
   },
 
@@ -41,11 +41,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchProcess ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+  searchProcess({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
     return $http.post(`proc/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
   },
 
-  searchProcessById ({ rootGetters }, { bizId, processId, config }) {
+  searchProcessById({ rootGetters }, { bizId, processId, config }) {
     return $http.post(`proc/search/${rootGetters.supplierAccount}/${bizId}`, {
       condition: {
         'bk_biz_id': bizId,
@@ -66,7 +66,7 @@ const actions = {
      * @param {Number} processId 进程id
      * @return {promises} promises 对象
      */
-  getProcessDetail ({ commit, state, dispatch, rootGetters }, { bizId, processId }) {
+  getProcessDetail({ commit, state, dispatch, rootGetters }, { bizId, processId }) {
     return $http.get(`proc/${rootGetters.supplierAccount}/${bizId}/${processId}`)
   },
 
@@ -79,7 +79,7 @@ const actions = {
      * @param {Number} processId 进程id
      * @return {promises} promises 对象
      */
-  deleteProcess ({ commit, state, dispatch, rootGetters }, { bizId, processId }) {
+  deleteProcess({ commit, state, dispatch, rootGetters }, { bizId, processId }) {
     return $http.delete(`proc/${rootGetters.supplierAccount}/${bizId}/${processId}`)
   },
 
@@ -93,7 +93,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateProcess ({ commit, state, dispatch, rootGetters }, { bizId, processId, params }) {
+  updateProcess({ commit, state, dispatch, rootGetters }, { bizId, processId, params }) {
     return $http.put(`proc/${rootGetters.supplierAccount}/${bizId}/${processId}`, params)
   },
 
@@ -106,7 +106,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  batchUpdateProcess ({ commit, state, dispatch, rootGetters }, { bizId, params }) {
+  batchUpdateProcess({ commit, state, dispatch, rootGetters }, { bizId, params }) {
     return $http.put(`proc/${rootGetters.supplierAccount}/${bizId}`, params)
   },
 
@@ -119,7 +119,7 @@ const actions = {
      * @param {Number} processId 进程id
      * @return {promises} promises 对象
      */
-  getProcessBindModule ({ commit, state, dispatch, rootGetters }, { bizId, processId, config }) {
+  getProcessBindModule({ commit, state, dispatch, rootGetters }, { bizId, processId, config }) {
     return $http.get(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}`, config)
   },
 
@@ -133,7 +133,7 @@ const actions = {
      * @param {String} moduleName 模块名称
      * @return {promises} promises 对象
      */
-  bindProcessModule ({ commit, state, dispatch, rootGetters }, { bizId, processId, moduleName, config }) {
+  bindProcessModule({ commit, state, dispatch, rootGetters }, { bizId, processId, moduleName, config }) {
     return $http.put(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}/${moduleName}`, {}, config)
   },
 
@@ -147,7 +147,7 @@ const actions = {
      * @param {String} moduleName 模块名称
      * @return {promises} promises 对象
      */
-  deleteProcessModuleBinding ({ commit, state, dispatch, rootGetters }, { bizId, processId, moduleName, config }) {
+  deleteProcessModuleBinding({ commit, state, dispatch, rootGetters }, { bizId, processId, moduleName, config }) {
     return $http.delete(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}/${moduleName}`, config)
   }
 }

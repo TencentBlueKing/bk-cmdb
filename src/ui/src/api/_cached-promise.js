@@ -1,20 +1,20 @@
 export default class CachedPromise {
-  constructor () {
+  constructor() {
     this.cache = {}
   }
 
-  get (id) {
+  get(id) {
     if (typeof id === 'undefined') {
       return Object.keys(this.cache).map(requestId => this.cache[requestId].promise)
     }
     return this.cache.hasOwnProperty(id) ? this.cache[id].promise : null
   }
 
-  set (id, promise, config) {
+  set(id, promise, config) {
     Object.assign(this.cache, { [id]: { promise, config } })
   }
 
-  getGroupedIds (id) {
+  getGroupedIds(id) {
     const groupedIds = []
     for (const requestId in this.cache) {
       const isInclude = groupedIds.includes(requestId)
@@ -26,7 +26,7 @@ export default class CachedPromise {
     return groupedIds
   }
 
-  getDeleteIds (id) {
+  getDeleteIds(id) {
     const deleteIds = this.getGroupedIds(id)
     if (this.cache.hasOwnProperty(id)) {
       deleteIds.push(id)
@@ -34,7 +34,7 @@ export default class CachedPromise {
     return deleteIds
   }
 
-  delete (deleteIds) {
+  delete(deleteIds) {
     let requestIds = []
     if (typeof deleteIds === 'undefined') {
       requestIds = Object.keys(this.cache)

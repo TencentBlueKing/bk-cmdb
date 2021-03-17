@@ -22,21 +22,21 @@
         default: false
       }
     },
-    data () {
+    data() {
       return {
         localValue: ''
       }
     },
     watch: {
-      value () {
+      value() {
         this.localValue = this.value === '' ? '' : this.value
       }
     },
-    created () {
+    created() {
       this.localValue = this.value === '' ? '' : this.value
     },
     methods: {
-      handleInput () {
+      handleInput() {
         this.$emit('input', this.localValue)
       }
     }

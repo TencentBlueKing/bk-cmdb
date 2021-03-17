@@ -217,7 +217,7 @@
   import { MENU_RESOURCE_HOST, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_INSTANCE } from '@/dictionary/menu-symbol'
   export default {
     filters: {
-      instanceCount (value) {
+      instanceCount(value) {
         if ([null, undefined].includes(value)) {
           return 0
         }
@@ -229,7 +229,7 @@
       theCreateModel,
       cmdbMainInject
     },
-    data () {
+    data() {
       return {
         scrollHandler: null,
         scrollTop: 0,
@@ -267,7 +267,7 @@
       ...mapGetters('objectModelClassify', [
         'classifications'
       ]),
-      enableClassifications () {
+      enableClassifications() {
         const enableClassifications = []
         this.classifications.forEach((classification) => {
           enableClassifications.push({
@@ -279,7 +279,7 @@
         })
         return enableClassifications
       },
-      disabledClassifications () {
+      disabledClassifications() {
         const disabledClassifications = []
         this.classifications.forEach((classification) => {
           const disabledModels = classification['bk_objects'].filter((model) => {
@@ -294,22 +294,22 @@
         })
         return disabledClassifications
       },
-      currentClassifications () {
+      currentClassifications() {
         if (!this.searchModel) {
           return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
         } else {
           return this.filterClassifications
         }
       },
-      disabledModelBtnText () {
+      disabledModelBtnText() {
         return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
       },
-      mainLoading () {
+      mainLoading() {
         return this.$loading(Object.values(this.request))
       }
     },
     watch: {
-      searchModel (value) {
+      searchModel(value) {
         if (!value) {
           return
         }
@@ -327,11 +327,11 @@
         }
         this.filterClassifications = searchResult
       },
-      modelType () {
+      modelType() {
         this.searchModel = ''
       }
     },
-    async created () {
+    async created() {
       this.scrollHandler = (event) => {
         this.scrollTop = event.target.scrollTop
       }
@@ -355,10 +355,10 @@
         window.location.hash = hash.substring(0, hash.indexOf('?'))
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
       removeMainScrollListener(this.scrollHandler)
     },
@@ -377,13 +377,13 @@
       ...mapActions('objectModel', [
         'createObject'
       ]),
-      handleSetPadding () {
+      handleSetPadding() {
         this.topPadding = this.$refs.mainInject.$el.offsetHeight
       },
-      isEditable (classification) {
+      isEditable(classification) {
         return !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classification.bk_classification_id)
       },
-      showGroupDialog (isEdit, group) {
+      showGroupDialog(isEdit, group) {
         if (isEdit) {
           this.groupDialog.data.id = group.id
           this.groupDialog.title = this.$t('编辑分组')
@@ -399,11 +399,11 @@
         this.groupDialog.isEdit = isEdit
         this.groupDialog.isShow = true
       },
-      hideGroupDialog () {
+      hideGroupDialog() {
         this.groupDialog.isShow = false
         this.$validator.reset()
       },
-      async getModelStatistics () {
+      async getModelStatistics() {
         const modelStatisticsSet = {}
         const res = await this.getClassificationsObjectStatistics({
           config: {
@@ -415,7 +415,7 @@
         })
         this.modelStatisticsSet = modelStatisticsSet
       },
-      async saveGroup () {
+      async saveGroup() {
         const res = await Promise.all([
           this.$validator.validate('classifyId'),
           this.$validator.validate('classifyName')
@@ -448,7 +448,7 @@
         this.hideGroupDialog()
         this.searchModel = ''
       },
-      deleteGroup (group) {
+      deleteGroup(group) {
         this.$bkInfo({
           title: this.$t('确认要删除此分组'),
           confirmFn: async () => {
@@ -460,11 +460,11 @@
           }
         })
       },
-      showModelDialog (groupId) {
+      showModelDialog(groupId) {
         this.modelDialog.groupId = groupId || ''
         this.modelDialog.isShow = true
       },
-      async saveModel (data) {
+      async saveModel(data) {
         const params = {
           bk_supplier_account: this.supplierAccount,
           bk_obj_name: data['bk_obj_name'],
@@ -485,7 +485,7 @@
         this.modelDialog.groupId = ''
         this.searchModel = ''
       },
-      modelClick (model) {
+      modelClick(model) {
         this.$store.commit('objectModel/setActiveModel', model)
         this.$routerActions.redirect({
           name: 'modelDetails',
@@ -495,7 +495,7 @@
           history: true
         })
       },
-      handleGoInstance (model) {
+      handleGoInstance(model) {
         this.sucessDialog.isShow = false
         const map = {
           host: MENU_RESOURCE_HOST,

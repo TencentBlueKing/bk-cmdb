@@ -1,6 +1,6 @@
 import i18n from '@/i18n'
 
-function t (key) {
+function t(key) {
   return i18n.t(key)
 }
 export const actions = {

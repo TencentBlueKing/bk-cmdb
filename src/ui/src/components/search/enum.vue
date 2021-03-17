@@ -29,14 +29,14 @@
       }
     },
     computed: {
-      multiple () {
+      multiple() {
         return Array.isArray(this.value)
       },
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }

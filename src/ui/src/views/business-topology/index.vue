@@ -74,7 +74,7 @@
       ServiceNodeInfo,
       ServiceInstanceView
     },
-    data () {
+    data() {
       return {
         activeTab: RouterQuery.get('tab', 'hostList'),
         layout: {
@@ -90,25 +90,25 @@
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['selectedNode']),
-      showServiceInstance () {
+      showServiceInstance() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module' && this.selectedNode.data.default === 0
       },
-      showNodeInfo () {
+      showNodeInfo() {
         return this.selectedNode && this.selectedNode.data.default === 0
       },
-      nodeId () {
+      nodeId() {
         return this.selectedNode ? this.selectedNode.data.bk_inst_id : '--'
       },
-      nodeName () {
+      nodeName() {
         return this.selectedNode && this.selectedNode.data.bk_inst_name
       },
-      emptySet () {
+      emptySet() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
           && this.selectedNode.children && !this.selectedNode.children.length
       }
     },
     watch: {
-      activeTab (tab) {
+      activeTab(tab) {
         this.$nextTick(() => {
           RouterQuery.set({
             tab: tab,
@@ -118,7 +118,7 @@
           })
         })
       },
-      emptySet (value) {
+      emptySet(value) {
         if (!value) {
           this.$nextTick(() => {
             this.$refs.hostList.doLayoutTable()
@@ -126,7 +126,7 @@
         }
       }
     },
-    async created () {
+    async created() {
       this.unwatch = RouterQuery.watch('tab', (value = 'hostList') => {
         this.activeTab = value
       })
@@ -140,26 +140,26 @@
         console.error(e)
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.$store.commit('businessHost/clear')
       this.unwatch()
     },
     methods: {
-      handleTabToggle () {
+      handleTabToggle() {
         Bus.$emit('toggle-host-filter', false)
         return true
       },
-      handleCreateModule () {
+      handleCreateModule() {
         this.$refs.topologyTree.showCreateDialog(this.selectedNode)
       },
-      getTopologyModels () {
+      getTopologyModels() {
         return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
           config: {
             requestId: this.request.mainline
           }
         })
       },
-      getProperties (models) {
+      getProperties(models) {
         return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
           injectId: 'host',
           params: {

@@ -79,7 +79,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         initRuleList: [],
         checkedPropertyIdList: [],
@@ -94,23 +94,23 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapState('hostApply', ['ruleDraft']),
-      moduleId () {
+      moduleId() {
         return this.moduleIds[0]
       },
-      hasRuleDraft () {
+      hasRuleDraft() {
         return Object.keys(this.ruleDraft).length > 0
       }
     },
     watch: {
-      checkedPropertyIdList () {
+      checkedPropertyIdList() {
         this.toggleNextButtonDisabled()
       }
     },
-    created () {
+    created() {
       this.initData()
     },
     methods: {
-      async initData () {
+      async initData() {
         try {
           const ruleData = await this.getRules()
           this.initRuleList = ruleData.info || []
@@ -120,7 +120,7 @@
           console.log(e)
         }
       },
-      getRules () {
+      getRules() {
         return this.$store.dispatch('hostApply/getRules', {
           bizId: this.bizId,
           params: {
@@ -131,7 +131,7 @@
           }
         })
       },
-      toggleNextButtonDisabled () {
+      toggleNextButtonDisabled() {
         this.$nextTick(() => {
           if (this.$refs.propertyConfigTable) {
             const { modulePropertyList } = this.$refs.propertyConfigTable
@@ -149,7 +149,7 @@
           }
         })
       },
-      async handleNextStep () {
+      async handleNextStep() {
         const { modulePropertyList, removeRuleIds } = this.$refs.propertyConfigTable
         const additionalRules = modulePropertyList.map(property => ({
           bk_attribute_id: property.id,
@@ -184,13 +184,13 @@
           })
         })
       },
-      handlePropertyValueChange () {
+      handlePropertyValueChange() {
         this.toggleNextButtonDisabled()
       },
-      handleChooseField () {
+      handleChooseField() {
         this.propertyModalVisible = true
       },
-      handleCancel () {
+      handleCancel() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY,
           query: {

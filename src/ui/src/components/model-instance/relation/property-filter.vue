@@ -35,18 +35,18 @@
       },
       excludeType: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
       excludeId: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       }
     },
-    data () {
+    data() {
       return {
         localSelected: {
           id: '',
@@ -73,10 +73,10 @@
     },
     computed: {
       ...mapGetters(['supplierAccount']),
-      selectedProperty () {
+      selectedProperty() {
         return this.filteredProperties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === this.localSelected.id) || {}
       },
-      operatorOptions () {
+      operatorOptions() {
         if (this.selectedProperty) {
           if (['bk_host_innerip', 'bk_host_outerip'].includes(this.selectedProperty['bk_property_id']) || this.objId === 'biz') {
             return [{ label: this.operatorLabel['$regex'], value: '$regex' }]
@@ -95,7 +95,7 @@
       }
     },
     watch: {
-      filteredProperties (properties) {
+      filteredProperties(properties) {
         if (properties.length) {
           this.localSelected.id = properties[0]['bk_property_id']
           this.$emit('on-property-selected', properties[0]['bk_property_id'], properties[0])
@@ -104,17 +104,17 @@
           this.$emit('on-property-selected', '', null)
         }
       },
-      operatorOptions (operatorOptions) {
+      operatorOptions(operatorOptions) {
         this.localSelected.operator = operatorOptions.length ? operatorOptions[0]['value'] : ''
         this.$emit('handleOperatorSelected', this.localSelected.operator)
       },
-      'localSelected.id' (id) {
+      'localSelected.id'(id) {
         this.localSelected.value = ''
       },
-      'localSelected.value' (value) {
+      'localSelected.value'(value) {
         this.$emit('on-value-change', value)
       },
-      async objId (objId) {
+      async objId(objId) {
         const properties = await this.searchObjectAttribute({
           params: {
             'bk_obj_id': objId,
@@ -137,10 +137,10 @@
     },
     methods: {
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-      handlePropertySelected (value, data) {
+      handlePropertySelected(value, data) {
         this.$emit('on-property-selected', value, data)
       },
-      handleOperatorSelected (value, data) {
+      handleOperatorSelected(value, data) {
         this.$emit('on-operator-selected', value, data)
       }
     }

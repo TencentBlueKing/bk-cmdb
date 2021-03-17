@@ -47,7 +47,7 @@
       },
       options: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
@@ -61,17 +61,17 @@
       }
     },
     computed: {
-      searchable () {
+      searchable() {
         return this.options.length > 7
       },
       selected: {
-        get () {
+        get() {
           if (this.isEmpty(this.value)) {
             return this.getDefaultValue()
           }
           return this.value
         },
-        set (value) {
+        set(value) {
           let emitValue = value
           if (value === '') {
             emitValue = this.multiple ? [] : null
@@ -84,16 +84,16 @@
     watch: {
       value: {
         immediate: true,
-        handler (value) {
+        handler(value) {
           this.checkSelected()
         }
       }
     },
     methods: {
-      isEmpty (value) {
+      isEmpty(value) {
         return ['', undefined, null].includes(value)
       },
-      getDefaultValue () {
+      getDefaultValue() {
         if (this.autoSelect) {
           const defaultOption = this.options.find(option => option['is_default'])
           return defaultOption
@@ -102,13 +102,13 @@
         }
         return this.multiple ? [] : ''
       },
-      checkSelected () {
+      checkSelected() {
         const selected = this.selected
         if (this.value !== selected) {
           this.selected = selected
         }
       },
-      focus () {
+      focus() {
         this.$refs.selector.show()
       }
     }

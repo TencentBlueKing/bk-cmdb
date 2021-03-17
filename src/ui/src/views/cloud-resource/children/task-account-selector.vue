@@ -45,7 +45,7 @@
         type: [String, Number]
       }
     },
-    data () {
+    data() {
       return {
         accounts: [],
         vendors: [],
@@ -58,25 +58,25 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       selected: {
-        get () {
+        get() {
           return this.value
         },
-        set (value, oldValue) {
+        set(value, oldValue) {
           this.$emit('input', value)
           this.$emit('change', value, oldValue)
         }
       },
-      selectedAccount () {
+      selectedAccount() {
         return this.accounts.find(account => account.bk_account_id === this.selected)
       },
-      accountVendor () {
+      accountVendor() {
         if (!this.selectedAccount) {
           return null
         }
         return this.vendors.find(vendor => vendor.id === this.selectedAccount.bk_cloud_vendor)
       }
     },
-    async created () {
+    async created() {
       try {
         const [{ info: accounts }, properties] = await Promise.all([
           this.getAccounts(),
@@ -91,7 +91,7 @@
       }
     },
     methods: {
-      getAccounts () {
+      getAccounts() {
         return this.$store.dispatch('cloud/account/findMany', {
           params: {},
           config: {
@@ -100,7 +100,7 @@
           }
         })
       },
-      getCloudAreaProperties () {
+      getCloudAreaProperties() {
         return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
           params: {
             bk_obj_id: 'plat',

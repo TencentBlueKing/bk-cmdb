@@ -3,7 +3,7 @@ import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 const requestId = Symbol('getAuthorizedBusiness')
 
 let committed = false
-export async function getAuthorizedBusiness (app) {
+export async function getAuthorizedBusiness(app) {
   const { info } = await app.$store.dispatch('objectBiz/getAuthorizedBusiness', {
     requestId: requestId,
     fromCache: true

@@ -26,33 +26,33 @@
         type: Number
       }
     },
-    data () {
+    data() {
       return {
         localValue: '',
         localPlaceholder: this.placeholder || this.$t('请输入实例名称')
       }
     },
     computed: {
-      disabled () {
+      disabled() {
         return this.value === this.localValue || !this.localValue.length
       }
     },
     watch: {
       value: {
-        handler (value) {
+        handler(value) {
           this.localValue = value || ''
         },
         immediate: true
       }
     },
     methods: {
-      focus () {
+      focus() {
         this.$refs.input && this.$refs.input.focus()
       },
-      handleConfirm () {
+      handleConfirm() {
         this.$emit('confirm', this.localValue)
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       }
     }

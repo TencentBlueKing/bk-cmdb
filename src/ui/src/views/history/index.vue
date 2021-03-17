@@ -43,7 +43,7 @@
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
   export default {
-    data () {
+    data() {
       const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
       return {
         dictionary: [],
@@ -64,31 +64,31 @@
       }
     },
     computed: {
-      objId () {
+      objId() {
         if (this.$route.name === 'hostHistory') {
           return 'host'
         }
         return this.$route.params.objId
       },
-      isHost () {
+      isHost() {
         return this.objId === 'host'
       }
     },
     watch: {
       objId: {
         immediate: true,
-        handler (objId) {
+        handler(objId) {
           const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
           this.$store.commit('setTitle', `${model.bk_obj_name}${this.$t('删除历史')}`)
         }
       }
     },
-    created () {
+    created() {
       this.getAuditDictionary()
       this.getHistory()
     },
     methods: {
-      async getAuditDictionary () {
+      async getAuditDictionary() {
         try {
           this.dictionary = await this.$store.dispatch('audit/getDictionary', {
             fromCache: true,
@@ -98,7 +98,7 @@
           this.dictionary = []
         }
       },
-      async getHistory () {
+      async getHistory() {
         try {
           const { info, count } = await this.$store.dispatch('audit/getList', {
             params: {
@@ -125,7 +125,7 @@
           this.history = []
         }
       },
-      getUsefulConditon () {
+      getUsefulConditon() {
         const usefuleCondition = {
           category: this.isHost ? 'host' : 'resource',
           resource_type: this.isHost ? 'host' : 'model_instance'
@@ -145,15 +145,15 @@
         }
         return usefuleCondition
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.pagination.limit = size
         this.handlePageChange(1)
       },
-      handlePageChange (current) {
+      handlePageChange(current) {
         this.pagination.current = current
         this.getHistory()
       },
-      handleRowClick (row) {
+      handleRowClick(row) {
         AuditDetails.show({
           id: row.id
         })

@@ -33,26 +33,26 @@
       FilterTagItem
     },
     computed: {
-      condition () {
+      condition() {
         return FilterStore.condition
       },
-      showIPTag () {
+      showIPTag() {
         const list = Utils.splitIP(FilterStore.IP.text)
         return !!list.length
       },
-      selected () {
+      selected() {
         return FilterStore.selected.filter((property) => {
           const value = this.condition[property.id].value
           return value !== null && !!value.toString().length
         })
       },
-      showClear () {
+      showClear() {
         const count = this.selected.length + (this.showIPTag ? 1 : 0)
         return count > 1
       }
     },
     methods: {
-      handleResetAll () {
+      handleResetAll() {
         FilterStore.resetAll()
       }
     }

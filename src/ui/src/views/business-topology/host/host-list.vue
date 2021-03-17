@@ -78,7 +78,7 @@
     props: {
       active: Boolean
     },
-    data () {
+    data() {
       return {
         commonRequestFinished: false,
         table: {
@@ -110,11 +110,11 @@
         'selectedNode',
         'commonRequest'
       ]),
-      tableHeader () {
+      tableHeader() {
         return FilterStore.header
       }
     },
-    created () {
+    created() {
       setupFilterStore({
         bk_biz_id: this.bizId,
         header: {
@@ -136,7 +136,7 @@
         tab === 'hostList' && node && this.selectedNode && this.getHostList()
       }, { throttle: 16, ignore: ['keyword'] })
     },
-    mounted () {
+    mounted() {
       this.unwatchFilter = this.$watch(() => {
         return [FilterStore.condition, FilterStore.IP]
       }, () => {
@@ -149,23 +149,23 @@
       }, { immediate: true, deep: true })
       this.disabledTableSettingDefaultBehavior()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatchRouter()
       this.unwatchFilter()
     },
     methods: {
-      disabledTableSettingDefaultBehavior () {
+      disabledTableSettingDefaultBehavior() {
         setTimeout(() => {
           const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
       },
-      getColumnSortable (column) {
+      getColumnSortable(column) {
         const isHostProperty = column.bk_obj_id === 'host'
         const isForeignKey = column.bk_property_type === 'foreignkey'
         return (isHostProperty && !isForeignKey) ? 'custom' : false
       },
-      renderHeader (property) {
+      renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
         const modelId = property.bk_obj_id
         if (modelId !== 'host') {
@@ -175,24 +175,24 @@
         }
         return this.$createElement('span', {}, content)
       },
-      handlePageChange (current = 1) {
+      handlePageChange(current = 1) {
         RouterQuery.set({
           page: current,
           _t: Date.now()
         })
       },
-      handleLimitChange (limit) {
+      handleLimitChange(limit) {
         RouterQuery.set({
           limit: limit,
           page: 1,
           _t: Date.now()
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
         RouterQuery.set('_t', Date.now())
       },
-      handleValueClick (row, column) {
+      handleValueClick(row, column) {
         if (column.bk_obj_id !== 'host' || column.bk_property_id !== 'bk_host_id') {
           return
         }
@@ -205,10 +205,10 @@
           history: true
         })
       },
-      handleSelectionChange (selection) {
+      handleSelectionChange(selection) {
         this.table.selection = selection
       },
-      handleHeaderClick (column) {
+      handleHeaderClick(column) {
         if (column.type !== 'setting') {
           return false
         }
@@ -236,12 +236,12 @@
           }
         })
       },
-      handleApplyColumnsConfig (properties = []) {
+      handleApplyColumnsConfig(properties = []) {
         return this.$store.dispatch('userCustom/saveUsercustom', {
           [this.$route.meta.customInstanceColumn]: properties.map(property => property.bk_property_id)
         })
       },
-      async getHostList () {
+      async getHostList() {
         try {
           await this.commonRequest
           this.commonRequestFinished = true
@@ -260,7 +260,7 @@
           this.table.pagination.count = 0
         }
       },
-      getParams () {
+      getParams() {
         const params = {
           ...FilterStore.getSearchParams(),
           page: {
@@ -284,7 +284,7 @@
         modelCondition.condition.push(topoCondition)
         return params
       },
-      handleTransfer (type) {
+      handleTransfer(type) {
         const actionMap = {
           idle: this.openModuleSelector,
           business: this.openModuleSelector,
@@ -293,7 +293,7 @@
         }
         actionMap[type] && actionMap[type](type)
       },
-      openModuleSelector (type) {
+      openModuleSelector(type) {
         const props = {
           moduleType: type,
           business: this.currentBusiness
@@ -320,7 +320,7 @@
         this.dialog.component = ModuleSelector.name
         this.dialog.show = true
       },
-      openResourceConfirm () {
+      openResourceConfirm() {
         const invalidList = this.validteIdleHost()
         if (!invalidList) return
         this.dialog.props = {
@@ -334,7 +334,7 @@
         this.dialog.component = MoveToResourceConfirm.name
         this.dialog.show = true
       },
-      openAcrossBusiness () {
+      openAcrossBusiness() {
         const invalidList = this.validteIdleHost()
         if (!invalidList) return
         if (invalidList.length) {
@@ -343,7 +343,7 @@
           this.openAcrossBusinessModuleSelector()
         }
       },
-      openAcrossBusinessConfirm (invalidList) {
+      openAcrossBusinessConfirm(invalidList) {
         this.dialog.props = {
           invalidList,
           count: this.table.selection.length
@@ -353,7 +353,7 @@
         this.dialog.component = AcrossBusinessConfirm.name
         this.dialog.show = true
       },
-      openAcrossBusinessModuleSelector () {
+      openAcrossBusinessModuleSelector() {
         this.dialog.props = {
           title: this.$t('转移主机到其他业务'),
           business: this.currentBusiness
@@ -363,7 +363,7 @@
         this.dialog.component = AcrossBusinessModuleSelector.name
         this.dialog.show = true
       },
-      validteIdleHost () {
+      validteIdleHost() {
         const invalidList = this.table.selection.filter((item) => {
           const [module] = item.module
           return module.default !== 1
@@ -374,10 +374,10 @@
         }
         return invalidList
       },
-      handleDialogCancel () {
+      handleDialogCancel() {
         this.dialog.show = false
       },
-      handleDialogConfirm () {
+      handleDialogConfirm() {
         this.dialog.show = false
         if (this.dialog.component === ModuleSelector.name) {
           if (this.dialog.props.moduleType === 'idle') {
@@ -401,7 +401,7 @@
           this.openAcrossBusinessModuleSelector()
         }
       },
-      async transferDirectly (modules) {
+      async transferDirectly(modules) {
         try {
           const internalModule = modules[0]
           const selectedNode = this.selectedNode
@@ -430,7 +430,7 @@
           console.error(e)
         }
       },
-      gotoTransferPage (modules) {
+      gotoTransferPage(modules) {
         const query = {
           sourceModel: this.selectedNode.data.bk_obj_id,
           sourceId: this.selectedNode.data.bk_inst_id,
@@ -447,7 +447,7 @@
           history: true
         })
       },
-      async moveHostToResource (directoryId) {
+      async moveHostToResource(directoryId) {
         try {
           const validList = this.table.selection.filter((item) => {
             const [module] = item.module
@@ -468,7 +468,7 @@
           console.error(e)
         }
       },
-      async moveHostToOtherBusiness (modules, targetBizId) {
+      async moveHostToOtherBusiness(modules, targetBizId) {
         try {
           const [targetModule] = modules
           const validList = this.table.selection.filter((item) => {
@@ -486,7 +486,7 @@
           console.error(error)
         }
       },
-      refreshHost () {
+      refreshHost() {
         Bus.$emit('refresh-count', {
           type: 'host_count',
           hosts: [...this.table.selection]
@@ -498,7 +498,7 @@
           page: 1
         })
       },
-      doLayoutTable () {
+      doLayoutTable() {
         this.$refs.table.doLayout()
       }
     }

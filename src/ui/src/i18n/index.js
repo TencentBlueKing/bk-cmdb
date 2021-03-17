@@ -11,7 +11,7 @@ const i18n = new VueI18n({
   locale,
   fallbackLocale: 'zh_CN',
   messages,
-  missing (locale, path) {
+  missing(locale, path) {
     const parsedPath = i18n._path.parsePath(path)
     return parsedPath[parsedPath.length - 1]
   }

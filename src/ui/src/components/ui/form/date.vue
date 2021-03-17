@@ -32,13 +32,13 @@
     },
     computed: {
       date: {
-        get () {
+        get() {
           if (!this.value) {
             return ''
           }
           return new Date(this.value)
         },
-        set (value) {
+        set(value) {
           const previousValue = this.value
           const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD')
           this.$emit('input', currentValue)

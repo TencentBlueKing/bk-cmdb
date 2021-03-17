@@ -23,7 +23,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  createProcessTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('createmany/proc/proc_template', params, config)
   },
   /**
@@ -34,7 +34,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  getBatchProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  getBatchProcessTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('findmany/proc/proc_template', params, config)
   },
   /**
@@ -45,7 +45,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  getProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  getProcessTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post(`find/proc/proc_template/id/${params.processTemplateId}`, {}, config)
   },
   /**
@@ -56,7 +56,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  updateProcessTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.put('update/proc/proc_template', params, config)
   },
   /**
@@ -67,7 +67,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  deleteProcessTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.delete('deletemany/proc/proc_template', params, config)
   }
 }

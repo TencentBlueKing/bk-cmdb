@@ -102,7 +102,7 @@
   import authMixin from './mixin-auth'
   export default {
     filters: {
-      filterShowText (value, unit) {
+      filterShowText(value, unit) {
         return value === '--' ? '--' : value + unit
       }
     },
@@ -117,7 +117,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         instState: this.inst,
         editState: {
@@ -130,7 +130,7 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-      authData () {
+      authData() {
         if (this.resourceType === 'business') {
           return this.INST_AUTH.U_BUSINESS
         }
@@ -138,25 +138,25 @@
       }
     },
     watch: {
-      inst (val) {
+      inst(val) {
         this.instState = val
       }
     },
     methods: {
       ...mapActions('objectCommonInst', ['updateInst']),
       ...mapActions('objectBiz', ['updateBusiness']),
-      setFocus (id, focus) {
+      setFocus(id, focus) {
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      isPropertyEditable (property) {
+      isPropertyEditable(property) {
         return property.editable && !property.bk_isapi
       },
-      setEditState (property) {
+      setEditState(property) {
         const value = this.instState[property.bk_property_id]
         this.editState.value = (value === null || value === undefined) ? '' : value
         this.editState.property = property
@@ -165,7 +165,7 @@
           component[0] && component[0].focus && component[0].focus()
         })
       },
-      async confirm () {
+      async confirm() {
         const { property, value } = this.editState
         try {
           const isValid = await this.$validator.validateAll()
@@ -198,11 +198,11 @@
           this.loadingState = this.loadingState.filter(exist => exist !== property)
         }
       },
-      exitForm () {
+      exitForm() {
         this.editState.property = null
         this.editState.value = null
       },
-      handleCopy (propertyId) {
+      handleCopy(propertyId) {
         const component = this.$refs[`property-value-${propertyId}`]
         const copyText = component[0] ? component[0].$el.innerText : ''
         this.$copyText(copyText).then(() => {

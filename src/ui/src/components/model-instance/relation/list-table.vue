@@ -86,7 +86,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         properties: [],
         list: [],
@@ -117,10 +117,10 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-      model () {
+      model() {
         return this.getModelById(this.id) || {}
       },
-      permissionAuth () {
+      permissionAuth() {
         if (this.model.bk_obj_id === 'biz') {
           return {
             type: this.$OPERATION.R_BUSINESS
@@ -128,34 +128,34 @@
         }
         return null
       },
-      title () {
+      title() {
         const desc = this.type === 'source' ? this.associationType.src_des : this.associationType.dest_des
         return `${desc}-${this.model.bk_obj_name}`
       },
-      propertyRequest () {
+      propertyRequest() {
         return `get_${this.id}_association_list_table_properties`
       },
-      instanceRequest () {
+      instanceRequest() {
         return `get_${this.id}_association_list_table_instances`
       },
-      page () {
+      page() {
         return {
           limit: this.pagination.size,
           start: (this.pagination.current - 1) * this.pagination.size
         }
       },
-      totalPage () {
+      totalPage() {
         return Math.ceil(this.pagination.count / this.pagination.size)
       },
-      instances () {
+      instances() {
         const topology = this.type === 'source' ? this.targetInstances : this.sourceInstances
         const data = topology.find(data => data.bk_obj_id === this.id) || {}
         return data.children || []
       },
-      instanceIds () {
+      instanceIds() {
         return this.instances.map(instance => instance.bk_inst_id)
       },
-      header () {
+      header() {
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
         const header = headerProperties.map((property) => {
           return {
@@ -166,18 +166,18 @@
         })
         return header
       },
-      loading () {
+      loading() {
         return this.$loading([
           this.propertyRequest
         ])
       },
-      hasInstance () {
+      hasInstance() {
         return this.instances.length > 0
       },
-      resourceType () {
+      resourceType() {
         return this.$parent.resourceType
       },
-      authResources () {
+      authResources() {
         if (this.resourceType === 'business') {
           return this.INST_AUTH.U_BUSINESS
         }
@@ -186,7 +186,7 @@
     },
     watch: {
       instances: {
-        handler (value) {
+        handler(value) {
           if (this.expanded) {
             this.getData()
           }
@@ -194,32 +194,32 @@
         },
         immediate: true
       },
-      expanded (expanded) {
+      expanded(expanded) {
         if (expanded) {
           this.getData()
         }
       },
-      source (source) {
+      source(source) {
         this.sourceInstances = source
       },
-      target (target) {
+      target(target) {
         this.targetInstances = target
       }
     },
-    created () {
+    created() {
       bus.$on('expand-all-relation-table', (expandAll) => {
         this.expanded = expandAll
       })
     },
-    beforeDestroy () {
+    beforeDestroy() {
       bus.$off('expand-all-relation-table')
     },
     methods: {
-      getData () {
+      getData() {
         this.getProperties()
         this.getInstances()
       },
-      async getProperties () {
+      async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -235,7 +235,7 @@
           this.properties = []
         }
       },
-      async getInstances () {
+      async getInstances() {
         let promise
         const config = {
           requestId: this.instanceRequest,
@@ -263,7 +263,7 @@
           this.pagination.count = 0
         }
       },
-      getHostInstances (config) {
+      getHostInstances(config) {
         const models = ['biz', 'set', 'module', 'host']
         const hostCondition = {
           field: 'bk_host_id',
@@ -299,7 +299,7 @@
           }
         })
       },
-      getBusinessInstances (config) {
+      getBusinessInstances(config) {
         return this.$store.dispatch('objectBiz/searchBusiness', {
           params: {
             condition: {
@@ -316,7 +316,7 @@
           config
         })
       },
-      getModelInstances (config) {
+      getModelInstances(config) {
         return this.$store.dispatch('objectCommonInst/searchInst', {
           objId: this.id,
           params: {
@@ -342,7 +342,7 @@
           return data
         })
       },
-      async cancelAssociation () {
+      async cancelAssociation() {
         const item = this.confirm.item
         const keyMap = {
           host: 'bk_host_id',
@@ -377,14 +377,14 @@
           console.error(e)
         }
       },
-      getPaginationInfo () {
+      getPaginationInfo() {
         return this.$tc('页码', this.pagination.current, {
           current: this.pagination.current,
           count: this.pagination.count,
           total: this.totalPage
         })
       },
-      togglePage (step) {
+      togglePage(step) {
         const current = this.pagination.current
         const newCurrent = current + step
         if (newCurrent < 1 || newCurrent > this.totalPage) {
@@ -393,13 +393,13 @@
         this.pagination.current = newCurrent
         this.getInstances()
       },
-      hideTips (event) {
+      hideTips(event) {
         if (event && event.target === this.confirm.target) {
           return false
         }
         this.confirm.instance && this.confirm.instance.hide()
       },
-      showTips (event, item) {
+      showTips(event, item) {
         this.confirm.item = item
         this.confirm.id = item.bk_inst_id
         this.confirm.instance && this.confirm.instance.destroy()

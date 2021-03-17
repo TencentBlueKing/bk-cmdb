@@ -21,14 +21,14 @@
 <script>
   import { mapGetters } from 'vuex'
   export default {
-    data () {
+    data() {
       return {
         year: (new Date()).getFullYear()
       }
     },
     computed: {
       ...mapGetters(['site']),
-      links () {
+      links() {
         const { footer = {} } = this.site
         const links = footer.links || []
         return links.filter(link => link.enabled)

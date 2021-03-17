@@ -86,12 +86,12 @@
       id: [String, Number],
       title: String
     },
-    provide () {
+    provide() {
       return {
         dynamicGroupForm: this
       }
     },
-    data () {
+    data() {
       return {
         isShow: false,
         details: null,
@@ -115,20 +115,20 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
-      isCreateMode () {
+      isCreateMode() {
         return !this.id
       },
-      searchTargetModels () {
+      searchTargetModels() {
         return this.availableModels.filter(model => ['host', 'set'].includes(model.bk_obj_id))
       },
-      saveAuth () {
+      saveAuth() {
         if (this.id) {
           return { type: this.$OPERATION.U_CUSTOM_QUERY, relation: [this.bizId, this.id] }
         }
         return { type: this.$OPERATION.C_CUSTOM_QUERY, relation: [this.bizId] }
       }
     },
-    async created () {
+    async created() {
       await this.getMainLineModels()
       await this.getModelProperties()
       if (this.id) {
@@ -136,7 +136,7 @@
       }
     },
     methods: {
-      async getMainLineModels () {
+      async getMainLineModels() {
         try {
           const models = await this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
             config: {
@@ -151,7 +151,7 @@
           console.error(error)
         }
       },
-      async getModelProperties () {
+      async getModelProperties() {
         try {
           const propertyMap = await this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
             params: {
@@ -171,7 +171,7 @@
           this.propertyMap = {}
         }
       },
-      getServiceTemplateProperty () {
+      getServiceTemplateProperty() {
         return {
           id: Date.now(),
           bk_obj_id: 'module',
@@ -189,7 +189,7 @@
           _is_inject_: true
         }
       },
-      async getDetails () {
+      async getDetails() {
         try {
           const details = await this.$store.dispatch('dynamicGroup/details', {
             bizId: this.bizId,
@@ -208,7 +208,7 @@
           console.error(error)
         }
       },
-      transformDetails (details) {
+      transformDetails(details) {
         const condition = details.info.condition
         const transformedCondition = []
         condition.forEach((data) => {
@@ -258,11 +258,11 @@
           }
         }
       },
-      getConditionProperty (modelId, field) {
+      getConditionProperty(modelId, field) {
         const properties = this.propertyMap[modelId] || []
         return properties.find(property => property.bk_property_id === field)
       },
-      setDetailsSelectedProperties () {
+      setDetailsSelectedProperties() {
         const conditions = this.details.info.condition
         const properties = []
         conditions.forEach(({ bk_obj_id: modelId, condition }) => {
@@ -273,25 +273,25 @@
         })
         this.selectedProperties = properties
       },
-      handleModelChange () {
+      handleModelChange() {
         this.selectedProperties = []
       },
-      showPropertySelector () {
+      showPropertySelector() {
         FormPropertySelector.show({
           selected: this.selectedProperties,
           handler: this.handlePropertySelected
         }, this)
       },
-      handlePropertySelected (selected) {
+      handlePropertySelected(selected) {
         this.selectedProperties = selected
       },
-      handleRemoveProperty (property) {
+      handleRemoveProperty(property) {
         const index = this.selectedProperties.findIndex(target => target.id === property.id)
         if (index > -1) {
           this.selectedProperties.splice(index, 1)
         }
       },
-      async handleConfirm () {
+      async handleConfirm() {
         try {
           const results = [
             await this.$validator.validateAll(),
@@ -310,7 +310,7 @@
           console.error(error)
         }
       },
-      updateDynamicGroup () {
+      updateDynamicGroup() {
         return this.$store.dispatch('dynamicGroup/update', {
           bizId: this.bizId,
           id: this.id,
@@ -327,7 +327,7 @@
           }
         })
       },
-      createDynamicGroup () {
+      createDynamicGroup() {
         return this.$store.dispatch('dynamicGroup/create', {
           params: {
             bk_biz_id: this.bizId,
@@ -342,7 +342,7 @@
           }
         })
       },
-      getSubmitCondition () {
+      getSubmitCondition() {
         const submitConditionMap = {}
         const propertyCondition = this.$refs.propertyList.condition
         Object.values(propertyCondition).forEach(({ property, operator, value }) => {
@@ -374,19 +374,19 @@
           }
         })
       },
-      close () {
+      close() {
         this.isShow = false
         RouterQuery.set({
           _t: Date.now()
         })
       },
-      show () {
+      show() {
         this.isShow = true
       },
-      beforeClose () {
+      beforeClose() {
         return true
       },
-      handleHidden () {
+      handleHidden() {
         this.$emit('close')
       }
     }

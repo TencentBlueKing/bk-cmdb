@@ -56,30 +56,30 @@
         default: 'medium'
       }
     },
-    data () {
+    data() {
       return {
         selected: this.multiple ? [] : ''
       }
     },
     computed: {
-      searchable () {
+      searchable() {
         return this.options.length > 7
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.selected = value
       },
-      selected (selected) {
+      selected(selected) {
         this.$emit('input', selected)
         this.$emit('on-selected', selected)
       }
     },
-    created () {
+    created() {
       this.initValue()
     },
     methods: {
-      initValue () {
+      initValue() {
         try {
           if (this.autoSelect && (!this.value || (this.multiple && !this.value.length))) {
             this.selected = this.multiple ? [this.options[0]] : (this.options[0] || '')
@@ -90,7 +90,7 @@
           this.selected = this.multiple ? [] : ''
         }
       },
-      focus () {
+      focus() {
         this.$refs.selector.show()
       }
     }

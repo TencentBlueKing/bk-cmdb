@@ -22,11 +22,11 @@
       }
     },
     computed: {
-      isLimited () {
+      isLimited() {
         return ['bk_func_name', 'bk_process_name'].includes(this.property.bk_property_id)
       }
     },
-    mounted () {
+    mounted() {
       if (this.isLimited) {
         this.setupTips()
       } else {
@@ -34,7 +34,7 @@
       }
     },
     methods: {
-      setupTips () {
+      setupTips() {
         const DOM = this.$el.previousElementSibling
         Tippy(DOM, {
           content: this.$t('系统限定不可修改'),
@@ -42,14 +42,14 @@
           placement: 'top'
         })
       },
-      hackRadius () {
+      hackRadius() {
         const hackDOM = this.$el.parentElement.querySelectorAll('.bk-form-input,.bk-form-textarea,.bk-textarea-wrapper,.bk-select')
         Array.prototype.forEach.call(hackDOM, (dom) => {
           dom.style.borderTopRightRadius = 0
           dom.style.borderBottomRightRadius = 0
         })
       },
-      handleRedirect () {
+      handleRedirect() {
         this.$routerActions.redirect({
           name: 'operationalTemplate',
           params: {

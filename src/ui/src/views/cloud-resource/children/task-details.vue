@@ -33,7 +33,7 @@
       defaultComponent: String,
       container: Object
     },
-    data () {
+    data() {
       return {
         task: null,
         title: '',
@@ -45,7 +45,7 @@
       }
     },
     computed: {
-      component () {
+      component() {
         if (!this.task) {
           return null
         }
@@ -55,11 +55,11 @@
         return TaskDetailsHistory.name
       }
     },
-    created () {
+    created() {
       this.getTaskDetails()
     },
     methods: {
-      async getTaskDetails () {
+      async getTaskDetails() {
         try {
           this.task = await this.$store.dispatch('cloud/resource/findOneTask', {
             id: this.id,
@@ -72,12 +72,12 @@
           this.task = null
         }
       },
-      show (options) {
+      show(options) {
         this.title = options.title || this.title
         this.task = options.task || this.task
         this.detailsComponent = options.detailsComponent || TaskDetailsInfo.name
       },
-      hide (eventType) {
+      hide(eventType) {
         eventType && this.$emit(eventType)
         this.container.hide()
       }

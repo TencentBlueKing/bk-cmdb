@@ -14,7 +14,7 @@
   export default {
     name: 'cmdb-search-module',
     mixins: [autocomplete],
-    data () {
+    data() {
       return {
         type: 'module'
       }

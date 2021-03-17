@@ -31,7 +31,7 @@
         default: 'icon-cc-default'
       }
     },
-    data () {
+    data() {
       return {
         iconList,
         activeTab: 'system',
@@ -40,11 +40,11 @@
       }
     },
     methods: {
-      handleConfirm () {
+      handleConfirm() {
         this.$emit('input', this.curIcon)
         this.$emit('chooseIcon')
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('close')
       }
     }

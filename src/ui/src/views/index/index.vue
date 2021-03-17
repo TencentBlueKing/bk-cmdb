@@ -40,7 +40,7 @@
       theMap,
       theFooter
     },
-    data () {
+    data() {
       return {
         activeName: 'host',
         inSearchPaddingTop: null,
@@ -50,14 +50,14 @@
     },
     computed: {
       ...mapGetters(['site']),
-      isFullTextSearch () {
+      isFullTextSearch() {
         return this.site.fullTextSearch === 'on'
       },
-      paddingTop () {
+      paddingTop() {
         return parseInt((this.$APP.height - 58) / 3, 10)
       }
     },
-    created () {
+    created() {
       this.inSearchPaddingTop = this.paddingTop
       const query = this.$route.query
       const showFullText = ['keywords', 'show'].every(key => query.hasOwnProperty(key))
@@ -66,14 +66,14 @@
       }
     },
     methods: {
-      handleChangeTab (name) {
+      handleChangeTab(name) {
         this.activeName = name
       },
-      handleSearchStatus (status) {
+      handleSearchStatus(status) {
         this.inSearchPaddingTop = status ? 0 : this.paddingTop
         this.showSearchTab = !status
       },
-      handleFocus (status) {
+      handleFocus(status) {
         this.isFocus = status
       }
     }

@@ -49,7 +49,7 @@
       cmdbAuditHistory,
       cmdbHostService
     },
-    data () {
+    data() {
       return {
         active: RouterQuery.get('tab', 'property'),
         infoHeight: '81px',
@@ -60,10 +60,10 @@
       ...mapGetters(['supplierAccount']),
       ...mapState('hostDetails', ['info', 'isBusinessHost']),
       ...mapGetters('hostDetails', ['isBusinessHost']),
-      id () {
+      id() {
         return parseInt(this.$route.params.id)
       },
-      business () {
+      business() {
         const business = parseInt(this.$route.params.bizId || this.$route.params.business)
         if (isNaN(business)) {
           return -1
@@ -72,18 +72,18 @@
       }
     },
     watch: {
-      info (info) {
+      info(info) {
         const hostList = info.host.bk_host_innerip.split(',')
         const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
         this.setBreadcrumbs(host)
       },
-      id () {
+      id() {
         this.getData()
       },
-      business () {
+      business() {
         this.getData()
       },
-      active (active) {
+      active(active) {
         if (active !== 'association') {
           this.$store.commit('hostDetails/toggleExpandAll', false)
         }
@@ -92,14 +92,14 @@
         })
       }
     },
-    created () {
+    created() {
       this.getData()
     },
     methods: {
-      setBreadcrumbs (ip) {
+      setBreadcrumbs(ip) {
         this.$store.commit('setTitle', `${this.$t('主机详情')}【${ip}】`)
       },
-      async getData () {
+      async getData() {
         try {
           this.loading = true
           await Promise.all([
@@ -113,7 +113,7 @@
           this.loading = false
         }
       },
-      async getHostInfo () {
+      async getHostInfo() {
         try {
           const { info } = await this.$store.dispatch('hostSearch/searchHost', {
             params: this.getSearchHostParams()
@@ -128,7 +128,7 @@
           this.$store.commit('hostDetails/setHostInfo', null)
         }
       },
-      getSearchHostParams () {
+      getSearchHostParams() {
         const hostCondition = {
           field: 'bk_host_id',
           operator: '$eq',
@@ -146,7 +146,7 @@
           ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
         }
       },
-      async getProperties () {
+      async getProperties() {
         try {
           const params = {
             bk_supplier_account: this.supplierAccount,
@@ -164,7 +164,7 @@
           this.$store.commit('hostDetails/setHostProperties', [])
         }
       },
-      async getPropertyGroups () {
+      async getPropertyGroups() {
         try {
           const propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
             objId: 'host',
@@ -176,13 +176,13 @@
           this.$store.commit('hostDetails/setHostPropertyGroups', [])
         }
       },
-      setInfoHeight (height) {
+      setInfoHeight(height) {
         this.infoTimer && clearTimeout(this.infoTimer)
         this.infoTimer = setTimeout(() => {
           this.infoHeight = this.$refs.info.$el.offsetHeight + 'px'
         }, 250)
       },
-      handleInfoChange () {
+      handleInfoChange() {
         this.getHostInfo()
       }
     }

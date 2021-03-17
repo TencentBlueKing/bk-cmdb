@@ -69,7 +69,7 @@
     filters: {
       hostValueFilter
     },
-    data () {
+    data() {
       return {
         directory: null,
         scope: 1,
@@ -101,19 +101,19 @@
       ...mapGetters(['userName']),
       ...mapGetters('resourceHost', ['activeDirectory']),
       ...mapGetters('objectModelClassify', ['getModelById']),
-      moduleProperties () {
+      moduleProperties() {
         return FilterStore.getModelProperties('module')
       },
-      tableHeader () {
+      tableHeader() {
         return FilterStore.header
       }
     },
     watch: {
-      scope () {
+      scope() {
         this.setModuleNamePropertyState()
       }
     },
-    async created () {
+    async created() {
       try {
         setupFilterStore({
           header: {
@@ -144,7 +144,7 @@
         console.error(error)
       }
     },
-    mounted () {
+    mounted() {
       this.unwatchFilter = this.$watch(() => {
         return [FilterStore.condition, FilterStore.IP]
       }, () => {
@@ -157,19 +157,19 @@
       }, { immediate: true, deep: true })
       this.disabledTableSettingDefaultBehavior()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatchRouter()
       this.unwatchFilter()
       this.unwatchScopeAndDirectory()
     },
     methods: {
-      disabledTableSettingDefaultBehavior () {
+      disabledTableSettingDefaultBehavior() {
         setTimeout(() => {
           const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
       },
-      setModuleNamePropertyState () {
+      setModuleNamePropertyState() {
         const property = this.moduleProperties.find(property => property.bk_property_id === 'bk_module_name')
         if (property) {
           const normalName = this.$t('模块名')
@@ -182,16 +182,16 @@
           property.bk_property_name = scopeModuleName[this.scope]
         }
       },
-      getColumnMinWidth (property) {
+      getColumnMinWidth(property) {
         if (property.bk_property_type === 'topology') {
           return 200
         }
         return 100
       },
-      isPropertySortable (property) {
+      isPropertySortable(property) {
         return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)
       },
-      renderHeader (property) {
+      renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
         const modelId = property.bk_obj_id
         if (modelId !== 'host') {
@@ -201,7 +201,7 @@
         }
         return this.$createElement('span', {}, content)
       },
-      async getHostList (event) {
+      async getHostList(event) {
         try {
           const { count, info } = await this.$store.dispatch('hostSearch/searchHost', {
             params: this.getParams(),
@@ -220,7 +220,7 @@
           console.error(error)
         }
       },
-      getParams () {
+      getParams() {
         const params = {
           ...FilterStore.getSearchParams(),
           page: {
@@ -232,7 +232,7 @@
         this.scope === 1 && this.injectDirectory(params)
         return params
       },
-      injectScope (params) {
+      injectScope(params) {
         const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
         if (this.scope === 'all') {
           biz.condition = biz.condition.filter(condition => condition.field !== 'default')
@@ -251,7 +251,7 @@
         }
         return params
       },
-      injectDirectory (params) {
+      injectDirectory(params) {
         if (!this.directory) {
           return false
         }
@@ -268,12 +268,12 @@
           moduleCondition.condition.push(directoryMeta)
         }
       },
-      handleSelectionChange (selection) {
+      handleSelectionChange(selection) {
         this.table.selection = selection
         this.table.checked = selection.map(item => item.host.bk_host_id)
         HostStore.setSelected(selection)
       },
-      handleValueClick (item, property) {
+      handleValueClick(item, property) {
         if (property.bk_obj_id !== 'host' || property.bk_property_id !== 'bk_host_id') {
           return
         }
@@ -303,30 +303,30 @@
           })
         }
       },
-      handlePageChange (current) {
+      handlePageChange(current) {
         RouterQuery.set({
           page: current,
           _t: Date.now()
         })
       },
-      handleSizeChange (limit) {
+      handleSizeChange(limit) {
         RouterQuery.set({
           limit: limit,
           page: 1,
           _t: Date.now()
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         RouterQuery.set({
           sort: this.$tools.getSort(sort),
           _t: Date.now()
         })
       },
       // 拓扑路径写入数据中，用于复制
-      handlePathReady (row, paths) {
+      handlePathReady(row, paths) {
         row.__bk_host_topology__ = paths
       },
-      handleHeaderClick (column) {
+      handleHeaderClick(column) {
         if (column.type !== 'setting') {
           return false
         }
@@ -354,7 +354,7 @@
           }
         })
       },
-      handleApplyColumnsConfig (properties = []) {
+      handleApplyColumnsConfig(properties = []) {
         return this.$store.dispatch('userCustom/saveUsercustom', {
           [this.$route.meta.customInstanceColumn]: properties.map(property => property.bk_property_id)
         })

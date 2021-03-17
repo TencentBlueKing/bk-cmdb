@@ -82,7 +82,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         hostList: [],
         topoModuleList: [],
@@ -108,19 +108,19 @@
       ...mapGetters('businessHost', ['getDefaultSearchCondition'])
     },
     watch: {
-      'filter.keyword' () {
+      'filter.keyword'() {
         this.handleFilter()
       }
     },
-    created () {
+    created() {
       this.initTopology()
       this.handleFilter = debounce(this.searchTopology, 300)
     },
-    activated () {
+    activated() {
       this.filter.keyword = ''
     },
     methods: {
-      async initTopology () {
+      async initTopology() {
         try {
           const [topology, internal] = await Promise.all([
             this.getInstanceTopology(),
@@ -153,26 +153,26 @@
           console.error(e)
         }
       },
-      isModule (node) {
+      isModule(node) {
         return node.data.bk_obj_id === 'module'
       },
-      async beforeSelect (node) {
+      async beforeSelect(node) {
         return this.isModule(node)
       },
-      getInstanceTopology () {
+      getInstanceTopology() {
         return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.bizId
         })
       },
-      getInternalTopology () {
+      getInternalTopology() {
         return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
           bizId: this.bizId
         })
       },
-      getNodeId (data) {
+      getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
-      searchHost (node) {
+      searchHost(node) {
         const params = {
           bk_biz_id: this.bizId,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
@@ -201,7 +201,7 @@
           }
         })
       },
-      searchTopology () {
+      searchTopology() {
         const keyword = this.filter.keyword.toLowerCase()
         if (!keyword) {
           this.filter.list = []
@@ -215,7 +215,7 @@
         this.filter.list = result
         this.showFilterPopover()
       },
-      getTopoModuleList (treeData) {
+      getTopoModuleList(treeData) {
         const modules = []
         const findModuleNode = function (data, parent) {
           data.forEach((item) => {
@@ -232,7 +232,7 @@
 
         return modules
       },
-      getFilterPopover () {
+      getFilterPopover() {
         if (this.filter.popover) {
           return this.filter.popover
         }
@@ -249,23 +249,23 @@
         })
         return this.filter.popover
       },
-      async handleModuleSelectChange (node) {
+      async handleModuleSelectChange(node) {
         const result = await this.searchHost(node)
         this.hostList = result.info
       },
-      handleClickFilterInput () {
+      handleClickFilterInput() {
         if (!this.filter.keyword) {
           return
         }
         this.showFilterPopover()
       },
-      handleClickFilterItem (module) {
+      handleClickFilterItem(module) {
         const nodeId = this.getNodeId(module)
         this.$refs.tree.setSelected(nodeId, { emitEvent: true })
         this.$refs.tree.setExpanded(nodeId)
         this.hideFilterPopover()
       },
-      async handleCheckFilterItem (module) {
+      async handleCheckFilterItem(module) {
         const moduleId = module.bk_inst_id
         const checked = !this.filter.checked[moduleId]
         this.$set(this.filter.checked, moduleId, checked)
@@ -277,26 +277,26 @@
         }
         this.hideFilterPopover()
       },
-      handleHostSelectChange (data) {
+      handleHostSelectChange(data) {
         this.$emit('select-change', data)
       },
-      showFilterPopover () {
+      showFilterPopover() {
         this.filter.show = true
         this.$nextTick(() => {
           this.getFilterPopover().show()
         })
       },
-      hideFilterPopover () {
+      hideFilterPopover() {
         this.filter.show = false
         this.getFilterPopover().hide()
       },
-      getInternalNodeClass (node, data) {
+      getInternalNodeClass(node, data) {
         return this.nodeIconMap[data.default] || this.nodeIconMap.default
       },
-      isTemplate (node) {
+      isTemplate(node) {
         return node.data.service_template_id || node.data.set_template_id
       },
-      getNodeCount (data) {
+      getNodeCount(data) {
         const count = data.host_count
         if (typeof count === 'number') {
           return count > 999 ? '999+' : count

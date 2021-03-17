@@ -83,7 +83,7 @@
       },
       formatter: Function
     },
-    data () {
+    data() {
       return {
         focused: false,
         checked: this.value || [],
@@ -102,32 +102,32 @@
       }
     },
     computed: {
-      unselected () {
+      unselected() {
         return !this.checked.length
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.checked = value
       },
-      checked (checked) {
+      checked(checked) {
         this.$emit('input', checked)
         this.$emit('on-checked', checked)
         this.setDisplayName()
       },
-      focused (focused) {
+      focused(focused) {
         this.$emit('toggle', focused)
       }
     },
-    created () {
+    created() {
       this.initTree()
     },
     methods: {
-      async initTree () {
+      async initTree() {
         await this.loadTree()
         this.setDisplayName()
       },
-      async loadTree () {
+      async loadTree() {
         const { data: topData } = await this.getLazyData()
         const defaultChecked = this.checked
         const tree = this.$refs.tree
@@ -168,7 +168,7 @@
           tree.setData(topData)
         }
       },
-      async setViewData () {
+      async setViewData() {
         if (!this.checked.length) {
           this.viewName = '--'
           return
@@ -181,7 +181,7 @@
         const names = (res.results || []).map(item => item.full_name)
         this.viewName = this.formatName(names)
       },
-      async getLazyData (parentId) {
+      async getLazyData(parentId) {
         try {
           const params = {
             lookup_field: 'level',
@@ -202,29 +202,29 @@
           console.error(e)
         }
       },
-      getSearchData (params) {
+      getSearchData(params) {
         return this.$store.dispatch('organization/getDepartment', {
           params,
           requestId: this.searchRequestId
         })
       },
-      resetTree () {
+      resetTree() {
         this.checked = []
         this.loadTree()
       },
-      lazyMethod (node) {
+      lazyMethod(node) {
         return this.getLazyData(node.id)
       },
-      lazyDisabled (node) {
+      lazyDisabled(node) {
         return !node.data.has_children
       },
-      setDisplayName () {
+      setDisplayName() {
         const tree = this.$refs.tree
         const nodes = this.checked.map(id => tree.getNodeById(id)).filter(node => !!node)
         const displayNames = nodes.map(node => node.data.full_name)
         this.displayName = this.formatName(displayNames)
       },
-      formatName (names) {
+      formatName(names) {
         let name = ''
         if (this.formatter) {
           name = this.formatter(names)
@@ -233,7 +233,7 @@
         }
         return name
       },
-      async getCheckedFullTreeData (chekcedTreeData) {
+      async getCheckedFullTreeData(chekcedTreeData) {
         // 获取所有节点id
         const ids = []
         const getId = (nodes) => {
@@ -279,7 +279,7 @@
 
         return chekcedTreeData
       },
-      getTreeSearchData (data) {
+      getTreeSearchData(data) {
         // 将偏平的数据组装成树形结构
         const treeData = []
         data.forEach((item) => {
@@ -348,7 +348,7 @@
         const finalTreeData = treeData.filter(item => !item.remove).map(item => item.map)
         return finalTreeData
       },
-      setTreeSearchData (data) {
+      setTreeSearchData(data) {
         const tree = this.$refs.tree
         const finalTreeData = this.getTreeSearchData(data)
         tree.setData(finalTreeData)
@@ -374,10 +374,10 @@
           console.error(e)
         }
       }, 160),
-      handleClear () {
+      handleClear() {
         this.resetTree()
       },
-      handleCheckChange (ids, node) {
+      handleCheckChange(ids, node) {
         if (this.multiple) {
           this.checked = ids
         } else {
@@ -388,14 +388,14 @@
           this.$refs.selectDropdown.instance.hide()
         }
       },
-      handleDropdownShow () {
+      handleDropdownShow() {
         this.popoverWidth = this.$el.offsetWidth
         this.focused = true
       },
-      handleDropdownHide () {
+      handleDropdownHide() {
         this.focused = false
       },
-      focus () {
+      focus() {
         this.$refs.selectDropdown.instance.show()
       }
     }

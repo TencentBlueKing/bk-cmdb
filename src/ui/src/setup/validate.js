@@ -336,7 +336,7 @@ const mixinConfig = () => {
   }
 }
 
-export function setupValidator (app) {
+export function setupValidator(app) {
   mixinConfig()
   for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
@@ -354,7 +354,7 @@ export function setupValidator (app) {
   app.$store.commit('setValidatorSetuped')
 }
 
-export function updateValidator () {
+export function updateValidator() {
   mixinConfig()
   for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])

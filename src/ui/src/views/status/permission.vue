@@ -19,7 +19,7 @@
   import { translateAuth } from '@/setup/permission'
   export default {
     methods: {
-      async handleApplyPermission () {
+      async handleApplyPermission() {
         try {
           const { view, permission } = this.$route.meta.auth || {}
           const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {

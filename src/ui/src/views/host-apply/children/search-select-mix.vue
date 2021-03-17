@@ -25,7 +25,7 @@
   import { mapGetters } from 'vuex'
   export default {
     components: {},
-    data () {
+    data() {
       return {
         showClear: false,
         searchOptions: [],
@@ -39,7 +39,7 @@
       ...mapGetters('objectBiz', ['bizId'])
     },
     watch: {
-      searchValue (searchValue) {
+      searchValue(searchValue) {
         this.searchOptions.forEach((option) => {
           const selected = searchValue.some(value => value.id === option.id && value.name === option.name && value.type === option.type)
           option.disabled = selected
@@ -47,11 +47,11 @@
         this.handleSearch()
       }
     },
-    created () {
+    created() {
       this.initOptions()
     },
     methods: {
-      async initOptions () {
+      async initOptions() {
         try {
           const properties = await this.$store.dispatch('hostApply/getProperties', { params: { bk_biz_id: this.bizId } })
           const availableProperties = properties.filter(property => property.host_apply_enabled)
@@ -79,30 +79,30 @@
           console.error(e)
         }
       },
-      handleChange (values) {
+      handleChange(values) {
         const keywords = values.filter(value => !value.hasOwnProperty('type') && value.hasOwnProperty('id'))
         if (keywords.length > 1) {
           keywords.pop()
           this.searchValue = values.filter(value => !keywords.includes(value))
         }
       },
-      handleKeyEnter () {
+      handleKeyEnter() {
         this.currentMenu = null
       },
-      handleFocus () {
+      handleFocus() {
         this.showClear = true
       },
-      handleBlur () {
+      handleBlur() {
         this.showClear = false
       },
-      handleClear () {
+      handleClear() {
         this.searchValue = []
         Bus.$emit('topology-search', { query_filter: { rules: [] } })
       },
-      handleSearch () {
+      handleSearch() {
         Bus.$emit('topology-search', this.getSearchValue())
       },
-      getSearchValue () {
+      getSearchValue() {
         const params = {
           query_filter: {
             condition: 'AND',
@@ -147,13 +147,13 @@
         })
         return params
       },
-      handleMenuSelect (item, index) {
+      handleMenuSelect(item, index) {
         this.currentMenu = item
       },
-      filterMenuMethod (list, filter) {
+      filterMenuMethod(list, filter) {
         return list.filter(item => item.name.toLowerCase().indexOf(filter.toLowerCase()) > -1)
       },
-      filterChildrenMethod (list, filter) {
+      filterChildrenMethod(list, filter) {
         if (this.currentMenu && this.currentMenu.children && this.currentMenu.children.length) {
           return this.currentMenu.children.filter(item => item.name.toLowerCase().indexOf(filter.toLowerCase()) > -1)
         }

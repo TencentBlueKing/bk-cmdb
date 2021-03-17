@@ -88,7 +88,7 @@
       },
       title: String
     },
-    data () {
+    data() {
       return {
         tab: {
           panels: [
@@ -114,25 +114,25 @@
       }
     },
     computed: {
-      selected () {
+      selected() {
         return [...this.repeatSelected, ...this.uniqueSelected]
       }
     },
-    created () {
+    created() {
       this.setSelected(this.exist)
     },
     methods: {
-      handleSelectChange ({ removed, selected }) {
+      handleSelectChange({ removed, selected }) {
         this.handleRemove(removed)
         this.handleSelect(selected)
       },
-      handleRemove (hosts) {
+      handleRemove(hosts) {
         const removeData = Array.isArray(hosts) ? hosts : [hosts]
         const ids = [...new Set(removeData.map(data => data.host.bk_host_id))]
         const selected = this.selected.filter(target => !ids.includes(target.host.bk_host_id))
         this.setSelected(selected)
       },
-      handleSelect (hosts) {
+      handleSelect(hosts) {
         const selectData = Array.isArray(hosts) ? hosts : [hosts]
         const ids = [...new Set(selectData.map(data => data.host.bk_host_id))]
         const uniqueData = ids.map(id => selectData.find(data => data.host.bk_host_id === id))
@@ -147,7 +147,7 @@
           this.setSelected([...this.selected, ...newSelectData])
         }
       },
-      setSelected (selected) {
+      setSelected(selected) {
         const ipMap = {}
         const repeat = []
         const unique = []
@@ -169,7 +169,7 @@
         this.repeatSelected = repeat
         this.uniqueSelected = unique
       },
-      handleClickMore (event) {
+      handleClickMore(event) {
         this.more.instance && this.more.instance.destroy()
         this.more.instance = this.$bkPopover(event.target, {
           content: this.$refs.moreMenu,
@@ -187,7 +187,7 @@
           this.more.instance.show()
         })
       },
-      handleCopyIp () {
+      handleCopyIp() {
         const ipList = this.selected.map(item => item.host.bk_host_innerip)
         this.$copyText(ipList.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))
@@ -198,24 +198,24 @@
             this.more.instance.hide()
           })
       },
-      handleRemoveAll () {
+      handleRemoveAll() {
         this.repeatSelected = []
         this.uniqueSelected = []
         this.more.instance.hide()
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       },
-      handleNextStep () {
+      handleNextStep() {
         this.$emit('confirm', this.selected)
       },
-      handleCollapse (names) {
+      handleCollapse(names) {
         Object.keys(this.collapse.expanded).forEach(key => (this.collapse.expanded[key] = false))
         names.forEach((name) => {
           this.$set(this.collapse.expanded, name, true)
         })
       },
-      foreignkey (value) {
+      foreignkey(value) {
         return foreignkey(value)
       }
     }

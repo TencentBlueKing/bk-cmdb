@@ -121,7 +121,7 @@
         default: false
       }
     },
-    data () {
+    data() {
       return {
         modulePropertyList: [],
         removeRuleIds: [],
@@ -135,22 +135,22 @@
     computed: {
       ...mapGetters('hostApply', ['configPropertyList']),
       ...mapState('hostApply', ['ruleDraft']),
-      hasRuleDraft () {
+      hasRuleDraft() {
         return Object.keys(this.ruleDraft).length > 0
       }
     },
     watch: {
-      checkedPropertyIdList () {
+      checkedPropertyIdList() {
         this.setModulePropertyList()
       },
-      configPropertyList () {
+      configPropertyList() {
         this.setModulePropertyList()
       },
-      modulePropertyList () {
+      modulePropertyList() {
         this.setConfigData()
       }
     },
-    created () {
+    created() {
       if (this.hasRuleDraft) {
         this.modulePropertyList = this.$tools.clone(this.ruleDraft.rules)
         const checkedPropertyIdList = this.modulePropertyList.map(item => item.id)
@@ -160,7 +160,7 @@
       }
     },
     methods: {
-      setModulePropertyList () {
+      setModulePropertyList() {
         // 当前模块属性列表中不存在，则添加
         this.checkedPropertyIdList.forEach((id) => {
           // 原始主机属性对象
@@ -186,7 +186,7 @@
         // 删除或取消选择的，则去除
         this.modulePropertyList = this.modulePropertyList.filter(property => this.checkedPropertyIdList.includes(property.id))
       },
-      setConfigData () {
+      setConfigData() {
         this.removeRuleIds = []
         this.ignoreRuleIds = []
         // 找出不存在于初始数据中的规则
@@ -202,42 +202,42 @@
           }
         })
       },
-      getRuleValue (attrId, moduleId) {
+      getRuleValue(attrId, moduleId) {
         return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.bk_module_id === moduleId) || {}).bk_property_value || ''
       },
-      getPropertyDefaultValue (property) {
+      getPropertyDefaultValue(property) {
         let value = ''
         if (property.bk_property_type === 'bool') {
           value = false
         }
         return value
       },
-      reset () {
+      reset() {
         if (!this.hasRuleDraft) {
           this.modulePropertyList = []
         }
       },
-      renderColumnHeader (h, data, tips) {
+      renderColumnHeader(h, data, tips) {
         const directive = {
           content: tips,
           placement: 'bottom-start'
         }
         return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
       },
-      handleToggleExpanded (id) {
+      handleToggleExpanded(id) {
         this.showMore.expanded = { ...this.showMore.expanded, ...{ [id]: !this.showMore.expanded[id] } }
       },
-      handleSelectionChange (value) {
+      handleSelectionChange(value) {
         this.$emit('selection-change', value)
       },
-      handlePropertyRowDel (property) {
+      handlePropertyRowDel(property) {
         const checkedIndex = this.checkedPropertyIdList.findIndex(id => id === property.id)
         this.checkedPropertyIdList.splice(checkedIndex, 1)
 
         // 清理展开状态
         delete this.showMore.expanded[property.id]
       },
-      handlePropertyValueChange (value) {
+      handlePropertyValueChange(value) {
         this.$emit('property-value-change', value)
       }
     }

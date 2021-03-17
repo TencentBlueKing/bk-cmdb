@@ -51,7 +51,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
       return {
         history: [],
@@ -77,12 +77,12 @@
         requestId: Symbol('getList')
       }
     },
-    created () {
+    created() {
       this.getAuditDictionary()
       this.getHistory()
     },
     methods: {
-      async getAuditDictionary () {
+      async getAuditDictionary() {
         try {
           this.dictionary = await this.$store.dispatch('audit/getDictionary', {
             fromCache: true,
@@ -92,7 +92,7 @@
           this.dictionary = []
         }
       },
-      async getHistory () {
+      async getHistory() {
         try {
           const { info, count } = await this.$store.dispatch('audit/getList', {
             params: {
@@ -119,7 +119,7 @@
           this.history = []
         }
       },
-      getUsefulConditon () {
+      getUsefulConditon() {
         const usefuleCondition = {}
         Object.keys(this.condition).forEach((key) => {
           const value = this.condition[key]
@@ -136,25 +136,25 @@
         }
         return usefuleCondition
       },
-      getFormatterDesc (row) {
+      getFormatterDesc(row) {
         const type = this.dictionary.find(type => type.id === row.resource_type) || {}
         const action = (type.operations || []).find(action => action.id === row.action) || {}
         return `${action.name || row.action}${type.name || row.resource_type}`
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.pagination.current = page
         this.getHistory(true)
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.pagination.limit = size
         this.pagination.current = 1
         this.getHistory()
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.sort = this.$tools.getSort(sort)
         this.getHistory()
       },
-      handleRowClick (item) {
+      handleRowClick(item) {
         AuditDetails.show({
           id: item.id
         })

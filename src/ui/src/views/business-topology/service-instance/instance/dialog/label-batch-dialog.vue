@@ -36,7 +36,7 @@
       serviceInstances: Array,
       updateCallback: Function
     },
-    data () {
+    data() {
       return {
         isShow: false,
         request: {
@@ -47,7 +47,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      labels () {
+      labels() {
         const labels = []
         this.serviceInstances.forEach((instance) => {
           if (!instance.labels) return
@@ -69,13 +69,13 @@
       }
     },
     methods: {
-      show () {
+      show() {
         this.isShow = true
       },
-      close () {
+      close() {
         this.isShow = false
       },
-      async handleSubmit () {
+      async handleSubmit() {
         try {
           const singleContent = this.$refs.singleContent
           const validateResult = await singleContent.$validator.validateAll()
@@ -130,7 +130,7 @@
           console.error(error)
         }
       },
-      handleHidden () {
+      handleHidden() {
         this.$emit('close')
       }
     }

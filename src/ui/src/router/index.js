@@ -111,7 +111,7 @@ const router = new Router({
 
 const beforeHooks = new Set()
 
-function runBeforeHooks () {
+function runBeforeHooks() {
   return Promise.all(Array.from(beforeHooks).map(callback => callback()))
 }
 
@@ -119,7 +119,7 @@ export const addBeforeHooks = function (hook) {
   beforeHooks.add(hook)
 }
 
-function cancelRequest (app) {
+function cancelRequest(app) {
   const pendingRequest = app.$http.queue.get()
   const cancelId = pendingRequest.filter(request => request.cancelWhenRouteChange).map(request => request.requestId)
   app.$http.cancelRequest(cancelId)

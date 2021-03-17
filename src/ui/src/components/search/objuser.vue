@@ -20,10 +20,10 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value.join(',')
         },
-        set (value) {
+        set(value) {
           const values = value.split(',')
           this.$emit('input', values)
           this.$emit('change', values)

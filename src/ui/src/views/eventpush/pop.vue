@@ -71,7 +71,7 @@
         type: Boolean
       }
     },
-    data () {
+    data() {
       return {
         isResultOpen: false,
         isResultShow: false,
@@ -84,13 +84,13 @@
       }
     },
     watch: {
-      isShow (isShow) {
+      isShow(isShow) {
         if (!isShow) {
           this.isResultOpen = false
         }
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.$http.cancelRequest(['testPing', 'testTelnet'])
     },
     methods: {
@@ -101,7 +101,7 @@
       /*
                 测试推送
             */
-      async testPing () {
+      async testPing() {
         this.isResultShow = true
         const res = await this.pingSubscription({
           params: {
@@ -118,7 +118,7 @@
       /*
                 测试连通性
             */
-      async testTelnet () {
+      async testTelnet() {
         this.isResultShow = true
         const res = await this.testingConnection({
           params: { callback_url: this.callbackURL },
@@ -129,7 +129,7 @@
         })
         this.resultInfo = res
       },
-      closePop () {
+      closePop() {
         this.isResultShow = false
         this.$emit('closePop')
       }

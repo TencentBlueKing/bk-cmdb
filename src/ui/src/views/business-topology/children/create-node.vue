@@ -62,55 +62,55 @@
       },
       nextModelId: String
     },
-    data () {
+    data() {
       return {
         values: {}
       }
     },
     computed: {
-      topoPath () {
+      topoPath() {
         const nodePath = [...this.parentNode.parents, this.parentNode]
         return nodePath.map(node => node.data.bk_inst_name).join('-')
       },
-      sortedProperties () {
+      sortedProperties() {
         return this.properties.sort((propertyA, propertyB) => {
           return propertyA['bk_property_index'] - propertyB['bk_property_index']
         })
       },
-      title () {
+      title() {
         return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
       },
-      formPaddingBottom () {
+      formPaddingBottom() {
         return this.nextModelId === 'set' ? '20px' : '52px'
       }
     },
     watch: {
-      properties () {
+      properties() {
         this.initValues()
       }
     },
-    created () {
+    created() {
       this.initValues()
     },
     methods: {
-      initValues () {
+      initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, {})
       },
-      getValidateRules (property) {
+      getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)
         if (property.bk_property_id === 'bk_inst_name') {
           rules.businessTopoInstNames = true
         }
         return rules
       },
-      handleSave () {
+      handleSave() {
         this.$validator.validateAll().then((isValid) => {
           if (isValid) {
             this.$emit('submit', this.$tools.formatValues(this.values, this.properties))
           }
         })
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       }
     }

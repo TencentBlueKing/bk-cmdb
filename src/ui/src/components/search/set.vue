@@ -14,7 +14,7 @@
   export default {
     name: 'cmdb-search-set',
     mixins: [autocomplete],
-    data () {
+    data() {
       return {
         type: 'set'
       }

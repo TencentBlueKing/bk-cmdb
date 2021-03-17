@@ -58,7 +58,7 @@
         default: 'medium'
       }
     },
-    data () {
+    data() {
       return {
         selected: this.value || [],
         firstClassList: []
@@ -71,19 +71,19 @@
       ])
     },
     watch: {
-      value (value) {
+      value(value) {
         this.selected = value || []
       },
-      selected (selected) {
+      selected(selected) {
         this.$emit('input', selected)
         this.$emit('on-selected', selected)
       }
     },
-    created () {
+    created() {
       this.getServiceCategories()
     },
     methods: {
-      async getServiceCategories () {
+      async getServiceCategories() {
         if (this.categoryMap.hasOwnProperty(this.bizId)) {
           this.firstClassList = this.categoryMap[this.bizId]
         } else {
@@ -103,7 +103,7 @@
           }
         }
       },
-      collectServiceCategories (data) {
+      collectServiceCategories(data) {
         const categories = []
         data.forEach((item) => {
           if (!item.category.bk_parent_id) {

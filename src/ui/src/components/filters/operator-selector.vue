@@ -29,7 +29,7 @@
       }
     },
     computed: {
-      listeners () {
+      listeners() {
         const internalEvent = ['input', 'change']
         const listeners = {}
         Object.keys(this.$listeners).forEach((key) => {
@@ -39,7 +39,7 @@
         })
         return listeners
       },
-      options () {
+      options() {
         const EQ = '$eq'
         const NE = '$ne'
         const IN = '$in'
@@ -86,10 +86,10 @@
         })
       },
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }

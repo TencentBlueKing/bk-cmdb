@@ -42,7 +42,7 @@
         default: true
       }
     },
-    data () {
+    data() {
       return {
         regions: [],
         request: symbols.get(`taskRegionSelection-${this.account}`)
@@ -50,21 +50,21 @@
     },
     computed: {
       selected: {
-        get () {
+        get() {
           return this.value
         },
-        set (value, oldValue) {
+        set(value, oldValue) {
           this.$emit('input', value)
           this.$emit('change', value, oldValue)
         }
       }
     },
-    created () {
+    created() {
       // 为0时是默认云区域，无地域信息
       this.account && this.getRegions()
     },
     methods: {
-      async getRegions () {
+      async getRegions() {
         try {
           const regions = await this.$store.dispatch('cloud/resource/findRegion', {
             params: {
@@ -87,7 +87,7 @@
           this.regions = []
         }
       },
-      getRegionInfo () {
+      getRegionInfo() {
         const region = this.regions.find(region => region.bk_region === this.value)
         return region ? region.bk_region_name : (this.value || '--')
       }

@@ -20,7 +20,7 @@
 
 <script>
   export default {
-    data () {
+    data() {
       return {
         username: '',
         password: '',
@@ -28,7 +28,7 @@
       }
     },
     methods: {
-      handleSubmit (event) {
+      handleSubmit(event) {
         if (!this.username.length) {
           this.error = '请输入用户名'
           event.preventDefault()

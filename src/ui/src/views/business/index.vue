@@ -179,7 +179,7 @@
       cmdbColumnsConfig,
       cmdbPropertySelector
     },
-    data () {
+    data() {
       return {
         objectUnique: [],
         properties: [],
@@ -235,13 +235,13 @@
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['getModelById']),
-      customBusinessColumns () {
+      customBusinessColumns() {
         return this.usercustom[this.columnsConfigKey] || []
       },
-      globalCustomColumns () {
+      globalCustomColumns() {
         return this.globalUsercustom['biz_global_custom_table_columns'] || []
       },
-      saveAuth () {
+      saveAuth() {
         const type = this.attribute.type
         if (type === 'create') {
           return { type: this.$OPERATION.C_BUSINESS }
@@ -250,25 +250,25 @@
         }
         return null
       },
-      model () {
+      model() {
         return this.getModelById('biz') || {}
       }
     },
     watch: {
-      'filter.id' (id) {
+      'filter.id'(id) {
         this.filter.value = ''
         this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
       },
-      'slider.show' (show) {
+      'slider.show'(show) {
         if (!show) {
           this.tab.active = 'attribute'
         }
       },
-      customBusinessColumns () {
+      customBusinessColumns() {
         this.setTableHeader()
       }
     },
-    async created () {
+    async created() {
       try {
         this.properties = await this.searchObjectAttribute({
           injectId: 'biz',
@@ -307,7 +307,7 @@
         'createBusiness',
         'searchBusinessById'
       ]),
-      getPropertyGroups () {
+      getPropertyGroups() {
         return this.searchGroup({
           objId: 'biz',
           params: {},
@@ -320,7 +320,7 @@
           return groups
         })
       },
-      getObjectUnique () {
+      getObjectUnique() {
         return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
           objId: 'biz',
           params: {}
@@ -329,7 +329,7 @@
           return data
         })
       },
-      setTableHeader () {
+      setTableHeader() {
         return new Promise((resolve, reject) => {
           const customColumns = this.customBusinessColumns.length ? this.customBusinessColumns : this.globalCustomColumns
           const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
@@ -339,7 +339,7 @@
           this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
         })
       },
-      updateTableHeader (properties) {
+      updateTableHeader(properties) {
         this.table.header = properties.map((property) => {
           return {
             id: property['bk_property_id'],
@@ -348,7 +348,7 @@
           }
         })
       },
-      handleValueClick (row, column) {
+      handleValueClick(row, column) {
         if (column.id !== 'bk_biz_id') {
           return false
         }
@@ -360,30 +360,30 @@
           history: true
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
         this.handlePageChange(1)
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.table.pagination.limit = size
         this.handlePageChange(1)
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.table.pagination.current = page
         this.getTableData()
       },
-      getBusinessList (config = { cancelPrevious: true }) {
+      getBusinessList(config = { cancelPrevious: true }) {
         return this.searchBusiness({
           params: this.getSearchParams(),
           config: Object.assign({ requestId: 'post_searchBusiness_list' }, config)
         })
       },
-      handleFilterData (withFilter = true) {
+      handleFilterData(withFilter = true) {
         this.table.pagination.current = 1
         this.filter.sendValue = this.filter.value
         this.getTableData(withFilter)
       },
-      getTableData (event) {
+      getTableData(event) {
         this.getBusinessList({ cancelPrevious: true, globalPermission: false }).then((data) => {
           if (data.count && !data.info.length) {
             this.table.pagination.current -= 1
@@ -405,7 +405,7 @@
             }
           })
       },
-      getSearchParams () {
+      getSearchParams() {
         const params = {
           condition: {
             'bk_data_status': { '$ne': 'disabled' }
@@ -430,19 +430,19 @@
         }
         return params
       },
-      async handleEdit (inst) {
+      async handleEdit(inst) {
         const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')
         bizNameProperty.isreadonly = inst['bk_biz_name'] === '蓝鲸'
         this.attribute.inst.edit = inst
         this.attribute.type = 'update'
       },
-      handleCreate () {
+      handleCreate() {
         this.attribute.type = 'create'
         this.attribute.inst.edit = {}
         this.slider.show = true
         this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
       },
-      handleDelete (inst) {
+      handleDelete(inst) {
         this.$bkInfo({
           title: this.$t('确认要归档', { name: inst['bk_biz_name'] }),
           subTitle: this.$t('归档确认信息'),
@@ -456,7 +456,7 @@
           }
         })
       },
-      handleSave (values, changedValues, originalValues, type) {
+      handleSave(values, changedValues, originalValues, type) {
         if (type === 'update') {
           this.updateBusiness({
             bizId: originalValues['bk_biz_id'],
@@ -480,30 +480,30 @@
           })
         }
       },
-      handleCancel () {
+      handleCancel() {
         if (this.attribute.type === 'create') {
           this.slider.show = false
         }
       },
-      handleApplayColumnsConfig (properties) {
+      handleApplayColumnsConfig(properties) {
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.columnsConfigKey]: properties.map(property => property['bk_property_id'])
         })
         this.columnsConfig.show = false
       },
-      handleResetColumnsConfig () {
+      handleResetColumnsConfig() {
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.columnsConfigKey]: []
         })
         this.columnsConfig.show = false
       },
-      routeToHistory () {
+      routeToHistory() {
         this.$routerActions.redirect({
           name: MENU_RESOURCE_BUSINESS_HISTORY,
           history: true
         })
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         if (this.tab.active === 'attribute') {
           const $form = this.$refs.form
           const changedValues = $form.changedValues
@@ -529,7 +529,7 @@
         this.handleCancel()
         return true
       },
-      async handleApplyPermission () {
+      async handleApplyPermission() {
         try {
           const permission = translateAuth({
             type: this.$OPERATION.R_BUSINESS,

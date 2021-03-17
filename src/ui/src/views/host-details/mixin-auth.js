@@ -2,7 +2,7 @@ import { mapState } from 'vuex'
 export default {
   computed: {
     ...mapState('hostDetails', ['info']),
-    HOST_AUTH () {
+    HOST_AUTH() {
       if (!this.info) {
         return { U_HOST: null, D_SERVICE_INSTANCE: null }
       }

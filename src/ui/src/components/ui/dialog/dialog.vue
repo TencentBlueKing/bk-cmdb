@@ -56,7 +56,7 @@
         default: true
       }
     },
-    data () {
+    data() {
       return {
         timer: null,
         bodyHeight: 0,
@@ -66,10 +66,10 @@
       }
     },
     computed: {
-      autoResize () {
+      autoResize() {
         return typeof this.height !== 'number'
       },
-      bodyStyle () {
+      bodyStyle() {
         const style = {
           width: this.width + 'px',
           '--height': (this.autoResize ? this.bodyHeight : this.height) + 'px'
@@ -87,7 +87,7 @@
     watch: {
       value: {
         immediate: true,
-        handler (value) {
+        handler(value) {
           if (value) {
             this.showWrapper = true
             this.zIndex = window.__bk_zIndex_manager.nextZIndex()
@@ -104,19 +104,19 @@
         }
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.resizeTrigger, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.resizeTrigger, this.resizeHandler)
     },
     methods: {
-      resizeHandler () {
+      resizeHandler() {
         this.$nextTick(() => {
           this.bodyHeight = Math.min(this.$APP.height, this.$refs.resizeTrigger.offsetHeight)
         })
       },
-      handleCloseDialog () {
+      handleCloseDialog() {
         this.$emit('close')
         this.$emit('input', false)
       }

@@ -26,7 +26,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  createNetcollectProperty ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  createNetcollectProperty({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/property/action/create', params, config)
   },
   /**
@@ -37,7 +37,7 @@ const actions = {
      * @param {Number} propertyId 属性id
      * @return {promises} promises 对象
      */
-  updateNetcollectProperty ({ commit, state, dispatch, rootGetters }, { propertyId, params, config }) {
+  updateNetcollectProperty({ commit, state, dispatch, rootGetters }, { propertyId, params, config }) {
     return $http.post(`collector/netcollect/property/${propertyId}/action/update`, params, config)
   },
   /**
@@ -47,7 +47,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  searchNetcollectProperty ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchNetcollectProperty({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/property/action/search', params, config)
   },
   /**
@@ -58,7 +58,7 @@ const actions = {
      * @param {Object} params 属性id
      * @return {promises} promises 对象
      */
-  deleteNetcollectProperty ({ commit, state, dispatch, rootGetters }, { config }) {
+  deleteNetcollectProperty({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.delete('collector/netcollect/property/action/delete', config)
   },
   /**
@@ -69,7 +69,7 @@ const actions = {
      * @param {Number} deviceId 属性id
      * @return {promises} promises 对象
      */
-  importNetNetcollectProperty ({ commit, state, dispatch, rootGetters }, { config }) {
+  importNetNetcollectProperty({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.post(`${window.API_HOST}collector/netproperty/import`, config)
   },
   /**
@@ -79,7 +79,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  exportNetcollectProperty ({ commit, state, dispatch, rootGetters }, { config }) {
+  exportNetcollectProperty({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.post(`${window.API_HOST}collector/netproperty/export`, config)
   },
   /**
@@ -89,7 +89,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  getNetDeviceImportTemplate ({ commit, state, dispatch, rootGetters }, { config }) {
+  getNetDeviceImportTemplate({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.get(`${window.API_HOST}collector/netcollect/importtemplate/netproperty`, config)
   }
 }

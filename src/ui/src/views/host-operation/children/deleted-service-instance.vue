@@ -40,7 +40,7 @@
       }
     },
     methods: {
-      getCellStyle ({ columnIndex }) {
+      getCellStyle({ columnIndex }) {
         if (columnIndex === 0) {
           return {
             color: '#FF5656'

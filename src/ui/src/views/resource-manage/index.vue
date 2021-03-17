@@ -41,7 +41,7 @@
     components: {
       cmdbClassifyPanel
     },
-    data () {
+    data() {
       return {
         filter: '',
         debounceFilter: null,
@@ -53,7 +53,7 @@
       ...mapGetters(['globalLoading']),
       ...mapGetters('objectModelClassify', ['classifications', 'models']),
       ...mapGetters('userCustom', ['usercustom']),
-      collection () {
+      collection() {
         const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
           ? true
           : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
@@ -71,7 +71,7 @@
           return this.models.some(model => model.bk_obj_id === modelId)
         })
       },
-      filteredClassifications () {
+      filteredClassifications() {
         const result = []
         const filterClassify = ['bk_biz_topo']
         this.classifications.forEach((classification) => {
@@ -92,7 +92,7 @@
         })
         return result
       },
-      classifyColumns () {
+      classifyColumns() {
         const colHeight = [0, 0, 0, 0]
         const classifyColumns = [[], [], [], []]
         this.filteredClassifications.forEach((classify) => {
@@ -103,28 +103,28 @@
         })
         return classifyColumns
       },
-      isEmpty () {
+      isEmpty() {
         return this.classifyColumns.every(column => !column.length)
       }
     },
     watch: {
-      filter () {
+      filter() {
         this.debounceFilter()
       }
     },
-    created () {
+    created() {
       this.debounceFilter = debounce(this.filterModel, 300)
       this.getInstanceCount()
     },
     methods: {
-      filterModel () {
+      filterModel() {
         if (this.filter) {
           this.matchedModels = this.models.filter(model => model.bk_obj_name.indexOf(this.filter) > -1).map(model => model.bk_obj_id)
         } else {
           this.matchedModels = null
         }
       },
-      async getInstanceCount () {
+      async getInstanceCount() {
         try {
           this.instanceCount = await this.$store.dispatch('objectCommonInst/getInstanceCount', {
             config: {
@@ -138,7 +138,7 @@
           this.$route.meta.view = 'error'
         }
       },
-      calcWaterfallHeight (classify) {
+      calcWaterfallHeight(classify) {
         // 46px 分类高度
         // 16px 模型列表padding
         // 36 模型高度

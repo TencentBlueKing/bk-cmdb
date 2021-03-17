@@ -17,17 +17,17 @@ const getters = {
 }
 
 const mutations = {
-  deleteInstancesId (state, data) {
+  deleteInstancesId(state, data) {
     const curInstancesId = state.syncIdMap[data.id]
     const newInstancesId = curInstancesId.filter(id => id !== data.deleteId)
     Vue.set(state.syncIdMap, data.id, newInstancesId)
     sessionStorage.setItem('setSyncIdMap', JSON.stringify(state.syncIdMap))
   },
-  setSyncIdMap (state, data) {
+  setSyncIdMap(state, data) {
     Vue.set(state.syncIdMap, data.id, data.instancesId)
     sessionStorage.setItem('setSyncIdMap', JSON.stringify(state.syncIdMap))
   },
-  resetSyncIdMap (state, data) {
+  resetSyncIdMap(state, data) {
     state.syncIdMap = data
   }
 }

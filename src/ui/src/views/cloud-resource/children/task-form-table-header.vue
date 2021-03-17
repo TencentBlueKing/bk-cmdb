@@ -48,26 +48,26 @@
       },
       disabled: Boolean
     },
-    data () {
+    data() {
       return {
         selected: ''
       }
     },
     methods: {
-      handleClick () {
+      handleClick() {
         if (this.disabled) {
           return false
         }
         this.$refs.popover.instance.show()
       },
-      handleConfirm () {
+      handleConfirm() {
         this.batchSelectHandler(this.selected)
         this.handleCancel()
       },
-      handleCancel () {
+      handleCancel() {
         this.$refs.popover.instance.hide()
       },
-      handleHidden () {
+      handleHidden() {
         this.selected = ''
       }
     }

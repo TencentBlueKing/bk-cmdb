@@ -37,46 +37,46 @@
         type: String
       }
     },
-    data () {
+    data() {
       return {
         hidden: this.collapse
       }
     },
     watch: {
-      collapse (collapse) {
+      collapse(collapse) {
         this.hidden = collapse
       },
-      hidden (hidden) {
+      hidden(hidden) {
         this.$emit('update:collapse', hidden)
         this.$emit('collapse-change', hidden)
       }
     },
     methods: {
-      toggle () {
+      toggle() {
         this.hidden = !this.hidden
       },
-      handleBeforeEnter () {
+      handleBeforeEnter() {
         this.$emit('before-enter')
       },
-      handleEnter () {
+      handleEnter() {
         this.$emit('enter')
       },
-      handleAfterEnter () {
+      handleAfterEnter() {
         this.$emit('after-enter')
       },
-      handleEnterCancelled () {
+      handleEnterCancelled() {
         this.$emit('enter-cancelled')
       },
-      handleBeforeLeave () {
+      handleBeforeLeave() {
         this.$emit('before-leave')
       },
-      handleLeave () {
+      handleLeave() {
         this.$emit('leave')
       },
-      handleAfterLeave () {
+      handleAfterLeave() {
         this.$emit('after-leave')
       },
-      handleLeaveCancelled () {
+      handleLeaveCancelled() {
         this.$emit('leave-cancelled')
       }
     }

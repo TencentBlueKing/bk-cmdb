@@ -90,7 +90,7 @@
     props: {
       details: Object
     },
-    data () {
+    data() {
       return {
         list: [],
         diffList: [],
@@ -100,43 +100,43 @@
       }
     },
     computed: {
-      showBefore () {
+      showBefore() {
         return !['create'].includes(this.details.action)
       },
-      showAfter () {
+      showAfter() {
         return !['delete'].includes(this.details.action)
       },
-      resourceType () {
+      resourceType() {
         return this.dictionary.find(type => type.id === this.details.resource_type)
       },
-      action () {
+      action() {
         if (!this.resourceType) {
           return null
         }
         return this.resourceType.operations.find(action => action.id === this.details.action)
       },
-      description () {
+      description() {
         const actionName = this.action ? this.action.name : this.details.action
         return `${actionName}${this.details.resource_name}`
       },
-      modelId () {
+      modelId() {
         return this.details.operation_detail.bk_obj_id
       },
-      modelName () {
+      modelName() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.modelId)
         return model.bk_obj_name
       },
-      tableList () {
+      tableList() {
         if (this.showToggle) {
           return this.isShowAllFields ? this.list : this.diffList
         }
         return this.list
       },
-      showToggle () {
+      showToggle() {
         return this.diffList.length && this.diffList.length !== this.list.length
       }
     },
-    async created () {
+    async created() {
       await Promise.all([
         this.getAuditDictionary(),
         this.getModelProperty()
@@ -144,7 +144,7 @@
       this.setList()
     },
     methods: {
-      async getAuditDictionary () {
+      async getAuditDictionary() {
         try {
           this.dictionary = await this.$store.dispatch('audit/getDictionary', {
             fromCache: true
@@ -153,7 +153,7 @@
           this.dictionary = []
         }
       },
-      async getModelProperty () {
+      async getModelProperty() {
         try {
           if (!this.modelId) {
             return false
@@ -168,7 +168,7 @@
           console.error(error)
         }
       },
-      setList () {
+      setList() {
         const isTopologyPathChange = ['unassign_host', 'assign_host', 'transfer_host_module'].includes(this.details.action)
         if (isTopologyPathChange) {
           this.setTopologyPathList()
@@ -176,7 +176,7 @@
           this.setNormalList()
         }
       },
-      setTopologyPathList () {
+      setTopologyPathList() {
         this.list = [{
           field: this.$t('关联关系'),
           type: 'topology',
@@ -185,7 +185,7 @@
         }]
         this.diffList = [...this.list]
       },
-      getTopoPath (data) {
+      getTopoPath(data) {
         const paths = []
         data.set.forEach((set) => {
           const path = [data.bk_biz_name, set.bk_set_name]
@@ -195,7 +195,7 @@
         })
         return paths.join('<br>')
       },
-      setNormalList () {
+      setNormalList() {
         const operationDetails = this.details.operation_detail.details || {}
         const before = operationDetails.pre_data || {}
         const update = operationDetails.update_fields || {}
@@ -212,10 +212,10 @@
         })
         this.diffList = this.list.filter(row => row.before !== row.after)
       },
-      toggleDetails () {
+      toggleDetails() {
         this.isShowAllFields = !this.isShowAllFields
       },
-      getCellStyle ({ row, columnIndex }) {
+      getCellStyle({ row, columnIndex }) {
         if (!this.showBefore || !this.showAfter) {
           return {}
         }

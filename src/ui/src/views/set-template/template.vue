@@ -28,23 +28,23 @@
       setTemplateInstance,
       setTemplateConfig
     },
-    data () {
+    data() {
       return {
         active: RouterQuery.get('tab', 'setting')
       }
     },
     computed: {
-      mode () {
+      mode() {
         return this.$route.params.mode
       },
-      templateId () {
+      templateId() {
         return this.$route.params.templateId
       }
     },
     watch: {
       $route: {
         immediate: true,
-        handler ($route) {
+        handler($route) {
           if ($route.query.tab) {
             this.active = $route.query.tab
           }
@@ -52,7 +52,7 @@
       },
       active: {
         immediate: true,
-        handler (active) {
+        handler(active) {
           if (this.mode === 'view') {
             this.checkSyncStatus()
           }
@@ -63,7 +63,7 @@
       }
     },
     methods: {
-      async checkSyncStatus () {
+      async checkSyncStatus() {
         try {
           const data = await this.$store.dispatch('setTemplate/getSetTemplateStatus', {
             bizId: this.$store.getters['objectBiz/bizId'],

@@ -131,7 +131,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         timer: null,
         list: [],
@@ -156,7 +156,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      filterList () {
+      filterList() {
         return [{
           id: 'all',
           name: this.$t('全部')
@@ -174,10 +174,10 @@
           name: this.$t('已同步')
         }]
       },
-      setsId () {
+      setsId() {
         return this.list.map(item => item.bk_set_id)
       },
-      displayList () {
+      displayList() {
         const list = this.$tools.clone(this.list)
         return list.map((item) => {
           const otherParams = {
@@ -209,7 +209,7 @@
           }
         })
       },
-      searchParams () {
+      searchParams() {
         const params = {
           set_template_id: Number(this.templateId),
           page: {
@@ -226,7 +226,7 @@
       }
     },
     watch: {
-      list () {
+      list() {
         if (!this.list.length) {
           clearInterval(this.timer)
           this.timer = null
@@ -235,7 +235,7 @@
         }
       }
     },
-    async created () {
+    async created() {
       await this.getData()
       if (this.list.length) {
         this.getSetInstancesWithTopo()
@@ -243,20 +243,20 @@
         this.polling()
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       clearInterval(this.timer)
     },
     methods: {
-      getTopoPath (row) {
+      getTopoPath(row) {
         return [...row.topo_path].reverse().map(path => path.bk_inst_name)
           .join(' / ') || '--'
       },
-      async getData () {
+      async getData() {
         const data = await this.getSetInstancesWithStatus('getSetInstanceData')
         this.pagination.count = data.count
         this.list = data.info || []
       },
-      async updateStatusData () {
+      async updateStatusData() {
         const data = await this.getSetInstancesWithStatus('updateStatusData', {
           page: {
             start: 0,
@@ -278,7 +278,7 @@
           })
         }
       },
-      getSetInstancesWithStatus (requestId, otherParams, config) {
+      getSetInstancesWithStatus(requestId, otherParams, config) {
         return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
           bizId: this.bizId,
           params: {
@@ -292,7 +292,7 @@
           }
         })
       },
-      async getSetInstancesWithTopo () {
+      async getSetInstancesWithTopo() {
         try {
           const data = await this.$store.dispatch('setTemplate/getSetInstancesWithTopo', {
             bizId: this.bizId,
@@ -314,7 +314,7 @@
           this.listWithTopo = []
         }
       },
-      async getInstancesInfo () {
+      async getInstancesInfo() {
         const instancesInfo = await this.$store.dispatch('setSync/getInstancesSyncStatus', {
           bizId: this.bizId,
           setTemplateId: this.templateId,
@@ -327,7 +327,7 @@
         })
         this.instancesInfo = instancesInfo
       },
-      polling () {
+      polling() {
         try {
           if (this.timer) {
             clearInterval(this.timer)
@@ -343,10 +343,10 @@
           this.timer = null
         }
       },
-      handleLinkServiceTopo () {
+      handleLinkServiceTopo() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
       },
-      async handleFilter (current = 1, event) {
+      async handleFilter(current = 1, event) {
         this.pagination.current = current
         await this.getData()
 
@@ -358,28 +358,28 @@
           this.getInstancesInfo()
         }
       },
-      handleSelectionChange (selection) {
+      handleSelectionChange(selection) {
         this.checkedList = selection.map(item => item.bk_set_id)
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.listSort = this.$tools.getSort(sort)
         this.handleFilter()
       },
-      handlePageChange (current) {
+      handlePageChange(current) {
         this.handleFilter(current)
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.pagination.limit = size
         this.handlePageChange(1)
       },
-      handleSearch (name) {
+      handleSearch(name) {
         this.filterName = name
         this.handleFilter(1, true)
       },
-      handleSelectable (row) {
+      handleSelectable(row) {
         return !['syncing', 'finished'].includes(row.status)
       },
-      handleBatchSync () {
+      handleBatchSync() {
         this.$store.commit('setFeatures/setSyncIdMap', {
           id: `${this.bizId}_${this.templateId}`,
           instancesId: this.checkedList
@@ -392,7 +392,7 @@
           history: true
         })
       },
-      handleSync (row) {
+      handleSync(row) {
         this.$store.commit('setFeatures/setSyncIdMap', {
           id: `${this.bizId}_${this.templateId}`,
           instancesId: [row.bk_set_id]
@@ -405,7 +405,7 @@
           history: true
         })
       },
-      async handleRetry (row) {
+      async handleRetry(row) {
         try {
           await this.$store.dispatch('setSync/syncTemplateToInstances', {
             bizId: this.bizId,
@@ -423,7 +423,7 @@
           console.error(e)
         }
       },
-      routeToHistory () {
+      routeToHistory() {
         this.$routerActions.redirect({
           name: 'syncHistory',
           params: {
@@ -432,7 +432,7 @@
           history: true
         })
       },
-      handlePathClick (row) {
+      handlePathClick(row) {
         this.$routerActions.open({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {

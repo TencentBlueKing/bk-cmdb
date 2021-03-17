@@ -134,7 +134,7 @@
     props: {
       active: Boolean
     },
-    data () {
+    data() {
       return {
         type: 'details',
         properties: [],
@@ -154,48 +154,48 @@
       }
     },
     computed: {
-      business () {
+      business() {
         return this.$store.getters['objectBiz/bizId']
       },
-      propertyMap () {
+      propertyMap() {
         return this.$store.state.businessHost.propertyMap
       },
-      propertyGroupMap () {
+      propertyGroupMap() {
         return this.$store.state.businessHost.propertyGroupMap
       },
-      categoryMap () {
+      categoryMap() {
         return this.$store.state.businessHost.categoryMap
       },
-      firstCategories () {
+      firstCategories() {
         return this.categoryMap[this.business] || []
       },
-      secondCategories () {
+      secondCategories() {
         const firstCategory = this.firstCategories.find(category => category.id === this.first) || {}
         return firstCategory.secondCategory || []
       },
-      selectedNode () {
+      selectedNode() {
         return this.$store.state.businessHost.selectedNode
       },
-      isModuleNode () {
+      isModuleNode() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
       },
-      isSetNode () {
+      isSetNode() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
       },
-      isBlueking () {
+      isBlueking() {
         let rootNode = this.selectedNode || {}
         if (rootNode.parent) {
           rootNode = rootNode.parents[0]
         }
         return rootNode.name === '蓝鲸'
       },
-      modelId () {
+      modelId() {
         if (this.selectedNode) {
           return this.selectedNode.data.bk_obj_id
         }
         return null
       },
-      nodeNamePropertyId () {
+      nodeNamePropertyId() {
         if (this.modelId) {
           const map = {
             biz: 'bk_biz_name',
@@ -206,7 +206,7 @@
         }
         return null
       },
-      nodePrimaryPropertyId () {
+      nodePrimaryPropertyId() {
         if (this.modelId) {
           const map = {
             biz: 'bk_biz_id',
@@ -217,16 +217,16 @@
         }
         return null
       },
-      withTemplate () {
+      withTemplate() {
         return this.isModuleNode && !!this.instance.service_template_id
       },
-      withSetTemplate () {
+      withSetTemplate() {
         return this.isSetNode && !!this.instance.set_template_id
       },
-      moduleFromSetTemplate () {
+      moduleFromSetTemplate() {
         return this.isModuleNode && !!this.selectedNode.parent.data.set_template_id
       },
-      editable () {
+      editable() {
         const editable = this.$store.state.businessHost.blueKingEditable
         return this.isBlueking ? this.isBlueking && editable : true
       }
@@ -234,7 +234,7 @@
     watch: {
       modelId: {
         immediate: true,
-        handler (modelId) {
+        handler(modelId) {
           if (modelId && this.active) {
             this.initProperties()
           }
@@ -242,7 +242,7 @@
       },
       selectedNode: {
         immediate: true,
-        handler (node) {
+        handler(node) {
           if (node && this.active) {
             this.getNodeDetails()
           }
@@ -250,21 +250,21 @@
       },
       active: {
         immediate: true,
-        handler (active) {
+        handler(active) {
           if (active) {
             this.refresh && this.refresh()
           }
         }
       }
     },
-    created () {
+    created() {
       this.refresh = debounce(() => {
         this.initProperties()
         this.getNodeDetails()
       }, 10)
     },
     methods: {
-      async initProperties () {
+      async initProperties() {
         this.type = 'details'
         try {
           const [
@@ -282,7 +282,7 @@
           this.propertyGroups = []
         }
       },
-      async getNodeDetails () {
+      async getNodeDetails() {
         this.type = 'details'
         await this.getInstance()
         if (this.withSetTemplate) {
@@ -290,7 +290,7 @@
         }
         this.disabledProperties = this.selectedNode.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
       },
-      async getProperties () {
+      async getProperties() {
         let properties = []
         const modelId = this.modelId
         if (this.propertyMap.hasOwnProperty(modelId)) {
@@ -315,7 +315,7 @@
         this.insertNodeIdProperty(properties)
         return Promise.resolve(properties)
       },
-      async getPropertyGroups () {
+      async getPropertyGroups() {
         let groups = []
         const modelId = this.modelId
         if (this.propertyGroupMap.hasOwnProperty(modelId)) {
@@ -336,7 +336,7 @@
         }
         return Promise.resolve(groups)
       },
-      async getInstance () {
+      async getInstance() {
         try {
           const modelId = this.modelId
           const promiseMap = {
@@ -351,7 +351,7 @@
           this.instance = {}
         }
       },
-      async getBizInstance () {
+      async getBizInstance() {
         try {
           const data = await this.$store.dispatch('objectBiz/searchBusiness', {
             params: {
@@ -373,7 +373,7 @@
           return {}
         }
       },
-      async getSetInstance () {
+      async getSetInstance() {
         const data = await this.$store.dispatch('objectSet/searchSet', {
           bizId: this.business,
           params: {
@@ -396,7 +396,7 @@
         this.templateInfo.setTemplateName = setTemplateInfo.name || this.$t('无')
         return data.info[0]
       },
-      insertNodeIdProperty (properties) {
+      insertNodeIdProperty(properties) {
         if (properties.find(property => property.bk_property_id === this.nodePrimaryPropertyId)) {
           return
         }
@@ -408,7 +408,7 @@
           editable: false
         })
       },
-      getSetTemplateInfo (id) {
+      getSetTemplateInfo(id) {
         return this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
           bizId: this.business,
           setTemplateId: id,
@@ -417,7 +417,7 @@
           }
         })
       },
-      async getModuleInstance () {
+      async getModuleInstance() {
         const data = await this.$store.dispatch('objectModule/searchModule', {
           bizId: this.business,
           setId: this.selectedNode.parent.data.bk_inst_id,
@@ -438,14 +438,14 @@
         this.getServiceInfo(instance)
         return instance
       },
-      async getServiceInfo (instance) {
+      async getServiceInfo(instance) {
         this.templateInfo.serviceTemplateName = instance.service_template_id ? instance.bk_module_name : this.$t('无')
         const categories = await this.getServiceCategories()
         const firstCategory = categories.find(category => category.secondCategory.some(second => second.id === instance.service_category_id)) || {}
         const secondCategory = (firstCategory.secondCategory || []).find(second => second.id === instance.service_category_id) || {}
         this.templateInfo.serviceCategory = `${firstCategory.name || '--'} / ${secondCategory.name || '--'}`
       },
-      async getServiceCategories () {
+      async getServiceCategories() {
         if (this.categoryMap.hasOwnProperty(this.business)) {
           return this.categoryMap[this.business]
         } else {
@@ -465,7 +465,7 @@
           }
         }
       },
-      collectServiceCategories (data) {
+      collectServiceCategories(data) {
         const categories = []
         data.forEach((item) => {
           if (!item.category.bk_parent_id) {
@@ -477,7 +477,7 @@
         })
         return categories
       },
-      async getCustomInstance () {
+      async getCustomInstance() {
         const data = await this.$store.dispatch('objectCommonInst/searchInst', {
           objId: this.modelId,
           params: {
@@ -498,7 +498,7 @@
         })
         return data.info[0]
       },
-      handleEdit () {
+      handleEdit() {
         if (this.modelId === 'module') {
           if (!this.withTemplate) {
             const second = this.instance.service_category_id
@@ -511,16 +511,16 @@
         }
         this.type = 'update'
       },
-      handleChangeFirstCategory (id, category) {
+      handleChangeFirstCategory(id, category) {
         if (!this.secondCategories.length) {
           this.second = ''
           this.$set(this.$refs.form.values, 'service_category_id', '')
         }
       },
-      handleChangeCategory (id, category) {
+      handleChangeCategory(id, category) {
         this.$set(this.$refs.form.values, 'service_category_id', id)
       },
-      async handleSubmit (value) {
+      async handleSubmit(value) {
         if (!await this.$validator.validateAll()) return
         const promiseMap = {
           set: this.updateSetInstance,
@@ -541,7 +541,7 @@
           console.error(e)
         }
       },
-      updateSetInstance (value) {
+      updateSetInstance(value) {
         return this.$store.dispatch('objectSet/updateSet', {
           bizId: this.business,
           setId: this.selectedNode.data.bk_inst_id,
@@ -551,7 +551,7 @@
           }
         })
       },
-      updateModuleInstance (value) {
+      updateModuleInstance(value) {
         return this.$store.dispatch('objectModule/updateModule', {
           bizId: this.business,
           setId: this.selectedNode.parent.data.bk_inst_id,
@@ -565,7 +565,7 @@
           }
         })
       },
-      updateCustomInstance (value) {
+      updateCustomInstance(value) {
         return this.$store.dispatch('objectCommonInst/updateInst', {
           objId: this.modelId,
           instId: this.selectedNode.data.bk_inst_id,
@@ -575,10 +575,10 @@
           }
         })
       },
-      handleCancel () {
+      handleCancel() {
         this.type = 'details'
       },
-      async handleDelete () {
+      async handleDelete() {
         const count = await this.getSelectedNodeHostCount()
         if (count) {
           this.$error(this.$t('目标包含主机, 不允许删除'))
@@ -607,7 +607,7 @@
           }
         })
       },
-      deleteSetInstance () {
+      deleteSetInstance() {
         return this.$store.dispatch('objectSet/deleteSet', {
           bizId: this.business,
           setId: this.selectedNode.data.bk_inst_id,
@@ -617,7 +617,7 @@
           }
         })
       },
-      deleteModuleInstance () {
+      deleteModuleInstance() {
         return this.$store.dispatch('objectModule/deleteModule', {
           bizId: this.business,
           setId: this.selectedNode.parent.data.bk_inst_id,
@@ -628,7 +628,7 @@
           }
         })
       },
-      deleteCustomInstance () {
+      deleteCustomInstance() {
         return this.$store.dispatch('objectCommonInst/deleteInst', {
           objId: this.modelId,
           instId: this.selectedNode.data.bk_inst_id,
@@ -638,7 +638,7 @@
           }
         })
       },
-      handleRemoveTemplate () {
+      handleRemoveTemplate() {
         const content = this.$createElement('div', {
           style: {
             'font-size': '14px'
@@ -667,7 +667,7 @@
           }
         })
       },
-      async getDiffTemplateAndInstances () {
+      async getDiffTemplateAndInstances() {
         try {
           const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
             bizId: this.business,
@@ -687,7 +687,7 @@
           this.hasChange = false
         }
       },
-      handleSyncSetTemplate () {
+      handleSyncSetTemplate() {
         this.$store.commit('setFeatures/setSyncIdMap', {
           id: `${this.business}_${this.instance.set_template_id}`,
           instancesId: [this.instance.bk_set_id]
@@ -701,7 +701,7 @@
           history: true
         })
       },
-      async goServiceTemplate () {
+      async goServiceTemplate() {
         try {
           const data = await this.$store.dispatch('serviceTemplate/findServiceTemplate', {
             id: this.instance.service_template_id,
@@ -729,7 +729,7 @@
           history: true
         })
       },
-      async goSetTemplate () {
+      async goSetTemplate() {
         try {
           const data = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
             setTemplateId: this.instance.set_template_id,
@@ -759,7 +759,7 @@
           history: true
         })
       },
-      async getSelectedNodeHostCount () {
+      async getSelectedNodeHostCount() {
         const defaultModel = ['biz', 'set', 'module', 'host', 'object']
         const modelInstKey = {
           biz: 'bk_biz_id',

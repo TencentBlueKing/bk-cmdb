@@ -30,22 +30,22 @@
       },
       reverse: Boolean
     },
-    data () {
+    data() {
       return {
         visible: false,
         confirmPromise: Promise.resolve(true),
         confirmResolve: null
       }
     },
-    mounted () {
+    mounted() {
       ConfirmStore.install(this)
       this.addListener()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.destroy()
     },
     methods: {
-      show () {
+      show() {
         if (this.active) {
           this.confirmPromise = new Promise((resolve) => {
             this.confirmResolve = resolve
@@ -70,26 +70,26 @@
           this.confirmPromise = Promise.resolve(true)
         }
       },
-      destroy () {
+      destroy() {
         ConfirmStore.uninstall(this)
         this.removeListener()
       },
-      addListener () {
+      addListener() {
         window.addEventListener('beforeunload', this.unloadHandler)
         this.$router.beforeHooks.unshift(this.beforeEachHook)
       },
-      removeListener () {
+      removeListener() {
         window.removeEventListener('beforeunload', this.unloadHandler)
         const beforeEachHookIndex = this.$router.beforeHooks.indexOf(this.beforeEachHook)
         beforeEachHookIndex > -1 && this.$router.beforeHooks.splice(beforeEachHookIndex, 1)
       },
-      unloadHandler (e) {
+      unloadHandler(e) {
         if (this.active) {
           /* eslint-disable-next-line */
                     return (e || window.event).returnValue = this.title
         }
       },
-      async beforeEachHook (to, from, next) {
+      async beforeEachHook(to, from, next) {
         const result = await ConfirmStore.popup(this.id)
         result ? next() : next(false)
       }

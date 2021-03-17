@@ -93,7 +93,7 @@
         type: Boolean
       }
     },
-    data () {
+    data() {
       return {
         relationList: [],
         mappingList: [{
@@ -123,7 +123,7 @@
     computed: {
       ...mapGetters('objectModelClassify', ['models'])
     },
-    async created () {
+    async created() {
       await this.initRelationList()
       this.initData()
     },
@@ -134,7 +134,7 @@
         'deleteObjectAssociation',
         'searchAssociationType'
       ]),
-      async initData () {
+      async initData() {
         const asstList = await this.searchObjectAssociation({
           params: {
             condition: {
@@ -147,7 +147,7 @@
           this.relationInfoSnapshot = JSON.stringify(this.relationInfo)
         }
       },
-      async initRelationList () {
+      async initRelationList() {
         const data = await this.searchAssociationType({ params: {} })
         const relationList = data.info.map(({ bk_asst_id: asstId, bk_asst_name: asstName }) => {
           if (asstName.length) {
@@ -163,14 +163,14 @@
         })
         this.relationList = Object.freeze(relationList)
       },
-      getModelName (objId) {
+      getModelName(objId) {
         const model = this.models.find(model => model['bk_obj_id'] === objId)
         if (model) {
           return model['bk_obj_name']
         }
         return ''
       },
-      async saveRelation () {
+      async saveRelation() {
         await this.updateObjectAssociation({
           id: this.relationInfo.id,
           params: {
@@ -188,7 +188,7 @@
         })
         this.$emit('cancel')
       },
-      deleteRelation () {
+      deleteRelation() {
         this.$bkInfo({
           title: this.$t('确定删除关联关系?'),
           confirmFn: async () => {

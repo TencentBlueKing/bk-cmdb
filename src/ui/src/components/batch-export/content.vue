@@ -71,7 +71,7 @@
         default: 'xlsx'
       }
     },
-    data () {
+    data() {
       return {
         current: null,
         message: null,
@@ -94,16 +94,16 @@
       }
     },
     computed: {
-      isFinished () {
+      isFinished() {
         return this.all.every(task => task.state === 'finished')
       },
-      finishedCount () {
+      finishedCount() {
         return this.all.filter(task => task.state === 'finished').length
       },
-      hasError () {
+      hasError() {
         return this.all.some(task => task.state === 'error')
       },
-      title () {
+      title() {
         if (this.hasError) {
           return this.$t('下载失败')
         }
@@ -113,14 +113,14 @@
         return this.$t('分批下载标题')
       }
     },
-    mounted () {
+    mounted() {
       this.setupSchedule()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.$http.cancel(this.request.id)
     },
     methods: {
-      setupSchedule () {
+      setupSchedule() {
         const queue = new Array(Math.ceil(this.count / this.limit)).fill(null)
           .map((_, index) => ({
             state: 'waiting',
@@ -133,7 +133,7 @@
         this.all = [...queue]
         this.processSchedule()
       },
-      async processSchedule () {
+      async processSchedule() {
         if (!this.queue.length) return
         try {
           this.message = null
@@ -154,7 +154,7 @@
           console.error(error)
         }
       },
-      syncScrollbar () {
+      syncScrollbar() {
         const index = this.all.indexOf(this.current)
         const item = this.$refs.listItem[index]
         const top = item.offsetTop + item.offsetHeight + 10 // margin

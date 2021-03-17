@@ -106,7 +106,7 @@
       AuditActionSelector,
       AuditModelSelector
     },
-    data () {
+    data() {
       const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
       const defaultCondition = {
         bk_biz_id: '',
@@ -127,28 +127,28 @@
     },
     computed: {
       instanceFilter: {
-        get () {
+        get() {
           return this.condition[this.instanceType]
         },
-        set (value) {
+        set(value) {
           this.condition[this.instanceType] = value
         }
       },
-      isModelInstance () {
+      isModelInstance() {
         return this.condition.resource_type === 'model_instance'
       }
     },
     watch: {
-      instanceType () {
+      instanceType() {
         this.condition.resource_id = ''
         this.condition.resource_name = ''
       }
     },
-    created () {
+    created() {
       this.handleSearch()
     },
     methods: {
-      handleSearch (isEvent) {
+      handleSearch(isEvent) {
         this.$emit('condition-change', this.condition)
         RouterQuery.set({
           tab: 'resource',
@@ -157,7 +157,7 @@
           _e: isEvent
         })
       },
-      handleReset () {
+      handleReset() {
         this.condition = { ...this.defaultCondition }
         this.handleSearch()
       }

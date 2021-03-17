@@ -49,7 +49,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         detailsData: []
       }
@@ -57,7 +57,7 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId'])
     },
-    created () {
+    created() {
       switch (this.type) {
         case 'added':
           this.initTemplateData()
@@ -73,10 +73,10 @@
       }
     },
     methods: {
-      initChangedData () {
+      initChangedData() {
         this.detailsData = this.instance.changed_attributes
       },
-      async initTemplateData () {
+      async initTemplateData() {
         try {
           const { info } = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
             params: {
@@ -104,7 +104,7 @@
           console.error(e)
         }
       },
-      initRemovedData () {
+      initRemovedData() {
         const details = []
         Object.keys(this.instance.process).forEach((key) => {
           const property = this.properties.find(property => property.bk_property_id === key)
@@ -121,10 +121,10 @@
         })
         this.detailsData = details
       },
-      initOthersData () {
+      initOthersData() {
         this.detailsData = [...this.instance.changed_attributes]
       },
-      getCellValue (row, type) {
+      getCellValue(row, type) {
         const propertyId = row.property_id
         let value = row.property_value
         const templateValue = row.template_property_value

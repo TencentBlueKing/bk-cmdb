@@ -62,7 +62,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         sort: 'module',
         instances: [],
@@ -75,13 +75,13 @@
     watch: {
       info: {
         immediate: true,
-        handler () {
+        handler() {
           this.sortInfo()
         }
       }
     },
     methods: {
-      sortInfo () {
+      sortInfo() {
         let instances = []
         if (this.sort === 'module') {
           const order = this.$parent.targetModules
@@ -95,7 +95,7 @@
         }
         this.instances = instances.map(instance => ({ ...instance, name: '', editing: { name: false } }))
       },
-      getName (instance) {
+      getName(instance) {
         if (instance.name) {
           return instance.name
         }
@@ -105,16 +105,16 @@
         }
         return '--'
       },
-      getEditState (instance) {
+      getEditState(instance) {
         return instance.editing
       },
-      getServiceTemplates (instance) {
+      getServiceTemplates(instance) {
         if (instance.service_template) {
           return instance.service_template.process_templates
         }
         return []
       },
-      getSourceProcesses (instance) {
+      getSourceProcesses(instance) {
         const templates = this.getServiceTemplates(instance)
         return templates.map((template) => {
           const value = {}
@@ -141,7 +141,7 @@
           return value
         })
       },
-      getBindIp (instance, info) {
+      getBindIp(instance, info) {
         const ipValue = info.ip.value
         const mapping = {
           1: '127.0.0.1',
@@ -159,7 +159,7 @@
         const [outerIP] = host.bk_host_outerip.split(',')
         return outerIP || mapping[1]
       },
-      getServiceInstanceOptions () {
+      getServiceInstanceOptions() {
         return this.instances.map((instance, index) => {
           const component = this.$refs.serviceInstance.find(component => component.index === index)
           return {
@@ -173,7 +173,7 @@
       /**
        * 解决后端性能问题: 用服务模板生成的实例仅传递有被用户主动触发过编辑的进程信息
        */
-      getChangedProcessList (instance, component) {
+      getChangedProcessList(instance, component) {
         if (instance.service_template) {
           const processes = []
           const stateKey = `${instance.bk_module_id}-${instance.bk_host_id}`
@@ -195,22 +195,22 @@
       /**
        * 解决后端性能问题: 记录用服务模板生成的实例是否触发编辑动作
        */
-      handleEditProcess (instance, processIndex) {
+      handleEditProcess(instance, processIndex) {
         if (!instance.service_template) return
         const key = `${instance.bk_module_id}-${instance.bk_host_id}`
         const state = this.processChangeState[key] || new Set()
         state.add(processIndex)
         this.processChangeState[key] = state
       },
-      handleEditName (instance) {
+      handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))
         instance.editing.name = true
       },
-      handleConfirmEditName (instance, name) {
+      handleConfirmEditName(instance, name) {
         instance.name = name
         instance.editing.name = false
       },
-      handleCancelEditName (instance) {
+      handleCancelEditName(instance) {
         instance.editing.name = false
       }
     }

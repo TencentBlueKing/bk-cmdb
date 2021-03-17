@@ -180,7 +180,7 @@
         type: Array
       }
     },
-    data () {
+    data() {
       return {
         relationInfo: {
           ispre: false,
@@ -203,10 +203,10 @@
       ...mapGetters('objectModel', [
         'activeModel'
       ]),
-      isSelfRelation () {
+      isSelfRelation() {
         return this.relationInfo.bk_obj_id === this.relationInfo.bk_asst_obj_id
       },
-      mappingList () {
+      mappingList() {
         const mappingList = [{
           id: 'n:n',
           name: 'N-N'
@@ -222,10 +222,10 @@
         }
         return mappingList
       },
-      usefulRelationList () {
+      usefulRelationList() {
         return this.relationList.filter(relation => relation.id !== 'bk_mainline')
       },
-      objAsstId () {
+      objAsstId() {
         if (this.isEdit) {
           return this.relation.bk_obj_asst_id
         }
@@ -235,7 +235,7 @@
         }
         return ''
       },
-      createParams () {
+      createParams() {
         return {
           bk_obj_asst_id: this.objAsstId,
           bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
@@ -245,13 +245,13 @@
           mapping: this.relationInfo.mapping
         }
       },
-      updateParams () {
+      updateParams() {
         return {
           bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
           bk_asst_id: this.relationInfo['bk_asst_id']
         }
       },
-      asstList () {
+      asstList() {
         const asstList = []
         this.classifications.forEach((classify) => {
           if (classify['bk_objects'].length) {
@@ -271,7 +271,7 @@
         })
         return asstList
       },
-      changedValues () {
+      changedValues() {
         const changedValues = {}
         for (const propertyId in this.relationInfo) {
           if (JSON.stringify(this.relationInfo[propertyId]) !== JSON.stringify(this.originRelationInfo[propertyId])) {
@@ -280,30 +280,30 @@
         }
         return changedValues
       },
-      sourceModel () {
+      sourceModel() {
         return this.getModelById(this.relationInfo['bk_obj_id']) || {}
       },
-      targetModel () {
+      targetModel() {
         return this.getModelById(this.relationInfo['bk_asst_obj_id']) || {}
       },
-      relationName () {
+      relationName() {
         const asstId = this.relationInfo['bk_asst_id']
         return (this.relationList.find(relation => relation.id === asstId) || {}).name
       }
     },
     watch: {
-      'relationInfo.bk_obj_id' (val) {
+      'relationInfo.bk_obj_id'(val) {
         if (val !== this.activeModel['bk_obj_id']) {
           this.relationInfo['bk_asst_obj_id'] = this.activeModel['bk_obj_id']
         }
       },
-      'relationInfo.bk_asst_obj_id' (val) {
+      'relationInfo.bk_asst_obj_id'(val) {
         if (val !== this.activeModel['bk_obj_id']) {
           this.relationInfo['bk_obj_id'] = this.activeModel['bk_obj_id']
         }
       }
     },
-    created () {
+    created() {
       this.initData()
       this.$nextTick(() => {
         this.originRelationInfo = this.$tools.clone(this.relationInfo)
@@ -314,11 +314,11 @@
         'createObjectAssociation',
         'updateObjectAssociation'
       ]),
-      async validateValue () {
+      async validateValue() {
         await this.$nextTick()
         this.$validator.validateAll()
       },
-      initData () {
+      initData() {
         if (this.isEdit) {
           for (const key in this.relationInfo) {
             this.relationInfo[key] = this.$tools.clone(this.relation[key])
@@ -327,7 +327,7 @@
           this.relationInfo['bk_obj_id'] = this.activeModel['bk_obj_id']
         }
       },
-      async saveRelation () {
+      async saveRelation() {
         if (!await this.$validator.validateAll()) {
           return
         }
@@ -349,10 +349,10 @@
         }
         this.$emit('save')
       },
-      cancel () {
+      cancel() {
         this.$emit('cancel')
       },
-      exchangeObjAsst () {
+      exchangeObjAsst() {
         const { relationInfo } = this;
         [relationInfo['bk_obj_id'], relationInfo['bk_asst_obj_id']] = [relationInfo['bk_asst_obj_id'], relationInfo['bk_obj_id']]
       }

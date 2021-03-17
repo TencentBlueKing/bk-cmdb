@@ -40,7 +40,7 @@
         default: () => []
       }
     },
-    data () {
+    data() {
       return {
         originList: [],
         list: [],
@@ -50,7 +50,7 @@
     },
     watch: {
       defaultLabels: {
-        handler (list) {
+        handler(list) {
           let cloneList = this.$tools.clone(list)
           if (!cloneList.length) {
             cloneList = cloneList.concat([{
@@ -65,7 +65,7 @@
         deep: true
       },
       list: {
-        handler (list) {
+        handler(list) {
           if (list.length === 1 && !list[0].key && !list[0].value) {
             this.submitList = []
             this.removeKeysList = this.originList.map(label => label.key)
@@ -84,11 +84,11 @@
         deep: true
       }
     },
-    created () {
+    created() {
       this.initValue()
     },
     methods: {
-      initValue () {
+      initValue() {
         let cloneList = this.$tools.clone(this.defaultLabels)
         if (!cloneList.length) {
           cloneList = cloneList.concat([{
@@ -100,7 +100,7 @@
         this.list = cloneList
         this.originList = this.$tools.clone(this.defaultLabels)
       },
-      getValidateRules (currentIndex, type) {
+      getValidateRules(currentIndex, type) {
         const rules = {}
         if (this.list.length === 1 && !this.list[0].key && !this.list[0].value) {
           return {}
@@ -116,7 +116,7 @@
         }
         return rules
       },
-      handleAddLabel (index) {
+      handleAddLabel(index) {
         const currentTag = this.list[index]
         if (!currentTag.key || !currentTag.value) {
           this.$bkMessage({
@@ -134,7 +134,7 @@
           this.$refs.tagKey[index + 1].focus()
         })
       },
-      handleRemoveLabel (index) {
+      handleRemoveLabel(index) {
         if (this.list.length === 1) {
           this.$set(this.list[0], 'key', '')
           this.$set(this.list[0], 'value', '')

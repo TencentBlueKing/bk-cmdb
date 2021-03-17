@@ -28,7 +28,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  searchHost ({ commit, state, dispatch }, { params, config }) {
+  searchHost({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/search', transformHostSearchParams(params), config).then((data) => {
       if (data.hasOwnProperty('info')) {
         data.info.forEach((host) => {
@@ -49,7 +49,7 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-  getHostBaseInfo ({ commit, state, dispatch, rootGetters }, { hostId, config }) {
+  getHostBaseInfo({ commit, state, dispatch, rootGetters }, { hostId, config }) {
     return $http.get(`hosts/${rootGetters.supplierAccount}/${hostId}`)
   },
 
@@ -61,7 +61,7 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-  getHostSnapshot ({ commit, state, dispatch }, { hostId, config }) {
+  getHostSnapshot({ commit, state, dispatch }, { hostId, config }) {
     return $http.get(`hosts/snapshot/${hostId}`, config)
   },
 
@@ -73,7 +73,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  searchHostByCondition ({ commit, state, dispatch }, { params }) {
+  searchHostByCondition({ commit, state, dispatch }, { params }) {
     return $http.post('hosts/snapshot/asstdetail', params)
   }
 }

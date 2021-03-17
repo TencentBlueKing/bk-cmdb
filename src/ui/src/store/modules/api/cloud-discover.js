@@ -19,43 +19,43 @@ const getters = {
 }
 
 const actions = {
-  searchCloudTask ({ commit, state, dispatch }, { params, config }) {
+  searchCloudTask({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/cloud/search', params, config)
   },
 
-  addCloudTask ({ commit, state, dispatch }, { params }) {
+  addCloudTask({ commit, state, dispatch }, { params }) {
     return $http.post('hosts/cloud/add', params)
   },
 
-  updateCloudTask ({ commit, state, dispatch }, { params }) {
+  updateCloudTask({ commit, state, dispatch }, { params }) {
     return $http.put('hosts/cloud/update', params)
   },
 
-  deleteCloudTask ({ commit, state, dispatch }, { taskID }) {
+  deleteCloudTask({ commit, state, dispatch }, { taskID }) {
     return $http.delete(`hosts/cloud/delete/${taskID}`)
   },
 
-  startCloudSync ({ commit, state, dispatch }, { params }) {
+  startCloudSync({ commit, state, dispatch }, { params }) {
     return $http.post('hosts/cloud/startSync', params)
   },
 
-  searchCloudHistory ({ commit, state, dispatch }, { params, config }) {
+  searchCloudHistory({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/cloud/syncHistory', params, config)
   },
 
-  getResourceConfirm ({ commit, state, dispatch }, { params, config }) {
+  getResourceConfirm({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/cloud/searchConfirm', params, config)
   },
 
-  resourceConfirm ({ commit, state, dispatch }, { params }) {
+  resourceConfirm({ commit, state, dispatch }, { params }) {
     return $http.post('hosts/cloud/resourceConfirm', params)
   },
 
-  addConfirmHistory ({ commit, state, dispatch }, { params }) {
+  addConfirmHistory({ commit, state, dispatch }, { params }) {
     return $http.post('hosts/cloud/confirmHistory/add', params)
   },
 
-  searchConfirmHistory ({ commit, state, dispatch }, { params, config }) {
+  searchConfirmHistory({ commit, state, dispatch }, { params, config }) {
     return $http.post('/hosts/cloud/confirmHistory/search', params, config)
   }
 }

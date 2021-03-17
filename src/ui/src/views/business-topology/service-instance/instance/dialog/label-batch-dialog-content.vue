@@ -27,14 +27,14 @@
         default: () => []
       }
     },
-    data () {
+    data() {
       return {
         localLabels: [...this.labels],
         removeLabels: []
       }
     },
     methods: {
-      handleRemove (index) {
+      handleRemove(index) {
         this.removeLabels.push(this.localLabels[index])
         this.localLabels.splice(index, 1)
       }

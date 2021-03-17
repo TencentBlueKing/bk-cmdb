@@ -41,7 +41,7 @@
       cmdbAuditHistory,
       cmdbRelation
     },
-    data () {
+    data() {
       return {
         inst: {},
         objId: 'biz',
@@ -53,22 +53,22 @@
     computed: {
       ...mapGetters(['supplierAccount', 'userName']),
       ...mapGetters('objectModelClassify', ['getModelById']),
-      bizId () {
+      bizId() {
         return parseInt(this.$route.params.bizId)
       },
-      model () {
+      model() {
         return this.getModelById('biz') || {}
       }
     },
     watch: {
-      bizId () {
+      bizId() {
         this.getData()
       },
-      objId () {
+      objId() {
         this.getData()
       }
     },
-    created () {
+    created() {
       this.getData()
     },
     methods: {
@@ -77,10 +77,10 @@
       ...mapActions('objectBiz', [
         'searchBusinessById'
       ]),
-      setBreadcrumbs (inst) {
+      setBreadcrumbs(inst) {
         this.$store.commit('setTitle', `${this.model.bk_obj_name}【${inst.bk_biz_name}】`)
       },
-      async getData () {
+      async getData() {
         try {
           const [inst, properties, propertyGroups] = await Promise.all([
             this.getInstInfo(),
@@ -97,7 +97,7 @@
           console.error(e)
         }
       },
-      async getInstInfo () {
+      async getInstInfo() {
         try {
           const inst = await this.searchBusinessById({
             bizId: this.bizId,
@@ -108,7 +108,7 @@
           console.error(e)
         }
       },
-      async getProperties () {
+      async getProperties() {
         try {
           const properties = await this.searchObjectAttribute({
             params: {
@@ -126,7 +126,7 @@
           console.error(e)
         }
       },
-      async getPropertyGroups () {
+      async getPropertyGroups() {
         try {
           const propertyGroups = this.searchGroup({
             objId: this.objId,

@@ -68,7 +68,7 @@
     props: {
       process: Object
     },
-    data () {
+    data() {
       return {
         list: [],
         properties: [],
@@ -85,10 +85,10 @@
       ...mapGetters(['supplierAccount']),
       ...mapGetters('businessHost', ['selectedNode']),
       ...mapGetters('objectBiz', ['bizId']),
-      serviceTemplateId () {
+      serviceTemplateId() {
         return this.selectedNode && this.selectedNode.data.service_template_id
       },
-      dynamicProps () {
+      dynamicProps() {
         const dynamicProps = {}
         const paddingHeight = 43
         const rowHeight = 42
@@ -98,26 +98,26 @@
         return dynamicProps
       }
     },
-    created () {
+    created() {
       this.getProperties()
       this.getList()
       Bus.$on('process-selection-change', this.handleProcessSelectionChange)
       Bus.$on('batch-delete', this.handeBatchDelete)
       Bus.$on('refresh-expand-list', this.handleRefreshList)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('process-selection-change', this.handleProcessSelectionChange)
       Bus.$off('batch-delete', this.handeBatchDelete)
       Bus.$off('refresh-expand-list', this.handleRefreshList)
     },
     methods: {
-      handleRefreshList (target) {
+      handleRefreshList(target) {
         if (target !== this.process) {
           return false
         }
         this.getList()
       },
-      async getList () {
+      async getList() {
         try {
           const { info } = await this.$store.dispatch('serviceInstance/getProcessListById', {
             params: {
@@ -139,14 +139,14 @@
           this.$nextTick(this.checkSelection)
         }
       },
-      checkSelection () {
+      checkSelection() {
         const reserved = this.process.reserved.map(data => data.process_id)
         const existSelection = this.list.filter(row => reserved.includes(row.process_id))
         existSelection.forEach((row) => {
           this.$refs.expandListTable.toggleRowSelection(row, true)
         })
       },
-      async getProperties () {
+      async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -163,7 +163,7 @@
           console.error(error)
         }
       },
-      setHeader () {
+      setHeader() {
         const header = []
         processTableHeader.forEach((id) => {
           if (id === 'bk_process_name') {
@@ -176,7 +176,7 @@
         })
         this.header = header
       },
-      handleProcessSelectionChange (process) {
+      handleProcessSelectionChange(process) {
         if (process === this.process) {
           return false
         }
@@ -186,14 +186,14 @@
           this.isEmitByOthers = false
         })
       },
-      handleSelectionChange (selection) {
+      handleSelectionChange(selection) {
         this.selection = selection
         if (!this.isEmitByOthers) {
           Bus.$emit('process-selection-change', this.process, selection, this.request.delete)
         }
         Bus.$emit('update-reserve-selection', this.process, selection)
       },
-      handleView (row) {
+      handleView(row) {
         Form.show({
           type: 'view',
           title: this.$t('查看进程'),
@@ -205,7 +205,7 @@
           submitHandler: this.editSubmitHandler
         })
       },
-      handleEdit (row) {
+      handleEdit(row) {
         Form.show({
           type: 'update',
           title: this.$t('编辑进程'),
@@ -217,7 +217,7 @@
           submitHandler: this.editSubmitHandler
         })
       },
-      async editSubmitHandler (values, changedValues, instance) {
+      async editSubmitHandler(values, changedValues, instance) {
         try {
           await this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
             params: {
@@ -230,7 +230,7 @@
           console.error(error)
         }
       },
-      handleDelete (row) {
+      handleDelete(row) {
         this.$bkInfo({
           title: this.$t('确定删除该进程'),
           confirmFn: async () => {
@@ -247,7 +247,7 @@
           }
         })
       },
-      async handeBatchDelete (name) {
+      async handeBatchDelete(name) {
         if (name !== this.process.bk_process_name) {
           return
         }
@@ -264,7 +264,7 @@
           this.selection = []
         }
       },
-      dispatchDelete (ids) {
+      dispatchDelete(ids) {
         return this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
           config: {
             data: {
@@ -275,7 +275,7 @@
           }
         })
       },
-      refreshParentList () {
+      refreshParentList() {
         RouterQuery.set({
           _t: Date.now(),
           page: 1

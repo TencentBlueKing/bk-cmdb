@@ -29,7 +29,7 @@
       processTemplateId: Number,
       submitHandler: Function
     },
-    data () {
+    data() {
       return {
         isShow: false,
         properties: [],
@@ -42,7 +42,7 @@
     computed: {
       ...mapGetters(['supplierAccount'])
     },
-    async created () {
+    async created() {
       try {
         const request = [
           this.getProperties(),
@@ -59,10 +59,10 @@
       }
     },
     methods: {
-      show () {
+      show() {
         this.isShow = true
       },
-      async getProperties () {
+      async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -79,7 +79,7 @@
           this.properties = []
         }
       },
-      async getPropertyGroups () {
+      async getPropertyGroups() {
         try {
           this.propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
             objId: 'process',
@@ -94,7 +94,7 @@
           this.propertyGroups = []
         }
       },
-      async getProcessTemplate () {
+      async getProcessTemplate() {
         try {
           const { property } = await this.$store.dispatch('processTemplate/getProcessTemplate', {
             params: {
@@ -115,10 +115,10 @@
           console.error(error)
         }
       },
-      handleHidden () {
+      handleHidden() {
         this.$emit('close')
       },
-      async handleSaveProcess (values, changedValues, instance) {
+      async handleSaveProcess(values, changedValues, instance) {
         try {
           this.pending = true
           await this.submitHandler(values, changedValues, instance)
@@ -129,7 +129,7 @@
           this.pending = false
         }
       },
-      beforeClose () {
+      beforeClose() {
         if (this.$refs.form.hasChange) {
           return new Promise((resolve, reject) => {
             this.$bkInfo({

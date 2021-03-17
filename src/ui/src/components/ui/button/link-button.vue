@@ -22,7 +22,7 @@
       }
     },
     methods: {
-      handleClick (event) {
+      handleClick(event) {
         if (this.disabled) {
           return false
         }

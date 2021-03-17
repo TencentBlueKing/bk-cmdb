@@ -50,7 +50,7 @@
     props: {
       id: Number
     },
-    data () {
+    data() {
       return {
         timeRange: [],
         histories: [],
@@ -58,11 +58,11 @@
         requestId: Symbol('getHistory')
       }
     },
-    created () {
+    created() {
       this.getHistory()
     },
     methods: {
-      async getHistory () {
+      async getHistory() {
         try {
           const params = {
             bk_task_id: this.id,
@@ -85,10 +85,10 @@
           this.histories = []
         }
       },
-      getCount (row, type) {
+      getCount(row, type) {
         return (row.bk_detail[type] || {}).count || 0
       },
-      handleView (row, column) {
+      handleView(row, column) {
         column.type !== 'expand' && this.$refs.table.toggleRowExpansion(row)
       }
     }

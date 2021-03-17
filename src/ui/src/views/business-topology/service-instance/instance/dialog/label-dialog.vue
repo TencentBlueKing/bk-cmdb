@@ -29,7 +29,7 @@
       serviceInstance: Object,
       updateCallback: Function
     },
-    data () {
+    data() {
       return {
         isShow: false,
         request: {
@@ -40,7 +40,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      labels () {
+      labels() {
         if (!this.serviceInstance.labels) {
           return []
         }
@@ -48,13 +48,13 @@
       }
     },
     methods: {
-      show () {
+      show() {
         this.isShow = true
       },
-      close () {
+      close() {
         this.isShow = false
       },
-      async handleSubmit () {
+      async handleSubmit() {
         try {
           const labelComp = this.$refs.labelComp
           const validateResult = await labelComp.$validator.validateAll()
@@ -106,7 +106,7 @@
           console.error(error)
         }
       },
-      handleHidden () {
+      handleHidden() {
         this.$emit('close')
       }
     }

@@ -9,29 +9,29 @@ const Component = Vue.extend({
   components: {
     ExportContent
   },
-  data () {
+  data() {
     return {
       visible: false
     }
   },
-  created () {
+  created() {
     this.unwatch = RouterQuery.watch('*', () => {
       this.close()
     })
   },
-  beforeDestroy () {
+  beforeDestroy() {
     this.unwatch()
   },
   methods: {
-    toggle (visible) {
+    toggle(visible) {
       this.visible = visible
     },
-    close () {
+    close() {
       document.body.removeChild(this.$el)
       this.$destroy()
     }
   },
-  render (h) {
+  render(h) {
     return (
       <bk-dialog
         width={ 768 }

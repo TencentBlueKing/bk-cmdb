@@ -82,7 +82,7 @@
     components: {
       applyStatusModal
     },
-    data () {
+    data() {
       return {
         applyRequest: null,
         table: {
@@ -112,13 +112,13 @@
       ...mapState('hostApply', ['propertyConfig']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapState('hosts', ['propertyList']),
-      hostIds () {
+      hostIds() {
         return this.propertyConfig.bk_host_ids || []
       },
-      isBatch () {
+      isBatch() {
         return this.$route.query.batch === 1
       },
-      moduleId () {
+      moduleId() {
         const mid = this.$route.query.mid
         let moduleId
         if (mid) {
@@ -127,7 +127,7 @@
         return moduleId
       }
     },
-    created () {
+    created() {
       if (!Object.keys(this.propertyConfig).length) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY
@@ -144,13 +144,13 @@
       ...mapActions('hostApply', [
         'runApply'
       ]),
-      getData () {
+      getData() {
         this.getHostList()
       },
-      setBreadcrumbs () {
+      setBreadcrumbs() {
         this.$store.commit('setTitle', this.$t('失败列表'))
       },
-      async getHostList () {
+      async getHostList() {
         try {
           const { info, count } = await this.$store.dispatch('hostSearch/searchHost', {
             params: this.getSearchHostParams()
@@ -161,7 +161,7 @@
           console.error(e)
         }
       },
-      getSearchHostParams () {
+      getSearchHostParams() {
         const hostCondition = {
           field: 'bk_host_id',
           operator: '$in',
@@ -179,7 +179,7 @@
           ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
         }
       },
-      getTopopath (info) {
+      getTopopath(info) {
         const topology = []
         const sets = info.set || []
         const modules = info.module || []
@@ -199,7 +199,7 @@
         })
         return topology.map(item => item.path).join('\n')
       },
-      getPropertyGroups () {
+      getPropertyGroups() {
         return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
           objId: 'host',
           params: {
@@ -207,21 +207,21 @@
           }
         })
       },
-      getCloudName (cloud) {
+      getCloudName(cloud) {
         const names = cloud.map(item => item.bk_inst_name)
         return names.join(',')
       },
-      setTableList () {
+      setTableList() {
         const { start, limit } = this.$tools.getPageParams(this.table.pagination)
         this.table.list = this.table.list.slice(start, start + limit)
       },
-      goBack () {
+      goBack() {
         this.$store.commit('hostApply/clearRuleDraft')
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY
         })
       },
-      async handleRetry () {
+      async handleRetry() {
         this.applyRequest = this.runApply({
           bizId: this.bizId,
           params: this.propertyConfig,
@@ -231,18 +231,18 @@
         })
         this.$refs.applyStatusModal.show()
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.table.pagination.current = page
         this.setTableList()
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.table.pagination.limit = size
         this.setTableList()
       },
-      handleRowClick (row) {
+      handleRowClick(row) {
         this.handleShowDetails(row)
       },
-      async handleShowDetails (row) {
+      async handleShowDetails(row) {
         this.slider.title = `${this.$t('属性详情')}【${row.bk_host_innerip}】`
         this.slider.content = 'detail'
         const properties = this.propertyList
@@ -261,16 +261,16 @@
           this.slider.isShow = false
         }
       },
-      handleSliderCancel () {
+      handleSliderCancel() {
         this.slider.isShow = false
       },
-      handleStatusModalBack () {
+      handleStatusModalBack() {
         this.goBack()
       },
-      handleCancel () {
+      handleCancel() {
         this.goBack()
       },
-      handleViewHost () {
+      handleViewHost() {
         const query = {}
         if (!this.isBatch && this.moduleId) {
           query.node = `module-${this.moduleId}`
@@ -281,14 +281,14 @@
           history: true
         })
       },
-      handleViewFailed () {
+      handleViewFailed() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_FAILED,
           query: this.$route.query,
           history: true
         })
       },
-      handleCopyIp () {
+      handleCopyIp() {
         const ips = this.table.list.map(item => item.host.bk_host_innerip)
         this.$copyText(ips.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))

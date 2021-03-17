@@ -2,7 +2,7 @@ import Form from '@/components/service/form/form.js'
 import Bus from '../common/bus'
 export default {
   methods: {
-    handleAddProcess () {
+    handleAddProcess() {
       Form.show({
         type: 'create',
         title: `${this.$t('添加进程')}(${this.row.name})`,
@@ -11,7 +11,7 @@ export default {
         submitHandler: this.createSubmitHandler
       })
     },
-    async createSubmitHandler (values) {
+    async createSubmitHandler(values) {
       try {
         await this.$store.dispatch('processInstance/createServiceInstanceProcess', {
           params: {

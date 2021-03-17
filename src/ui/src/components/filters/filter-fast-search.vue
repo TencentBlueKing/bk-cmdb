@@ -11,21 +11,21 @@
   import FilterStore from './store'
   import IS_IP from 'validator/es/lib/isIP'
   export default {
-    data () {
+    data() {
       return {
         value: ''
       }
     },
     methods: {
-      async handleSearch () {
+      async handleSearch() {
         this.dispatchFilter(this.value)
       },
-      handlePaste (value, event) {
+      handlePaste(value, event) {
         event.preventDefault()
         const text = event.clipboardData.getData('text').trim()
         this.dispatchFilter(text)
       },
-      dispatchFilter (currentValue) {
+      dispatchFilter(currentValue) {
         const values = currentValue.trim().split(/,|;|\n/g)
           .map(text => text.trim())
           .filter(text => text.length)

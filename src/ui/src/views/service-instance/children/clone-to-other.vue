@@ -64,18 +64,18 @@
     props: {
       module: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
       sourceProcesses: {
         type: Array,
-        default () {
+        default() {
           return {}
         }
       }
     },
-    data () {
+    data() {
       return {
         dialog: {
           show: false,
@@ -88,24 +88,24 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      hostId () {
+      hostId() {
         return parseInt(this.$route.params.hostId)
       },
-      moduleId () {
+      moduleId() {
         return parseInt(this.$route.params.moduleId)
       },
-      setId () {
+      setId() {
         return parseInt(this.$route.params.setId)
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.createTables, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.createTables, this.resizeHandler)
     },
     methods: {
-      handleAddHost () {
+      handleAddHost() {
         this.dialog.component = HostSelector.name
         this.dialog.props = {
           exist: this.hosts,
@@ -113,7 +113,7 @@
         }
         this.dialog.show = true
       },
-      handleDialogConfirm (selected) {
+      handleDialogConfirm(selected) {
         this.hosts = selected.map((item) => {
           return {
             ...item,
@@ -125,13 +125,13 @@
         })
         this.dialog.show = false
       },
-      handleDialogCancel () {
+      handleDialogCancel() {
         this.dialog.show = false
       },
-      handleDeleteInstance (index) {
+      handleDeleteInstance(index) {
         this.hosts.splice(index, 1)
       },
-      async handleConfirm () {
+      async handleConfirm() {
         try {
           const serviceInstanceTables = this.$refs.serviceInstanceTable
           await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
@@ -159,30 +159,30 @@
           console.error(e)
         }
       },
-      getName (data) {
+      getName(data) {
         if (data.instance.name) {
           return data.instance.name
         }
         return data.host.bk_host_innerip || '--'
       },
-      getEditState (instance) {
+      getEditState(instance) {
         return instance.editing
       },
-      handleEditName (instance) {
+      handleEditName(instance) {
         this.hosts.forEach(data => (data.instance.editing.name = false))
         instance.editing.name = true
       },
-      handleConfirmEditName (instance, name) {
+      handleConfirmEditName(instance, name) {
         instance.name = name
         instance.editing.name = false
       },
-      handleCancelEditName (instance) {
+      handleCancelEditName(instance) {
         instance.editing.name = false
       },
-      handleBackToModule () {
+      handleBackToModule() {
         this.$routerActions.back()
       },
-      resizeHandler () {
+      resizeHandler() {
         this.$nextTick(() => {
           const scroller = this.$el.parentElement
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight

@@ -68,7 +68,7 @@
     props: {
       defaultChecked: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
@@ -78,7 +78,7 @@
       },
       moduleType: {
         type: String,
-        validator (moduleType) {
+        validator(moduleType) {
           return ['idle', 'business'].includes(moduleType)
         }
       },
@@ -99,7 +99,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         filter: '',
         handlerFilter: null,
@@ -117,20 +117,20 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      bizId () {
+      bizId() {
         return this.business.bk_biz_id
       },
-      bizName () {
+      bizName() {
         return this.business.bk_biz_name
       },
-      hasDifference () {
+      hasDifference() {
         const checkedModules = this.checked.map(node => node.data.bk_inst_id).sort()
         return checkedModules.join(',') !== this.previousModules.join(',')
       },
-      hasTitle () {
+      hasTitle() {
         return this.title && this.title.length
       },
-      confirmTooltips () {
+      confirmTooltips() {
         const tooltips = { disabled: true }
         if (!this.checked.length) {
           tooltips.content = this.$t('请先选择业务模块')
@@ -143,18 +143,18 @@
       }
     },
     watch: {
-      filter () {
+      filter() {
         this.handlerFilter()
       }
     },
-    async created () {
+    async created() {
       this.handlerFilter = debounce(() => {
         this.$refs.tree.filter(this.filter)
       }, 300)
       this.getModules()
     },
     methods: {
-      async getModules () {
+      async getModules() {
         try {
           let data
           if (this.moduleType === 'idle') {
@@ -170,7 +170,7 @@
           console.error(e)
         }
       },
-      setDefaultChecked () {
+      setDefaultChecked() {
         this.$nextTick(() => {
           this.defaultChecked.forEach((id) => {
             const node = this.$refs.tree.getNodeById(this.getNodeId({
@@ -185,7 +185,7 @@
           })
         })
       },
-      getInternalModules () {
+      getInternalModules() {
         return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
           bizId: this.bizId,
           config: {
@@ -215,7 +215,7 @@
           }]
         })
       },
-      getBusinessModules () {
+      getBusinessModules() {
         return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.bizId,
           config: {
@@ -223,16 +223,16 @@
           }
         })
       },
-      getNodeId (data) {
+      getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
-      getInternalNodeClass (node, data) {
+      getInternalNodeClass(node, data) {
         const clazz = []
         clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
         return clazz
       },
       // 选择空闲模块
-      handleNodeClick (node) {
+      handleNodeClick(node) {
         const data = node.data
         if (data.bk_obj_id !== 'module') {
           return false
@@ -243,38 +243,38 @@
           this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true })
         }
       },
-      handleNodeCheck (checked, node) {
+      handleNodeCheck(checked, node) {
         if (this.moduleType === 'idle' || node.data.bk_obj_id !== 'module') {
           return false
         }
         this.checked = checked.map(id => this.$refs.tree.getNodeById(id))
       },
-      handleDeleteModule (node) {
+      handleDeleteModule(node) {
         this.checked = this.checked.filter(exist => exist !== node)
         if (this.moduleType === 'business') {
           this.$refs.tree.setChecked(node.id, { checked: false })
         }
       },
-      handleClearModule () {
+      handleClearModule() {
         if (this.moduleType === 'business') {
           this.$refs.tree.setChecked(this.checked.map(node => node.id), { checked: false })
         }
         this.checked = []
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       },
-      handleNextStep () {
+      handleNextStep() {
         if (!this.checked.length) {
           this.$warn('请选择模块')
           return false
         }
         this.$emit('confirm', this.checked)
       },
-      isTemplate (data) {
+      isTemplate(data) {
         return data.service_template_id || data.set_template_id
       },
-      isShowCheckbox (data) {
+      isShowCheckbox(data) {
         if (this.moduleType === 'idle') {
           return false
         }

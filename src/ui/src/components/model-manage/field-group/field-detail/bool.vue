@@ -20,7 +20,7 @@
       },
       isReadonly: Boolean
     },
-    data () {
+    data() {
       return {
         localValue: false
       }
@@ -28,7 +28,7 @@
     watch: {
       value: {
         immediate: true,
-        handler (value) {
+        handler(value) {
           this.localValue = typeof value === 'boolean' ? value : false
           // 将空字符转为false
           this.handleChange(this.localValue)
@@ -36,7 +36,7 @@
       }
     },
     methods: {
-      handleChange (selected) {
+      handleChange(selected) {
         this.$emit('input', selected)
       }
     }

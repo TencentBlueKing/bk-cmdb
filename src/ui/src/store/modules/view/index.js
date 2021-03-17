@@ -7,7 +7,7 @@ const getters = {
 }
 
 const mutations = {
-  toggleClassify (state, showClassify) {
+  toggleClassify(state, showClassify) {
     state.showClassify = showClassify
   }
 }

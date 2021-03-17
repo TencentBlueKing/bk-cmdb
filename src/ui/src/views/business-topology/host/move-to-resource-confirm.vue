@@ -55,7 +55,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         target: '',
         directories: [],
@@ -65,15 +65,15 @@
       }
     },
     computed: {
-      hasInvalid () {
+      hasInvalid() {
         return !!this.invalidList.length
       }
     },
-    created () {
+    created() {
       this.getDirectories()
     },
     methods: {
-      async getDirectories () {
+      async getDirectories() {
         try {
           const { info } = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
             params: {
@@ -90,10 +90,10 @@
           console.error(error)
         }
       },
-      handleConfirm () {
+      handleConfirm() {
         this.$emit('confirm', this.target)
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       }
     }

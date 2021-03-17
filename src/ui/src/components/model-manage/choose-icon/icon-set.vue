@@ -34,7 +34,7 @@
       ...mapGetters([
         'language'
       ]),
-      curIconList () {
+      curIconList() {
         if (this.filterIcon) {
           return this.iconList.filter(icon => icon.nameZh.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1)
         }
@@ -42,7 +42,7 @@
       }
     },
     methods: {
-      handleChooseIcon (value) {
+      handleChooseIcon(value) {
         this.$emit('input', value)
       }
     }

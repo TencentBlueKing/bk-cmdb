@@ -170,7 +170,7 @@
       },
       chartData: {
         type: Object,
-        default () {
+        default() {
           return {
             report_type: 'custom',
             name: '',
@@ -188,7 +188,7 @@
         default: () => []
       }
     },
-    data () {
+    data() {
       return {
         seList: {
           host: [
@@ -235,7 +235,7 @@
       ...mapGetters('objectModelClassify', [
         'getModelById'
       ]),
-      filterList () {
+      filterList() {
         return this.demList.filter((item) => {
           if (this.hostType === 'host') {
             return item.bk_property_type === 'enum' && item.bk_property_id !== 'bk_os_type'
@@ -243,12 +243,12 @@
           return item.bk_property_type === 'enum'
         })
       },
-      staticFilter () {
+      staticFilter() {
         return this.staList.filter((item) => {
           return !item.bk_ishidden && !this.hostFilter.includes(item.bk_obj_id)
         })
       },
-      typeFilter () {
+      typeFilter() {
         const data = this.chartData.bk_obj_id === 'host' ? this.seList.host : this.seList.inst
         return data.filter((item) => {
           return item.name === this.chartData.name
@@ -256,17 +256,17 @@
       }
     },
     watch: {
-      'chartType' () {
+      'chartType'() {
         this.$validator.reset()
         if (this.chartData.bk_obj_id === 'host') this.seList.disList = this.$tools.clone(this.seList.host)
         else this.seList.disList = this.$tools.clone(this.seList.inst)
         if (this.chartType) this.chartData.name = ''
       },
-      'chartData.bk_obj_id' () {
+      'chartData.bk_obj_id'() {
         this.getDemList(this.chartData.bk_obj_id)
       }
     },
-    created () {
+    created() {
       if (this.openType !== 'add') this.maxNum = this.chartData.chart_type === 'pie' ? this.chartData.data.data[0].labels.length : this.chartData.data.data[0].x.length
       else this.maxNum = 25
       this.initTitle()
@@ -274,7 +274,7 @@
       this.chartData.bk_obj_id && this.getDemList(this.chartData.bk_obj_id)
       if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
     },
-    mounted () {
+    mounted() {
       this.showDia = true
     },
     methods: {
@@ -284,7 +284,7 @@
         'newStatisticalCharts',
         'updateStatisticalCharts'
       ]),
-      getDisabled (property) {
+      getDisabled(property) {
         if (this.hostType === 'host') {
           return this.existedCharts.findIndex(item => item.field === property.bk_property_id) > -1
         } else if (this.hostType === 'inst') {
@@ -293,7 +293,7 @@
         }
         return false
       },
-      calculate (flag) {
+      calculate(flag) {
         if (flag === 'up') {
           this.chartData.x_axis_count += 1
           this.maxNum = parseInt(this.maxNum) >= 25 ? 25 : this.maxNum
@@ -307,10 +307,10 @@
           }
         }
       },
-      async getStaList () {
+      async getStaList() {
         this.staList = await this.getStaticObj({})
       },
-      async getDemList (id) {
+      async getDemList(id) {
         this.demList = await this.getStaticDimeObj({
           params: {
             bk_obj_id: id,
@@ -320,7 +320,7 @@
         this.$validator.reset()
         if (this.openType === 'add') this.chartData.field = ''
       },
-      confirm () {
+      confirm() {
         this.$validator.validateAll().then((result) => {
           if (result) {
             this.chartData.report_type = this.chartType ? 'custom' : this.typeFilter[0].repType
@@ -341,25 +341,25 @@
           }
         })
       },
-      transData (res) {
+      transData(res) {
         this.showDia = false
         setTimeout(() => {
           this.$emit('transData', res)
         }, 300)
       },
-      closeChart () {
+      closeChart() {
         this.showDia = false
         setTimeout(() => {
           this.$emit('closeChart')
         }, 300)
       },
-      delKeys (obj, keys) {
+      delKeys(obj, keys) {
         keys.map((key) => {
           delete obj[key]
         })
         return obj
       },
-      initTitle () {
+      initTitle() {
         if (this.openType !== 'add') this.editTitle = this.$t('编辑') + '【' + this.chartData.title + '】'
         else this.editTitle = this.chartData.bk_obj_id === 'host' ? this.$t('新增主机统计图表') : this.$t('新增实例统计图表')
       }

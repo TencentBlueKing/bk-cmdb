@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchNetcollect ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchNetcollect({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/summary/action/search', params, config)
   },
   /**
@@ -38,7 +38,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchNetcollectList ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchNetcollectList({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/report/action/search', params, config)
   },
   /**
@@ -49,7 +49,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  confirmNetcollectChange ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  confirmNetcollectChange({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/report/action/confirm', params, config)
   },
   /**
@@ -60,13 +60,13 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchNetcollectHistory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchNetcollectHistory({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/history/action/search', params, config)
   }
 }
 
 const mutations = {
-  setCloudName (state, cloudName) {
+  setCloudName(state, cloudName) {
     state.cloudName = cloudName
   }
 }

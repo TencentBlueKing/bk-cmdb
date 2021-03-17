@@ -98,7 +98,7 @@
     components: {
       vPushDetail
     },
-    data () {
+    data() {
       return {
         curPush: {},
         table: {
@@ -123,7 +123,7 @@
         }
       }
     },
-    created () {
+    created() {
       this.getTableData()
     },
     methods: {
@@ -131,7 +131,7 @@
         'searchSubscription',
         'unsubcribeEvent'
       ]),
-      handleBeforeSliderClose () {
+      handleBeforeSliderClose() {
         if (this.$refs.detail.isCloseConfirmShow()) {
           return new Promise((resolve, reject) => {
             this.$bkInfo({
@@ -149,18 +149,18 @@
         }
         return true
       },
-      createPush () {
+      createPush() {
         this.slider.isShow = true
         this.slider.type = 'create'
         this.slider.title = this.$t('新增订阅')
       },
-      editPush (item) {
+      editPush(item) {
         this.curPush = { ...item }
         this.slider.isShow = true
         this.slider.type = 'edit'
         this.slider.title = this.$t('编辑订阅')
       },
-      deleteConfirm (item) {
+      deleteConfirm(item) {
         this.$bkInfo({
           title: this.$tc('删除推送确认', item['subscription_name'], { name: item['subscription_name'] }),
           confirmFn: () => {
@@ -168,12 +168,12 @@
           }
         })
       },
-      async deletePush (subscriptionId) {
+      async deletePush(subscriptionId) {
         await this.unsubcribeEvent({ bkBizId: 0, subscriptionId })
         this.$success(this.$t('删除推送成功'))
         this.getTableData()
       },
-      saveSuccess () {
+      saveSuccess() {
         if (this.slider.type === 'create') {
           this.handlePageChange(1)
         } else {
@@ -181,10 +181,10 @@
         }
         this.slider.isShow = false
       },
-      closeSlider () {
+      closeSlider() {
         this.slider.isShow = false
       },
-      async getTableData () {
+      async getTableData() {
         const pagination = this.table.pagination
         const params = {
           page: {
@@ -221,15 +221,15 @@
           }
         }
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
         this.handlePageChange(1)
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.table.pagination.limit = size
         this.handlePageChange(1)
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.table.pagination.current = page
         this.getTableData()
       }

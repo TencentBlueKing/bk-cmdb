@@ -90,7 +90,7 @@
   import { mapGetters } from 'vuex'
   import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
   export default {
-    data () {
+    data() {
       return {
         list: [],
         originList: [],
@@ -113,15 +113,15 @@
       ...mapGetters('objectBiz', ['bizId'])
     },
     watch: {
-      originList () {
+      originList() {
         this.getSyncStatus()
       }
     },
-    async created () {
+    async created() {
       await this.getSetTemplates()
     },
     methods: {
-      async getSetTemplates () {
+      async getSetTemplates() {
         const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
           bizId: this.bizId,
           params: {
@@ -141,7 +141,7 @@
         this.list = list
         this.originList = list
       },
-      async getSyncStatus () {
+      async getSyncStatus() {
         try {
           if (this.originList.length) {
             const data = await this.$store.dispatch('setTemplate/getSetTemplateStatus', {
@@ -161,7 +161,7 @@
           console.error(e)
         }
       },
-      handleCreate () {
+      handleCreate() {
         this.$routerActions.redirect({
           name: 'setTemplateConfig',
           params: {
@@ -170,7 +170,7 @@
           history: true
         })
       },
-      handleEdit (row) {
+      handleEdit(row) {
         this.$routerActions.redirect({
           name: 'setTemplateConfig',
           params: {
@@ -183,7 +183,7 @@
           history: true
         })
       },
-      async handleDelete (row) {
+      async handleDelete(row) {
         this.$bkInfo({
           title: this.$t('确认删除'),
           subTitle: this.$t('确认删除xx集群模板', { name: row.name }),
@@ -204,21 +204,21 @@
           }
         })
       },
-      handleFilterTemplate () {
+      handleFilterTemplate() {
         const originList = this.$tools.clone(this.originList)
         this.list = this.searchName
           ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
           : originList
         this.table.stuff.type = this.searchName ? 'search' : 'default'
       },
-      handleClearFilter () {
+      handleClearFilter() {
         this.list = this.originList
         this.table.stuff.type = 'default'
       },
-      handleSelectable (row) {
+      handleSelectable(row) {
         return !row.set_instance_count
       },
-      handleRowClick (row, event, column) {
+      handleRowClick(row, event, column) {
         if (!column.property) {
           return false
         }
@@ -231,19 +231,19 @@
           history: true
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         if (sort.prop === 'set_instance_count') {
           return
         }
         this.table.sort = this.$tools.getSort(sort, '-last_time')
         this.getSetTemplates()
       },
-      handleGoBusinessTopo () {
+      handleGoBusinessTopo() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE
         })
       },
-      handleGoServiceTemplate () {
+      handleGoServiceTemplate() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE
         })

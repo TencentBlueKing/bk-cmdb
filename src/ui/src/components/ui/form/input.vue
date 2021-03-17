@@ -27,27 +27,27 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         localValue: this.value
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.localValue = value
       },
-      localValue (localValue) {
+      localValue(localValue) {
         this.$emit('input', localValue)
       }
     },
     methods: {
-      handleEnter () {
+      handleEnter() {
         this.$emit('enter', this.localValue)
       },
-      handleIconClick () {
+      handleIconClick() {
         this.$emit('icon-click', this.localValue)
       },
-      focus () {
+      focus() {
         this.$el.querySelector('input').focus()
       }
     }

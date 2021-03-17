@@ -302,7 +302,7 @@
     props: {
       customObjId: String
     },
-    data () {
+    data() {
       return {
         updateAuth: false,
         properties: [],
@@ -368,23 +368,23 @@
       ...mapState('userCustom', ['globalUsercustom']),
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModel', ['activeModel']),
-      isGlobalView () {
+      isGlobalView() {
         const topRoute = this.$route.matched[0]
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
-      bizId () {
+      bizId() {
         if (this.isGlobalView) {
           return null
         }
         return parseInt(this.$route.params.bizId)
       },
-      objId () {
+      objId() {
         return this.$route.params.modelId || this.customObjId
       },
-      isReadOnly () {
+      isReadOnly() {
         return this.activeModel && this.activeModel.bk_ispaused
       },
-      sortedProperties () {
+      sortedProperties() {
         const propertiesSorted = this.isGlobalView ? this.groupedProperties : this.bizGroupedProperties
         let properties = []
         propertiesSorted.forEach((group) => {
@@ -392,7 +392,7 @@
         })
         return properties
       },
-      groupedPropertiesCount () {
+      groupedPropertiesCount() {
         const count = {}
         this.groupedProperties.forEach(({ info, properties }) => {
           const groupId = info.bk_group_id
@@ -400,20 +400,20 @@
         })
         return count
       },
-      bizGroupedProperties () {
+      bizGroupedProperties() {
         return this.groupedProperties.filter(group => this.isBizCustomData(group.info))
       },
-      curModel () {
+      curModel() {
         if (!this.objId) return {}
         return this.$store.getters['objectModelClassify/getModelById'](this.objId)
       },
-      modelId () {
+      modelId() {
         return this.curModel.id || null
       },
-      isMainLineModel () {
+      isMainLineModel() {
         return ['bk_host_manage', 'bk_biz_topo', 'bk_organization'].includes(this.curModel.bk_classification_id)
       },
-      authResources () {
+      authResources() {
         if (this.customObjId) { // 业务自定义字段
           return {
             type: this.$OPERATION.U_BIZ_MODEL_CUSTOM_FIELD,
@@ -425,32 +425,32 @@
           type: this.$OPERATION.U_MODEL
         }
       },
-      disabledConfig () {
+      disabledConfig() {
         const disabled = {
           host: ['bk_host_innerip', 'bk_cloud_id'],
           biz: ['bk_biz_name']
         }
         return disabled[this.objId] || ['bk_inst_name']
       },
-      curGlobalCustomTableColumns () {
+      curGlobalCustomTableColumns() {
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
       },
-      canEditSort () {
+      canEditSort() {
         return !this.customObjId && this.curModel['bk_classification_id'] !== 'bk_biz_topo'
       }
     },
     watch: {
       groupedProperties: {
-        handler (groupedProperties) {
+        handler(groupedProperties) {
           this.filterField()
         },
         deep: true
       },
-      keyword () {
+      keyword() {
         this.handleFilter()
       }
     },
-    async created () {
+    async created() {
       this.handleFilter = debounce(this.filterField, 300)
       const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
       this.properties = properties
@@ -469,16 +469,16 @@
       ...mapActions('objectModelProperty', [
         'searchObjectAttribute'
       ]),
-      isBizCustomData (data) {
+      isBizCustomData(data) {
         return data.hasOwnProperty('bk_biz_id') && data.bk_biz_id > 0
       },
-      isBuiltInGroup (group) {
+      isBuiltInGroup(group) {
         if (this.isGlobalView) {
           return false
         }
         return !this.isBizCustomData(group)
       },
-      isFieldEditable (item, checkIspre = true) {
+      isFieldEditable(item, checkIspre = true) {
         if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
           return false
         }
@@ -487,7 +487,7 @@
         }
         return true
       },
-      isEditable (group) {
+      isEditable(group) {
         if (this.isReadOnly) {
           return false
         }
@@ -496,33 +496,33 @@
         }
         return this.isBizCustomData(group)
       },
-      canRiseGroup (index, group) {
+      canRiseGroup(index, group) {
         if (this.isGlobalView) {
           return index !== 0
         }
         const customDataIndex = this.bizGroupedProperties.indexOf(group)
         return customDataIndex !== 0
       },
-      canDropGroup (index, group) {
+      canDropGroup(index, group) {
         if (this.isGlobalView) {
           return index !== (this.groupedProperties.length - 1)
         }
         const customDataIndex = this.bizGroupedProperties.indexOf(group)
         return customDataIndex !== (this.bizGroupedProperties.length - 1)
       },
-      handleRiseGroup (index, group) {
+      handleRiseGroup(index, group) {
         this.groupedProperties[index - 1].info.bk_group_index = index
         group.info.bk_group_index = index - 1
         this.updateGroupIndex()
         this.resortGroups()
       },
-      handleDropGroup (index, group) {
+      handleDropGroup(index, group) {
         this.groupedProperties[index + 1].info.bk_group_index = index
         group.info.bk_group_index = index + 1
         this.updateGroupIndex()
         this.resortGroups()
       },
-      async resetData (filedId) {
+      async resetData(filedId) {
         const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
         if (filedId && this.slider.isShow) {
           const field = properties.find(property => property.bk_property_id === filedId)
@@ -536,7 +536,7 @@
         this.groups = groups
         this.init(properties, groups)
       },
-      init (properties, groups) {
+      init(properties, groups) {
         properties = this.setPropertIndex(properties)
         groups = this.separateBizCustomGroups(groups)
         groups = this.setGroupIndex(groups)
@@ -559,7 +559,7 @@
         this.groupState = Object.assign({}, groupState, this.groupState)
         this.groupedProperties = groupedProperties
       },
-      filterField () {
+      filterField() {
         if (this.keyword) {
           const reg = new RegExp(this.keyword, 'i')
           const displayGroupedProperties = []
@@ -585,7 +585,7 @@
           this.displayGroupedProperties = this.groupedProperties
         }
       },
-      getPropertyGroups () {
+      getPropertyGroups() {
         return this.searchGroup({
           objId: this.objId,
           params: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
@@ -595,7 +595,7 @@
           }
         })
       },
-      getProperties () {
+      getProperties() {
         const params = {
           'bk_obj_id': this.objId,
           'bk_supplier_account': this.supplierAccount
@@ -611,7 +611,7 @@
           }
         })
       },
-      separateBizCustomGroups (groups) {
+      separateBizCustomGroups(groups) {
         const publicGroups = []
         const bizCustomGroups = []
         groups.forEach((group) => {
@@ -629,17 +629,17 @@
         })
         return [...publicGroups, ...bizCustomGroups]
       },
-      setGroupIndex (groups) {
+      setGroupIndex(groups) {
         groups.forEach((group, index) => {
           group.bk_group_index = index
         })
         return groups
       },
-      setPropertIndex (properties) {
+      setPropertIndex(properties) {
         properties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
         return properties
       },
-      handleCancelAddProperty () {
+      handleCancelAddProperty() {
         this.dialog.isShow = false
         this.dialog.selectedProperties = []
         this.dialog.addedProperties = []
@@ -650,7 +650,7 @@
           this.$refs.dialogProperty.style.height = 'auto'
         })
       },
-      handleSelectProperty (property) {
+      handleSelectProperty(property) {
         const selectedProperties = this.dialog.selectedProperties
         const addedProperties = this.dialog.addedProperties
         const deletedProperties = this.dialog.deletedProperties
@@ -677,7 +677,7 @@
           }
         }
       },
-      handleConfirmAddProperty () {
+      handleConfirmAddProperty() {
         const {
           selectedProperties,
           addedProperties,
@@ -700,10 +700,10 @@
         }
         this.handleCancelAddProperty()
       },
-      filter (property) {
+      filter(property) {
         return property.bk_property_name.toLowerCase().indexOf(this.dialog.filter.toLowerCase()) !== -1
       },
-      handleEditGroup (group) {
+      handleEditGroup(group) {
         this.groupDialog.isShow = true
         this.groupDialog.isShowContent = true
         this.groupDialog.type = 'update'
@@ -712,7 +712,7 @@
         this.groupForm.isCollapse = group.info.is_collapse
         this.groupForm.groupName = group.info.bk_group_name
       },
-      async handleUpdateGroup () {
+      async handleUpdateGroup() {
         const valid = await this.$validator.validate('groupName')
         if (!valid) {
           return
@@ -747,20 +747,20 @@
         this.groupState[curGroup.info.bk_group_id] = this.groupForm.isCollapse
         this.groupDialog.isShow = false
       },
-      handleAddGroup () {
+      handleAddGroup() {
         this.groupDialog.isShow = true
         this.groupDialog.isShowContent = true
         this.groupDialog.type = 'create'
         this.groupDialog.title = this.$t('新建分组')
       },
-      handleCancelGroupLeave () {
+      handleCancelGroupLeave() {
         this.groupDialog.group = {}
         this.groupForm.groupName = ''
         this.groupForm.isCollapse = false
         this.groupDialog.isShowContent = false
         this.groupDialog.isShow = false
       },
-      async handleCreateGroup () {
+      async handleCreateGroup() {
         const valid = await this.$validator.validate('groupName')
         if (!valid) {
           return
@@ -797,7 +797,7 @@
           this.groupDialog.isShow = false
         })
       },
-      handleDeleteGroup (group, index) {
+      handleDeleteGroup(group, index) {
         if (group.properties.length) {
           this.$error(this.$t('请先清空该分组下的字段'))
           return
@@ -814,10 +814,10 @@
           this.$success(this.$t('删除成功'))
         })
       },
-      resortGroups () {
+      resortGroups() {
         this.groupedProperties.sort((groupA, groupB) => groupA.info.bk_group_index - groupB.info.bk_group_index)
       },
-      updateGroupIndex () {
+      updateGroupIndex() {
         const groupToUpdate = this.groupedProperties.filter((group, index) => group.info.bk_group_index !== index)
         groupToUpdate.forEach((group) => {
           const params = {
@@ -840,13 +840,13 @@
           })
         })
       },
-      handleDragChange (moveInfo) {
+      handleDragChange(moveInfo) {
         if (moveInfo.hasOwnProperty('moved') || moveInfo.hasOwnProperty('added')) {
           const info = moveInfo.moved ? { ...moveInfo.moved } : { ...moveInfo.added }
           this.updatePropertyIndex(info)
         }
       },
-      async updatePropertyIndex ({ element: property, newIndex }) {
+      async updatePropertyIndex({ element: property, newIndex }) {
         let curIndex = 0
         let curGroup = ''
         for (const group of this.groupedProperties) {
@@ -882,7 +882,7 @@
         const properties = await this.getProperties()
         this.init(properties, this.groups)
       },
-      handleAddField (group) {
+      handleAddField(group) {
         this.slider.isEditField = false
         this.slider.curField = {}
         this.slider.curGroup = group.info
@@ -891,7 +891,7 @@
         this.slider.beforeClose = this.handleSliderBeforeClose
         this.slider.view = 'operation'
       },
-      handleEditField (group, property) {
+      handleEditField(group, property) {
         this.slider.isEditField = true
         this.slider.curField = property
         this.slider.curGroup = group.info
@@ -900,11 +900,11 @@
         this.slider.beforeClose = this.handleSliderBeforeClose
         this.slider.view = 'operation'
       },
-      handleFieldSave (filedId) {
+      handleFieldSave(filedId) {
         this.handleBackView()
         this.resetData(filedId)
       },
-      handleDeleteField ({ property: field, index, fieldIndex }) {
+      handleDeleteField({ property: field, index, fieldIndex }) {
         this.$bkInfo({
           title: this.$tc('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
           subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
@@ -926,7 +926,7 @@
           }
         })
       },
-      handleBackView () {
+      handleBackView() {
         if (this.slider.backView === 'details') {
           this.handleFieldDetailsView({
             group: this.slider.group,
@@ -938,7 +938,7 @@
           this.handleSliderHidden()
         }
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
         if (hasChanged) {
           return new Promise((resolve, reject) => {
@@ -959,13 +959,13 @@
         this.handleBackView()
         return true
       },
-      handleSliderHidden () {
+      handleSliderHidden() {
         this.slider.isShow = false
         this.slider.curField = {}
         this.slider.beforeClose = null
         this.slider.backView = ''
       },
-      handleFieldDetailsView ({ group, index, fieldIndex, property }) {
+      handleFieldDetailsView({ group, index, fieldIndex, property }) {
         this.slider.isShow = true
         this.slider.curField = property
         this.slider.curGroup = group.info
@@ -977,10 +977,10 @@
         this.slider.fieldIndex = fieldIndex
         this.slider.beforeClose = null
       },
-      handleReceiveAuth (auth) {
+      handleReceiveAuth(auth) {
         this.updateAuth = auth
       },
-      handleApplyConfig (properties) {
+      handleApplyConfig(properties) {
         const setProperties = properties.map(property => property.bk_property_id)
         this.$store.dispatch('userCustom/saveGlobalUsercustom', {
           objId: this.objId,

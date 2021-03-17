@@ -7,14 +7,14 @@ const requestConfigBase = key => ({
   fromCache: true
 })
 
-async function getBusinessList (vm) {
+async function getBusinessList(vm) {
   // 使用`biz/search/${rootGetters.supplierAccount}`需要鉴权，从而使用biz/simplify
   const url = 'biz/simplify'
   const data = await vm.$http.get(`${url}?sort=bk_biz_id`, { ...requestConfigBase(url) })
   return data.info || []
 }
 
-async function getResourceDirectoryList (vm) {
+async function getResourceDirectoryList(vm) {
   const action = 'resourceDirectory/getDirectoryList'
   let directoryList = vm.$store.getters['resourceHost/directoryList']
   if (!directoryList.length) {

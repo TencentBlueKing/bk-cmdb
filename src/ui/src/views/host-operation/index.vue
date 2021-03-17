@@ -159,7 +159,7 @@
       [HostSelector.name]: HostSelector,
       [HostAttrsAutoApply.name]: HostAttrsAutoApply
     },
-    data () {
+    data() {
       return {
         hasScrollbar: false,
         hostInfo: [],
@@ -234,7 +234,7 @@
         'getDefaultSearchCondition',
         'failHostList'
       ]),
-      confirmText () {
+      confirmText() {
         const textMap = {
           remove: this.$t('确认移除'),
           idle: this.$t('确认转移'),
@@ -242,7 +242,7 @@
         }
         return this.isRetry ? this.$t('失败重试') : textMap[this.type]
       },
-      availableTabList () {
+      availableTabList() {
         const map = {
           remove: ['deletedServiceInstance', 'moveToIdleHost', 'hostAttrsAutoApply'],
           idle: ['deletedServiceInstance', 'hostAttrsAutoApply'],
@@ -251,25 +251,25 @@
         const available = map[this.type]
         return this.tabList.filter(tab => available.includes(tab.id) && tab.props.info.length > 0)
       },
-      activeTab () {
+      activeTab() {
         return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
       },
-      isRemoveModule () {
+      isRemoveModule() {
         const { type, module } = this.$route.params
         return type === 'remove' && module
       },
-      isRetry () {
+      isRetry() {
         return parseInt(this.$route.query.retry) === 1
       },
-      isSingle () {
+      isSingle() {
         return parseInt(this.$route.query.single) === 1
       },
-      changeHostDisabled () {
+      changeHostDisabled() {
         return this.isSingle || this.isRemoveModule
       }
     },
     watch: {
-      availableTabList (tabList) {
+      availableTabList(tabList) {
         tabList.forEach((tab) => {
           if (tab !== this.activeTab) {
             tab.confirmed = false
@@ -278,12 +278,12 @@
         const hasActiveTab = tabList.find(tab => tab === this.activeTab)
         if (!hasActiveTab) this.tab.active = null
       },
-      activeTab (tab) {
+      activeTab(tab) {
         if (!tab) return
         tab.confirmed = true
       }
     },
-    async created () {
+    async created() {
       if (this.isRetry && !this.failHostList.length) {
         this.redirect()
       } else {
@@ -296,27 +296,27 @@
         this.getPreviewData()
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.changeInfo, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
     },
-    async beforeRouteUpdate (to, from, next) {
+    async beforeRouteUpdate(to, from, next) {
       this.resolveData(to)
       await this.getHostInfo()
       this.$nextTick(this.setBreadcrumbs)
       this.getPreviewData()
       next()
     },
-    beforeRouteLeave (to, from, next) {
+    beforeRouteLeave(to, from, next) {
       if (to.name !== MENU_BUSINESS_TRANSFER_HOST) {
         this.$store.commit('businessHost/clearFailHostList')
       }
       next()
     },
     methods: {
-      resolveData (route) {
+      resolveData(route) {
         this.type = route.params.type
         const query = route.query || {}
         const targetModules = query.targetModules
@@ -351,7 +351,7 @@
         }
         this.confirmParams = params
       },
-      setBreadcrumbs () {
+      setBreadcrumbs() {
         const titleMap = {
           idle: this.$t('转移到空闲模块'),
           business: this.$t('转移到业务模块'),
@@ -359,7 +359,7 @@
         }
         this.$store.commit('setTitle', titleMap[this.type])
       },
-      async getTopologyModels () {
+      async getTopologyModels() {
         try {
           const topologyModels = await this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
             config: {
@@ -371,7 +371,7 @@
           console.error(e)
         }
       },
-      async getPreviewData () {
+      async getPreviewData() {
         try {
           this.loading = true
           const data = await this.$http.post(
@@ -403,7 +403,7 @@
           }
         }
       },
-      setConfirmState (data) {
+      setConfirmState(data) {
         // 是否是相同的模块转换
         this.isSameModule = data.every(datum => !(datum.to_add_to_modules.length || datum.to_remove_from_modules.length))
         // 是否溢出的是空服务实例（前端流转不会创建空服务实例，但是ESB会）
@@ -413,7 +413,7 @@
           return !(hasAdd || hasRemoveInstance)
         })
       },
-      async setModulePathInfo (data) {
+      async setModulePathInfo(data) {
         try {
           const moduleIds = [...this.targetModules]
           data.forEach((datum) => {
@@ -436,19 +436,19 @@
           console.error(e)
         }
       },
-      getModulePath (id) {
+      getModulePath(id) {
         const info = this.moduleMap[id] || []
         const path = info.map(node => node.bk_inst_name).reverse()
           .join(' / ')
         return path
       },
-      setHostAttrsAutoApply (data) {
+      setHostAttrsAutoApply(data) {
         const conflictInfo = (data || []).map(item => item.host_apply_plan)
         const conflictList = conflictInfo.filter(item => item.conflicts.length || item.update_fields.length)
         const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
         tab.props.info = Object.freeze(conflictList)
       },
-      setCreateServiceInstance (data) {
+      setCreateServiceInstance(data) {
         const instanceInfo = []
         data.forEach((item) => {
           item.to_add_to_modules.forEach((moduleInfo) => {
@@ -461,7 +461,7 @@
         const tab = this.tabList.find(tab => tab.id === 'createServiceInstance')
         tab.props.info = Object.freeze(instanceInfo)
       },
-      setFailHostTableList (data) {
+      setFailHostTableList(data) {
         this.failDetailDialog.list = this.failHostList.map((item) => {
           const host = (this.hostInfo.find(data => data.host.bk_host_id === item.bk_host_id) || {}).host || {}
           return {
@@ -470,7 +470,7 @@
           }
         })
       },
-      async getHostInfo () {
+      async getHostInfo() {
         try {
           const result = await this.$store.dispatch('hostSearch/searchHost', {
             params: this.getSearchHostParams(),
@@ -483,7 +483,7 @@
           console.error(e)
         }
       },
-      getSearchHostParams () {
+      getSearchHostParams() {
         const params = {
           bk_biz_id: this.bizId,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
@@ -498,7 +498,7 @@
         })
         return params
       },
-      setDeletedServiceInstance (data) {
+      setDeletedServiceInstance(data) {
         const deletedServiceInstance = []
         data.forEach((item) => {
           item.to_remove_from_modules.forEach((module) => {
@@ -508,12 +508,12 @@
         const tab = this.tabList.find(tab => tab.id === 'deletedServiceInstance')
         tab.props.info = Object.freeze(deletedServiceInstance)
       },
-      getModuleName (id) {
+      getModuleName(id) {
         const topoInfo = this.moduleMap[id] || []
         const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
         return target.bk_inst_name
       },
-      async setMoveToIdleHost (data) {
+      async setMoveToIdleHost(data) {
         try {
           const internalTopology = await this.getInternalTopology()
           const internalModules = internalTopology.module
@@ -532,7 +532,7 @@
           console.error(e)
         }
       },
-      getInternalTopology () {
+      getInternalTopology() {
         return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
           bizId: this.bizId,
           config: {
@@ -540,7 +540,7 @@
           }
         })
       },
-      handleRemoveModule (id) {
+      handleRemoveModule(id) {
         const targetModules = this.targetModules.filter(exist => exist !== id)
         this.$routerActions.redirect({
           name: MENU_BUSINESS_TRANSFER_HOST,
@@ -553,16 +553,16 @@
           }
         })
       },
-      resizeHandler () {
+      resizeHandler() {
         this.$nextTick(() => {
           const scroller = this.$el.parentElement
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
         })
       },
-      handleTabClick (tab) {
+      handleTabClick(tab) {
         this.tab.active = tab.id
       },
-      handleChangeModule () {
+      handleChangeModule() {
         const props = {
           moduleType: this.type,
           title: this.type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块'),
@@ -586,7 +586,7 @@
         this.dialog.component = ModuleSelector.name
         this.dialog.show = true
       },
-      handleChangeHost () {
+      handleChangeHost() {
         const props = {
           exist: [...this.hostInfo]
         }
@@ -599,10 +599,10 @@
         this.dialog.component = HostSelector.name
         this.dialog.show = true
       },
-      handleDialogCancel () {
+      handleDialogCancel() {
         this.dialog.show = false
       },
-      handleDialogConfirm () {
+      handleDialogConfirm() {
         if (this.dialog.component === ModuleSelector.name) {
           this.gotoTransferPage(...arguments)
           this.dialog.show = false
@@ -611,7 +611,7 @@
           this.dialog.show = false
         }
       },
-      refreshRemoveHost (hosts) {
+      refreshRemoveHost(hosts) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
@@ -623,7 +623,7 @@
           }
         })
       },
-      gotoTransferPage (modules) {
+      gotoTransferPage(modules) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
@@ -635,7 +635,7 @@
           }
         })
       },
-      refreshRetry (hosts) {
+      refreshRetry(hosts) {
         this.$router.replace({
           name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
@@ -648,7 +648,7 @@
           }
         })
       },
-      async handleConfrim () {
+      async handleConfrim() {
         try {
           const params = { ...this.confirmParams }
           const createComponent = this.$refs.createServiceInstance && this.$refs.createServiceInstance[0]
@@ -695,16 +695,16 @@
           console.error(e)
         }
       },
-      handleCancel () {
+      handleCancel() {
         this.redirect()
       },
-      handleViewFailDetail () {
+      handleViewFailDetail() {
         this.failDetailDialog.show = true
       },
-      handleCloseFailDetail () {
+      handleCloseFailDetail() {
         this.failDetailDialog.show = false
       },
-      redirect () {
+      redirect() {
         this.$routerActions.back()
       }
     }

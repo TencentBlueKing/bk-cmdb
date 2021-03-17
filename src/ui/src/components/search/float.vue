@@ -19,7 +19,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         listeners: {
           focus: () => this.handleToggle(true),
@@ -28,14 +28,14 @@
       }
     },
     computed: {
-      multiple () {
+      multiple() {
         return Array.isArray(this.value)
       },
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           let newValue
           if (Array.isArray(value)) {
             newValue = value.map(number => number.toString().length ? Number(number) : number)
@@ -47,21 +47,21 @@
         }
       },
       start: {
-        get () {
+        get() {
           const [start] = this.value
           return start
         },
-        set (start) {
+        set(start) {
           const [, end = ''] = this.value
           this.localValue = [start, end]
         }
       },
       end: {
-        get () {
+        get() {
           const [, end] = this.value
           return end
         },
-        set (end) {
+        set(end) {
           const [start = ''] = this.value
           this.localValue = [start, end]
         }

@@ -108,7 +108,7 @@
       TaskAccountSelector,
       CmdbVendor
     },
-    data () {
+    data() {
       return {
         filter: '',
         list: [],
@@ -122,24 +122,24 @@
       }
     },
     watch: {
-      filter () {
+      filter() {
         this.scheduleSearch()
       }
     },
-    created () {
+    created() {
       Bus.$on('request-refresh', this.getData)
       this.getData()
       this.unwatch = RouterQuery.watch('_t', () => {
         this.handlePageChange(1)
       })
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('request-refresh', this.getData)
       this.$http.cancelCache(symbols.all)
       this.unwatch && this.unwatch()
     },
     methods: {
-      handleCreate () {
+      handleCreate() {
         this.$refs.taskSideslider.show({
           mode: 'create',
           title: this.$t('新建发现任务'),
@@ -148,25 +148,25 @@
           }
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.sort = this.$tools.getSort(sort, { prop: 'bk_task_id' })
         this.getData()
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.pagination.current = page
         this.getData()
       },
-      handleLimitChange (limit) {
+      handleLimitChange(limit) {
         this.pagination.limit = limit
         this.pagination.current = 1
         this.getData()
       },
-      handleCellClick (row, column) {
+      handleCellClick(row, column) {
         if (column.property === 'bk_task_name') {
           this.handleView(row)
         }
       },
-      handleView (row) {
+      handleView(row) {
         this.$refs.taskSideslider.show({
           mode: 'details',
           title: `${this.$t('任务详情')} 【${row.bk_task_name}】`,
@@ -175,7 +175,7 @@
           }
         })
       },
-      handleEdit (row) {
+      handleEdit(row) {
         this.$refs.taskSideslider.show({
           mode: 'details',
           title: `${this.$t('任务详情')} 【${row.bk_task_name}】`,
@@ -185,7 +185,7 @@
           }
         })
       },
-      async handleDelete (row) {
+      async handleDelete(row) {
         const infoInstance = this.$bkInfo({
           title: this.$t('确认删除xx', { instance: row.bk_task_name }),
           closeIcon: false,
@@ -206,7 +206,7 @@
           }
         })
       },
-      async getData () {
+      async getData() {
         try {
           const params = {
             fields: [],
@@ -239,7 +239,7 @@
           this.pagination.count = 0
         }
       },
-      resourceTypeFormatter (row, column) {
+      resourceTypeFormatter(row, column) {
         return this.$t(resourceTypeFormatter(row[column.property]))
       }
     }

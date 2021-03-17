@@ -29,7 +29,7 @@
       }
     },
     computed: {
-      group () {
+      group() {
         let group = this.$parent
         while (group && !group.isSwitcherGroup) {
           group = group.$parent
@@ -38,7 +38,7 @@
       }
     },
     methods: {
-      handleClick () {
+      handleClick() {
         if (this.group) {
           this.group.setActive(this.name)
         }

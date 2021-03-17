@@ -30,7 +30,7 @@
       }
     },
     methods: {
-      async handleCopy () {
+      async handleCopy() {
         try {
           await this.$copyText(this.list.join('\n'))
           this.$success(this.$t('复制成功'))

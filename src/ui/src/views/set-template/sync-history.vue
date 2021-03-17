@@ -64,7 +64,7 @@
 
 <script>
   export default {
-    data () {
+    data() {
       return {
         templateName: '',
         searchName: '',
@@ -88,17 +88,17 @@
       }
     },
     computed: {
-      business () {
+      business() {
         return this.$store.state.objectBiz.bizId
       },
-      templateId () {
+      templateId() {
         return this.$route.params.templateId
       },
-      setsId () {
+      setsId() {
         const ids = this.list.map(item => item.bk_set_id)
         return [...new Set(ids)]
       },
-      displayList () {
+      displayList() {
         const list = this.$tools.clone(this.list)
         return list.map((item) => {
           const otherParams = {
@@ -116,7 +116,7 @@
           }
         })
       },
-      searchParams () {
+      searchParams() {
         const params = {
           set_template_id: Number(this.templateId),
           search: this.searchName,
@@ -133,12 +133,12 @@
         return params
       }
     },
-    created () {
+    created() {
       this.getSetTemplateInfo()
       this.getData()
     },
     methods: {
-      getTopoPath (row) {
+      getTopoPath(row) {
         const topoPath = this.$tools.clone(row.topo_path)
         if (topoPath.length) {
           const setIndex = topoPath.findIndex(path => path.ObjectID === 'set')
@@ -150,7 +150,7 @@
         }
         return '--'
       },
-      async getData (event) {
+      async getData(event) {
         await this.getHistoryList()
 
         if (event) {
@@ -159,7 +159,7 @@
 
         this.setsId.length && this.getSetInstancesWithTopo()
       },
-      async getSetTemplateInfo () {
+      async getSetTemplateInfo() {
         try {
           const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
             bizId: this.$store.getters['objectBiz/bizId'],
@@ -170,7 +170,7 @@
           console.error(e)
         }
       },
-      async getHistoryList () {
+      async getHistoryList() {
         try {
           const data = await this.$store.dispatch('setTemplate/getSyncHistory', {
             bizId: this.business,
@@ -186,7 +186,7 @@
           this.list = []
         }
       },
-      async getSetInstancesWithTopo () {
+      async getSetInstancesWithTopo() {
         try {
           const data = await this.$store.dispatch('setTemplate/getSetInstancesWithTopo', {
             bizId: this.business,
@@ -208,19 +208,19 @@
           this.listWithTopo = []
         }
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.listSort = this.$tools.getSort(sort)
         this.handlePageChange(1)
       },
-      handlePageChange (current) {
+      handlePageChange(current) {
         this.pagination.current = current
         this.getData()
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.pagination.limit = size
         this.handlePageChange(1)
       },
-      hanldeFilterByDate (daterange) {
+      hanldeFilterByDate(daterange) {
         daterange = daterange.filter(date => date)
         this.searchDate = daterange.map((date, index) => {
           return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')

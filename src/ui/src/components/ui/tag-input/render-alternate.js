@@ -1,9 +1,9 @@
 export default {
   name: 'render-alternate',
-  data () {
+  data() {
     return { tagInput: null }
   },
-  render (h) {
+  render(h) {
     return this.tagInput.defaultAlternate(h)
   }
 }

@@ -110,7 +110,7 @@ const setChildrenEvents = (target, pointerEvents) => {
 }
 
 const cursor = {
-  inserted (el, binding, vNode) {
+  inserted(el, binding, vNode) {
     if (!proxy) {
       createProxy()
     }
@@ -129,7 +129,7 @@ const cursor = {
       setChildrenEvents(target, pointerEvents)
     }
   },
-  update (el, binding) {
+  update(el, binding) {
     const data = { ...options }
     if (typeof binding.value !== 'object') {
       data.active = binding.value
@@ -152,7 +152,7 @@ const cursor = {
       setChildrenEvents(target, pointerEvents)
     }
   },
-  unbind (el) {
+  unbind(el) {
     const target = el.__cursor_target__
     removeEventListener(target)
   }

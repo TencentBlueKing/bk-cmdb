@@ -35,12 +35,12 @@
       displayType: {
         type: String,
         default: 'selector',
-        validator (type) {
+        validator(type) {
           return ['selector', 'info'].includes(type)
         }
       }
     },
-    data () {
+    data() {
       return {
         list: [],
         requestId: requestId
@@ -49,19 +49,19 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       localValue: {
-        get () {
+        get() {
           const value = this.value
           if (Array.isArray(value)) {
             return value
           }
           return value.split(',').map(id => parseInt(id, 10))
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       },
-      info () {
+      info() {
         const info = []
         this.localValue.forEach((id) => {
           const data = this.list.find(data => data.id === id)
@@ -70,11 +70,11 @@
         return info.join(' | ') || '--'
       }
     },
-    created () {
+    created() {
       this.getServiceTemplate()
     },
     methods: {
-      async getServiceTemplate () {
+      async getServiceTemplate() {
         try {
           const { info } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
             params: {

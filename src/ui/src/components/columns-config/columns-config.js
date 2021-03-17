@@ -3,16 +3,16 @@ import i18n from '@/i18n'
 import store from '@/store'
 import ColumnsConfig from './columns-config.vue'
 export default {
-  open ({ props = {}, handler = {} }) {
+  open({ props = {}, handler = {} }) {
     const vm = new Vue({
       i18n,
       store,
-      data () {
+      data() {
         return {
           isShow: false
         }
       },
-      render (h) {
+      render(h) {
         return h('bk-sideslider', {
           ref: 'sideslider',
           props: {

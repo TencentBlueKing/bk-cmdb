@@ -93,7 +93,7 @@
     props: {
       inst: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
@@ -103,7 +103,7 @@
       },
       type: {
         default: 'create',
-        validator (val) {
+        validator(val) {
           return ['create', 'update'].includes(val)
         }
       },
@@ -130,7 +130,7 @@
         default: data => data
       }
     },
-    data () {
+    data() {
       return {
         values: {
           bk_func_name: ''
@@ -142,19 +142,19 @@
       }
     },
     computed: {
-      groupedProperties () {
+      groupedProperties() {
         return this.$groupedProperties
       }
     },
     watch: {
-      inst (inst) {
+      inst(inst) {
         this.initValues()
       },
-      properties () {
+      properties() {
         this.initValues()
       },
       'values.bk_func_name.value': {
-        handler (newVal, oldValue) {
+        handler(newVal, oldValue) {
           if (this.values.bk_process_name.value === oldValue) {
             this.values.bk_process_name.value = newVal
           }
@@ -162,38 +162,38 @@
         deep: true
       }
     },
-    created () {
+    created() {
       this.initValues()
     },
-    mounted () {
+    mounted() {
       RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
     },
     methods: {
       ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
-      isLocked (property) {
+      isLocked(property) {
         return this.values[property.bk_property_id].as_default_value
       },
-      allowLock (property) {
+      allowLock(property) {
         return !this.defaultLocked.includes(property.bk_property_id)
       },
-      toggleLockState (property) {
+      toggleLockState(property) {
         this.values[property.bk_property_id].as_default_value = !this.isLocked(property)
       },
-      getComponentType (property) {
+      getComponentType(property) {
         const type = property.bk_property_type
         if (type === 'table') {
           return 'process-form-property-table'
         }
         return `cmdb-form-${type}`
       },
-      getPropertyEditStatus (property) {
+      getPropertyEditStatus(property) {
         const uneditable = ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']) && !this.isCreatedService
         return this.type === 'update' && uneditable
       },
-      changedValues () {
+      changedValues() {
         const changedValues = {}
         if (!Object.keys(this.refrenceValues).length) return {}
         Object.keys(this.values).forEach((propertyId) => {
@@ -209,17 +209,17 @@
         })
         return changedValues
       },
-      hasChange () {
+      hasChange() {
         return !!Object.keys(this.changedValues()).length
       },
-      btnStatus () {
+      btnStatus() {
         return this.type === 'create' ? false : !this.hasChange()
       },
-      checkScrollbar () {
+      checkScrollbar() {
         const $layout = this.$el
         this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
       },
-      initValues () {
+      initValues() {
         const restValues = {}
         const formValues = this.$tools.getInstFormValues(this.properties, {}, this.type === 'create')
         Object.keys(formValues).forEach((key) => {
@@ -236,46 +236,46 @@
           clearTimeout(timer)
         })
       },
-      checkGroupAvailable (properties) {
+      checkGroupAvailable(properties) {
         const availabelProperties = properties.filter((property) => {
           return this.checkEditable(property)
         })
         return !!availabelProperties.length
       },
-      checkEditable (property) {
+      checkEditable(property) {
         if (this.type === 'create') {
           return !property['bk_isapi']
         }
         return property.editable && !property['bk_isapi']
       },
-      checkDisabled (property) {
+      checkDisabled(property) {
         if (this.type === 'create') {
           return false
         }
         return !property.editable || property.isreadonly
       },
-      htmlEncode (placeholder) {
+      htmlEncode(placeholder) {
         let temp = document.createElement('div')
         temp.innerHTML = placeholder
         const output = temp.innerText
         temp = null
         return output
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      getValidateRules (property) {
+      getValidateRules(property) {
         return this.$tools.getValidateRules(property)
       },
-      getFormError (property) {
+      getFormError(property) {
         if (property.bk_property_type === 'table') {
           const hasError = this.errors.items.some(item => item.scope === property.bk_property_id)
           return hasError ? this.$t('有未正确定义的监听信息') : ''
         }
         return this.errors.first(property.bk_property_id)
       },
-      callComponentValidator () {
+      callComponentValidator() {
         const componentValidator = []
         const { formComponent = [] } = this.$refs
         formComponent.forEach((component) => {
@@ -284,7 +284,7 @@
         })
         return componentValidator
       },
-      async handleSave () {
+      async handleSave() {
         try {
           const results = await Promise.all([
             this.$validator.validateAll(),
@@ -312,7 +312,7 @@
           console.error(error)
         }
       },
-      uncollapseGroup () {
+      uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const compareKey = item.scope || item.field
           const property = this.properties.find(property => property['bk_property_id'] === compareKey)
@@ -320,7 +320,7 @@
           this.groupState[group] = false
         })
       },
-      handleCancel () {
+      handleCancel() {
         if (this.hasChange()) {
           return new Promise((resolve, reject) => {
             this.$bkInfo({

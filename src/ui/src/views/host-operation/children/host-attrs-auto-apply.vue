@@ -39,15 +39,15 @@
       }
     },
     computed: {
-      conflictList () {
+      conflictList() {
         return this.info.filter(item => item.unresolved_conflict_count > 0)
       },
-      list () {
+      list() {
         return this.conflictList.length ? this.conflictList : this.info
       }
     },
     methods: {
-      getHostApplyConflictResolvers () {
+      getHostApplyConflictResolvers() {
         const conflictResolveResult = this.$refs.confirmTable.conflictResolveResult
         const conflictResolvers = []
         Object.keys(conflictResolveResult).forEach((key) => {

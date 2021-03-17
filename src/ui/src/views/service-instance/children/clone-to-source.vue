@@ -74,12 +74,12 @@
     props: {
       sourceProcesses: {
         type: Array,
-        default () {
+        default() {
           return {}
         }
       }
     },
-    data () {
+    data() {
       return {
         checked: [],
         cloneProcesses: this.$tools.clone(this.sourceProcesses),
@@ -92,7 +92,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      header () {
+      header() {
         const header = processTableHeader.map((id) => {
           const property = this.properties.find(property => property.bk_property_id === id) || {}
           return {
@@ -103,12 +103,12 @@
         })
         return header
       },
-      norepeatProperties () {
+      norepeatProperties() {
         const unique = this.propertyUnique.find(unique => unique.must_check) || {}
         const uniqueKeys = unique.keys || []
         return this.properties.filter(property => uniqueKeys.some(target => target.key_id === property.id))
       },
-      repeatedProcesses () {
+      repeatedProcesses() {
         return this.cloneProcesses.filter((cloneProcess) => {
           const sourceProcess = this.sourceProcesses.find(sourceProcess => sourceProcess.bk_process_id === cloneProcess.bk_process_id)
           return this.norepeatProperties.length
@@ -117,33 +117,33 @@
             })
         })
       },
-      hostId () {
+      hostId() {
         return parseInt(this.$route.params.hostId)
       },
-      bindInfoProperty () {
+      bindInfoProperty() {
         return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
       },
       bindInfo: {
-        get () {
+        get() {
           return this.formValuesReflect.bind_info || []
         },
-        set (values) {
+        set(values) {
           this.formValuesReflect.bind_info = values
         }
       }
     },
     watch: {
-      sourceProcesses (source) {
+      sourceProcesses(source) {
         this.cloneProcesses = this.$tools.clone(source)
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.sourceTables, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.sourceTables, this.resizeHandler)
     },
-    async created () {
+    async created() {
       try {
         const [properties, propertyUnique] = await Promise.all([
           this.getProcessProperties(),
@@ -156,7 +156,7 @@
       }
     },
     methods: {
-      getProcessProperties () {
+      getProcessProperties() {
         const action = 'objectModelProperty/searchObjectAttribute'
         return this.$store.dispatch(action, {
           params: {
@@ -169,7 +169,7 @@
           }
         })
       },
-      getProcessPropertyUnique () {
+      getProcessPropertyUnique() {
         const action = 'objectUnique/searchObjectUniqueConstraints'
         return this.$store.dispatch(action, {
           objId: 'process',
@@ -180,13 +180,13 @@
           }
         })
       },
-      isRepeat (item) {
+      isRepeat(item) {
         return this.repeatedProcesses.some(process => process.bk_process_id === item.bk_process_id)
       },
-      handleSelectChange (selection) {
+      handleSelectChange(selection) {
         this.checked = selection.map(row => row.bk_process_id)
       },
-      handleBatchEdit () {
+      handleBatchEdit() {
         this.processFormType = 'batch'
         ProcessForm.show({
           type: 'update',
@@ -198,7 +198,7 @@
           invisibleProperties: ['bind_info']
         })
       },
-      handleEditProcess (item) {
+      handleEditProcess(item) {
         this.processFormType = 'single'
         ProcessForm.show({
           type: 'update',
@@ -209,7 +209,7 @@
           submitHandler: this.handleSubmit
         })
       },
-      async validateCustomComponent () {
+      async validateCustomComponent() {
         const { bindInfo } = this.$refs
         const customComponents = [bindInfo]
         const validatePromise = []
@@ -220,7 +220,7 @@
         const results = await Promise.all(validatePromise)
         return results.every(result => result)
       },
-      handleSubmit (values, changedValues, instance) {
+      handleSubmit(values, changedValues, instance) {
         if (this.processFormType === 'single') {
           Object.assign(instance, changedValues)
         } else {
@@ -229,7 +229,7 @@
           })
         }
       },
-      async doClone () {
+      async doClone() {
         try {
           await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
             params: {
@@ -250,7 +250,7 @@
           console.error(e)
         }
       },
-      getCloneProcessValues () {
+      getCloneProcessValues() {
         return this.cloneProcesses.map((process) => {
           const value = {}
           this.properties.forEach((property) => {
@@ -261,10 +261,10 @@
           }
         })
       },
-      backToModule () {
+      backToModule() {
         this.$routerActions.back()
       },
-      resizeHandler () {
+      resizeHandler() {
         this.$nextTick(() => {
           const scroller = this.$el.parentElement
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight

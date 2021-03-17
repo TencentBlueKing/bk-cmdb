@@ -24,7 +24,7 @@
     },
     mixins: [permissionMixins],
     props: {},
-    data () {
+    data() {
       return {
         applied: false,
         isModalShow: false,
@@ -34,7 +34,7 @@
       }
     },
     watch: {
-      isModalShow (val) {
+      isModalShow(val) {
         if (val) {
           setTimeout(() => {
             this.$refs.main.doTableLayout()
@@ -43,21 +43,21 @@
       }
     },
     methods: {
-      show (permission) {
+      show(permission) {
         this.permission = permission
         this.applied = false
         this.isModalShow = true
       },
-      onCloseDialog () {
+      onCloseDialog() {
         this.isModalShow = false
       },
-      async handleApply () {
+      async handleApply() {
         try {
           await this.handleApplyPermission()
           this.applied = true
         } catch (error) {}
       },
-      handleRefresh () {
+      handleRefresh() {
         window.location.reload()
       }
     }

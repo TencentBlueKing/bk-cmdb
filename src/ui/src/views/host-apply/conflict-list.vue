@@ -46,7 +46,7 @@
       applyStatusModal,
       propertyConfirmTable
     },
-    data () {
+    data() {
       return {
         table: {
           list: [],
@@ -59,7 +59,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      moduleIds () {
+      moduleIds() {
         const mid = this.$route.query.mid
         let moduleIds = []
         if (mid) {
@@ -69,13 +69,13 @@
         return moduleIds
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
     },
-    created () {
+    created() {
       this.setBreadcrumbs()
       this.initData()
     },
@@ -84,7 +84,7 @@
         'getApplyPreview',
         'runApply'
       ]),
-      async initData () {
+      async initData() {
         try {
           const previewData = await this.getApplyPreview({
             bizId: this.bizId,
@@ -101,21 +101,21 @@
           console.error(e)
         }
       },
-      setBreadcrumbs () {
+      setBreadcrumbs() {
         this.$store.commit('setTitle', this.$t('策略失效主机'))
       },
-      goBack () {
+      goBack() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY
         })
       },
-      resizeHandler (a, b, c) {
+      resizeHandler(a, b, c) {
         this.$nextTick(() => {
           const scroller = this.$refs.propertyConfirmTable.$el.querySelector('.bk-table-body-wrapper')
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
         })
       },
-      postApply () {
+      postApply() {
         const conflictResolveResult = this.$refs.propertyConfirmTable.conflictResolveResult
         const conflictResolvers = []
         Object.keys(conflictResolveResult).forEach((key) => {
@@ -141,7 +141,7 @@
         })
         this.$refs.applyStatusModal.show()
       },
-      async handleApply () {
+      async handleApply() {
         const allResolved = this.$refs.propertyConfirmTable.list.every(item => item.unresolved_conflict_count === 0)
         if (allResolved) {
           this.postApply()
@@ -155,10 +155,10 @@
           })
         }
       },
-      handleStatusModalBack () {
+      handleStatusModalBack() {
         this.goBack()
       },
-      handleViewHost () {
+      handleViewHost() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {
@@ -167,7 +167,7 @@
           history: true
         })
       },
-      handleViewFailed () {
+      handleViewFailed() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_FAILED,
           query: this.$route.query,

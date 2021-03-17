@@ -11,7 +11,7 @@ export default {
       required: true
     }
   },
-  data () {
+  data() {
     return {
       slider: {
         show: false,
@@ -26,11 +26,11 @@ export default {
     }
   },
   computed: {
-    isGlobalView () {
+    isGlobalView() {
       const topRoute = this.$route.matched[0]
       return topRoute ? topRoute.name !== MENU_BUSINESS : true
     },
-    saveAuth () {
+    saveAuth() {
       return this.selection.map(({ host, biz, module }) => {
         const isBizHost = biz[0].default === 0
         if (isBizHost) {
@@ -47,7 +47,7 @@ export default {
     }
   },
   methods: {
-    async handleMultipleEdit () {
+    async handleMultipleEdit() {
       try {
         this.slider.show = true
         this.slider.title = this.$t('主机属性')
@@ -66,7 +66,7 @@ export default {
         console.error(e)
       }
     },
-    async handleMultipleSave (changedValues) {
+    async handleMultipleSave(changedValues) {
       try {
         await this.$store.dispatch('hostUpdate/updateHost', {
           params: {
@@ -83,7 +83,7 @@ export default {
         console.error(e)
       }
     },
-    handleSliderBeforeClose () {
+    handleSliderBeforeClose() {
       const $form = this.$refs.multipleForm
       if (Object.keys($form.changedValues).length) {
         return new Promise((resolve, reject) => {
@@ -105,7 +105,7 @@ export default {
       this.slider.component = null
       this.slider.show = false
     },
-    getObjectUnique () {
+    getObjectUnique() {
       return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
         objId: 'host',
         params: {},
@@ -114,7 +114,7 @@ export default {
         }
       })
     },
-    getPropertyGroups () {
+    getPropertyGroups() {
       return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
         objId: 'host',
         params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId) },

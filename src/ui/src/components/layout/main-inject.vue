@@ -14,17 +14,17 @@
       injectType: {
         type: String,
         default: 'append',
-        validator (val) {
+        validator(val) {
           return ['append', 'prepend'].includes(val)
         }
       }
     },
     computed: {
-      scrollbar () {
+      scrollbar() {
         return this.$store.state.scrollerState.scrollbar
       }
     },
-    mounted () {
+    mounted() {
       const $mainLayout = document.querySelector('.main-layout')
       if (this.injectType === 'append') {
         $mainLayout.append(this.$el)
@@ -32,7 +32,7 @@
         $mainLayout.insertBefore(this.$el, $mainLayout.firstChild)
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.$el.remove()
     }
   }

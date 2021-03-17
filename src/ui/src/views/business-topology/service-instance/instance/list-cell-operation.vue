@@ -37,7 +37,7 @@
       ...mapGetters('businessHost', ['selectedNode'])
     },
     methods: {
-      handleClone () {
+      handleClone() {
         this.$routerActions.redirect({
           name: 'cloneServiceInstance',
           params: {
@@ -53,7 +53,7 @@
           history: true
         })
       },
-      handleDelete () {
+      handleDelete() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_DELETE_SERVICE,
           params: {

@@ -80,7 +80,7 @@
         }
       }
     },
-    data () {
+    data() {
       return {
         loaded: false,
         allowClose: true,
@@ -93,24 +93,24 @@
     },
     computed: {
       selected: {
-        get () {
+        get() {
           return this.storageCollection ? [this.storageCollection.id] : []
         },
-        set (value = []) {
+        set(value = []) {
           this.handleApply(value)
         }
       },
-      collections () {
+      collections() {
         return FilterStore.collections || []
       },
-      storageCollection () {
+      storageCollection() {
         return FilterStore.activeCollection
       },
-      loadingCollections () {
+      loadingCollections() {
         return this.$loading(FilterStore.request.collections)
       }
     },
-    mounted () {
+    mounted() {
       const instance = this.$refs.selector.$refs.selectDropdown.instance
       const bindedHideFunc = instance.props.onHide
       instance.set({
@@ -125,7 +125,7 @@
       })
     },
     methods: {
-      async loadCollections () {
+      async loadCollections() {
         if (this.loaded || this.loadingCollections) {
           return false
         }
@@ -139,7 +139,7 @@
           console.error(error)
         }
       },
-      handleApply (value) {
+      handleApply(value) {
         this.$refs.selector.close()
         let selected
         if (value.length === 2) {
@@ -152,30 +152,30 @@
         const collection = selected ? this.collections.find(collection => collection.id === selected) : null
         FilterStore.setActiveCollection(collection)
       },
-      deactiveAllowClose () {
+      deactiveAllowClose() {
         this.allowClose = false
       },
-      activeAllowClose () {
+      activeAllowClose() {
         this.allowClose = true
       },
-      handleEdit (collection) {
+      handleEdit(collection) {
         this.deactiveAllowClose()
         this.editState.id = collection.id
         this.editState.value = collection.name
         this.editState.raw = collection
       },
-      isPending (collection) {
+      isPending(collection) {
         return this.$loading([
           FilterStore.request.deleteCollection(collection.id),
           FilterStore.request.updateCollection(collection.id)
         ])
       },
-      handleNativeSelect (event, collection) {
+      handleNativeSelect(event, collection) {
         if (collection.id === this.editState.id) {
           event.stopPropagation()
         }
       },
-      async handleUpdateCollection () {
+      async handleUpdateCollection() {
         if (!this.editState.raw) {
           return false
         }
@@ -198,7 +198,7 @@
         }
         setTimeout(this.activeAllowClose, 300)
       },
-      async handleRemove (collection) {
+      async handleRemove(collection) {
         try {
           this.deactiveAllowClose()
           await FilterStore.removeCollection(collection)
@@ -210,7 +210,7 @@
           console.error(error)
         }
       },
-      handleCreate () {
+      handleCreate() {
         FilterStore.setActiveCollection(null)
         FilterForm.show()
       }

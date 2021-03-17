@@ -194,7 +194,7 @@
     components: {
       vDetail
     },
-    data () {
+    data() {
       const startDate = this.$tools.formatTime(moment().subtract(6, 'days')
         .toDate(), 'YYYY-MM-DD')
       const endDate = this.$tools.formatTime(moment().toDate(), 'YYYY-MM-DD')
@@ -227,7 +227,7 @@
         dateChart: {},
         maxRange: [],
         options: {
-          disabledDate (date) {
+          disabledDate(date) {
             const today = new Date()
             const lastYears = moment().subtract(1, 'years')
               .toDate()
@@ -245,7 +245,7 @@
     computed: {
       ...mapGetters(['site'])
     },
-    async created () {
+    async created() {
       this.fetching = true
       const [plotly, plotlyCn] = await Promise.all([
                 import('plotly.js'),
@@ -263,7 +263,7 @@
         'deleteOperationChart',
         'updateChartPosition'
       ]),
-      async getChartList () {
+      async getChartList() {
         try {
           const res = await this.getCountedCharts({
             config: {
@@ -286,7 +286,7 @@
           this.$route.meta.view = 'permission'
         }
       },
-      async getNavData (item, type) {
+      async getNavData(item, type) {
         const res = await this.getCountedChartsData({
           params: {
             config_id: item.config_id
@@ -319,7 +319,7 @@
           this.drawCharts(item)
         }
       },
-      dataDeal (data, res) {
+      dataDeal(data, res) {
         const returnData = {
           data: [],
           minTime: '',
@@ -442,7 +442,7 @@
         if (data.report_type === 'host_change_biz_chart') this.maxRange = [returnData.minTime, returnData.maxTime]
         return returnData
       },
-      drawCharts (item) {
+      drawCharts(item) {
         const layConfig = {
           type: 'category',
           nticks: item.x_axis_count,
@@ -537,7 +537,7 @@
           if (item.data.data[0].mode !== 'line') this.hoverConfig(document.getElementById(myDiv), myDiv)
         }
       },
-      hoverConfig (myPlot, myDiv) {
+      hoverConfig(myPlot, myDiv) {
         myPlot.on('plotly_hover', (data) => {
           const colors = ['#A3C5FD', '#B0E7F4', '#BDEDC9']
           this.reStyle(myDiv, data, colors)
@@ -547,7 +547,7 @@
           this.reStyle(myDiv, data, colors)
         })
       },
-      reStyle (myDiv, data, color) {
+      reStyle(myDiv, data, color) {
         let pn = ''
         let tn = ''
         let colors = []
@@ -578,7 +578,7 @@
           Plotly.restyle(myDiv, update, [0, 2])
         }
       },
-      moveChart (type, dire, key, list) {
+      moveChart(type, dire, key, list) {
         if (dire === 'up' && key !== 0) {
           list[key] = list.splice(key - 1, 1, list[key])[0]
         } else if (dire === 'down' && key !== list.length - 1) {
@@ -588,7 +588,7 @@
         else this.instData.disList = list
         this.updatePosition()
       },
-      deleteChart (type, key, list, item) {
+      deleteChart(type, key, list, item) {
         this.$bkInfo({
           title: this.$tc('是否确认删除'),
           subTitle: '确定要删除【' + item.name + '】',
@@ -604,7 +604,7 @@
           }
         })
       },
-      async openNew (type, host, data, key) {
+      async openNew(type, host, data, key) {
         this.editType.hostType = host
         this.editType.key = key
         this.editType.openType = type
@@ -628,7 +628,7 @@
         }
         this.isShow = true
       },
-      async saveData (data) {
+      async saveData(data) {
         let editList = []
         if (this.editType.hostType === 'host') editList = this.hostData.disList
         else editList = this.instData.disList
@@ -642,11 +642,11 @@
         this.updatePosition()
         this.newChart = {}
       },
-      cancelData () {
+      cancelData() {
         this.isShow = false
         this.newChart = {}
       },
-      updatePosition () {
+      updatePosition() {
         const data = {
           'host': [],
           'inst': []
@@ -663,16 +663,16 @@
           }
         })
       },
-      goRouter (route) {
+      goRouter(route) {
         this.$routerActions.redirect({ name: route })
       },
-      dateChange (date) {
+      dateChange(date) {
         this.dateChart.data.maxTime = date[1]
         this.dateChart.data.minTime = date[0]
         this.editType.openType = 'edit'
         this.drawCharts(this.dateChart)
       },
-      handleReceiveAuth (auth) {
+      handleReceiveAuth(auth) {
         this.updateAuth = auth
       }
     }

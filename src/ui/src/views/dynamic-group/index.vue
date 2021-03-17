@@ -101,7 +101,7 @@
   import DynamicGroupForm from './form/form.js'
   import DynmaicGroupPreview from './preview/preview.js'
   export default {
-    data () {
+    data() {
       return {
         filter: '',
         table: {
@@ -125,7 +125,7 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['getModelById'])
     },
-    created () {
+    created() {
       this.unwatchQuery = RouterQuery.watch('*', ({ page, limit, sort, filter }) => {
         this.table.pagination.current = parseInt(page || this.table.pagination.current, 10)
         this.table.pagination.limit = parseInt(limit || this.table.pagination.limit, 10)
@@ -144,12 +144,12 @@
         }, 500)
       })
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatchQuery && this.unwatchQuery()
       this.unwatchFilter && this.unwatchFilter()
     },
     methods: {
-      async getList () {
+      async getList() {
         try {
           const { info, count } = await this.$store.dispatch('dynamicGroup/search', {
             bizId: this.bizId,
@@ -180,12 +180,12 @@
           }
         }
       },
-      handleCreate () {
+      handleCreate() {
         DynamicGroupForm.show({
           title: this.$t('新建动态分组')
         })
       },
-      handleCellClick (row, column, cell, event) {
+      handleCellClick(row, column, cell, event) {
         if (column.property !== 'name') {
           return false
         }
@@ -194,17 +194,17 @@
           this.handleEdit(row)
         }
       },
-      getModelName (row) {
+      getModelName(row) {
         const model = this.getModelById(row.bk_obj_id)
         return model ? model.bk_obj_name : row.bk_obj_id
       },
-      handleEdit (row) {
+      handleEdit(row) {
         DynamicGroupForm.show({
           id: row.id,
           title: this.$t('编辑动态分组')
         })
       },
-      handleDelete (row) {
+      handleDelete(row) {
         this.$bkInfo({
           title: this.$t('确定删除'),
           subTitle: this.$t('确认要删除分组', { name: row.name }),
@@ -226,25 +226,25 @@
           }
         })
       },
-      handlePreview (row) {
+      handlePreview(row) {
         DynmaicGroupPreview.show({
           id: row.id
         })
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         RouterQuery.set({
           page: page,
           _t: Date.now()
         })
       },
-      handlePageLimitChange (limit) {
+      handlePageLimitChange(limit) {
         RouterQuery.set({
           page: 1,
           limit: limit,
           _t: Date.now()
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         RouterQuery.set({
           sort: this.$tools.getSort(sort, '-last_time'),
           _t: Date.now()

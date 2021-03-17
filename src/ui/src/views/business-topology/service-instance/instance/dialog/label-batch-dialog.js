@@ -7,18 +7,18 @@ const Component = Vue.extend({
     LabelBatchDialog
   },
   methods: {
-    handleClose () {
+    handleClose() {
       document.body.removeChild(this.$el)
       this.$destroy()
     }
   },
-  render (h) {
+  render(h) {
     return <label-batch-dialog ref="dialog" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></label-batch-dialog>
   }
 })
 
 export default {
-  show (data = {}) {
+  show(data = {}) {
     const vm = new Component({
       store,
       i18n,

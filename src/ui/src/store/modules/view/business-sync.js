@@ -10,7 +10,7 @@ const actions = {
 }
 
 const mutations = {
-  setInstance (state, data) {
+  setInstance(state, data) {
     Vue.set(state.instanceMap, data.id, data.instanceProperty)
   }
 }

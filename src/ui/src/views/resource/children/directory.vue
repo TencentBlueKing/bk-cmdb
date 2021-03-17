@@ -107,7 +107,7 @@
   import RouterQuery from '@/router/query'
   const CUSTOM_STICKY_KEY = 'sticky-directory'
   export default {
-    data () {
+    data() {
       return {
         dirSearch: '',
         resetName: false,
@@ -127,10 +127,10 @@
       ...mapGetters('resourceHost', [
         'directoryList'
       ]),
-      stickyDirectory () {
+      stickyDirectory() {
         return this.usercustom[CUSTOM_STICKY_KEY] || []
       },
-      filterDirList () {
+      filterDirList() {
         let list = [...this.directoryList]
         if (this.dirSearch) {
           const lowerCaseSearch = this.dirSearch.toLowerCase()
@@ -145,14 +145,14 @@
         })
         return list
       },
-      totalCount () {
+      totalCount() {
         return this.directoryList.reduce((accumulator, directory) => {
           return accumulator + directory.host_count
         }, 0)
       }
     },
     watch: {
-      acitveDirId (id) {
+      acitveDirId(id) {
         RouterQuery.set({
           directory: id,
           page: 1,
@@ -160,15 +160,15 @@
         })
       }
     },
-    async created () {
+    async created() {
       Bus.$on('refresh-dir-count', this.getDirectoryList)
       this.getDirectoryList()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('refresh-dir-count', this.getDirectoryList)
     },
     methods: {
-      async getDirectoryList () {
+      async getDirectoryList() {
         try {
           const { info } = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
             params: {
@@ -191,10 +191,10 @@
           console.error(error)
         }
       },
-      isSticky (dir) {
+      isSticky(dir) {
         return this.stickyDirectory.includes(dir.bk_module_id)
       },
-      async handleToggleSticky (dir) {
+      async handleToggleSticky(dir) {
         try {
           const previous = this.stickyDirectory
           const isSticky = this.isSticky(dir)
@@ -207,7 +207,7 @@
           console.error(error)
         }
       },
-      async createdDir () {
+      async createdDir() {
         try {
           const data = await this.$store.dispatch('resourceDirectory/createDirectory', {
             params: {
@@ -227,7 +227,7 @@
           console.error(e)
         }
       },
-      async updateDir () {
+      async updateDir() {
         try {
           await this.$store.dispatch('resourceDirectory/updateDirectory', {
             moduleId: this.editDir.id,
@@ -249,21 +249,21 @@
           console.error(e)
         }
       },
-      handleSearchHost (active = {}, dispatchEvent = true) {
+      handleSearchHost(active = {}, dispatchEvent = true) {
         this.$store.commit('resourceHost/setActiveDirectory', active)
         this.acitveDirId = active.bk_module_id
         dispatchEvent && Bus.$emit('refresh-resource-list')
       },
-      handleResourceClick () {
+      handleResourceClick() {
         this.$store.commit('resourceHost/setActiveDirectory', null)
         this.acitveDirId = null
         Bus.$emit('refresh-resource-list')
       },
-      handleCancelCreate () {
+      handleCancelCreate() {
         this.createInfo.active = false
         this.createInfo.name = ''
       },
-      handleShowCreate () {
+      handleShowCreate() {
         this.createInfo.active = true
         this.$nextTick(() => {
           const createDirItem = this.$refs.createDirItem
@@ -272,11 +272,11 @@
           this.$refs.createdDir.$refs.input.focus()
         })
       },
-      handleCancelEdit () {
+      handleCancelEdit() {
         this.editDir.id = null
         this.editDir.name = ''
       },
-      async handleConfirm (isCreate) {
+      async handleConfirm(isCreate) {
         if (!await this.$validator.validateAll()) {
           this.$error(this.$t('请正确目录名称'))
           return
@@ -287,18 +287,18 @@
           this.updateDir()
         }
       },
-      handleResetName (dir) {
+      handleResetName(dir) {
         this.editDir.id = dir.bk_module_id
         this.editDir.name = dir.bk_module_name
         this.$nextTick(() => {
           this.$refs[`dir-node-${dir.bk_module_id}`][0].$refs.input.focus()
         })
       },
-      handleCloseInput () {
+      handleCloseInput() {
         this.handleCancelCreate()
         this.handleCancelEdit()
       },
-      async handleDelete (dir, index) {
+      async handleDelete(dir, index) {
         if (dir.host_count) {
           this.$error(this.$t('目标包含主机, 不允许删除'))
           return

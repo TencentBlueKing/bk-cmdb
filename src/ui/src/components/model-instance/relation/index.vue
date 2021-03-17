@@ -93,7 +93,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         associationObject: [],
         associationTypes: [],
@@ -116,7 +116,7 @@
       }
     },
     computed: {
-      formatedInst () {
+      formatedInst() {
         const idKey = this.idKeyMap[this.objId] || 'bk_inst_id'
         const nameKey = this.nameKeyMap[this.objId] || 'bk_inst_name'
         return {
@@ -125,14 +125,14 @@
           'bk_inst_name': this.inst[nameKey]
         }
       },
-      authResources () {
+      authResources() {
         if (this.resourceType === 'business') {
           return this.INST_AUTH.U_BUSINESS
         }
         return this.INST_AUTH.U_INST
       }
     },
-    created () {
+    created() {
       this.getRelation()
       this.getAssociationType()
     },
@@ -141,7 +141,7 @@
         'searchAssociationType',
         'searchObjectAssociation'
       ]),
-      async getRelation () {
+      async getRelation() {
         try {
           let [dataAsSource, dataAsTarget, mainLineModels] = await Promise.all([
             this.getObjectAssociation({ 'bk_obj_id': this.objId }, { requestId: 'getSourceAssocaition' }),
@@ -163,18 +163,18 @@
           this.hasRelation = false
         }
       },
-      getAvailableRelation (data, mainLine) {
+      getAvailableRelation(data, mainLine) {
         return data.filter((relation) => {
           return !mainLine.some(model => [relation['bk_obj_id'], relation['bk_asst_obj_id']].includes(model['bk_obj_id']))
         })
       },
-      getObjectAssociation (condition, config) {
+      getObjectAssociation(condition, config) {
         return this.searchObjectAssociation({
           params: { condition },
           config
         })
       },
-      getAssociationType () {
+      getAssociationType() {
         return this.searchAssociationType({}, {
           config: {
             requestId: 'getAssociationType'
@@ -184,13 +184,13 @@
           return data
         })
       },
-      handleFullScreen () {
+      handleFullScreen() {
         this.$refs.dynamicComponent.toggleFullScreen(true)
       },
-      handleToggleView (view) {
+      handleToggleView(view) {
         this.activeView = view
       },
-      handleExpandAll (expandAll) {
+      handleExpandAll(expandAll) {
         bus.$emit('expand-all-relation-table', expandAll)
       }
     }

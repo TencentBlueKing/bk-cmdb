@@ -78,11 +78,11 @@
       },
       showOperation: Boolean
     },
-    data () {
+    data() {
       return {}
     },
     computed: {
-      header () {
+      header() {
         const header = processTableHeader.map((id) => {
           const property = this.properties.find(property => property.bk_property_id === id) || {}
           return {
@@ -93,7 +93,7 @@
         })
         return header
       },
-      showList () {
+      showList() {
         const list = this.list.map((template) => {
           const result = {}
           Object.keys(template).map((key) => {
@@ -112,10 +112,10 @@
       }
     },
     methods: {
-      handleEdit (process, index) {
+      handleEdit(process, index) {
         this.$emit('on-edit', process, index)
       },
-      handleDelete (process, index) {
+      handleDelete(process, index) {
         this.$emit('on-delete', process, index)
       }
     }

@@ -8,7 +8,7 @@ import GET_VALUE from 'get-value'
  * @return {String} 拍平后的模型属性对应的值
  */
 
-export function getPropertyText (property, item) {
+export function getPropertyText(property, item) {
   const propertyId = property['bk_property_id']
   const propertyType = property['bk_property_type']
   let propertyValue = item[propertyId]
@@ -42,7 +42,7 @@ export function getPropertyText (property, item) {
  * @return {Object} 实例真实值
  */
 
-function getDefaultOptionValue (property) {
+function getDefaultOptionValue(property) {
   const defaultOption = (property.option || []).find(option => option.is_default)
   if (defaultOption) {
     return defaultOption.id
@@ -50,7 +50,7 @@ function getDefaultOptionValue (property) {
   return ''
 }
 
-export function getInstFormValues (properties, inst = {}, autoSelect = true) {
+export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   const values = {}
   properties.forEach((property) => {
     const propertyId = property['bk_property_id']
@@ -84,11 +84,11 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
   return { ...inst, ...values }
 }
 
-export function isEmptyValue (value) {
+export function isEmptyValue(value) {
   return value === '' || value === null || value === void 0
 }
 
-export function formatValue (value, property) {
+export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
     return value
   }
@@ -110,7 +110,7 @@ export function formatValue (value, property) {
   return formattedValue
 }
 
-export function formatValues (values, properties) {
+export function formatValues(values, properties) {
   const formatted = { ...values }
   properties.forEach((property) => {
     const key = property.bk_property_id
@@ -127,7 +127,7 @@ export function formatValues (values, properties) {
  * @param {String} format - 格式化类型
  * @return {String} 格式化后的时间
  */
-export function formatTime (originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
+export function formatTime(originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
   if (!originalTime) {
     return ''
   }
@@ -144,7 +144,7 @@ export function formatTime (originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
  * @param {String} id - 属性id
  * @return {Object} 模型属性对象
  */
-export function getProperty (properties, id) {
+export function getProperty(properties, id) {
   return properties.find(property => property['bk_property_id'] === id)
 }
 
@@ -154,7 +154,7 @@ export function getProperty (properties, id) {
  * @param {String} id - 属性id
  * @return {Array} 枚举列表
  */
-export function getEnumOptions (properties, id) {
+export function getEnumOptions(properties, id) {
   const property = getProperty(properties, id)
   return property ? property.option || [] : []
 }
@@ -164,7 +164,7 @@ export function getEnumOptions (properties, id) {
  * @param {Object} property - 模型属性
  * @return {Number} 优先级分数，越小优先级越高
  */
-export function getPropertyPriority (property) {
+export function getPropertyPriority(property) {
   let priority = 0
   if (property['isonly']) {
     priority--
@@ -180,7 +180,7 @@ export function getPropertyPriority (property) {
  * @param {Array} properties - 模型属性
  * @return {Array} 默认展示的前六个模型属性
  */
-export function getDefaultHeaderProperties (properties) {
+export function getDefaultHeaderProperties(properties) {
   return [...properties].sort((propertyA, propertyB) => {
     return getPropertyPriority(propertyA) - getPropertyPriority(propertyB)
   }).slice(0, 6)
@@ -192,7 +192,7 @@ export function getDefaultHeaderProperties (properties) {
  * @param {Array} customColumns - 自定义表头
  * @return {Array} 自定义表头属性
  */
-export function getCustomHeaderProperties (properties, customColumns) {
+export function getCustomHeaderProperties(properties, customColumns) {
   const columnProperties = []
   customColumns.forEach((propertyId) => {
     const columnProperty = properties.find(property => property['bk_property_id'] === propertyId)
@@ -210,7 +210,7 @@ export function getCustomHeaderProperties (properties, customColumns) {
  * @param {Array} fixedPropertyIds - 需固定在表格前面的属性ID
  * @return {Array} 表头属性
  */
-export function getHeaderProperties (properties, customColumns, fixedPropertyIds = []) {
+export function getHeaderProperties(properties, customColumns, fixedPropertyIds = []) {
   let headerProperties
   if (customColumns && customColumns.length) {
     headerProperties = getCustomHeaderProperties(properties, customColumns)
@@ -231,7 +231,7 @@ export function getHeaderProperties (properties, customColumns, fixedPropertyIds
   return headerProperties
 }
 
-export function getHeaderPropertyName (property) {
+export function getHeaderPropertyName(property) {
   if (property.unit) {
     return `${property.bk_property_name}(${property.unit})`
   }
@@ -243,11 +243,11 @@ export function getHeaderPropertyName (property) {
  * @param {Object} object - 需拷贝的对象
  * @return {Object} 拷贝后的对象
  */
-export function clone (object) {
+export function clone(object) {
   return JSON.parse(JSON.stringify(object))
 }
 
-export function getValidateRules (property) {
+export function getValidateRules(property) {
   const rules = {}
   const {
     bk_property_type: propertyType,
@@ -282,7 +282,7 @@ export function getValidateRules (property) {
   return rules
 }
 
-export function getSort (sort, defaultSort = {}) {
+export function getSort(sort, defaultSort = {}) {
   const order = sort.order || defaultSort.order || 'ascending'
   const prop = sort.prop || defaultSort.prop || ''
   if (prop && order === 'descending') {
@@ -291,11 +291,11 @@ export function getSort (sort, defaultSort = {}) {
   return prop
 }
 
-export function getValue () {
+export function getValue() {
   return GET_VALUE(...arguments)
 }
 
-export function transformHostSearchParams (params) {
+export function transformHostSearchParams(params) {
   const transformedParams = clone(params)
   const conditions = transformedParams.condition
   conditions.forEach((item) => {
@@ -314,7 +314,7 @@ export function transformHostSearchParams (params) {
 const defaultPaginationConfig = window.innerHeight > 750
   ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
   : { limit: 10, 'limit-list': [10, 50, 100, 500] }
-export function getDefaultPaginationConfig (customConfig = {}) {
+export function getDefaultPaginationConfig(customConfig = {}) {
   const RouterQuery = require('@/router/query').default
   const config = {
     count: 0,
@@ -325,14 +325,14 @@ export function getDefaultPaginationConfig (customConfig = {}) {
   return config
 }
 
-export function getPageParams (pagination) {
+export function getPageParams(pagination) {
   return {
     start: (pagination.current - 1) * pagination.limit,
     limit: pagination.limit
   }
 }
 
-export function localSort (data, compareKey) {
+export function localSort(data, compareKey) {
   return data.sort((A, B) => {
     if (A.hasOwnProperty(compareKey) && B.hasOwnProperty(compareKey)) {
       return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
@@ -341,11 +341,11 @@ export function localSort (data, compareKey) {
   })
 }
 
-export function sort (data, compareKey) {
+export function sort(data, compareKey) {
   return [...data].sort((A, B) => A[compareKey] - B[compareKey])
 }
 
-export function getPropertyCopyValue (originalValue, propertyType) {
+export function getPropertyCopyValue(originalValue, propertyType) {
   if (
     originalValue === ''
         || originalValue === null

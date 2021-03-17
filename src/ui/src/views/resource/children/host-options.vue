@@ -216,7 +216,7 @@
       cmdbTransferMenu,
       FilterFastSearch
     },
-    data () {
+    data() {
       return {
         scope: '',
         importInst: {
@@ -260,22 +260,22 @@
         'defaultDirectory',
         'directoryList'
       ]),
-      directoryId () {
+      directoryId() {
         if (this.activeDirectory) {
           return this.activeDirectory.bk_module_id
         }
         return undefined
       },
-      table () {
+      table() {
         return this.$parent.table
       },
-      isAllResourceHost () {
+      isAllResourceHost() {
         return this.table.selection.every(({ biz }) => {
           const [currentBiz] = biz
           return currentBiz.default === 1
         })
       },
-      clipboardList () {
+      clipboardList() {
         const IPWithCloud = FilterUtils.defineProperty({
           id: this.IPWithCloudSymbol,
           bk_obj_id: 'host',
@@ -287,13 +287,13 @@
         clipboardList.splice(1, 0, IPWithCloud)
         return clipboardList
       },
-      properties () {
+      properties() {
         return FilterStore.modelPropertyMap
       },
-      propertyGroups () {
+      propertyGroups() {
         return FilterStore.propertyGroups
       },
-      buttons () {
+      buttons() {
         const buttonConfig = [{
           id: 'delete',
           text: this.$t('删除'),
@@ -315,7 +315,7 @@
         }
         return buttonConfig
       },
-      saveAuth () {
+      saveAuth() {
         return this.table.selection.map(({ host, module, biz }) => {
           if (biz[0].default === 0) {
             return {
@@ -329,7 +329,7 @@
           }
         })
       },
-      editButtonGroup () {
+      editButtonGroup() {
         const buttonConfig = [{
           id: 'batch-edit',
           text: this.$t('批量编辑'),
@@ -346,7 +346,7 @@
         }
         return buttonConfig
       },
-      importInstError () {
+      importInstError() {
         const importInstError = this.importInst.error || {}
         if (importInstError.bk_error_msg) {
           return importInstError.bk_error_msg
@@ -355,7 +355,7 @@
       }
     },
     watch: {
-      'importInst.show' (show) {
+      'importInst.show'(show) {
         if (!show) {
           this.importInst.type = 'new'
           this.importInst.active = 'import'
@@ -365,19 +365,19 @@
           this.importInst.directory = this.directoryId
         }
       },
-      'importInst.directory' (directory) {
+      'importInst.directory'(directory) {
         if (this.importInst.type === 'new') {
           this.importInst.payload = {
             bk_module_id: directory
           }
         }
       },
-      'importInst.active' () {
+      'importInst.active'() {
         this.importInst.error = null
         this.importInst.showTips = false
       }
     },
-    async created () {
+    async created() {
       try {
         this.unwatchScope = RouterQuery.watch('scope', (scope = 1) => {
           this.scope = isNaN(scope) ? 'all' : parseInt(scope)
@@ -387,11 +387,11 @@
         console.error(e.message)
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatchScope()
     },
     methods: {
-      async getFullAmountBusiness () {
+      async getFullAmountBusiness() {
         try {
           const data = await this.$http.get('biz/simplify?sort=bk_biz_id')
           this.businessList = data.info || []
@@ -402,7 +402,7 @@
           HostStore.setBusinessList(this.businessList)
         }
       },
-      openAgentApp () {
+      openAgentApp() {
         const agent = window.Site.agent
         if (agent) {
           const topWindow = window.top
@@ -419,7 +419,7 @@
           this.$warn(this.$t('未配置Agent安装APP地址'))
         }
       },
-      handleAssignHosts (id) {
+      handleAssignHosts(id) {
         let directoryId = this.directoryId
         if (!directoryId) {
           const hosts = HostStore.getSelected()
@@ -448,7 +448,7 @@
         this.setAssignOptions(directoryId)
         this.assign.show = true
       },
-      setAssignOptions (directoryId) {
+      setAssignOptions(directoryId) {
         if (this.assign.curSelected === 'toBusiness') {
           this.assignOptions = this.businessList.map(item => ({
             id: item.bk_biz_id,
@@ -471,18 +471,18 @@
           }))
         }
       },
-      handleUpdateAssignAuth (option, authorized) {
+      handleUpdateAssignAuth(option, authorized) {
         option.disabled = !authorized
       },
-      closeAssignDialog () {
+      closeAssignDialog() {
         this.assign.id = ''
         this.assign.show = false
         this.assign.curSelected = '-1'
       },
-      handleConfirmAssign () {
+      handleConfirmAssign() {
         this.assign.curSelected === 'toBusiness' ? this.assignHostsToBusiness() : this.changeHostsDir()
       },
-      async assignHostsToBusiness () {
+      async assignHostsToBusiness() {
         await this.$store.dispatch('resourceDirectory/assignHostsToBusiness', {
           params: {
             bk_biz_id: this.assign.id,
@@ -504,7 +504,7 @@
             console.error(e)
           })
       },
-      async changeHostsDir () {
+      async changeHostsDir() {
         try {
           await this.$store.dispatch('resource/host/transfer/directory', {
             params: {
@@ -526,7 +526,7 @@
           console.error(e)
         }
       },
-      handleCopy (property) {
+      handleCopy(property) {
         const copyText = this.table.selection.map((data) => {
           const modelId = property.bk_obj_id
           const [modelData] = Array.isArray(data[modelId]) ? data[modelId] : [data[modelId]]
@@ -547,7 +547,7 @@
           this.$error(this.$t('复制失败'))
         })
       },
-      async handleMultipleEdit () {
+      async handleMultipleEdit() {
         this.slider.title = this.$t('主机属性')
         this.slider.show = true
         this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
@@ -561,7 +561,7 @@
           this.slider.component = 'cmdb-form-multiple'
         }, 200)
       },
-      async handleMultipleSave (changedValues) {
+      async handleMultipleSave(changedValues) {
         await this.$store.dispatch('hostUpdate/updateHost', {
           params: {
             ...changedValues,
@@ -573,7 +573,7 @@
           _t: Date.now()
         })
       },
-      handleMultipleDelete () {
+      handleMultipleDelete() {
         this.$bkInfo({
           title: `${this.$t('确定删除选中的主机')}？`,
           confirmFn: () => {
@@ -595,7 +595,7 @@
           }
         })
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         const $form = this.$refs.multipleForm
         const changedValues = $form.changedValues
         if (Object.keys(changedValues).length) {
@@ -617,7 +617,7 @@
         this.slider.show = false
         this.slider.component = null
       },
-      async exportField () {
+      async exportField() {
         ExportFields.show({
           title: this.$t('导出选中'),
           properties: FilterStore.getModelProperties('host'),
@@ -625,7 +625,7 @@
           handler: this.exportHanlder
         })
       },
-      async exportHanlder (properties) {
+      async exportHanlder(properties) {
         const formData = new FormData()
         formData.append('bk_biz_id', -1)
         formData.append('bk_host_id', this.table.selection.map(({ host }) => host.bk_host_id).join(','))
@@ -643,7 +643,7 @@
           this.$store.commit('setGlobalLoading', false)
         }
       },
-      async batchExportField () {
+      async batchExportField() {
         ExportFields.show({
           title: this.$t('导出全部'),
           properties: FilterStore.getModelProperties('host'),
@@ -651,7 +651,7 @@
           handler: this.batchExportHandler
         })
       },
-      batchExportHandler (properties) {
+      batchExportHandler(properties) {
         BatchExport({
           name: 'host',
           count: this.table.pagination.count,
@@ -675,23 +675,23 @@
           }
         })
       },
-      routeToHistory () {
+      routeToHistory() {
         this.$routerActions.redirect({
           name: 'hostHistory',
           history: true
         })
       },
-      handleSetFilters () {
+      handleSetFilters() {
         FilterForm.show()
       },
-      handleNewImportInst () {
+      handleNewImportInst() {
         this.importInst.type = 'new'
         this.importInst.show = true
         this.importInst.title = this.$t('导入主机')
         this.importInst.importUrl = `${window.API_HOST}hosts/import`
         this.importInst.templdateAvailable = true
       },
-      handleEditImportInst () {
+      handleEditImportInst() {
         this.importInst.type = 'edit'
         this.importInst.show = true
         this.importInst.title = this.$t('导入编辑')
@@ -702,15 +702,15 @@
           bk_biz_id: 0
         }
       },
-      handleImportSuccess () {
+      handleImportSuccess() {
         this.$parent.getHostList(true)
         Bus.$emit('refresh-dir-count')
         this.importInst.error = null
       },
-      handleImportError (error) {
+      handleImportError(error) {
         this.importInst.error = error
       },
-      handleBeforeUpload () {
+      handleBeforeUpload() {
         this.importInst.showTips = false
         if (!this.importInst.directory) {
           this.importInst.showTips = true

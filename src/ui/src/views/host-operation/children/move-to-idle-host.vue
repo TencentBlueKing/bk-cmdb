@@ -41,7 +41,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         data: [{
           operation: this.$t('转移到空闲机')
@@ -49,7 +49,7 @@
       }
     },
     computed: {
-      list () {
+      list() {
         return this.info.map((id) => {
           const target = this.$parent.hostInfo.find(target => target.host.bk_host_id === id)
           return target || {}
@@ -57,7 +57,7 @@
       }
     },
     methods: {
-      getHostValue (row, field) {
+      getHostValue(row, field) {
         const host = row.host
         if (host) {
           return host[field]

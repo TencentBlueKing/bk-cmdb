@@ -102,7 +102,7 @@
         default: null
       }
     },
-    data () {
+    data() {
       return {
         updateAuth: false,
         slider: {
@@ -135,7 +135,7 @@
         'activeModel'
       ]),
       ...mapGetters('objectModelClassify', ['models']),
-      isReadOnly () {
+      isReadOnly() {
         if (this.activeModel) {
           return this.activeModel['bk_ispaused']
         }
@@ -145,7 +145,7 @@
     watch: {
       activeModel: {
         immediate: true,
-        handler (activeModel) {
+        handler(activeModel) {
           if (activeModel.bk_obj_id) {
             this.searchRelationList()
             this.initRelationList()
@@ -159,19 +159,19 @@
         'deleteObjectAssociation',
         'searchAssociationType'
       ]),
-      isEditable (item) {
+      isEditable(item) {
         if (item.ispre || item['bk_asst_id'] === 'bk_mainline' || this.isReadOnly) {
           return false
         }
         return true
       },
-      getRelationName (id) {
+      getRelationName(id) {
         const relation = this.relationList.find(item => item.id === id)
         if (relation) {
           return relation.name
         }
       },
-      async initRelationList () {
+      async initRelationList() {
         const data = await this.searchAssociationType({
           params: {},
           config: {
@@ -192,28 +192,28 @@
           }
         })
       },
-      getModelName (objId) {
+      getModelName(objId) {
         const model = this.models.find(model => model['bk_obj_id'] === objId)
         if (model) {
           return model['bk_obj_name']
         }
         return ''
       },
-      createRelation () {
+      createRelation() {
         this.slider.isEdit = false
         this.slider.isReadOnly = false
         this.slider.relation = {}
         this.slider.title = this.$t('新建关联')
         this.slider.isShow = true
       },
-      editRelation (item) {
+      editRelation(item) {
         this.slider.isEdit = true
         this.slider.isReadOnly = false
         this.slider.relation = item
         this.slider.title = this.$t('编辑关联')
         this.slider.isShow = true
       },
-      deleteRelation (relation) {
+      deleteRelation(relation) {
         this.$bkInfo({
           title: this.$t('确定删除关联关系?'),
           confirmFn: async () => {
@@ -229,11 +229,11 @@
           }
         })
       },
-      async searchRelationList () {
+      async searchRelationList() {
         const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
         this.table.list = [...source, ...dest.filter(des => !source.some(src => src.id === des.id))]
       },
-      searchAsSource () {
+      searchAsSource() {
         return this.searchObjectAssociation({
           params: {
             condition: {
@@ -242,7 +242,7 @@
           }
         })
       },
-      searchAsDest () {
+      searchAsDest() {
         return this.searchObjectAssociation({
           params: {
             condition: {
@@ -251,11 +251,11 @@
           }
         })
       },
-      saveRelation () {
+      saveRelation() {
         this.slider.isShow = false
         this.searchRelationList()
       },
-      handleShowDetails (row, column, cell) {
+      handleShowDetails(row, column, cell) {
         if (column.property === 'operation') return
         this.slider.isEdit = true
         this.slider.isReadOnly = true
@@ -263,10 +263,10 @@
         this.slider.title = this.$t('查看关联')
         this.slider.isShow = true
       },
-      handleReceiveAuth (auth) {
+      handleReceiveAuth(auth) {
         this.updateAuth = auth
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
         if (hasChanged) {
           return new Promise((resolve, reject) => {

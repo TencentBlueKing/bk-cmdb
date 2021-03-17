@@ -28,7 +28,7 @@
       },
       onclick: Function
     },
-    data () {
+    data() {
       return {
         authResults: null,
         authMetas: null,
@@ -40,19 +40,19 @@
     watch: {
       auth: {
         deep: true,
-        handler (value, oldValue) {
+        handler(value, oldValue) {
           !deepEqual(value, oldValue) && this.setAuthProxy()
         }
       },
-      ignore () {
+      ignore() {
         this.setAuthProxy()
       }
     },
-    mounted () {
+    mounted() {
       this.setAuthProxy()
     },
     methods: {
-      setAuthProxy () {
+      setAuthProxy() {
         if (this.useIAM && this.auth && !this.ignore) {
           AuthProxy.add({
             component: this,
@@ -64,7 +64,7 @@
           this.$emit('update-auth', true)
         }
       },
-      updateAuth (authResults, authMetas) {
+      updateAuth(authResults, authMetas) {
         let isPass
         if (!authResults.length && authMetas.length) { // 鉴权失败
           isPass = false
@@ -77,7 +77,7 @@
         this.disabled = !isPass
         this.$emit('update-auth', isPass)
       },
-      handleClick () {
+      handleClick() {
         if (this.disabled) {
           return
         }

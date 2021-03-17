@@ -111,7 +111,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         withTemplate: 1,
         createTypeList: [{
@@ -135,31 +135,31 @@
       }
     },
     computed: {
-      topoPath () {
+      topoPath() {
         const nodePath = [...this.parentNode.parents, this.parentNode]
         return nodePath.map(node => node.data.bk_inst_name).join('/')
       },
-      business () {
+      business() {
         return this.$store.getters['objectBiz/bizId']
       },
-      serviceTemplateMap () {
+      serviceTemplateMap() {
         return this.$store.state.businessHost.serviceTemplateMap
       },
-      currentTemplate () {
+      currentTemplate() {
         return this.templateList.find(item => item.id === this.template) || {}
       },
-      categoryMap () {
+      categoryMap() {
         return this.$store.state.businessHost.categoryMap
       },
-      currentCategory () {
+      currentCategory() {
         return this.firstClassList.find(category => category.id === this.firstClass) || {}
       },
-      secondClassList () {
+      secondClassList() {
         return this.currentCategory.secondCategory || []
       }
     },
     watch: {
-      withTemplate (withTemplate) {
+      withTemplate(withTemplate) {
         if (withTemplate) {
           this.updateCategory()
           this.template = this.templateList.length ? this.templateList[0].id : ''
@@ -169,7 +169,7 @@
           this.getServiceCategories()
         }
       },
-      template (template) {
+      template(template) {
         if (template) {
           this.moduleName = this.currentTemplate.name
         } else {
@@ -177,11 +177,11 @@
         }
       }
     },
-    created () {
+    created() {
       this.getServiceTemplates()
     },
     methods: {
-      async getServiceTemplates () {
+      async getServiceTemplates() {
         if (this.serviceTemplateMap.hasOwnProperty(this.business)) {
           this.templateList = this.serviceTemplateMap[this.business]
         } else {
@@ -209,7 +209,7 @@
         }
         this.template = this.templateList[0] ? this.templateList[0].id : ''
       },
-      async getServiceCategories () {
+      async getServiceCategories() {
         if (this.categoryMap.hasOwnProperty(this.business)) {
           this.firstClassList = this.categoryMap[this.business]
         } else {
@@ -232,7 +232,7 @@
           }
         }
       },
-      collectServiceCategories (data) {
+      collectServiceCategories(data) {
         const categories = []
         data.forEach((item) => {
           if (!item.category.bk_parent_id) {
@@ -244,7 +244,7 @@
         })
         return categories
       },
-      updateCategory (firstClass) {
+      updateCategory(firstClass) {
         if (firstClass) {
           this.firstClass = firstClass
           this.secondClass = this.secondClassList.length ? this.secondClassList[0].id : ''
@@ -253,7 +253,7 @@
           this.secondClass = ''
         }
       },
-      handleSave () {
+      handleSave() {
         this.$validator.validateAll().then((isValid) => {
           if (isValid) {
             this.$emit('submit', {
@@ -264,10 +264,10 @@
           }
         })
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       },
-      jumpServiceTemplate () {
+      jumpServiceTemplate() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE,
           params: {

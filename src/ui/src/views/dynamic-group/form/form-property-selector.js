@@ -7,28 +7,28 @@ const Component = Vue.extend({
   components: {
     FormPropertySelector
   },
-  created () {
+  created() {
     this.unwatch = RouterQuery.watch('*', () => {
       this.handleClose()
     })
   },
-  beforeDestroy () {
+  beforeDestroy() {
     this.unwatch()
   },
   methods: {
-    handleClose () {
+    handleClose() {
       // magicbox实现相关，多个侧滑同时存在，后面的不会挂在到body中，而是挂在到popmanager中，此处不手动移出
       // document.body.removeChild(this.$el)
       this.$destroy()
     }
   },
-  render (h) {
+  render(h) {
     return (<form-property-selector ref="selector" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></form-property-selector>)
   }
 })
 
 export default {
-  show (data = {}, dynamicGroupForm) {
+  show(data = {}, dynamicGroupForm) {
     const vm = new Component({
       store,
       i18n,

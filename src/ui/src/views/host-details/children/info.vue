@@ -78,7 +78,7 @@
     components: {
       [ModuleSelectorWithTab.name]: ModuleSelectorWithTab
     },
-    data () {
+    data() {
       return {
         displayType: window.localStorage.getItem('host_topology_display_type') || 'double',
         showAll: false,
@@ -98,23 +98,23 @@
     computed: {
       ...mapState('hostDetails', ['info']),
       ...mapGetters('hostDetails', ['isBusinessHost']),
-      business () {
+      business() {
         const biz = this.info.biz || []
         return biz[0]
       },
-      bizId () {
+      bizId() {
         return this.business.bk_biz_id
       },
-      isSingleColumn () {
+      isSingleColumn() {
         return this.displayType === 'single'
       },
-      host () {
+      host() {
         return this.info.host || {}
       },
-      modules () {
+      modules() {
         return this.info.module || []
       },
-      hostIp () {
+      hostIp() {
         if (Object.keys(this.host).length) {
           const hostList = this.host.bk_host_innerip.split(',')
           const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
@@ -123,12 +123,12 @@
           return ''
         }
       },
-      cloudArea () {
+      cloudArea() {
         return (this.host.bk_cloud_id || []).map((cloud) => {
           return `${this.$t('云区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`
         }).join('\n')
       },
-      topologyList () {
+      topologyList() {
         const modules = this.info.module || []
         return this.topoNodesPath.map((item) => {
           const instId = item.topo_node.bk_inst_id
@@ -143,26 +143,26 @@
           return itemA.path.localeCompare(itemB.path, 'zh-Hans-CN', { sensitivity: 'accent' })
         })
       },
-      showMore () {
+      showMore() {
         if (this.isSingleColumn) {
           return this.topologyList.length > 1
         }
         return this.topologyList.length > 2
       },
-      model () {
+      model() {
         return this.$store.getters['objectModelClassify/getModelById']('host')
       },
-      confirmLoading () {
+      confirmLoading() {
         return this.$loading(Object.values(this.request))
       }
     },
     watch: {
-      async info () {
+      async info() {
         await this.getModulePathInfo()
       }
     },
     methods: {
-      async getModulePathInfo () {
+      async getModulePathInfo() {
         try {
           const modules = this.info.module || []
           const biz = this.info.biz || []
@@ -178,11 +178,11 @@
           this.topoNodesPath = []
         }
       },
-      viewAll () {
+      viewAll() {
         this.showAll = !this.showAll
         this.$emit('info-toggle')
       },
-      getListStyle (items) {
+      getListStyle(items) {
         const itemHeight = 21
         const itemMargin = 9
         const length = this.isSingleColumn ? items.length : Math.ceil(items.length / 2)
@@ -191,12 +191,12 @@
           flex: (!this.isSingleColumn && items.length === 1) ? 'none' : ''
         }
       },
-      toggleDisplayType () {
+      toggleDisplayType() {
         this.displayType = this.displayType === 'single' ? 'double' : 'single'
         this.$emit('info-toggle')
         window.localStorage.setItem('host_topology_display_type', this.displayType)
       },
-      handlePathClick (item) {
+      handlePathClick(item) {
         if (this.isBusinessHost) {
           this.$routerActions.open({
             name: MENU_BUSINESS_HOST_AND_SERVICE,
@@ -221,7 +221,7 @@
           })
         }
       },
-      handleRemove (moduleId) {
+      handleRemove(moduleId) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
@@ -237,16 +237,16 @@
           history: true
         })
       },
-      handleEditTopo () {
+      handleEditTopo() {
         this.dialog.component = ModuleSelectorWithTab.name
         this.dialog.componentProps.modules = this.modules
         this.dialog.componentProps.business = this.business
         this.dialog.show = true
       },
-      handleDialogCancel () {
+      handleDialogCancel() {
         this.dialog.show = false
       },
-      handleDialogConfirm () {
+      handleDialogConfirm() {
         const [tab, ...params] = [...arguments]
         const { tabName, moduleType } = tab
         if (tabName !== 'acrossBusiness') {
@@ -264,7 +264,7 @@
           this.moveHostToOtherBusiness(...params)
         }
       },
-      async transferDirectly (modules) {
+      async transferDirectly(modules) {
         try {
           const internalModule = modules[0]
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
@@ -284,7 +284,7 @@
           console.error(e)
         }
       },
-      gotoTransferPage (modules, moduleType) {
+      gotoTransferPage(modules, moduleType) {
         const query = {
           sourceModel: 'biz',
           sourceId: this.bizId,
@@ -302,7 +302,7 @@
           history: true
         })
       },
-      async moveHostToOtherBusiness (modules, targetBizId) {
+      async moveHostToOtherBusiness(modules, targetBizId) {
         try {
           const [targetModule] = modules
           await this.$http.post('hosts/modules/across/biz', {

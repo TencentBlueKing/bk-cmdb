@@ -38,7 +38,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       const timezoneList = TIMEZONE.map((timezone) => {
         return {
           id: timezone,
@@ -51,26 +51,26 @@
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         if (value !== this.selected) {
           this.selected = value
         }
       },
-      selected (selected) {
+      selected(selected) {
         this.$emit('input', selected)
         this.$emit('on-selected', selected)
       },
-      disabled (disabled) {
+      disabled(disabled) {
         if (!disabled) {
           this.selected = this.getDefaultValue()
         }
       }
     },
-    created () {
+    created() {
       this.selected = this.getDefaultValue()
     },
     methods: {
-      getDefaultValue () {
+      getDefaultValue() {
         let value = this.value || ''
         if (this.multiple && !value.length) {
           value = ['Asia/Shanghai']
@@ -79,7 +79,7 @@
         }
         return value
       },
-      focus () {
+      focus() {
         this.$refs.selector.show()
       }
     }

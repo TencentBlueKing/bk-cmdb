@@ -66,7 +66,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         withTemplate: true,
         setTemplate: '',
@@ -79,19 +79,19 @@
       }
     },
     computed: {
-      topoPath () {
+      topoPath() {
         const nodePath = [...this.parentNode.parents, this.parentNode]
         return nodePath.map(node => node.data.bk_inst_name).join('/')
       },
-      business () {
+      business() {
         return this.$store.getters['objectBiz/bizId']
       },
-      setTemplateMap () {
+      setTemplateMap() {
         return this.$store.state.businessHost.setTemplateMap
       }
     },
     watch: {
-      withTemplate (value) {
+      withTemplate(value) {
         if (value) {
           this.setTemplate = this.setTemplateList[0] ? this.setTemplateList[0].id : ''
         } else {
@@ -99,15 +99,15 @@
         }
       }
     },
-    created () {
+    created() {
       this.getSetTemplates()
     },
     methods: {
-      setRows () {
+      setRows() {
         const rows = this.setName.split('\n').length
         this.rows = Math.min(3, Math.max(rows, 1))
       },
-      handleKeydown (value, keyEvent) {
+      handleKeydown(value, keyEvent) {
         if (['Enter', 'NumpadEnter'].includes(keyEvent.code)) {
           this.rows = Math.min(this.rows + 1, 3)
         } else if (keyEvent.code === 'Backspace') {
@@ -116,7 +116,7 @@
           })
         }
       },
-      async getSetTemplates () {
+      async getSetTemplates() {
         if (this.setTemplateMap.hasOwnProperty(this.business)) {
           this.setTemplateList = this.setTemplateMap[this.business]
         } else {
@@ -140,7 +140,7 @@
         }
         this.setTemplate = this.setTemplateList[0] ? this.setTemplateList[0].id : ''
       },
-      handleCreateSet () {
+      handleCreateSet() {
         this.$validator.validateAll().then((isValid) => {
           if (isValid) {
             const nameList = this.setName.split('\n').filter(name => name.trim().length)
@@ -156,7 +156,7 @@
           }
         })
       },
-      handleAddTemplate () {
+      handleAddTemplate() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SET_TEMPLATE,
           params: {
@@ -164,7 +164,7 @@
           }
         })
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       }
     }

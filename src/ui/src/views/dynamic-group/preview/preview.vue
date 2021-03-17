@@ -43,7 +43,7 @@
         type: String
       }
     },
-    data () {
+    data() {
       return {
         details: null,
         properties: [],
@@ -59,23 +59,23 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
-      previewFields () {
+      previewFields() {
         return this.previewProperties.map(property => property.bk_property_id)
       },
-      title () {
+      title() {
         const title = [this.$t('预览分组')]
         this.details && title.push(this.details.name)
         return title.join(' - ')
       }
     },
-    async created () {
+    async created() {
       await this.getDetails()
       await this.getProperties()
       await this.setPreviewProperties()
       this.preview()
     },
     methods: {
-      async getDetails () {
+      async getDetails() {
         try {
           const details = await this.$store.dispatch('dynamicGroup/details', {
             bizId: this.bizId,
@@ -87,7 +87,7 @@
           console.error(error)
         }
       },
-      async getProperties () {
+      async getProperties() {
         try {
           const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -105,7 +105,7 @@
           console.error(error)
         }
       },
-      async setPreviewProperties () {
+      async setPreviewProperties() {
         try {
           const previewProperties = await this.$tools.getDefaultHeaderProperties(this.properties)
           this.previewProperties = Object.freeze(previewProperties)
@@ -113,7 +113,7 @@
           console.error(error)
         }
       },
-      async preview () {
+      async preview() {
         try {
           const { count, info } = await this.$store.dispatch('dynamicGroup/preview', {
             bizId: this.bizId,
@@ -134,20 +134,20 @@
           console.error(error)
         }
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.table.pagination.current = page
         this.preview()
       },
-      handlePageLimitChange (limit) {
+      handlePageLimitChange(limit) {
         this.table.pagination.current = 1
         this.table.pagination.limit = limit
         this.preview()
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort, '-create_time')
         this.preview()
       },
-      renderHeader (h, property) {
+      renderHeader(h, property) {
         if (!this.table.pagination.count || property.bk_property_id !== 'bk_host_innerip') {
           return this.$tools.getHeaderPropertyName(property)
         }
@@ -161,7 +161,7 @@
                     </span>
                 )
       },
-      async handleCopyIP (event) {
+      async handleCopyIP(event) {
         event.stopPropagation()
         const IP = this.table.list.map(item => item.bk_host_innerip)
         try {
@@ -172,11 +172,11 @@
           this.$error(this.$t('复制失败'))
         }
       },
-      show () {
+      show() {
         this.isShow = true
         setTimeout(this.$refs.table.doLayout, 50)
       },
-      handleHidden () {
+      handleHidden() {
         this.$emit('close')
       }
     }

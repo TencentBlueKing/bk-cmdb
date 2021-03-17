@@ -41,19 +41,19 @@
         default: true
       }
     },
-    data () {
+    data() {
       return {
         open: false
       }
     },
     methods: {
-      show () {
+      show() {
         this.open = true
       },
-      hide () {
+      hide() {
         this.open = false
       },
-      handleContentClick () {
+      handleContentClick() {
         if (this.closeWhenMenuClick) {
           this.$refs.popover.$refs.reference._tippy.hide()
         }

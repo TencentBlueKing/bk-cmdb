@@ -36,7 +36,7 @@
       [cloneToSource.name]: cloneToSource,
       [cloneToOther.name]: cloneToOther
     },
-    data () {
+    data() {
       return {
         hostTarget: cloneToSource.name,
         targetName: {
@@ -48,20 +48,20 @@
       }
     },
     computed: {
-      business () {
+      business() {
         return this.$store.getters['objectBiz/bizId']
       },
-      setId () {
+      setId() {
         return parseInt(this.$route.params.setId)
       },
-      moduleId () {
+      moduleId() {
         return parseInt(this.$route.params.moduleId)
       },
-      instanceId () {
+      instanceId() {
         return parseInt(this.$route.params.instanceId)
       }
     },
-    async created () {
+    async created() {
       try {
         const [module, processes] = await Promise.all([
           this.getModuleInstance(),
@@ -74,7 +74,7 @@
       }
     },
     methods: {
-      getModuleInstance () {
+      getModuleInstance() {
         return this.$store.dispatch('objectModule/searchModule', {
           bizId: this.business,
           setId: this.setId,
@@ -91,7 +91,7 @@
           }
         })
       },
-      getServiceInstanceProcesses () {
+      getServiceInstanceProcesses() {
         return this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
           params: {
             bk_biz_id: this.business,

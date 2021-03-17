@@ -23,10 +23,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchServiceCategory({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('findmany/proc/service_category/with_statistics', params, config)
   },
-  searchServiceCategoryWithoutAmout (context, { params, config }) {
+  searchServiceCategoryWithoutAmout(context, { params, config }) {
     return $http.post('findmany/proc/service_category', params, config)
   },
   /**
@@ -37,7 +37,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  createServiceCategory({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('create/proc/service_category', params, config)
   },
   /**
@@ -48,7 +48,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  updateServiceCategory({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.put('update/proc/service_category', params, config)
   },
   /**
@@ -59,7 +59,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  deleteServiceCategory({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.delete('delete/proc/service_category', params, config)
   }
 }

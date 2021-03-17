@@ -26,13 +26,13 @@
         type: [String, Number]
       }
     },
-    data () {
+    data() {
       return {
         isSwitcherGroup: true
       }
     },
     computed: {
-      bindProps () {
+      bindProps() {
         let showOnInit = false
         if (this.tipsKey) {
           showOnInit = window.localStorage.getItem(this.tipsKey) === null
@@ -50,21 +50,21 @@
         }
       },
       active: {
-        get () {
+        get() {
           return this.value
         },
-        set (active) {
+        set(active) {
           this.$emit('input', active)
           this.$emit('change', active)
         }
       }
     },
     methods: {
-      setActive (name) {
+      setActive(name) {
         this.active = name
         this.handleCloseTips()
       },
-      handleCloseTips () {
+      handleCloseTips() {
         this.$refs.popover.instance.hide()
         window.localStorage.setItem(this.tipsKey, false)
       }

@@ -63,7 +63,7 @@
   import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
   export default {
-    data () {
+    data() {
       return {
         menu: menu
       }
@@ -71,19 +71,19 @@
     computed: {
       ...mapGetters(['site', 'userName']),
       ...mapGetters('objectBiz', ['bizId']),
-      helpDocUrl () {
+      helpDocUrl() {
         return this.site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
       }
     },
     methods: {
-      isLinkActive (nav) {
+      isLinkActive(nav) {
         const matched = this.$route.matched
         if (!matched.length) {
           return false
         }
         return matched[0].name === nav.id
       },
-      getHeaderLink (nav) {
+      getHeaderLink(nav) {
         const link = { name: nav.id }
         if (nav.id === MENU_BUSINESS && this.bizId) {
           link.name = MENU_BUSINESS_HOST_AND_SERVICE
@@ -93,7 +93,7 @@
         }
         return link
       },
-      handleLogout () {
+      handleLogout() {
         this.$http.post(`${window.API_HOST}logout`, {
           'http_scheme': window.location.protocol.replace(':', '')
         }).then((data) => {

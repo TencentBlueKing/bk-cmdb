@@ -57,7 +57,7 @@
         type: Array
       }
     },
-    data () {
+    data() {
       return {
         verificationInfo: {
           selected: [],
@@ -74,7 +74,7 @@
       ...mapGetters('objectModel', [
         'activeModel'
       ]),
-      selectedName () {
+      selectedName() {
         const nameList = []
         this.verificationInfo.selected.forEach((id) => {
           const attr = this.attribute.list.find(attr => attr.id === id)
@@ -84,7 +84,7 @@
         })
         return nameList.join(',')
       },
-      params () {
+      params() {
         const params = {
           must_check: this.verificationInfo['must_check'],
           keys: []
@@ -97,7 +97,7 @@
         })
         return params
       },
-      changedValues () {
+      changedValues() {
         const changedValues = {}
         for (const propertyId in this.verificationInfo) {
           if (JSON.stringify(this.verificationInfo[propertyId]) !== JSON.stringify(this.originVerificationInfo[propertyId])) {
@@ -107,7 +107,7 @@
         return changedValues
       }
     },
-    created () {
+    created() {
       if (this.isEdit) {
         this.initData()
       }
@@ -118,19 +118,19 @@
         'createObjectUniqueConstraints',
         'updateObjectUniqueConstraints'
       ]),
-      initData () {
+      initData() {
         this.verificationInfo['must_check'] = this.verification['must_check']
         this.verification.keys.forEach((key) => {
           this.verificationInfo.selected.push(key['key_id'])
         })
       },
-      toggleSelector (isShow) {
+      toggleSelector(isShow) {
         if (!this.isReadOnly) {
           // isShow ? this.$refs.attrSelector.show() : this.$refs.attrSelector.hide()
           this.attribute.isShow = isShow
         }
       },
-      async saveVerification () {
+      async saveVerification() {
         if (this.isEdit) {
           await this.updateObjectUniqueConstraints({
             id: this.verification.id,
@@ -152,7 +152,7 @@
           this.$emit('save')
         }
       },
-      cancel () {
+      cancel() {
         this.$emit('cancel')
       }
     }

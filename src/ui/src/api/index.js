@@ -57,7 +57,7 @@ const allMethods = [...methodsWithoutData, ...methodsWithData]
 // 在自定义对象$http上添加各请求方法
 allMethods.forEach((method) => {
   Object.defineProperty($http, method, {
-    get () {
+    get() {
       return getRequest(method)
     }
   })
@@ -68,7 +68,7 @@ allMethods.forEach((method) => {
  * @param {method} http method 与 axios实例中的method保持一致
  * @return {Function} 实际调用的请求函数
  */
-function getRequest (method) {
+function getRequest(method) {
   if (methodsWithData.includes(method)) {
     return (url, data, config) => {
       return getPromise(method, url, data, config)
@@ -87,7 +87,7 @@ function getRequest (method) {
  * @param {userConfig} 用户配置，包含axios的配置与本系统自定义配置
  * @return {Promise} 本次http请求的Promise
  */
-async function getPromise (method, url, data, userConfig = {}) {
+async function getPromise(method, url, data, userConfig = {}) {
   const config = initConfig(method, url, userConfig)
   let promise
   if (config.cancelPrevious) {
@@ -132,7 +132,7 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @return
  */
 const PermissionCode = 9900403
-function handleResponse ({ config, response, resolve, reject }) {
+function handleResponse({ config, response, resolve, reject }) {
   const transformedResponse = response.data
   const { bk_error_msg: message, permission } = transformedResponse
   if (transformedResponse.bk_error_code === PermissionCode) {
@@ -152,7 +152,7 @@ function handleResponse ({ config, response, resolve, reject }) {
  * @param {config} 请求配置
  * @return Promise.reject
  */
-function handleReject (error, config) {
+function handleReject(error, config) {
   if (error.code && error.code === PermissionCode) {
     return Promise.reject(error)
   }
@@ -186,7 +186,7 @@ function handleReject (error, config) {
   return Promise.reject(error)
 }
 
-function popupPermissionModal (permission = []) {
+function popupPermissionModal(permission = []) {
   window.permissionModal && window.permissionModal.show(permission)
 }
 
@@ -198,7 +198,7 @@ function popupPermissionModal (permission = []) {
  * @return {Promise} 本次http请求的Promise
  */
 
-function initConfig (method, url, userConfig) {
+function initConfig(method, url, userConfig) {
   if (userConfig.hasOwnProperty('requestGroup')) {
     userConfig.requestGroup = userConfig.requestGroup instanceof Array ? userConfig.requestGroup : [userConfig.requestGroup]
   }
@@ -234,7 +234,7 @@ function initConfig (method, url, userConfig) {
  *      cancelToken: axios实例使用的cancelToken
  *      cancelExcutor: 取消http请求的可执行函数
  */
-function getCancelToken () {
+function getCancelToken() {
   let cancelExcutor
   const cancelToken = new Axios.CancelToken((excutor) => {
     cancelExcutor = excutor
@@ -245,7 +245,7 @@ function getCancelToken () {
   }
 }
 
-async function download (options = {}) {
+async function download(options = {}) {
   const { url, method = 'post', data, name } = options
   const config = Object.assign({
     globalError: false,

@@ -47,58 +47,58 @@ const getters = {
 }
 
 const mutations = {
-  setBlueKingEditable (state, status) {
+  setBlueKingEditable(state, status) {
     state.blueKingEditable = status
   },
-  setPropertyMap (state, propertyMap = {}) {
+  setPropertyMap(state, propertyMap = {}) {
     state.propertyMap = propertyMap
   },
-  setProperties (state, data) {
+  setProperties(state, data) {
     Vue.set(state.propertyMap, data.id, data.properties)
   },
-  setTopologyModels (state, topologyModels) {
+  setTopologyModels(state, topologyModels) {
     state.topologyModels = topologyModels
   },
-  setSelectedNode (state, node) {
+  setSelectedNode(state, node) {
     state.selectedNode = node
   },
-  resolveCommonRequest (state) {
+  resolveCommonRequest(state) {
     state.commonRequestResolver()
   },
-  setPropertyGroups (state, data) {
+  setPropertyGroups(state, data) {
     Vue.set(state.propertyGroupMap, data.id, data.groups)
   },
-  setServiceTemplate (state, data) {
+  setServiceTemplate(state, data) {
     Vue.set(state.serviceTemplateMap, data.id, data.templates)
   },
-  setSetTemplate (state, data) {
+  setSetTemplate(state, data) {
     Vue.set(state.setTemplateMap, data.id, data.templates)
   },
-  setProcessTemplate (state, data) {
+  setProcessTemplate(state, data) {
     Vue.set(state.processTemplateMap, data.id, data.template)
   },
-  setCategories (state, data) {
+  setCategories(state, data) {
     Vue.set(state.categoryMap, data.id, data.categories)
   },
-  setSelectedNodeInstance (state, instance) {
+  setSelectedNodeInstance(state, instance) {
     state.selectedNodeInstance = instance
   },
-  setHostSelectorVisible (state, visible) {
+  setHostSelectorVisible(state, visible) {
     state.hostSelectorVisible = visible
   },
-  setSelectedHost (state, selectedHost) {
+  setSelectedHost(state, selectedHost) {
     state.selectedHost = selectedHost
   },
-  setFailHostList (state, failHostList) {
+  setFailHostList(state, failHostList) {
     state.failHostList = failHostList
   },
-  clearFailHostList (state) {
+  clearFailHostList(state) {
     state.failHostList = []
   },
-  setInstanceIp (state, { hostId, res }) {
+  setInstanceIp(state, { hostId, res }) {
     Vue.set(state.instanceIpMap, hostId, res)
   },
-  clear (state) {
+  clear(state) {
     state.propertyMap = {}
     state.topologyModels = []
     state.selectedNode = null

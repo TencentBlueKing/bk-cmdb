@@ -74,7 +74,7 @@
       selected: Array,
       account: Number
     },
-    data () {
+    data() {
       return {
         list: [],
         selection: [],
@@ -87,13 +87,13 @@
     watch: {
       selected: {
         immediate: true,
-        handler () {
+        handler() {
           this.updateList()
         }
       }
     },
     methods: {
-      updateList () {
+      updateList() {
         const oldList = this.list
         this.list = this.selected.map((vpc) => {
           const newRow = { ...vpc }
@@ -106,7 +106,7 @@
           return newRow
         })
       },
-      vpcFormatter (row, column) {
+      vpcFormatter(row, column) {
         const vpcId = row.bk_vpc_id
         const vpcName = row.bk_vpc_name
         if (vpcId !== vpcName) {
@@ -114,15 +114,15 @@
         }
         return vpcId
       },
-      handleRemove (row) {
+      handleRemove(row) {
         this.$emit('remove', row)
       },
-      handleMultipleSelected (value) {
+      handleMultipleSelected(value) {
         this.list.forEach((row) => {
           row.bk_sync_dir = value
         })
       },
-      directoryHeaderRender (h, data) {
+      directoryHeaderRender(h, data) {
         return h('div', [
           h(TaskFormTableHeader, {
             props: {
@@ -133,12 +133,12 @@
           })
         ])
       },
-      handleAreaChange (row, cloudName) {
+      handleAreaChange(row, cloudName) {
         row.bk_cloud_name = cloudName
         row.bk_cloud_error = false
       },
       // task-form保存时调用，创建新的云区域
-      async createCloudArea (accountInfo) {
+      async createCloudArea(accountInfo) {
         try {
           const newAreaList = this.list.filter(row => row.bk_cloud_id === -1)
           if (!newAreaList.length) {
@@ -184,7 +184,7 @@
           return Promise.resolve(false)
         }
       },
-      validate (list) {
+      validate(list) {
         let valid = true
         list.forEach((row) => {
           if (!row.bk_cloud_name) {
@@ -194,7 +194,7 @@
         })
         return valid
       },
-      getRowClass ({ row }) {
+      getRowClass({ row }) {
         if (row.destroyed) {
           return 'is-destroyed'
         }

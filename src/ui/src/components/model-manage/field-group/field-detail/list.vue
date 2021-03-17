@@ -57,7 +57,7 @@
         default: false
       }
     },
-    data () {
+    data() {
       return {
         list: [{ name: '' }],
         dragOptions: {
@@ -71,15 +71,15 @@
       }
     },
     watch: {
-      value () {
+      value() {
         this.initValue()
       }
     },
-    created () {
+    created() {
       this.initValue()
     },
     methods: {
-      getOtherName (index) {
+      getOtherName(index) {
         const nameList = []
         this.list.map((item, _index) => {
           if (index !== _index) {
@@ -88,14 +88,14 @@
         })
         return nameList.join(',')
       },
-      initValue () {
+      initValue() {
         if (this.value === '') {
           this.list = [{ name: '' }]
         } else {
           this.list = this.value.map(name => ({ name }))
         }
       },
-      handleInput () {
+      handleInput() {
         this.$nextTick(async () => {
           const res = await this.$validator.validateAll()
           if (res) {
@@ -104,24 +104,24 @@
           }
         })
       },
-      addList (index) {
+      addList(index) {
         this.list.push({ name: '' })
         this.$nextTick(() => {
           this.$refs[`name${index + 1}`] && this.$refs[`name${index + 1}`][0].focus()
         })
       },
-      deleteList (index) {
+      deleteList(index) {
         this.list.splice(index, 1)
         this.handleInput()
       },
-      validate () {
+      validate() {
         return this.$validator.validateAll()
       },
-      handleDragEnd () {
+      handleDragEnd() {
         const list = this.list.map(item => item.name)
         this.$emit('input', list)
       },
-      handleSort () {
+      handleSort() {
         this.order = this.order * -1
         this.list.sort((A, B) => {
           return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order

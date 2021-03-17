@@ -7,7 +7,7 @@ export default {
     })
   },
   methods: {
-    $loading (requestIds) {
+    $loading(requestIds) {
       if (typeof requestIds === 'undefined') {
         return !!this.$requestQueue.length
       } else if (requestIds instanceof Array) {

@@ -45,7 +45,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  searchModelAction ({ commit, state, dispatch, rootGetters }, params) {
+  searchModelAction({ commit, state, dispatch, rootGetters }, params) {
     return $http.post('find/objecttopo/scope_type/global/scope_id/0', params).then((data) => {
       return data.filter((node) => {
         const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
@@ -62,13 +62,13 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  updateModelAction ({ commit, state, dispatch }, { params }) {
+  updateModelAction({ commit, state, dispatch }, { params }) {
     return $http.post('update/objecttopo/scope_type/global/scope_id/0', params)
   }
 }
 
 const mutations = {
-  setTopologyData (state, topologyData) {
+  setTopologyData(state, topologyData) {
     const topologyMap = {}
     topologyData.forEach((data) => {
       topologyMap[data['bk_obj_id']] = data
@@ -76,7 +76,7 @@ const mutations = {
     state.topologyData = topologyData
     state.topologyMap = topologyMap
   },
-  updateTopologyData (state, queue) {
+  updateTopologyData(state, queue) {
     const updateQueue = Array.isArray(queue) ? queue : [queue]
     const topologyMap = state.topologyMap
     updateQueue.forEach((data) => {
@@ -84,7 +84,7 @@ const mutations = {
       Object.assign(topologyMap[modelId], data)
     })
   },
-  addAssociation (state, { id, association }) {
+  addAssociation(state, { id, association }) {
     const data = state.topologyMap[id]
     const associations = data.assts
     if (Array.isArray(associations)) {
@@ -93,7 +93,7 @@ const mutations = {
       Vue.set(data, 'assts', [association])
     }
   },
-  deleteAssociation (state, associationId) {
+  deleteAssociation(state, associationId) {
     const topologyData = state.topologyData
     for (let i = 0; i < topologyData.length; i++) {
       const associations = topologyData[i]['assts'] || []
@@ -104,19 +104,19 @@ const mutations = {
       }
     }
   },
-  changeEditMode (state) {
+  changeEditMode(state) {
     state.isEditMode = !state.isEditMode
   },
-  setOptions (state, options) {
+  setOptions(state, options) {
     state.options = options
   },
-  setEdgeOptions (state, edgeOptions) {
+  setEdgeOptions(state, edgeOptions) {
     state.edgeOptions = edgeOptions
   },
-  setAssociation (state, data) {
+  setAssociation(state, data) {
     Object.assign(state.association, data)
   },
-  setAddEdgePromise (state, promise) {
+  setAddEdgePromise(state, promise) {
     state.addEdgePromise = promise
   }
 }

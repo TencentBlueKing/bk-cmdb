@@ -83,13 +83,13 @@
       },
       downloadPayload: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
       importPayload: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
@@ -99,7 +99,7 @@
       },
       allowType: {
         type: Array,
-        default () {
+        default() {
           return ['xlsx']
         }
       },
@@ -133,7 +133,7 @@
       },
       beforeUpload: Function
     },
-    data () {
+    data() {
       return {
         isLoading: false,
         uploaded: false,
@@ -152,16 +152,16 @@
       }
     },
     computed: {
-      allowTypeRegExp () {
+      allowTypeRegExp() {
         return new RegExp(`^.*?.(${this.allowType.join('|')})$`)
       },
-      maxSizeLocal () {
+      maxSizeLocal() {
         const maxSize = this.maxSize * 1024
         return this.formatSize(maxSize)
       }
     },
     methods: {
-      handleFile (e) {
+      handleFile(e) {
         this.reset()
 
         if (this.beforeUpload && this.beforeUpload() === false) {
@@ -222,14 +222,14 @@
             })
         }
       },
-      hasUploadError () {
+      hasUploadError() {
         const uploadResult = this.uploadResult
         return (uploadResult.success && uploadResult.success.length)
           || (uploadResult.error && uploadResult.error.length)
           || (uploadResult.update_error && uploadResult.update_error.length)
           || (uploadResult.asst_error && uploadResult.asst_error.length)
       },
-      reset () {
+      reset() {
         this.uploaded = false
         this.failed = false
         this.fileInfo = {
@@ -244,14 +244,14 @@
           asst_error: null
         }
       },
-      formatSize (value, digits = 0) {
+      formatSize(value, digits = 0) {
         const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
         const index = Math.floor(Math.log(value) / Math.log(1024))
         let size = value / Math.pow(1024, index)
         size = `${size.toFixed(digits)}${uints[index]}`
         return size
       },
-      async handleDownloadTemplate () {
+      async handleDownloadTemplate() {
         try {
           let data = this.downloadPayload
           if (!(data instanceof FormData)) {

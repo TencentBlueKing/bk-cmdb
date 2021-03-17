@@ -14,7 +14,7 @@
   import { MENU_BUSINESS_HOST_DETAILS, MENU_RESOURCE_HOST, MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
   const BK_NO_LIMIT = 999999999
   export default {
-    data () {
+    data() {
       return {
         loading: true,
         notFound: false,
@@ -23,7 +23,7 @@
       }
     },
     computed: {
-      params () {
+      params() {
         const bizCondition = { bk_obj_id: 'biz', condition: [], fields: ['bk_biz_id', 'default'] }
         const setCondition = { bk_obj_id: 'set', condition: [], fields: ['bk_set_id'] }
         const moduleCondition = { bk_obj_id: 'module', condition: [], fields: ['bk_module_id'] }
@@ -52,11 +52,11 @@
         return params
       }
     },
-    created () {
+    created() {
       this.searchHost()
     },
     methods: {
-      async searchHost () {
+      async searchHost() {
         try {
           const { info } = await this.$store.dispatch('hostSearch/searchHost', {
             params: this.params,
@@ -79,7 +79,7 @@
           console.error(error)
         }
       },
-      redirectToDetails (data) {
+      redirectToDetails(data) {
         const { host, biz } = data
         if (biz[0].default === 1) {
           this.$routerActions.redirect({
@@ -98,7 +98,7 @@
           })
         }
       },
-      redirectToResource () {
+      redirectToResource() {
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST,
           query: {

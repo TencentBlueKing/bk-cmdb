@@ -117,7 +117,7 @@
         type: Array
       }
     },
-    data () {
+    data() {
       return {
         relationList: [],
         modelRelationList: [],
@@ -132,10 +132,10 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-      isSelfRelation () {
+      isSelfRelation() {
         return this.relationInfo.bk_obj_id === this.relationInfo.bk_asst_obj_id
       },
-      mappingList () {
+      mappingList() {
         const mappingList = [{
           id: 'n:n',
           name: 'N-N'
@@ -151,7 +151,7 @@
         }
         return mappingList
       },
-      objAsstId () {
+      objAsstId() {
         const {
           relationInfo
         } = this
@@ -160,18 +160,18 @@
         }
         return ''
       },
-      sourceModel () {
+      sourceModel() {
         return this.getModelById(this.relationInfo['bk_obj_id']) || {}
       },
-      targetModel () {
+      targetModel() {
         return this.getModelById(this.relationInfo['bk_asst_obj_id']) || {}
       },
-      relationName () {
+      relationName() {
         const asstId = this.relationInfo['bk_asst_id']
         return (this.relationList.find(relation => relation.id === asstId) || {}).name
       }
     },
-    created () {
+    created() {
       this.searchModelRelationList()
       this.initRelationList()
     },
@@ -181,20 +181,20 @@
         'searchAssociationType',
         'searchObjectAssociation'
       ]),
-      getModelName (objId) {
+      getModelName(objId) {
         const model = this.models.find(model => model['bk_obj_id'] === objId)
         if (model) {
           return model['bk_obj_name']
         }
         return ''
       },
-      exchangeObjAsst () {
+      exchangeObjAsst() {
         const {
           relationInfo
         } = this;
         [relationInfo['bk_obj_id'], relationInfo['bk_asst_obj_id']] = [relationInfo['bk_asst_obj_id'], relationInfo['bk_obj_id']]
       },
-      async initRelationList () {
+      async initRelationList() {
         const data = await this.searchAssociationType({
           params: {},
           config: {
@@ -218,11 +218,11 @@
         })
         this.relationInfo['bk_asst_id'] = this.relationList[0].id
       },
-      async searchModelRelationList () {
+      async searchModelRelationList() {
         const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
         this.modelRelationList = [...source, ...dest]
       },
-      searchAsSource () {
+      searchAsSource() {
         return this.searchObjectAssociation({
           params: {
             condition: {
@@ -231,7 +231,7 @@
           }
         })
       },
-      searchAsDest () {
+      searchAsDest() {
         return this.searchObjectAssociation({
           params: {
             condition: {
@@ -240,7 +240,7 @@
           }
         })
       },
-      async saveRelation () {
+      async saveRelation() {
         if (!await this.$validator.validateAll()) {
           return
         }
@@ -259,7 +259,7 @@
         this.$emit('save', res)
         this.$emit('cancel')
       },
-      cancel () {
+      cancel() {
         this.$emit('cancel')
       }
     }

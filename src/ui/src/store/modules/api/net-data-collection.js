@@ -26,7 +26,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  searchDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchDataCollection({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/collector/action/search', params, config)
   },
   /**
@@ -36,7 +36,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  updateDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  updateDataCollection({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/collector/action/update', params, config)
   },
   /**
@@ -46,7 +46,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  collectDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  collectDataCollection({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/collector/action/discover', params, config)
   }
 }

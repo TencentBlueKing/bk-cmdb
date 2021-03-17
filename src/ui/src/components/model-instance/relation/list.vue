@@ -51,7 +51,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         sourceInstances: [],
         targetInstances: [],
@@ -62,20 +62,20 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModelClassify', ['models']),
-      objId () {
+      objId() {
         return this.$parent.objId
       },
-      instId () {
+      instId() {
         return this.$parent.formatedInst['bk_inst_id']
       },
-      hasRelation () {
+      hasRelation() {
         return this.$parent.hasRelation
       },
-      uniqueAssociationObject () {
+      uniqueAssociationObject() {
         const ids = this.associationObject.map(association => association.id)
         return [...new Set(ids)].map(id => this.associationObject.find(association => association.id === id))
       },
-      list () {
+      list() {
         try {
           const list = []
           this.uniqueAssociationObject.forEach((association, index) => {
@@ -94,21 +94,21 @@
         }
         return []
       },
-      loading () {
+      loading() {
         return this.$loading([
           'getInstRelation'
         ])
       },
-      resourceType () {
+      resourceType() {
         return this.$parent.resourceType
       }
     },
     watch: {
-      list () {
+      list() {
         this.expandFirstListTable()
       }
     },
-    created () {
+    created() {
       this.getInstRelation()
 
       bus.$on('association-change', async () => {
@@ -117,14 +117,14 @@
 
       this.expandFirstListTable()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       bus.$off('association-change')
     },
     methods: {
       ...mapActions('objectAssociation', [
         'searchObjectAssociation'
       ]),
-      async getInstRelation () {
+      async getInstRelation() {
         const res = await this.$store.dispatch('objectRelation/getInstRelation', {
           objId: this.objId,
           instId: this.instId,
@@ -140,7 +140,7 @@
           this.targetInstances = data.next
         }
       },
-      expandFirstListTable () {
+      expandFirstListTable() {
         this.$nextTick(() => {
           if (this.$refs.associationListTable) {
             const firstAssociationListTable = this.$refs.associationListTable.find(listTable => listTable.hasInstance)
@@ -148,7 +148,7 @@
           }
         })
       },
-      handleInstanceListChange (list, id, type) {
+      handleInstanceListChange(list, id, type) {
         this.instances[`${id}_${type}`] = list
         const instanceList = Object.values(this.instances).reduce((acc, cur) => acc.concat(cur), [])
         this.hasRelationInstance = instanceList.length > 0

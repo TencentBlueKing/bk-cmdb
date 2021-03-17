@@ -90,7 +90,7 @@
         default: null
       }
     },
-    data () {
+    data() {
       return {
         isMultiple: true,
         values: {},
@@ -103,7 +103,7 @@
       }
     },
     computed: {
-      changedValues () {
+      changedValues() {
         const changedValues = {}
         for (const propertyId in this.values) {
           const property = this.getProperty(propertyId)
@@ -116,7 +116,7 @@
         }
         return changedValues
       },
-      hasChange () {
+      hasChange() {
         let hasChange = false
         for (const propertyId in this.editable) {
           if (this.editable[propertyId]) {
@@ -126,7 +126,7 @@
         }
         return hasChange
       },
-      groupedProperties () {
+      groupedProperties() {
         return this.$groupedProperties.map((properties) => {
           return properties.filter((property) => {
             const editable = property.editable
@@ -137,10 +137,10 @@
           })
         })
       },
-      hasAvaliableGroups () {
+      hasAvaliableGroups() {
         return this.groupedProperties.some(properties => !!properties.length)
       },
-      authProps () {
+      authProps() {
         if (this.saveAuth) {
           return {
             auth: this.saveAuth
@@ -153,33 +153,33 @@
       }
     },
     watch: {
-      properties () {
+      properties() {
         this.initValues()
         this.initEditableStatus()
       }
     },
-    created () {
+    created() {
       this.initValues()
       this.initEditableStatus()
     },
-    mounted () {
+    mounted() {
       if (this.$refs.formGroups) {
         RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
     },
     methods: {
-      checkScrollbar () {
+      checkScrollbar() {
         const $layout = this.$el
         this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
       },
-      initValues () {
+      initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, {}, false)
         this.refrenceValues = this.$tools.clone(this.values)
       },
-      initEditableStatus () {
+      initEditableStatus() {
         const editable = {}
         this.groupedProperties.forEach((properties) => {
           properties.forEach((property) => {
@@ -188,27 +188,27 @@
         })
         this.editable = editable
       },
-      htmlEncode (placeholder) {
+      htmlEncode(placeholder) {
         let temp = document.createElement('div')
         temp.innerHTML = placeholder
         const output = temp.innerText
         temp = null
         return output
       },
-      getProperty (id) {
+      getProperty(id) {
         return this.properties.find(property => property['bk_property_id'] === id)
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      getValidateRules (property) {
+      getValidateRules(property) {
         if (!this.editable[property.bk_property_id]) {
           return {}
         }
         return this.$tools.getValidateRules(property)
       },
-      getMultipleValues () {
+      getMultipleValues() {
         const multipleValues = {}
         for (const propertyId in this.editable) {
           if (this.editable[propertyId]) {
@@ -217,7 +217,7 @@
         }
         return this.$tools.formatValues(multipleValues, this.properties)
       },
-      handleSave () {
+      handleSave() {
         this.$validator.validateAll().then((result) => {
           if (result) {
             this.$emit('on-submit', this.getMultipleValues())
@@ -226,14 +226,14 @@
           }
         })
       },
-      uncollapseGroup () {
+      uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const property = this.properties.find(property => property['bk_property_id'] === item.field)
           const group = property['bk_property_group']
           this.groupState[group] = false
         })
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('on-cancel')
       }
     }

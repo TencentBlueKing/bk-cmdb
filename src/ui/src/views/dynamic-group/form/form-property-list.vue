@@ -36,43 +36,43 @@
       FormOperatorSelector
     },
     inject: ['dynamicGroupForm'],
-    data () {
+    data() {
       return {
         condition: {},
         withoutOperator: ['date', 'time', 'bool', 'service-template']
       }
     },
     computed: {
-      bizId () {
+      bizId() {
         return this.dynamicGroupForm.bizId
       },
-      properties () {
+      properties() {
         return this.dynamicGroupForm.selectedProperties
       },
-      availableModels () {
+      availableModels() {
         return this.dynamicGroupForm.availableModels
       },
-      modelMap () {
+      modelMap() {
         const modelMap = {}
         this.availableModels.forEach((model) => {
           modelMap[model.bk_obj_id] = model
         })
         return modelMap
       },
-      details () {
+      details() {
         return this.dynamicGroupForm.details
       }
     },
     watch: {
       properties: {
         immediate: true,
-        handler () {
+        handler() {
           this.UpdateCondition()
         }
       }
     },
     methods: {
-      getDefaultData (property) {
+      getDefaultData(property) {
         const defaultMap = {
           bool: {
             operator: '$eq',
@@ -105,7 +105,7 @@
           ...defaultMap[property.bk_property_type]
         }
       },
-      setDetailsCondition () {
+      setDetailsCondition() {
         Object.values(this.condition).forEach((condition) => {
           const modelId = condition.property.bk_obj_id
           const propertyId = condition.property.bk_property_id
@@ -115,7 +115,7 @@
           condition.value = detailsFieldData.value
         })
       },
-      UpdateCondition () {
+      UpdateCondition() {
         const newConditon = {}
         this.properties.forEach((property) => {
           if (this.condition.hasOwnProperty(property.id)) {
@@ -129,7 +129,7 @@
         })
         this.condition = newConditon
       },
-      handleOperatorChange (property, operator) {
+      handleOperatorChange(property, operator) {
         if (operator === '$range') {
           this.condition[property.id].value = []
         } else {
@@ -139,10 +139,10 @@
           this.condition[property.id].value = isTypeChanged ? defaultValue : currentValue
         }
       },
-      handleRemove (property) {
+      handleRemove(property) {
         this.$emit('remove', property)
       },
-      getComponentType (property) {
+      getComponentType(property) {
         const {
           bk_obj_id: modelId,
           bk_property_id: propertyId,
@@ -155,7 +155,7 @@
         }
         return `cmdb-search-${propertyType}`
       },
-      getBindProps (property) {
+      getBindProps(property) {
         const props = this.getNormalProps(property)
         const {
           bk_obj_id: modelId,
@@ -168,7 +168,7 @@
         }
         return props
       },
-      getNormalProps (property) {
+      getNormalProps(property) {
         const type = property.bk_property_type
         if (['list', 'enum'].includes(type)) {
           return {
@@ -182,13 +182,13 @@
         }
         return {}
       },
-      getPropertyLabel (property) {
+      getPropertyLabel(property) {
         const modelId = property.bk_obj_id
         const propertyName = property.bk_property_name
         const modelName = this.modelMap[modelId].bk_obj_name
         return `${modelName} - ${propertyName}`
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time']
         if (selectTypes.includes(property.bk_property_type)) {
           return this.$t('请选择xx', { name: property.bk_property_name })

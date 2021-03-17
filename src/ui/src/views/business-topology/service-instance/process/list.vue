@@ -35,7 +35,7 @@
     components: {
       ExpandList
     },
-    data () {
+    data() {
       return {
         filter: '',
         list: [],
@@ -50,11 +50,11 @@
       ...mapGetters('businessHost', ['selectedNode'])
     },
     watch: {
-      selectedNode () {
+      selectedNode() {
         this.handlePageChange(1)
       }
     },
-    created () {
+    created() {
       this.unwatch = RouterQuery.watch(['page', 'limit', '_t'], ({
         page = 1,
         limit = this.pagination.limit
@@ -67,21 +67,21 @@
       Bus.$on('update-reserve-selection', this.handleReserveSelectionChange)
       Bus.$on('filter-list', this.handleFilterList)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatch()
       Bus.$off('expand-all-change', this.handleExpandAllChange)
       Bus.$off('update-reserve-selection', this.handleReserveSelectionChange)
       Bus.$off('filter-list', this.handleFilterList)
     },
     methods: {
-      handleFilterList (value) {
+      handleFilterList(value) {
         this.filter = value
         RouterQuery.set({
           page: 1,
           _t: Date.now()
         })
       },
-      async getProcessList () {
+      async getProcessList() {
         try {
           const { count, info } = await this.$store.dispatch('serviceInstance/getMoudleProcessList', {
             params: {
@@ -105,36 +105,36 @@
           Bus.$emit('process-list-change')
         }
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         RouterQuery.set({
           page: page,
           _t: Date.now()
         })
       },
-      handlePageLimitChange (limit) {
+      handlePageLimitChange(limit) {
         RouterQuery.set({
           limit: limit,
           page: 1,
           _t: Date.now()
         })
       },
-      handleExpandChange (row, expandedRows) {
+      handleExpandChange(row, expandedRows) {
         row.pending = expandedRows.includes(row)
       },
-      handleExpandAllChange (expand) {
+      handleExpandAllChange(expand) {
         this.list.forEach((row) => {
           this.$refs.processTable.toggleRowExpansion(row, expand)
         })
       },
-      handleRowClick (row) {
+      handleRowClick(row) {
         this.$refs.processTable.toggleRowExpansion(row)
       },
-      handleReserveSelectionChange (process, selection) {
+      handleReserveSelectionChange(process, selection) {
         this.list.forEach((row) => {
           row.reserved = row === process ? selection : []
         })
       },
-      handleExpandResolved (row, list) {
+      handleExpandResolved(row, list) {
         row.pending = false
         row.process_ids = list.map(process => process.process_id)
       }

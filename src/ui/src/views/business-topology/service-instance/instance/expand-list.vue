@@ -61,7 +61,7 @@
     props: {
       serviceInstance: Object
     },
-    data () {
+    data() {
       return {
         properties: [],
         header: [],
@@ -75,7 +75,7 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
-      dynamicProps () {
+      dynamicProps() {
         const dynamicProps = {}
         const paddingHeight = 43
         const rowHeight = 42
@@ -85,16 +85,16 @@
         return dynamicProps
       }
     },
-    created () {
+    created() {
       this.getProperties()
       this.getList()
       Bus.$on('refresh-process-list', this.handleRefresh)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('refresh-process-list', this.handleRefresh)
     },
     methods: {
-      async getProperties () {
+      async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -111,7 +111,7 @@
           console.error(error)
         }
       },
-      setHeader () {
+      setHeader() {
         const header = []
         processTableHeader.forEach((id) => {
           const property = this.properties.find(property => property.bk_property_id === id)
@@ -121,13 +121,13 @@
         })
         this.header = header
       },
-      handleRefresh (target) {
+      handleRefresh(target) {
         if (target !== this.serviceInstance) {
           return
         }
         this.getList()
       },
-      async getList () {
+      async getList() {
         try {
           this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
             params: {
@@ -146,7 +146,7 @@
           this.$emit('update-list', this.list)
         }
       },
-      handleView (row) {
+      handleView(row) {
         Form.show({
           type: 'view',
           title: this.$t('查看进程'),
@@ -158,7 +158,7 @@
           submitHandler: this.editSubmitHandler
         })
       },
-      handleEdit (row) {
+      handleEdit(row) {
         Form.show({
           type: 'update',
           title: this.$t('编辑进程'),
@@ -170,7 +170,7 @@
           submitHandler: this.editSubmitHandler
         })
       },
-      async editSubmitHandler (values, changedValues, instance) {
+      async editSubmitHandler(values, changedValues, instance) {
         try {
           await this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
             params: {
@@ -183,7 +183,7 @@
           console.error(error)
         }
       },
-      handleDelete (row) {
+      handleDelete(row) {
         this.$bkInfo({
           title: this.$t('确定删除该进程'),
           confirmFn: async () => {

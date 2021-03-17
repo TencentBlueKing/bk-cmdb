@@ -43,7 +43,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         serviceCategory: '',
         processes: [],
@@ -52,7 +52,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      header () {
+      header() {
         const header = processTableHeader.map((id) => {
           const property = this.properties.find(property => property.bk_property_id === id) || {}
           return {
@@ -64,7 +64,7 @@
         return header
       }
     },
-    async created () {
+    async created() {
       setTimeout(() => {
         this.$refs.table.doLayout()
       }, 0)
@@ -73,10 +73,10 @@
       this.getServiceProcesses()
     },
     methods: {
-      close () {
+      close() {
         this.visible = false
       },
-      async getProcessProperties () {
+      async getProcessProperties() {
         try {
           const action = 'objectModelProperty/searchObjectAttribute'
           this.properties = await this.$store.dispatch(action, {
@@ -93,7 +93,7 @@
           console.error(e)
         }
       },
-      async getServiceProcesses () {
+      async getServiceProcesses() {
         try {
           const result = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
             params: {
@@ -116,7 +116,7 @@
           this.processes = []
         }
       },
-      async getTitle () {
+      async getTitle() {
         try {
           const [details, categoryData] = await Promise.all([
             this.getServiceDetails(),
@@ -132,7 +132,7 @@
           this.serviceCategory = ''
         }
       },
-      getServiceDetails () {
+      getServiceDetails() {
         return this.$store.dispatch('serviceTemplate/findServiceTemplate', {
           id: this.id,
           config: {
@@ -140,7 +140,7 @@
           }
         })
       },
-      getServiceCategory () {
+      getServiceCategory() {
         return this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
           params: { bk_biz_id: this.bizId },
           config: {

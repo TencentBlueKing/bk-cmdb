@@ -128,7 +128,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         initRuleList: [],
         checkedPropertyIdList: [],
@@ -151,33 +151,33 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapState('hostApply', ['ruleDraft']),
-      isDel () {
+      isDel() {
         return this.action === 'batch-del'
       },
-      hasRuleDraft () {
+      hasRuleDraft() {
         return Object.keys(this.ruleDraft).length > 0
       }
     },
     watch: {
-      checkedPropertyIdList (val) {
+      checkedPropertyIdList(val) {
         this.$nextTick(() => {
           this.toggleNextButtonDisabled()
         })
       }
     },
-    created () {
+    created() {
       this.initData()
       this.leaveConfirmConfig.active = !this.isDel
     },
-    mounted () {
+    mounted() {
       this.setShowMoreLinkStatus()
       window.addEventListener('resize', this.setShowMoreLinkStatus)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       window.removeEventListener('resize', this.setShowMoreLinkStatus)
     },
     methods: {
-      async initData () {
+      async initData() {
         try {
           const ruleData = await this.getRules()
           this.initRuleList = ruleData.info
@@ -188,7 +188,7 @@
           console.log(e)
         }
       },
-      getRules () {
+      getRules() {
         return this.$store.dispatch('hostApply/getRules', {
           bizId: this.bizId,
           params: {
@@ -199,10 +199,10 @@
           }
         })
       },
-      getModulePath (id) {
+      getModulePath(id) {
         return this.$parent.getModulePath(id)
       },
-      setShowMoreLinkStatus () {
+      setShowMoreLinkStatus() {
         const moduleList = this.$refs.moduleList
         const moduleItemEl = moduleList.getElementsByClassName('module-item')[0]
         const moduleItemStyle = getComputedStyle(moduleItemEl)
@@ -213,7 +213,7 @@
         this.showMore.showLink = rowCount > this.showMore.moduleListMaxRow
         this.showMore.linkLeft = moduleItemWidth * (maxCountInRow - 1)
       },
-      toggleNextButtonDisabled () {
+      toggleNextButtonDisabled() {
         const modulePropertyList = this.$refs.configEditTable.modulePropertyList
         const everyTruthy = modulePropertyList.every((property) => {
           const validTruthy = property.__extra__.valid !== false
@@ -227,7 +227,7 @@
         })
         this.nextButtonDisabled = !this.checkedPropertyIdList.length || !everyTruthy
       },
-      goBack () {
+      goBack() {
         // 删除离开不用确认
         this.leaveConfirmConfig.active = !this.isDel
         this.$nextTick(function () {
@@ -237,7 +237,7 @@
           })
         })
       },
-      handleNextStep () {
+      handleNextStep() {
         const { modulePropertyList, ignoreRuleIds } = this.$refs.configEditTable
         const additionalRules = []
         this.moduleIds.forEach((moduleId) => {
@@ -276,7 +276,7 @@
           })
         })
       },
-      handleDel () {
+      handleDel() {
         this.$bkInfo({
           title: this.$t('确认删除自动应用字段？'),
           subTitle: this.$t('删除后将会移除字段在对应模块中的配置'),
@@ -299,21 +299,21 @@
           }
         })
       },
-      handleCancel () {
+      handleCancel() {
         this.$store.commit('hostApply/clearRuleDraft')
         this.goBack()
       },
-      handlePropertySelectionChange (value) {
+      handlePropertySelectionChange(value) {
         this.selectedPropertyRow = value
         this.delButtonDisabled = this.selectedPropertyRow.length <= 0
       },
-      handlePropertyValueChange () {
+      handlePropertyValueChange() {
         this.toggleNextButtonDisabled()
       },
-      handleChooseField () {
+      handleChooseField() {
         this.propertyModalVisible = true
       },
-      handleShowMore () {
+      handleShowMore() {
         this.showMore.isMoreModuleShowed = !this.showMore.isMoreModuleShowed
       }
     }

@@ -84,13 +84,13 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         isDropdownShow: false
       }
     },
     computed: {
-      available () {
+      available() {
         return this.buttons.filter((button) => {
           if (button.hasOwnProperty('available')) {
             return button.available
@@ -100,7 +100,7 @@
       }
     },
     methods: {
-      handleClick (button) {
+      handleClick(button) {
         if (button.disabled) {
           return false
         }
@@ -108,10 +108,10 @@
           button.handler.call(null)
         }
       },
-      toggleDropdownState (state) {
+      toggleDropdownState(state) {
         this.isDropdownShow = state
       },
-      getTooltips (tooltips) {
+      getTooltips(tooltips) {
         let tooltipsSettings = { disabled: true }
         if (tooltips) {
           tooltipsSettings.disabled = false

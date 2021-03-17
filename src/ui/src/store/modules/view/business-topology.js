@@ -17,43 +17,43 @@ const getters = {
 }
 
 const actions = {
-  getModelProperty (context) {
+  getModelProperty(context) {
     console.log(context)
   }
 }
 
 const mutations = {
-  setProperties (state, data) {
+  setProperties(state, data) {
     Vue.set(state.propertyMap, data.id, data.properties)
   },
-  setPropertyGroups (state, data) {
+  setPropertyGroups(state, data) {
     Vue.set(state.propertyGroupMap, data.id, data.groups)
   },
-  setServiceTemplate (state, data) {
+  setServiceTemplate(state, data) {
     Vue.set(state.serviceTemplateMap, data.id, data.templates)
   },
-  setSetTemplate (state, data) {
+  setSetTemplate(state, data) {
     Vue.set(state.setTemplateMap, data.id, data.templates)
   },
-  setProcessTemplate (state, data) {
+  setProcessTemplate(state, data) {
     Vue.set(state.processTemplateMap, data.id, data.template)
   },
-  setCategories (state, data) {
+  setCategories(state, data) {
     Vue.set(state.categoryMap, data.id, data.categories)
   },
-  setSelectedNode (state, node) {
+  setSelectedNode(state, node) {
     state.selectedNode = node
   },
-  setSelectedNodeInstance (state, instance) {
+  setSelectedNodeInstance(state, instance) {
     state.selectedNodeInstance = instance
   },
-  setHostSelectorVisible (state, visible) {
+  setHostSelectorVisible(state, visible) {
     state.hostSelectorVisible = visible
   },
-  setSelectedHost (state, selectedHost) {
+  setSelectedHost(state, selectedHost) {
     state.selectedHost = selectedHost
   },
-  resetState (state) {
+  resetState(state) {
     state.propertyMap = {}
     state.propertyGroupMap = {}
     state.serviceTemplateMap = {}
@@ -66,7 +66,7 @@ const mutations = {
     state.hostSelectorVisible = false
     state.selectedHost = []
   },
-  setInstanceIp (state, { hostId, res }) {
+  setInstanceIp(state, { hostId, res }) {
     Vue.set(state.instanceIpMap, hostId, res)
   }
 }

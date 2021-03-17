@@ -17,7 +17,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchAssociationType ({ commit, state, dispatch }, { params, config }) {
+  searchAssociationType({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/associationtype', params, config)
   },
   /**
@@ -28,7 +28,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createAssociationType ({ commit, state, dispatch }, { params, config }) {
+  createAssociationType({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/associationtype', params, config)
   },
   /**
@@ -40,7 +40,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateAssociationType ({ commit, state, dispatch }, { id, params, config }) {
+  updateAssociationType({ commit, state, dispatch }, { id, params, config }) {
     return $http.put(`update/associationtype/${id}`, params, config)
   },
   /**
@@ -52,7 +52,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteAssociationType ({ commit, state, dispatch }, { id, config }) {
+  deleteAssociationType({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/associationtype/${id}`, config)
   },
   /**
@@ -63,7 +63,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchObjectAssociation ({ commit, state, dispatch }, { params, config }) {
+  searchObjectAssociation({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/objectassociation', params, config)
   },
   /**
@@ -74,7 +74,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createObjectAssociation ({ commit, state, dispatch }, { params, config }) {
+  createObjectAssociation({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/objectassociation', params, config)
   },
   /**
@@ -86,7 +86,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateObjectAssociation ({ commit, state, dispatch }, { id, params, config }) {
+  updateObjectAssociation({ commit, state, dispatch }, { id, params, config }) {
     return $http.put(`update/objectassociation/${id}`, params, config)
   },
   /**
@@ -98,7 +98,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteObjectAssociation ({ commit, state, dispatch }, { id, config }) {
+  deleteObjectAssociation({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/objectassociation/${id}`, config)
   },
   /**
@@ -109,7 +109,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchAssociationListWithAssociationKindList ({ commit, state, dispatch }, { params, config }) {
+  searchAssociationListWithAssociationKindList({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/topoassociationtype', params, config)
   },
   /**
@@ -120,7 +120,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchInstAssociation ({ commit, state, dispatch }, { params, config }) {
+  searchInstAssociation({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/instassociation', params, config)
   },
   /**
@@ -131,7 +131,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createInstAssociation ({ commit, state, dispatch }, { params, config }) {
+  createInstAssociation({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/instassociation', params, config)
   },
   /**
@@ -142,13 +142,13 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteInstAssociation ({ commit, state, dispatch }, { id, config }) {
+  deleteInstAssociation({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/instassociation/${id}`, config)
   }
 }
 
 const mutations = {
-  setAssociationList (state, list) {
+  setAssociationList(state, list) {
     state.associationList = list
   }
 }

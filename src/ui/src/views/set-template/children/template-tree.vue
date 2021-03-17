@@ -77,7 +77,7 @@
     },
     /* eslint-disable-next-line */
         props: ['mode', 'templateId'],
-    data () {
+    data() {
       return {
         templateName: this.$t('模板集群名称'),
         services: [],
@@ -96,7 +96,7 @@
       }
     },
     computed: {
-      hasChange () {
+      hasChange() {
         if (this.mode !== 'edit') {
           return false
         }
@@ -108,20 +108,20 @@
           return (target && target.id !== service.id) || !target
         })
       },
-      setName () {
+      setName() {
         const setModel = this.$store.getters['objectModelClassify/getModelById']('set') || {}
         return setModel.bk_obj_name || ''
       },
-      moduleName () {
+      moduleName() {
         const moduleModel = this.$store.getters['objectModelClassify/getModelById']('module') || {}
         return moduleModel.bk_obj_name || ''
       },
-      sortedServices () {
+      sortedServices() {
         return [...this.services].sort((A, B) => {
           return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' })
         })
       },
-      topoNodes () {
+      topoNodes() {
         return this.originalServices.map((service) => {
           return {
             bk_obj_id: 'module',
@@ -131,27 +131,27 @@
       }
     },
     watch: {
-      hasChange (value) {
+      hasChange(value) {
         this.$emit('service-change', value)
       },
-      services (value) {
+      services(value) {
         this.$emit('service-selected', value)
       },
-      mode () {
+      mode() {
         this.selected = null
       }
     },
-    created () {
+    created() {
       this.initMonitorTemplateName()
       if (['edit', 'view'].includes(this.mode)) {
         this.getSetTemplateServices()
       }
     },
-    beforeDestory () {
+    beforeDestory() {
       this.unwatch && this.unwatch()
     },
     methods: {
-      async getSetTemplateServices () {
+      async getSetTemplateServices() {
         try {
           const data = await this.$store.dispatch('setTemplate/getSetTemplateServicesStatistics', {
             bizId: this.$store.getters['objectBiz/bizId'],
@@ -172,14 +172,14 @@
           this.servicesHost = []
         }
       },
-      serviceExistHost (id) {
+      serviceExistHost(id) {
         const service = this.servicesHost.find(service => service.service_id === id)
         if (service) {
           return service.host_count > 0
         }
         return false
       },
-      initMonitorTemplateName () {
+      initMonitorTemplateName() {
         this.unwatch = this.$watch(() => {
           return this.$parent.templateName
         }, (value) => {
@@ -190,13 +190,13 @@
           }
         }, { immediate: true })
       },
-      handleChildClick (service) {
+      handleChildClick(service) {
         if (this.mode === 'view') {
           return false
         }
         this.selected = service.id
       },
-      handleAddService () {
+      handleAddService() {
         this.selected = null
         this.dialog.props = {
           selected: this.services.map(service => service.id)
@@ -206,7 +206,7 @@
         this.dialog.component = serviceTemplateSelector.name
         this.dialog.visible = true
       },
-      handleViewService (service) {
+      handleViewService(service) {
         this.dialog.props = {
           id: service.id
         }
@@ -215,24 +215,24 @@
         this.dialog.component = serviceTemplateInfo.name
         this.dialog.visible = true
       },
-      handleDialogConfirm () {
+      handleDialogConfirm() {
         if (this.dialog.component === serviceTemplateSelector.name) {
           this.services = this.$refs.dialogComponent.getSelectedServices()
         }
         this.dialog.visible = false
       },
-      handleDialogClose () {
+      handleDialogClose() {
         this.dialog.component = null
         this.dialog.title = ''
         this.dialog.props = {}
       },
-      handleDeleteService (index) {
+      handleDeleteService(index) {
         this.services.splice(index, 1)
       },
-      recoveryService () {
+      recoveryService() {
         this.services = [...this.originalServices]
       },
-      handleGoTopoBusiness (service) {
+      handleGoTopoBusiness(service) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {
@@ -241,13 +241,13 @@
           history: true
         })
       },
-      handleSelectChange (selected) {
+      handleSelectChange(selected) {
         this.selectedServiceCount = selected.length
       },
-      handleServiceTemplateLoaded (templates) {
+      handleServiceTemplateLoaded(templates) {
         this.serviceTemplateCount = (templates || []).length
       },
-      handleLinkClick () {
+      handleLinkClick() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE
         })

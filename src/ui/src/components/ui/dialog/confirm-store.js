@@ -1,14 +1,14 @@
 const map = {}
 export default {
-  install (vm) {
+  install(vm) {
     if (vm.id !== undefined) {
       map[vm.id] = vm
     }
   },
-  uninstall (vm) {
+  uninstall(vm) {
     delete map[vm.id]
   },
-  async popup (id) {
+  async popup(id) {
     const vm = map[id]
     if (vm) {
       vm.show()

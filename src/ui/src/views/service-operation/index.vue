@@ -60,7 +60,7 @@
       [MoveToIdleHost.name]: MoveToIdleHost,
       [HostAttrsAutoApply.name]: HostAttrsAutoApply
     },
-    data () {
+    data() {
       return {
         ready: false,
         hasScrollbar: false,
@@ -97,46 +97,46 @@
       ...mapGetters('businessHost', [
         'getDefaultSearchCondition'
       ]),
-      moduleId () {
+      moduleId() {
         return this.$route.params.moduleId && parseInt(this.$route.params.moduleId)
       },
-      serviceInstanceIds () {
+      serviceInstanceIds() {
         return String(this.$route.params.ids).split('/')
           .map(id => parseInt(id, 10))
       },
-      availableTabList () {
+      availableTabList() {
         return this.tabList.filter(tab => tab.props.info.length > 0)
       },
-      activeTab () {
+      activeTab() {
         return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
       }
     },
     watch: {
-      ready (ready) {
+      ready(ready) {
         this.$nextTick(() => {
           addResizeListener(this.$refs.changeInfo, this.resizeHandler)
         })
       },
-      availableTabList (tabList) {
+      availableTabList(tabList) {
         tabList.forEach((tab) => {
           if (tab !== this.activeTab) {
             tab.confirmed = false
           }
         })
       },
-      activeTab (tab) {
+      activeTab(tab) {
         if (!tab) return
         tab.confirmed = true
       }
     },
-    async created () {
+    async created() {
       this.getPreviewData()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
     },
     methods: {
-      async getPreviewData () {
+      async getPreviewData() {
         try {
           const data = await this.$store.dispatch('serviceInstance/previewDeleteServiceInstances', {
             params: {
@@ -153,7 +153,7 @@
           console.error(e)
         }
       },
-      async setMoveToIdleHosts (data = []) {
+      async setMoveToIdleHosts(data = []) {
         try {
           const hostIds = []
           data.forEach((item) => {
@@ -171,12 +171,12 @@
           console.error(e)
         }
       },
-      setHostAttrsAutoApply (data = {}) {
+      setHostAttrsAutoApply(data = {}) {
         const applyList = data.plans || []
         const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
         tab.props.info = applyList.filter(item => item.conflicts.length || item.update_fields.length)
       },
-      getHostInfo (hostIds) {
+      getHostInfo(hostIds) {
         return this.$store.dispatch('hostSearch/searchHost', {
           params: this.getSearchHostParams(hostIds),
           config: {
@@ -184,7 +184,7 @@
           }
         }).then(data => data.info)
       },
-      getSearchHostParams (hostIds) {
+      getSearchHostParams(hostIds) {
         const params = {
           bk_biz_id: this.bizId,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
@@ -199,13 +199,13 @@
         })
         return params
       },
-      resizeHandler () {
+      resizeHandler() {
         this.$nextTick(() => {
           const scroller = this.$el.parentElement
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
         })
       },
-      async handleConfirm () {
+      async handleConfirm() {
         try {
           await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
             config: {
@@ -222,13 +222,13 @@
           console.error(e)
         }
       },
-      handleCancel () {
+      handleCancel() {
         this.redirect()
       },
-      handleTabClick (tab) {
+      handleTabClick(tab) {
         this.tab.active = tab.id
       },
-      redirect () {
+      redirect() {
         this.$routerActions.back()
       }
     }

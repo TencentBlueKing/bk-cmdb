@@ -122,7 +122,7 @@
     components: {
       InstanceDetails
     },
-    data () {
+    data() {
       return {
         processList: [],
         properties: [],
@@ -143,30 +143,30 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
-      current () {
+      current() {
         if (this.activeIndex !== null) {
           return this.processList[this.activeIndex]
         }
         return null
       },
-      changedProperties () {
+      changedProperties() {
         if (this.current && this.current.type === 'changed') {
           return this.getChangedProperties()
         }
         return []
       },
-      templateId () {
+      templateId() {
         return Number(this.$route.params.template)
       },
-      modules () {
+      modules() {
         return String(this.$route.params.modules).split(',')
           .map(id => Number(id))
       },
-      allConfirmed () {
+      allConfirmed() {
         return this.processList.every(process => process.confirmed)
       }
     },
-    async created () {
+    async created() {
       try {
         await this.getProperties()
         this.getTopoPath()
@@ -176,11 +176,11 @@
       }
     },
     methods: {
-      handleChangeActive (process, index) {
+      handleChangeActive(process, index) {
         this.activeIndex = index
         process.confirmed = true
       },
-      async getProperties () {
+      async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -193,7 +193,7 @@
           console.error(e)
         }
       },
-      async getTopoPath () {
+      async getTopoPath() {
         try {
           const { nodes } = await this.$store.dispatch('objectMainLineModule/getTopoPath', {
             bizId: this.bizId,
@@ -211,7 +211,7 @@
           console.error(e)
         }
       },
-      async getDifference () {
+      async getDifference() {
         try {
           const differences = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
             params: {
@@ -255,7 +255,7 @@
           console.error(e)
         }
       },
-      async getServiceCategoryDifference (changedCategory) {
+      async getServiceCategoryDifference(changedCategory) {
         try {
           const categoryInfo = {
             type: 'others',
@@ -286,19 +286,19 @@
           console.error(e)
         }
       },
-      getServiceCategory () {
+      getServiceCategory() {
         return this.$store.dispatch('serviceClassification/searchServiceCategory', {
           params: { bk_biz_id: this.bizId }
         })
       },
-      getCagetoryPath (id) {
+      getCagetoryPath(id) {
         const second = this.categories.find(second => second.category.id === id)
         const first = this.categories.find(first => first.category.id === this.$tools.getValue(second, 'category.bk_parent_id'))
         const firstName = this.$tools.getValue(first, 'category.name') || '--'
         const secondName = this.$tools.getValue(second, 'category.name') || '--'
         return [firstName, secondName].join(' / ')
       },
-      getServiceModules () {
+      getServiceModules() {
         return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
           bizId: this.bizId,
           serviceTemplateId: this.templateId,
@@ -307,7 +307,7 @@
           }
         })
       },
-      getChangedProperties () {
+      getChangedProperties() {
         const changed = []
         this.current.modules.forEach((module) => {
           module.service_instances.forEach((instance) => {
@@ -325,16 +325,16 @@
         })
         return changed
       },
-      getChangedValue (changed) {
+      getChangedValue(changed) {
         const property = changed.property
         let value = changed.template_property_value
         value = Object.prototype.toString.call(value) === '[object Object]' ? value.value : value
         return formatter(value, property)
       },
-      getModuleTopoPath (moduleId) {
+      getModuleTopoPath(moduleId) {
         return this.topoPath[moduleId]
       },
-      async handleModulesCollapseChange (collapse, module) {
+      async handleModulesCollapseChange(collapse, module) {
         const loaded = module.service_instances.__loaded__
         if (this.current.type === 'others' && !loaded) {
           try {
@@ -357,7 +357,7 @@
           }
         }
       },
-      getModuleServiceInstances (moduleId) {
+      getModuleServiceInstances(moduleId) {
         return this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
           params: {
             bk_biz_id: this.bizId,
@@ -366,7 +366,7 @@
           }
         })
       },
-      handleViewDiff (instance, module) {
+      handleViewDiff(instance, module) {
         this.slider.title = instance.service_instance.name
         this.slider.props = {
           module,
@@ -375,7 +375,7 @@
         }
         this.slider.show = true
       },
-      handleConfirm () {
+      handleConfirm() {
         this.$store.dispatch('businessSynchronous/syncServiceInstanceByTemplate', {
           params: {
             service_template_id: this.templateId,
@@ -388,10 +388,10 @@
           this.handleGoBackModule()
         })
       },
-      handleGoBackModule () {
+      handleGoBackModule() {
         this.$routerActions.back()
       },
-      getServiceInstanceIds () {
+      getServiceInstanceIds() {
         const ids = []
         this.processList.forEach((process) => {
           process.modules.forEach((module) => {
@@ -402,7 +402,7 @@
         })
         return [...new Set(ids)]
       },
-      getInstanceCount (process) {
+      getInstanceCount(process) {
         return process.modules.reduce((count, module) => count + module.service_instances.length, 0)
       }
     }

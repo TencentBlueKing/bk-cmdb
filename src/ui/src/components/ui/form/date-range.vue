@@ -16,7 +16,7 @@
     props: {
       value: {
         type: [Array, String],
-        default () {
+        default() {
           return []
         }
       },
@@ -38,31 +38,31 @@
         default: 'medium'
       }
     },
-    data () {
+    data() {
       return {
         localValue: [...this.value]
       }
     },
     computed: {
       time: {
-        get () {
+        get() {
           return this.localValue.map((date) => {
             return date ? new Date(date) : ''
           })
         },
-        set (value) {
+        set(value) {
           const localValue = value.map(date => this.$tools.formatTime(date, this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'))
           this.localValue = localValue.filter(date => !!date)
         }
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         if ([...value].join('') !== this.localValue.join('')) {
           this.localValue = [...value]
         }
       },
-      localValue (value, oldValue) {
+      localValue(value, oldValue) {
         if (value.join('') !== [...this.value].join('')) {
           this.$emit('input', [...value])
           this.$emit('change', [...value], [...oldValue])

@@ -23,7 +23,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchServiceTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('findmany/proc/service_template', params, config)
   },
   /**
@@ -34,7 +34,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchServiceTemplateCount ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+  searchServiceTemplateCount({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
     return $http.post(`findmany/proc/service_template/count_info/biz/${bizId}`, params, config)
   },
   /**
@@ -45,7 +45,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchServiceTemplateWithoutDetails ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchServiceTemplateWithoutDetails({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('findmany/proc/service_template', params, config)
   },
   /**
@@ -56,7 +56,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  createServiceTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('create/proc/service_template', params, config)
   },
   /**
@@ -67,7 +67,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  updateServiceTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.put('update/proc/service_template', params, config)
   },
   /**
@@ -78,7 +78,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  deleteServiceTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.delete('delete/proc/service_template', params)
   },
   /**
@@ -89,11 +89,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  findServiceTemplate ({ commit, state, dispatch, rootGetters }, { id, config }) {
+  findServiceTemplate({ commit, state, dispatch, rootGetters }, { id, config }) {
     return $http.get(`find/proc/service_template/${id}/detail`, config)
   },
 
-  getServiceTemplateModules (context, { bizId, serviceTemplateId, params, config }) {
+  getServiceTemplateModules(context, { bizId, serviceTemplateId, params, config }) {
     return $http.post(`module/bk_biz_id/${bizId}/service_template_id/${serviceTemplateId}`, params, config)
   }
 }

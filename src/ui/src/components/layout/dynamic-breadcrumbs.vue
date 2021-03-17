@@ -11,18 +11,18 @@
   export default {
     computed: {
       ...mapGetters(['title']),
-      current () {
+      current() {
         const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
         return this.title || this.$route.meta.title || menuI18n
       },
-      defaultFrom () {
+      defaultFrom() {
         const menu = this.$route.meta.menu || {}
         if (menu.relative) {
           return { name: menu.relative }
         }
         return null
       },
-      latest () {
+      latest() {
         let latest
         if (this.$route.query.hasOwnProperty('_f')) {
           try {
@@ -34,7 +34,7 @@
         }
         return latest
       },
-      from () {
+      from() {
         if (this.latest) {
           try {
             return JSON.parse(Base64.decode(this.latest))
@@ -46,7 +46,7 @@
       }
     },
     methods: {
-      async handleClick () {
+      async handleClick() {
         this.$routerActions.redirect({ ...this.from, back: true })
       }
     }

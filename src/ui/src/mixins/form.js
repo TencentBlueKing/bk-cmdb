@@ -10,25 +10,25 @@ export default {
     },
     uneditableProperties: {
       type: Array,
-      default () {
+      default() {
         return []
       }
     },
     disabledProperties: {
       type: Array,
-      default () {
+      default() {
         return []
       }
     },
     objectUnique: {
       type: Array,
-      default () {
+      default() {
         return []
       }
     }
   },
   computed: {
-    $sortedGroups () {
+    $sortedGroups() {
       const publicGroups = []
       const bizCustomGroups = []
       this.propertyGroups.forEach((group) => {
@@ -51,7 +51,7 @@ export default {
       })
       return allGroups
     },
-    $sortedProperties () {
+    $sortedProperties() {
       const unique = this.isMultiple ? this.objectUnique.find(unique => unique.must_check) || {} : {}
       const uniqueKeys = unique.keys || []
       const sortKey = 'bk_property_index'
@@ -61,7 +61,7 @@ export default {
       })
       return properties.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
     },
-    $groupedProperties () {
+    $groupedProperties() {
       return this.$sortedGroups.map((group) => {
         return this.$sortedProperties.filter((property) => {
           // 兼容旧数据， 把none 这个分组的属性塞到默认分组去
@@ -74,7 +74,7 @@ export default {
       })
     }
   },
-  data () {
+  data() {
     return {
       groupState: {}
     }

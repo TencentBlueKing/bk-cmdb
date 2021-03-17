@@ -44,13 +44,13 @@
     props: {
       modules: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
       business: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
@@ -59,7 +59,7 @@
         default: false
       }
     },
-    data () {
+    data() {
       return {
         tab: {
           list: [
@@ -118,13 +118,13 @@
       }
     },
     computed: {
-      bizId () {
+      bizId() {
         return this.business.bk_biz_id
       },
-      isIdleSetModules () {
+      isIdleSetModules() {
         return this.modules.every(module => module.default >= 1)
       },
-      availableTabList () {
+      availableTabList() {
         const availableTabList = []
         this.tab.list.forEach((tab) => {
           tab.component.props.business = this.business
@@ -141,35 +141,35 @@
         })
         return availableTabList
       },
-      activeTab () {
+      activeTab() {
         return this.availableTabList.find(tab => tab.props.name === this.tab.active)
       },
-      auth () {
+      auth() {
         return [
           { type: this.$OPERATION.C_SERVICE_INSTANCE, relation: [this.bizId] },
           { type: this.$OPERATION.U_SERVICE_INSTANCE, relation: [this.bizId] },
           { type: this.$OPERATION.D_SERVICE_INSTANCE, relation: [this.bizId] }
         ]
       },
-      permission () {
+      permission() {
         return translateAuth(this.auth)
       }
     },
     watch: {
-      confirmLoading (value) {
+      confirmLoading(value) {
         this.activeTab.component.props.confirmLoading = value
       }
     },
     methods: {
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       },
-      handleConfirm () {
+      handleConfirm() {
         const currentTab = this.activeTab
         const tab = { tabName: currentTab.props.name, moduleType: currentTab.component.props.moduleType }
         this.$emit('confirm', tab, ...arguments)
       },
-      handleUpdateAuth (isAuthorized, panel) {
+      handleUpdateAuth(isAuthorized, panel) {
         // 已鉴权则不再更新，配合auth组件ignore，在切换tab时不重复鉴权
         if (!this.authorized.hasOwnProperty(panel)) {
           this.$set(this.authorized, panel, isAuthorized)

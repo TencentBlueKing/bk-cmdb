@@ -44,7 +44,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         localOperator: null,
@@ -54,35 +54,35 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      labelSuffix () {
+      labelSuffix() {
         const model = this.getModelById(this.property.bk_obj_id)
         return model ? model.bk_obj_name : this.property.bk_obj_id
       },
       operator: {
-        get () {
+        get() {
           return this.localOperator || FilterStore.condition[this.property.id].operator
         },
-        set (operator) {
+        set(operator) {
           this.localOperator = operator
         }
       },
       value: {
-        get () {
+        get() {
           if (this.localValue === null) {
             return FilterStore.condition[this.property.id].value
           }
           return this.localValue
         },
-        set (value) {
+        set(value) {
           this.localValue = value
         }
       }
     },
     methods: {
-      getPlaceholder () {
+      getPlaceholder() {
         return Utils.getPlaceholder(this.property)
       },
-      getComponentType () {
+      getComponentType() {
         const {
           bk_obj_id: modelId,
           bk_property_id: propertyId,
@@ -99,7 +99,7 @@
         }
         return normal
       },
-      getBindProps () {
+      getBindProps() {
         const props = Utils.getBindProps(this.property)
         if (!FilterStore.bizId) {
           return props
@@ -115,15 +115,15 @@
         }
         return props
       },
-      resetCondition () {
+      resetCondition() {
         this.operator = null
         this.value = null
       },
-      handleOperatorChange (operator) {
+      handleOperatorChange(operator) {
         this.value = Utils.getOperatorSideEffect(this.property, operator, this.value)
       },
       // 当失去焦点时，激活状态的改变做一个延时，避免点击表单外部时直接隐藏了表单对应的tooltips
-      handleActiveChange (active) {
+      handleActiveChange(active) {
         this.timer && clearTimeout(this.timer)
         if (active) {
           this.active = active
@@ -133,11 +133,11 @@
           }, 100)
         }
       },
-      handleConfirm () {
+      handleConfirm() {
         FilterStore.updateCondition(this.property, this.operator, this.value)
         this.$emit('confirm')
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       }
     }

@@ -11,17 +11,17 @@
  */
 
 export default class CombineRequest {
-  static setup (id, callback) {
+  static setup(id, callback) {
     return this.getInstance(id, callback)
   }
-  constructor (id, callback) {
+  constructor(id, callback) {
     this.id = id
     this.timer = null
     this.data = []
     this.callback = callback
     this.promise = null
   }
-  add (payload) {
+  add(payload) {
     this.data.push(payload)
     if (!this.timer) {
       this.promise = new Promise(async (resolve, reject) => {
@@ -34,18 +34,18 @@ export default class CombineRequest {
     }
     return this.promise
   }
-  run () {
+  run() {
     if (this.callback) {
       return this.callback(this.data)
     }
   }
-  reset () {
+  reset() {
     clearTimeout(this.timer)
     this.data = []
     this.timer = null
     this.promise = null
   }
-  static getInstance (id, callback) {
+  static getInstance(id, callback) {
     const instances = CombineRequest.instances || {}
     if (!instances[id]) {
       instances[id] = new CombineRequest(id, callback)

@@ -141,7 +141,7 @@
     components: {
       CmdbLoading
     },
-    data () {
+    data() {
       return {
         filter: {
           mainClassification: '',
@@ -178,7 +178,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      params () {
+      params() {
         const id = this.categoryId
           ? this.categoryId
           : this.maincategoryId ? this.maincategoryId : 0
@@ -193,14 +193,14 @@
           }
         }
       },
-      emptyText () {
+      emptyText() {
         return this.filter.mainClassification ? this.$t('没有二级分类') : this.$t('请选择一级分类')
       },
-      hasFilter () {
+      hasFilter() {
         return Object.values(this.filter).some(value => !!value)
       }
     },
-    async created () {
+    async created() {
       try {
         await this.getServiceClassification()
         await this.getTableData()
@@ -211,7 +211,7 @@
     methods: {
       ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
       ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
-      async getTableData (event) {
+      async getTableData(event) {
         try {
           const templateData = await this.getTemplateData()
           if (templateData.count && !templateData.info.length) {
@@ -238,7 +238,7 @@
           }
         }
       },
-      async getTemplateCount () {
+      async getTemplateCount() {
         try {
           const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplateCount', {
             bizId: this.bizId,
@@ -267,7 +267,7 @@
           })
         }
       },
-      getTemplateData () {
+      getTemplateData() {
         return this.searchServiceTemplate({
           params: this.params,
           config: {
@@ -277,7 +277,7 @@
           }
         })
       },
-      async getServiceClassification () {
+      async getServiceClassification() {
         const { info: categories } = await this.searchServiceCategoryWithoutAmout({
           params: { bk_biz_id: this.bizId },
           config: {
@@ -288,17 +288,17 @@
         this.mainList = this.classificationList.filter(classification => !classification['bk_parent_id'])
         this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
       },
-      handleSelect (id = '') {
+      handleSelect(id = '') {
         this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
         this.maincategoryId = id
         this.handleSelectSecondary()
       },
-      handleSelectSecondary (id = '') {
+      handleSelectSecondary(id = '') {
         this.categoryId = id
         this.filter.secondaryClassification = id
         this.getTableData(true)
       },
-      operationTemplate (id, type) {
+      operationTemplate(id, type) {
         this.$routerActions.redirect({
           name: 'operationalTemplate',
           params: {
@@ -308,7 +308,7 @@
           history: true
         })
       },
-      deleteTemplate (template) {
+      deleteTemplate(template) {
         this.$bkInfo({
           title: this.$t('确认删除模板'),
           extCls: 'bk-dialog-sub-header-center',
@@ -330,23 +330,23 @@
           }
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort, '-id')
         this.handlePageChange(1)
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.table.pagination.limit = size
         this.handlePageChange(1)
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.table.pagination.current = page
         this.getTableData()
       },
-      handleRowClick (row, event, column) {
+      handleRowClick(row, event, column) {
         if (column.property === 'operation') return
         this.operationTemplate(row.id)
       },
-      handleTipsLinkClick () {
+      handleTipsLinkClick() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE
         })

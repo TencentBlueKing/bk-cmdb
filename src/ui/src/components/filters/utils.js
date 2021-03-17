@@ -3,12 +3,12 @@ import i18n from '@/i18n'
 import IS_INT from 'validator/es/lib/isInt'
 
 const getModelById = store.getters['objectModelClassify/getModelById']
-export function getLabel (property) {
+export function getLabel(property) {
   const model = getModelById(property.bk_obj_id) || {}
   return `${model.bk_obj_name} - ${property.bk_property_name}`
 }
 
-export function getBindProps (property) {
+export function getBindProps(property) {
   const type = property.bk_property_type
   if (['list', 'enum'].includes(type)) {
     return {
@@ -23,7 +23,7 @@ export function getBindProps (property) {
   return {}
 }
 
-export function getPlaceholder (property) {
+export function getPlaceholder(property) {
   const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time']
   if (selectTypes.includes(property.bk_property_type)) {
     return i18n.t('请选择xx', { name: property.bk_property_name })
@@ -31,7 +31,7 @@ export function getPlaceholder (property) {
   return i18n.t('请输入xx', { name: property.bk_property_name })
 }
 
-export function getDefaultData (property) {
+export function getDefaultData(property) {
   const defaultMap = {
     bool: {
       operator: '$eq',
@@ -65,7 +65,7 @@ export function getDefaultData (property) {
   }
 }
 
-export function getOperatorSideEffect (property, operator, value) {
+export function getOperatorSideEffect(property, operator, value) {
   let effectValue = value
   if (operator === '$range') {
     effectValue = []
@@ -77,7 +77,7 @@ export function getOperatorSideEffect (property, operator, value) {
   return effectValue
 }
 
-export function convertValue (value, operator, property) {
+export function convertValue(value, operator, property) {
   const { bk_property_type: type } = property
   let convertedValue = Array.isArray(value) ? value : [value]
   convertedValue = convertedValue.map((data) => {
@@ -96,19 +96,19 @@ export function convertValue (value, operator, property) {
   return convertedValue[0]
 }
 
-export function findProperty (id, properties) {
+export function findProperty(id, properties) {
   const field = IS_INT(id) ? 'id' : 'bk_property_id'
   return properties.find(property => property[field].toString() === id.toString())
 }
 
-export function findPropertyByPropertyId (propertyId, properties, modelId) {
+export function findPropertyByPropertyId(propertyId, properties, modelId) {
   if (modelId) {
     return properties.find(property => property.bk_obj_id === modelId && property.bk_property_id === propertyId)
   }
   return properties.find(property => property.bk_property_id === propertyId)
 }
 
-export function transformCondition (condition, properties, header) {
+export function transformCondition(condition, properties, header) {
   const conditionMap = {
     host: [],
     module: [],
@@ -151,7 +151,7 @@ export function transformCondition (condition, properties, header) {
   })
 }
 
-export function splitIP (raw) {
+export function splitIP(raw) {
   const list = []
   raw.trim().split(/\n|;|；|,|，/)
     .forEach((text) => {
@@ -161,7 +161,7 @@ export function splitIP (raw) {
   return list
 }
 
-export function transformIP (raw) {
+export function transformIP(raw) {
   const transformedIP = {
     data: [],
     condition: null
@@ -196,11 +196,11 @@ const operatorSymbolMap = {
   '$regex': 'Like',
   '$range': '≤ ≥'
 }
-export function getOperatorSymbol (operator) {
+export function getOperatorSymbol(operator) {
   return operatorSymbolMap[operator]
 }
 
-export function getDefaultIP () {
+export function getDefaultIP() {
   return {
     text: '',
     inner: true,
@@ -209,7 +209,7 @@ export function getDefaultIP () {
   }
 }
 
-export function defineProperty (definition) {
+export function defineProperty(definition) {
   return Object.assign({}, {
     id: null,
     bk_obj_id: null,
@@ -228,14 +228,14 @@ export function defineProperty (definition) {
   }, definition)
 }
 
-export function getUniqueProperties (preset, dynamic) {
+export function getUniqueProperties(preset, dynamic) {
   const unique = dynamic.filter(property => !preset.includes(property))
   const full = [...preset, ...unique]
   const ids = [...new Set(full.map(property => property.id))]
   return ids.map(id => full.find(property => property.id === id))
 }
 
-function getPropertyPriority (property) {
+function getPropertyPriority(property) {
   let priority = 0
   if (property['isonly']) {
     priority--
@@ -245,7 +245,7 @@ function getPropertyPriority (property) {
   }
   return priority
 }
-export function getInitialProperties (properties) {
+export function getInitialProperties(properties) {
   return [...properties].sort((propertyA, propertyB) => {
     return getPropertyPriority(propertyA) - getPropertyPriority(propertyB)
   }).slice(0, 6)

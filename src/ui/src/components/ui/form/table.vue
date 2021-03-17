@@ -80,17 +80,17 @@
       mode: {
         type: String,
         default: 'create',
-        validator (mode) {
+        validator(mode) {
           return ['create', 'update', 'info'].includes(mode)
         }
       },
       disabled: Boolean
     },
-    data () {
+    data() {
       return {}
     },
     computed: {
-      columns () {
+      columns() {
         if (this.mode === 'update') {
           return this.options.filter(property => property.editable && !property.bk_isapi)
         }
@@ -100,17 +100,17 @@
         return this.options.filter(property => property.editable)
       },
       localValue: {
-        get () {
+        get() {
           return this.value || []
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       }
     },
     methods: {
-      renderHeader (h, { column, $index }, property) {
+      renderHeader(h, { column, $index }, property) {
         if (!property.placeholder) {
           return property.bk_property_name
         }
@@ -126,14 +126,14 @@
         }
         return (<span v-bk-tooltips={ directive } style={ style }>{ property.bk_property_name }</span>)
       },
-      handleColumnValueChange ({ row, column, $index }, value) {
+      handleColumnValueChange({ row, column, $index }, value) {
         const newRowValue = { ...row }
         newRowValue[column.property] = value
         const newValues = [...this.localValue]
         newValues.splice($index, 1, newRowValue)
         this.localValue = newValues
       },
-      handleAddRow (event, index) {
+      handleAddRow(event, index) {
         const newRowIndex = index + 1
         const newRowValue = this.$tools.getInstFormValues(this.columns, {}, false)
         const newValues = [...this.localValue]
@@ -141,7 +141,7 @@
         this.localValue = newValues
         this.$emit('add-row', newRowValue, newRowIndex)
       },
-      handleDeleteRow (event, index) {
+      handleDeleteRow(event, index) {
         const newValues = [...this.localValue]
         const [deleteRow] = newValues.splice(index, 1)
         this.localValue = newValues

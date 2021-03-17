@@ -1,7 +1,7 @@
 import { OPERATION } from '@/dictionary/iam-auth'
 export default {
   computed: {
-    $OPERATION () {
+    $OPERATION() {
       return Object.freeze(OPERATION)
     }
   }

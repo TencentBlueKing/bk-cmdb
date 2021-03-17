@@ -226,7 +226,7 @@
         default: 'create'
       }
     },
-    data () {
+    data() {
       return {
         isPopShow: false,
         subscriptionFormError: false,
@@ -256,7 +256,7 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['classifications']),
-      selectNum () {
+      selectNum() {
         let num = 0
         const {
           subscription_form: subscriptionForm
@@ -272,7 +272,7 @@
         }
         return num
       },
-      params () {
+      params() {
         const params = this.$tools.clone(this.tempEventData)
         params['confirm_pattern'] = this.tempEventData['confirm_mode'] === 'httpstatus' ? this.tempEventData['confirm_pattern']['httpstatus'] : this.tempEventData['confirm_pattern']['regular']
         const subscriptionForm = []
@@ -286,7 +286,7 @@
         return params
       }
     },
-    created () {
+    created() {
       this.setEventPushList()
       this.initData()
     },
@@ -295,7 +295,7 @@
         'subscribeEvent',
         'updateEventSubscribe'
       ]),
-      isCloseConfirmShow () {
+      isCloseConfirmShow() {
         const tempEventData = this.tempEventData
         const eventData = this.eventData
         for (const key in tempEventData) {
@@ -323,14 +323,14 @@
         }
         return false
       },
-      testPush () {
+      testPush() {
         this.$validator.validate('http').then((res) => {
           if (res) {
             this.isPopShow = true
           }
         })
       },
-      async checkParams () {
+      async checkParams() {
         let result = false
         await this.$validator.validateAll().then((res) => {
           result = res
@@ -344,7 +344,7 @@
         }
         return true
       },
-      async save () {
+      async save() {
         if (!await this.checkParams()) {
           return
         }
@@ -359,10 +359,10 @@
         this.$success(this.$t('保存成功'))
         this.eventData = { ...this.tempEventData }
       },
-      cancel () {
+      cancel() {
         this.$emit('cancel')
       },
-      checkAll (objId) {
+      checkAll(objId) {
         if (event.target.checked) {
           if (objId === 'resource') {
             this.tempEventData['subscription_form'][objId] = ['hostcreate', 'hostdelete']
@@ -375,13 +375,13 @@
           this.tempEventData['subscription_form'][objId] = []
         }
       },
-      toggleEventList (classify) {
+      toggleEventList(classify) {
         classify.isHidden = !classify.isHidden
       },
-      eventHeight (len) {
+      eventHeight(len) {
         return `height: ${len * 32}px`
       },
-      setEventPushList () {
+      setEventPushList() {
         const eventPushList = []
         const subscriptionForm = {}
         this.classifications.map((classify) => {
@@ -432,7 +432,7 @@
         this.$set(this.tempEventData, 'subscription_form', subscriptionForm)
         this.eventPushList = eventPushList
       },
-      initData () {
+      initData() {
         if (this.type === 'edit') {
           const subscriptionForm = {}
           this.curPush['subscription_form'].map((item) => {

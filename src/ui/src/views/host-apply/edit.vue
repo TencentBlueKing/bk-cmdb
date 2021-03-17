@@ -21,7 +21,7 @@
       multiModuleConfig,
       singleModuleConfig
     },
-    data () {
+    data() {
       return {
         currentView: '',
         moduleMap: {}
@@ -29,7 +29,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      moduleIds () {
+      moduleIds() {
         const mid = this.$route.query.mid
         let moduleIds = []
         if (mid) {
@@ -38,13 +38,13 @@
         }
         return moduleIds
       },
-      isBatch () {
+      isBatch() {
         return this.$route.query.hasOwnProperty('batch')
       },
-      action () {
+      action() {
         return this.$route.query.action
       },
-      title () {
+      title() {
         let title
         if (this.isBatch) {
           title = this.$t(this.action === 'batch-del' ? '批量删除' : '批量编辑')
@@ -54,18 +54,18 @@
         return title
       }
     },
-    created () {
+    created() {
       this.initData()
       this.currentView = this.isBatch ? multiModuleConfig.name : singleModuleConfig.name
     },
-    beforeRouteLeave (to, from, next) {
+    beforeRouteLeave(to, from, next) {
       if (to.name !== MENU_BUSINESS_HOST_APPLY_CONFIRM) {
         this.$store.commit('hostApply/clearRuleDraft')
       }
       next()
     },
     methods: {
-      async initData () {
+      async initData() {
         try {
           const topopath = await this.getTopopath()
           const moduleMap = {}
@@ -79,10 +79,10 @@
           console.log(e)
         }
       },
-      setBreadcrumbs () {
+      setBreadcrumbs() {
         this.$store.commit('setTitle', this.title)
       },
-      getTopopath () {
+      getTopopath() {
         return this.$store.dispatch('hostApply/getTopopath', {
           bizId: this.bizId,
           params: {
@@ -93,13 +93,13 @@
           }
         })
       },
-      getModulePath (id) {
+      getModulePath(id) {
         const info = this.moduleMap[id] || []
         const path = info.map(node => node.bk_inst_name).reverse()
           .join(' / ')
         return path
       },
-      getModuleName (id) {
+      getModuleName(id) {
         const topoInfo = this.moduleMap[id] || []
         const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
         return target.bk_inst_name

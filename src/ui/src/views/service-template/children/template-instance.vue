@@ -63,7 +63,7 @@
     props: {
       active: Boolean
     },
-    data () {
+    data() {
       return {
         table: {
           filter: '',
@@ -87,23 +87,23 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      serviceTemplateId () {
+      serviceTemplateId() {
         return this.$route.params.templateId
       }
     },
     watch: {
       active: {
         immediate: true,
-        handler (active) {
+        handler(active) {
           active && this.refresh()
         }
       }
     },
-    created () {
+    created() {
       this.handleFilter = debounce(this.filterData, 300)
     },
     methods: {
-      async refresh () {
+      async refresh() {
         try {
           const data = await this.getTemplateInstance()
           if (data.count) {
@@ -125,7 +125,7 @@
           console.error(e)
         }
       },
-      getTemplateInstance () {
+      getTemplateInstance() {
         return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
           bizId: this.bizId,
           serviceTemplateId: this.serviceTemplateId,
@@ -135,7 +135,7 @@
           }
         })
       },
-      getSyncStatus (modules) {
+      getSyncStatus(modules) {
         return this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
           params: {
             bk_module_ids: modules.map(module => module.bk_module_id),
@@ -147,7 +147,7 @@
           }
         })
       },
-      getTopoPath (modules) {
+      getTopoPath(modules) {
         return this.$store.dispatch('objectMainLineModule/getTopoPath', {
           bizId: this.bizId,
           params: {
@@ -158,21 +158,21 @@
           }
         })
       },
-      getSyncStatusDifference (row) {
+      getSyncStatusDifference(row) {
         return this.table.syncStatus.find(difference => difference.bk_module_id === row.bk_module_id)
       },
-      isSyncDisabled (row) {
+      isSyncDisabled(row) {
         const difference = this.getSyncStatusDifference(row)
         if (difference) {
           return !difference.has_difference
         }
         return true
       },
-      getSyncDisabledText (row) {
+      getSyncDisabledText(row) {
         const difference = this.getSyncStatusDifference(row) || {}
         return difference.unchanged && difference.unchanged.length ? this.$t('已经是最新，无需同步') : this.$t('没有主机无需同步')
       },
-      handleSync (row) {
+      handleSync(row) {
         this.$routerActions.redirect({
           name: 'syncServiceFromTemplate',
           params: {
@@ -182,13 +182,13 @@
           history: true
         })
       },
-      checkSelectable (row) {
+      checkSelectable(row) {
         return !this.isSyncDisabled(row)
       },
-      handleSelectionChange (selection) {
+      handleSelectionChange(selection) {
         this.table.selection = selection
       },
-      handleBatchSync () {
+      handleBatchSync() {
         this.$routerActions.redirect({
           name: 'syncServiceFromTemplate',
           params: {
@@ -198,7 +198,7 @@
           history: true
         })
       },
-      filterData () {
+      filterData() {
         this.table.filtering = true
         this.$nextTick(() => {
           if (this.table.filter) {
@@ -214,18 +214,18 @@
           this.table.filtering = false
         })
       },
-      sortByPath (rowA, rowB) {
+      sortByPath(rowA, rowB) {
         return rowA._path_.toLowerCase().localeCompare(rowB._path_.toLowerCase(), 'zh-Hans-CN', { sensitivity: 'accent' })
       },
-      sortByTime (rowA, rowB) {
+      sortByTime(rowA, rowB) {
         const timeA = (new Date(rowA.last_time)).getTime()
         const timeB = (new Date(rowB.last_time)).getTime()
         return timeA - timeB
       },
-      handleToCreatedInstance () {
+      handleToCreatedInstance() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
       },
-      handlePathClick (row) {
+      handlePathClick(row) {
         this.$routerActions.open({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {

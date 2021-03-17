@@ -76,7 +76,7 @@
 <script>
   import { mapGetters, mapActions } from 'vuex'
   export default {
-    data () {
+    data() {
       return {
         properties: [],
         header: [],
@@ -109,11 +109,11 @@
     computed: {
       ...mapGetters(['supplierAccount', 'userName']),
       ...mapGetters('userCustom', ['usercustom']),
-      customBusinessColumns () {
+      customBusinessColumns() {
         return this.usercustom[this.columnsConfigKey] || []
       }
     },
-    async created () {
+    async created() {
       try {
         this.properties = await this.searchObjectAttribute({
           params: {
@@ -135,7 +135,7 @@
     methods: {
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectBiz', ['searchBusiness', 'recoveryBusiness']),
-      setTableHeader () {
+      setTableHeader() {
         const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
         this.header = headerProperties.map((property) => {
           return {
@@ -145,7 +145,7 @@
           }
         })
       },
-      getTableData (event) {
+      getTableData(event) {
         this.searchBusiness({
           params: this.getSearchParams(),
           config: {
@@ -174,7 +174,7 @@
             }
           })
       },
-      getSearchParams () {
+      getSearchParams() {
         const params = {
           condition: {
             'bk_data_status': 'disabled'
@@ -197,12 +197,12 @@
         }
         return params
       },
-      handleRecovery (biz) {
+      handleRecovery(biz) {
         this.recovery.show = true
         this.recovery.name = biz.bk_biz_name
         this.recovery.bizId = biz.bk_biz_id
       },
-      async recoveryBiz () {
+      async recoveryBiz() {
         if (!await this.$validator.validateAll()) return
         this.recoveryBusiness({
           bizId: this.recovery.bizId,
@@ -219,11 +219,11 @@
           this.getTableData()
         })
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.pagination.limit = size
         this.handlePageChange(1)
       },
-      handlePageChange (current, event) {
+      handlePageChange(current, event) {
         this.pagination.current = current
         this.getTableData(event)
       }

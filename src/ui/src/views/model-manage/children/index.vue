@@ -204,7 +204,7 @@
       theChooseIcon,
       cmdbImport
     },
-    data () {
+    data() {
       return {
         tab: {
           active: RouterQuery.get('tab', 'field')
@@ -237,22 +237,22 @@
         'isMainLine'
       ]),
       ...mapGetters('objectModelClassify', ['models']),
-      isShowOperationButton () {
+      isShowOperationButton() {
         return this.activeModel && !this.activeModel.ispre
       },
-      isReadOnly () {
+      isReadOnly() {
         if (this.activeModel) {
           return this.activeModel.bk_ispaused
         }
         return false
       },
-      isEditable () {
+      isEditable() {
         if (this.activeModel) {
           return !this.activeModel.ispre && !this.activeModel.bk_ispaused
         }
         return false
       },
-      modelParams () {
+      modelParams() {
         const {
           objIcon,
           objName
@@ -268,32 +268,32 @@
         }
         return params
       },
-      exportUrl () {
+      exportUrl() {
         return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
       },
-      importUrl () {
+      importUrl() {
         return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/import`
       },
-      canBeImport () {
+      canBeImport() {
         const cantImport = ['host', 'biz']
         return !this.isMainLine
           && !cantImport.includes(this.$route.params.modelId)
       },
-      modelId () {
+      modelId() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         return model.id || null
       }
     },
     watch: {
-      '$route.params.modelId' () {
+      '$route.params.modelId'() {
         this.initObject()
       }
     },
-    created () {
+    created() {
       this.initObject()
     },
     methods: {
-      handleTabChange (tab) {
+      handleTabChange(tab) {
         RouterQuery.set({ tab })
       },
       ...mapActions('objectModel', [
@@ -311,13 +311,13 @@
       ...mapMutations('objectModel', [
         'setActiveModel'
       ]),
-      getModelType () {
+      getModelType() {
         if (this.activeModel) {
           return this.activeModel.ispre ? this.$t('内置') : this.$t('公共')
         }
         return ''
       },
-      async handleFile (e) {
+      async handleFile(e) {
         const files = e.target.files
         const formData = new FormData()
         formData.append('file', files[0])
@@ -353,21 +353,21 @@
           this.$refs.fileInput.value = ''
         }
       },
-      checkModel () {
+      checkModel() {
         return this.models.find(model => model['bk_obj_id'] === this.$route.params.modelId)
       },
-      hideChooseBox () {
+      hideChooseBox() {
         this.isIconListShow = false
       },
-      chooseIcon () {
+      chooseIcon() {
         this.isIconListShow = false
         this.saveModel()
       },
-      editModelName () {
+      editModelName() {
         this.modelInfo.objName = this.activeModel['bk_obj_name']
         this.isEditName = true
       },
-      async saveModel () {
+      async saveModel() {
         if (!await this.$validator.validateAll()) {
           return
         }
@@ -380,7 +380,7 @@
         this.setActiveModel({ ...this.activeModel, ...this.modelParams })
         this.isEditName = false
       },
-      async initObject () {
+      async initObject() {
         await this.getModelStatistics()
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
@@ -390,7 +390,7 @@
           this.$routerActions.redirect({ name: 'status404' })
         }
       },
-      async getModelStatistics () {
+      async getModelStatistics() {
         const modelStatisticsSet = {}
         const res = await this.$store.dispatch('objectModelClassify/getClassificationsObjectStatistics', {
           config: {
@@ -402,13 +402,13 @@
         })
         this.modelStatisticsSet = modelStatisticsSet
       },
-      initModelInfo () {
+      initModelInfo() {
         this.modelInfo = {
           objIcon: this.activeModel['bk_obj_icon'],
           objName: this.activeModel['bk_obj_name']
         }
       },
-      exportExcel (response) {
+      exportExcel(response) {
         const contentDisposition = response.headers['content-disposition']
         const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
         const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
@@ -420,7 +420,7 @@
         link.click()
         document.body.removeChild(link)
       },
-      async exportField () {
+      async exportField() {
         const res = await this.exportObjectAttribute({
           objId: this.activeModel['bk_obj_id'],
           params: {},
@@ -432,7 +432,7 @@
         })
         this.exportExcel(res)
       },
-      dialogConfirm (type) {
+      dialogConfirm(type) {
         switch (type) {
           case 'restart':
             this.$bkInfo({
@@ -461,7 +461,7 @@
           default:
         }
       },
-      async updateModelObject (ispaused) {
+      async updateModelObject(ispaused) {
         await this.updateObject({
           id: this.activeModel['id'],
           params: {
@@ -477,7 +477,7 @@
         })
         this.setActiveModel({ ...this.activeModel, ...{ bk_ispaused: ispaused } })
       },
-      async deleteModel () {
+      async deleteModel() {
         if (this.isMainLine) {
           await this.deleteMainlineObject({
             bkObjId: this.activeModel['bk_obj_id'],
@@ -497,7 +497,7 @@
         }
         this.$http.cancel('post_searchClassificationsObjects')
       },
-      handleGoInstance () {
+      handleGoInstance() {
         const model = this.activeModel
         const map = {
           host: MENU_RESOURCE_HOST,
@@ -518,7 +518,7 @@
           })
         }
       },
-      handleUploadDone (res) {
+      handleUploadDone(res) {
         const data = res.data[this.activeModel['bk_obj_id']]
         if (res.result) {
           this.uploadResult.success = data.success
@@ -529,14 +529,14 @@
           this.uploadResult.update_failed = data['update_failed']
         }
       },
-      handleSliderHide () {
+      handleSliderHide() {
         this.uploadResult = {
           success: null,
           insert_failed: null,
           update_failed: null
         }
       },
-      handleImportField () {
+      handleImportField() {
         this.importField.show = true
       }
     }

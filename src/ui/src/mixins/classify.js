@@ -5,7 +5,7 @@ export default {
       $authorizedNavigation: 'authorizedNavigation',
       $classifications: 'classifications'
     }),
-    $classify () {
+    $classify() {
       let $classify = {}
       const relativePath = this.$route.meta.relative || this.$route.query.relative || null
       const path = relativePath || this.$route.path
@@ -25,7 +25,7 @@ export default {
       }
       return $classify
     },
-    $allModels () {
+    $allModels() {
       const allModels = []
       this.$classifications.forEach((classify) => {
         classify['bk_objects'].forEach((model) => {
@@ -34,7 +34,7 @@ export default {
       })
       return allModels
     },
-    $model () {
+    $model() {
       const objId = this.$route.params.objId || this.$route.meta.objId
       const targetModel = this.$allModels.find(model => model['bk_obj_id'] === objId)
       return targetModel || {}

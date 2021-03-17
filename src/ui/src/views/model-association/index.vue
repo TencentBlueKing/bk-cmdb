@@ -123,7 +123,7 @@
     components: {
       theRelation
     },
-    data () {
+    data() {
       return {
         slider: {
           isShow: false,
@@ -153,7 +153,7 @@
       }
     },
     computed: {
-      searchParams () {
+      searchParams() {
         const params = {
           page: {
             start: (this.table.pagination.current - 1) * this.table.pagination.limit,
@@ -173,7 +173,7 @@
         return params
       }
     },
-    created () {
+    created() {
       this.searchRelation()
     },
     methods: {
@@ -182,7 +182,7 @@
         'deleteAssociationType',
         'searchAssociationListWithAssociationKindList'
       ]),
-      searchRelation (fromClick) {
+      searchRelation(fromClick) {
         if (fromClick) {
           this.sendSearchText = this.searchText
           this.table.pagination.current = 1
@@ -204,7 +204,7 @@
           this.$http.cancel('post_searchAssociationType')
         })
       },
-      async searchUsageCount () {
+      async searchUsageCount() {
         const asstIds = []
         this.table.list.forEach(({ bk_asst_id: asstId }) => asstIds.push(asstId))
         const res = await this.searchAssociationListWithAssociationKindList({
@@ -220,20 +220,20 @@
         })
         this.table.list.splice()
       },
-      createRelation () {
+      createRelation() {
         this.slider.title = this.$t('新建关联类型')
         this.slider.isReadOnly = false
         this.slider.isEdit = false
         this.slider.isShow = true
       },
-      editRelation (relation) {
+      editRelation(relation) {
         this.slider.title = this.$t('编辑关联类型')
         this.slider.isReadOnly = false
         this.slider.relation = relation
         this.slider.isEdit = true
         this.slider.isShow = true
       },
-      deleteRelation (relation) {
+      deleteRelation(relation) {
         this.$bkInfo({
           title: this.$tc('确定删除关联类型？', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
           confirmFn: async () => {
@@ -247,23 +247,23 @@
           }
         })
       },
-      saveRelation () {
+      saveRelation() {
         this.slider.isShow = false
         this.searchRelation()
       },
-      handlePageChange (current) {
+      handlePageChange(current) {
         this.table.pagination.current = current
         this.searchRelation()
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.table.pagination.limit = size
         this.handlePageChange(1)
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
         this.searchRelation()
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
         if (hasChanged) {
           return new Promise((resolve, reject) => {
@@ -284,7 +284,7 @@
         this.slider.isShow = false
         return true
       },
-      handleShowDetails (relation, event, column = {}) {
+      handleShowDetails(relation, event, column = {}) {
         if (column.property === 'operation') return
         this.slider.title = this.$t('关联类型详情')
         this.slider.relation = relation

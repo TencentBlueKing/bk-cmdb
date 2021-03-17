@@ -31,31 +31,31 @@
       displayType: {
         type: String,
         default: 'selector',
-        validator (type) {
+        validator(type) {
           return ['selector', 'info'].includes(type)
         }
       }
     },
-    data () {
+    data() {
       return {
         options: [],
         requestId: 'searchForeignkey'
       }
     },
     computed: {
-      multiple () {
+      multiple() {
         return Array.isArray(this.value)
       },
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       },
-      info () {
+      info() {
         const values = Array.isArray(this.value) ? this.value : [this.value]
         const info = []
         values.forEach((value) => {
@@ -65,7 +65,7 @@
         return info.join(' | ')
       }
     },
-    async created () {
+    async created() {
       try {
         const { info } = await this.$store.dispatch('cloud/area/findMany', {
           params: {

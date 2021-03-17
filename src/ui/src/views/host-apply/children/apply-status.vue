@@ -37,12 +37,12 @@
   export default {
     props: {
       request: {
-        validator (request) {
+        validator(request) {
           return request instanceof Promise
         }
       }
     },
-    data () {
+    data() {
       return {
         visible: false,
         loading: false,
@@ -52,18 +52,18 @@
       }
     },
     watch: {
-      request (request) {
+      request(request) {
         this.initStatus()
       }
     },
     methods: {
-      show () {
+      show() {
         this.visible = true
       },
-      hide () {
+      hide() {
         this.visible = false
       },
-      async initStatus () {
+      async initStatus() {
         try {
           this.loading = true
           this.error = false
@@ -82,7 +82,7 @@
           console.error(e)
         }
       },
-      handleEvent (event) {
+      handleEvent(event) {
         if (event) {
           this.$emit(event)
         }

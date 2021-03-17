@@ -50,7 +50,7 @@
   import FilterStore from './store'
   import Throttle from 'lodash.throttle'
   export default {
-    data () {
+    data() {
       return {
         filter: '',
         isShow: false,
@@ -61,7 +61,7 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      propertyMap () {
+      propertyMap() {
         let modelPropertyMap = { ...FilterStore.modelPropertyMap }
         const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__']
         modelPropertyMap.host = modelPropertyMap.host.filter(property => !ignoreHostProperties.includes(property.bk_property_id))
@@ -75,7 +75,7 @@
         }
         return modelPropertyMap
       },
-      groups () {
+      groups() {
         const sequence = ['host', 'module', 'set', 'biz']
         return Object.keys(this.propertyMap).map((modelId) => {
           const model = this.getModelById(modelId) || {}
@@ -93,13 +93,13 @@
     watch: {
       filter: {
         immediate: true,
-        handler () {
+        handler() {
           this.throttleFilter()
         }
       }
     },
     methods: {
-      handleFilter () {
+      handleFilter() {
         if (!this.filter.length) {
           this.renderGroups = this.groups
         } else {
@@ -120,10 +120,10 @@
           this.renderGroups = filteredGroups
         }
       },
-      isChecked (property) {
+      isChecked(property) {
         return this.selected.some(target => target.id === property.id)
       },
-      handleToggleProperty (property, checked) {
+      handleToggleProperty(property, checked) {
         if (checked) {
           this.selected.push(property)
         } else {
@@ -131,18 +131,18 @@
           index > -1 && this.selected.splice(index, 1)
         }
       },
-      async confirm () {
+      async confirm() {
         FilterStore.updateSelected(this.selected)
         FilterStore.updateUserBehavior(this.selected)
         this.close()
       },
-      handleClosed () {
+      handleClosed() {
         this.$emit('closed')
       },
-      open () {
+      open() {
         this.isShow = true
       },
-      close () {
+      close() {
         this.isShow = false
       }
     }

@@ -9,7 +9,7 @@
  * @param {(Node|string|Boolean)} [node=document.body] DOM Node, CSS selector, or Boolean
  * @return {Node} The target that the el will be appended to
  */
-function getTarget (node) {
+function getTarget(node) {
   if (node === void 0) {
     node = document.body
   }
@@ -20,7 +20,7 @@ function getTarget (node) {
 }
 
 const directive = {
-  inserted (el, { value }, vnode) {
+  inserted(el, { value }, vnode) {
     el.className = el.className ? el.className + ' v-transfer-dom' : 'v-transfer-dom'
     const parentNode = el.parentNode
     if (!parentNode) {
@@ -43,7 +43,7 @@ const directive = {
       }
     }
   },
-  componentUpdated (el, { value }) {
+  componentUpdated(el, { value }) {
     // need to make sure children are done updating (vs. `update`)
     const ref$1 = el.__transferDomData
     if (!ref$1) {
@@ -83,7 +83,7 @@ const directive = {
       getTarget(value).appendChild(el)
     }
   },
-  unbind (el) {
+  unbind(el) {
     if (el.nodeType !== 1) {
       return false
     }

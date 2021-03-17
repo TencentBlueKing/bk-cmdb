@@ -102,7 +102,7 @@
       serviceInstanceTable,
       propertyConfirmTable
     },
-    data () {
+    data() {
       return {
         hasScrollbar: false,
         hosts: [],
@@ -148,50 +148,50 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['getDefaultSearchCondition']),
-      moduleId () {
+      moduleId() {
         return parseInt(this.$route.params.moduleId)
       },
-      setId () {
+      setId() {
         return parseInt(this.$route.params.setId)
       },
-      withTemplate () {
+      withTemplate() {
         const instance = this.instances[0] || {}
         if (instance.service_template && instance.service_template.service_template.id) {
           return true
         }
         return false
       },
-      availableTabList () {
+      availableTabList() {
         return this.tabList.filter(tab => tab.props.count > 0)
       },
-      activeTab () {
+      activeTab() {
         return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
       },
-      hasConflict () {
+      hasConflict() {
         const conflictList = this.conflictList.filter(item => item.unresolved_conflict_count > 0)
         return conflictList.length > 0
       }
     },
     watch: {
-      activeTab (tab) {
+      activeTab(tab) {
         if (!tab) return
         tab.confirmed = true
       }
     },
-    async created () {
+    async created() {
       this.resolveData(this.$route)
       if (this.resources.length) {
         this.getSelectedHost()
         this.getPreviewData()
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.changeInfo, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
     },
-    async beforeRouteUpdate (to, from, next) {
+    async beforeRouteUpdate(to, from, next) {
       this.resolveData(to)
       if (this.resources.length) {
         this.getSelectedHost()
@@ -200,7 +200,7 @@
       next()
     },
     methods: {
-      resolveData (route) {
+      resolveData(route) {
         const query = route.query || {}
         const resources = query.resources
         if (!resources) {
@@ -214,7 +214,7 @@
           bk_module_id: this.moduleId
         }
       },
-      async getSelectedHost () {
+      async getSelectedHost() {
         try {
           this.$store.commit('setGlobalLoading', this.hasScrollbar)
           const result = await this.getHostInfo()
@@ -225,7 +225,7 @@
           this.$store.commit('setGlobalLoading', false)
         }
       },
-      async getPreviewData () {
+      async getPreviewData() {
         try {
           this.$store.commit('setGlobalLoading', this.hasScrollbar)
           const data = await this.$store.dispatch('serviceInstance/createProcServiceInstancePreview', {
@@ -249,7 +249,7 @@
           this.$store.commit('setGlobalLoading', false)
         }
       },
-      getHostInfo () {
+      getHostInfo() {
         const params = {
           bk_biz_id: this.bk_biz_id,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
@@ -269,7 +269,7 @@
           }
         })
       },
-      setCreateServiceInstance (data) {
+      setCreateServiceInstance(data) {
         const instanceInfo = []
         data.forEach((item) => {
           item.to_add_to_modules.forEach((moduleInfo) => {
@@ -285,13 +285,13 @@
         this.instances = instanceInfo
         tab.props.count = this.instances.length
       },
-      setHostAttrsAutoApply (data) {
+      setHostAttrsAutoApply(data) {
         const conflictInfo = (data || []).map(item => item.host_apply_plan)
         this.conflictList = conflictInfo.filter(item => item.conflicts.length || item.update_fields.length)
         const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
         tab.props.count = this.conflictList.length
       },
-      getName (instance) {
+      getName(instance) {
         if (instance.name) {
           return instance.name
         }
@@ -301,13 +301,13 @@
         }
         return '--'
       },
-      getServiceTemplates (instance) {
+      getServiceTemplates(instance) {
         if (instance.service_template) {
           return instance.service_template.process_templates
         }
         return []
       },
-      getSourceProcesses (instance) {
+      getSourceProcesses(instance) {
         const templates = this.getServiceTemplates(instance)
         return templates.map((template) => {
           const value = {}
@@ -334,7 +334,7 @@
           return value
         })
       },
-      getBindIp (instance, row) {
+      getBindIp(instance, row) {
         const ipValue = row.ip.value
         const mapping = {
           1: '127.0.0.1',
@@ -352,15 +352,15 @@
         const [outerIP] = host.bk_host_outerip.split(',')
         return outerIP || mapping[1]
       },
-      getEditState (instance) {
+      getEditState(instance) {
         return instance.editing
       },
-      handleSelectHost () {
+      handleSelectHost() {
         this.dialog.componentProps.exist = this.hosts
         this.dialog.component = HostSelector.name
         this.dialog.show = true
       },
-      handleDialogConfirm (selected) {
+      handleDialogConfirm(selected) {
         this.dialog.show = false
         this.redirect({
           query: {
@@ -369,10 +369,10 @@
           }
         })
       },
-      handleDialogCancel () {
+      handleDialogCancel() {
         this.dialog.show = false
       },
-      handleDeleteInstance (index) {
+      handleDeleteInstance(index) {
         this.instances.splice(index, 1)
         this.redirect({
           query: {
@@ -384,7 +384,7 @@
       /**
        * 解决后端性能问题: 用服务模板生成的实例仅传递有被用户主动触发过编辑的进程信息
        */
-      getChangedProcessList (instance, component) {
+      getChangedProcessList(instance, component) {
         if (this.withTemplate) {
           const processes = []
           const stateKey = `${instance.bk_module_id}-${instance.bk_host_id}`
@@ -406,14 +406,14 @@
       /**
        * 解决后端性能问题: 记录用服务模板生成的实例是否触发编辑动作
        */
-      handleEditProcess (instance, processIndex) {
+      handleEditProcess(instance, processIndex) {
         if (!instance.service_template) return
         const key = `${instance.bk_module_id}-${instance.bk_host_id}`
         const state = this.processChangeState[key] || new Set()
         state.add(processIndex)
         this.processChangeState[key] = state
       },
-      async handleConfirm () {
+      async handleConfirm() {
         try {
           const serviceInstanceTables = this.$refs.serviceInstanceTable
           const confirmTable = this.$refs.confirmTable
@@ -445,7 +445,7 @@
           console.error(e)
         }
       },
-      getHostApplyConflictResolvers () {
+      getHostApplyConflictResolvers() {
         const conflictResolveResult = this.$refs.confirmTable.conflictResolveResult
         const conflictResolvers = []
         Object.keys(conflictResolveResult).forEach((key) => {
@@ -460,30 +460,30 @@
         })
         return conflictResolvers
       },
-      handleEditName (instance) {
+      handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))
         instance.editing.name = true
       },
-      handleConfirmEditName (instance, name) {
+      handleConfirmEditName(instance, name) {
         instance.name = name
         instance.editing.name = false
       },
-      handleCancelEditName (instance) {
+      handleCancelEditName(instance) {
         instance.editing.name = false
       },
-      handleBackToModule () {
+      handleBackToModule() {
         this.$routerActions.back()
       },
-      handleTabClick (tab) {
+      handleTabClick(tab) {
         this.tab.active = tab.id
       },
-      resizeHandler () {
+      resizeHandler() {
         this.$nextTick(() => {
           const scroller = this.$el.parentElement
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
         })
       },
-      redirect (options = {}) {
+      redirect(options = {}) {
         const config = {
           name: 'createServiceInstance',
           params: this.$route.params,

@@ -51,38 +51,38 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         pending: true,
         nodes: []
       }
     },
     computed: {
-      bizId () {
+      bizId() {
         const [biz] = this.host.biz
         return biz.bk_biz_id
       },
-      isResourcePool () {
+      isResourcePool() {
         const [biz] = this.host.biz
         return biz.default === 1
       },
-      modules () {
+      modules() {
         return this.host.module.map(module => module.bk_module_id)
       },
-      isSingle () {
+      isSingle() {
         return this.modules.length === 1
       }
     },
     watch: {
       host: {
         immediate: true,
-        handler () {
+        handler() {
           this.searchPath()
         }
       }
     },
     methods: {
-      async searchPath () {
+      async searchPath() {
         try {
           this.pending = true
           this.nodes = await proxy.search({
@@ -97,7 +97,7 @@
           this.$emit('path-ready', this.getFullModulePath())
         }
       },
-      getModulePath (moduleId) {
+      getModulePath(moduleId) {
         const node = this.nodes.find(node => node.topo_node.bk_inst_id === moduleId)
         if (!node) {
           return '--'
@@ -105,10 +105,10 @@
         return node.topo_path.map(path => path.bk_inst_name).reverse()
           .join(' / ')
       },
-      getFullModulePath () {
+      getFullModulePath() {
         return this.modules.map(moduleId => this.getModulePath(moduleId))
       },
-      handleLinkToTopology (moduleId) {
+      handleLinkToTopology(moduleId) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {

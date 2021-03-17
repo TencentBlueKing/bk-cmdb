@@ -17,7 +17,7 @@
     props: {
       value: {
         default: null,
-        validator (val) {
+        validator(val) {
           return ['string', 'number'].includes(typeof val) || val === null
         }
       },
@@ -40,10 +40,10 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value === null ? '' : this.value
         },
-        set (value) {
+        set(value) {
           const emitValue = value === '' ? null : value
           this.$emit('input', emitValue)
           this.$emit('change', emitValue)
@@ -52,7 +52,7 @@
       }
     },
     methods: {
-      handleInput (value, event) {
+      handleInput(value, event) {
         const originalValue = String(event.target.value).trim()
         const floatValue = originalValue.length ? Number(event.target.value.trim()) : null
         if (isNaN(floatValue)) {
@@ -63,10 +63,10 @@
         this.$refs.input.curValue = value
         this.localValue = value
       },
-      handleChange () {
+      handleChange() {
         this.$emit('on-change', this.localValue)
       },
-      focus () {
+      focus() {
         this.$el.querySelector('input').focus()
       }
     }

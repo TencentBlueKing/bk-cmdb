@@ -24,22 +24,22 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         classifications: []
       }
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (values) {
+        set(values) {
           this.$emit('input', values)
           this.$emit('change', values)
         }
       },
-      displayModelList () {
+      displayModelList() {
         const displayModelList = []
         this.classifications.forEach((classification) => {
           displayModelList.push({
@@ -52,11 +52,11 @@
         return displayModelList.filter(item => item.bk_objects.length > 0)
       }
     },
-    created () {
+    created() {
       this.getModelList()
     },
     methods: {
-      async getModelList () {
+      async getModelList() {
         try {
           this.classifications = await this.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
             fromCache: true

@@ -45,26 +45,26 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         maxCustomNavigationCount: 8
       }
     },
     computed: {
       ...mapGetters('userCustom', ['usercustom']),
-      collectedCount () {
+      collectedCount() {
         return this.collection.length
       }
     },
     methods: {
-      getInstanceCount (model) {
+      getInstanceCount(model) {
         const data = this.instanceCount.find(data => data.bk_obj_id === model.bk_obj_id)
         if (data) {
           return data.instance_count
         }
         return 0
       },
-      redirect (model) {
+      redirect(model) {
         const map = {
           host: MENU_RESOURCE_HOST,
           biz: MENU_RESOURCE_BUSINESS
@@ -82,10 +82,10 @@
           })
         }
       },
-      isCollected (model) {
+      isCollected(model) {
         return this.collection.includes(model.bk_obj_id)
       },
-      toggleCustomNavigation (model) {
+      toggleCustomNavigation(model) {
         if (['host', 'biz'].includes(model.bk_obj_id)) {
           this.toggleDefaultCollection(model)
         } else {
@@ -110,7 +110,7 @@
           })
         }
       },
-      async toggleDefaultCollection (model) {
+      async toggleDefaultCollection(model) {
         const isCollected = this.collection.includes(model.bk_obj_id)
         if (!isCollected && this.collection.length >= this.maxCustomNavigationCount) {
           this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))

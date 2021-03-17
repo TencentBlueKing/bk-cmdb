@@ -25,31 +25,31 @@ const numericFormatter = (value) => {
   return value
 }
 
-export function singlechar (value) {
+export function singlechar(value) {
   return defaultFormatter(value)
 }
 
-export function longchar (value) {
+export function longchar(value) {
   return defaultFormatter(value)
 }
 
-export function int (value) {
+export function int(value) {
   return numericFormatter(value)
 }
 
-export function float (value) {
+export function float(value) {
   return numericFormatter(value)
 }
 
-export function date (value) {
+export function date(value) {
   return timeFormatter(value, 'YYYY-MM-DD')
 }
 
-export function time (value) {
+export function time(value) {
   return timeFormatter(value, 'YYYY-MM-DD HH:mm:ss')
 }
 
-export function objuser (value) {
+export function objuser(value) {
   if (!value) {
     return '--'
   }
@@ -61,18 +61,18 @@ export function objuser (value) {
   return value
 }
 
-export function timezone (value) {
+export function timezone(value) {
   return defaultFormatter(value)
 }
 
-export function bool (value) {
+export function bool(value) {
   if (['true', 'false'].includes(String(value))) {
     return String(value)
   }
   return '--'
 }
 
-export function enumeration (value, options, showId = false) {
+export function enumeration(value, options, showId = false) {
   const option = (options || []).find(option => option.id === value)
   if (!option) {
     return '--'
@@ -83,7 +83,7 @@ export function enumeration (value, options, showId = false) {
   return option.name
 }
 
-export function foreignkey (value) {
+export function foreignkey(value) {
   if (Array.isArray(value)) {
     return value.map(inst => `${inst.bk_inst_name}[${inst.bk_inst_id}]`).join(',')
   }
@@ -93,11 +93,11 @@ export function foreignkey (value) {
   return '--'
 }
 
-export function list (value) {
+export function list(value) {
   return defaultFormatter(value)
 }
 
-export function implode (value, separator = ',') {
+export function implode(value, separator = ',') {
   if (Array.isArray(value)) {
     return value.join(separator)
   }
@@ -119,7 +119,7 @@ const formatterMap = {
   enum: enumeration
 }
 
-export default function formatter (value, property, options) {
+export default function formatter(value, property, options) {
   const isPropertyObject = typeof property === 'object'
   const type = isPropertyObject ? property.bk_property_type : property
   const propertyOptions = isPropertyObject ? property.option : options

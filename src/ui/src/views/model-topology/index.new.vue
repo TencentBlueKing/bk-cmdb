@@ -173,7 +173,7 @@
       theRelationDetail,
       theCreateModel
     },
-    data () {
+    data() {
       return {
         // 关联数据
         associationList: [],
@@ -225,14 +225,14 @@
         'classifications',
         'getModelById'
       ]),
-      noPositionModels () {
+      noPositionModels() {
         return this.localTopoModelList.filter((model) => {
           const position = model.position
           const isMainNode = this.isMainNode(model)
           return position.x === null && position.y === null && !isMainNode
         })
       },
-      localClassifications () {
+      localClassifications() {
         return this.$tools.clone(this.classifications).map((classify) => {
           classify['bk_objects'] = classify['bk_objects'].filter((model) => {
             return !model.bk_ishidden && !model.bk_ispaused
@@ -240,17 +240,17 @@
           return classify
         })
       },
-      hideModels () {
+      hideModels() {
         return this.usercustom[this.hideModelConfigKey] || {}
       }
     },
     watch: {
-      'topoNav.hideNodeIds' (hideNodeIds) {
+      'topoNav.hideNodeIds'(hideNodeIds) {
         this.saveHideModelConfig(hideNodeIds)
         this.toggleAddBusinessBtn()
       }
     },
-    created () {
+    created() {
       if (typeof cytoscape('core', 'edgehandles') !== 'function') {
         cytoscape.use(edgehandles)
       }
@@ -263,11 +263,11 @@
       this.topoNav.hideNodeIds = hideNodeIds || []
       this.topoNav.hideGroupIds = hideGroupIds || []
     },
-    mounted () {
+    mounted() {
       this.getMainLineModel()
       this.initNetwork()
     },
-    destroyed () {
+    destroyed() {
       cy = null
       eh = null
 
@@ -285,10 +285,10 @@
       ...mapActions('objectModelClassify', [
         'searchClassificationsObjects'
       ]),
-      getMainLineModel () {
+      getMainLineModel() {
         return this.searchMainlineObject({})
       },
-      getAssociationType () {
+      getAssociationType() {
         return this.searchAssociationType({
           params: {},
           config: {
@@ -296,7 +296,7 @@
           }
         }).then(res => res.info)
       },
-      initNetwork () {
+      initNetwork() {
         cy = window.cy = cytoscape({
           container: this.$refs.topo,
           autolock: true,
@@ -655,7 +655,7 @@
             this.isTopoHover = false
           })
       },
-      async updateNetwork () {
+      async updateNetwork() {
         // 全量更新画布元素，如存在性能问题则需要依赖数据返回做按需更新
         const elements = await this.getTopoElements()
         cy.json({ elements })
@@ -663,7 +663,7 @@
         this.loadNodeImage()
         this.updateElementPostion()
       },
-      async getTopoElements () {
+      async getTopoElements() {
         const [asstData, mainLineData, nodeData] = await Promise.all([
           this.getAssociationType(),
           this.getMainLineModel(),
@@ -754,7 +754,7 @@
 
         return elements
       },
-      loadNodeImage () {
+      loadNodeImage() {
         // 缓存调用结果，减少相同icon的转换开销
         const makeSvg = memoize(this.makeSvg, data => data.icon)
         cy.nodes('.model').forEach(async (node, i) => {
@@ -763,7 +763,7 @@
           node.addClass('bg')
         })
       },
-      updateElementPostion () {
+      updateElementPostion() {
         const extent = cy.extent()
         const isEdit = this.topoEdit.isEdit
 
@@ -829,7 +829,7 @@
         // 更新节点锁状态
         cy.autolock(!isEdit)
       },
-      handleToggleGroup (group) {
+      handleToggleGroup(group) {
         const groupId = group['bk_classification_id']
         const index = this.topoNav.hideGroupIds.indexOf(groupId)
         let display
@@ -842,7 +842,7 @@
         }
         this.toggleNodeByGroup(group, display)
       },
-      handleToggleNode (model, group) {
+      handleToggleNode(model, group) {
         const nodeId = model['bk_obj_id']
         const groupId = group['bk_classification_id']
 
@@ -877,7 +877,7 @@
           this.topoNav.hideGroupIds.push(groupId)
         }
       },
-      handleSelectGroup (group) {
+      handleSelectGroup(group) {
         if (group) {
           const groupId = group['bk_classification_id']
           const groupNodes = cy.$(`node[groupId='${groupId}']`)
@@ -899,7 +899,7 @@
         // 取消单个节点选择
         this.topoNav.selectedNodeId = ''
       },
-      handleSelectNode (model) {
+      handleSelectNode(model) {
         const nodeId = model['bk_obj_id']
         this.topoNav.selectedNodeId = nodeId
 
@@ -911,7 +911,7 @@
         // 取消组选择
         this.topoNav.selectedGroupId = ''
       },
-      toggleNodeByGroup (group, display) {
+      toggleNodeByGroup(group, display) {
         const groupId = group['bk_classification_id']
         const nodeIds = group['bk_objects'].map(model => model['bk_obj_id'])
 
@@ -928,7 +928,7 @@
           .connectedEdges()
           .style('visibility', visibility)
       },
-      makeSvg (nodeData) {
+      makeSvg(nodeData) {
         return new Promise((resolve, reject) => {
           const image = new Image()
           image.onload = () => {
@@ -951,7 +951,7 @@
           image.src = `${window.location.origin}/static/svg/${nodeData.icon.substr(5)}.svg`
         })
       },
-      handleRelationSave (params) {
+      handleRelationSave(params) {
         const fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
         if (!fromNode.hasOwnProperty('assts')) {
           Object.assign(fromNode, { assts: [] })
@@ -965,7 +965,7 @@
         // 完成edge添加
         this.completeEditingEdge(params)
       },
-      handleRelationDetailSave (data) {
+      handleRelationDetailSave(data) {
         if (data.type === 'delete') {
           this.localTopoModelList.forEach((model) => {
             if (model.hasOwnProperty('assts')) {
@@ -986,7 +986,7 @@
           cy.edges(`[instId=${data.params.id}]`).remove()
         }
       },
-      handleEditTopo () {
+      handleEditTopo() {
         this.topoEdit.isEdit = true
 
         // 解除锁定
@@ -997,10 +997,10 @@
           eh.enable()
         } else {
           eh = cy.edgehandles({
-            loopAllowed (node) {
+            loopAllowed(node) {
               return true
             },
-            edgeParams (sourceNode, targetNode, i) {
+            edgeParams(sourceNode, targetNode, i) {
               return {
                 data: {
                   label: ''
@@ -1015,20 +1015,20 @@
         // 显示新建层级操作节点
         this.toggleAddBusinessBtn()
       },
-      handleExitEdit () {
+      handleExitEdit() {
         this.topoEdit.isEdit = false
         cy.autolock(true)
         eh.disable()
         cy.nodes('.add-business-btn').style('display', 'none')
       },
-      handleAddEdge () {
+      handleAddEdge() {
         const nodeId = this.topoTooltip.hoverNode.id
         const node = cy.$(`node#${nodeId}`)
 
         // 触发edge编辑，node为source
         eh.start(node)
       },
-      handleHideNode () {
+      handleHideNode() {
         const { id, groupId } = this.topoTooltip.hoverNode
         const group = this.localClassifications.find(item => item.bk_classification_id === groupId) || {}
         const model = this.localTopoModelList.find(item => item.bk_obj_id === id) || {}
@@ -1041,11 +1041,11 @@
 
         this.handleToggleNode(model, group)
       },
-      clearEditingEdge () {
+      clearEditingEdge() {
         // 删除编辑中的edge
         cy.edges('.edge-editing').remove()
       },
-      completeEditingEdge (params) {
+      completeEditingEdge(params) {
         const asstInstId = this.associationList.find(asst => asst['bk_asst_id'] === params['bk_asst_id']).id
         const { direction, asstName, asstId } = this.getAsstDetail(asstInstId)
         const edge = cy.edges('.edge-editing')
@@ -1064,7 +1064,7 @@
           instId: params.id
         })
       },
-      handleSliderSave (params) {
+      handleSliderSave(params) {
         switch (this.slider.content) {
           case 'theRelation':
             this.handleRelationSave(params)
@@ -1075,20 +1075,20 @@
           default:
         }
       },
-      handleSliderCancel () {
+      handleSliderCancel() {
         if (this.slider.content === 'theRelation') {
           this.clearEditingEdge()
         }
         this.slider.isShow = false
       },
-      canAddBusinessLevel (model) {
+      canAddBusinessLevel(model) {
         return !['set', 'module', 'host'].includes(model['bk_obj_id'])
       },
-      isMainNode (model) {
+      isMainNode(model) {
         const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
         return mainLineIds.includes(model['bk_obj_id'])
       },
-      handleShowDetails (labelInfo) {
+      handleShowDetails(labelInfo) {
         this.slider.title = labelInfo.text
         this.slider.properties = {
           objId: labelInfo.objId,
@@ -1098,7 +1098,7 @@
         }
         this.showSlider('theRelationDetail')
       },
-      getAsstDetail (asstId) {
+      getAsstDetail(asstId) {
         const asst = this.associationList.find(asst => asst.id === asstId)
         return {
           asstId: asst['bk_asst_id'],
@@ -1106,7 +1106,7 @@
           direction: asst.direction
         }
       },
-      showSlider (content) {
+      showSlider(content) {
         const {
           slider
         } = this
@@ -1119,36 +1119,36 @@
         }
         slider.isShow = true
       },
-      handleSlideGroup (group) {
+      handleSlideGroup(group) {
         if (group['bk_classification_id'] !== this.topoNav.activeGroupId) {
           this.topoNav.activeGroupId = group['bk_classification_id']
         } else {
           this.topoNav.activeGroupId = ''
         }
       },
-      resizeFit () {
+      resizeFit() {
         cy.fit()
       },
-      resizeFull (reset) {
+      resizeFull(reset) {
         const mainFullScreen = reset === true ? false : !this.mainFullScreen
         this.$store.commit('setLayoutStatus', { mainFullScreen })
       },
-      zoomIn () {
+      zoomIn() {
         const zoom = cy.zoom()
         cy.zoom(zoom + 0.05)
       },
-      zoomOut () {
+      zoomOut() {
         const zoom = cy.zoom()
         cy.zoom(zoom - 0.05)
       },
-      updateSingleNodePosition (node) {
+      updateSingleNodePosition(node) {
         this.$store.dispatch('globalModels/updateModelAction', {
           params: {
             origin: [node]
           }
         })
       },
-      handleAddBusinessLevel (model) {
+      handleAddBusinessLevel(model) {
         if (this.createAuth) {
           this.addBusinessLevel.parent = model
           this.addBusinessLevel.showDialog = true
@@ -1159,7 +1159,7 @@
           }
         }
       },
-      async handleCreateBusinessLevel (data) {
+      async handleCreateBusinessLevel(data) {
         try {
           await this.createMainlineObject({
             params: {
@@ -1190,16 +1190,16 @@
           console.log(e)
         }
       },
-      cancelCreateBusinessLevel () {
+      cancelCreateBusinessLevel() {
         this.addBusinessLevel.parent = null
         this.addBusinessLevel.showDialog = false
       },
-      saveHideModelConfig (hideNodeIds) {
+      saveHideModelConfig(hideNodeIds) {
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.hideModelConfigKey]: { hideNodeIds, hideGroupIds: this.topoNav.hideGroupIds }
         })
       },
-      toggleAddBusinessBtn () {
+      toggleAddBusinessBtn() {
         if (this.topoEdit.isEdit) {
           cy.nodes('.add-business-btn').forEach((node) => {
             const model = node.data('model')
@@ -1211,14 +1211,14 @@
           })
         }
       },
-      fitMaxZoom (cy) {
+      fitMaxZoom(cy) {
         const fitMaxZoom = 1
         if (cy.zoom() > fitMaxZoom) {
           cy.zoom(fitMaxZoom)
           cy.center()
         }
       },
-      handleReceiveAuth (auth) {
+      handleReceiveAuth(auth) {
         this.createAuth = auth
       }
     }

@@ -28,7 +28,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createInst ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
+  createInst({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
     return $http.post(`create/instance/object/${objId}`, params, config)
   },
 
@@ -41,7 +41,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateInst ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
+  updateInst({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
     return $http.put(`update/instance/object/${objId}/inst/${instId}`, params, config)
   },
 
@@ -54,7 +54,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  batchUpdateInst ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
+  batchUpdateInst({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
     return $http.put(`updatemany/instance/object/${objId}`, params, config)
   },
 
@@ -68,11 +68,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchInst ({ commit, state, dispatch, rootGetters }, { params, config, objId }) {
+  searchInst({ commit, state, dispatch, rootGetters }, { params, config, objId }) {
     return $http.post(`find/instassociation/object/${objId}`, params, config)
   },
 
-  searchInstById ({ rootGetters }, { config, objId, instId, idKey = 'bk_inst_id', params }) {
+  searchInstById({ rootGetters }, { config, objId, instId, idKey = 'bk_inst_id', params }) {
     return $http.post(`find/instassociation/object/${objId}`, Object.assign({
       condition: {
         [objId]: [{
@@ -102,7 +102,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteInst ({ commit, state, dispatch, rootGetters }, { objId, instId, config }) {
+  deleteInst({ commit, state, dispatch, rootGetters }, { objId, instId, config }) {
     return $http.delete(`delete/instance/object/${objId}/inst/${instId}`, config)
   },
 
@@ -112,10 +112,10 @@ const actions = {
      * @param {Object} config 参数
      * @return {promises} promises 对象
      */
-  batchDeleteInst ({ commit, state, dispatch, rootGetters }, { objId, config }) {
+  batchDeleteInst({ commit, state, dispatch, rootGetters }, { objId, config }) {
     return $http.delete(`deletemany/instance/object/${objId}`, config)
   },
-  getInstanceCount (context, { config }) {
+  getInstanceCount(context, { config }) {
     return $http.get('object/statistics', config)
   }
 }

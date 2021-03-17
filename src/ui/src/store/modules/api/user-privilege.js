@@ -64,7 +64,7 @@ const actions = {
      * @param {String} bkPropertyId 属性id
      * @return {promises} promises 对象
      */
-  getRolePrivilege ({ commit, state, dispatch, rootGetters }, { bkObjId, bkPropertyId }) {
+  getRolePrivilege({ commit, state, dispatch, rootGetters }, { bkObjId, bkPropertyId }) {
     return $http.get(`topo/privilege/${rootGetters.supplierAccount}/${bkObjId}/${bkPropertyId}`)
   },
 
@@ -78,7 +78,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  bindRolePrivilege ({ commit, state, dispatch, rootGetters }, { bkObjId, bkPropertyId, params, config }) {
+  bindRolePrivilege({ commit, state, dispatch, rootGetters }, { bkObjId, bkPropertyId, params, config }) {
     return $http.post(`topo/privilege/${rootGetters.supplierAccount}/${bkObjId}/${bkPropertyId}`, params, config)
   },
 
@@ -90,7 +90,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createUserGroup ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  createUserGroup({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post(`topo/privilege/group/${rootGetters.supplierAccount}`, params, config)
   },
 
@@ -103,7 +103,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateUserGroup ({ commit, state, dispatch, rootGetters }, { bkGroupId, params, config }) {
+  updateUserGroup({ commit, state, dispatch, rootGetters }, { bkGroupId, params, config }) {
     return $http.put(`topo/privilege/group/${rootGetters.supplierAccount}/${bkGroupId}`, params, config)
   },
 
@@ -115,7 +115,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchUserGroup ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchUserGroup({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post(`topo/privilege/group/${rootGetters.supplierAccount}/search`, params, config)
   },
 
@@ -127,7 +127,7 @@ const actions = {
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-  deleteUserGroup ({ commit, state, dispatch, rootGetters }, { bkGroupId }) {
+  deleteUserGroup({ commit, state, dispatch, rootGetters }, { bkGroupId }) {
     return $http.delete(`topo/privilege/group/${rootGetters.supplierAccount}/${bkGroupId}`)
   },
 
@@ -139,7 +139,7 @@ const actions = {
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-  searchUserPrivilege ({ commit, state, dispatch, rootGetters }, { bkGroupId, config }) {
+  searchUserPrivilege({ commit, state, dispatch, rootGetters }, { bkGroupId, config }) {
     return $http.get(`topo/privilege/group/detail/${rootGetters.supplierAccount}/${bkGroupId}`, config)
   },
 
@@ -151,7 +151,7 @@ const actions = {
      * @param {String} userName 用户名
      * @return {promises} promises 对象
      */
-  getUserPrivilege ({ commit, state, dispatch, rootGetters }, httpConfig) {
+  getUserPrivilege({ commit, state, dispatch, rootGetters }, httpConfig) {
     return $http.get(`topo/privilege/user/detail/${rootGetters.supplierAccount}/${rootGetters.userName}`, httpConfig).then((privilege) => {
       commit('setUserPrivilege', privilege)
     })
@@ -165,16 +165,16 @@ const actions = {
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-  updateGroupPrivilege ({ commit, state, dispatch, rootGetters }, { bkGroupId, params, config }) {
+  updateGroupPrivilege({ commit, state, dispatch, rootGetters }, { bkGroupId, params, config }) {
     return $http.post(`topo/privilege/group/detail/${rootGetters.supplierAccount}/${bkGroupId}`, params, config)
   }
 }
 
 const mutations = {
-  setUserPrivilege (state, privilege) {
+  setUserPrivilege(state, privilege) {
     state.privilege = privilege
   },
-  setRoles (state, roles) {
+  setRoles(state, roles) {
     state.roles = roles
   }
 }

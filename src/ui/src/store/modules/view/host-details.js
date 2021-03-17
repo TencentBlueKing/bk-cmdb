@@ -15,7 +15,7 @@ const state = {
   expandAll: false
 }
 
-function isBizCustomData (data) {
+function isBizCustomData(data) {
   return data.hasOwnProperty('bk_biz_id') && data.bk_biz_id > 0
 }
 const getters = {
@@ -58,31 +58,31 @@ const getters = {
 }
 
 const mutations = {
-  setHostInfo (state, info) {
+  setHostInfo(state, info) {
     state.info = info || {}
   },
-  setHostProperties (state, properties) {
+  setHostProperties(state, properties) {
     state.properties = properties
   },
-  setHostPropertyGroups (state, propertyGroups) {
+  setHostPropertyGroups(state, propertyGroups) {
     state.propertyGroups = propertyGroups
   },
-  updateInfo (state, data) {
+  updateInfo(state, data) {
     Object.assign(state.info.host, data)
   },
-  setAssociation (state, data) {
+  setAssociation(state, data) {
     state.association[data.type] = data.association
   },
-  setMainLine (state, mainLine) {
+  setMainLine(state, mainLine) {
     state.mainLine = mainLine
   },
-  setInstances (state, data) {
+  setInstances(state, data) {
     state.instances[data.type] = data.instances
   },
-  setAssociationTypes (state, types) {
+  setAssociationTypes(state, types) {
     state.associationTypes = types
   },
-  deleteAssociation (state, data) {
+  deleteAssociation(state, data) {
     const type = data.type
     const model = data.model
     const target = data.association
@@ -93,7 +93,7 @@ const mutations = {
       associations.children.splice(index, 1)
     }
   },
-  toggleExpandAll (state, expandAll) {
+  toggleExpandAll(state, expandAll) {
     state.expandAll = expandAll
   }
 }

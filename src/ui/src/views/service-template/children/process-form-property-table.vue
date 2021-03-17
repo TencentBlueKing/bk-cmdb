@@ -57,7 +57,7 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return (this.value || []).map((row) => {
             const rowValue = {}
             Object.keys(row).forEach((key) => {
@@ -70,14 +70,14 @@
             return rowValue
           })
         },
-        set (values) {
+        set(values) {
           const newValues = this.transformValueToTemplateValue(values)
           this.$emit('input', newValues)
           this.$emit('change', newValues)
         }
       },
       lockStates: {
-        get () {
+        get() {
           return (this.value || []).map((row) => {
             const rowState = {}
             Object.keys(row).forEach((key) => {
@@ -90,13 +90,13 @@
             return rowState
           })
         },
-        set (states) {
+        set(states) {
           const newValues = this.transformStateToTemplateValue(states)
           this.$emit('input', newValues)
           this.$emit('change', newValues)
         }
       },
-      defaultRowValue () {
+      defaultRowValue() {
         return {
           // ip为字符串类型，模板提供内置两种枚举选项，模板锁定时，默认选择127.0.0.1
           locked: this.$tools.getInstFormValues(this.options, { ip: '1' }, true),
@@ -105,10 +105,10 @@
       }
     },
     methods: {
-      isLocked ({ row, column, index }) {
+      isLocked({ row, column, index }) {
         return this.lockStates[index][column.property]
       },
-      setLockState (rowProps) {
+      setLockState(rowProps) {
         const { column, index } = rowProps
         const lockState = { ...(this.lockStates[index] || {}) }
         lockState[column.property] = !this.isLocked(rowProps)
@@ -116,17 +116,17 @@
         newStates.splice(index, 1, lockState)
         this.lockStates = newStates
       },
-      getComponentType (property) {
+      getComponentType(property) {
         if (property.bk_property_id === 'ip') {
           return 'process-form-property-ip'
         }
         return `cmdb-form-${property.bk_property_type}`
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      getRules (rowProps, property) {
+      getRules(rowProps, property) {
         const rules = this.$tools.getValidateRules(property)
         rules.required = true
         // IP字段在模板上被构造为枚举，无法通过ip的正则，此处忽略IP正则
@@ -135,7 +135,7 @@
         }
         return rules
       },
-      handleColumnValueChange ({ row, column, index }, value) {
+      handleColumnValueChange({ row, column, index }, value) {
         const rowValue = { ...row }
         rowValue[column.property] = value
         const newValues = [...this.localValue]
@@ -143,7 +143,7 @@
         this.localValue = newValues
       },
       // 将常规表格数据，转换成服务模板需要的数据格式
-      transformValueToTemplateValue (values) {
+      transformValueToTemplateValue(values) {
         const isAddOrDelete = values.length !== this.localValue.length
         return values.map((row, rowIndex) => {
           const templateRowValue = {}
@@ -163,7 +163,7 @@
         })
       },
       // 将常规表格行锁定状态，转换成服务模板需要的数据格式
-      transformStateToTemplateValue (states) {
+      transformStateToTemplateValue(states) {
         return states.map((row, rowIndex) => {
           const templateRowValue = {}
           Object.keys(row).forEach((key) => {

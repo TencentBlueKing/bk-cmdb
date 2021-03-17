@@ -1,20 +1,20 @@
 export default class RequestQueue {
-  constructor () {
+  constructor() {
     this.queue = []
   }
 
-  get (id) {
+  get(id) {
     if (typeof id === 'undefined') return this.queue
     return this.queue.find(request => request.requestId === id || request.requestGroup.includes(id))
   }
 
-  set (newRequest) {
+  set(newRequest) {
     if (!this.queue.some(request => request.requestId === newRequest.requestId)) {
       this.queue.push(newRequest)
     }
   }
 
-  delete (id, symbol) {
+  delete(id, symbol) {
     let target
     if (symbol) {
       target = this.queue.find(request => request.requestSymbol === symbol)
@@ -27,7 +27,7 @@ export default class RequestQueue {
     }
   }
 
-  cancel (requestIds, msg = 'request canceled') {
+  cancel(requestIds, msg = 'request canceled') {
     let cancelQueue = []
     if (typeof requestIds === 'undefined') {
       cancelQueue = [...this.queue]

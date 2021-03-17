@@ -56,24 +56,24 @@
 <script>
   export default {
     name: 'cmdb-host-status',
-    data () {
+    data() {
       return {
         snapshot: null,
         Echarts: null
       }
     },
     computed: {
-      info () {
+      info() {
         return this.$store.state.hostDetails.info || {}
       },
-      isWindows () {
+      isWindows() {
         return this.info.host.bk_os_type === 'windows'
       },
-      id () {
+      id() {
         return this.$route.params.id
       }
     },
-    async mounted () {
+    async mounted() {
       try {
         const [Echarts, snapshot] = await Promise.all([
                     import(/* webpackChunkName: "echart" */ 'echarts'),
@@ -90,7 +90,7 @@
       }
     },
     methods: {
-      async getHostSnapshot () {
+      async getHostSnapshot() {
         const snapshot = await this.$store.dispatch('hostSearch/getHostSnapshot', {
           hostId: this.id,
           config: {
@@ -103,12 +103,12 @@
         }
         return Promise.reject(new Error('Get host snapshot failed.'))
       },
-      initCharts () {
+      initCharts() {
         this.initCpuChart()
         this.initMemoryChart()
         this.initDiskChart()
       },
-      initCpuChart () {
+      initCpuChart() {
         const cpuChart = this.Echarts.init(this.$refs.cpuChart)
         cpuChart.setOption({
           title: {
@@ -140,7 +140,7 @@
           }]
         })
       },
-      initMemoryChart () {
+      initMemoryChart() {
         const memoryChart = this.Echarts.init(this.$refs.memoryChart)
         memoryChart.setOption({
           title: {
@@ -172,7 +172,7 @@
           }]
         })
       },
-      initDiskChart () {
+      initDiskChart() {
         const diskChart = this.Echarts.init(this.$refs.diskChart)
         diskChart.setOption({
           title: {
@@ -204,7 +204,7 @@
           }]
         })
       },
-      openAgentApp () {
+      openAgentApp() {
         const topWindow = window.top
         const isPaasConsole = topWindow !== window
         const [cloud = {}] = this.info.host.bk_cloud_id || []

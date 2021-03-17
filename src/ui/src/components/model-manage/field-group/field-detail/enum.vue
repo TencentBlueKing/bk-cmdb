@@ -85,7 +85,7 @@
         default: false
       }
     },
-    data () {
+    data() {
       return {
         enumList: [this.generateEnum()],
         defaultIndex: 0,
@@ -102,12 +102,12 @@
       }
     },
     watch: {
-      value () {
+      value() {
         this.initValue()
       },
       enumList: {
         deep: true,
-        handler (value) {
+        handler(value) {
           this.settingList = (value || []).filter(item => item.id && item.name)
           if (this.settingList.length && this.defaultIndex > -1) {
             this.defaultValue = this.settingList[this.defaultIndex].id
@@ -115,11 +115,11 @@
         }
       }
     },
-    created () {
+    created() {
       this.initValue()
     },
     methods: {
-      getOtherId (index) {
+      getOtherId(index) {
         const idList = []
         this.enumList.forEach((item, enumIndex) => {
           if (index !== enumIndex) {
@@ -128,7 +128,7 @@
         })
         return idList.join(',')
       },
-      getOtherName (index) {
+      getOtherName(index) {
         const nameList = []
         this.enumList.forEach((item, enumIndex) => {
           if (index !== enumIndex) {
@@ -137,7 +137,7 @@
         })
         return nameList.join(',')
       },
-      initValue () {
+      initValue() {
         if (this.value === '') {
           this.enumList = [this.generateEnum()]
         } else {
@@ -145,16 +145,16 @@
           this.defaultIndex = this.enumList.findIndex(({ is_default: isDefault }) => isDefault)
         }
       },
-      handleInput () {
+      handleInput() {
         this.$emit('input', this.enumList)
       },
-      addEnum (index) {
+      addEnum(index) {
         this.enumList.push(this.generateEnum({ is_default: false }))
         this.$nextTick(() => {
           this.$refs[`id${index + 1}`] && this.$refs[`id${index + 1}`][0].focus()
         })
       },
-      deleteEnum (index) {
+      deleteEnum(index) {
         this.enumList.splice(index, 1)
         if (this.defaultIndex === index) {
           this.defaultIndex = 0
@@ -162,7 +162,7 @@
         }
         this.handleInput()
       },
-      generateEnum (settings = {}) {
+      generateEnum(settings = {}) {
         const defaults = {
           id: '',
           is_default: true,
@@ -171,10 +171,10 @@
         }
         return { ...defaults, ...settings }
       },
-      validate () {
+      validate() {
         return this.$validator.validateAll()
       },
-      handleSettingDefault (id) {
+      handleSettingDefault(id) {
         const itemIndex = this.enumList.findIndex(item => item.id === id)
         if (itemIndex > -1) {
           this.defaultIndex = itemIndex
@@ -185,10 +185,10 @@
           this.$emit('input', this.enumList)
         }
       },
-      handleDragEnd () {
+      handleDragEnd() {
         this.$emit('input', this.enumList)
       },
-      handleSort () {
+      handleSort() {
         this.order = this.order * -1
         this.enumList.sort((A, B) => {
           return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order

@@ -44,7 +44,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  saveUsercustom ({ commit, state, dispatch }, usercustom = {}) {
+  saveUsercustom({ commit, state, dispatch }, usercustom = {}) {
     return $http.post('usercustom', usercustom, { cancelWhenRouteChange: false }).then(() => {
       $http.cancelCache('searchUserCustom')
       commit('setUsercustom', usercustom)
@@ -59,7 +59,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  searchUsercustom ({ commit, state, dispatch }, { config }) {
+  searchUsercustom({ commit, state, dispatch }, { config }) {
     const mergedConfig = Object.assign({
       requestId: 'searchUserCustom'
     }, config)
@@ -76,11 +76,11 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  getUserDefaultCustom ({ commit, state, dispatch }) {
+  getUserDefaultCustom({ commit, state, dispatch }) {
     return $http.post('usercustom/default/search')
   },
 
-  setRencentlyData ({ commit, state, dispatch }, { id }) {
+  setRencentlyData({ commit, state, dispatch }, { id }) {
     const usercustomData = state.usercustom.recently_models || []
     const isExist = usercustomData.some(target => target === id)
     let newUsercustomData = [...usercustomData]
@@ -93,7 +93,7 @@ const actions = {
     })
   },
 
-  saveGlobalUsercustom ({ commit }, { objId, params, config }) {
+  saveGlobalUsercustom({ commit }, { objId, params, config }) {
     return $http.post(`usercustom/default/model/${objId}`, params, config).then((data) => {
       commit('setGlobalUsercustom', {
         [`${objId}_global_custom_table_columns`]: params.global_custom_table_columns
@@ -102,7 +102,7 @@ const actions = {
     })
   },
 
-  getGlobalUsercustom ({ commit }, { config }) {
+  getGlobalUsercustom({ commit }, { config }) {
     const mergedConfig = Object.assign({
       requestId: 'getGlobalUsercustom'
     }, config)
@@ -114,12 +114,12 @@ const actions = {
 }
 
 const mutations = {
-  setUsercustom (state, usercustom = {}) {
+  setUsercustom(state, usercustom = {}) {
     for (const key in usercustom) {
       Vue.set(state.usercustom, key, usercustom[key])
     }
   },
-  setGlobalUsercustom (state, globalUsercustom = {}) {
+  setGlobalUsercustom(state, globalUsercustom = {}) {
     for (const key in globalUsercustom) {
       Vue.set(state.globalUsercustom, key, globalUsercustom[key])
     }

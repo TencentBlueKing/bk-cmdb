@@ -26,7 +26,7 @@
     props: {
       id: Number
     },
-    data () {
+    data() {
       return {
         details: null,
         isShow: false,
@@ -34,7 +34,7 @@
       }
     },
     computed: {
-      detailsType () {
+      detailsType() {
         if (!this.details) {
           return null
         }
@@ -42,17 +42,17 @@
         return withCompare.includes(this.details.resource_type) ? DetailsTable.name : DetailsJson.name
       }
     },
-    async created () {
+    async created() {
       this.getDetails()
     },
     methods: {
-      show () {
+      show() {
         this.isShow = true
       },
-      handleHidden () {
+      handleHidden() {
         this.$emit('close')
       },
-      async getDetails () {
+      async getDetails() {
         try {
           this.pending = true
           this.details = await this.$store.dispatch('audit/getDetails', { id: this.id })

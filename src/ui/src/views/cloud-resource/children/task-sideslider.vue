@@ -21,7 +21,7 @@
       [TaskForm.name]: TaskForm,
       [TaskDetails.name]: TaskDetails
     },
-    data () {
+    data() {
       return {
         isShow: false,
         title: '',
@@ -30,7 +30,7 @@
       }
     },
     methods: {
-      show ({ mode, props, title }) {
+      show({ mode, props, title }) {
         const componentMap = {
           create: TaskForm.name,
           update: TaskForm.name,
@@ -41,10 +41,10 @@
         this.title = title
         this.isShow = true
       },
-      hide (eventType) {
+      hide(eventType) {
         this.isShow = false
       },
-      handleHidden () {
+      handleHidden() {
         this.component = null
       }
     }

@@ -33,46 +33,46 @@ const getters = {
 }
 
 const actions = {
-  getRules ({ commit, state, dispatch }, { bizId, params, config }) {
+  getRules({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}`, params, config)
   },
-  getApplyPreview ({ commit, state, dispatch }, { bizId, params, config }) {
+  getApplyPreview({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`createmany/host_apply_plan/bk_biz_id/${bizId}/preview`, params, config)
   },
-  runApply ({ commit, state, dispatch }, { bizId, params, config }) {
+  runApply({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`updatemany/host_apply_plan/bk_biz_id/${bizId}/run`, params, config)
   },
-  getTopopath ({ commit, state, dispatch }, { bizId, params, config }) {
+  getTopopath({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`find/topopath/biz/${bizId}`, params, config)
   },
-  setEnableStatus ({ commit, state, dispatch }, { bizId, moduleId, params, config }) {
+  setEnableStatus({ commit, state, dispatch }, { bizId, moduleId, params, config }) {
     return $http.put(`module/host_apply_enable_status/bk_biz_id/${bizId}/bk_module_id/${moduleId}`, params, config)
   },
-  deleteRules ({ commit, state, dispatch }, { bizId, params }) {
+  deleteRules({ commit, state, dispatch }, { bizId, params }) {
     return $http.delete(`deletemany/host_apply_rule/bk_biz_id/${bizId}`, params)
   },
-  getProperties (context, { params, config }) {
+  getProperties(context, { params, config }) {
     return $http.post('find/objectattr/host', params, config)
   },
-  getHostRelatedRules (context, { bizId, params, config }) {
+  getHostRelatedRules(context, { bizId, params, config }) {
     return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)
   },
-  searchNode (context, { bizId, params, config }) {
+  searchNode(context, { bizId, params, config }) {
     return $http.post(`find/topoinst/bk_biz_id/${bizId}/host_apply_rule_related`, params, config)
   }
 }
 
 const mutations = {
-  setPropertyConfig (state, config) {
+  setPropertyConfig(state, config) {
     state.propertyConfig = config
   },
-  setRuleDraft (state, draft) {
+  setRuleDraft(state, draft) {
     state.ruleDraft = draft
   },
-  clearRuleDraft (state) {
+  clearRuleDraft(state) {
     state.ruleDraft = {}
   },
-  setPropertyList (state, list) {
+  setPropertyList(state, list) {
     state.propertyList = list
   }
 }

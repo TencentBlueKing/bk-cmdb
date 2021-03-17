@@ -12,16 +12,16 @@ const getters = {
 const actions = {}
 
 const mutations = {
-  addLocalProcessTemplate (state, process) {
+  addLocalProcessTemplate(state, process) {
     state.localProcessTemplate.push(process)
   },
-  updateLocalProcessTemplate (state, { process, index }) {
+  updateLocalProcessTemplate(state, { process, index }) {
     state.localProcessTemplate.splice(index, 1, process)
   },
-  deleteLocalProcessTemplate (state, { process, index }) {
+  deleteLocalProcessTemplate(state, { process, index }) {
     state.localProcessTemplate.splice(index, 1)
   },
-  clearLocalProcessTemplate (state) {
+  clearLocalProcessTemplate(state) {
     state.localProcessTemplate = []
   }
 }

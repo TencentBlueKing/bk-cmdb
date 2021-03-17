@@ -40,15 +40,15 @@
         'targetInstances',
         'associationTypes'
       ]),
-      id () {
+      id() {
         return parseInt(this.$route.params.id)
       },
-      hasAssociation () {
+      hasAssociation() {
         return [...this.sourceInstances, ...this.targetInstances].some((instance) => {
           return !!(instance.children || []).length
         })
       },
-      list () {
+      list() {
         try {
           const list = []
           const associations = [...this.source, ...this.target]
@@ -75,7 +75,7 @@
         }
         return []
       },
-      loading () {
+      loading() {
         return this.$loading([
           'getAssociation',
           'getMainLine',
@@ -85,7 +85,7 @@
       }
     },
     watch: {
-      list () {
+      list() {
         this.$nextTick(() => {
           if (this.$refs.associationListTable) {
             const [firstAssociationListTable] = this.$refs.associationListTable
@@ -94,7 +94,7 @@
         })
       }
     },
-    created () {
+    created() {
       this.getData()
       bus.$on('association-change', async () => {
         const root = await this.getInstRelation()
@@ -102,11 +102,11 @@
         this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
       })
     },
-    beforeDestroy () {
+    beforeDestroy() {
       bus.$off('association-change')
     },
     methods: {
-      async getData () {
+      async getData() {
         try {
           const [source, target, mainLine, associationTypes, root] = await Promise.all([
             this.getAssociation({ bk_obj_id: 'host' }),
@@ -139,7 +139,7 @@
           console.error(e)
         }
       },
-      setState ({ source, target, mainLine, associationTypes, root }) {
+      setState({ source, target, mainLine, associationTypes, root }) {
         this.$store.commit('hostDetails/setAssociation', { type: 'source', association: source })
         this.$store.commit('hostDetails/setAssociation', { type: 'target', association: target })
         this.$store.commit('hostDetails/setMainLine', mainLine)
@@ -147,7 +147,7 @@
         this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
         this.$store.commit('hostDetails/setAssociationTypes', associationTypes)
       },
-      getAssociation (condition) {
+      getAssociation(condition) {
         return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
           params: { condition },
           config: {
@@ -155,14 +155,14 @@
           }
         })
       },
-      getMainLine () {
+      getMainLine() {
         return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {}, {
           config: {
             requestId: 'getMainLine'
           }
         })
       },
-      async getAssociationType () {
+      async getAssociationType() {
         const { info } = await this.$store.dispatch('objectAssociation/searchAssociationType', {}, {
           config: {
             requestId: 'getAssociationType'
@@ -170,7 +170,7 @@
         })
         return Promise.resolve(info)
       },
-      async getInstRelation () {
+      async getInstRelation() {
         const [root] = await this.$store.dispatch('objectRelation/getInstRelation', {
           objId: 'host',
           instId: this.id,
@@ -181,7 +181,7 @@
         })
         return Promise.resolve(root || { prev: [], next: [] })
       },
-      getAvailableAssociation (data, reference = [], mainLine = []) {
+      getAvailableAssociation(data, reference = [], mainLine = []) {
         return data.filter((association) => {
           const sourceId = association.bk_obj_id
           const targetId = association.bk_asst_obj_id

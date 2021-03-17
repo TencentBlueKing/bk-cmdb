@@ -23,18 +23,18 @@
       auth: [Object, Array],
       ignore: Boolean
     },
-    data () {
+    data() {
       return {
         isAuthorized: false
       }
     },
     computed: {
-      computedDisabled () {
+      computedDisabled() {
         return this.disabled || !this.isAuthorized
       }
     },
     methods: {
-      handleUpdateAuth (isAuthorized) {
+      handleUpdateAuth(isAuthorized) {
         this.isAuthorized = isAuthorized
       }
     }

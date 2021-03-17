@@ -21,17 +21,17 @@
         default: '--'
       }
     },
-    data () {
+    data() {
       return {
         vendors: []
       }
     },
     computed: {
       ...mapGetters(['supplierAccount']),
-      vendor () {
+      vendor() {
         return this.vendors.find(vendor => vendor.id === this.type)
       },
-      icon () {
+      icon() {
         if (!this.vendor) {
           return null
         }
@@ -43,11 +43,11 @@
         return iconMap[this.vendor.id] || null
       }
     },
-    created () {
+    created() {
       this.getVendors()
     },
     methods: {
-      async getVendors () {
+      async getVendors() {
         try {
           const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {

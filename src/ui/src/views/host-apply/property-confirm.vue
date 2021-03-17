@@ -76,7 +76,7 @@
       applyStatusModal,
       propertyConfirmTable
     },
-    data () {
+    data() {
       return {
         table: {
           list: [],
@@ -96,23 +96,23 @@
       ...mapState('hostApply', ['propertyConfig']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters(['supplierAccount']),
-      isBatch () {
+      isBatch() {
         return this.$route.query.batch === 1
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
     },
-    beforeRouteLeave (to, from, next) {
+    beforeRouteLeave(to, from, next) {
       if (to.name !== MENU_BUSINESS_HOST_APPLY_EDIT) {
         this.$store.commit('hostApply/clearRuleDraft')
       }
       next()
     },
-    created () {
+    created() {
       // 无配置数据时强制跳转至入口页
       if (!Object.keys(this.propertyConfig).length) {
         this.leaveConfirmConfig.active = false
@@ -129,7 +129,7 @@
         'getApplyPreview',
         'runApply'
       ]),
-      async initData () {
+      async initData() {
         try {
           const previewData = await this.getApplyPreview({
             bizId: this.bizId,
@@ -147,11 +147,11 @@
           console.error(e)
         }
       },
-      setBreadcrumbs () {
+      setBreadcrumbs() {
         const title = this.isBatch ? '批量应用属性' : '应用属性'
         this.$store.commit('setTitle', this.$t(title))
       },
-      goBack () {
+      goBack() {
         const query = {}
         if (!this.isBatch) {
           query.module = this.propertyConfig.bk_module_ids[0]
@@ -162,13 +162,13 @@
           query
         })
       },
-      resizeHandler (a, b, c) {
+      resizeHandler(a, b, c) {
         this.$nextTick(() => {
           const scroller = this.$refs.propertyConfirmTable.$el.querySelector('.bk-table-body-wrapper')
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
         })
       },
-      saveAndApply () {
+      saveAndApply() {
         const { conflictResolveResult } = this.$refs.propertyConfirmTable
         const conflictResolvers = []
         Object.keys(conflictResolveResult).forEach((key) => {
@@ -204,7 +204,7 @@
           this.$store.commit('hostApply/setPropertyConfig', propertyConfig)
         })
       },
-      async handleApply () {
+      async handleApply() {
         const allResolved = this.$refs.propertyConfirmTable.list.every(item => item.unresolved_conflict_count === 0)
         if (allResolved) {
           this.saveAndApply()
@@ -218,17 +218,17 @@
           })
         }
       },
-      handleCancel () {
+      handleCancel() {
         this.goBack()
       },
-      handlePrevStep () {
+      handlePrevStep() {
         this.leaveConfirmConfig.active = false
         this.$routerActions.back()
       },
-      handleStatusModalBack () {
+      handleStatusModalBack() {
         this.goBack()
       },
-      handleViewHost () {
+      handleViewHost() {
         const query = {}
         if (!this.isBatch) {
           query.node = `module-${this.propertyConfig.bk_module_ids[0]}`
@@ -239,7 +239,7 @@
           history: true
         })
       },
-      handleViewFailed () {
+      handleViewFailed() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_FAILED,
           query: this.$route.query,

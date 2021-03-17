@@ -7,16 +7,16 @@
     name: 'cmdb-form-bool-input',
     // eslint-disable-next-line
         props: ['value'],
-    data () {
+    data() {
       return {
         localValue: ''
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.localValue = value
       },
-      localValue (localValue) {
+      localValue(localValue) {
         if (['true', 'false'].includes(localValue)) {
           localValue = [true, false].find(value => value.toString() === localValue)
         }
@@ -24,11 +24,11 @@
         this.$emit('on-change', localValue)
       }
     },
-    created () {
+    created() {
       this.localValue = this.value
     },
     methods: {
-      focus () {
+      focus() {
         this.$el.querySelector('input').focus()
       }
     }

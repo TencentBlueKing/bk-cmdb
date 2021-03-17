@@ -105,7 +105,7 @@
         default: () => ({})
       }
     },
-    data () {
+    data() {
       return {
         localExpand: this.expand,
         beforeSyncExpand: true,
@@ -114,13 +114,13 @@
       }
     },
     computed: {
-      beforeChangeList () {
+      beforeChangeList() {
         return this.instance.module_diffs.filter(_module => _module.diff_type !== 'add')
       },
-      setDeatails () {
+      setDeatails() {
         return this.instance.set_detail
       },
-      topoPath () {
+      topoPath() {
         const path = this.instance.topo_path
         if (path.length) {
           const topoPath = this.$tools.clone(path)
@@ -129,7 +129,7 @@
         }
         return '--'
       },
-      canSyncStatus () {
+      canSyncStatus() {
         for (const _module of this.instance.module_diffs) {
           if (_module.diff_type === 'remove' && this.moduleHostCount[_module.bk_module_id] > 0) {
             return false
@@ -139,20 +139,20 @@
       }
     },
     watch: {
-      localExpand (value) {
+      localExpand(value) {
         if (value && !this.hasRead) {
           this.hasRead = true
         }
       }
     },
     methods: {
-      existHost (moduleId) {
+      existHost(moduleId) {
         return this.moduleHostCount[moduleId] > 0
       },
-      handleClose () {
+      handleClose() {
         this.$emit('close', this.instance.bk_set_id)
       },
-      handleViewModule (moduleId) {
+      handleViewModule(moduleId) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {

@@ -27,32 +27,32 @@
       ServiceTemplateConfig,
       ServiceTemplateInstance
     },
-    data () {
+    data() {
       return {
         active: RouterQuery.get('tab', 'config')
       }
     },
     computed: {
-      isUpdate () {
+      isUpdate() {
         return this.$route.params.templateId !== undefined
       }
     },
     watch: {
       active: {
         immediate: true,
-        handler (active) {
+        handler(active) {
           RouterQuery.set({
             tab: active
           })
         }
       }
     },
-    created () {
+    created() {
       Bus.$on('active-change', (active) => {
         this.active = active
       })
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('active-change')
     }
   }

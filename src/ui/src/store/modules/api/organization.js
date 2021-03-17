@@ -19,7 +19,7 @@ const getters = {
 }
 
 const actions = {
-  getDepartment ({ commit, state, dispatch }, config) {
+  getDepartment({ commit, state, dispatch }, config) {
     return $http.get(`${window.API_HOST}organization/department`, config)
   }
 }

@@ -44,7 +44,7 @@
     components: {
       ViewSwitcher
     },
-    data () {
+    data() {
       return {
         withTemplate: true,
         searchData: [],
@@ -60,20 +60,20 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['selectedNode']),
-      serviceTemplateId () {
+      serviceTemplateId() {
         return this.selectedNode && this.selectedNode.data.service_template_id
       }
     },
-    created () {
+    created() {
       Bus.$on('process-selection-change', this.handleProcessSelectionChange)
       Bus.$on('process-list-change', this.handleProcessListChange)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('process-selection-change', this.handleProcessSelectionChange)
       Bus.$off('process-list-change', this.handleProcessListChange)
     },
     methods: {
-      handleBatchEdit () {
+      handleBatchEdit() {
         const props = {
           submitHandler: this.batchEditSubmitHandler
         }
@@ -84,7 +84,7 @@
         }
         FormMultiple.show(props)
       },
-      async batchEditSubmitHandler (values) {
+      async batchEditSubmitHandler(values) {
         try {
           await this.$store.dispatch('serviceInstance/batchUpdateProcess', {
             params: {
@@ -99,7 +99,7 @@
           console.error(error)
         }
       },
-      handleBatchtDelete () {
+      handleBatchtDelete() {
         this.$bkInfo({
           title: this.$t('确定删除N个进程', { count: this.selection.value.length }),
           confirmFn: () => {
@@ -107,7 +107,7 @@
           }
         })
       },
-      handleProcessSelectionChange (process, selection, requestId) {
+      handleProcessSelectionChange(process, selection, requestId) {
         if (selection.length) {
           this.selection.process = process
           this.selection.value = selection
@@ -118,13 +118,13 @@
           this.selection.requestId = null
         }
       },
-      handleSearch () {
+      handleSearch() {
         Bus.$emit('filter-list', this.searchValue)
       },
-      handleExpandAllChange (expand) {
+      handleExpandAllChange(expand) {
         Bus.$emit('expand-all-change', expand)
       },
-      handleProcessListChange () {
+      handleProcessListChange() {
         this.expandAll = false
         this.selection = {
           process: null,

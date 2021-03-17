@@ -58,7 +58,7 @@
       },
       list: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
@@ -101,33 +101,33 @@
       },
       readonly: Boolean
     },
-    data () {
+    data() {
       return {
         selected: ''
       }
     },
     computed: {
-      selectedOption () {
+      selectedOption() {
         return this.list.find(option => option[this.settingKey] === this.selected)
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.selected = value
       },
-      selected (selected) {
+      selected(selected) {
         this.$emit('input', selected)
         this.$emit('on-selected', selected, this.selectedOption)
       },
-      list () {
+      list() {
         this.setInitData()
       }
     },
-    created () {
+    created() {
       this.setInitData()
     },
     methods: {
-      setInitData () {
+      setInitData() {
         let value = this.value
         if (this.autoSelect) {
           const currentOption = this.list.find(option => option[this.settingKey] === this.value)

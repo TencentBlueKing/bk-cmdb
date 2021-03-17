@@ -221,7 +221,7 @@
       cmdbImport,
       cmdbPropertySelector
     },
-    data () {
+    data() {
       return {
         objectUnique: [],
         properties: [],
@@ -278,22 +278,22 @@
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-      objId () {
+      objId() {
         return this.$route.params.objId
       },
-      model () {
+      model() {
         return this.getModelById(this.objId) || {}
       },
-      customConfigKey () {
+      customConfigKey() {
         return `${this.objId}_custom_table_columns`
       },
-      customColumns () {
+      customColumns() {
         return this.usercustom[this.customConfigKey] || []
       },
-      globalCustomColumns () {
+      globalCustomColumns() {
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`] || []
       },
-      url () {
+      url() {
         const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
         return {
           import: prefix + 'import',
@@ -301,13 +301,13 @@
           template: `${window.API_HOST}importtemplate/${this.objId}`
         }
       },
-      parentLayers () {
+      parentLayers() {
         return [{
           resource_id: this.model.id,
           resource_type: 'model'
         }]
       },
-      filterType () {
+      filterType() {
         const propertyId = this.filter.id
         const property = this.properties.find(property => property.bk_property_id === propertyId)
         if (property) {
@@ -317,10 +317,10 @@
       }
     },
     watch: {
-      'filter.id' (id) {
+      'filter.id'(id) {
         this.filter.value = ''
       },
-      'slider.show' (show) {
+      'slider.show'(show) {
         if (!show) {
           this.tab.active = 'attribute'
         }
@@ -328,15 +328,15 @@
           this.slider.contentShow = show
         })
       },
-      customColumns () {
+      customColumns() {
         this.setTableHeader()
       },
-      objId () {
+      objId() {
         this.setDynamicBreadcrumbs()
         this.reload()
       }
     },
-    created () {
+    created() {
       this.unwatch = RouterQuery.watch('*', ({
         page = 1,
         limit = this.table.pagination.limit,
@@ -352,10 +352,10 @@
       this.setDynamicBreadcrumbs()
       this.reload()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatch()
     },
-    beforeRouteUpdate (to, from, next) {
+    beforeRouteUpdate(to, from, next) {
       this.setDynamicBreadcrumbs()
       next()
     },
@@ -371,10 +371,10 @@
         'batchDeleteInst',
         'searchInstById'
       ]),
-      setDynamicBreadcrumbs () {
+      setDynamicBreadcrumbs() {
         this.$store.commit('setTitle', this.model.bk_obj_name)
       },
-      async reload () {
+      async reload() {
         try {
           this.setRencentlyData()
           this.resetData()
@@ -401,7 +401,7 @@
           // ignore
         }
       },
-      handleFilterValueChange () {
+      handleFilterValueChange() {
         RouterQuery.set({
           _t: Date.now(),
           page: 1,
@@ -409,7 +409,7 @@
           filter: this.filter.value
         })
       },
-      resetData () {
+      resetData() {
         this.table = {
           checked: [],
           header: [],
@@ -429,7 +429,7 @@
           }
         }
       },
-      getPropertyGroups () {
+      getPropertyGroups() {
         return this.searchGroup({
           objId: this.objId,
           params: {},
@@ -442,7 +442,7 @@
           return groups
         })
       },
-      getObjectUnique () {
+      getObjectUnique() {
         return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
           objId: this.objId,
           params: {}
@@ -451,7 +451,7 @@
           return data
         })
       },
-      setTableHeader () {
+      setTableHeader() {
         return new Promise((resolve, reject) => {
           const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
           const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
@@ -461,7 +461,7 @@
           this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
         })
       },
-      updateTableHeader (properties) {
+      updateTableHeader(properties) {
         this.table.header = properties.map((property) => {
           return {
             id: property.bk_property_id,
@@ -470,7 +470,7 @@
           }
         })
       },
-      handleValueClick (item, column) {
+      handleValueClick(item, column) {
         if (column.id !== 'bk_inst_id') {
           return false
         }
@@ -483,36 +483,36 @@
           history: true
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.table.sort = this.$tools.getSort(sort)
         RouterQuery.set({
           _t: Date.now()
         })
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         RouterQuery.set({
           limit: size,
           page: 1,
           _t: Date.now()
         })
       },
-      handlePageChange (page, withFilter = false) {
+      handlePageChange(page, withFilter = false) {
         RouterQuery.set({
           page: page,
           _t: Date.now()
         })
       },
-      handleSelectChange (selection) {
+      handleSelectChange(selection) {
         this.table.checked = selection.map(row => row.bk_inst_id)
       },
-      getInstList (config = { cancelPrevious: true }) {
+      getInstList(config = { cancelPrevious: true }) {
         return this.searchInst({
           objId: this.objId,
           params: this.getSearchParams(),
           config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
         })
       },
-      getTableData (withFilter) {
+      getTableData(withFilter) {
         this.getInstList({ cancelPrevious: true, globalPermission: false }).then((data) => {
           if (data.count && !data.info.length) {
             this.table.pagination.current -= 1
@@ -534,7 +534,7 @@
             }
           })
       },
-      getSearchParams () {
+      getSearchParams() {
         const params = {
           condition: {
             [this.objId]: []
@@ -589,17 +589,17 @@
         }
         return params
       },
-      async handleEdit (item) {
+      async handleEdit(item) {
         this.attribute.inst.edit = item
         this.attribute.type = 'update'
       },
-      handleCreate () {
+      handleCreate() {
         this.attribute.type = 'create'
         this.attribute.inst.edit = {}
         this.slider.show = true
         this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
       },
-      handleDelete (inst) {
+      handleDelete(inst) {
         this.$bkInfo({
           title: this.$t('确认要删除', { name: inst['bk_inst_name'] }),
           confirmFn: () => {
@@ -616,7 +616,7 @@
           }
         })
       },
-      handleSave (values, changedValues, originalValues, type) {
+      handleSave(values, changedValues, originalValues, type) {
         if (type === 'update') {
           this.updateInst({
             objId: this.objId,
@@ -645,17 +645,17 @@
           })
         }
       },
-      handleCancel () {
+      handleCancel() {
         if (this.attribute.type === 'create') {
           this.slider.show = false
         }
       },
-      handleMultipleEdit () {
+      handleMultipleEdit() {
         this.attribute.type = 'multiple'
         this.slider.title = this.$t('批量更新')
         this.slider.show = true
       },
-      handleMultipleSave (values) {
+      handleMultipleSave(values) {
         this.batchUpdateInst({
           objId: this.objId,
           params: {
@@ -678,10 +678,10 @@
           })
         })
       },
-      handleMultipleCancel () {
+      handleMultipleCancel() {
         this.slider.show = false
       },
-      handleMultipleDelete () {
+      handleMultipleDelete() {
         this.$bkInfo({
           title: this.$t('确定删除选中的实例'),
           confirmFn: () => {
@@ -689,7 +689,7 @@
           }
         })
       },
-      doBatchDeleteInst () {
+      doBatchDeleteInst() {
         this.batchDeleteInst({
           objId: this.objId,
           config: {
@@ -707,19 +707,19 @@
           })
         })
       },
-      handleApplyColumnsConfig (properties) {
+      handleApplyColumnsConfig(properties) {
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customConfigKey]: properties.map(property => property['bk_property_id'])
         })
         this.columnsConfig.show = false
       },
-      handleResetColumnsConfig () {
+      handleResetColumnsConfig() {
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customConfigKey]: []
         })
         this.columnsConfig.show = false
       },
-      routeToHistory () {
+      routeToHistory() {
         this.$routerActions.redirect({
           name: 'instanceHistory',
           params: {
@@ -728,7 +728,7 @@
           history: true
         })
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         if (this.tab.active === 'attribute') {
           const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
           if ($form.hasChange) {
@@ -750,7 +750,7 @@
         }
         return true
       },
-      handleExport () {
+      handleExport() {
         const data = new FormData()
         data.append('bk_inst_id', this.table.checked.join(','))
         const customFields = this.usercustom[this.customConfigKey]
@@ -763,7 +763,7 @@
           data
         })
       },
-      setRencentlyData () {
+      setRencentlyData() {
         const modelId = this.model.id
         this.$store.dispatch('userCustom/setRencentlyData', { id: modelId })
       }

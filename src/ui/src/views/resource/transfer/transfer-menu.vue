@@ -38,7 +38,7 @@
       [ModuleSelector.name]: ModuleSelector,
       [MoveToResourceConfirm.name]: MoveToResourceConfirm
     },
-    data () {
+    data() {
       return {
         isShow: false,
         dialog: {
@@ -55,22 +55,22 @@
       }
     },
     computed: {
-      disabled () {
+      disabled() {
         return !HostStore.isSelected
       }
     },
     methods: {
-      handleMenuToggle (isShow) {
+      handleMenuToggle(isShow) {
         this.isShow = isShow
       },
-      validateSameBiz () {
+      validateSameBiz() {
         if (!HostStore.isSameBiz) {
           this.$error(this.$t('仅支持对相同业务下的主机进行操作'))
           return false
         }
         return true
       },
-      transferToIdleModule () {
+      transferToIdleModule() {
         const valid = this.validateSameBiz()
         if (!valid) {
           return false
@@ -90,7 +90,7 @@
         this.dialog.component = ModuleSelector.name
         this.dialog.show = true
       },
-      transferToBizModule () {
+      transferToBizModule() {
         const valid = this.validateSameBiz()
         if (!valid) {
           return false
@@ -121,7 +121,7 @@
         this.dialog.component = ModuleSelector.name
         this.dialog.show = true
       },
-      transferToResourcePool () {
+      transferToResourcePool() {
         const isSameBiz = this.validateSameBiz()
         if (!isSameBiz) {
           return false
@@ -145,10 +145,10 @@
         this.dialog.component = MoveToResourceConfirm.name
         this.dialog.show = true
       },
-      handleDialogCancel () {
+      handleDialogCancel() {
         this.dialog.show = false
       },
-      handleDialogConfirm () {
+      handleDialogConfirm() {
         this.dialog.show = false
         if (this.dialog.component === ModuleSelector.name) {
           if (this.dialog.props.moduleType === 'idle') {
@@ -164,7 +164,7 @@
           this.moveHostToResource(...arguments)
         }
       },
-      async transferDirectly (modules) {
+      async transferDirectly(modules) {
         try {
           const bizId = HostStore.uniqueBusiness.bk_biz_id
           const internalModule = modules[0]
@@ -188,7 +188,7 @@
           console.error(e)
         }
       },
-      gotoTransferPage (modules) {
+      gotoTransferPage(modules) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_TRANSFER_HOST,
           params: {
@@ -204,7 +204,7 @@
         })
         HostStore.clear()
       },
-      async moveHostToResource (directoryId) {
+      async moveHostToResource(directoryId) {
         try {
           await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
             params: {

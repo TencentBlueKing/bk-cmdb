@@ -168,7 +168,7 @@
         default: false
       }
     },
-    data () {
+    data() {
       return {
         selectedStatus: false,
         selectIndex: -1,
@@ -219,10 +219,10 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-      placeholder () {
+      placeholder() {
         return this.isFullTextSearch ? this.$t('请输入关键字，点击或回车搜索') : this.$t('请输入IP开始搜索')
       },
-      params () {
+      params() {
         const keywords = this.keywords.length > 32 ? this.keywords.slice(0, 32) : this.keywords
         const notZhCn = keywords.replace(/\w\.?/g, '').length === 0
         const singleSpecial = /[!"#$%&'()\*,-\./:;<=>?@\[\\\]^_`{}\|~]{1}/
@@ -238,7 +238,7 @@
           filter: ['model']
         }
       },
-      searchParams () {
+      searchParams() {
         return {
           'page': {
             'start': this.pagination.start,
@@ -270,15 +270,15 @@
           }]
         }
       },
-      historyList () {
+      historyList() {
         return this.$store.state.fullTextSearch.searchHistory
       },
-      interfacePath () {
+      interfacePath() {
         return this.isFullTextSearch ? 'fullTextSearch/search' : 'hostSearch/searchHost'
       }
     },
     watch: {
-      '$route' (to, from) {
+      '$route'(to, from) {
         const queryLen = Object.keys(to.query).length
         if (to.path === '/index' && !queryLen) {
           this.$emit('search-status', 0)
@@ -288,7 +288,7 @@
           this.result.isShow = false
         }
       },
-      keywords (keywords) {
+      keywords(keywords) {
         if (this.selectedStatus) return
         if (this.query.trigger === 'input') {
           this.query.objId = ''
@@ -303,14 +303,14 @@
           this.handleHideLenovo()
         }
       },
-      showLenovo (flag) {
+      showLenovo(flag) {
         if (!flag) this.selectIndex = -1
       },
-      showHistory (flag) {
+      showHistory(flag) {
         if (!flag) this.selectIndex = -1
       }
     },
-    created () {
+    created() {
       this.$store.commit('fullTextSearch/getSearchHistory')
       const routerQuery = this.$route.query || {}
       if (routerQuery.show === 'true') {
@@ -321,13 +321,13 @@
       }
     },
     methods: {
-      handleFocus (status) {
+      handleFocus(status) {
         this.isFocus = status
       },
-      handleChangeTab (name) {
+      handleChangeTab(name) {
         this.activeName = name
       },
-      getShowModelName (source) {
+      getShowModelName(source) {
         let modelName = ''
         try {
           const model = this.getModelById(source['bk_obj_id'])
@@ -337,7 +337,7 @@
         }
         return modelName
       },
-      formatData (data) {
+      formatData(data) {
         const res = {
           aggregations: [],
           hits: [],
@@ -359,7 +359,7 @@
         }
         return res
       },
-      getFullTextSearch (wait = 600) {
+      getFullTextSearch(wait = 600) {
         let _resolve = null
         const _promise = new Promise((resolve, reject) => {
           _resolve = resolve
@@ -416,7 +416,7 @@
         }, wait)
         return _promise
       },
-      handleHideLenovo () {
+      handleHideLenovo() {
         this.showHistory = false
         this.showLenovo = false
         const timer = setTimeout(() => {
@@ -424,18 +424,18 @@
           clearTimeout(timer)
         }, 300)
       },
-      handleShowHistory () {
+      handleShowHistory() {
         if (!this.keywords) {
           this.$emit('focus', true)
         }
         this.isFocus = true
         this.showHistory = !this.keywords && this.historyList.length
       },
-      handlClearHistory () {
+      handlClearHistory() {
         this.$store.commit('fullTextSearch/clearSearchHistory')
         this.handleHideLenovo()
       },
-      resetIndex () {
+      resetIndex() {
         this.$routerActions.redirect({
           name: MENU_INDEX
         })
@@ -445,7 +445,7 @@
           clearTimeout(timer)
         })
       },
-      async handleShowResult () {
+      async handleShowResult() {
         if (!this.keywords) {
           this.resetIndex()
           return
@@ -477,13 +477,13 @@
           this.$refs.searchInput.$refs.input.focus()
         })
       },
-      handleHistorySearch (keyword) {
+      handleHistorySearch(keyword) {
         this.keywords = keyword
         this.$nextTick(() => {
           this.handleShowResult()
         })
       },
-      handleGoResource (host) {
+      handleGoResource(host) {
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST_DETAILS,
           params: {
@@ -492,7 +492,7 @@
           history: true
         })
       },
-      handleGoInstace (source) {
+      handleGoInstace(source) {
         const model = this.getModelById(source['bk_obj_id'])
         const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
         if (model['bk_classification_id'] === 'bk_biz_topo') {
@@ -517,7 +517,7 @@
           history: true
         })
       },
-      handleGoBusiness (source) {
+      handleGoBusiness(source) {
         const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS_DETAILS
         this.$routerActions.redirect({
           name: name,
@@ -528,7 +528,7 @@
           history: true
         })
       },
-      toggleClassify (index, objId) {
+      toggleClassify(index, objId) {
         if (index === this.currentClassify || this.searching) return
         this.query.trigger = 'click'
         this.currentClassify = index
@@ -538,18 +538,18 @@
         this.pagination.current = 1
         this.getFullTextSearch(0)
       },
-      handleLimitChange (limit) {
+      handleLimitChange(limit) {
         if (this.pagination.limit === limit) return
         this.pagination.limit = limit
         this.handlePageChange(1)
       },
-      handlePageChange (current) {
+      handlePageChange(current) {
         this.pagination.start = (current - 1) * this.pagination.limit
         this.pagination.current = current
         this.query.trigger = 'click'
         this.getFullTextSearch()
       },
-      handleInputSearch (value) {
+      handleInputSearch(value) {
         this.selectedStatus = false
         if (value.length === 32) {
           this.toggleTips && this.toggleTips.destroy()
@@ -568,13 +568,13 @@
           this.toggleTips.hide()
         }
       },
-      handleClear () {
+      handleClear() {
         this.$refs.searchInput.$refs.input.focus()
         this.$emit('focus', true)
         this.keywords = ''
         this.toggleTips && this.toggleTips.hide()
       },
-      handleSelectedKeywords (event) {
+      handleSelectedKeywords(event) {
         const showLenovo = this.showLenovo && this.lenovoList.length
         if (!showLenovo && !this.showHistory) return
         this.selectedStatus = true

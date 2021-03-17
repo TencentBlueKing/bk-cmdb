@@ -19,10 +19,10 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('input', value)
         }

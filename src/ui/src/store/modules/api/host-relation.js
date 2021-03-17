@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  addHostToResource ({ commit, state, dispatch }, { params, config }) {
+  addHostToResource({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/add', params, config)
   },
 
@@ -39,7 +39,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  transferHostModule ({ commit, state, dispatch }, { params, config }) {
+  transferHostModule({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/modules', params, config)
   },
 
@@ -51,7 +51,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  transferResourcehostToIdleModule ({ commit, state, dispatch }, { params, config }) {
+  transferResourcehostToIdleModule({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/modules/resource/idle', params, config)
   },
 
@@ -63,7 +63,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  transferHostToFaultModule ({ commit, state, dispatch }, { params, config }) {
+  transferHostToFaultModule({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/modules/fault', params, config)
   },
 
@@ -75,7 +75,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  transferHostToIdleModule ({ commit, state, dispatch }, { params, config }) {
+  transferHostToIdleModule({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/modules/idle', params, config)
   },
 
@@ -87,7 +87,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  transferHostToResourceModule ({ commit, state, dispatch }, { params, config }) {
+  transferHostToResourceModule({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/modules/resource', params, config)
   },
 
@@ -99,7 +99,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  transferHostToMutipleBizModule ({ commit, state, dispatch }, { params, config }) {
+  transferHostToMutipleBizModule({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/modules/biz/mutilple', params, config)
   }
 }

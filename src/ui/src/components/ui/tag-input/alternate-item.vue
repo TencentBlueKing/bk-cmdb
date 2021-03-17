@@ -30,19 +30,19 @@
     // eslint-disable-next-line
         props: ['tagInput', 'tag', 'keyword', 'index'],
     computed: {
-      disabled () {
+      disabled() {
         return this.tagInput.disabledData.includes(this.tag.value)
       }
     },
     methods: {
-      getItemContent () {
+      getItemContent() {
         let displayText = this.tag.text || this.tag.value
         if (this.keyword) {
           displayText = displayText.replace(new RegExp(this.keyword, 'ig'), `<span ${this.$options._scopeId}>$&</span>`)
         }
         return displayText
       },
-      getTitle () {
+      getTitle() {
         return this.tagInput.getDisplayText(this.tag)
       }
     }

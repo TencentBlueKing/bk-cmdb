@@ -89,7 +89,7 @@
       AccountSideslider,
       CmdbVendor
     },
-    data () {
+    data() {
       return {
         filter: '',
         list: [],
@@ -103,11 +103,11 @@
       }
     },
     watch: {
-      filter () {
+      filter() {
         this.scheduleSearch()
       }
     },
-    created () {
+    created() {
       this.unwatch = RouterQuery.watch('*', ({
         page,
         limit,
@@ -119,11 +119,11 @@
         this.getData()
       }, { immediate: true })
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatch && this.unwatch()
     },
     methods: {
-      handleCreate () {
+      handleCreate() {
         this.$refs.accountSideslider.show({
           type: 'form',
           title: this.$t('新建账户'),
@@ -132,31 +132,31 @@
           }
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         RouterQuery.set({
           _t: Date.now(),
           sort: this.$tools.getSort(sort, { prop: 'bk_account_id' })
         })
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         RouterQuery.set({
           _t: Date.now(),
           page: page
         })
       },
-      handleLimitChange (limit) {
+      handleLimitChange(limit) {
         RouterQuery.set({
           _t: Date.now(),
           page: 1,
           limit: limit
         })
       },
-      handleCellClick (row, column) {
+      handleCellClick(row, column) {
         if (column.property === 'bk_account_name') {
           this.handleView(row)
         }
       },
-      handleView (row) {
+      handleView(row) {
         this.$refs.accountSideslider.show({
           type: 'details',
           title: `${this.$t('账户详情')} 【${row.bk_account_name}】`,
@@ -165,7 +165,7 @@
           }
         })
       },
-      async handleDelete (row) {
+      async handleDelete(row) {
         const infoInstance = this.$bkInfo({
           title: this.$t('确认删除xx', { instance: row.bk_account_name }),
           closeIcon: false,
@@ -185,7 +185,7 @@
           }
         })
       },
-      async getData () {
+      async getData() {
         try {
           const params = {
             page: {
@@ -217,7 +217,7 @@
           this.pagination.count = 0
         }
       },
-      async getAccountStatus () {
+      async getAccountStatus() {
         try {
           const results = await this.$store.dispatch('cloud/account/getStatus', {
             params: {
@@ -247,7 +247,7 @@
           console.error(error)
         }
       },
-      getStatusText (status) {
+      getStatusText(status) {
         const textMap = {
           normal: this.$t('正常'),
           error: this.$t('异常'),
@@ -255,7 +255,7 @@
         }
         return textMap[status]
       },
-      linkResource () {
+      linkResource() {
         this.$routerActions.redirect({
           name: MENU_RESOURCE_CLOUD_RESOURCE,
           history: true

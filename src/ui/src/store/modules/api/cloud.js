@@ -2,19 +2,19 @@ import $http from '@/api'
 const cloudArea = {
   namespaced: true,
   actions: {
-    findMany ({ commit, state, dispatch }, { params, config }) {
+    findMany({ commit, state, dispatch }, { params, config }) {
       return $http.post('findmany/cloudarea', params, config)
     },
-    delete (context, { id, config }) {
+    delete(context, { id, config }) {
       return $http.delete(`delete/cloudarea/${id}`, config)
     },
-    batchCreate (context, { params, config }) {
+    batchCreate(context, { params, config }) {
       return $http.post('createmany/cloudarea', params, config)
     },
-    update (context, { id, params, config }) {
+    update(context, { id, params, config }) {
       return $http.put(`update/cloudarea/${id}`, params, config)
     },
-    getHostCount (context, { params, config }) {
+    getHostCount(context, { params, config }) {
       return $http.post('findmany/cloudarea/hostcount', params, config)
     }
   }
@@ -23,10 +23,10 @@ const cloudArea = {
 const cloudAccount = {
   namespaced: true,
   actions: {
-    findMany (context, { params, config }) {
+    findMany(context, { params, config }) {
       return $http.post('findmany/cloud/account', params, config)
     },
-    async findOne (context, { id, config }) {
+    async findOne(context, { id, config }) {
       return context.dispatch('findMany', {
         params: {
           condition: {
@@ -43,19 +43,19 @@ const cloudAccount = {
         return info[0]
       })
     },
-    verify (context, { params, config }) {
+    verify(context, { params, config }) {
       return $http.post('cloud/account/verify', params, config)
     },
-    create (context, { params, config }) {
+    create(context, { params, config }) {
       return $http.post('create/cloud/account', params, config)
     },
-    update (context, { id, params, config }) {
+    update(context, { id, params, config }) {
       return $http.put(`update/cloud/account/${id}`, params, config)
     },
-    delete (context, { id, config }) {
+    delete(context, { id, config }) {
       return $http.delete(`delete/cloud/account/${id}`, config)
     },
-    getStatus (context, { params, config }) {
+    getStatus(context, { params, config }) {
       return $http.post('findmany/cloud/account/validity', params, config)
     }
   }
@@ -64,13 +64,13 @@ const cloudAccount = {
 const cloudResource = {
   namespaced: true,
   actions: {
-    createTask (context, { params, config }) {
+    createTask(context, { params, config }) {
       return $http.post('create/cloud/sync/task', params, config)
     },
-    findTask (context, { params, config }) {
+    findTask(context, { params, config }) {
       return $http.post('findmany/cloud/sync/task', params, config)
     },
-    findOneTask (context, { id, config }) {
+    findOneTask(context, { id, config }) {
       return context.dispatch('findTask', {
         params: {
           condition: {
@@ -88,19 +88,19 @@ const cloudResource = {
         return info[0]
       })
     },
-    updateTask (context, { id, params, config }) {
+    updateTask(context, { id, params, config }) {
       return $http.put(`update/cloud/sync/task/${id}`, params, config)
     },
-    deleteTask (context, { id, config }) {
+    deleteTask(context, { id, config }) {
       return $http.delete(`delete/cloud/sync/task/${id}`, config)
     },
-    findRegion ({ state, commit }, { params, config }) {
+    findRegion({ state, commit }, { params, config }) {
       return $http.post('findmany/cloud/sync/region', params, config)
     },
-    findVPC (context, { id, params, config }) {
+    findVPC(context, { id, params, config }) {
       return $http.post(`findmany/cloud/account/vpc/${id}`, params, config)
     },
-    findHistory (context, { params, config }) {
+    findHistory(context, { params, config }) {
       return $http.post('findmany/cloud/sync/history', params, config)
     }
   }

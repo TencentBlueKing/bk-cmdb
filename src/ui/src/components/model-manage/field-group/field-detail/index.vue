@@ -160,7 +160,7 @@
         default: 0
       }
     },
-    data () {
+    data() {
       return {
         fieldTypeList: [{
           id: 'singlechar',
@@ -218,11 +218,11 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters(['supplierAccount', 'userName']),
       ...mapGetters('objectModel', ['activeModel']),
-      isGlobalView () {
+      isGlobalView() {
         const topRoute = this.$route.matched[0]
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
-      fieldType () {
+      fieldType() {
         const {
           bk_property_type: type
         } = this.fieldInfo
@@ -231,10 +231,10 @@
         }
         return type
       },
-      isComponentShow () {
+      isComponentShow() {
         return ['singlechar', 'longchar', 'enum', 'int', 'float', 'list', 'bool'].indexOf(this.fieldInfo['bk_property_type']) !== -1
       },
-      changedValues () {
+      changedValues() {
         const changedValues = {}
         for (const propertyId in this.fieldInfo) {
           if (JSON.stringify(this.fieldInfo[propertyId]) !== JSON.stringify(this.originalFieldInfo[propertyId])) {
@@ -243,7 +243,7 @@
         }
         return changedValues
       },
-      isSystemCreate () {
+      isSystemCreate() {
         if (this.isEditField) {
           return this.field.creator === 'cc_system'
         }
@@ -251,7 +251,7 @@
       }
     },
     watch: {
-      'fieldInfo.bk_property_type' (type) {
+      'fieldInfo.bk_property_type'(type) {
         if (!this.isEditField) {
           switch (type) {
             case 'int':
@@ -267,16 +267,16 @@
         }
       }
     },
-    created () {
+    created() {
       this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
       if (this.isEditField) {
         this.initData()
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.sliderMain, this.handleScrollbar)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.sliderMain, this.handleScrollbar)
     },
     methods: {
@@ -286,17 +286,17 @@
         'updateObjectAttribute',
         'updateBizObjectAttribute'
       ]),
-      handleScrollbar () {
+      handleScrollbar() {
         const el = this.$refs.sliderMain
         this.scrollbar = el.scrollHeight !== el.offsetHeight
       },
-      initData () {
+      initData() {
         for (const key in this.fieldInfo) {
           this.fieldInfo[key] = this.$tools.clone(this.field[key])
         }
         this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
       },
-      async validateValue () {
+      async validateValue() {
         const validate = [
           this.$validator.validateAll()
         ]
@@ -306,10 +306,10 @@
         const results = await Promise.all(validate)
         return results.every(result => result)
       },
-      isNullOrUndefinedOrEmpty (value) {
+      isNullOrUndefinedOrEmpty(value) {
         return [null, '', undefined].includes(value)
       },
-      async saveField () {
+      async saveField() {
         if (!await this.validateValue()) {
           return
         }
@@ -365,7 +365,7 @@
         }
         this.$emit('save', fieldId)
       },
-      getPreFieldUpdateParams () {
+      getPreFieldUpdateParams() {
         const allowKey = ['option', 'unit', 'placeholder']
         const params = {}
         allowKey.forEach((key) => {
@@ -373,7 +373,7 @@
         })
         return params
       },
-      cancel () {
+      cancel() {
         this.$emit('cancel')
       }
     }

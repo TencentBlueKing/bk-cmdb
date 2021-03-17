@@ -18,33 +18,33 @@
       }
     },
     inject: ['form'],
-    data () {
+    data() {
       return {
         IPList: []
       }
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       },
-      requestId () {
+      requestId() {
         return `getInstanceIpByHost_${this.form.hostId}`
       }
     },
-    created () {
+    created() {
       this.getBindIPList()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.$http.cancel(this.requestId)
     },
     methods: {
-      async getBindIPList () {
+      async getBindIPList() {
         try {
           const { options } = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
             hostId: this.form.hostId,

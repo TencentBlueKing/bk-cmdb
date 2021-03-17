@@ -116,7 +116,7 @@
       TaskRegionSelector,
       Loading
     },
-    data () {
+    data() {
       return {
         filter: '',
         list: [],
@@ -131,22 +131,22 @@
       }
     },
     watch: {
-      filter () {
+      filter() {
         this.scheduleSearch()
       }
     },
-    created () {
+    created() {
       this.getData()
     },
     methods: {
-      handleEditName (row) {
+      handleEditName(row) {
         this.rowInEdit = row
         this.$nextTick(() => {
           const input = this.$el.querySelector(`#input-${row.bk_cloud_id}`).querySelector('input')
           input.focus()
         })
       },
-      async handleUpdateName (row, value) {
+      async handleUpdateName(row, value) {
         try {
           value = value.trim()
           this.rowInEdit = null
@@ -166,10 +166,10 @@
           console.error(error)
         }
       },
-      isRemovable (row) {
+      isRemovable(row) {
         return row.host_count === 0 && !this.isLimited(row) && row.sync_task_ids.length === 0
       },
-      getRemoveTips (row) {
+      getRemoveTips(row) {
         if (this.isLimited(row)) {
           return this.$t('系统限定，不能删除')
         }
@@ -181,23 +181,23 @@
         }
         return null
       },
-      isLimited (row) {
+      isLimited(row) {
         return row.bk_cloud_id === 0
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         this.sort = this.$tools.getSort(sort, { prop: 'bk_cloud_id' })
         this.getData()
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.pagination.current = page
         this.getData()
       },
-      handleLimitChange (limit) {
+      handleLimitChange(limit) {
         this.pagination.limit = limit
         this.pagination.current = 1
         this.getData()
       },
-      handleDelete (row) {
+      handleDelete(row) {
         const infoInstance = this.$bkInfo({
           title: this.$t('确认删除xx', { instance: row.bk_cloud_name }),
           closeIcon: false,
@@ -217,7 +217,7 @@
           }
         })
       },
-      async getData () {
+      async getData() {
         try {
           const params = {
             page: {
@@ -252,7 +252,7 @@
           this.pagination.count = 0
         }
       },
-      async getHostCount () {
+      async getHostCount() {
         try {
           this.$http.cancelRequest(this.request.count.splice(0))
           const reduceIds = this.list.reduce((accumulator, current) => {
@@ -287,7 +287,7 @@
           console.error(error)
         }
       },
-      getVpcInfo (row) {
+      getVpcInfo(row) {
         const id = row.bk_vpc_id
         const name = row.bk_vpc_name
         if (name && id !== name) {
@@ -295,13 +295,13 @@
         }
         return id
       },
-      linkResource () {
+      linkResource() {
         this.$routerActions.redirect({
           name: MENU_RESOURCE_CLOUD_RESOURCE,
           history: true
         })
       },
-      linkAgent () {
+      linkAgent() {
         const topWindow = window.top
         const isPaasConsole = topWindow !== window
         const urlSuffix = '#/cloud-manager'

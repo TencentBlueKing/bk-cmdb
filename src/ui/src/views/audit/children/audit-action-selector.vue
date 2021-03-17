@@ -24,36 +24,36 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         dictionary: []
       }
     },
     computed: {
-      actions () {
+      actions() {
         const target = this.dictionary.find(target => target.id === this.target)
         return target ? target.operations : []
       },
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (values) {
+        set(values) {
           this.$emit('input', values)
           this.$emit('change', values)
         }
       }
     },
     watch: {
-      target () {
+      target() {
         this.localValue = []
       }
     },
-    created () {
+    created() {
       this.getAuditDictionary()
     },
     methods: {
-      async getAuditDictionary () {
+      async getAuditDictionary() {
         try {
           this.dictionary = await this.$store.dispatch('audit/getDictionary', {
             fromCache: true

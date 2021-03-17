@@ -89,7 +89,7 @@
       expanded: Boolean,
       instance: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
@@ -107,13 +107,13 @@
       },
       sourceProcesses: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
       templates: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
@@ -135,13 +135,13 @@
       },
       editing: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
       bizId: Number
     },
-    data () {
+    data() {
       return {
         localExpanded: this.expanded,
         processList: this.$tools.clone(this.sourceProcesses),
@@ -154,7 +154,7 @@
       }
     },
     computed: {
-      header () {
+      header() {
         const header = []
         processTableHeader.forEach((id) => {
           const property = this.processProperties.find(property => property.bk_property_id === id)
@@ -169,12 +169,12 @@
         return header
       }
     },
-    created () {
+    created() {
       this.getProcessProperties()
       this.getProcessPropertyGroups()
     },
     methods: {
-      async getProcessProperties () {
+      async getProcessProperties() {
         try {
           const action = 'objectModelProperty/searchObjectAttribute'
           this.processProperties = await this.$store.dispatch(action, {
@@ -191,7 +191,7 @@
           console.error(e)
         }
       },
-      async getProcessPropertyGroups () {
+      async getProcessPropertyGroups() {
         try {
           const action = 'objectModelFieldGroup/searchGroup'
           this.processPropertyGroups = await this.$store.dispatch(action, {
@@ -206,10 +206,10 @@
           console.error(e)
         }
       },
-      handleDelete () {
+      handleDelete() {
         this.$emit('delete-instance', this.index)
       },
-      handleAddProcess () {
+      handleAddProcess() {
         Form.show({
           type: 'create',
           title: this.$t('添加进程'),
@@ -220,7 +220,7 @@
           }
         })
       },
-      handleEditProcess (rowIndex) {
+      handleEditProcess(rowIndex) {
         Form.show({
           type: 'update',
           title: this.$t('编辑进程'),
@@ -235,19 +235,19 @@
         })
         this.$emit('edit-process', rowIndex)
       },
-      handleDeleteProcess (rowIndex) {
+      handleDeleteProcess(rowIndex) {
         this.processList.splice(rowIndex, 1)
       },
-      handleEditName () {
+      handleEditName() {
         this.$emit('edit-name')
         this.$nextTick(() => {
           this.$refs.nameEditForm.focus()
         })
       },
-      handleConfirmEditName (name) {
+      handleConfirmEditName(name) {
         this.$emit('confirm-edit-name', name)
       },
-      handleCancelEditName () {
+      handleCancelEditName() {
         this.$emit('cancel-edit-name')
       }
     }

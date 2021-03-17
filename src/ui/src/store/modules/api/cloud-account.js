@@ -1,10 +1,10 @@
 import $http from '@/api'
 
 const actions = {
-  search (context, { params, config }) {
+  search(context, { params, config }) {
     return $http.post('findmany/cloud/account', params, config)
   },
-  async searchById (context, { id, config }) {
+  async searchById(context, { id, config }) {
     try {
       const { info } = await context.dispatch('search', {
         params: {
@@ -24,16 +24,16 @@ const actions = {
       return Promise.reject(e)
     }
   },
-  verify (context, { params, config }) {
+  verify(context, { params, config }) {
     return $http.post('cloud/account/verify', params, config)
   },
-  create (context, { params, config }) {
+  create(context, { params, config }) {
     return $http.post('create/cloud/account', params, config)
   },
-  update (context, { id, params, config }) {
+  update(context, { id, params, config }) {
     return $http.put(`update/cloud/account/${id}`, params, config)
   },
-  delete (context, { id, config }) {
+  delete(context, { id, config }) {
     return $http.delete(`delete/cloud/account/${id}`, config)
   }
 }

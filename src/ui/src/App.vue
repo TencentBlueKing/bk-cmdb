@@ -34,7 +34,7 @@
       thePermissionModal,
       theLoginModal
     },
-    data () {
+    data() {
       const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
       return {
         showBrowserTips,
@@ -45,17 +45,17 @@
     computed: {
       ...mapGetters(['site', 'globalLoading', 'mainFullScreen']),
       ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
-      isIndex () {
+      isIndex() {
         return this.$route.name === MENU_INDEX
       },
-      hideBreadcrumbs () {
+      hideBreadcrumbs() {
         return !(this.$route.meta.layout || {}).breadcrumbs
       },
-      topView () {
+      topView() {
         const topRoute = this.$route.matched[0]
         return (topRoute && topRoute.meta.view) || 'default'
       },
-      loginUrl () {
+      loginUrl() {
         const siteLoginUrl = this.site.login || ''
         const loginBaseUrl = siteLoginUrl.substring(0, siteLoginUrl.indexOf('?'))
         if (loginBaseUrl) {
@@ -65,7 +65,7 @@
       }
     },
     watch: {
-      site (site) {
+      site(site) {
         let language = (this.$i18n.locale || 'cn').toLocaleLowerCase()
         if (['zh-cn', 'zh_cn', 'zh', 'cn'].includes(language)) {
           language = 'cn'
@@ -73,18 +73,18 @@
         document.title = site.title.i18n[language] || site.title.value
       }
     },
-    mounted () {
+    mounted() {
       // addResizeListener(this.$refs.mainScroller, execMainResizeListener)
       addResizeListener(this.$el, this.calculateAppHeight)
       window.permissionModal = this.$refs.permissionModal
       window.loginModal = this.$refs.loginModal
     },
-    beforeDestroy () {
+    beforeDestroy() {
       // removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
       removeResizeListener(this.$el, this.calculateAppHeight)
     },
     methods: {
-      calculateAppHeight () {
+      calculateAppHeight() {
         this.$store.commit('setAppHeight', this.$el.offsetHeight)
       }
     }

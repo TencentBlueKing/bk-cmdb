@@ -66,7 +66,7 @@
     MENU_RESOURCE_BUSINESS_COLLECTION
   } from '@/dictionary/menu-symbol'
   export default {
-    data () {
+    data() {
       return {
         routerLinkHeight: 42,
         timer: null,
@@ -78,20 +78,20 @@
       ...mapGetters(['navStick', 'navFold', 'admin']),
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectModelClassify', ['classifications', 'models']),
-      isBusinessNav () {
+      isBusinessNav() {
         const matched = this.$route.matched
         if (!matched.length) {
           return false
         }
         return matched[0].name === MENU_BUSINESS
       },
-      unfold () {
+      unfold() {
         return this.navStick || !this.navFold
       },
-      owner () {
+      owner() {
         return this.$route.matched[0].name
       },
-      collection () {
+      collection() {
         if (this.owner === MENU_RESOURCE) {
           const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
             ? true
@@ -112,7 +112,7 @@
         }
         return []
       },
-      collectionMenus () {
+      collectionMenus() {
         return this.collection.map((id) => {
           const model = this.models.find(model => model.bk_obj_id === id)
           return {
@@ -123,7 +123,7 @@
           }
         })
       },
-      currentMenus () {
+      currentMenus() {
         const target = MENU_DICTIONARY.find(menu => menu.id === this.owner)
         const menus = [...((target && target.menu) || [])]
         if (this.owner === MENU_RESOURCE) {
@@ -131,7 +131,7 @@
         }
         return menus
       },
-      relativeActiveName () {
+      relativeActiveName() {
         const relative = this.$tools.getValue(this.$route, 'meta.menu.relative')
         if (relative && !this.hasExactActive) {
           const names = Array.isArray(relative) ? relative : [relative]
@@ -159,14 +159,14 @@
     watch: {
       $route: {
         immediate: true,
-        handler () {
+        handler() {
           this.setDefaultExpand()
           this.checkExactActive()
         }
       }
     },
     methods: {
-      setDefaultExpand () {
+      setDefaultExpand() {
         const expandedId = this.$route.meta.menu.parent
         if (expandedId) {
           this.$set(this.state, expandedId, { expanded: true })
@@ -182,7 +182,7 @@
           }
         }
       },
-      checkExactActive () {
+      checkExactActive() {
         if (!this.$refs.menuLink) {
           return
         }
@@ -190,10 +190,10 @@
           this.hasExactActive = this.$refs.menuLink.some(link => link.$el.classList.contains('active'))
         })
       },
-      isRelativeActive (menu) {
+      isRelativeActive(menu) {
         return menu.route.name === this.relativeActiveName
       },
-      getCollectionRoute (model) {
+      getCollectionRoute(model) {
         const map = {
           host: MENU_RESOURCE_HOST,
           biz: MENU_RESOURCE_BUSINESS
@@ -210,7 +210,7 @@
           }
         }
       },
-      getMenuLink (menu) {
+      getMenuLink(menu) {
         if (this.isBusinessNav) {
           return {
             name: menu.route.name,
@@ -221,25 +221,25 @@
         }
         return menu.route
       },
-      handleMouseEnter () {
+      handleMouseEnter() {
         if (this.timer) {
           clearTimeout(this.timer)
         }
         this.$store.commit('setNavStatus', { fold: false })
       },
-      handleMouseLeave () {
+      handleMouseLeave() {
         this.timer = setTimeout(() => {
           this.$store.commit('setNavStatus', { fold: true })
         }, 300)
       },
       // 切换导航展开固定
-      toggleNavStick () {
+      toggleNavStick() {
         this.$store.commit('setNavStatus', {
           fold: !this.navFold,
           stick: !this.navStick
         })
       },
-      handleToggleBusiness (id, oldValue) {
+      handleToggleBusiness(id, oldValue) {
         if (!oldValue || id === oldValue) {
           return false
         }

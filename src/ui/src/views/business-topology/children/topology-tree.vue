@@ -115,7 +115,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         isBlueKing: false,
         filter: RouterQuery.get('keyword', ''),
@@ -147,11 +147,11 @@
       ...mapGetters('businessHost', ['topologyModels', 'propertyMap'])
     },
     watch: {
-      filter (value) {
+      filter(value) {
         this.handleFilter()
         RouterQuery.set('keyword', value)
       },
-      active (value) {
+      active(value) {
         const map = {
           hostList: 'host_count',
           serviceInstance: 'service_instance_count'
@@ -160,7 +160,7 @@
           this.nodeCountType = map[value]
         }
       },
-      isBlueKing (flag) {
+      isBlueKing(flag) {
         if (flag) {
           this.getBlueKingEditStatus()
           clearInterval(this.timer)
@@ -168,21 +168,21 @@
         }
       }
     },
-    created () {
+    created() {
       Bus.$on('refresh-count', this.refreshCount)
       this.initTopology()
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$el, this.handleResize)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.destroyWatcher()
       Bus.$off('refresh-count', this.refreshCount)
       clearInterval(this.timer)
       removeResizeListener(this.$el, this.handleResize)
     },
     methods: {
-      async initTopology () {
+      async initTopology() {
         try {
           const [topology, internal] = await Promise.all([
             this.getInstanceTopology(),
@@ -215,7 +215,7 @@
           console.error(e)
         }
       },
-      createWatcher () {
+      createWatcher() {
         this.nodeUnwatch = RouterQuery.watch('node', this.setDefaultState, { immediate: true })
         this.filterUnwatch = RouterQuery.watch('keyword', (value) => {
           this.filter = value
@@ -224,11 +224,11 @@
           this.$refs.tree.filter(this.filter)
         }, 300)
       },
-      destroyWatcher () {
+      destroyWatcher() {
         this.nodeUnwatch && this.nodeUnwatch()
         this.filterUnwatch && this.filterUnwatch()
       },
-      setDefaultState () {
+      setDefaultState() {
         const defaultNode = this.getDefaultNode()
         if (defaultNode) {
           const tree = this.$refs.tree
@@ -242,7 +242,7 @@
           })
         }
       },
-      getDefaultNode () {
+      getDefaultNode() {
         // 选中指定的节点
         const queryNodeId = RouterQuery.get('node', '')
         if (queryNodeId) {
@@ -263,7 +263,7 @@
         const [firstNode] = this.$refs.tree.nodes
         return firstNode || null
       },
-      getInstanceTopology () {
+      getInstanceTopology() {
         return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.bizId,
           config: {
@@ -271,7 +271,7 @@
           }
         })
       },
-      getInternalTopology () {
+      getInternalTopology() {
         return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
           bizId: this.bizId,
           config: {
@@ -279,10 +279,10 @@
           }
         })
       },
-      getNodeId (data) {
+      getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
-      getInternalNodeClass (node, data) {
+      getInternalNodeClass(node, data) {
         const clazz = []
         clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
         if (node.selected) {
@@ -290,14 +290,14 @@
         }
         return clazz
       },
-      getNodeCount (data) {
+      getNodeCount(data) {
         const count = data[this.nodeCountType]
         if (typeof count === 'number') {
           return count
         }
         return 0
       },
-      handleSelectChange (node) {
+      handleSelectChange(node) {
         this.$store.commit('businessHost/setSelectedNode', node)
         Bus.$emit('toggle-host-filter', false)
         const query = {
@@ -308,12 +308,12 @@
         RouterQuery.set(query)
         this.initialized && FilterStore.setActiveCollection(null)
       },
-      showCreate (node, data) {
+      showCreate(node, data) {
         const isModule = data.bk_obj_id === 'module'
         const isIdleSet = data.is_idle_set
         return !isModule && !isIdleSet
       },
-      async getBlueKingEditStatus () {
+      async getBlueKingEditStatus() {
         try {
           this.editable = await this.$store.dispatch('getBlueKingEditStatus', {
             config: {
@@ -325,7 +325,7 @@
           this.editable = false
         }
       },
-      getSetNodeTips (node) {
+      getSetNodeTips(node) {
         const tips = document.createElement('div')
         const span = document.createElement('span')
         span.innerText = this.$t('需在集群模板中新建')
@@ -347,7 +347,7 @@
         tips.appendChild(link)
         return tips
       },
-      handleSetNodeTipsToggle (tips) {
+      handleSetNodeTipsToggle(tips) {
         const element = tips.reference.parentElement
         if (tips.state.isVisible) {
           element.classList.remove('hovering')
@@ -356,7 +356,7 @@
         }
         return true
       },
-      async showCreateDialog (node) {
+      async showCreateDialog(node) {
         const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
         const nextModelId = nodeModel.bk_next_obj
         this.createInfo.nextModelId = nextModelId
@@ -386,16 +386,16 @@
           this.createInfo.properties = properties
         }
       },
-      handleAfterCancelCreateNode () {
+      handleAfterCancelCreateNode() {
         this.createInfo.visible = false
         this.createInfo.properties = []
         this.createInfo.parentNode = null
         this.createInfo.nextModelId = null
       },
-      handleCancelCreateNode () {
+      handleCancelCreateNode() {
         this.createInfo.show = false
       },
-      async handleCreateNode (value) {
+      async handleCreateNode(value) {
         try {
           const parentNode = this.createInfo.parentNode
           const formData = {
@@ -427,7 +427,7 @@
           console.error(e)
         }
       },
-      async handleCreateSetNode (value) {
+      async handleCreateSetNode(value) {
         try {
           const parentNode = this.createInfo.parentNode
           const nextModel = this.topologyModels.find(model => model.bk_obj_id === 'set')
@@ -468,7 +468,7 @@
           console.error(e)
         }
       },
-      async addModulesInSetTemplate (parentNodeData, id) {
+      async addModulesInSetTemplate(parentNodeData, id) {
         const modules = await this.$store.dispatch('objectModule/searchModule', {
           bizId: this.bizId,
           setId: id,
@@ -494,7 +494,7 @@
           this.$refs.tree.addNode(nodeData, parentNodeId, 0)
         })
       },
-      async createSet (value) {
+      async createSet(value) {
         const data = await this.$store.dispatch('objectSet/createset', {
           bizId: this.bizId,
           params: {
@@ -508,7 +508,7 @@
         })
         return data || []
       },
-      async createModule (value) {
+      async createModule(value) {
         const data = await this.$store.dispatch('objectModule/createModule', {
           bizId: this.bizId,
           setId: this.createInfo.parentNode.data.bk_inst_id,
@@ -523,7 +523,7 @@
           bk_inst_name: data.bk_module_name
         }
       },
-      async createCommonInstance (value) {
+      async createCommonInstance(value) {
         const data = await this.$store.dispatch('objectCommonInst/createInst', {
           objId: this.createInfo.nextModelId,
           params: value
@@ -533,10 +533,10 @@
           bk_inst_name: data.bk_inst_name
         }
       },
-      isTemplate (node) {
+      isTemplate(node) {
         return node.data.service_template_id || node.data.set_template_id
       },
-      refreshCount ({ type, hosts, target }) {
+      refreshCount({ type, hosts, target }) {
         hosts.forEach((data) => {
           data.module.forEach((module) => {
             if (!target || target.data.bk_inst_id !== module.bk_module_id) {
@@ -557,7 +557,7 @@
           }
         }
       },
-      handleResize () {
+      handleResize() {
         this.$refs.tree.resize()
       }
     }

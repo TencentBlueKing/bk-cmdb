@@ -42,7 +42,7 @@
       },
       popoverOptions: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
@@ -52,17 +52,17 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId', 'authorizedBusiness']),
       localSelected: {
-        get () {
+        get() {
           return this.bizId
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('select', value, this.bizId)
         }
       }
     },
     methods: {
-      async handleApplyPermission () {
+      async handleApplyPermission() {
         try {
           const permission = translateAuth({
             type: this.$OPERATION.R_BIZ_RESOURCE,
@@ -74,7 +74,7 @@
           console.error(e)
         }
       },
-      handleApplyCreate () {}
+      handleApplyCreate() {}
     }
   }
 </script>

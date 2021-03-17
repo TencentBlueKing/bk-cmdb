@@ -37,7 +37,7 @@
       },
       ispre: Boolean
     },
-    data () {
+    data() {
       return {
         editableMap: [
           'singlechar',
@@ -72,24 +72,24 @@
       }
     },
     computed: {
-      isEditableShow () {
+      isEditableShow() {
         return this.editableMap.indexOf(this.type) !== -1
       },
-      isRequiredShow () {
+      isRequiredShow() {
         return this.isrequiredMap.indexOf(this.type) !== -1
       }
     },
     watch: {
-      editable (editable) {
+      editable(editable) {
         this.localValue.editable = editable
       },
-      isrequired (isrequired) {
+      isrequired(isrequired) {
         this.localValue.isrequired = isrequired
       },
-      'localValue.editable' (editable) {
+      'localValue.editable'(editable) {
         this.$emit('update:editable', editable)
       },
-      'localValue.isrequired' (isrequired) {
+      'localValue.isrequired'(isrequired) {
         if (!isrequired && this.isOnlyShow) {
           this.localValue.isonly = false
         }

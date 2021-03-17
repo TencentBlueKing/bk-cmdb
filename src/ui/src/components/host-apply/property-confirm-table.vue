@@ -103,7 +103,7 @@
         default: true
       }
     },
-    data () {
+    data() {
       return {
         table: {
           list: [],
@@ -137,25 +137,25 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('hostApply', ['configPropertyList']),
       ...mapState('hostApply', ['propertyList']),
-      conflictResolveCache () {
+      conflictResolveCache() {
         const key = this.currentRow.bk_host_id
         return this.conflictResolveResult[key] || []
       }
     },
     watch: {
-      list (data) {
+      list(data) {
         this.setTableList()
       },
-      total (value) {
+      total(value) {
         this.table.pagination.count = value
       }
     },
-    created () {
+    created() {
       this.getHostPropertyList()
       this.setTableList()
     },
     methods: {
-      async getHostPropertyList () {
+      async getHostPropertyList() {
         try {
           const data = await this.$store.dispatch('hostApply/getProperties', {
             params: { bk_biz_id: this.bizId },
@@ -169,11 +169,11 @@
           console.error(e)
         }
       },
-      setTableList () {
+      setTableList() {
         const { start, limit } = this.$tools.getPageParams(this.table.pagination)
         this.table.list = this.list.slice(start, start + limit)
       },
-      getChangeValue (row) {
+      getChangeValue(row) {
         const { conflicts, update_fields: updateFields, unresolved_conflict_count: conflictCount } = row
 
         const resultConflicts = conflicts.map((item) => {
@@ -199,13 +199,13 @@
                     </div>
                 )
       },
-      getPropertyGroups () {
+      getPropertyGroups() {
         return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
           objId: 'host',
           params: { bk_biz_id: this.bizId }
         })
       },
-      renderTableHeader (h, data, tips, options = {}) {
+      renderTableHeader(h, data, tips, options = {}) {
         const directive = {
           content: tips,
           placement: options.placement || 'top-end'
@@ -215,16 +215,16 @@
         }
         return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.table.pagination.current = page
         this.setTableList()
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.table.pagination.limit = size
         this.table.pagination.current = 1
         this.setTableList()
       },
-      async handleShowDetails (row) {
+      async handleShowDetails(row) {
         this.currentRow = row
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
         this.slider.content = 'detail'
@@ -248,13 +248,13 @@
           this.slider.isShow = false
         }
       },
-      handleShowConflict (row) {
+      handleShowConflict(row) {
         this.currentRow = row
         this.slider.title = `${this.$t('手动修改')}【${row.expect_host.bk_host_innerip}】`
         this.slider.content = 'conflict'
         this.slider.isShow = true
       },
-      handleConflictSave (data) {
+      handleConflictSave(data) {
         // 将处理结果保存
         this.conflictResolveResult[this.currentRow.bk_host_id] = data
 
@@ -265,7 +265,7 @@
         })
         this.currentRow.unresolved_conflict_count = 0
       },
-      handleSliderCancel () {
+      handleSliderCancel() {
         if (this.slider.content === 'conflict') {
           if (this.$refs.conflictResolve) {
             this.$refs.conflictResolve.restoreConflictPropertyList()

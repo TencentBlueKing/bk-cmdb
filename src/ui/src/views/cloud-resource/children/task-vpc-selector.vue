@@ -112,7 +112,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         currentRegion: '',
         regionVPC: {},
@@ -124,7 +124,7 @@
       }
     },
     computed: {
-      selectState () {
+      selectState() {
         const state = {}
         const vpcList = this.regionVPC[this.currentRegion]
         const selected = vpcList.filter(vpc => this.selectionMap.hasOwnProperty(vpc.bk_vpc_id))
@@ -132,10 +132,10 @@
         state.all = selected.length === vpcList.length
         return state
       },
-      hasVpc () {
+      hasVpc() {
         return this.currentRegion && (this.regionVPC[this.currentRegion] || []).length
       },
-      selectionMap () {
+      selectionMap() {
         const map = {}
         this.selection.forEach((vpc) => {
           map[vpc.bk_vpc_id] = vpc
@@ -144,12 +144,12 @@
       }
     },
     watch: {
-      currentRegion () {
+      currentRegion() {
         this.getVpcList()
       }
     },
     methods: {
-      async getVpcList () {
+      async getVpcList() {
         try {
           if (this.regionVPC.hasOwnProperty(this.currentRegion)) {
             return this.regionVPC[this.currentRegion]
@@ -169,7 +169,7 @@
           console.error(e)
         }
       },
-      handleToggleSelectAll (checked) {
+      handleToggleSelectAll(checked) {
         const vpcList = this.regionVPC[this.currentRegion]
         if (checked) {
           const appendVpc = vpcList.filter(vpc => !this.selectionMap.hasOwnProperty(vpc.bk_vpc_id))
@@ -178,7 +178,7 @@
           this.selection = this.selection.filter(exist => !vpcList.some(vpc => exist.bk_vpc_id === vpc.bk_vpc_id))
         }
       },
-      handleVpcChange (vpc, checked) {
+      handleVpcChange(vpc, checked) {
         if (checked) {
           this.selection.unshift(vpc)
         } else {
@@ -186,20 +186,20 @@
           index > -1 && this.selection.splice(index, 1)
         }
       },
-      handleRemoveSelection (row) {
+      handleRemoveSelection(row) {
         const index = this.selection.findIndex(vpc => vpc.bk_vpc_id === row.bk_vpc_id)
         index > -1 && this.selection.splice(index, 1)
       },
-      handleClear () {
+      handleClear() {
         this.selection = []
       },
-      handleConfirm () {
+      handleConfirm() {
         this.$emit('change', [...this.selection])
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       },
-      getVpcName (vpc) {
+      getVpcName(vpc) {
         const id = vpc.bk_vpc_id
         const name = vpc.bk_vpc_name
         if (id === name) {
@@ -207,7 +207,7 @@
         }
         return `${id}(${name})`
       },
-      getRowClass ({ row }) {
+      getRowClass({ row }) {
         if (row.destroyed) {
           return 'is-destroyed'
         }

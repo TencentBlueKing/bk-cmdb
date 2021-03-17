@@ -29,7 +29,7 @@
   import { Base64 } from 'js-base64'
   import { updateValidator } from '@/setup/validate'
   export default {
-    data () {
+    data() {
       return {
         configValue: '',
         disabled: false,
@@ -43,11 +43,11 @@
     computed: {
       ...mapGetters(['config'])
     },
-    created () {
+    created() {
       this.configValue = this.getJSONString(this.config)
     },
     methods: {
-      handleInput (value) {
+      handleInput(value) {
         try {
           JSON.parse(value)
           this.hasError = false
@@ -55,13 +55,13 @@
           this.hasError = true
         }
       },
-      handleBlur (value) {
+      handleBlur(value) {
         if (!this.hasError) {
           const config = JSON.parse(value)
           this.configValue = this.getJSONString(config)
         }
       },
-      async handleSave () {
+      async handleSave() {
         this.loading = true
         try {
           const configData = JSON.parse(this.configValue)
@@ -83,10 +83,10 @@
           this.loading = false
         }
       },
-      getJSONString (data) {
+      getJSONString(data) {
         return JSON.stringify(data, null, 4)
       },
-      handleReset () {
+      handleReset() {
         this.configValue = this.getJSONString(this.config)
         this.hasError = false
       }

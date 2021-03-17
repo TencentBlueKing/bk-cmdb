@@ -29,7 +29,7 @@
     components: {
       fieldGroup
     },
-    data () {
+    data() {
       return {
         active: RouterQuery.get('tab', 'set'),
         featureTips: true,
@@ -39,14 +39,14 @@
     watch: {
       active: {
         immediate: true,
-        handler (active) {
+        handler(active) {
           RouterQuery.set({
             tab: active
           })
         }
       }
     },
-    async created () {
+    async created() {
       try {
         const data = await this.getMainLine()
         this.mainLine = data.filter(model => ['host', 'set', 'module'].includes(model.bk_obj_id))
@@ -55,14 +55,14 @@
       }
     },
     methods: {
-      getMainLine () {
+      getMainLine() {
         return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
           config: {
             requestId: 'getMainLine'
           }
         })
       },
-      handleTabChange (modelId) {
+      handleTabChange(modelId) {
         const activeModel = this.mainLine.find(model => model.bk_obj_id === modelId) || {}
         this.$store.commit('objectModel/setActiveModel', activeModel)
       }

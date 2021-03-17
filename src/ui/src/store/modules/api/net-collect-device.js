@@ -26,7 +26,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  createDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  createDevice({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/device/action/create', params, config)
   },
   /**
@@ -37,7 +37,7 @@ const actions = {
      * @param {Number} deviceId 设备id
      * @return {promises} promises 对象
      */
-  updateDevice ({ commit, state, dispatch, rootGetters }, { deviceId, params, config }) {
+  updateDevice({ commit, state, dispatch, rootGetters }, { deviceId, params, config }) {
     return $http.post(`collector/netcollect/device/${deviceId}/action/update`, params, config)
   },
   /**
@@ -47,7 +47,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  searchDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchDevice({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('collector/netcollect/device/action/search', params, config)
   },
   /**
@@ -58,7 +58,7 @@ const actions = {
      * @param {Object} params 设备id
      * @return {promises} promises 对象
      */
-  deleteDevice ({ commit, state, dispatch, rootGetters }, { config }) {
+  deleteDevice({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.delete('collector/netcollect/device/action/delete', config)
   },
   /**
@@ -69,7 +69,7 @@ const actions = {
      * @param {Number} deviceId 设备id
      * @return {promises} promises 对象
      */
-  importNetDevice ({ commit, state, dispatch, rootGetters }, { config }) {
+  importNetDevice({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.post(`${window.API_HOST}collector/netdevice/import`, config)
   },
   /**
@@ -79,7 +79,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  exportNetDevice ({ commit, state, dispatch, rootGetters }, { config }) {
+  exportNetDevice({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.post(`${window.API_HOST}collector/netdevice/export`, config)
   },
   /**
@@ -89,7 +89,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  getNetDeviceImportTemplate ({ commit, state, dispatch, rootGetters }, { config }) {
+  getNetDeviceImportTemplate({ commit, state, dispatch, rootGetters }, { config }) {
     return $http.get(`${window.API_HOST}collector/netcollect/importtemplate/netdevice`, config)
   }
 }

@@ -71,12 +71,12 @@
         default: () => ([])
       }
     },
-    provide () {
+    provide() {
       return {
         form: this
       }
     },
-    data () {
+    data() {
       return {
         isShow: false,
         internalType: this.type,
@@ -93,27 +93,27 @@
     },
     computed: {
       ...mapGetters(['supplierAccount']),
-      bindInfoProperty () {
+      bindInfoProperty() {
         return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
       },
       bindInfo: {
-        get () {
+        get() {
           return this.formValuesReflect.bind_info || []
         },
-        set (values) {
+        set(values) {
           this.formValuesReflect.bind_info = values
         }
       },
-      visibleProperties () {
+      visibleProperties() {
         return this.properties.filter(property => !this.invisibleProperties.includes(property.bk_property_id))
       }
     },
     watch: {
-      internalType (type) {
+      internalType(type) {
         this.updateFormWatcher()
       }
     },
-    async created () {
+    async created() {
       try {
         const request = [
           this.getProperties(),
@@ -129,21 +129,21 @@
         this.pending = false
       }
     },
-    mounted () {
+    mounted() {
       this.updateFormWatcher()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.teardownWatcher()
     },
     methods: {
-      show () {
+      show() {
         this.isShow = true
       },
-      teardownWatcher () {
+      teardownWatcher() {
         this.unwatchName && this.unwatchName()
         this.unwatchFormValues && this.unwatchFormValues()
       },
-      updateFormWatcher () {
+      updateFormWatcher() {
         if (this.internalType === 'view') {
           this.teardownWatcher()
         } else {
@@ -169,7 +169,7 @@
           })
         }
       },
-      async getProperties () {
+      async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -186,7 +186,7 @@
           this.properties = []
         }
       },
-      async getPropertyGroups () {
+      async getPropertyGroups() {
         try {
           this.propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
             objId: 'process',
@@ -201,7 +201,7 @@
           this.propertyGroups = []
         }
       },
-      async getProcessTemplate () {
+      async getProcessTemplate() {
         try {
           this.processTemplate = await this.$store.dispatch('processTemplate/getProcessTemplate', {
             params: {
@@ -223,10 +223,10 @@
           console.error(error)
         }
       },
-      handleHidden () {
+      handleHidden() {
         this.$emit('close')
       },
-      async validateCustomComponent () {
+      async validateCustomComponent() {
         const customComponents = []
         const { bindInfo } = this.$refs
         if (bindInfo) {
@@ -240,7 +240,7 @@
         const results = await Promise.all(validatePromise)
         return results.every(result => result)
       },
-      async handleSaveProcess (values, changedValues, instance) {
+      async handleSaveProcess(values, changedValues, instance) {
         try {
           this.pending = true
           await this.submitHandler(values, changedValues, instance)
@@ -251,7 +251,7 @@
           this.pending = false
         }
       },
-      async handleCancel () {
+      async handleCancel() {
         const userConfirm = await this.beforeClose()
         if (!userConfirm) {
           return false
@@ -263,7 +263,7 @@
           this.isShow = false
         }
       },
-      beforeClose () {
+      beforeClose() {
         if (this.internalType === 'view') return Promise.resolve(true)
         const formChanged = !!Object.values(this.$refs.form.changedValues).length
         if (formChanged) {
@@ -281,7 +281,7 @@
         }
         return Promise.resolve(true)
       },
-      renderAppend (h, { property, type }) {
+      renderAppend(h, { property, type }) {
         if (this.bindedProperties.includes(property.bk_property_id)) {
           return RenderAppend(h, {
             serviceTemplateId: this.serviceTemplateId,
@@ -291,7 +291,7 @@
         }
         return ''
       },
-      handleChangeInternalType () {
+      handleChangeInternalType() {
         this.internalType = 'update'
         this.internalTitle = this.$t('编辑进程')
       }

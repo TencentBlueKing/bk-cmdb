@@ -26,7 +26,7 @@
       },
       list: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
@@ -40,7 +40,7 @@
       }
     },
     methods: {
-      handleClick (item) {
+      handleClick(item) {
         this.$emit('on-copy', item)
       }
     }

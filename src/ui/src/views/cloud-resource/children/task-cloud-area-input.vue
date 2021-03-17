@@ -39,7 +39,7 @@
       mode: {
         type: String,
         default: 'create',
-        validator (val) {
+        validator(val) {
           return ['create', 'read'].includes(val)
         }
       },
@@ -48,29 +48,29 @@
         default: 'input'
       }
     },
-    data () {
+    data() {
       return {
         list: []
       }
     },
     computed: {
-      readonly () {
+      readonly() {
         return this.id !== -1
       },
       localValue: {
-        get () {
+        get() {
           const area = this.list.find(area => area.bk_cloud_id === this.id)
           return area ? area.bk_cloud_name : this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
         }
       },
-      hasTips () {
+      hasTips() {
         return this.error || this.readonly
       }
     },
-    async created () {
+    async created() {
       Bus.$on('refresh-cloud-area', this.refresh)
       try {
         const { info } = await this.getList()
@@ -79,15 +79,15 @@
         console.error(e)
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('refresh-cloud-area', this.refresh)
     },
     methods: {
-      refresh () {
+      refresh() {
         this.$http.cancelCache(symbols.get('cloudArea'))
         this.$nextTick(this.getList)
       },
-      getList () {
+      getList() {
         return this.$store.dispatch('cloud/area/findMany', {
           params: {
             page: {}
@@ -98,7 +98,7 @@
           }
         })
       },
-      validate () {
+      validate() {
         if (this.mode === 'read') {
           return true
         }

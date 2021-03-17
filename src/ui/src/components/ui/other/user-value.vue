@@ -20,14 +20,14 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         api: window.ESB.userManage
       }
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           if (this.value) {
             return this.value.split(',')
           }

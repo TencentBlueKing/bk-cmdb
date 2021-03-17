@@ -22,12 +22,12 @@
   import { MENU_RESOURCE_BUSINESS } from '@/dictionary/menu-symbol'
   export default {
     computed: {
-      bizId () {
+      bizId() {
         return this.$route.params.bizId
       }
     },
     methods: {
-      async handleApplyPermission () {
+      async handleApplyPermission() {
         try {
           const permission = translateAuth({
             type: this.$OPERATION.R_BIZ_RESOURCE,
@@ -44,7 +44,7 @@
           console.error(e)
         }
       },
-      handleCreate () {
+      handleCreate() {
         this.$routerActions.redirect({ name: MENU_RESOURCE_BUSINESS })
       }
     }

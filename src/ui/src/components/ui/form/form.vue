@@ -92,7 +92,7 @@
     props: {
       inst: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
@@ -102,7 +102,7 @@
       },
       type: {
         default: 'create',
-        validator (val) {
+        validator(val) {
           return ['create', 'update'].includes(val)
         }
       },
@@ -126,7 +126,7 @@
       },
       customValidator: Function
     },
-    data () {
+    data() {
       return {
         values: {},
         refrenceValues: {},
@@ -134,7 +134,7 @@
       }
     },
     computed: {
-      changedValues () {
+      changedValues() {
         const changedValues = {}
         for (const propertyId in this.values) {
           if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
@@ -143,60 +143,60 @@
         }
         return changedValues
       },
-      hasChange () {
+      hasChange() {
         return !!Object.keys(this.changedValues).length
       },
-      groupedProperties () {
+      groupedProperties() {
         return this.$groupedProperties.map((properties) => {
           return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
         })
       }
     },
     watch: {
-      inst (inst) {
+      inst(inst) {
         this.initValues()
       },
-      properties () {
+      properties() {
         this.initValues()
       }
     },
-    created () {
+    created() {
       this.initValues()
     },
-    mounted () {
+    mounted() {
       RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
     },
     methods: {
-      checkScrollbar () {
+      checkScrollbar() {
         const $layout = this.$el
         this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
       },
-      initValues () {
+      initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
         this.refrenceValues = this.$tools.clone(this.values)
       },
-      checkGroupAvailable (properties) {
+      checkGroupAvailable(properties) {
         const availabelProperties = properties.filter((property) => {
           return this.checkEditable(property)
         })
         return !!availabelProperties.length
       },
-      checkEditable (property) {
+      checkEditable(property) {
         if (this.type === 'create') {
           return !property['bk_isapi']
         }
         return property.editable && !property['bk_isapi'] && !this.uneditableProperties.includes(property.bk_property_id)
       },
-      checkDisabled (property) {
+      checkDisabled(property) {
         if (this.type === 'create') {
           return false
         }
         return !property.editable || property.isreadonly || this.disabledProperties.includes(property.bk_property_id)
       },
-      isRequired (property) {
+      isRequired(property) {
         return property.isrequired
         // 后台无对应逻辑，前端屏蔽唯一校验配置中为空必须校验的字段设置为必填的逻辑
         // if (property.isrequired) {
@@ -208,18 +208,18 @@
         // }
         // return false
       },
-      htmlEncode (placeholder) {
+      htmlEncode(placeholder) {
         let temp = document.createElement('div')
         temp.innerHTML = placeholder
         const output = temp.innerText
         temp = null
         return output
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      getValidateRules (property) {
+      getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)
         if (this.isRequired(property)) {
           rules.required = true
@@ -231,7 +231,7 @@
 
         return rules
       },
-      async handleSave () {
+      async handleSave() {
         const validatePromise = [this.$validator.validateAll()]
         if (typeof this.customValidator === 'function') {
           validatePromise.push(this.customValidator())
@@ -250,7 +250,7 @@
           this.uncollapseGroup()
         }
       },
-      uncollapseGroup () {
+      uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const compareKey = item.scope || item.field
           const property = this.properties.find(property => property['bk_property_id'] === compareKey)
@@ -258,7 +258,7 @@
           this.groupState[group] = false
         })
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('on-cancel')
       }
     }

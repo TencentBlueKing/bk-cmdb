@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  getCountedCharts ({ commit, state, dispatch }, { params, config }) {
+  getCountedCharts({ commit, state, dispatch }, { params, config }) {
     return $http.get('findmany/operation/chart', config)
   },
 
@@ -39,7 +39,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  getCountedChartsData ({ commit, state, dispatch }, { params, config }) {
+  getCountedChartsData({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/operation/chart/data', params, config)
   },
 
@@ -51,7 +51,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  getStaticDimeObj ({ commit, state, dispatch }, { params, config }) {
+  getStaticDimeObj({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/objectattr', params, config)
   },
 
@@ -63,7 +63,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  getStaticObj ({ commit, state, dispatch }, { params, config }) {
+  getStaticObj({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/object', params, config)
   },
 
@@ -75,7 +75,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  newStatisticalCharts ({ commit, state, dispatch }, { params, config }) {
+  newStatisticalCharts({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/operation/chart', params, config)
   },
 
@@ -87,7 +87,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateStatisticalCharts ({ commit, state, dispatch }, { params, config }) {
+  updateStatisticalCharts({ commit, state, dispatch }, { params, config }) {
     return $http.post('update/operation/chart', params, config)
   },
 
@@ -99,7 +99,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  deleteOperationChart ({ commit, state, dispatch }, { id, config }) {
+  deleteOperationChart({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/operation/chart/${id}`, config)
   },
 
@@ -111,7 +111,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateChartPosition ({ commit, state, dispatch }, { params, config }) {
+  updateChartPosition({ commit, state, dispatch }, { params, config }) {
     return $http.post('/update/operation/chart/position', params, config)
   }
 }

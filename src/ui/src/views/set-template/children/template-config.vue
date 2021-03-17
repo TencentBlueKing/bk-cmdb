@@ -100,7 +100,7 @@
     components: {
       cmdbSetTemplateTree
     },
-    data () {
+    data() {
       return {
         templateInfo: null,
         templateName: '',
@@ -114,19 +114,19 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      mode () {
+      mode() {
         return this.insideMode || this.$route.params.mode
       },
-      isApplied () {
+      isApplied() {
         return this.templateInfo && this.templateInfo.set_instance_count > 0
       },
-      isViewMode () {
+      isViewMode() {
         return this.mode === 'view'
       },
-      templateId () {
+      templateId() {
         return Number(this.$route.params.templateId) || null
       },
-      hasChange () {
+      hasChange() {
         if (this.mode !== 'edit') {
           return true
         }
@@ -136,16 +136,16 @@
     watch: {
       '$route.query': {
         immediate: true,
-        handler (query) {
+        handler(query) {
           if (query.edit) {
             this.handleEdit()
           }
         }
       },
-      mode (mode) {
+      mode(mode) {
         this.errors.clear()
       },
-      services (services) {
+      services(services) {
         if (!this.isViewMode) {
           this.$nextTick(() => {
             this.$validator.validate('service')
@@ -153,19 +153,19 @@
         }
       }
     },
-    created () {
+    created() {
       this.setBreadcrumbs()
       if (['edit', 'view'].includes(this.mode)) {
         this.getSetTemplateInfo()
       }
     },
     methods: {
-      setBreadcrumbs () {
+      setBreadcrumbs() {
         if (this.mode !== 'create') {
           this.$store.commit('setTitle', this.templateName)
         }
       },
-      async getSetTemplateInfo () {
+      async getSetTemplateInfo() {
         try {
           const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
             bizId: this.bizId,
@@ -182,10 +182,10 @@
           console.error(e)
         }
       },
-      handleEdit () {
+      handleEdit() {
         this.insideMode = 'edit'
       },
-      async handleDelete () {
+      async handleDelete() {
         const instance = this.$bkInfo({
           title: this.$t('确认删除'),
           subTitle: this.$t('确认删除xx集群模板', { name: this.originalTemplateName }),
@@ -210,7 +210,7 @@
           }
         })
       },
-      async handleConfirm () {
+      async handleConfirm() {
         try {
           const validateResult = await this.$validator.validateAll()
           if (!validateResult) {
@@ -227,7 +227,7 @@
           console.error(e)
         }
       },
-      createSetTemplate () {
+      createSetTemplate() {
         const services = this.$refs.templateTree.services
         const bizId = this.$store.getters['objectBiz/bizId']
         return this.$store.dispatch('setTemplate/createSetTemplate', {
@@ -242,7 +242,7 @@
           }
         })
       },
-      alertCreateInfo () {
+      alertCreateInfo() {
         this.$bkInfo({
           type: 'success',
           width: 480,
@@ -258,7 +258,7 @@
           }
         })
       },
-      updateSetTemplate () {
+      updateSetTemplate() {
         const services = this.$refs.templateTree.services
         const bizId = this.$store.getters['objectBiz/bizId']
         return this.$store.dispatch('setTemplate/updateSetTemplate', {
@@ -274,7 +274,7 @@
           }
         })
       },
-      handleCancel () {
+      handleCancel() {
         if (this.insideMode) {
           this.insideMode = null
           this.$refs.templateTree.recoveryService()
@@ -289,13 +289,13 @@
           }
         }
       },
-      handleServiceChange (value) {
+      handleServiceChange(value) {
         this.serviceChange = value
       },
-      handleServiceSelected (services) {
+      handleServiceSelected(services) {
         this.services = services
       },
-      handleClose () {
+      handleClose() {
         this.showUpdateInfo = false
         this.insideMode = null
         this.$routerActions.redirect({
@@ -307,10 +307,10 @@
           history: false
         })
       },
-      handleToCreateInstance () {
+      handleToCreateInstance() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
       },
-      handleToSyncInstance () {
+      handleToSyncInstance() {
         this.showUpdateInfo = false
         this.insideMode = null
         this.$routerActions.redirect({

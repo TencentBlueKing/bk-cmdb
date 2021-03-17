@@ -87,7 +87,7 @@
       },
       canEdit: Boolean
     },
-    data () {
+    data() {
       return {
         fieldTypeMap: {
           'singlechar': this.$t('短字符'),
@@ -106,14 +106,14 @@
         scrollbar: false
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.fieldList, this.handleScrollbar)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.fieldList, this.handleScrollbar)
     },
     methods: {
-      getEnumValue () {
+      getEnumValue() {
         const value = this.field.option
         const type = this.field.bk_property_type
         if (Array.isArray(value)) {
@@ -131,13 +131,13 @@
         }
         return '--'
       },
-      handleEdit () {
+      handleEdit() {
         this.$emit('on-edit')
       },
-      handleDelete () {
+      handleDelete() {
         this.$emit('on-delete')
       },
-      handleScrollbar () {
+      handleScrollbar() {
         const el = this.$refs.fieldList
         this.scrollbar = el.scrollHeight !== el.offsetHeight
       }

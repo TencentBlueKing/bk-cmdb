@@ -4,7 +4,7 @@ const preloadConfig = {
   cancelWhenRouteChange: false
 }
 
-export function getClassifications (app) {
+export function getClassifications(app) {
   return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
     params: {},
     config: {
@@ -14,7 +14,7 @@ export function getClassifications (app) {
   })
 }
 
-export function getUserCustom (app) {
+export function getUserCustom(app) {
   return app.$store.dispatch('userCustom/searchUsercustom', {
     config: {
       ...preloadConfig,
@@ -24,7 +24,7 @@ export function getUserCustom (app) {
   })
 }
 
-export function getGlobalUsercustom (app) {
+export function getGlobalUsercustom(app) {
   return app.$store.dispatch('userCustom/getGlobalUsercustom', {
     config: {
       ...preloadConfig,
@@ -36,7 +36,7 @@ export function getGlobalUsercustom (app) {
   })
 }
 
-export async function getConfig (app) {
+export async function getConfig(app) {
   return app.$store.dispatch('getConfig', {
     config: {
       ...preloadConfig,

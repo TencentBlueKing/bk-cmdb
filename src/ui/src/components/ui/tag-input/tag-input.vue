@@ -103,7 +103,7 @@
       },
       defaultAlternate: {
         type: [String, Array, Function],
-        validator (value) {
+        validator(value) {
           return value === 'history' || typeof value === 'function' || value instanceof Array
         }
       },
@@ -154,7 +154,7 @@
       },
       pasteFormatter: {
         type: Function,
-        default (value) {
+        default(value) {
           return value.trim()
         }
       },
@@ -164,13 +164,13 @@
       },
       panelWidth: {
         type: [Number, String],
-        validator (value) {
+        validator(value) {
           const pixel = parseInt(value)
           return pixel >= 190
         }
       }
     },
-    data () {
+    data() {
       return {
         inputHeight: 32,
         singleRowHeight: 30,
@@ -192,7 +192,7 @@
       }
     },
     computed: {
-      containerStyle () {
+      containerStyle() {
         const style = {}
         if (this.isFocus) {
           style.maxHeight = this.fixedHeight ? this.focusRowLimit * this.singleRowHeight + 'px' : 'auto'
@@ -202,15 +202,15 @@
         return style
       },
       localValue: {
-        get () {
+        get() {
           return [...this.value]
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       },
-      localValueData () {
+      localValueData() {
         return this.localValue.map((value) => {
           const tag = this.currentData.find(tag => tag.value === value)
           return tag || { value }
@@ -218,7 +218,7 @@
       }
     },
     watch: {
-      inputValue (value) {
+      inputValue(value) {
         if (value.length) {
           this.highlightIndex = -1
           this.updateScroller()
@@ -227,7 +227,7 @@
           this.scheduleSearch()
         }
       },
-      isFocus (isFocus) {
+      isFocus(isFocus) {
         if (isFocus) {
           this.search()
           this.$emit('focus')
@@ -237,22 +237,22 @@
         }
         this.calcOverflow()
       },
-      localValue (localValue) {
+      localValue(localValue) {
         this.calcOverflow()
         this.getCurrentData()
       },
-      highlightIndex () {
+      highlightIndex() {
         this.updateScroller()
       }
     },
-    created () {
+    created() {
       this.getCurrentData()
     },
-    mounted () {
+    mounted() {
       this.calcOverflow()
     },
     methods: {
-      async getCurrentData () {
+      async getCurrentData() {
         try {
           if (this.exactSearchMethod) {
             this.currentData = await this.exactSearchMethod(this.localValue)
@@ -264,7 +264,7 @@
         }
       },
       // 搜索，滚动加载时next可设置为页码，无更多设置为false
-      async search (value, next) {
+      async search(value, next) {
         if (this.createOnly) return
         try {
           const popoverInstance = this.getPopoverInstance()
@@ -316,7 +316,7 @@
           this.flattenedData = []
         }
       },
-      async getDefaultAlternateData (keyword) {
+      async getDefaultAlternateData(keyword) {
         let data = []
         const isMatch = (tag, keyword) => tag.value.toLowerCase().indexOf(keyword.toString().toLowerCase()) > -1
         if (this.defaultAlternate === 'history') {
@@ -346,7 +346,7 @@
         return Promise.resolve({ results: data, next: false })
       },
       // 过滤已被选择的
-      filterData (data) {
+      filterData(data) {
         const matched = []
         const flattened = []
         data.forEach((tag) => {
@@ -378,7 +378,7 @@
         }
       },
       // 默认模糊搜索方法，可通过fuzzySearchMethod自定义
-      async defaultFuzzySearchMethod (value, next) {
+      async defaultFuzzySearchMethod(value, next) {
         if (!this.fuzzySearchMethod) {
           console.warn('No fuzzy search method has been set')
           return Promise.resolve({ next: false, results: [] })
@@ -386,7 +386,7 @@
         return this.fuzzySearchMethod(value, next)
       },
       // 已选择的标签tootips内容，可通过tagTipsContent自定义
-      async getTagTips (instance, value) {
+      async getTagTips(instance, value) {
         try {
           const contentElement = document.createElement('span')
           if (typeof this.tagTipsContent === 'function') {
@@ -403,7 +403,7 @@
         }
       },
       // 默认精确搜索方法，通过此方法获取单个信息
-      defaultExactSearchMethod (value) {
+      defaultExactSearchMethod(value) {
         if (!this.exactSearchMethod) {
           console.warn('No exact search method has been set')
           return Promise.resolve({})
@@ -411,7 +411,7 @@
         return this.exactSearchMethod(value)
       },
       // 创建/获取备选面板popover实例
-      getPopoverInstance () {
+      getPopoverInstance() {
         if (!this.popoverInstance) {
           this.popoverInstance = Tippy(this.$refs.input, {
             theme: 'light tag-input-popover',
@@ -433,7 +433,7 @@
         return this.popoverInstance
       },
       // 创建/获取备选面板内容
-      getAlternateContent () {
+      getAlternateContent() {
         if (!this.alternateContent) {
           this.alternateContent = new Vue(AlternateList)
           this.alternateContent.tagInput = this
@@ -442,7 +442,7 @@
         return this.alternateContent
       },
       // 获取最近输入
-      getHistoryData () {
+      getHistoryData() {
         try {
           if (this.historyKey) {
             const data = JSON.parse(window.localStorage.getItem(this.historyKey)) || []
@@ -455,7 +455,7 @@
         }
       },
       // 更新最近输入
-      updateHistoryData (tag) {
+      updateHistoryData(tag) {
         if (this.historyKey) {
           try {
             const histories = this.getHistoryData()
@@ -472,18 +472,18 @@
         }
       },
       // 更新面板定位
-      updatePopover () {
+      updatePopover() {
         this.popoverInstance && this.popoverInstance.popperInstance && this.popoverInstance.popperInstance.update()
       },
-      showPopover () {
+      showPopover() {
         this.updatePopover()
         this.popoverInstance && this.popoverInstance.show(0)
       },
-      hidePopover () {
+      hidePopover() {
         this.popoverInstance && this.popoverInstance.hide(0)
       },
       // 面板隐藏后重置匹配上的数据
-      handlePopoverHide () {
+      handlePopoverHide() {
         this.$nextTick(() => {
           this.matchedData = []
           this.flattenedData = []
@@ -491,12 +491,12 @@
         })
       },
       // 显示的文本
-      getDisplayText (tag) {
+      getDisplayText(tag) {
         const isObject = typeof tag === 'object'
         return isObject ? tag.text || tag.value : tag
       },
       // 元素整体点击, 获得焦点，初始化输入相关内容
-      focus () {
+      focus() {
         if (this.disabled) {
           return false
         }
@@ -511,19 +511,19 @@
         }
       },
       // 选择面板显示时，禁止已选容器的滚动，防止面板滚动后错位
-      handleContainerScroll (event) {
+      handleContainerScroll(event) {
         this.popoverInstance && this.popoverInstance.state.isVisible && event.preventDefault()
       },
       // 已选择click事件拆分为mousedown,mouseup, 因为click事件晚于input的blur事件，但mousedown早于blur
       // shouldUpdate = false, 阻止input blur后续处理
-      handleSelectedMousedown (event, index) {
+      handleSelectedMousedown(event, index) {
         if (this.disabled) {
           return false
         }
         this.shouldUpdate = false
       },
       // 根据点击的位置判断在点击的前方还是后方进行输入
-      handleSelectedMouseup (event, index) {
+      handleSelectedMouseup(event, index) {
         if (this.disabled) {
           return false
         }
@@ -541,7 +541,7 @@
         }
       },
       // 已选的鼠标划过事件，如果配置了显示tips，则在一定延时后显示
-      handleSelectedMouseenter (event, { value }) {
+      handleSelectedMouseenter(event, { value }) {
         if (!this.displayTagTips) return
         const target = event.currentTarget
         if (target._tag_tips_) {
@@ -563,17 +563,17 @@
         }, this.tagTipsDelay)
       },
       // 在tips延时执行前离开，放弃执行
-      handleSelectedMouseleave (event, { value }) {
+      handleSelectedMouseleave(event, { value }) {
         if (this.displayTagTips) {
           this.selectedTipsTimer[value] && clearTimeout(this.selectedTipsTimer[value])
         }
       },
       // 删除单个mousedown,阻止input blur
-      handleRemoveMouseDown () {
+      handleRemoveMouseDown() {
         this.shouldUpdate = false
       },
       // 删除单个
-      handleRemoveSelected ({ value }, index) {
+      handleRemoveSelected({ value }, index) {
         if (this.disabled) {
           return false
         }
@@ -589,11 +589,11 @@
         this.$emit('remove-selected', value)
       },
       // 选择列表mousedown, 阻止input blur
-      handleTagMousedown (tag, disabled) {
+      handleTagMousedown(tag, disabled) {
         this.shouldUpdate = false
       },
       // 选择列表，区分单选多选
-      handleTagMouseup (tag, disabled) {
+      handleTagMouseup(tag, disabled) {
         if (disabled || this.disabled) {
           this.moveInput(0)
           return false
@@ -617,16 +617,16 @@
         this.$emit('select-tag', tag)
       },
       // 选择列表分组 mousedown, 阻止input blur
-      handleGroupMousedown () {
+      handleGroupMousedown() {
         this.shouldUpdate = false
       },
       // 点击选择列表分组会导致input 失去焦点，mouseup后重新获得焦点
-      handleGroupMouseup () {
+      handleGroupMouseup() {
         this.moveInput(0)
       },
       // input 通过contenteditable模拟，已输入情况下，再次点击同一位置，光标会在文字最前方
       // 此方法多选时，将光标移至文字末尾，单选时，选中文本
-      setSelection (option = {}) {
+      setSelection(option = {}) {
         if (option.reset) {
           this.reset()
         }
@@ -641,7 +641,7 @@
         })
       },
       // 集中分配input 的键盘事件
-      handleKeydown (event) {
+      handleKeydown(event) {
         if (this.loading) {
           event.preventDefault()
           event.stopPropagation()
@@ -665,7 +665,7 @@
       // 通过键盘enter进行确认
       // 1.如果有备选高亮，则直接选中该项
       // 2.如果配置允许创建，允许输入不在备选列表中的，则进行相关值的设定
-      handleEnter (event) {
+      handleEnter(event) {
         event.preventDefault()
         this.shouldUpdate = false
         if (this.highlightIndex !== -1) {
@@ -705,7 +705,7 @@
         this.hidePopover()
       },
       // 删除事件，无文本输入时删除前一个
-      handleBackspace (event) {
+      handleBackspace(event) {
         if (this.inputValue || !this.localValue.length || !this.inputIndex) {
           return true
         }
@@ -719,7 +719,7 @@
       // 箭头事件
       // 1.左右事件处理为无文本时移动光标在已选中的位置
       // 2.上下事件处理备选高亮状态及备选列表的滚动位置
-      handleArrow (event) {
+      handleArrow(event) {
         const arrow = event.key
         if (['ArrowLeft', 'ArrowRight'].includes(arrow)) {
           if (this.inputValue || !this.localValue.length) {
@@ -747,7 +747,7 @@
         }
       },
       // 处理input输入
-      handleInput (event) {
+      handleInput(event) {
         if (this.loading) {
           event.preventDefault()
           event.stopPropagation()
@@ -757,7 +757,7 @@
       },
       // 处理input blur事件，在其他元素的mousedown事件中控制shouldUpdate，达到阻止后续逻辑的能力
       // blur时，如果允许输入不存在备选列表中的值，则以当前值填充，否则匹配备选列表
-      handleBlur () {
+      handleBlur() {
         if (!this.shouldUpdate) {
           return true
         }
@@ -765,7 +765,7 @@
         this.hidePopover()
       },
       // 获取匹配当前输入文本的数据
-      getMatchedTag (nameToMatch) {
+      getMatchedTag(nameToMatch) {
         const tag = this.flattenedData.find((tag) => {
           const value = tag.value
           const text = tag.text
@@ -776,7 +776,7 @@
         return tag
       },
       // 粘贴事件，逗号或者分号分隔
-      async handlePaste (event) {
+      async handlePaste(event) {
         this.hidePopover()
         if (this.loading) {
           event.preventDefault()
@@ -806,11 +806,11 @@
           this.loading = false
         }
       },
-      getSelectedDOM () {
+      getSelectedDOM() {
         return Array.from(this.$refs.container.querySelectorAll('.tag-input-selected'))
       },
       // 移动光标位置
-      moveInput (step, option = {}) {
+      moveInput(step, option = {}) {
         this.inputIndex = this.inputIndex + step
         this.$nextTick(() => {
           const selected = this.getSelectedDOM()
@@ -821,7 +821,7 @@
         })
       },
       // 设置备选高亮时，当前备选项不在视图内时，进行滚动，到底/顶后循环滚动
-      updateScroller () {
+      updateScroller() {
         if (!this.alternateContent) {
           return false
         }
@@ -850,7 +850,7 @@
         })
       },
       // 计算第二行第一个的index，在其前方插入overflow tag
-      calcOverflow () {
+      calcOverflow() {
         this.removeOverflowTagNode()
         if (!this._isMounted || !this.fixedHeight || this.isFocus || this.localValue.length < 2) {
           return false
@@ -872,11 +872,11 @@
           this.insertOverflowTag()
         }, 0)
       },
-      clearOverflowTimer () {
+      clearOverflowTimer() {
         this.overflowTimer && clearTimeout(this.overflowTimer)
       },
       // 根据计算的overflow index，插入tag并进行校正
-      insertOverflowTag () {
+      insertOverflowTag() {
         if (!this.overflowTagIndex) return
         const overflowTagNode = this.getOverflowTagNode()
         const selectedTag = this.getSelectedDOM()
@@ -898,7 +898,7 @@
         }, 0)
       },
       // 创建/获取溢出数字节点
-      getOverflowTagNode () {
+      getOverflowTagNode() {
         if (this.overflowTagNode) {
           return this.overflowTagNode
         }
@@ -909,18 +909,18 @@
         return overflowTagNode
       },
       // 从容器中移除溢出数字节点
-      removeOverflowTagNode () {
+      removeOverflowTagNode() {
         if (this.overflowTagNode && this.overflowTagNode.parentNode === this.$refs.container) {
           this.$refs.container.removeChild(this.overflowTagNode)
         }
       },
       // 一键清空
-      handleFastClear () {
+      handleFastClear() {
         this.localValue = []
         this.$emit('clear')
       },
       // 重置选择器输入状态
-      reset () {
+      reset() {
         this.shouldUpdate = true
         this.highlightIndex = -1
         this.inputValue = ''

@@ -1,16 +1,16 @@
 class Symbols {
-  constructor () {
+  constructor() {
     this.map = {}
   }
 
-  get (name) {
+  get(name) {
     if (!this.map.hasOwnProperty(name)) {
       this.map[name] = Symbol(name)
     }
     return this.map[name]
   }
 
-  get all () {
+  get all() {
     return Object.values(this.map)
   }
 }

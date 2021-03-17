@@ -42,7 +42,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         tipsConfig: {
           triggerTarget: null,
@@ -53,20 +53,20 @@
       }
     },
     computed: {
-      transformedValue () {
+      transformedValue() {
         let value = this.value
         if (!Array.isArray(value)) {
           value = [value]
         }
         return value.map(value => Formatter(value, this.property))
       },
-      showColon () {
+      showColon() {
         return this.operator === '$range'
       },
-      operatorSymbol () {
+      operatorSymbol() {
         return Utils.getOperatorSymbol(this.operator)
       },
-      displayText () {
+      displayText() {
         if (this.operator === '$range') {
           const [start, end] = this.transformedValue
           return `${start} ~ ${end}`
@@ -74,15 +74,15 @@
         return `${this.operatorSymbol} ${this.transformedValue.join(' | ')}`
       }
     },
-    mounted () {
+    mounted() {
       this.tipsConfig.triggerTarget = this.$el
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.tagFormInstance && this.tagFormInstance.destroy()
       this.tagFormViewModel && this.tagFormViewModel.$destroy()
     },
     methods: {
-      handleClick () {
+      handleClick() {
         if (this.tagFormInstance) {
           this.tagFormInstance.show()
         } else {
@@ -90,7 +90,7 @@
           this.tagFormViewModel = new Vue({
             i18n,
             store,
-            render (h) {
+            render(h) {
               return h(FilterTagForm, {
                 ref: 'filterTagForm',
                 props: {
@@ -124,10 +124,10 @@
         }
         Tippy.hideAll({ exclude: this.tagFormInstance })
       },
-      handleHideTagForm () {
+      handleHideTagForm() {
         this.tagFormInstance && this.tagFormInstance.hide()
       },
-      handleRemove () {
+      handleRemove() {
         FilterStore.resetValue(this.property)
       }
     }

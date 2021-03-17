@@ -15,22 +15,22 @@
     props: {
       permission: Object
     },
-    data () {
+    data() {
       return {
         applied: false
       }
     },
     methods: {
-      handleClose () {
+      handleClose() {
         this.$emit('cancel')
       },
-      async handleApply () {
+      async handleApply() {
         try {
           await this.handleApplyPermission()
           this.applied = true
         } catch (error) {}
       },
-      handleRefresh () {
+      handleRefresh() {
         window.location.reload()
       }
     }

@@ -31,10 +31,10 @@
       }
     },
     methods: {
-      next () {
+      next() {
         this.$emit('confirm')
       },
-      cancel () {
+      cancel() {
         this.$emit('cancel')
       }
     }

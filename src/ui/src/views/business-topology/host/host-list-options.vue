@@ -170,7 +170,7 @@
       [HostSelector.name]: HostSelector,
       [CmdbImport.name]: CmdbImport
     },
-    data () {
+    data() {
       return {
         isTransferMenuOpen: false,
         isRemoveMenuOpen: false,
@@ -199,35 +199,35 @@
         'getProperties',
         'selectedNode'
       ]),
-      hostProperties () {
+      hostProperties() {
         return FilterStore.getModelProperties('host')
       },
-      count () {
+      count() {
         return this.$parent.table.pagination.count
       },
-      selection () {
+      selection() {
         return this.$parent.table.selection
       },
-      hasSelection () {
+      hasSelection() {
         return !!this.selection.length
       },
-      isNormalModuleNode () {
+      isNormalModuleNode() {
         return this.selectedNode
           && this.selectedNode.data.bk_obj_id === 'module'
           && this.selectedNode.data.default === 0
       },
-      isIdleModule () {
+      isIdleModule() {
         return this.selection.every((data) => {
           const modules = data.module
           return modules.every(module => module.default === 1)
         })
       },
-      isIdleSetModules () {
+      isIdleSetModules() {
         return this.selection.every((data) => {
           return data.module.every(module => module.default >= 1)
         })
       },
-      showRemoveMenu () {
+      showRemoveMenu() {
         if (!this.selectedNode) return false
         const data = this.selectedNode.data
         return data.is_idle_set || data.default === 1 || data.bk_obj_id === 'biz'
@@ -235,14 +235,14 @@
       /**
        * 暂时屏蔽从当前模块移出主机的功能
        */
-      showRemove () {
+      showRemove() {
         return false
         // return this.selectedNode
         //     && !this.selectedNode.data.is_idle_set
         //     && this.selectedNode.data.bk_obj_id === 'module'
         //     && this.selectedNode.data.default !== 1
       },
-      clipboardList () {
+      clipboardList() {
         const IPWithCloud = FilterUtils.defineProperty({
           id: this.IPWithCloudSymbol,
           bk_obj_id: 'host',
@@ -256,22 +256,22 @@
       }
     },
     methods: {
-      handleTransfer (event, type, disabled) {
+      handleTransfer(event, type, disabled) {
         if (disabled) {
           event.stopPropagation()
           return false
         }
         this.$emit('transfer', type)
       },
-      handleMultipleEdit () {
+      handleMultipleEdit() {
         this.$refs.editMultipleHost.handleMultipleEdit()
       },
-      handleAddHost () {
+      handleAddHost() {
         this.dialog.componentProps.title = this.$t('新增主机到模块')
         this.dialog.component = HostSelector.name
         this.dialog.show = true
       },
-      handleRemove (event) {
+      handleRemove(event) {
         if (!this.hasSelection) {
           event.stopPropagation()
           return false
@@ -290,7 +290,7 @@
           history: true
         })
       },
-      handleExport (event) {
+      handleExport(event) {
         if (!this.hasSelection) {
           event.stopPropagation()
           return false
@@ -302,7 +302,7 @@
           handler: this.exportHanlder
         })
       },
-      async exportHanlder (properties) {
+      async exportHanlder(properties) {
         const formData = new FormData()
         formData.append('bk_biz_id', this.bizId)
         formData.append('bk_host_id', this.selection.map(({ host }) => host.bk_host_id).join(','))
@@ -320,7 +320,7 @@
           this.$store.commit('setGlobalLoading', false)
         }
       },
-      async handleBatchExport (event) {
+      async handleBatchExport(event) {
         if (!this.count) {
           event.stopPropagation()
           return false
@@ -332,7 +332,7 @@
           handler: this.batchExportHandler
         })
       },
-      batchExportHandler (properties) {
+      batchExportHandler(properties) {
         BatchExport({
           name: 'host',
           count: this.count,
@@ -356,7 +356,7 @@
           }
         })
       },
-      handleExcelUpdate (event) {
+      handleExcelUpdate(event) {
         this.sideslider.component = CmdbImport.name
         this.sideslider.componentProps = {
           templateUrl: `${window.API_HOST}importtemplate/host`,
@@ -367,7 +367,7 @@
         this.sideslider.title = this.$t('更新主机属性')
         this.sideslider.show = true
       },
-      handleCopy (property) {
+      handleCopy(property) {
         const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
           const [modelData] = Array.isArray(data[modelId]) ? data[modelId] : [data[modelId]]
@@ -385,12 +385,12 @@
           this.$error(this.$t('复制失败'))
         })
       },
-      handleDialogConfirm () {
+      handleDialogConfirm() {
         if (this.dialog.component === HostSelector.name) {
           this.gotoTransferPage(...arguments)
         }
       },
-      gotoTransferPage (selected) {
+      gotoTransferPage(selected) {
         this.$routerActions.redirect({
           name: 'createServiceInstance',
           params: {
@@ -405,10 +405,10 @@
           history: true
         })
       },
-      handleDialogCancel () {
+      handleDialogCancel() {
         this.dialog.show = false
       },
-      handleSetFilters () {
+      handleSetFilters() {
         FilterForm.show()
       }
     }

@@ -47,7 +47,7 @@
       handler: Function
     },
     inject: ['dynamicGroupForm'],
-    data () {
+    data() {
       return {
         isShow: false,
         filter: '',
@@ -56,27 +56,27 @@
       }
     },
     computed: {
-      target () {
+      target() {
         return this.dynamicGroupForm.formData.bk_obj_id
       },
-      models () {
+      models() {
         if (this.target === 'host') {
           return this.dynamicGroupForm.availableModels
         }
         return this.dynamicGroupForm.availableModels.filter(model => model.bk_obj_id === this.target)
       },
-      propertyMap () {
+      propertyMap() {
         return this.dynamicGroupForm.propertyMap
       }
     },
     watch: {
-      filter (filter) {
+      filter(filter) {
         this.filterTimer && clearTimeout(this.filterTimer)
         this.filterTimer = setTimeout(() => this.handleFilter(filter), 500)
       }
     },
     methods: {
-      handleFilter (filter) {
+      handleFilter(filter) {
         if (!filter.length) {
           this.matchedPropertyMap = this.propertyMap
         } else {
@@ -91,17 +91,17 @@
           this.matchedPropertyMap = matchedPropertyMap
         }
       },
-      isShowGroup (model) {
+      isShowGroup(model) {
         return !!this.matchedPropertyMap[model.bk_obj_id].length
       },
-      isShowProperty (property) {
+      isShowProperty(property) {
         const modelId = property.bk_obj_id
         return this.matchedPropertyMap[modelId].some(target => target === property)
       },
-      isChecked (property) {
+      isChecked(property) {
         return this.localSelected.some(target => target.id === property.id)
       },
-      handleChange (property, checked) {
+      handleChange(property, checked) {
         if (checked) {
           this.localSelected.push(property)
         } else {
@@ -109,17 +109,17 @@
           index > -1 && this.localSelected.splice(index, 1)
         }
       },
-      handleConfirm () {
+      handleConfirm() {
         this.handler && this.handler([...this.localSelected])
         this.isShow = false
       },
-      handleCancel () {
+      handleCancel() {
         this.isShow = false
       },
-      show () {
+      show() {
         this.isShow = true
       },
-      hanldeHidden () {
+      hanldeHidden() {
         this.$emit('close')
       }
     }

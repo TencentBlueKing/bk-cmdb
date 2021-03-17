@@ -1,5 +1,5 @@
 export default class Meta {
-  constructor (data = {}) {
+  constructor(data = {}) {
     this.owner = ''
     this.title = ''
     this.available = true

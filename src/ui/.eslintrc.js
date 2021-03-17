@@ -37,6 +37,7 @@ module.exports = {
             'flatTernaryExpressions': true
         }],
 
+        // 强制使用一致的换行符风格，默认unix，关闭
         'linebreak-style': 'off',
 
         // 禁止在语句末尾使用分号
@@ -71,9 +72,11 @@ module.exports = {
             }
         }],
 
-        'space-before-function-paren': 'off',
-
+        // 要求或禁止末尾逗号，关闭
         'comma-dangle': 'off',
+
+        // 必须只使用函数声明或只使用函数表达式，关闭
+        'func-style': 'off',
 
         // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/array-bracket-spacing.md
         'vue/array-bracket-spacing': ['error', 'never'],

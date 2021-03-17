@@ -7,27 +7,27 @@ const Component = Vue.extend({
   components: {
     ProcessForm
   },
-  created () {
+  created() {
     this.unwatch = RouterQuery.watch('*', () => {
       this.handleClose()
     })
   },
-  beforeDestroy () {
+  beforeDestroy() {
     this.unwatch()
   },
   methods: {
-    handleClose () {
+    handleClose() {
       document.body.removeChild(this.$el)
       this.$destroy()
     }
   },
-  render (h) {
+  render(h) {
     return <process-form ref="form" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></process-form>
   }
 })
 
 export default {
-  show (data = {}) {
+  show(data = {}) {
     const vm = new Component({
       store,
       i18n,

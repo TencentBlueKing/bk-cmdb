@@ -63,7 +63,7 @@
 
   export default {
     name: 'cmdb-host-association-graphics',
-    data () {
+    data() {
       return {
         getRelationRequestId: null,
         fullScreen: false,
@@ -102,14 +102,14 @@
         'getModelById'
       ]),
       ...mapState('hostDetails', ['info']),
-      host () {
+      host() {
         return this.info.host || {}
       },
-      id () {
+      id() {
         return parseInt(this.$route.params.id)
       }
     },
-    created () {
+    created() {
       if (typeof cytoscape('core', 'popper') !== 'function') {
         cytoscape.use(popper)
       }
@@ -117,7 +117,7 @@
         cytoscape.use(dagre)
       }
     },
-    mounted () {
+    mounted() {
       this.initNetwork()
     },
     methods: {
@@ -125,7 +125,7 @@
       ...mapActions('objectAssociation', [
         'searchAssociationType'
       ]),
-      initNetwork () {
+      initNetwork() {
         cy = window.cy = cytoscape({
           container: this.$refs.container,
 
@@ -334,7 +334,7 @@
             event.target.removeClass('hover')
           })
       },
-      async initTopoElements () {
+      async initTopoElements() {
         try {
           const rootObjId = 'host'
           const rootInstId = this.id
@@ -379,7 +379,7 @@
           console.log(e)
         }
       },
-      loadNodeImage () {
+      loadNodeImage() {
         // 缓存调用结果，减少相同icon的转换开销
         const makeSvg = memoize(this.makeSvg, data => data.icon)
         cy.nodes().forEach(async (node, i) => {
@@ -391,7 +391,7 @@
           }
         })
       },
-      makeSvg (nodeData) {
+      makeSvg(nodeData) {
         return new Promise((resolve, reject) => {
           const image = new Image()
           image.onload = () => {
@@ -413,7 +413,7 @@
           image.src = `${window.location.origin}/static/svg/${nodeData.icon.substr(5)}.svg`
         })
       },
-      getRelationTopo (objId, instId) {
+      getRelationTopo(objId, instId) {
         this.getRelationRequestId = `get_getInstRelationTopo_${objId}_${instId}`
         return this.getInstRelationTopo({
           objId,
@@ -425,7 +425,7 @@
           }
         })
       },
-      getAssociationType () {
+      getAssociationType() {
         return this.searchAssociationType({
           params: {},
           config: {
@@ -433,7 +433,7 @@
           }
         }).then(res => res.info)
       },
-      getAsstDetail (asstId) {
+      getAsstDetail(asstId) {
         const asst = this.associationList.find(asst => asst.bk_asst_id === asstId)
         return {
           asstId: asst['bk_asst_id'],
@@ -441,7 +441,7 @@
           direction: asst.direction
         }
       },
-      getInstDetail (objId, instId) {
+      getInstDetail(objId, instId) {
         const instIdKey = this.getInstIdKey(objId)
         const instNameKey = this.getInstNameKey(instIdKey)
         const inst = this.instanceMap[objId].find(inst => inst[instIdKey] === instId)
@@ -450,7 +450,7 @@
           name: inst[instNameKey]
         }
       },
-      getInstIdKey (objId) {
+      getInstIdKey(objId) {
         const specialObj = {
           'host': 'bk_host_id',
           'biz': 'bk_biz_id',
@@ -463,7 +463,7 @@
         }
         return 'bk_inst_id'
       },
-      getInstNameKey (idKey) {
+      getInstNameKey(idKey) {
         const nameKey = {
           'bk_host_id': 'bk_host_innerip',
           'bk_biz_id': 'bk_biz_name',
@@ -474,7 +474,7 @@
         }
         return nameKey[idKey]
       },
-      getTopoElements (topoData, rootNodeId) {
+      getTopoElements(topoData, rootNodeId) {
         const { association, instance } = topoData
 
         // 更新实例信息新的实例得以获取到正确的详情
@@ -523,7 +523,7 @@
 
         return elements
       },
-      getNodeOptions ({ nodeId, objId, instId }) {
+      getNodeOptions({ nodeId, objId, instId }) {
         const model = this.getModelById(objId)
         const options = {
           data: {
@@ -540,7 +540,7 @@
 
         return options
       },
-      getEdgeOptions ({ source, target, asstId }) {
+      getEdgeOptions({ source, target, asstId }) {
         const { direction } = this.getAsstDetail(asstId)
         const options = {
           data: {
@@ -554,7 +554,7 @@
 
         return options
       },
-      setLegends (rootNodeId, objId, nodeId) {
+      setLegends(rootNodeId, objId, nodeId) {
         const model = this.getModelById(objId)
         let nodelegends = this.legends[rootNodeId]
         const legendNew = {
@@ -579,7 +579,7 @@
 
         this.legends = { ...this.legends, ...{ [rootNodeId]: nodelegends } }
       },
-      async handleSelectNode (node) {
+      async handleSelectNode(node) {
         const nodeData = node.data()
         const { objId, instId, id } = nodeData
 
@@ -600,14 +600,14 @@
         // 标记为loaded
         node.data('loaded', true)
       },
-      handleToggleNodeVisibility (legend) {
+      handleToggleNodeVisibility(legend) {
         legend.active = !legend.active
 
         cy.startBatch()
         legend.nodeIds.forEach(nodeId => cy.$(`#${nodeId}`).style('display', legend.active ? 'element' : 'none'))
         cy.endBatch()
       },
-      async handleShowDetails () {
+      async handleShowDetails() {
         const nodeData = this.hoverNodeData
         this.details.title = `${nodeData.modelName}-${nodeData.name}`
         try {
@@ -631,7 +631,7 @@
           this.hoverNodeData.popover.hide()
         }
       },
-      async getInst () {
+      async getInst() {
         const modelId = this.hoverNodeData.objId
         if (modelId === 'host') {
           return this.getHostDetails()
@@ -640,7 +640,7 @@
         }
         return this.getInstDetails()
       },
-      getHostDetails () {
+      getHostDetails() {
         const hostId = this.hoverNodeData.instId
         return this.$store.dispatch('hostSearch/getHostBaseInfo', { hostId }).then((data) => {
           const inst = {}
@@ -650,7 +650,7 @@
           return inst
         })
       },
-      getBusinessDetails () {
+      getBusinessDetails() {
         const bizId = this.hoverNodeData.instId
         return this.$store.dispatch('objectBiz/searchBusiness', {
           params: {
@@ -660,7 +660,7 @@
           }
         }).then(({ info }) => info[0])
       },
-      getInstDetails () {
+      getInstDetails() {
         const modelId = this.hoverNodeData.objId
         const instId = this.hoverNodeData.instId
         return this.$store.dispatch('objectCommonInst/searchInst', {
@@ -678,24 +678,24 @@
           }
         }).then(({ info }) => info[0])
       },
-      getProperties () {
+      getProperties() {
         return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
           params: {
             'bk_obj_id': this.hoverNodeData.objId
           }
         })
       },
-      getPropertyGroups () {
+      getPropertyGroups() {
         return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
           objId: this.hoverNodeData.objId,
           params: {}
         })
       },
-      toggleFullScreen (fullScreen) {
+      toggleFullScreen(fullScreen) {
         this.$store.commit('setLayoutStatus', { mainFullScreen: fullScreen })
         this.fullScreen = fullScreen
       },
-      fitMaxZoom (cy) {
+      fitMaxZoom(cy) {
         const fitMaxZoom = 1
         if (cy.zoom() > fitMaxZoom) {
           cy.zoom(fitMaxZoom)

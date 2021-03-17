@@ -32,7 +32,7 @@ const GET_BASE_64_IMAGE = (image, color) => {
   return canvas.toDataURL(`image/${GET_FILE_EXTENSION(image.src)}`)
 }
 
-export function svgToImageUrl (image, options) {
+export function svgToImageUrl(image, options) {
   const base64Image = GET_BASE_64_IMAGE(image, options.iconColor)
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
                 <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
@@ -42,7 +42,7 @@ export function svgToImageUrl (image, options) {
             </svg>`)
 }
 
-export function generateObjIcon (image, options) {
+export function generateObjIcon(image, options) {
   if (image instanceof Image) {
     const base64Image = GET_BASE_64_IMAGE(image, options.iconColor)
     return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">

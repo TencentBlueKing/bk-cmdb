@@ -31,7 +31,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      tags () {
+      tags() {
         const labels = this.row.labels
         if (!labels) {
           return []
@@ -40,21 +40,21 @@
       }
     },
     watch: {
-      tags () {
+      tags() {
         this.handleResize()
       }
     },
-    created () {
+    created() {
       this.scheduleResize = throttle(this.handleResize, 300)
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$el, this.scheduleResize)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$el, this.scheduleResize)
     },
     methods: {
-      handleResize () {
+      handleResize() {
         this.removeEllipsisTag()
         if (!this.tags.length) {
           this.updateEditPosition()
@@ -78,11 +78,11 @@
           this.updateEditPosition()
         })
       },
-      insertEllipsisTag (reference, index) {
+      insertEllipsisTag(reference, index) {
         const ellipsis = this.$refs.ellipsis
         this.$refs.list.insertBefore(ellipsis, reference)
       },
-      doubleCheckEllipsisPosition () {
+      doubleCheckEllipsisPosition() {
         const ellipsis = this.$refs.ellipsis
         const previous = ellipsis.previousElementSibling
         if (previous && ellipsis.offsetTop !== previous.offsetTop) {
@@ -90,7 +90,7 @@
         }
         this.setEllipsisTips()
       },
-      updateEditPosition () {
+      updateEditPosition() {
         const ellipsis = this.$refs.ellipsis
         let lastItem = null
         if (ellipsis && ellipsis.previousElementSibling) {
@@ -101,7 +101,7 @@
         }
         this.$refs.editTrigger.$el.style.left = lastItem ? lastItem.offsetLeft + lastItem.offsetWidth + 10 + 'px' : 0
       },
-      setEllipsisTips () {
+      setEllipsisTips() {
         const ellipsis = this.$refs.ellipsis
         const tips = this.getTipsInstance()
         const tipsNode = this.$refs.list.cloneNode(false)
@@ -117,7 +117,7 @@
         }
         tips.setContent(tipsNode)
       },
-      getTipsInstance () {
+      getTipsInstance() {
         if (!this.tips) {
           this.tips = this.$bkPopover(this.$refs.ellipsis, {
             allowHTML: true,
@@ -129,12 +129,12 @@
         }
         return this.tips
       },
-      removeEllipsisTag () {
+      removeEllipsisTag() {
         try {
           this.$refs.list.removeChild(this.$refs.ellipsis)
         } catch (e) {}
       },
-      handleEditLabel () {
+      handleEditLabel() {
         LabelDialog.show({
           serviceInstance: this.row,
           updateCallback: (labels) => {

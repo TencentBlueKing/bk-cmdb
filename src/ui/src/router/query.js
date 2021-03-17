@@ -4,7 +4,7 @@ import deepEqual from 'deep-equal'
 import { redirect } from './actions'
 
 // Vue.watch的options
-function createWatchOptions (key, options) {
+function createWatchOptions(key, options) {
   const watchOptions = {
     immediate: false,
     deep: false
@@ -21,7 +21,7 @@ function createWatchOptions (key, options) {
 }
 
 // 始终watch router.query, 根据watch的key再做变更比对，除immediate外，无变更时不触发注册的handler
-function createCallback (keys, handler, options = {}) {
+function createCallback(keys, handler, options = {}) {
   let immediateCalled = false
   const callback = (values, oldValues = {}) => {
     let execValue, execOldValue
@@ -63,23 +63,23 @@ function createCallback (keys, handler, options = {}) {
   return callback
 }
 
-function isEmpty (value) {
+function isEmpty(value) {
   return value === '' || value === undefined || value === null
 }
 
 class RouterQuery {
-  constructor () {
+  constructor() {
     this.router = router
   }
-  get app () {
+  get app() {
     return router.app
   }
 
-  get route () {
+  get route() {
     return this.app.$route
   }
 
-  get (key, defaultValue) {
+  get(key, defaultValue) {
     if (this.route.query.hasOwnProperty(key)) {
       return this.route.query[key]
     }
@@ -88,11 +88,11 @@ class RouterQuery {
     }
   }
 
-  getAll () {
+  getAll() {
     return this.route.query
   }
 
-  set (key, value) {
+  set(key, value) {
     const query = { ...this.route.query }
     if (typeof key === 'object') {
       Object.assign(query, key)
@@ -110,7 +110,7 @@ class RouterQuery {
     })
   }
 
-  delete (key) {
+  delete(key) {
     const query = {
       ...this.route.query
     }
@@ -121,14 +121,14 @@ class RouterQuery {
     })
   }
 
-  clear () {
+  clear() {
     redirect({
       ...this.route,
       query: {}
     })
   }
 
-  watch (key, handler, options = {}) {
+  watch(key, handler, options = {}) {
     const watchOptions = createWatchOptions(key, options)
     const callback = createCallback(key, handler, options)
     const expression = () => this.route.query

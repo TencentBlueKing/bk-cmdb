@@ -27,7 +27,7 @@
   import IS_IP from 'validator/es/lib/isIP'
   import IS_INT from 'validator/es/lib/isInt'
   export default {
-    data () {
+    data() {
       return {
         rows: 1,
         searchText: '',
@@ -40,15 +40,15 @@
       }
     },
     watch: {
-      searchContent () {
+      searchContent() {
         this.$nextTick(this.setRows)
       }
     },
-    mounted () {
+    mounted() {
       this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
     },
     methods: {
-      getSearchList () {
+      getSearchList() {
         const searchList = []
         this.searchContent.split('\n').forEach((text) => {
           const trimText = text.trim()
@@ -58,22 +58,22 @@
         })
         return searchList
       },
-      setRows () {
+      setRows() {
         const rows = this.searchContent.split('\n').length || 1
         this.rows = Math.min(10, rows)
       },
-      handleFocus () {
+      handleFocus() {
         this.$emit('focus', true)
         this.setRows()
       },
-      handleBlur () {
+      handleBlur() {
         if (!this.searchContent.trim().length) {
           this.searchContent = ''
         }
         this.textareaDom && this.textareaDom.blur()
         this.$emit('focus', false)
       },
-      handleKeydown (content, event) {
+      handleKeydown(content, event) {
         const agent = window.navigator.userAgent.toLowerCase()
         const isMac = /macintosh|mac os x/i.test(agent)
         const modifierKey = isMac ? event.metaKey : event.ctrlKey
@@ -81,7 +81,7 @@
           this.handleSearch()
         }
       },
-      async handleSearch () {
+      async handleSearch() {
         const searchList = this.getSearchList()
         if (searchList.length > 500) {
           this.$warn(this.$t('最多支持搜索500条数据'))
@@ -131,7 +131,7 @@
           this.textareaDom && this.textareaDom.focus()
         }
       },
-      handleIPSearch (list) {
+      handleIPSearch(list) {
         const ip = {
           text: list.join('\n'),
           inner: true,
@@ -147,7 +147,7 @@
           history: true
         })
       },
-      handleIPWithCloudSearch (list, cloudSet) {
+      handleIPWithCloudSearch(list, cloudSet) {
         const IPList = list.map((text) => {
           const [, ip] = text.split(':')
           return ip
@@ -171,7 +171,7 @@
           history: true
         })
       },
-      async handleAssetSearch (list) {
+      async handleAssetSearch(list) {
         try {
           const filter = {
             'bk_asset_id.in': list.join(',')

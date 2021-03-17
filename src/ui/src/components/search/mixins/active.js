@@ -1,16 +1,16 @@
 export default {
-  data () {
+  data() {
     return {
       active: false
     }
   },
   watch: {
-    active (active) {
+    active(active) {
       this.$emit('active-change', active)
     }
   },
   methods: {
-    handleToggle (active) {
+    handleToggle(active) {
       this.active = active
     }
   }

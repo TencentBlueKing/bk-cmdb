@@ -22,36 +22,36 @@
       type: {
         type: String,
         default: 'selector',
-        validator (type) {
+        validator(type) {
           return ['selector', 'info'].includes(type)
         }
       }
     },
-    data () {
+    data() {
       return {
         businessList: []
       }
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       },
-      bizName () {
+      bizName() {
         const biz = this.businessList.find(biz => biz.bk_biz_id === this.value)
         return biz ? biz.bk_biz_name : '--'
       }
     },
-    created () {
+    created() {
       this.getFullAmountBusiness()
     },
     methods: {
-      async getFullAmountBusiness () {
+      async getFullAmountBusiness() {
         try {
           const data = await this.$http.get('biz/simplify?sort=bk_biz_id', {
             requestId: 'auditBusinessSelector',

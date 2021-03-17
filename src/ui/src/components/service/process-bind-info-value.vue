@@ -35,7 +35,7 @@
         default: () => ({})
       }
     },
-    data () {
+    data() {
       return {
         popoverList: [],
         localValue: []
@@ -43,7 +43,7 @@
     },
     watch: {
       value: {
-        handler (value) {
+        handler(value) {
           this.localValue = value || []
           this.setPopoverList()
         },
@@ -51,7 +51,7 @@
       }
     },
     methods: {
-      ipText (value) {
+      ipText(value) {
         const map = {
           '1': '127.0.0.1',
           '2': '0.0.0.0',
@@ -60,17 +60,17 @@
         }
         return map[value] || value || '--'
       },
-      setPopoverList () {
+      setPopoverList() {
         this.$nextTick(() => {
           const list = this.$refs.table.cellValue
           this.popoverList = list.map(this.getRowValue)
         })
       },
-      getRowValue (row) {
+      getRowValue(row) {
         const ip = this.ipText(row.ip)
         return `${row.protocol} ${ip}:${row.port}`
       },
-      formatCellValue (list) {
+      formatCellValue(list) {
         if (!list.length) {
           return '--'
         }

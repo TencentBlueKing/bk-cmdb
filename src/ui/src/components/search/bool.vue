@@ -21,10 +21,10 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value.toString()
         },
-        set (value) {
+        set(value) {
           const realValue = value && value === 'true'
           this.$emit('input', realValue)
           this.$emit('change', realValue)

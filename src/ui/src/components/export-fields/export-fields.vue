@@ -96,7 +96,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         ready: false,
         filter: '',
@@ -107,15 +107,15 @@
       }
     },
     computed: {
-      availableProperties () {
+      availableProperties() {
         return this.properties.filter(property => !this.invisibleProperties.includes(property.bk_property_id))
       },
-      sortedProperties () {
+      sortedProperties() {
         return [...this.availableProperties].sort((propertyA, propertyB) => {
 
         })
       },
-      independentProperties () {
+      independentProperties() {
         return this.availableProperties.filter((property) => {
           return !this.propertyGroups.some((group) => {
             return group.bk_group_id === property.bk_property_group
@@ -123,7 +123,7 @@
           })
         })
       },
-      groups () {
+      groups() {
         const sortedGroups = [...this.propertyGroups].sort((groupA, groupB) => {
           return groupA.bk_group_index - groupB.bk_group_index
         })
@@ -136,21 +136,21 @@
         })
         return groups.filter(group => group.properties.length)
       },
-      visibleProperties () {
+      visibleProperties() {
         return this.renderGroups.reduce((accumulator, group) => {
           return accumulator.concat(group.properties)
         }, [])
       },
-      isAllChecked () {
+      isAllChecked() {
         if (this.filter) {
           return this.visibleProperties.every(property => this.selected.includes(property))
         }
         return !!this.selected.length && this.selected.length === this.visibleProperties.length
       },
-      isEmpty () {
+      isEmpty() {
         return this.ready && !this.visibleProperties.length
       },
-      isGroupAllChecked () {
+      isGroupAllChecked() {
         const isGroupAllChecked = {}
         this.renderGroups.forEach((group) => {
           isGroupAllChecked[group.id] = group.properties.every(property => this.selected.includes(property))
@@ -161,13 +161,13 @@
     watch: {
       filter: {
         immediate: true,
-        handler () {
+        handler() {
           this.throttleFilter()
         }
       }
     },
     methods: {
-      handleFilter () {
+      handleFilter() {
         this.ready = true
         this.$nextTick(() => {
           if (!this.filter.length) {
@@ -191,10 +191,10 @@
           }
         })
       },
-      isChecked (property) {
+      isChecked(property) {
         return this.selected.some(target => target.id === property.id)
       },
-      handleToggleProperty (property, checked) {
+      handleToggleProperty(property, checked) {
         if (checked) {
           this.selected.push(property)
         } else {
@@ -202,7 +202,7 @@
           index > -1 && this.selected.splice(index, 1)
         }
       },
-      handleToggleAll () {
+      handleToggleAll() {
         if (this.filter) {
           if (this.isAllChecked) {
             this.selected = this.selected.filter(property => !this.visibleProperties.includes(property))
@@ -214,7 +214,7 @@
           this.selected = this.isAllChecked ? [] : [...this.visibleProperties]
         }
       },
-      handleGroupToggleAll (groupId) {
+      handleGroupToggleAll(groupId) {
         const group = this.renderGroups.find(group => group.id === groupId)
         const isGroupAllChecked = this.isGroupAllChecked[groupId]
         if (isGroupAllChecked) {
@@ -226,17 +226,17 @@
           this.selected = this.selected.concat(newSelected)
         }
       },
-      confirm () {
+      confirm() {
         this.handler(this.selected)
         this.close()
       },
-      handleClosed () {
+      handleClosed() {
         this.$emit('closed')
       },
-      open () {
+      open() {
         this.isShow = true
       },
-      close () {
+      close() {
         this.isShow = false
       }
     }

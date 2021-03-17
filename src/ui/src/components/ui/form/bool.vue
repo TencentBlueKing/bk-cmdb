@@ -23,7 +23,7 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           if (typeof this.value === 'boolean') {
             return this.value
           }
@@ -32,7 +32,7 @@
           }
           return false
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }

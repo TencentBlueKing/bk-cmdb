@@ -53,7 +53,7 @@
       ListCellOperation,
       ExpandList
     },
-    data () {
+    data() {
       return {
         list: [],
         selection: [],
@@ -68,11 +68,11 @@
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['selectedNode']),
-      searchKey () {
+      searchKey() {
         const nameFilter = this.filters.find(data => data.id === 'name')
         return nameFilter ? nameFilter.values[0].name : ''
       },
-      searchTag () {
+      searchTag() {
         const tagFilters = []
         this.filters.forEach((data) => {
           if (data.id === 'name') return
@@ -95,11 +95,11 @@
       }
     },
     watch: {
-      selectedNode () {
+      selectedNode() {
         this.handlePageChange(1)
       }
     },
-    created () {
+    created() {
       this.unwatch = RouterQuery.watch(['page', 'limit', '_t', 'view'], ({
         page = this.pagination.current,
         limit = this.pagination.limit,
@@ -116,21 +116,21 @@
       Bus.$on('filter-change', this.handleFilterChange)
       Bus.$on('batch-edit-labels', this.handleBatchEditLabels)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('expand-all-change', this.handleExpandAllChange)
       Bus.$off('filter-change', this.handleFilterChange)
       Bus.$off('batch-edit-labels', this.handleBatchEditLabels)
       this.unwatch()
     },
     methods: {
-      handleFilterChange (filters) {
+      handleFilterChange(filters) {
         this.filters = filters
         RouterQuery.set({
           page: 1,
           _t: Date.now()
         })
       },
-      async getList () {
+      async getList() {
         try {
           const { count, info } = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
             params: {
@@ -154,21 +154,21 @@
           console.error(error)
         }
       },
-      getRowClassName ({ row }) {
+      getRowClassName({ row }) {
         const className = ['instance-table-row']
         if (!row.process_count) {
           className.push('disabled')
         }
         return className.join(' ')
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.pagination.current = page
         RouterQuery.set({
           page: page,
           _t: Date.now()
         })
       },
-      handlePageLimitChange (limit) {
+      handlePageLimitChange(limit) {
         this.pagination.limit = limit
         this.pagination.page = 1
         RouterQuery.set({
@@ -177,39 +177,39 @@
           _t: Date.now()
         })
       },
-      beforeExpandChange ({ row }) {
+      beforeExpandChange({ row }) {
         return !!row.process_count
       },
-      handleExpandAllChange (expanded) {
+      handleExpandAllChange(expanded) {
         this.list.forEach((row) => {
           row.process_count && this.$refs.instanceTable.toggleRowExpansion(row, expanded)
         })
       },
-      async handleExpandChange (row, expandedRows) {
+      async handleExpandChange(row, expandedRows) {
         row.pending = expandedRows.includes(row)
       },
-      handleSelectionChange (selection) {
+      handleSelectionChange(selection) {
         this.selection = selection
         Bus.$emit('instance-selection-change', selection)
       },
-      handleRowClick (row) {
+      handleRowClick(row) {
         this.$refs.instanceTable.toggleRowExpansion(row)
       },
-      handleExpandResolved (row, list) {
+      handleExpandResolved(row, list) {
         row.pending = false
         this.handleRefreshCount(row, list.length)
         if (!row.process_count) {
           this.$refs.instanceTable.toggleRowExpansion(row, false)
         }
       },
-      handleRefreshCount (row, newCount) {
+      handleRefreshCount(row, newCount) {
         row.process_count = newCount
       },
-      handleUpdateLabels (row, labels) {
+      handleUpdateLabels(row, labels) {
         row.labels = labels
         Bus.$emit('update-labels')
       },
-      handleBatchEditLabels () {
+      handleBatchEditLabels() {
         LabelBatchDialog.show({
           serviceInstances: this.selection,
           updateCallback: (removedKeys, newLabels) => {
@@ -220,15 +220,15 @@
           }
         })
       },
-      handleEditName (row) {
+      handleEditName(row) {
         this.list.forEach(row => (row.editing.name = false))
         row.editing.name = true
       },
-      handleEditNameSuccess (row, value) {
+      handleEditNameSuccess(row, value) {
         row.name = value
         row.editing.name = false
       },
-      handleCancelEditName (row) {
+      handleCancelEditName(row) {
         row.editing.name = false
       }
     }

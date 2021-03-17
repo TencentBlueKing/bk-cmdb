@@ -14,7 +14,7 @@
       InstanceOptions,
       InstanceList
     },
-    data () {
+    data() {
       return {}
     }
   }

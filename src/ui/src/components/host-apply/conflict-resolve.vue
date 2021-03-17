@@ -62,7 +62,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         conflictPropertyList: [],
         conflictPropertyListSnapshot: [],
@@ -75,26 +75,26 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('hostApply', ['configPropertyList']),
-      moduleIds () {
+      moduleIds() {
         return this.dataRow.bk_module_ids
       }
     },
     watch: {
-      dataRow () {
+      dataRow() {
         this.getData()
       }
     },
-    created () {
+    created() {
       this.getData()
     },
-    mounted () {
+    mounted() {
       RESIZE_EVENTS.addResizeListener(this.$refs.conflictTable, this.checkScrollbar)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       RESIZE_EVENTS.removeResizeListener(this.$refs.conflictTable, this.checkScrollbar)
     },
     methods: {
-      async getData () {
+      async getData() {
         try {
           const topopath = await this.getTopopath()
           const moduleMap = {}
@@ -107,7 +107,7 @@
           console.error(e)
         }
       },
-      setConflictPropertyList () {
+      setConflictPropertyList() {
         let conflictPropertyList = []
         if (this.dataCache.length) {
           conflictPropertyList = this.$tools.clone(this.dataCache)
@@ -132,7 +132,7 @@
         this.conflictPropertyList = conflictPropertyList
         this.conflictPropertyListSnapshot = this.$tools.clone(conflictPropertyList)
       },
-      getTopopath () {
+      getTopopath() {
         return this.$store.dispatch('hostApply/getTopopath', {
           bizId: this.bizId,
           params: {
@@ -140,18 +140,18 @@
           }
         })
       },
-      getModulePath (id) {
+      getModulePath(id) {
         const info = this.moduleMap[id] || []
         const path = info.map(node => node.bk_inst_name).reverse()
           .join(' / ')
         return path
       },
-      getModuleName (id) {
+      getModuleName(id) {
         const topoInfo = this.moduleMap[id] || []
         const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
         return target.bk_inst_name
       },
-      renderColumnHeader (h, { column, $index }) {
+      renderColumnHeader(h, { column, $index }) {
         const style = {
           width: '50%',
           display: 'inline-block'
@@ -165,33 +165,33 @@
           ]
         )
       },
-      checkScrollbar () {
+      checkScrollbar() {
         const $layout = this.$el
         this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
       },
-      restoreConflictPropertyList () {
+      restoreConflictPropertyList() {
         this.conflictPropertyList = this.$tools.clone(this.conflictPropertyListSnapshot)
       },
-      toggleConfirmButtonDisabled () {
+      toggleConfirmButtonDisabled() {
         const everyValidTruthy = this.conflictPropertyList.every(property => property.__extra__.valid !== false)
         this.confirmButtonDisabled = !everyValidTruthy
       },
-      handlePickValue (row, index, value, $index) {
+      handlePickValue(row, index, value, $index) {
         row.__extra__.conflictList.forEach((item, i) => {
           this.$set(this.conflictPropertyList[$index].__extra__.conflictList[i], 'selected', index === i)
         })
         row.__extra__.value = value
       },
-      handleConfirm () {
+      handleConfirm() {
         this.conflictPropertyListSnapshot = this.$tools.clone(this.conflictPropertyList)
         this.$emit('save', this.conflictPropertyListSnapshot)
         this.$emit('cancel')
       },
-      handleCancel () {
+      handleCancel() {
         this.restoreConflictPropertyList()
         this.$emit('cancel')
       },
-      handlePropertyValueChange (value, row, $index) {
+      handlePropertyValueChange(value, row, $index) {
         let hasSelected = false
         row.__extra__.conflictList.forEach((item, i) => {
           const selected = item.bk_property_value === value

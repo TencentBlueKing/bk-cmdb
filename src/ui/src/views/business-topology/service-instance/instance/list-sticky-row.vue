@@ -36,7 +36,7 @@
     props: {
       table: Object
     },
-    data () {
+    data() {
       return {
         row: {},
         updateScrollPosition: false,
@@ -45,29 +45,29 @@
       }
     },
     computed: {
-      columns () {
+      columns() {
         return this.table.columns
       },
-      checked () {
+      checked() {
         return this.table.store.states.selection.includes(this.row)
       },
-      expanded () {
+      expanded() {
         return this.table.store.states.expandRows.includes(this.row)
       }
     },
     watch: {
-      updateScrollPosition () {
+      updateScrollPosition() {
         this.top = 0
       }
     },
-    mounted () {
+    mounted() {
       this.table.$refs.bodyWrapper.addEventListener('scroll', this.updatePostion)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.table.$refs.bodyWrapper.removeEventListener('scroll', this.updatePostion)
     },
     methods: {
-      updatePostion (event) {
+      updatePostion(event) {
         // const newScrollTop = event.target.scrollTop
         // const delta = newScrollTop - this.scrollTop
         // if (delta > 0 && this.updateScrollPosition) {
@@ -75,7 +75,7 @@
         // }
         // this.scrollTop = newScrollTop
       },
-      getCellStyle (property) {
+      getCellStyle(property) {
         const column = this.columns.find(column => column.property === property)
         if (column) {
           return {
@@ -84,13 +84,13 @@
         }
         return {}
       },
-      handleCheck () {
+      handleCheck() {
         this.table.toggleRowSelection(this.row, !this.checked)
       },
-      handleExpand () {
+      handleExpand() {
         this.table.toggleRowExpansion(this.row, !this.expanded)
       },
-      handleUpdateLabels (row, labels) {
+      handleUpdateLabels(row, labels) {
         row.labels = labels
       }
     }

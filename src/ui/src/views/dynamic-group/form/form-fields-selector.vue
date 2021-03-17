@@ -19,17 +19,17 @@
     inject: ['dynamicGroupForm'],
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (values) {
+        set(values) {
           this.$emit('input', values)
         }
       },
-      target () {
+      target() {
         return this.dynamicGroupForm.formData.bk_obj_id
       },
-      properties () {
+      properties() {
         return this.dynamicGroupForm.propertyMap[this.target] || []
       }
     }

@@ -34,19 +34,19 @@
     props: {
       checked: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       }
     },
     methods: {
-      handleDeleteModule (node) {
+      handleDeleteModule(node) {
         this.$emit('delete', node)
       },
-      handleClearModule () {
+      handleClearModule() {
         this.$emit('clear')
       },
-      getNodePath (node) {
+      getNodePath(node) {
         const parents = node.parents
         return parents.map(parent => parent.data.bk_inst_name).join(' / ')
       }

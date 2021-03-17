@@ -14,7 +14,7 @@
 <script>
   import { mapGetters } from 'vuex'
   export default {
-    data () {
+    data() {
       return {
         value: '',
         validList: [],
@@ -25,16 +25,16 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['getDefaultSearchCondition'])
     },
-    activated () {
+    activated() {
       this.value = ''
       this.validList = []
       this.invalidList = []
     },
     methods: {
-      handleFocus () {
+      handleFocus() {
         this.invalidList = []
       },
-      async handleConfirm () {
+      async handleConfirm() {
         try {
           await this.validateList()
           if (this.validList.length) {
@@ -58,7 +58,7 @@
           console.error(e)
         }
       },
-      async validateList () {
+      async validateList() {
         const list = [...new Set(this.value.split('\n').map(ip => ip.trim())
           .filter(ip => ip.length))]
         const validateQueue = []
@@ -78,7 +78,7 @@
         this.validList = validList
         this.invalidList = invalidList
       },
-      getParams () {
+      getParams() {
         return {
           bk_biz_id: this.bizId,
           condition: this.getDefaultSearchCondition(),

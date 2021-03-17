@@ -23,7 +23,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchServiceInstanceDifferences ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchServiceInstanceDifferences({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('find/proc/service_instance/difference', params, config)
   },
   /**
@@ -34,7 +34,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  syncServiceInstanceByTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  syncServiceInstanceByTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.put('update/proc/service_instance/sync', params, config)
   }
 }

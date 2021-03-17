@@ -1,17 +1,17 @@
 import Vue from 'vue'
 const store = new Vue({
-  data () {
+  data() {
     return {
       hosts: [],
       businessList: []
     }
   },
   computed: {
-    isSelected () {
+    isSelected() {
       return !!this.hosts.length
     },
     
-    bizSet () {
+    bizSet() {
       const bizSet = new Set()
       this.hosts.forEach((host) => {
         const [biz] = host.biz
@@ -20,25 +20,25 @@ const store = new Vue({
       return bizSet
     },
     
-    isSameBiz () {
+    isSameBiz() {
       return this.bizSet.size === 1
     },
 
-    isAllIdleModule () {
+    isAllIdleModule() {
       return this.hosts.every((host) => {
         const [module] = host.module
         return module.default === 1
       })
     },
     
-    isAllIdleSet () {
+    isAllIdleSet() {
       return this.hosts.every((host) => {
         const [module] = host.module
         return module.default !== 0
       })
     },
     
-    uniqueBusiness () {
+    uniqueBusiness() {
       if (this.isSameBiz) {
         const [bizId] = Array.from(this.bizSet)
         return this.businessList.find(business => business.bk_biz_id === bizId)
@@ -46,7 +46,7 @@ const store = new Vue({
       return null
     },
 
-    isAllResourceHost () {
+    isAllResourceHost() {
       return this.hosts.every((host) => {
         const [biz] = host.biz
         return biz.default === 1
@@ -54,19 +54,19 @@ const store = new Vue({
     }
   },
   methods: {
-    clear () {
+    clear() {
       this.hosts = []
     },
     
-    setSelected (hosts = []) {
+    setSelected(hosts = []) {
       this.hosts = hosts
     },
     
-    getSelected () {
+    getSelected() {
       return this.hosts
     },
     
-    setBusinessList (businessList) {
+    setBusinessList(businessList) {
       this.businessList = businessList
     }
   }

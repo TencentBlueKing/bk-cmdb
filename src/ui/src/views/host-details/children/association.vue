@@ -67,7 +67,7 @@
       cmdbHostAssociationCreate
     },
     mixins: [authMixin],
-    data () {
+    data() {
       return {
         viewName: {
           'list': cmdbHostAssociationList.name,
@@ -84,26 +84,26 @@
         'sourceInstances',
         'targetInstances'
       ]),
-      hasAssociation () {
+      hasAssociation() {
         return !!(this.source.length || this.target.length)
       },
-      hasInstance () {
+      hasInstance() {
         return [...this.sourceInstances, ...this.targetInstances].some((instance) => {
           return !!(instance.children || []).length
         })
       }
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.$store.commit('hostDetails/toggleExpandAll', false)
     },
     methods: {
-      toggleView (view) {
+      toggleView(view) {
         this.activeView = view
       },
-      handleExpandAll (expandAll) {
+      handleExpandAll(expandAll) {
         this.$store.commit('hostDetails/toggleExpandAll', expandAll)
       },
-      handleFullScreen () {
+      handleFullScreen() {
         this.$refs.dynamicComponent.toggleFullScreen(true)
       }
     }

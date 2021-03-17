@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  exportHost ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  exportHost({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post(`${window.API_HOST}hosts/export`, params, config)
   }
 }

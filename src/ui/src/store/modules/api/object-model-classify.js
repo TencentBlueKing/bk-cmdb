@@ -58,7 +58,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createClassification ({ commit, state, dispatch }, { params, config }) {
+  createClassification({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/objectclassification', params, config)
   },
 
@@ -70,7 +70,7 @@ const actions = {
      * @param {Number} id 分类数据记录id
      * @return {promises} promises 对象
      */
-  deleteClassification ({ commit, state, dispatch }, { id, config }) {
+  deleteClassification({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/objectclassification/${id}`, config)
   },
 
@@ -83,7 +83,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateClassification ({ commit, state, dispatch }, { id, params }) {
+  updateClassification({ commit, state, dispatch }, { id, params }) {
     return $http.put(`update/objectclassification/${id}`, params)
   },
 
@@ -95,7 +95,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchClassifications ({ commit, state, dispatch }, { params, config }) {
+  searchClassifications({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/objectclassification', params || {}, config)
   },
 
@@ -107,23 +107,23 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchClassificationsObjects ({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
+  searchClassificationsObjects({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
     return $http.post('find/classificationobject', params, config).then((data) => {
       commit('setClassificationsObjects', data)
       return data
     })
   },
 
-  getClassificationsObjectStatistics ({ state }, { config }) {
+  getClassificationsObjectStatistics({ state }, { config }) {
     return $http.get('object/statistics', config)
   }
 }
 
 const mutations = {
-  setClassificationsObjects (state, classifications) {
+  setClassificationsObjects(state, classifications) {
     state.classifications = classifications
   },
-  updateClassify (state, classification) {
+  updateClassify(state, classification) {
     const activeClassification = state.classifications.find(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classification['bk_classification_id'])
     if (activeClassification) {
       activeClassification['bk_classification_icon'] = classification['bk_classification_icon']
@@ -144,11 +144,11 @@ const mutations = {
       })
     }
   },
-  deleteClassify (state, classificationId) {
+  deleteClassify(state, classificationId) {
     const index = state.classifications.findIndex(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classificationId)
     state.classifications.splice(index, 1)
   },
-  updateModel (state, data) {
+  updateModel(state, data) {
     const models = []
     state.classifications.forEach((classification) => {
       (classification['bk_objects'] || []).forEach((model) => {

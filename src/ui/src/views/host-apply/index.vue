@@ -163,7 +163,7 @@
       sidebar,
       propertyConfigTable
     },
-    data () {
+    data() {
       return {
         currentModule: {},
         initRuleList: [],
@@ -177,26 +177,26 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      applyEnabled () {
+      applyEnabled() {
         return this.currentModule.host_apply_enabled
       },
-      moduleId () {
+      moduleId() {
         return this.currentModule.bk_inst_id
       },
-      ruleLastEditTime () {
+      ruleLastEditTime() {
         const lastTimeList = this.initRuleList.map(rule => new Date(rule.last_time).getTime())
         const latestTime = Math.max(...lastTimeList)
         return this.$tools.formatTime(latestTime, 'YYYY-MM-DD HH:mm:ss')
       },
-      hasConflict () {
+      hasConflict() {
         return this.conflictNum > 0
       }
     },
-    created () {
+    created() {
       this.getHostPropertyList()
     },
     methods: {
-      async getData () {
+      async getData() {
         try {
           const ruleData = await this.getRules()
 
@@ -217,7 +217,7 @@
           console.log(e)
         }
       },
-      getRules () {
+      getRules() {
         return this.$store.dispatch('hostApply/getRules', {
           bizId: this.bizId,
           params: {
@@ -228,7 +228,7 @@
           }
         })
       },
-      getApplyPreview () {
+      getApplyPreview() {
         return this.$store.dispatch('hostApply/getApplyPreview', {
           bizId: this.bizId,
           params: {
@@ -239,7 +239,7 @@
           }
         })
       },
-      async getHostPropertyList () {
+      async getHostPropertyList() {
         try {
           const properties = await this.$store.dispatch('hostApply/getProperties', {
             params: { bk_biz_id: this.bizId },
@@ -253,11 +253,11 @@
           console.error(e)
         }
       },
-      emptyRules () {
+      emptyRules() {
         this.checkedPropertyIdList = []
         this.hasRule = false
       },
-      handleCloseApply () {
+      handleCloseApply() {
         const h = this.$createElement
         this.$bkInfo({
           title: this.$t('确认关闭'),
@@ -297,7 +297,7 @@
           }
         })
       },
-      handleViewConflict () {
+      handleViewConflict() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
           query: {
@@ -306,7 +306,7 @@
           history: true
         })
       },
-      handleEdit () {
+      handleEdit() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_EDIT,
           query: {
@@ -315,11 +315,11 @@
           history: true
         })
       },
-      handleSelectModule (data) {
+      handleSelectModule(data) {
         this.currentModule = data
         this.getData()
       },
-      handleActionChange (action) {
+      handleActionChange(action) {
         this.batchAction = action
       }
     }

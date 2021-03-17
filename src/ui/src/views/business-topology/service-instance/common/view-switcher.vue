@@ -31,37 +31,37 @@
 <script>
   import RouterQuery from '@/router/query'
   export default {
-    data () {
+    data() {
       return {
         tipsDisabled: !!window.localStorage.getItem('service_instance_view_switcher'),
         active: RouterQuery.get('view', 'instance')
       }
     },
     watch: {
-      active (active) {
+      active(active) {
         if (active === 'process') {
           this.hideTips()
         }
       }
     },
-    mounted () {
+    mounted() {
       if (this.active === 'process') {
         this.hideTips()
       }
     },
     methods: {
-      getZIndex () {
+      getZIndex() {
         return window.__bk_zIndex_manager.nextZIndex()
       },
-      handleSwitch (active) {
+      handleSwitch(active) {
         RouterQuery.set({ 'view': active })
       },
-      hideTips () {
+      hideTips() {
         this.tipsDisabled = true
         const tippyInstance = this.$refs.tipsReference.$el.tippyInstance
         tippyInstance && tippyInstance.hide()
       },
-      handleCloseTips () {
+      handleCloseTips() {
         window.localStorage.setItem('service_instance_view_switcher', 'closed')
         this.hideTips()
       }

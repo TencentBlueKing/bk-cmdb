@@ -116,47 +116,47 @@
         default: () => []
       }
     },
-    data () {
+    data() {
       return {
         scrollbar: false,
         resizeEvent: null
       }
     },
     computed: {
-      editText () {
+      editText() {
         return this.editButtonText || this.$t('编辑')
       },
-      deleteText () {
+      deleteText() {
         return this.deleteButtonText || this.$t('删除')
       }
     },
-    mounted () {
+    mounted() {
       this.resizeEvent = Throttle(this.checkScrollbar, 100, { leading: false, trailing: true })
       RESIZE_EVENTS.addResizeListener(this.$refs.detailsWrapper, this.resizeEvent)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.resizeEvent)
     },
     methods: {
-      checkScrollbar () {
+      checkScrollbar() {
         const $layout = this.$el
         this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
       },
-      handleToggleGroup (group) {
+      handleToggleGroup(group) {
         const groupId = group['bk_group_id']
         const collapse = !!this.groupState[groupId]
         this.$set(this.groupState, groupId, !collapse)
       },
-      getTitle (inst, property) {
+      getTitle(inst, property) {
         return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`
       },
-      getValue (property) {
+      getValue(property) {
         return Formatter(this.inst[property.bk_property_id], property)
       },
-      handleEdit () {
+      handleEdit() {
         this.$emit('on-edit', this.inst)
       },
-      handleDelete () {
+      handleDelete() {
         this.$emit('on-delete', this.inst)
       }
     }

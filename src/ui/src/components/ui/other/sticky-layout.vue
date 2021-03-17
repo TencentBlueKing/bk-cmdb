@@ -23,22 +23,22 @@
   import throttle from 'lodash.throttle'
   export default {
     name: 'cmdb-sticky-layout',
-    data () {
+    data() {
       return {
         hasScrollbar: false,
         scheduleResize: throttle(this.handleResize, 300)
       }
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.content, this.scheduleResize)
       addResizeListener(this.$el, this.scheduleResize)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.content, this.scheduleResize)
       removeResizeListener(this.$el, this.scheduleResize)
     },
     methods: {
-      handleResize () {
+      handleResize() {
         this.hasScrollbar = this.$el.clientHeight < this.$el.scrollHeight
       }
     }

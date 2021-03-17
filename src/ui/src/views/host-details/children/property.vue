@@ -104,12 +104,12 @@
   export default {
     name: 'cmdb-host-property',
     filters: {
-      filterShowText (value, unit) {
+      filterShowText(value, unit) {
         return value === '--' ? '--' : value + unit
       }
     },
     mixins: [authMixin],
-    data () {
+    data() {
       return {
         editState: {
           property: null,
@@ -126,16 +126,16 @@
     computed: {
       ...mapState('hostDetails', ['info']),
       ...mapGetters('hostDetails', ['groupedProperties']),
-      host () {
+      host() {
         return this.info.host || {}
       }
     },
     methods: {
-      setFocus (id, focus) {
+      setFocus(id, focus) {
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')
       },
-      handleViewRules (property) {
+      handleViewRules(property) {
         const rule = this.hostRelatedRules.find(rule => rule.bk_attribute_id === property.id) || {}
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY,
@@ -145,10 +145,10 @@
           history: true
         })
       },
-      hasRelatedRules (property) {
+      hasRelatedRules(property) {
         return this.hostRelatedRules.some(rule => rule.bk_attribute_id === property.id)
       },
-      async getHostRelatedRules () {
+      async getHostRelatedRules() {
         try {
           const defaultType = this.$tools.getValue(this.info, 'biz.0.default')
           if (defaultType) { // 为0时为主机池未分配主机，不存在属性自动应用
@@ -170,17 +170,17 @@
           console.error(e)
         }
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      isPropertyEditable (property) {
+      isPropertyEditable(property) {
         const isSystemLimited = property.editable && !property.bk_isapi
         // bk_cloud_inst_id 有值得为云主机，云主机的外网IP不可编辑
         const isCloudHost = property.bk_property_id === 'bk_host_outerip' && this.host.bk_cloud_inst_id
         return isSystemLimited || isCloudHost
       },
-      setEditState (property) {
+      setEditState(property) {
         const value = this.host[property.bk_property_id]
         this.editState.value = (value === null || value === undefined) ? '' : value
         this.editState.property = property
@@ -189,7 +189,7 @@
           component[0] && component[0].focus && component[0].focus()
         })
       },
-      async confirm () {
+      async confirm() {
         const { property, value } = this.editState
         try {
           const isValid = await this.$validator.validateAll()
@@ -216,11 +216,11 @@
           this.loadingState = this.loadingState.filter(exist => exist !== property)
         }
       },
-      exitForm () {
+      exitForm() {
         this.editState.property = null
         this.editState.value = null
       },
-      handleCopy (propertyId) {
+      handleCopy(propertyId) {
         const component = this.$refs[`property-value-${propertyId}`]
         const copyText = component[0] ? component[0].$el.innerText : ''
         this.$copyText(copyText).then(() => {

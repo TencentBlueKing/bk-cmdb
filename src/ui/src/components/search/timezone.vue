@@ -25,17 +25,17 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         timezones: Object.freeze(TimeZones)
       }
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (values) {
+        set(values) {
           this.$emit('input', values)
           this.$emit('change', values)
         }

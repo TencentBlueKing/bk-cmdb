@@ -4,7 +4,7 @@ import store from '@/store'
 import FilterForm from './filter-form.vue'
 import FilterStore from './store'
 export default {
-  show (props = {}) {
+  show(props = {}) {
     const exist = FilterStore.getComponent('FilterForm')
     if (exist) {
       exist.$refs.FilterForm.focusIP()
@@ -13,13 +13,13 @@ export default {
     const vm = new Vue({
       i18n,
       store,
-      created () {
+      created() {
         FilterStore.setComponent('FilterForm', this)
       },
-      beforeDestroy () {
+      beforeDestroy() {
         FilterStore.setComponent('FilterForm', null)
       },
-      render (h) {
+      render(h) {
         return h(FilterForm, {
           ref: 'FilterForm',
           props,

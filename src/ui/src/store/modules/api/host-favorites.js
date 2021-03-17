@@ -66,7 +66,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  searchFavorites (context, { params, config }) {
+  searchFavorites(context, { params, config }) {
     return $http.post('hosts/favorites/search', params, config)
   },
   /**
@@ -77,7 +77,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  createFavorites ({ commit, state, dispatch }, { params, config }) {
+  createFavorites({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/favorites', params, config)
   },
 
@@ -90,7 +90,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  updateFavorites ({ commit, state, dispatch }, { id, params, config }) {
+  updateFavorites({ commit, state, dispatch }, { id, params, config }) {
     return $http.put(`hosts/favorites/${id}`, params, config)
   },
 
@@ -102,7 +102,7 @@ const actions = {
      * @param {String} id 收藏的主键
      * @return {Promise} promise 对象
      */
-  deleteFavorites ({ commit, state, dispatch }, { id, config }) {
+  deleteFavorites({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`hosts/favorites/${id}`, config)
   },
 
@@ -114,13 +114,13 @@ const actions = {
      * @param {String} id 收藏的主键
      * @return {Promise} promise 对象
      */
-  incrFavorites ({ commit, state, dispatch }, { id }) {
+  incrFavorites({ commit, state, dispatch }, { id }) {
     return $http.put(`hosts/favorites/${id}/incr`)
   }
 }
 
 const mutations = {
-  setApplying (state, collection) {
+  setApplying(state, collection) {
     state.applying = collection
   }
 }

@@ -11,11 +11,11 @@ export default {
     }
   },
   computed: {
-    multiple () {
+    multiple() {
       return Array.isArray(this.value)
     },
     localValue: {
-      get () {
+      get() {
         if (this.multiple) {
           return this.value
         }
@@ -24,7 +24,7 @@ export default {
         }
         return []
       },
-      set (value) {
+      set(value) {
         const emitValue = this.multiple ? [...value] : value.toString()
         this.$emit('input', emitValue)
         this.$emit('change', emitValue)
@@ -32,7 +32,7 @@ export default {
     }
   },
   methods: {
-    async fuzzySearchMethod (keyword) {
+    async fuzzySearchMethod(keyword) {
       try {
         const list = await this.$http.post('findmany/object/instances/names', {
           bk_obj_id: this.type,
@@ -50,7 +50,7 @@ export default {
         return Promise.reject(error)
       }
     },
-    exactSearchMethod (names) {
+    exactSearchMethod(names) {
       if (Array.isArray(names)) {
         return Promise.resolve(names.map(name => ({ text: name, value: name })))
       }

@@ -2,19 +2,19 @@ import Vue from 'vue'
 import http from '@/api'
 
 export default new Vue({
-  data () {
+  data() {
     return {
       results: new Map(),
       queue: []
     }
   },
   watch: {
-    queue (queue) {
+    queue(queue) {
       queue.length && this.dispatchRequest()
     }
   },
   methods: {
-    search (data) {
+    search(data) {
       return new Promise((resolve) => {
         this.queue.push({
           resolve,
@@ -22,7 +22,7 @@ export default new Vue({
         })
       })
     },
-    dispatchRequest () {
+    dispatchRequest() {
       this.requestTimer && clearTimeout(this.requestTimer)
       this.requestTimer = setTimeout(() => {
         // 一次执行请求后将队列清空
@@ -56,7 +56,7 @@ export default new Vue({
       }, 200)
     },
     // 将业务下的模块去重，并去掉已缓存的模块id
-    seperateNode (bizId, requestSet) {
+    seperateNode(bizId, requestSet) {
       const modules = []
       requestSet.forEach(({ data }) => {
         modules.push(...data.modules)
@@ -71,7 +71,7 @@ export default new Vue({
       }))
     },
     // 将请求结果用map缓存起来
-    setResults (bizId, nodes) {
+    setResults(bizId, nodes) {
       nodes.forEach((node) => {
         const resultMap = this.results.get(bizId)
         if (resultMap) {
@@ -84,7 +84,7 @@ export default new Vue({
       })
     },
     // resolve返回给每个组件的Promise
-    resolvePromise (bizId, requestSet) {
+    resolvePromise(bizId, requestSet) {
       const resultMap = this.results.get(bizId) || new Map()
       requestSet.forEach((meta) => {
         const result = meta.data.modules.map((moduleId) => {

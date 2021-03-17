@@ -38,7 +38,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         localEllipsis: false,
         showClose: false,
@@ -46,15 +46,15 @@
       }
     },
     watch: {
-      moreLink (link) {
+      moreLink(link) {
         this.localEllipsis = link ? false : this.ellipsis
       }
     },
-    created () {
+    created() {
       this.setStatus()
     },
     methods: {
-      setStatus () {
+      setStatus() {
         let value = !this.tipsKey
         if (this.tipsKey) {
           const localValue = window.localStorage.getItem(this.tipsKey)
@@ -64,7 +64,7 @@
         this.showTips = value
         this.showClose = !!this.tipsKey
       },
-      handleClose () {
+      handleClose() {
         window.localStorage.setItem(this.tipsKey, false)
         this.$emit('input', false)
         this.showTips = false

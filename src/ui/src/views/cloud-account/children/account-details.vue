@@ -73,7 +73,7 @@
         default: () => ({})
       }
     },
-    data () {
+    data() {
       return {
         account: {},
         request: {
@@ -82,11 +82,11 @@
         }
       }
     },
-    created () {
+    created() {
       this.getAccountData()
     },
     methods: {
-      async getAccountData () {
+      async getAccountData() {
         try {
           const account = await this.$store.dispatch('cloud/account/findOne', {
             id: this.id,
@@ -103,7 +103,7 @@
           console.error(e)
         }
       },
-      handleEdit () {
+      handleEdit() {
         this.container.show({
           type: 'form',
           title: `${this.$t('编辑账户')} 【${this.account.bk_account_name}】`,
@@ -113,7 +113,7 @@
           }
         })
       },
-      handleDelete () {
+      handleDelete() {
         const infoInstance = this.$bkInfo({
           title: this.$t('确认删除xx', { instance: this.account.bk_account_name }),
           closeIcon: false,

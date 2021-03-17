@@ -28,19 +28,19 @@
     },
     computed: {
       ...mapGetters(['userName']),
-      api () {
+      api() {
         return window.ESB.userManage
       },
       localValue: {
-        get () {
+        get() {
           return (this.value && this.value.length) ? this.value.split(',') : []
         },
-        set (val) {
+        set(val) {
           this.$emit('input', val.toString())
           this.$emit('change', val.toString, this.value)
         }
       },
-      props () {
+      props() {
         const props = { ...this.$attrs }
         if (this.api) {
           props.api = this.api
@@ -52,11 +52,11 @@
         return props
       }
     },
-    mounted () {
+    mounted() {
       this.setupFastSelect()
     },
     methods: {
-      setupFastSelect () {
+      setupFastSelect() {
         if (!this.fastSelect) return
         const FastSelect = new Vue({
           render: (h) => {
@@ -73,10 +73,10 @@
         const container = this.$refs.userSelector.$refs.container
         container.parentElement.append(FastSelect.$el)
       },
-      focus () {
+      focus() {
         this.$refs.userSelector.focus()
       },
-      async fuzzySearchMethod (keyword, page = 1) {
+      async fuzzySearchMethod(keyword, page = 1) {
         const users = await this.$http.get(`${window.API_HOST}user/list`, {
           params: {
             fuzzy_lookups: keyword
@@ -93,14 +93,14 @@
           }))
         }
       },
-      exactSearchMethod (usernames) {
+      exactSearchMethod(usernames) {
         const isBatch = Array.isArray(usernames)
         return Promise.resolve(isBatch ? usernames.map(username => ({ username })) : { username: usernames })
       },
-      pasteValidator (usernames) {
+      pasteValidator(usernames) {
         return Promise.resolve(usernames)
       },
-      handleFastSelect (event) {
+      handleFastSelect(event) {
         event.stopPropagation()
         const value = [...this.localValue]
         const exist = value.includes(this.userName)

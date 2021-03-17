@@ -11,27 +11,27 @@
     props: {
       relations: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       }
     },
-    data () {
+    data() {
       return {
         fetching: false,
         names: []
       }
     },
     watch: {
-      relations (value) {
+      relations(value) {
         this.fetchName()
       }
     },
-    created () {
+    created() {
       this.fetchName()
     },
     methods: {
-      async fetchName () {
+      async fetchName() {
         this.names = []
         const nameReq = []
         this.relations.forEach((relation) => {

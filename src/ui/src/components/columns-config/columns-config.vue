@@ -58,19 +58,19 @@
     props: {
       properties: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
       selected: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
       disabledColumns: {
         type: Array,
-        default () {
+        default() {
           return []
         }
       },
@@ -91,26 +91,26 @@
         default: true
       }
     },
-    data () {
+    data() {
       return {
         filter: '',
         localSelected: []
       }
     },
     computed: {
-      sortedProperties () {
+      sortedProperties() {
         return [...this.properties].sort((propertyA, propertyB) => {
           return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', { sensitivity: 'accent' })
         })
       },
-      unselectedProperties () {
+      unselectedProperties() {
         return this.sortedProperties.filter((property) => {
           const unselected = !this.localSelected.includes(property['bk_property_id'])
           const includesFilter = property['bk_property_name'].toLowerCase().indexOf(this.filter.toLowerCase()) !== -1
           return unselected && includesFilter
         })
       },
-      undragbbleProperties () {
+      undragbbleProperties() {
         const undragbbleProperties = []
         this.disabledColumns.forEach((id) => {
           const isSelected = this.localSelected.includes(id)
@@ -124,7 +124,7 @@
         return undragbbleProperties
       },
       drabbleProperties: {
-        get () {
+        get() {
           const drabbleProperties = []
           this.localSelected.forEach((propertyId) => {
             if (!this.disabledColumns.includes(propertyId)) {
@@ -136,41 +136,41 @@
           })
           return drabbleProperties
         },
-        set (drabbleProperties) {
+        set(drabbleProperties) {
           this.localSelected = [...this.undragbbleProperties, ...drabbleProperties].map(property => property['bk_property_id'])
         }
       }
     },
     watch: {
-      selected (selected) {
+      selected(selected) {
         this.initLocalSelected()
       }
     },
-    created () {
+    created() {
       this.initLocalSelected()
     },
     methods: {
-      initLocalSelected () {
+      initLocalSelected() {
         this.localSelected = this.selected.filter(propertyId => this.properties.some(property => property['bk_property_id'] === propertyId))
       },
-      selectProperty (property) {
+      selectProperty(property) {
         if (this.localSelected.length < this.max) {
           this.localSelected.push(property['bk_property_id'])
         } else {
           this.$info(this.$t('最多选择N项', { n: this.max }))
         }
       },
-      unselectProperty (property) {
+      unselectProperty(property) {
         if (this.localSelected.length > this.min) {
           this.localSelected = this.localSelected.filter(propertyId => propertyId !== property['bk_property_id'])
         } else {
           this.$info(this.$t('至少选择N项', { n: this.min }))
         }
       },
-      checkDisabled (property) {
+      checkDisabled(property) {
         return this.disabledColumns.includes(property['bk_property_id'])
       },
-      handleApply () {
+      handleApply() {
         if (this.localSelected.length > this.max) {
           this.$info(this.$t('最多选择N项', { n: this.max }))
         } else if (this.localSelected.length < this.min) {
@@ -181,11 +181,11 @@
           this.$emit('apply', properties)
         }
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('on-cancel')
         this.$emit('cancel')
       },
-      handleReset () {
+      handleReset() {
         this.$bkInfo({
           title: this.$t('确认还原配置'),
           subTitle: this.$t('是否还原为系统默认的列表属性配置？'),

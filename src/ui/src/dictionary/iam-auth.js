@@ -55,7 +55,7 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task']
 }
 
-function basicTransform (cmdbAction, meta = {}) {
+function basicTransform(cmdbAction, meta = {}) {
   const [internalType, internalAction] = cmdbAction.split('.')
   const inejctedMeta = {
     resource_type: internalType,
@@ -1177,7 +1177,7 @@ Object.keys(IAM_ACTIONS).forEach(key => (OPERATION[key] = key))
 //         resource_id: 12              // 父级依赖id
 //     }]
 // }
-export function TRANSFORM_TO_INTERNAL (authList) {
+export function TRANSFORM_TO_INTERNAL(authList) {
   try {
     // 类似导入的鉴权，需要新增、编辑两种权限，统一转成数组处理
     authList = Array.isArray(authList) ? authList : [authList]

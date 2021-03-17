@@ -95,7 +95,7 @@
       searchSelectMix,
       topologyTree
     },
-    data () {
+    data() {
       return {
         treeOptions: {
           showCheckbox: false,
@@ -112,10 +112,10 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      topologyTree () {
+      topologyTree() {
         return this.$refs.topologyTree
       },
-      checkedNodes () {
+      checkedNodes() {
         if (this.actionMode === 'batch-edit') {
           return this.checkedList.map(data => this.topologyTree.idGenerator(data))
         }
@@ -123,19 +123,19 @@
       }
     },
     watch: {
-      actionMode (value) {
+      actionMode(value) {
         this.$emit('action-change', value)
       }
     },
     methods: {
-      setApplyClosed (moduleId, isClear) {
+      setApplyClosed(moduleId, isClear) {
         this.topologyTree.updateNodeStatus(moduleId, isClear)
       },
-      removeChecked () {
+      removeChecked() {
         const tree = this.topologyTree.$refs.tree
         tree.removeChecked({ emitEvent: true })
       },
-      async handleBatchAction (actionMode) {
+      async handleBatchAction(actionMode) {
         this.actionMode = actionMode
         this.showCheckedPanel = true
         this.treeOptions.showCheckbox = true
@@ -143,10 +143,10 @@
         this.treeOptions.checkOnClick = true
         this.treeOptions.checkOnlyAvailableStrictly = true
       },
-      handleTreeSelected (node) {
+      handleTreeSelected(node) {
         this.$emit('module-selected', node.data)
       },
-      handleTreeChecked (ids, target) {
+      handleTreeChecked(ids, target) {
         const treeData = this.topologyTree.treeData
         const modules = []
         const findModuleNode = function (data, parent) {
@@ -164,16 +164,16 @@
 
         this.checkedList = modules
       },
-      handleRemoveChecked (id) {
+      handleRemoveChecked(id) {
         const tree = this.topologyTree.$refs.tree
         const checkedIds = this.checkedList.filter(item => item.bk_inst_id !== id).map(item => `module_${item.bk_inst_id}`)
         tree.removeChecked({ emitEvent: true })
         tree.setChecked(checkedIds, { emitEvent: true, beforeCheck: true, checked: true })
       },
-      handleClearChecked () {
+      handleClearChecked() {
         this.removeChecked()
       },
-      handleGoEdit () {
+      handleGoEdit() {
         const checkedIds = this.checkedList.map(item => item.bk_inst_id)
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_EDIT,
@@ -185,7 +185,7 @@
           history: true
         })
       },
-      handleCancelEdit () {
+      handleCancelEdit() {
         this.treeOptions.showCheckbox = false
         this.treeOptions.selectable = true
         this.treeOptions.checkOnClick = false

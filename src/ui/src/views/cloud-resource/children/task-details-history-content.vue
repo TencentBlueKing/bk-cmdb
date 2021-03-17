@@ -37,7 +37,7 @@
       }
     },
     computed: {
-      groupedList () {
+      groupedList() {
         const newAddList = (this.details.new_add || {}).ips || []
         const updateList = (this.details.update || {}).ips || []
         const groupedList = [{ type: this.$t('新增'), list: newAddList }, { type: this.$t('更新'), list: updateList }]
@@ -45,7 +45,7 @@
       }
     },
     methods: {
-      async handleCopy (event, group) {
+      async handleCopy(event, group) {
         try {
           await this.$copyText(group.list.map(ip => ip).join('\n'))
           const target = event.currentTarget

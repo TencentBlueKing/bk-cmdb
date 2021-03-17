@@ -88,7 +88,7 @@
       cmdbAssociationPropertyFilter
     },
     mixins: [authMixin],
-    data () {
+    data() {
       return {
         properties: [],
         filter: {
@@ -135,13 +135,13 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-      objId () {
+      objId() {
         return 'host'
       },
-      instId () {
+      instId() {
         return parseInt(this.$route.params.id)
       },
-      instanceIdKey () {
+      instanceIdKey() {
         const specialObj = {
           'host': 'bk_host_id',
           'biz': 'bk_biz_id',
@@ -154,7 +154,7 @@
         }
         return 'bk_inst_id'
       },
-      instanceNameKey () {
+      instanceNameKey() {
         const nameKey = {
           'bk_host_id': 'bk_host_innerip',
           'bk_biz_id': 'bk_biz_name',
@@ -165,7 +165,7 @@
         }
         return nameKey[this.instanceIdKey]
       },
-      instanceName () {
+      instanceName() {
         const name = {
           'bk_host_innerip': this.$t('内网IP'),
           'bk_biz_name': this.$t('业务名'),
@@ -179,7 +179,7 @@
         }
         return name[this.instanceNameKey]
       },
-      dataIdKey () {
+      dataIdKey() {
         const specialObj = {
           'host': 'bk_host_id',
           'biz': 'bk_biz_id',
@@ -192,7 +192,7 @@
         }
         return 'bk_inst_id'
       },
-      page () {
+      page() {
         const pagination = this.table.pagination
         return {
           start: (pagination.current - 1) * pagination.limit,
@@ -200,26 +200,26 @@
           sort: this.table.sort
         }
       },
-      multiple () {
+      multiple() {
         return this.currentOption.mapping !== '1:1'
       },
-      isSource () {
+      isSource() {
         return this.currentOption['bk_obj_id'] === this.objId
       }
     },
     watch: {
-      'filter.id' (id) {
+      'filter.id'(id) {
         this.setTableHeader(id)
       }
     },
-    async created () {
+    async created() {
       await Promise.all([
         this.getAssociationType(),
         this.getObjAssociation()
       ])
       this.setAssociationOptions()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       if (this.hasChange) {
         this.hasChange = false
         bus.$emit('association-change')
@@ -237,7 +237,7 @@
       ...mapActions('objectCommonInst', ['searchInst']),
       ...mapActions('objectBiz', ['searchBusiness']),
       ...mapActions('hostSearch', ['searchHost']),
-      getInstanceAuth (row) {
+      getInstanceAuth(row) {
         const auth = [this.HOST_AUTH.U_HOST]
         switch (this.currentAsstObj) {
           case 'biz': {
@@ -274,7 +274,7 @@
         }
         return auth
       },
-      getAsstObjProperties () {
+      getAsstObjProperties() {
         return this.searchObjectAttribute({
           params: {
             'bk_obj_id': this.currentAsstObj,
@@ -288,25 +288,25 @@
           return properties
         })
       },
-      close () {
+      close() {
         this.$emit('on-new-relation-close')
       },
-      search () {
+      search() {
         this.setCurrentPage(1)
       },
-      setCurrentPage (page) {
+      setCurrentPage(page) {
         this.table.pagination.current = page
         this.getInstance()
       },
-      setCurrentLimit (limit) {
+      setCurrentLimit(limit) {
         this.table.pagination.limit = limit
         this.search()
       },
-      setCurrentSort (sort) {
+      setCurrentSort(sort) {
         this.table.sort = this.$tools.getSort(sort)
         this.search()
       },
-      setTableHeader (propertyId) {
+      setTableHeader(propertyId) {
         const header = [{
           id: this.instanceIdKey,
           name: 'ID',
@@ -326,13 +326,13 @@
         }
         this.table.header = header
       },
-      getAssociationType () {
+      getAssociationType() {
         return this.searchAssociationType({}).then((data) => {
           this.associationType = data.info
           return data
         })
       },
-      getObjAssociation () {
+      getObjAssociation() {
         return Promise.all([
           this.searchObjectAssociation({
             params: {
@@ -368,12 +368,12 @@
           this.associationObject = [...dataAsSource, ...dataAsTarget]
         })
       },
-      getAvailableAssociation (data, mainLine) {
+      getAvailableAssociation(data, mainLine) {
         return data.filter((relation) => {
           return !mainLine.some(model => [relation['bk_obj_id'], relation['bk_asst_obj_id']].includes(model['bk_obj_id']))
         })
       },
-      setAssociationOptions () {
+      setAssociationOptions() {
         const options = this.associationObject.map((option) => {
           const isSource = option['bk_obj_id'] === this.objId
           const type = this.associationType.find(type => type['bk_asst_id'] === option['bk_asst_id'])
@@ -393,7 +393,7 @@
         const uniqueLabel = [...new Set(allLabel)]
         this.options = uniqueLabel.map(label => options.find(option => option._label === label))
       },
-      async handleSelectObj (asstId, option) {
+      async handleSelectObj(asstId, option) {
         this.tempData = []
         this.currentOption = option
         this.currentAsstObj = option['bk_obj_id'] === this.objId ? option['bk_asst_obj_id'] : option['bk_obj_id']
@@ -407,7 +407,7 @@
         ])
         this.getInstance()
       },
-      getExistInstAssociation () {
+      getExistInstAssociation() {
         const option = this.currentOption
         const isSource = this.isSource
         return this.searchInstAssociation({
@@ -424,7 +424,7 @@
           this.existInstAssociation = data || []
         })
       },
-      isAssociated (inst) {
+      isAssociated(inst) {
         return this.existInstAssociation.some((exist) => {
           if (this.isSource) {
             return exist['bk_asst_inst_id'] === inst[this.instanceIdKey]
@@ -432,7 +432,7 @@
           return exist['bk_inst_id'] === inst[this.instanceIdKey]
         })
       },
-      async updateAssociation (instId, updateType = 'new') {
+      async updateAssociation(instId, updateType = 'new') {
         try {
           if (updateType === 'new') {
             await this.createAssociation(instId)
@@ -457,7 +457,7 @@
           this.getExistInstAssociation()
         }
       },
-      createAssociation (instId) {
+      createAssociation(instId) {
         return this.createInstAssociation({
           params: {
             'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
@@ -466,7 +466,7 @@
           }
         })
       },
-      deleteAssociation (instId) {
+      deleteAssociation(instId) {
         const instAssociation = this.existInstAssociation.find((exist) => {
           if (this.isSource) {
             return exist['bk_asst_inst_id'] === instId
@@ -477,7 +477,7 @@
           id: (instAssociation || {}).id
         })
       },
-      beforeUpdate (event, instId, updateType = 'new') {
+      beforeUpdate(event, instId, updateType = 'new') {
         if (this.multiple || !this.existInstAssociation.length) {
           this.updateAssociation(instId, updateType)
         } else {
@@ -498,14 +498,14 @@
           })
         }
       },
-      confirmUpdate () {
+      confirmUpdate() {
         this.updateAssociation(this.confirm.id, 'update')
         this.cancelUpdate()
       },
-      cancelUpdate () {
+      cancelUpdate() {
         this.confirm.instance && this.confirm.instance.hide()
       },
-      async getInstance () {
+      async getInstance() {
         const objId = this.currentAsstObj
         const config = {
           requestId: 'get_relation_inst',
@@ -535,7 +535,7 @@
           }
         })
       },
-      getHostInstance (config) {
+      getHostInstance(config) {
         const ipFields = ['bk_host_innerip', 'bk_host_outerip']
         const filter = this.filter
         const hostParams = {
@@ -552,7 +552,7 @@
           config
         })
       },
-      getHostCondition () {
+      getHostCondition() {
         const condition = [{ 'bk_obj_id': 'host', 'condition': [], fields: [] }]
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
@@ -564,7 +564,7 @@
         }
         return condition
       },
-      getBizInstance (config) {
+      getBizInstance(config) {
         const params = {
           condition: {
             'bk_data_status': { '$ne': 'disabled' }
@@ -580,14 +580,14 @@
           config
         })
       },
-      getObjInstance (objId, config) {
+      getObjInstance(objId, config) {
         return this.searchInst({
           objId: objId,
           params: this.getObjParams(),
           config
         })
       },
-      getObjParams () {
+      getObjParams() {
         const params = {
           page: this.page,
           fields: {},
@@ -604,7 +604,7 @@
         }
         return params
       },
-      setTableList (data, asstObjId) {
+      setTableList(data, asstObjId) {
         // const properties = this.properties
         this.table.pagination.count = data.count
         if (asstObjId === 'host') {
@@ -615,20 +615,20 @@
         }
         this.table.list = data.info
       },
-      getProperty (propertyId) {
+      getProperty(propertyId) {
         return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)
       },
-      handleCloseConfirm (event) {
+      handleCloseConfirm(event) {
         // this.confirm.id = null
       },
-      handlePropertySelected (value, data) {
+      handlePropertySelected(value, data) {
         this.filter.id = data['bk_property_id']
         this.filter.name = data['bk_property_name']
       },
-      handleOperatorSelected (value, data) {
+      handleOperatorSelected(value, data) {
         this.filter.operator = value
       },
-      handleValueChange (value) {
+      handleValueChange(value) {
         this.filter.value = value
       }
     }

@@ -87,7 +87,7 @@
         default: null
       }
     },
-    data () {
+    data() {
       return {
         slider: {
           isShow: false,
@@ -111,10 +111,10 @@
       ...mapGetters('objectModel', [
         'activeModel'
       ]),
-      isTopoModel () {
+      isTopoModel() {
         return ['bk_biz_topo', 'bk_organization'].includes(this.activeModel.bk_classification_id)
       },
-      isReadOnly () {
+      isReadOnly() {
         if (this.activeModel) {
           return this.activeModel['bk_ispaused']
         }
@@ -124,7 +124,7 @@
     watch: {
       activeModel: {
         immediate: true,
-        handler (activeModel) {
+        handler(activeModel) {
           if (activeModel.bk_obj_id) {
             this.initAttrList()
             this.searchVerification()
@@ -140,13 +140,13 @@
         'searchObjectUniqueConstraints',
         'deleteObjectUniqueConstraints'
       ]),
-      isEditable (item) {
+      isEditable(item) {
         if (item.ispre || this.isReadOnly) {
           return false
         }
         return true
       },
-      getRuleName (keys) {
+      getRuleName(keys) {
         const name = []
         keys.forEach((key) => {
           if (key['key_kind'] === 'property') {
@@ -158,7 +158,7 @@
         })
         return name.join('+')
       },
-      async initAttrList () {
+      async initAttrList() {
         this.attributeList = await this.searchObjectAttribute({
           params: {
             bk_obj_id: this.activeModel['bk_obj_id']
@@ -168,24 +168,24 @@
           }
         })
       },
-      createVerification () {
+      createVerification() {
         this.slider.title = this.$t('新建校验')
         this.slider.isEdit = false
         this.slider.isReadOnly = false
         this.slider.isShow = true
       },
-      editVerification (verification) {
+      editVerification(verification) {
         this.slider.title = this.$t('编辑校验')
         this.slider.verification = verification
         this.slider.isEdit = true
         this.slider.isReadOnly = false
         this.slider.isShow = true
       },
-      saveVerification () {
+      saveVerification() {
         this.slider.isShow = false
         this.searchVerification()
       },
-      deleteVerification (verification) {
+      deleteVerification(verification) {
         this.$bkInfo({
           title: this.$tc('确定删除唯一校验', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
           confirmFn: async () => {
@@ -201,7 +201,7 @@
           }
         })
       },
-      async searchVerification () {
+      async searchVerification() {
         const res = await this.searchObjectUniqueConstraints({
           objId: this.activeModel['bk_obj_id'],
           params: {},
@@ -211,7 +211,7 @@
         })
         this.table.list = res
       },
-      handleShowDetails (row, column, cell) {
+      handleShowDetails(row, column, cell) {
         if (column.property === 'operation') return
         this.slider.title = this.$t('查看校验')
         this.slider.verification = row
@@ -219,10 +219,10 @@
         this.slider.isReadOnly = true
         this.slider.isShow = true
       },
-      handleReceiveAuth (auth) {
+      handleReceiveAuth(auth) {
         this.updateAuth = auth
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.verificationForm.changedValues).length
         if (hasChanged) {
           return new Promise((resolve, reject) => {

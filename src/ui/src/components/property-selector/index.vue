@@ -31,15 +31,15 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       },
-      options () {
+      options() {
         const options = this.properties.filter(property => !!property.id)
         const uniqueIds = (this.objectUnique.find(unique => unique.must_check) || {}).keys || []
         options.sort((m, n) => {

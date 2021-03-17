@@ -45,7 +45,7 @@
         default: 2000
       }
     },
-    data () {
+    data() {
       return {
         localValue: this.value,
         rows: 1,
@@ -54,26 +54,26 @@
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.setLocalValue()
       }
     },
-    created () {
+    created() {
       if (this.isFocus) {
         this.setRows()
       }
     },
     methods: {
-      setLocalValue () {
+      setLocalValue() {
         if (this.localValue !== this.value) {
           this.localValue = this.value
           this.$emit('on-change', this.localValue)
         }
       },
-      setValue () {
+      setValue() {
         this.$emit('input', this.localValue)
       },
-      handleClear () {
+      handleClear() {
         this.timer && clearTimeout(this.timer)
         this.localValue = ''
         this.rows = 1
@@ -81,15 +81,15 @@
         this.setValue()
         this.$emit('clear')
       },
-      setRows () {
+      setRows() {
         const rows = this.localValue.split('\n').length
         this.rows = Math.min(5, Math.max(rows, 1))
       },
-      handleFocus () {
+      handleFocus() {
         this.setRows()
         this.isFocus = true
       },
-      handleBlur () {
+      handleBlur() {
         this.isFocus = false
         this.timer = setTimeout(() => {
           this.rows = 1
@@ -98,16 +98,16 @@
           }
         }, 200)
       },
-      handleEnter () {
+      handleEnter() {
         this.rows = Math.min(this.rows + 1, 5)
         this.$emit('enter', this.localValue)
       },
-      handleDelete () {
+      handleDelete() {
         this.$nextTick(() => {
           this.setRows()
         })
       },
-      focus () {
+      focus() {
         this.$refs.textarea.focus()
       }
     }

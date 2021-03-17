@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-  createHostSearchHistory ({ commit, state, dispatch }, { params }) {
+  createHostSearchHistory({ commit, state, dispatch }, { params }) {
     return $http.post('hosts/history', params)
   },
 
@@ -40,7 +40,7 @@ const actions = {
      * @param {Number} limit 每页限制条数，最大200
      * @return {Promise} promise 对象
      */
-  searchHostSearchHistory ({ commit, state, dispatch }, { start, limit }) {
+  searchHostSearchHistory({ commit, state, dispatch }, { start, limit }) {
     return $http.get(`hosts/history${start}/${limit}`)
   }
 }

@@ -20,7 +20,7 @@
       [AccountForm.name]: AccountForm,
       [AccountDetails.name]: AccountDetails
     },
-    data () {
+    data() {
       return {
         isShow: false,
         title: '',
@@ -29,7 +29,7 @@
       }
     },
     methods: {
-      show (options) {
+      show(options) {
         this.componentProps = options.props || {}
         if (options.type === 'form') {
           this.component = AccountForm.name
@@ -39,10 +39,10 @@
         this.title = options.title
         this.isShow = true
       },
-      hide () {
+      hide() {
         this.isShow = false
       },
-      handleHidden () {
+      handleHidden() {
         this.component = null
         this.componentProps = {}
       }

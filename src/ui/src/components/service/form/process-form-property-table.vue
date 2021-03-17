@@ -58,15 +58,15 @@
     inject: ['form'],
     computed: {
       localValue: {
-        get () {
+        get() {
           return (this.value || [])
         },
-        set (values) {
+        set(values) {
           this.$emit('input', values)
           this.$emit('change', values)
         }
       },
-      lockStates () {
+      lockStates() {
         const property = this.form.processTemplate.property || { bind_info: { value: [] } }
         const values = property.bind_info.value || []
         return values.map((row) => {
@@ -78,43 +78,43 @@
           return state
         })
       },
-      serviceTemplateId () {
+      serviceTemplateId() {
         return this.form.serviceTemplateId
       },
-      bizId () {
+      bizId() {
         return this.form.bizId
       },
-      mode () {
+      mode() {
         return this.serviceTemplateId ? 'info' : 'update'
       },
-      validateMsg () {
+      validateMsg() {
         const hasError = this.errors.items.some(item => item.scope === 'bind_info')
         return hasError ? this.$t('有未正确定义的监听信息') : null
       }
     },
     methods: {
-      isLocked ({ row, column, index }) {
+      isLocked({ row, column, index }) {
         const rowState = this.lockStates[index]
         return rowState ? rowState[column.property] : false
       },
-      getComponentType (property) {
+      getComponentType(property) {
         if (property.bk_property_id === 'ip') {
           return 'process-form-property-ip'
         }
         return `cmdb-form-${property.bk_property_type}`
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      handleColumnValueChange ({ row, column, index }, value) {
+      handleColumnValueChange({ row, column, index }, value) {
         const rowValue = { ...row }
         rowValue[column.property] = value
         const newValues = [...this.localValue]
         newValues.splice(index, 1, rowValue)
         this.localValue = newValues
       },
-      handleRedirect () {
+      handleRedirect() {
         this.$routerActions.redirect({
           name: 'operationalTemplate',
           params: {

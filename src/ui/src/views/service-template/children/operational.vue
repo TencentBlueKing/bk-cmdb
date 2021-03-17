@@ -249,7 +249,7 @@
       processTable,
       processForm
     },
-    data () {
+    data() {
       return {
         processLoading: false,
         properties: [],
@@ -308,16 +308,16 @@
       ...mapGetters(['supplierAccount']),
       ...mapGetters('serviceProcess', ['localProcessTemplate']),
       ...mapGetters('objectBiz', ['bizId']),
-      templateId () {
+      templateId() {
         return this.$route.params.templateId
       },
-      isCreateMode () {
+      isCreateMode() {
         return this.templateId === undefined
       },
-      isFormMode () {
+      isFormMode() {
         return this.isCreateMode || this.insideMode === 'edit'
       },
-      auth () {
+      auth() {
         if (this.isCreateMode) {
           return {
             type: this.$OPERATION.C_SERVICE_TEMPLATE,
@@ -329,15 +329,15 @@
           relation: [this.bizId, Number(this.templateId)]
         }
       },
-      setActive () {
+      setActive() {
         return this.$route.params.active
       },
-      submitting () {
+      submitting() {
         const { createProcessTemplate, createServiceTemplate, updateServiceTemplate } = this.request
         return this.$loading([createProcessTemplate, createServiceTemplate, updateServiceTemplate])
       }
     },
-    created () {
+    created() {
       Bus.$on('module-loaded', (count) => {
         this.deletable = !count
       })
@@ -345,7 +345,7 @@
       this.processList = this.localProcessTemplate
       this.refresh()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('module-loaded')
       this.clearLocalProcessTemplate()
     },
@@ -370,7 +370,7 @@
         'deleteLocalProcessTemplate',
         'clearLocalProcessTemplate'
       ]),
-      async refresh () {
+      async refresh() {
         try {
           await this.reload()
           if (this.setActive) {
@@ -385,14 +385,14 @@
           console.error(e)
         }
       },
-      setBreadcrumbs () {
+      setBreadcrumbs() {
         if (this.isCreateMode) {
           this.$store.commit('setTitle', this.$t('新建模板'))
         } else {
           this.$store.commit('setTitle', this.$t('模板详情'))
         }
       },
-      async reload () {
+      async reload() {
         try {
           const request = [
             this.getProperties(),
@@ -443,7 +443,7 @@
           console.error(e)
         }
       },
-      getProperties () {
+      getProperties() {
         return this.searchObjectAttribute({
           params: {
             bk_biz_id: this.bizId,
@@ -456,7 +456,7 @@
           }
         })
       },
-      getPropertyGroups () {
+      getPropertyGroups() {
         return this.searchGroup({
           objId: 'process',
           params: { bk_biz_id: this.bizId },
@@ -466,7 +466,7 @@
           }
         })
       },
-      getSingleServiceTemplate () {
+      getSingleServiceTemplate() {
         return this.findServiceTemplate({
           id: this.templateId,
           config: {
@@ -476,7 +476,7 @@
           }
         })
       },
-      getServiceClassification () {
+      getServiceClassification() {
         return this.searchServiceCategory({
           params: { bk_biz_id: this.bizId },
           config: {
@@ -484,7 +484,7 @@
           }
         })
       },
-      getProcessList () {
+      getProcessList() {
         this.processLoading = true
         this.getBatchProcessTemplate({
           params: {
@@ -506,13 +506,13 @@
             this.processLoading = false
           })
       },
-      handleSelect (id, data) {
+      handleSelect(id, data) {
         this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
         if (!this.secondaryList.length) {
           this.formData.secondaryClassification = ''
         }
       },
-      formatSubmitData (data = {}) {
+      formatSubmitData(data = {}) {
         Object.keys(data).forEach((key) => {
           const property = this.properties.find(property => property.bk_property_id === key)
           if (property && property.bk_property_type === 'table') {
@@ -530,7 +530,7 @@
         })
         return data
       },
-      handleSaveProcess (values, changedValues, type) {
+      handleSaveProcess(values, changedValues, type) {
         const data = type === 'create' ? values : changedValues
         const processValues = this.formatSubmitData(data)
         if (type === 'create') {
@@ -559,14 +559,14 @@
           })
         }
       },
-      handleCancelProcess () {
+      handleCancelProcess() {
         this.slider.show = false
       },
-      handleSaveProcessAfter () {
+      handleSaveProcessAfter() {
         this.slider.show = false
         this.showSyncInstanceTips()
       },
-      showSyncInstanceTips (text = '成功更新模板进程，您可以通过XXX') {
+      showSyncInstanceTips(text = '成功更新模板进程，您可以通过XXX') {
         const message = () => (
                     <i18n path={text} tag="div" class="process-success-message">
                         <bk-link place="link" theme="primary" onClick={this.handleToSyncInstance}>{this.$t('同步功能')}</bk-link>
@@ -574,13 +574,13 @@
                 )
         this.$success(message())
       },
-      handleCreateProcess () {
+      handleCreateProcess() {
         this.slider.show = true
         this.slider.title = this.$t('添加进程')
         this.attribute.type = 'create'
         this.attribute.inst.edit = {}
       },
-      handleUpdateProcess (template, index) {
+      handleUpdateProcess(template, index) {
         try {
           this.slider.show = true
           this.slider.title = template['bk_func_name']['value']
@@ -591,7 +591,7 @@
           console.error(e)
         }
       },
-      handleDeleteProcess (template, index) {
+      handleDeleteProcess(template, index) {
         this.$bkInfo({
           title: this.$t('确认删除模板进程'),
           confirmFn: () => {
@@ -614,7 +614,7 @@
           }
         })
       },
-      handleSubmitProcessList () {
+      handleSubmitProcessList() {
         this.createProcessTemplate({
           params: {
             bk_biz_id: this.bizId,
@@ -645,7 +645,7 @@
             this.formData.templateId = ''
           })
       },
-      async handleSubmit () {
+      async handleSubmit() {
         if (!this.isCreateMode && this.insideMode === 'view') {
           this.insideMode = 'edit'
           return false
@@ -664,7 +664,7 @@
         }
         this.handleCreateTemplate()
       },
-      handleCreateTemplate () {
+      handleCreateTemplate() {
         this.createServiceTemplate({
           params: {
             name: this.formData.templateName,
@@ -684,7 +684,7 @@
           }
         })
       },
-      handleReturn () {
+      handleReturn() {
         if (this.insideMode === 'edit') {
           this.insideMode = 'view'
           this.refresh()
@@ -702,10 +702,10 @@
           this.handleCancelOperation()
         }
       },
-      handleCancelOperation () {
+      handleCancelOperation() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
       },
-      handleSliderBeforeClose () {
+      handleSliderBeforeClose() {
         const hasChanged = this.$refs.processForm && this.$refs.processForm.hasChange()
         if (hasChanged) {
           return new Promise((resolve, reject) => {
@@ -724,15 +724,15 @@
         }
         return true
       },
-      handleCreateSuccess () {
+      handleCreateSuccess() {
         this.dialog.success.show = true
       },
-      getServiceCategory () {
+      getServiceCategory() {
         const first = this.mainList.find(first => first.id === this.formData.mainClassification) || {}
         const second = this.allSecondaryList.find(second => second.id === this.formData.secondaryClassification) || {}
         return `${first.name || '--'} / ${second.name || '--'}`
       },
-      getButtonText () {
+      getButtonText() {
         if (this.isCreateMode) {
           return this.$t('提交')
         } else if (this.insideMode === 'view') {
@@ -740,20 +740,20 @@
         }
         return this.$t('保存')
       },
-      handleToSyncInstance () {
+      handleToSyncInstance() {
         Bus.$emit('active-change', 'instance')
       },
-      handleEditName () {
+      handleEditName() {
         this.isEditName = true
         this.$nextTick(() => {
           this.$refs.templateNameInput && this.$refs.templateNameInput.focus()
         })
       },
-      handleCancelEditName () {
+      handleCancelEditName() {
         this.formData.templateName = this.originTemplateValues.name
         this.isEditName = false
       },
-      async handleConfirmSaveName () {
+      async handleConfirmSaveName() {
         this.$bkInfo({
           title: this.$t('确认修改名称'),
           subTitle: this.$t('确认修改名称提示'),
@@ -764,7 +764,7 @@
           }
         })
       },
-      async handleSaveName () {
+      async handleSaveName() {
         try {
           const isValid = await this.$validator.validate('templateName')
           if (!isValid) {
@@ -785,7 +785,7 @@
           this.isEditNameLoading = false
         }
       },
-      async handleSaveCategory () {
+      async handleSaveCategory() {
         try {
           const isValid = await this.$validator.validateAll()
           if (!isValid) {
@@ -809,22 +809,22 @@
           this.isEditCategoryLoading = false
         }
       },
-      handleCancelEditCategory () {
+      handleCancelEditCategory() {
         this.formData.mainClassification = this.formData.originMainClassification
         this.formData.secondaryClassification = this.formData.originSecondaryClassification
         this.isEditCategory = false
       },
-      handleEditCategory () {
+      handleEditCategory() {
         this.isEditCategory = true
       },
-      handleContinueCreating () {
+      handleContinueCreating() {
         this.dialog.success.show = false
         this.$routerActions.redirect({
           name: 'operationalTemplate',
           reload: true
         })
       },
-      handleSuccessDialogClose () {
+      handleSuccessDialogClose() {
         this.dialog.success.show = false
         this.$routerActions.redirect({
           name: 'operationalTemplate',
@@ -834,10 +834,10 @@
           reload: true
         })
       },
-      handleToSetTemplate () {
+      handleToSetTemplate() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_SET_TEMPLATE })
       },
-      handleToBusinessTopo () {
+      handleToBusinessTopo() {
         this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
       }
     }

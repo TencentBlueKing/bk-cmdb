@@ -79,7 +79,7 @@
         default: () => []
       }
     },
-    data () {
+    data() {
       return {
         toggleTips: null,
         properties: [],
@@ -95,7 +95,7 @@
       ...mapGetters('objectModelClassify', ['models', 'getModelById'])
     },
     watch: {
-      queryData () {
+      queryData() {
         if (!this.queryData.total) {
           this.showNoData = true
           return
@@ -104,7 +104,7 @@
         this.initResult(this.queryData)
       }
     },
-    created () {
+    created() {
       if (!this.queryData.total) {
         this.showNoData = true
         return
@@ -114,7 +114,7 @@
     },
     methods: {
       ...mapActions('objectModelProperty', ['searchObjectAttribute', 'batchSearchObjectAttribute']),
-      async initResult (data) {
+      async initResult(data) {
         const hitsData = data.hits || []
         const modelData = data.aggregations || []
         this.modelClassify.forEach((model) => {
@@ -137,7 +137,7 @@
           return hit
         })
       },
-      async getProperties (objId) {
+      async getProperties(objId) {
         this.propertyMap = await this.batchSearchObjectAttribute({
           params: {
             bk_obj_id: objId,
@@ -145,7 +145,7 @@
           }
         })
       },
-      jumpPage (source) {
+      jumpPage(source) {
         if (source['hitsType'] === 'host') {
           this.$routerActions.redirect({
             name: MENU_RESOURCE_HOST_DETAILS,
@@ -190,7 +190,7 @@
           })
         }
       },
-      getShowPropertyText (property, source, thisProperty) {
+      getShowPropertyText(property, source, thisProperty) {
         let propertyValue = this.$tools.getPropertyText(property, source)
 
         if (!Object.keys(source.highlight).includes(thisProperty)) {
@@ -201,7 +201,7 @@
         propertyValue = this.getHighlightValue(propertyValue, source, thisProperty)
         return propertyValue || '--'
       },
-      getHighlightValue (value, source, thisProperty) {
+      getHighlightValue(value, source, thisProperty) {
         const highlightValue = source.highlight[thisProperty]
         if (!highlightValue) {
           return value

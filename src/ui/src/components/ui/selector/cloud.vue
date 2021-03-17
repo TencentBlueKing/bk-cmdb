@@ -39,18 +39,18 @@
       },
       popoverOptions: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
       requestConfig: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       }
     },
-    data () {
+    data() {
       return {
         data: [],
         selected: this.multiple ? [] : ''
@@ -58,23 +58,23 @@
     },
     watch: {
       value: {
-        handler (value) {
+        handler(value) {
           if (value !== null) {
             this.selected = value
           }
         },
         immediate: true
       },
-      selected (selected) {
+      selected(selected) {
         this.$emit('input', selected)
         this.$emit('on-selected', selected)
       }
     },
-    created () {
+    created() {
       this.getData()
     },
     methods: {
-      async getData () {
+      async getData() {
         const data = await this.$store.dispatch('cloud/area/findMany', {
           params: {},
           config: { ...this.requestConfig, ...{ fromCache: true } }

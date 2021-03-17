@@ -53,7 +53,7 @@
   import { mapGetters } from 'vuex'
   import debounce from 'lodash.debounce'
   export default {
-    data () {
+    data() {
       return {
         filter: '',
         filterMethod: this.defaultFilterMethod,
@@ -73,23 +73,23 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['getDefaultSearchCondition']),
-      deepestExpandedLevel () {
+      deepestExpandedLevel() {
         const maxLevel = Math.max.apply(null, [0, ...this.expandedNodes.map(node => node.level)])
         return Math.max(4, maxLevel) - 4
       },
-      limitDisplay () {
+      limitDisplay() {
         return !!this.$parent.displayNodes.length
       }
     },
     watch: {
-      '$parent.selected' (current, previous) {
+      '$parent.selected'(current, previous) {
         this.syncState(current, previous)
       },
-      filter () {
+      filter() {
         this.handleFilter()
       }
     },
-    created () {
+    created() {
       this.handleFilter = debounce(() => {
         this.$refs.tree.filter(this.limitDisplay ? (this.filter || Symbol('any')) : this.filter)
         this.recaculateLine()
@@ -97,29 +97,29 @@
       this.filterMethod = this.limitDisplay ? this.displayNodesFilterMethod : this.defaultFilterMethod
       this.initTopology()
     },
-    activated () {
+    activated() {
       this.filter = ''
     },
     methods: {
-      defaultFilterMethod (keyword, node) {
+      defaultFilterMethod(keyword, node) {
         return String(node.name).toLowerCase()
           .indexOf(keyword) > -1
       },
-      displayNodesFilterMethod (keyword, node) {
+      displayNodesFilterMethod(keyword, node) {
         const displayNodes = this.$parent.displayNodes
         if (this.filter) {
           return node.data.bk_obj_id === 'host' && node.name.indexOf(keyword) > -1
         }
         return displayNodes.includes(node.id) || node.data.bk_obj_id === 'host'
       },
-      recaculateLine () {
+      recaculateLine() {
         if (this.limitDisplay) {
           const tree = this.$refs.tree
           const displayNodes = this.$parent.displayNodes
           tree.needsCalculateNodes.push(...displayNodes.map(id => tree.getNodeById(id)))
         }
       },
-      syncState (current, previous) {
+      syncState(current, previous) {
         const unselectHost = previous.filter((prev) => {
           const exist = current.some(cur => cur.host.bk_host_id === prev.host.bk_host_id)
           return !exist
@@ -127,12 +127,12 @@
         this.syncCheckedState(current, true)
         this.syncCheckedState(unselectHost, false)
       },
-      syncCheckedState (list, checked) {
+      syncCheckedState(list, checked) {
         const hosts = list.map(item => item.host.bk_host_id)
         const nodes = this.$refs.tree.nodes.filter(node => hosts.includes(node.data.bk_host_id))
         this.$refs.tree.setChecked(nodes.map(node => node.id), { checked, beforeCheck: false })
       },
-      async initTopology () {
+      async initTopology() {
         try {
           const [topology, internal] = await Promise.all([
             this.getInstanceTopology(),
@@ -170,7 +170,7 @@
           console.error(e)
         }
       },
-      getInstanceTopology () {
+      getInstanceTopology() {
         return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.bizId,
           config: {
@@ -178,7 +178,7 @@
           }
         })
       },
-      getInternalTopology () {
+      getInternalTopology() {
         return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
           bizId: this.bizId,
           config: {
@@ -186,10 +186,10 @@
           }
         })
       },
-      getNodeId (data) {
+      getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
-      shouldShowCheckbox (data) {
+      shouldShowCheckbox(data) {
         if (data.bk_obj_id === 'host') {
           return true
         }
@@ -198,7 +198,7 @@
         }
         return false
       },
-      async loadHost (node) {
+      async loadHost(node) {
         try {
           const result = await this.searchHost(node)
           const data = []
@@ -228,10 +228,10 @@
           return { data: [] }
         }
       },
-      isLazyDisabled (node) {
+      isLazyDisabled(node) {
         return node.data.bk_obj_id === 'host' || node.data.host_count === 0
       },
-      searchHost (node) {
+      searchHost(node) {
         const params = {
           bk_biz_id: this.bizId,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
@@ -260,12 +260,12 @@
           }
         })
       },
-      handleNodeClick (node) {
+      handleNodeClick(node) {
         if (node.data.bk_obj_id === 'host') {
           this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true, beforeCheck: false })
         }
       },
-      async handleCheckedChange (checked, selectedNode) {
+      async handleCheckedChange(checked, selectedNode) {
         const hosts = []
         if (selectedNode.data.bk_obj_id === 'host') {
           hosts.push(selectedNode.data.item)
@@ -279,7 +279,7 @@
           this.$parent.handleRemove(hosts)
         }
       },
-      handleExpandChange (targetNode) {
+      handleExpandChange(targetNode) {
         const nodes = [targetNode, ...targetNode.descendants]
         const ids = nodes.map(node => node.id)
         if (targetNode.expanded) {
@@ -288,20 +288,20 @@
           this.expandedNodes = this.expandedNodes.filter(exist => !ids.includes(exist.id))
         }
       },
-      getInternalNodeClass (node, data) {
+      getInternalNodeClass(node, data) {
         return this.nodeIconMap[data.default] || this.nodeIconMap.default
       },
-      isTemplate (node) {
+      isTemplate(node) {
         return node.data.service_template_id || node.data.set_template_id
       },
-      getNodeCount (data) {
+      getNodeCount(data) {
         const count = data.host_count
         if (typeof count === 'number') {
           return count > 999 ? '999+' : count
         }
         return 0
       },
-      async beforeCheck (node) {
+      async beforeCheck(node) {
         if (node.lazy) {
           const { data } = await this.loadHost(node)
           this.$refs.tree.addNode(data, node.id)

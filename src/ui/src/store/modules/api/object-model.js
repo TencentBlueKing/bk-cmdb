@@ -28,7 +28,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createObject ({ commit, state, dispatch }, { params, config }) {
+  createObject({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/object', params, config)
   },
 
@@ -40,7 +40,7 @@ const actions = {
      * @param {Number} id 被删除的数据记录的id
      * @return {promises} promises 对象
      */
-  deleteObject ({ commit, state, dispatch }, { id, config }) {
+  deleteObject({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/object/${id}`, config)
   },
 
@@ -53,7 +53,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateObject ({ commit, state, dispatch }, { id, params, config }) {
+  updateObject({ commit, state, dispatch }, { id, params, config }) {
     return $http.put(`update/object/${id}`, params, config)
   },
 
@@ -65,7 +65,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchObjects ({ commit, state, dispatch }, { params, config }) {
+  searchObjects({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/object', params, config)
   },
 
@@ -77,13 +77,13 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchObjectTopo ({ commit, state, dispatch }, { params, config }) {
+  searchObjectTopo({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/objecttopology', params, config)
   }
 }
 
 const mutations = {
-  setActiveModel (state, activeModel) {
+  setActiveModel(state, activeModel) {
     state.activeModel = activeModel
   }
 }

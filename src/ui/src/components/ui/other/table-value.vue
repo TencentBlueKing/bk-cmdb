@@ -43,28 +43,28 @@
       showOn: {
         type: String,
         default: 'default',
-        validator (value) {
+        validator(value) {
           return ['default', 'cell'].includes(value)
         }
       },
       formatCellValue: Function
     },
-    data () {
+    data() {
       return {
         list: []
       }
     },
     computed: {
-      header () {
+      header() {
         return (this.property.option || []).map(option => option)
       },
-      displayType () {
+      displayType() {
         if (this.header.length) {
           return this.showOn === 'default' ? 'table' : 'info'
         }
         return 'info'
       },
-      cellValue () {
+      cellValue() {
         const list = this.list.map((item) => {
           const values = {}
           Object.keys(item).forEach((key) => {
@@ -83,7 +83,7 @@
     },
     watch: {
       value: {
-        handler (value) {
+        handler(value) {
           const formattedValue = (value || []).map((item) => {
             const row = { ...item }
             Object.keys(row).forEach((key) => {
@@ -102,7 +102,7 @@
       }
     },
     methods: {
-      getCellValue () {
+      getCellValue() {
         if (this.formatCellValue) {
           return (<span>{this.formatCellValue(this.cellValue)}</span>)
         }

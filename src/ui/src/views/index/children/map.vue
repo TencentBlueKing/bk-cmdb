@@ -11,7 +11,7 @@
   } from '@/utils/resize-events.js'
   export default {
     name: 'cmdb-index-map',
-    data () {
+    data() {
       return {
         ratio: {
           height: 404 / 857,
@@ -25,14 +25,14 @@
         resizeHandler: null
       }
     },
-    mounted () {
+    mounted() {
       this.initResizeEvent()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$parent.$el, this.resizeHandler)
     },
     methods: {
-      initResizeEvent () {
+      initResizeEvent() {
         this.resizeHandler = () => {
           const parentRect = this.$parent.$el.getBoundingClientRect()
           const imgStyles = {

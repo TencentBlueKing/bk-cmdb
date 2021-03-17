@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex'
 export default {
   computed: {
     ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-    INST_AUTH () {
+    INST_AUTH() {
       const params = this.$route.params
       const bizId = params.bizId
       const instId = params.instId

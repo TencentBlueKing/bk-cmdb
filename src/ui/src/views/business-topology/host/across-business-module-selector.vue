@@ -93,7 +93,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       return {
         loading: true,
         businessList: [],
@@ -113,21 +113,21 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      bizId () {
+      bizId() {
         return this.business.bk_biz_id
       },
-      targetBiz () {
+      targetBiz() {
         return this.businessList.find(biz => biz.bk_biz_id === this.targetBizId)
       },
-      hasTitle () {
+      hasTitle() {
         return this.title && this.title.length
       }
     },
-    async created () {
+    async created() {
       this.getFullAmountBusiness()
     },
     methods: {
-      async getFullAmountBusiness () {
+      async getFullAmountBusiness() {
         try {
           const data = await this.$http.get('biz/simplify?sort=bk_biz_id', { requestId: this.request.list })
           const availableBusiness = (data.info || []).filter(business => business.bk_biz_id !== this.bizId)
@@ -143,7 +143,7 @@
           }, 0)
         }
       },
-      async getModules () {
+      async getModules() {
         try {
           this.checked = []
           const internalTop = await this.getInternalModules()
@@ -153,7 +153,7 @@
           console.error(e)
         }
       },
-      getInternalModules () {
+      getInternalModules() {
         return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
           bizId: this.targetBizId,
           config: {
@@ -183,21 +183,21 @@
           }]
         })
       },
-      getNodeId (data) {
+      getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
-      getInternalNodeClass (node, data) {
+      getInternalNodeClass(node, data) {
         const clazz = []
         clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
         return clazz
       },
-      handleNodeClick (node) {
+      handleNodeClick(node) {
         if (node.data.bk_obj_id !== 'module') {
           return false
         }
         this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true })
       },
-      handleNodeCheck (checked, currentNode) {
+      handleNodeCheck(checked, currentNode) {
         const currentChecked = []
         const removeChecked = []
         checked.forEach((id) => {
@@ -211,21 +211,21 @@
         this.checked = currentChecked.map(id => this.$refs.tree.getNodeById(id))
         this.$refs.tree.setChecked(removeChecked, { checked: false })
       },
-      handleDeleteModule (node) {
+      handleDeleteModule(node) {
         this.checked = this.checked.filter(exist => exist !== node)
         this.$refs.tree.setChecked(node.id, { checked: false })
       },
-      handleClearModule () {
+      handleClearModule() {
         this.$refs.tree.setChecked(this.checked.map(node => node.id), { checked: false })
         this.checked = []
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       },
-      handleNextStep () {
+      handleNextStep() {
         this.$emit('confirm', this.checked, this.targetBizId)
       },
-      isShowCheckbox (data) {
+      isShowCheckbox(data) {
         return data.bk_obj_id === 'module'
       }
     }

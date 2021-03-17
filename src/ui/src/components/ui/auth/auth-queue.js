@@ -3,7 +3,7 @@ import debounce from 'lodash.debounce'
 import $http from '@/api'
 import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
 
-function filterUselssKey (data, uselessKeys) {
+function filterUselssKey(data, uselessKeys) {
   return JSON.parse(JSON.stringify(data), (key, value) => {
     if (key === '') return value
     if (uselessKeys.includes(key)) return undefined
@@ -11,7 +11,7 @@ function filterUselssKey (data, uselessKeys) {
   })
 }
 
-function equal (source, target) {
+function equal(source, target) {
   const {
     resource_type: SResourceType,
     resource_id: SResourceId,
@@ -42,7 +42,7 @@ function equal (source, target) {
   })
 }
 
-function unique (data) {
+function unique(data) {
   return data.reduce((queue, meta) => {
     const exist = queue.some(exist => equal(exist, meta))
     if (!exist) {
@@ -56,7 +56,7 @@ export const AuthRequestId = Symbol('auth_request_id')
 
 const authEnable = window.Site.authscheme === 'iam'
 let afterVerifyQueue = []
-export function afterVerify (func, once = true) {
+export function afterVerify(func, once = true) {
   if (authEnable) {
     afterVerifyQueue.push({
       handler: func,
@@ -66,13 +66,13 @@ export function afterVerify (func, once = true) {
     func()
   }
 }
-function execAfterVerify (authData) {
+function execAfterVerify(authData) {
   afterVerifyQueue.forEach(({ handler }) => handler(authData))
   afterVerifyQueue = afterVerifyQueue.filter(({ once }) => !once)
 }
 
 export default new Vue({
-  data () {
+  data() {
     return {
       queue: [],
       authComponents: [],
@@ -80,17 +80,17 @@ export default new Vue({
     }
   },
   watch: {
-    queue (queue) {
+    queue(queue) {
       this.verify()
     }
   },
   methods: {
-    add ({ component, data }) {
+    add({ component, data }) {
       this.authComponents.push(component)
       const authMetas = TRANSFORM_TO_INTERNAL(data)
       this.queue.push(...authMetas)
     },
-    async getAuth () {
+    async getAuth() {
       if (!this.queue.length) return
       const queue = unique(this.queue.splice(0))
       const authComponents = this.authComponents.splice(0)

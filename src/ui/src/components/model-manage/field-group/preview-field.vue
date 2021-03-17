@@ -61,7 +61,7 @@
     props: {
       inst: {
         type: Object,
-        default () {
+        default() {
           return {}
         }
       },
@@ -71,12 +71,12 @@
       },
       type: {
         default: 'create',
-        validator (val) {
+        validator(val) {
           return ['create', 'update'].includes(val)
         }
       }
     },
-    data () {
+    data() {
       return {
         values: {},
         refrenceValues: {},
@@ -87,71 +87,71 @@
       }
     },
     computed: {
-      groupedProperties () {
+      groupedProperties() {
         return this.$groupedProperties.map((properties) => {
           return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
         })
       }
     },
     watch: {
-      inst (inst) {
+      inst(inst) {
         this.initValues()
       },
-      properties () {
+      properties() {
         this.initValues()
       }
     },
-    created () {
+    created() {
       this.initValues()
     },
-    mounted () {
+    mounted() {
       RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
     },
     methods: {
-      checkScrollbar () {
+      checkScrollbar() {
         const $layout = this.$el
         this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
       },
-      initValues () {
+      initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
         this.refrenceValues = this.$tools.clone(this.values)
       },
-      checkGroupAvailable (properties) {
+      checkGroupAvailable(properties) {
         const availabelProperties = properties.filter((property) => {
           return this.checkEditable(property)
         })
         return !!availabelProperties.length
       },
-      checkEditable (property) {
+      checkEditable(property) {
         if (this.type === 'create') {
           return !property['bk_isapi']
         }
         return property.editable && !property['bk_isapi']
       },
-      checkDisabled (property) {
+      checkDisabled(property) {
         if (this.type === 'create') {
           return false
         }
         return !property.editable || property.isreadonly
       },
-      htmlEncode (placeholder) {
+      htmlEncode(placeholder) {
         let temp = document.createElement('div')
         temp.innerHTML = placeholder
         const output = temp.innerText
         temp = null
         return output
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
-      getValidateRules (property) {
+      getValidateRules(property) {
         return this.$tools.getValidateRules(property)
       },
-      uncollapseGroup () {
+      uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const property = this.properties.find(property => property['bk_property_id'] === item.field)
           const group = property['bk_property_group']

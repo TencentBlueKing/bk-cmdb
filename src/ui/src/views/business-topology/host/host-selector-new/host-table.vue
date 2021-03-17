@@ -45,31 +45,31 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         keyword: '',
         displayList: []
       }
     },
     watch: {
-      list (list) {
+      list(list) {
         this.displayList = list
       },
-      displayList (list) {
+      displayList(list) {
         this.setChecked()
       },
-      selected () {
+      selected() {
         this.setChecked()
       },
-      keyword () {
+      keyword() {
         this.handleFilter()
       }
     },
-    created () {
+    created() {
       this.handleFilter = debounce(this.searchList, 300)
     },
     methods: {
-      setChecked () {
+      setChecked() {
         this.$nextTick(() => {
           const ids = [...new Set(this.selected.map(data => data.host.bk_host_id))]
           const selected = []
@@ -81,18 +81,18 @@
           })
         })
       },
-      handleSelect (selection, row) {
+      handleSelect(selection, row) {
         this.handleSelectionChange(selection)
       },
-      handleSelectAll (selection) {
+      handleSelectAll(selection) {
         this.handleSelectionChange(selection)
       },
-      handleSelectionChange (selection) {
+      handleSelectionChange(selection) {
         const ids = [...new Set(selection.map(data => data.host.bk_host_id))]
         const removed = this.displayList.filter(item => !ids.includes(item.host.bk_host_id))
         this.$emit('select-change', { removed, selected: selection })
       },
-      searchList () {
+      searchList() {
         if (this.keyword) {
           this.displayList = this.list.filter((item) => {
             return new RegExp(this.keyword, 'i').test(item.host.bk_host_innerip)

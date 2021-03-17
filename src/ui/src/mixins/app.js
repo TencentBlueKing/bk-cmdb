@@ -1,6 +1,6 @@
 export default {
   computed: {
-    $APP () {
+    $APP() {
       return {
         height: this.$store.state.appHeight
       }

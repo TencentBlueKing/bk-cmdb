@@ -3,11 +3,11 @@ import i18n from '@/i18n'
 import store from '@/store'
 import ExportFields from './export-fields.vue'
 export default {
-  show (props = {}) {
+  show(props = {}) {
     const vm = new Vue({
       i18n,
       store,
-      render (h) {
+      render(h) {
         return h(ExportFields, {
           ref: 'ExportFields',
           props,

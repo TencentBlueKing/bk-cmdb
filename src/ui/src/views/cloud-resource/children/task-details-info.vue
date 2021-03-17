@@ -92,7 +92,7 @@
         default: null
       }
     },
-    data () {
+    data() {
       return {
         request: {
           delete: Symbol('delete')
@@ -100,7 +100,7 @@
       }
     },
     methods: {
-      vpcFormatter (row) {
+      vpcFormatter(row) {
         const vpcId = row.bk_vpc_id
         const vpcName = row.bk_vpc_name
         if (vpcName && vpcId !== vpcName) {
@@ -108,12 +108,12 @@
         }
         return vpcId
       },
-      handleEdit () {
+      handleEdit() {
         this.container.show({
           detailsComponent: TaskForm.name
         })
       },
-      handleDelete () {
+      handleDelete() {
         const infoInstance = this.$bkInfo({
           title: this.$t('确认删除xx', { instance: this.task.bk_task_name }),
           closeIcon: false,
@@ -142,7 +142,7 @@
           }
         })
       },
-      getRowClass ({ row }) {
+      getRowClass({ row }) {
         if (row.destroyed) {
           return 'is-destroyed'
         }

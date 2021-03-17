@@ -109,7 +109,7 @@
         default: ''
       }
     },
-    data () {
+    data() {
       return {
         modelDialog: {
           isShow: false,
@@ -127,13 +127,13 @@
       ...mapGetters('objectModelClassify', [
         'classifications'
       ]),
-      localClassifications () {
+      localClassifications() {
         const filterGroups = ['bk_biz_topo', 'bk_host_manage', 'bk_organization']
         return this.classifications.filter(group => !filterGroups.includes(group.bk_classification_id))
       }
     },
     watch: {
-      isShow (isShow) {
+      isShow(isShow) {
         if (isShow) {
           this.modelDialog.data['bk_classification_id'] = ''
           this.modelDialog.data['bk_obj_icon'] = 'icon-cc-default'
@@ -142,22 +142,22 @@
           this.$validator.reset()
         }
       },
-      groupId (value) {
+      groupId(value) {
         this.modelDialog.data.bk_classification_id = value
       }
     },
     methods: {
-      handleSelectGroup (group) {
+      handleSelectGroup(group) {
         this.modelDialog.data.bk_classification_id = group.bk_classification_id
         this.$refs.groupSelector.close()
       },
-      async confirm () {
+      async confirm() {
         if (!await this.$validator.validateAll()) {
           return
         }
         this.$emit('confirm', this.modelDialog.data)
       },
-      cancel () {
+      cancel() {
         this.$emit('update:isShow', false)
         this.$emit('update:groupId', '')
         this.$validator.reset()

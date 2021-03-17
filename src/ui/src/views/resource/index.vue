@@ -41,7 +41,7 @@
       resourceDirectory,
       resourceHosts
     },
-    data () {
+    data() {
       return {
         layout: {
           collapse: false
@@ -60,12 +60,12 @@
       }
     },
     computed: {
-      isResourcePool () {
+      isResourcePool() {
         return this.activeTab.toString() === '1'
       }
     },
     methods: {
-      handleTabChange (tab) {
+      handleTabChange(tab) {
         Bus.$emit('toggle-host-filter', false)
         Bus.$emit('reset-host-filter')
         RouterQuery.set({

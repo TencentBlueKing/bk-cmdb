@@ -112,7 +112,7 @@
         required: true
       }
     },
-    data () {
+    data() {
       const form = {
         bk_task_name: '',
         bk_account_id: '',
@@ -139,10 +139,10 @@
       }
     },
     computed: {
-      isCreateMode () {
+      isCreateMode() {
         return this.task === null
       },
-      auth () {
+      auth() {
         if (this.isCreateMode) {
           return {
             type: this.$OPERATION.C_CLOUD_RESOURCE_TASK
@@ -155,24 +155,24 @@
       }
     },
     watch: {
-      selectedVPC () {
+      selectedVPC() {
         this.errors.remove('vpc-count')
       }
     },
     methods: {
-      handleLinkToCloudAccount () {
+      handleLinkToCloudAccount() {
         this.$router.push({
           name: MENU_RESOURCE_CLOUD_ACCOUNT
         })
       },
-      handleAddVPC () {
+      handleAddVPC() {
         this.showVPCSelector = true
       },
-      handleRemove (target) {
+      handleRemove(target) {
         const index = this.selectedVPC.findIndex(vpc => vpc.bk_vpc_id === target.bk_vpc_id)
         index > -1 && this.selectedVPC.splice(index, 1)
       },
-      async handleSumbit () {
+      async handleSumbit() {
         const isFormValid = await this.$validator.validateAll()
         const isDirectoryValid = this.$refs.vpcTable && await this.$refs.vpcTable.$validator.validateAll()
         if (!isFormValid || !isDirectoryValid) {
@@ -194,7 +194,7 @@
           this.doUpdate()
         }
       },
-      async doCreate () {
+      async doCreate() {
         try {
           await this.$store.dispatch('cloud/resource/createTask', {
             params: {
@@ -211,7 +211,7 @@
           console.error(e)
         }
       },
-      async doUpdate () {
+      async doUpdate() {
         try {
           const params = {
             bk_task_id: this.task.bk_task_id,
@@ -237,7 +237,7 @@
           console.error(e)
         }
       },
-      getVPCList () {
+      getVPCList() {
         return this.$refs.vpcTable.list.map((row) => {
           return {
             bk_vpc_id: row.bk_vpc_id,
@@ -250,7 +250,7 @@
           }
         })
       },
-      handleCancel () {
+      handleCancel() {
         if (this.isCreateMode) {
           this.container.hide()
         } else {
@@ -262,11 +262,11 @@
           })
         }
       },
-      handleVPCChange (vpcs) {
+      handleVPCChange(vpcs) {
         this.showVPCSelector = false
         this.selectedVPC = vpcs
       },
-      handleVPCCancel () {
+      handleVPCCancel() {
         this.showVPCSelector = false
       }
     }

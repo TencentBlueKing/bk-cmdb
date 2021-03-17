@@ -69,37 +69,37 @@
         default: null
       }
     },
-    data () {
+    data() {
       return {
         permission: this.stuff.payload.permission
       }
     },
     computed: {
-      type () {
+      type() {
         return this.stuff.type
       },
-      action () {
+      action() {
         return this.stuff.payload.action || this.$t('创建')
       },
-      resource () {
+      resource() {
         return this.stuff.payload.resource
       },
-      emptyText () {
+      emptyText() {
         return this.stuff.payload.emptyText
       },
-      payload () {
+      payload() {
         return this.stuff.payload
       }
     },
     watch: {
       stuff: {
-        handler (value) {
+        handler(value) {
           this.permission = value.payload.permission
         },
         deep: true
       }
     },
-    mounted () {
+    mounted() {
     },
     methods: {
     }

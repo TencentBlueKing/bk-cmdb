@@ -53,7 +53,7 @@
       permission: Object,
       applied: Boolean
     },
-    data () {
+    data() {
       return {
         list: [],
         i18n: {
@@ -70,15 +70,15 @@
       }
     },
     watch: {
-      permission (v) {
+      permission(v) {
         this.setList()
       }
     },
-    created () {
+    created() {
       this.setList()
     },
     methods: {
-      setList () {
+      setList() {
         const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
         this.list = this.permission.actions.map((action) => {
           const { id: actionId, related_resource_types: relatedResourceTypes = [] } = action
@@ -98,16 +98,16 @@
           }
         })
       },
-      handleClose () {
+      handleClose() {
         this.$emit('close')
       },
-      handleApply () {
+      handleApply() {
         this.$emit('apply')
       },
-      handleRefresh () {
+      handleRefresh() {
         this.$emit('refresh')
       },
-      doTableLayout () {
+      doTableLayout() {
         this.$refs.table.doLayout()
       }
     }

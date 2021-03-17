@@ -14,7 +14,7 @@
       ProcessOptions,
       ProcessList
     },
-    data () {
+    data() {
       return {}
     }
   }

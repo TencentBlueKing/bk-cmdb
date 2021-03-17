@@ -80,7 +80,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         components: {
           topology: HostSelectorTopology,
@@ -99,29 +99,29 @@
       }
     },
     computed: {
-      selected () {
+      selected() {
         return [...this.repeatSelected, ...this.uniqueSelected]
       }
     },
     watch: {
       type: {
         immediate: true,
-        handler (type) {
+        handler(type) {
           this.activeComponent = this.components[type]
         }
       }
     },
-    created () {
+    created() {
       this.setSelected(this.exist)
     },
     methods: {
-      handleRemove (hosts) {
+      handleRemove(hosts) {
         const removeData = Array.isArray(hosts) ? hosts : [hosts]
         const ids = [...new Set(removeData.map(data => data.host.bk_host_id))]
         const selected = this.selected.filter(target => !ids.includes(target.host.bk_host_id))
         this.setSelected(selected)
       },
-      handleSelect (hosts) {
+      handleSelect(hosts) {
         const selectData = Array.isArray(hosts) ? hosts : [hosts]
         const ids = [...new Set(selectData.map(data => data.host.bk_host_id))]
         const uniqueData = ids.map(id => selectData.find(data => data.host.bk_host_id === id))
@@ -136,7 +136,7 @@
           this.setSelected([...this.selected, ...newSelectData])
         }
       },
-      setSelected (selected) {
+      setSelected(selected) {
         const ipMap = {}
         const repeat = []
         const unique = []
@@ -158,10 +158,10 @@
         this.repeatSelected = repeat
         this.uniqueSelected = unique
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('cancel')
       },
-      handleNextStep () {
+      handleNextStep() {
         this.$emit('confirm', this.selected)
       }
     }

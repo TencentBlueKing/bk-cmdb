@@ -29,33 +29,33 @@
       }
     },
     computed: {
-      multiple () {
+      multiple() {
         return Array.isArray(this.value)
       },
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       }
     },
-    mounted () {
+    mounted() {
       this.addPasteEvent()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.removePasteEvent()
     },
     methods: {
-      addPasteEvent () {
+      addPasteEvent() {
         this.$refs.tagInput.$refs.input.addEventListener('paste', this.handlePaste)
       },
-      removePasteEvent () {
+      removePasteEvent() {
         this.$refs.tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
       },
-      handlePaste (event) {
+      handlePaste(event) {
         const text = event.clipboardData.getData('text')
         const values = text.split(/,|;|\n/).map(value => value.trim())
           .filter(value => value.length)

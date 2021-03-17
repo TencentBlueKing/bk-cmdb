@@ -43,22 +43,22 @@
     },
     computed: {
       localValue: {
-        get () {
+        get() {
           return (this.value === null || this.value === undefined) ? '' : this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
         }
       }
     },
     methods: {
-      handleChange (value) {
+      handleChange(value) {
         this.$emit('on-change', value)
       },
-      handleEnter (value) {
+      handleEnter(value) {
         this.$emit('enter', value)
       },
-      focus () {
+      focus() {
         this.$el.querySelector('textarea').focus()
       }
     }

@@ -21,12 +21,12 @@
       category: {
         type: String,
         default: 'business',
-        validator (category) {
+        validator(category) {
           return ['host', 'business', 'resource', 'other'].includes(category)
         }
       }
     },
-    data () {
+    data() {
       return {
         dictionary: [],
         targetMap: Object.freeze({
@@ -68,24 +68,24 @@
       }
     },
     computed: {
-      options () {
+      options() {
         return this.dictionary.filter(target => this.targetMap[this.category].has(target.id))
       },
       localValue: {
-        get () {
+        get() {
           return this.value
         },
-        set (value) {
+        set(value) {
           this.$emit('input', value)
           this.$emit('change', value)
         }
       }
     },
-    created () {
+    created() {
       this.getAuditDictionary()
     },
     methods: {
-      async getAuditDictionary () {
+      async getAuditDictionary() {
         try {
           this.dictionary = await this.$store.dispatch('audit/getDictionary', {
             fromCache: true

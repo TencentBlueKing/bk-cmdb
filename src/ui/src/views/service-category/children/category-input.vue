@@ -35,24 +35,24 @@
         default: 0
       }
     },
-    data () {
+    data() {
       return {
         localValue: this.value
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.localValue = value
       },
-      localValue (localValue) {
+      localValue(localValue) {
         this.$emit('input', localValue)
       }
     },
     methods: {
-      handleConfirm () {
+      handleConfirm() {
         this.$emit('on-confirm', this.localValue, this.editId)
       },
-      handleCancel () {
+      handleCancel() {
         this.$emit('on-cancel')
       }
     }

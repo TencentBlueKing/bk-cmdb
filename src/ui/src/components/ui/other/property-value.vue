@@ -55,53 +55,53 @@
       theme: {
         type: String,
         default: 'default',
-        validator (value) {
+        validator(value) {
           return ['primary', 'default'].includes(value)
         }
       },
       showOn: {
         type: String,
         default: 'default',
-        validator (value) {
+        validator(value) {
           return ['default', 'cell'].includes(value)
         }
       },
       formatCellValue: Function
     },
-    data () {
+    data() {
       return {
         displayValue: ''
       }
     },
     computed: {
-      attrs () {
+      attrs() {
         const attrs = {}
         if (this.className) {
           attrs.class = this.className
         }
         return attrs
       },
-      isUser () {
+      isUser() {
         const type = typeof this.property === 'object' ? this.property.bk_property_type : this.property
         return type === 'objuser'
       },
-      isTable () {
+      isTable() {
         return this.property.bk_property_type === 'table'
       },
-      isServiceTemplate () {
+      isServiceTemplate() {
         return this.property.bk_property_type === 'service-template'
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.setDisplayValue(value)
       }
     },
-    created () {
+    created() {
       this.setDisplayValue(this.value)
     },
     methods: {
-      async setDisplayValue (value) {
+      async setDisplayValue(value) {
         if (this.isUser || this.isTable) return
         let displayValue
         const isPropertyObject = Object.prototype.toString.call(this.property) === '[object Object]'
@@ -118,7 +118,7 @@
             ? displayValue
             : '--'
       },
-      async getOrganization (value) {
+      async getOrganization(value) {
         let displayValue
         const cacheKey = (value || []).join('_')
         if (ORG_CACHES[cacheKey]) {

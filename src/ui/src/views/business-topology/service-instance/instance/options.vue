@@ -77,7 +77,7 @@
     components: {
       ViewSwitcher
     },
-    data () {
+    data() {
       return {
         selection: [],
         hasDifference: false,
@@ -92,13 +92,13 @@
     computed: {
       ...mapGetters('businessHost', ['selectedNode']),
       ...mapGetters('objectBiz', ['bizId']),
-      withTemplate () {
+      withTemplate() {
         return this.selectedNode && this.selectedNode.data.service_template_id
       },
-      nameFilterIndex () {
+      nameFilterIndex() {
         return this.searchValue.findIndex(data => data.id === 'name')
       },
-      searchMenuList () {
+      searchMenuList() {
         const hasHistoryLables = Object.keys(this.historyLabels).length > 0
         const list = [{
           id: 'name',
@@ -122,17 +122,17 @@
     watch: {
       withTemplate: {
         immediate: true,
-        handler (withTemplate) {
+        handler(withTemplate) {
           withTemplate && this.checkDifference()
         }
       },
-      searchMenuList () {
+      searchMenuList() {
         this.$nextTick(() => {
           const menu = this.$refs.searchSelect && this.$refs.searchSelect.menuInstance
           menu && (menu.list = this.$refs.searchSelect.data)
         })
       },
-      selectedNode () {
+      selectedNode() {
         this.searchValue = []
         RouterQuery.set({
           instanceName: ''
@@ -140,7 +140,7 @@
         Bus.$emit('filter-change', this.searchValue)
       }
     },
-    created () {
+    created() {
       this.unwatch = RouterQuery.watch(['node', 'page'], () => {
         this.allExpanded = false
       })
@@ -149,13 +149,13 @@
       this.setFilter()
       this.updateHistoryLabels()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatch()
       Bus.$off('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$off('update-labels', this.updateHistoryLabels)
     },
     methods: {
-      async updateHistoryLabels () {
+      async updateHistoryLabels() {
         try {
           this.historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
             params: {
@@ -166,7 +166,7 @@
           console.error(error)
         }
       },
-      setFilter () {
+      setFilter() {
         const filterName = RouterQuery.get('instanceName')
         if (!filterName) {
           return false
@@ -184,10 +184,10 @@
           Bus.$emit('filter-change', this.searchValue)
         })
       },
-      handleInstanceSelectionChange (selection) {
+      handleInstanceSelectionChange(selection) {
         this.selection = selection
       },
-      handleCreate () {
+      handleCreate() {
         this.$routerActions.redirect({
           name: 'createServiceInstance',
           params: {
@@ -202,7 +202,7 @@
           history: true
         })
       },
-      async handleBatchDelete (disabled) {
+      async handleBatchDelete(disabled) {
         if (disabled) {
           return false
         }
@@ -215,7 +215,7 @@
           history: true
         })
       },
-      async handleCopy (disabled) {
+      async handleCopy(disabled) {
         if (disabled) {
           return false
         }
@@ -243,12 +243,12 @@
           this.$error(this.$t('复制失败'))
         }
       },
-      handleEidtTag (disabled) {
+      handleEidtTag(disabled) {
         if (disabled) {
           return false
         }
       },
-      async checkDifference () {
+      async checkDifference() {
         try {
           const data = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
             params: {
@@ -266,7 +266,7 @@
           console.error(error)
         }
       },
-      handleSyncTemplate () {
+      handleSyncTemplate() {
         this.$routerActions.redirect({
           name: 'syncServiceFromModule',
           params: {
@@ -276,7 +276,7 @@
           history: true
         })
       },
-      handleSearch (filters) {
+      handleSearch(filters) {
         const transformedFilters = []
         filters.forEach((data) => {
           if (!data.values) {
@@ -306,10 +306,10 @@
           Bus.$emit('filter-change', this.searchValue)
         })
       },
-      handleExpandAll (expanded) {
+      handleExpandAll(expanded) {
         Bus.$emit('expand-all-change', expanded)
       },
-      handleBatchEditLabels (disabled) {
+      handleBatchEditLabels(disabled) {
         if (disabled) {
           return false
         }

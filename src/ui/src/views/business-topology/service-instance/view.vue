@@ -13,7 +13,7 @@
       ViewInstance,
       ViewProcess
     },
-    data () {
+    data() {
       return {
         activeComponent: null,
         viewMap: Object.freeze({
@@ -22,19 +22,19 @@
         })
       }
     },
-    created () {
+    created() {
       this.unwatchView = RouterQuery.watch('view', this.handleViewChange, { immediate: true })
       this.unwatchTab = RouterQuery.watch('tab', this.handleTabChange)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.unwatchView()
       this.unwatchTab()
     },
     methods: {
-      handleViewChange (view = 'instance') {
+      handleViewChange(view = 'instance') {
         this.activeComponent = this.viewMap[view]
       },
-      handleTabChange (tab) {
+      handleTabChange(tab) {
         if (tab !== 'serviceInstance') {
           this.activeComponent = null
         } else {

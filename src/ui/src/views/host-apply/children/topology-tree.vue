@@ -68,7 +68,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         treeData: [],
         treeStat: {},
@@ -93,33 +93,33 @@
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapState('hostApply', ['ruleDraft']),
-      business () {
+      business() {
         return this.$store.state.objectBiz.bizId
       },
-      propertyMap () {
+      propertyMap() {
         return this.$store.state.businessTopology.propertyMap
       },
-      mainLineModels () {
+      mainLineModels() {
         const models = this.$store.getters['objectModelClassify/models']
         return this.mainLine.map(data => models.find(model => model.bk_obj_id === data.bk_obj_id))
       },
-      modelIconMap () {
+      modelIconMap() {
         const map = {}
         this.mainLineModels.forEach((model) => {
           map[model.bk_obj_id] = model.bk_obj_name[0]
         })
         return map
       },
-      isDel () {
+      isDel() {
         return this.action === 'batch-del'
       }
     },
     watch: {
-      action () {
+      action() {
         this.setNodeDisabled()
       }
     },
-    async created () {
+    async created() {
       Bus.$on('topology-search', this.handleSearch)
       const [data, mainLine] = await Promise.all([
         this.getTopologyData(),
@@ -144,15 +144,15 @@
         this.setDefaultState(data)
       })
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$el, this.handleResize)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       Bus.$off('topology-search', this.handleSearch)
       removeResizeListener(this.$el, this.handleResize)
     },
     methods: {
-      async handleSearch (params) {
+      async handleSearch(params) {
         try {
           if (params.query_filter.rules.length) {
             const data = await this.$store.dispatch('hostApply/searchNode', {
@@ -173,10 +173,10 @@
           console.error(e)
         }
       },
-      filterMethod (remoteData, node) {
+      filterMethod(remoteData, node) {
         return remoteData.some(datum => datum.bk_inst_id === node.data.bk_inst_id && datum.bk_obj_id === node.data.bk_obj_id)
       },
-      setDefaultState (data) {
+      setDefaultState(data) {
         this.$refs.tree.setData(data)
         let defaultNodeId
         const queryModule = parseInt(this.$route.query.module)
@@ -193,7 +193,7 @@
           this.$refs.tree.setExpanded(defaultNodeId)
         }
       },
-      getTreeStat () {
+      getTreeStat() {
         const stat = {
           firstModule: null,
           levels: {},
@@ -220,11 +220,11 @@
         findModule(this.treeData)
         return stat
       },
-      setNodeDisabled () {
+      setNodeDisabled() {
         const nodeIds = this.treeStat.noRuleIds.map(id => `module_${id}`)
         this.$refs.tree.setDisabled(nodeIds, { emitEvent: true, disabled: this.isDel })
       },
-      updateNodeStatus (id, isClear) {
+      updateNodeStatus(id, isClear) {
         const nodeData = this.$refs.tree.getNodeById(`module_${id}`).data
         nodeData.host_apply_enabled = false
         if (isClear) {
@@ -232,7 +232,7 @@
         }
         this.treeStat = this.getTreeStat()
       },
-      getTopologyData () {
+      getTopologyData() {
         return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
           bizId: this.business,
           config: {
@@ -243,29 +243,29 @@
           }
         })
       },
-      getMainLine () {
+      getMainLine() {
         return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
           config: {
             requestId: 'getMainLine'
           }
         })
       },
-      idGenerator (data) {
+      idGenerator(data) {
         return `${data.bk_obj_id}_${data.bk_inst_id}`
       },
-      applyEnabled (node) {
+      applyEnabled(node) {
         return this.isModule(node) && node.data.host_apply_enabled
       },
-      isTemplate (node) {
+      isTemplate(node) {
         return node.data.service_template_id || node.data.set_template_id
       },
-      isModule (node) {
+      isModule(node) {
         return node.data.bk_obj_id === 'module'
       },
-      async beforeSelect (node) {
+      async beforeSelect(node) {
         return this.isModule(node)
       },
-      getInternalNodeClass (node, data) {
+      getInternalNodeClass(node, data) {
         const clazz = []
         clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
         if (node.selected) {
@@ -273,13 +273,13 @@
         }
         return clazz
       },
-      handleSelectChange (node) {
+      handleSelectChange(node) {
         this.$emit('selected', node)
       },
-      handleCheckChange (id, checked) {
+      handleCheckChange(id, checked) {
         this.$emit('checked', id, checked)
       },
-      handleResize () {
+      handleResize() {
         this.$refs.tree.resize()
       }
     }

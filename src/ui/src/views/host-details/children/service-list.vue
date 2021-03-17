@@ -99,7 +99,7 @@
       CmdbSwitcherItem
     },
     mixins: [authMixin],
-    data () {
+    data() {
       return {
         searchSelect: [
           {
@@ -141,10 +141,10 @@
     },
     computed: {
       ...mapState('hostDetails', ['info']),
-      host () {
+      host() {
         return this.info.host || {}
       },
-      emptyStuff () {
+      emptyStuff() {
         return {
           type: this.searchSelectData.length ? 'search' : 'default',
           payload: {}
@@ -152,16 +152,16 @@
       }
     },
     watch: {
-      checked () {
+      checked() {
         this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
       }
     },
-    created () {
+    created() {
       this.getHostSeriveInstances()
       this.getHistoryLabel()
     },
     methods: {
-      async getHostSeriveInstances () {
+      async getHostSeriveInstances() {
         try {
           const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
             || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
@@ -194,7 +194,7 @@
           this.pagination.count = 0
         }
       },
-      getSelectorParams () {
+      getSelectorParams() {
         try {
           const labels = this.searchSelectData.filter(item => item.id === 1 && item.hasOwnProperty('values'))
           const labelsKey = this.searchSelectData.filter(item => item.id === 2 && item.hasOwnProperty('values'))
@@ -236,7 +236,7 @@
           return []
         }
       },
-      async getHistoryLabel () {
+      async getHistoryLabel() {
         const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
           params: {
             bk_biz_id: this.info.biz[0].bk_biz_id
@@ -269,35 +269,35 @@
         this.$set(this.searchSelect[1], 'conditions', valueOption)
         this.$set(this.searchSelect[2], 'children', keyOption)
       },
-      handleDeleteInstance (id) {
+      handleDeleteInstance(id) {
         this.getHostSeriveInstances()
       },
-      handleEditName (instance) {
+      handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))
         instance.editing.name = true
       },
-      handleEditNameSuccess (instance, value) {
+      handleEditNameSuccess(instance, value) {
         instance.name = value
         instance.editing.name = false
       },
-      handleCancelEditName (instance) {
+      handleCancelEditName(instance) {
         instance.editing.name = false
       },
-      handleCheckALL (checked) {
+      handleCheckALL(checked) {
         this.searchSelectData = []
         this.isCheckAll = checked
         this.$refs.serviceInstanceTable.forEach((table) => {
           table.checked = checked
         })
       },
-      handleExpandAll (expanded) {
+      handleExpandAll(expanded) {
         this.searchSelectData = []
         this.isExpandAll = expanded
         this.$refs.serviceInstanceTable.forEach((table) => {
           table.localExpanded = expanded
         })
       },
-      batchDelete (disabled) {
+      batchDelete(disabled) {
         if (disabled) {
           return false
         }
@@ -309,17 +309,17 @@
           history: true
         })
       },
-      handleCheckChange (checked, instance) {
+      handleCheckChange(checked, instance) {
         if (checked) {
           this.checked.push(instance)
         } else {
           this.checked = this.checked.filter(target => target.id !== instance.id)
         }
       },
-      handleClearFilter () {
+      handleClearFilter() {
         this.handleSearch()
       },
-      handleSearch (value) {
+      handleSearch(value) {
         const instanceName = this.searchSelectData.filter(item => (item.id === 0 && item.hasOwnProperty('values'))
           || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
         if (instanceName.length) {
@@ -340,16 +340,16 @@
         }
         this.handlePageChange(1)
       },
-      handlePageChange (page) {
+      handlePageChange(page) {
         this.pagination.current = page
         this.getHostSeriveInstances()
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         this.pagination.current = 1
         this.pagination.size = size
         this.getHostSeriveInstances()
       },
-      handleConditionSelect (cur, index) {
+      handleConditionSelect(cur, index) {
         const values = this.historyLabels[cur.id]
         const children = values.map((item) => {
           return {
@@ -362,7 +362,7 @@
         el.updateChildMenu(cur, index, false)
         el.showChildMenu(children)
       },
-      handleGoAddInstance () {
+      handleGoAddInstance() {
         const [biz] = this.info.biz
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,

@@ -45,7 +45,7 @@
     components: {
       AlternateItem
     },
-    data () {
+    data() {
       return {
         tagInput: null,
         keyword: '',
@@ -55,14 +55,14 @@
       }
     },
     computed: {
-      wrapperStyle () {
+      wrapperStyle() {
         const style = {}
         if (this.tagInput && this.tagInput.panelWidth) {
           style.width = parseInt(this.tagInput.panelWidth) + 'px'
         }
         return style
       },
-      listStyle () {
+      listStyle() {
         const style = {
           'max-height': '192px'
         }
@@ -76,14 +76,14 @@
       }
     },
     watch: {
-      keyword () {
+      keyword() {
         this.$nextTick(() => {
           this.$refs.alternateList.scrollTop = 0
         })
       }
     },
     methods: {
-      getIndex (index, childIndex = 0) {
+      getIndex(index, childIndex = 0) {
         let flattenedIndex = 0
         this.matchedData.slice(0, index).forEach((tag) => {
           if (tag.hasOwnProperty('children')) {
@@ -94,7 +94,7 @@
         })
         return flattenedIndex + childIndex
       },
-      handleScroll () {
+      handleScroll() {
         if (this.loading || !this.next) return
         const list = this.$refs.alternateList
         const threshold = 32 // 距离底部2条数据

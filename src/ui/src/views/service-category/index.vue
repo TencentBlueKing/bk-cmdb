@@ -197,7 +197,7 @@
     components: {
       categoryInput
     },
-    data () {
+    data() {
       return {
         tooltips: {
           content: this.$t('二级分类删除提示'),
@@ -229,14 +229,14 @@
       ...mapGetters('objectBiz', ['bizId'])
     },
     watch: {
-      list (list) {
+      list(list) {
         this.displayList = list
       },
-      keyword () {
+      keyword() {
         this.handleFilter()
       }
     },
-    created () {
+    created() {
       this.handleFilter = debounce(this.searchList, 300)
       this.getCategoryList()
     },
@@ -247,7 +247,7 @@
         'updateServiceCategory',
         'deleteServiceCategory'
       ]),
-      getCategoryList () {
+      getCategoryList() {
         this.searchServiceCategory({
           params: { bk_biz_id: this.bizId },
           config: { requestId: this.request.category }
@@ -267,7 +267,7 @@
           }).sort((prev, next) => prev.id - next.id)
         })
       },
-      searchList () {
+      searchList() {
         if (this.keyword) {
           const reg = new RegExp(this.keyword, 'i')
           this.displayList = this.list.filter((mainCategory) => {
@@ -282,7 +282,7 @@
           this.displayList = this.list
         }
       },
-      createdCategory (name, rootId) {
+      createdCategory(name, rootId) {
         this.createServiceCategory({
           params: {
             bk_biz_id: this.bizId,
@@ -308,11 +308,11 @@
           }
         })
       },
-      handleCategoryTipsToggle (tipsInstance) {
+      handleCategoryTipsToggle(tipsInstance) {
         const willShow = !tipsInstance.state.isVisible
         tipsInstance.reference.parentElement.classList[willShow ? 'add' : 'remove']('tips-active')
       },
-      async handleAddCategory (name, bk_root_id = 0) {
+      async handleAddCategory(name, bk_root_id = 0) {
         if (!await this.$validator.validateAll()) {
           this.$bkMessage({
             message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
@@ -322,7 +322,7 @@
           this.createdCategory(name, bk_root_id)
         }
       },
-      async handleEditCategory (data, type, mainIndex) {
+      async handleEditCategory(data, type, mainIndex) {
         if (!await this.$validator.validateAll()) {
           this.$bkMessage({
             message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
@@ -356,7 +356,7 @@
           })
         }
       },
-      handleDeleteCategory (id, type, index) {
+      handleDeleteCategory(id, type, index) {
         this.$bkInfo({
           title: this.$t('确认删除分类'),
           zIndex: 999,
@@ -384,7 +384,7 @@
           }
         })
       },
-      handleEditMain (id, name) {
+      handleEditMain(id, name) {
         this.editMainStatus = id
         this.mainCategoryName = name
         this.handleCloseEditChild()
@@ -394,10 +394,10 @@
           this.$refs.editInput[0].$refs.categoryInput.focus()
         })
       },
-      handleCloseEditMain () {
+      handleCloseEditMain() {
         this.editMainStatus = null
       },
-      handleEditChild (id, name) {
+      handleEditChild(id, name) {
         this.editChildStatus = id
         this.childCategoryName = name
         this.handleCloseAddChild()
@@ -407,27 +407,27 @@
           this.$refs.editInput[0].$refs.categoryInput.focus()
         })
       },
-      handleCloseEditChild () {
+      handleCloseEditChild() {
         this.editChildStatus = null
       },
-      handleAddBox () {
+      handleAddBox() {
         this.showAddMianCategory = true
         this.$nextTick(() => {
           this.$refs.addCategoryInput.$refs.categoryInput.focus()
         })
       },
-      handleCloseAddBox () {
+      handleCloseAddBox() {
         this.showAddMianCategory = false
         this.categoryName = ''
       },
-      handleShowAddChild (id) {
+      handleShowAddChild(id) {
         this.addChildStatus = id
         this.isAuthcompleted = false
         this.$nextTick(() => {
           this.$refs.editInput[0].$refs.categoryInput.focus()
         })
       },
-      handleCloseAddChild () {
+      handleCloseAddChild() {
         this.addChildStatus = null
         this.categoryName = ''
       }

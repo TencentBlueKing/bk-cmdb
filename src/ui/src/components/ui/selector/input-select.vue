@@ -74,22 +74,22 @@
         default: true
       }
     },
-    data () {
+    data() {
       return {
         localValue: this.value
       }
     },
     watch: {
-      value (value) {
+      value(value) {
         this.localValue = value
       },
-      localValue (value) {
+      localValue(value) {
         this.$emit('input', value)
         this.$emit('on-change', value)
       }
     },
     methods: {
-      handleSelected (value) {
+      handleSelected(value) {
         this.localValue = value
       }
     }

@@ -133,7 +133,7 @@
         default: () => ({})
       }
     },
-    data () {
+    data() {
       return {
         form: {
           ...DEFAULT_FORM
@@ -151,34 +151,34 @@
     },
     computed: {
       ...mapGetters(['supplierAccount']),
-      isCreateMode () {
+      isCreateMode() {
         return this.mode === 'create'
       },
-      verifyParams () {
+      verifyParams() {
         return {
           bk_cloud_vendor: this.form.bk_cloud_vendor,
           bk_secret_id: this.form.bk_secret_id,
           bk_secret_key: this.form.bk_secret_key
         }
       },
-      verifyRequired () {
+      verifyRequired() {
         const changed = ['bk_cloud_vendor', 'bk_secret_id', 'bk_secret_key'].some(key => this.form[key] !== this.verifyResult[key])
         return changed || !this.verifyResult.connected
       },
-      vendors () {
+      vendors() {
         const vendorProperty = this.properties.find(property => property.bk_property_id === 'bk_cloud_vendor')
         if (vendorProperty) {
           return vendorProperty.option || []
         }
         return []
       },
-      hasChange () {
+      hasChange() {
         if (this.isCreateMode) {
           return true
         }
         return Object.keys(this.form).some(key => this.form[key] !== this.account[key])
       },
-      auth () {
+      auth() {
         if (this.isCreateMode) {
           return {
             type: this.$OPERATION.C_CLOUD_ACCOUNT
@@ -190,7 +190,7 @@
         }
       }
     },
-    created () {
+    created() {
       this.getCloudAreaProperties()
       if (!this.isCreateMode) {
         Object.keys(DEFAULT_FORM).forEach((key) => {
@@ -205,7 +205,7 @@
       }
     },
     methods: {
-      async getCloudAreaProperties () {
+      async getCloudAreaProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
@@ -221,7 +221,7 @@
           console.error(error)
         }
       },
-      handleSecretKeyFocus () {
+      handleSecretKeyFocus() {
         if (this.isCreateMode || this.form.bk_secret_key !== this.fakeSecret) {
           return
         }
@@ -231,20 +231,20 @@
           this.errors.clear()
         })
       },
-      handleSecretKeyBlur () {
+      handleSecretKeyBlur() {
         if (this.isCreateMode || this.form.bk_secret_key) {
           return
         }
         this.form.bk_secret_key = this.fakeSecret
       },
-      async handleTest () {
+      async handleTest() {
         if (!this.isCreateMode && this.form.bk_secret_key === this.fakeSecret) {
           this.useBackendTest()
         } else {
           this.useFrontendTest()
         }
       },
-      async useBackendTest () {
+      async useBackendTest() {
         try {
           const [result] = await this.$store.dispatch('cloud/account/getStatus', {
             params: {
@@ -264,7 +264,7 @@
           console.error(error)
         }
       },
-      async useFrontendTest () {
+      async useFrontendTest() {
         const results = await Promise.all([
           this.$validator.validate('bk_cloud_vendor'),
           this.$validator.validate('bk_secret_id'),
@@ -299,7 +299,7 @@
           console.error(e.message)
         }
       },
-      async handleSubmit () {
+      async handleSubmit() {
         const valid = await this.$validator.validateAll()
         if (!valid) {
           return false
@@ -314,7 +314,7 @@
           this.doUpdate()
         }
       },
-      async doCreate () {
+      async doCreate() {
         try {
           await this.$store.dispatch('cloud/account/create', {
             params: this.form,
@@ -332,7 +332,7 @@
           console.error(e)
         }
       },
-      async doUpdate () {
+      async doUpdate() {
         try {
           const params = { ...this.form }
           if (this.form.bk_secret_key === this.fakeSecret) {
@@ -355,7 +355,7 @@
           console.error(e)
         }
       },
-      handleCancel () {
+      handleCancel() {
         if (!this.isCreateMode) {
           this.container.show({
             type: 'details',
@@ -368,7 +368,7 @@
           this.container.hide()
         }
       },
-      handleLinkToFAQ () {
+      handleLinkToFAQ() {
         const FAQLink = {
           '1': 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html',
           '2': 'https://cloud.tencent.com/document/product/598/37140'

@@ -45,7 +45,7 @@
         default: false
       }
     },
-    data () {
+    data() {
       return {
         localValue: {
           min: '',
@@ -55,17 +55,17 @@
     },
     watch: {
       value: {
-        handler () {
+        handler() {
           this.initValue()
         },
         deep: true
       }
     },
-    created () {
+    created() {
       this.initValue()
     },
     methods: {
-      initValue () {
+      initValue() {
         if (this.value === '' || this.value === null) {
           this.localValue = {
             min: '',
@@ -75,7 +75,7 @@
           this.localValue = this.value
         }
       },
-      async handleInput () {
+      async handleInput() {
         const res = await this.$validator.validateAll()
         if (res) {
           this.$emit('input', {
@@ -84,7 +84,7 @@
           })
         }
       },
-      validate () {
+      validate() {
         return this.$validator.validateAll()
       }
     }

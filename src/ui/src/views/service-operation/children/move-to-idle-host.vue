@@ -42,7 +42,7 @@
       }
     },
     methods: {
-      getHostValue (row, field) {
+      getHostValue(row, field) {
         const host = row.host
         if (host) {
           return host[field]

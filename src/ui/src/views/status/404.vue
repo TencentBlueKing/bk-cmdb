@@ -11,7 +11,7 @@
   import { MENU_INDEX } from '@/dictionary/menu-symbol'
   export default {
     methods: {
-      handleRedirect () {
+      handleRedirect() {
         this.$routerActions.redirect({
           name: MENU_INDEX
         })

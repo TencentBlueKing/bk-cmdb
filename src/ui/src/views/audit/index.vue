@@ -83,7 +83,7 @@
       [AuditHostOptions.name]: AuditHostOptions,
       AuditBusinessSelector
     },
-    data () {
+    data() {
       return {
         active: RouterQuery.get('tab', 'host'),
         tabPanels: [
@@ -122,7 +122,7 @@
       }
     },
     computed: {
-      optionsComponent () {
+      optionsComponent() {
         const componentMap = {
           business: AuditBusinessOptions.name,
           resource: AuditResourceOptions.name,
@@ -132,15 +132,15 @@
         return componentMap[this.active]
       }
     },
-    created () {
+    created() {
       this.setQueryWatcher()
       this.getAuditDictionary()
     },
-    beforeDestroy () {
+    beforeDestroy() {
       this.teardownQueryWatcher()
     },
     methods: {
-      setQueryWatcher () {
+      setQueryWatcher() {
         this.unwatch = RouterQuery.watch('*', ({
           page,
           limit,
@@ -155,10 +155,10 @@
           this.$nextTick(() => this.getAuditList(isEvent))
         })
       },
-      teardownQueryWatcher () {
+      teardownQueryWatcher() {
         this.unwatch && this.unwatch()
       },
-      async getAuditDictionary () {
+      async getAuditDictionary() {
         try {
           this.dictionary = await this.$store.dispatch('audit/getDictionary', {
             fromCache: true,
@@ -168,7 +168,7 @@
           this.dictionary = []
         }
       },
-      handleConditionChange (condition) {
+      handleConditionChange(condition) {
         const usefulCondition = {}
         Object.keys(condition).forEach((key) => {
           const value = condition[key]
@@ -192,7 +192,7 @@
         }
         this.condition = usefulCondition
       },
-      async getAuditList (eventTrigger) {
+      async getAuditList(eventTrigger) {
         try {
           const params = {
             condition: this.condition,
@@ -216,36 +216,36 @@
           this.$route.meta.view = 'permission'
         }
       },
-      handlePageChange (current) {
+      handlePageChange(current) {
         RouterQuery.set({
           page: current,
           _t: Date.now()
         })
       },
-      handleSizeChange (size) {
+      handleSizeChange(size) {
         RouterQuery.set({
           limit: size,
           page: 1,
           _t: Date.now()
         })
       },
-      handleSortChange (sort) {
+      handleSortChange(sort) {
         RouterQuery.set({
           page: 1,
           sort: this.$tools.getSort(sort, 'operation_time'),
           _t: Date.now()
         })
       },
-      handleRowClick (row) {
+      handleRowClick(row) {
         AuditDetails.show({
           id: row.id
         })
       },
-      getResourceTypeName (row) {
+      getResourceTypeName(row) {
         const type = this.dictionary.find(type => type.id === row.resource_type)
         return type ? type.name : row.resource_type
       },
-      getActionName (row) {
+      getActionName(row) {
         const type = this.dictionary.find(type => type.id === row.resource_type)
         const operations = type ? type.operations : []
         const operation = operations.find(operation => operation.id === row.action)

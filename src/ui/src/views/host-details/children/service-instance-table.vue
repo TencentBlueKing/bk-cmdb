@@ -170,7 +170,7 @@
         default: 'label'
       }
     },
-    data () {
+    data() {
       return {
         tipsLabel: {
           show: false,
@@ -186,14 +186,14 @@
     },
     computed: {
       ...mapState('hostDetails', ['info']),
-      bizId () {
+      bizId() {
         const [biz] = this.info.biz || []
         return biz ? biz.bk_biz_id : null
       },
-      withTemplate () {
+      withTemplate() {
         return this.isModuleNode && !!this.instance.service_template_id
       },
-      instanceMenu () {
+      instanceMenu() {
         const menu = [{
           name: this.$t('删除'),
           handler: this.handleDeleteInstance,
@@ -205,14 +205,14 @@
         }]
         return menu
       },
-      requestId () {
+      requestId() {
         return {
           processList: `get_service_instance_${this.instance.id}_processes`,
           properties: 'get_service_process_properties',
           deleteProcess: 'delete_service_process'
         }
       },
-      labelList () {
+      labelList() {
         const list = []
         const labels = this.instance.labels
         labels && Object.keys(labels).forEach((key) => {
@@ -224,36 +224,36 @@
         })
         return list
       },
-      labelShowList () {
+      labelShowList() {
         return this.labelList.slice(0, 3)
       },
-      labelTipsList () {
+      labelTipsList() {
         return this.labelList.slice(3)
       },
-      topologyPath () {
+      topologyPath() {
         const pathArr = this.$tools.clone(this.instance.topo_path).reverse()
         const path = pathArr.map(path => path.bk_inst_name).join(' / ')
         return path
       }
     },
     watch: {
-      localExpanded (expanded) {
+      localExpanded(expanded) {
         if (expanded) {
           this.getServiceProcessList()
         }
       },
-      checked (checked) {
+      checked(checked) {
         this.$emit('check-change', checked, this.instance)
       }
     },
-    async created () {
+    async created() {
       await this.getProcessProperties()
       if (this.expanded) {
         this.getServiceProcessList()
       }
     },
     methods: {
-      async getProcessProperties () {
+      async getProcessProperties() {
         const action = 'objectModelProperty/searchObjectAttribute'
         const properties = await this.$store.dispatch(action, {
           params: {
@@ -268,7 +268,7 @@
         this.properties = properties
         this.setHeader()
       },
-      async getServiceProcessList () {
+      async getServiceProcessList() {
         try {
           this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
             params: {
@@ -284,7 +284,7 @@
           console.error(e)
         }
       },
-      setHeader () {
+      setHeader() {
         const header = processTableHeader.map((id) => {
           const property = this.properties.find(property => property.bk_property_id === id) || {}
           return {
@@ -295,7 +295,7 @@
         })
         this.header = header
       },
-      handleDeleteInstance () {
+      handleDeleteInstance() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_DELETE_SERVICE,
           params: {
@@ -304,13 +304,13 @@
           history: true
         })
       },
-      handleEditInstance () {
+      handleEditInstance() {
         this.$emit('edit-name')
         this.$nextTick(() => {
           this.$refs.nameEditForm.focus()
         })
       },
-      async handleConfirmEditName (value) {
+      async handleConfirmEditName(value) {
         try {
           await this.$store.dispatch('serviceInstance/updateServiceInstance', {
             bizId: this.bizId,
@@ -328,10 +328,10 @@
           console.error(error)
         }
       },
-      handleCancelEditName () {
+      handleCancelEditName() {
         this.$emit('cancel-edit-name')
       },
-      goTopologyInstance () {
+      goTopologyInstance() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {
@@ -342,17 +342,17 @@
           history: true
         })
       },
-      handleShowDotMenu () {
+      handleShowDotMenu() {
         if (this.$refs.dotMenu) {
           this.$refs.dotMenu.$el.style.opacity = 1
         }
       },
-      handleHideDotMenu () {
+      handleHideDotMenu() {
         if (this.$refs.dotMenu) {
           this.$refs.dotMenu.$el.style.opacity = 0
         }
       },
-      handleAddProcess () {
+      handleAddProcess() {
         Form.show({
           type: 'create',
           title: `${this.$t('添加进程')}(${this.instance.name})`,
@@ -361,7 +361,7 @@
           submitHandler: this.createSubmitHandler
         })
       },
-      async createSubmitHandler (values) {
+      async createSubmitHandler(values) {
         try {
           await this.$store.dispatch('processInstance/createServiceInstanceProcess', {
             params: {
@@ -378,7 +378,7 @@
           console.error(error)
         }
       },
-      showProcessDetails (row) {
+      showProcessDetails(row) {
         Form.show({
           type: 'view',
           title: this.$t('查看进程'),
@@ -390,7 +390,7 @@
           submitHandler: this.editSubmitHandler
         })
       },
-      handleEdit (row) {
+      handleEdit(row) {
         Form.show({
           type: 'update',
           title: this.$t('编辑进程'),
@@ -402,7 +402,7 @@
           submitHandler: this.editSubmitHandler
         })
       },
-      async editSubmitHandler (values, changedValues, instance) {
+      async editSubmitHandler(values, changedValues, instance) {
         try {
           await this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
             params: {
@@ -416,7 +416,7 @@
           console.error(error)
         }
       },
-      handleDelete (row) {
+      handleDelete(row) {
         this.$bkInfo({
           title: this.$t('确定删除该进程'),
           confirmFn: async () => {
@@ -438,7 +438,7 @@
           }
         })
       },
-      redirectToTemplate () {
+      redirectToTemplate() {
         this.$routerActions.redirect({
           name: 'operationalTemplate',
           params: {
@@ -448,7 +448,7 @@
           history: true
         })
       },
-      updateInstanceInfo () {
+      updateInstanceInfo() {
         // todo 需要后端提供接口查询数据变更后的服务实例信息，用于更新服务实例名
       }
     }

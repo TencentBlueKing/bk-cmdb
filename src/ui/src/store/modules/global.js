@@ -65,7 +65,7 @@ const getters = {
 }
 
 const actions = {
-  getUserList ({ commit }) {
+  getUserList({ commit }) {
     return $http.get(`${window.API_HOST}user/list?_t=${(new Date()).getTime()}`, {
       requestId: 'get_user_list',
       fromCache: true,
@@ -75,13 +75,13 @@ const actions = {
       return list
     })
   },
-  getBlueKingEditStatus ({ commit }, { config }) {
+  getBlueKingEditStatus({ commit }, { config }) {
     return $http.post('system/config/user_config/blueking_modify', {}, config)
   },
-  getConfig ({ commit }, { config }) {
+  getConfig({ commit }, { config }) {
     return $http.get('admin/find/system/config_admin', {}, config)
   },
-  updateConfig ({ commit }, { params, config }) {
+  updateConfig({ commit }, { params, config }) {
     return $http.put('admin/update/system/config_admin', params, config).then(() => {
       commit('setConfig', params)
     })
@@ -89,45 +89,45 @@ const actions = {
 }
 
 const mutations = {
-  setGlobalLoading (state, loading) {
+  setGlobalLoading(state, loading) {
     state.globalLoading = loading
   },
-  setNavStatus (state, status) {
+  setNavStatus(state, status) {
     Object.assign(state.nav, status)
   },
-  setHeaderStatus (state, status) {
+  setHeaderStatus(state, status) {
     Object.assign(state.header, status)
   },
-  setLayoutStatus (state, status) {
+  setLayoutStatus(state, status) {
     Object.assign(state.layout, status)
   },
-  setUserList (state, list) {
+  setUserList(state, list) {
     state.userList = list
   },
-  setPermission (state, permission) {
+  setPermission(state, permission) {
     state.permission = permission
   },
-  setAppHeight (state, height) {
+  setAppHeight(state, height) {
     state.appHeight = height
   },
-  setTitle (state, title) {
+  setTitle(state, title) {
     state.title = title
   },
-  setBusinessSelectorVisible (state, visible) {
+  setBusinessSelectorVisible(state, visible) {
     state.businessSelectorVisible = visible
   },
-  createBusinessSelectorPromise (state) {
+  createBusinessSelectorPromise(state) {
     state.businessSelectorPromise = new Promise((resolve) => {
       state.businessSelectorResolver = resolve
     })
   },
-  resolveBusinessSelectorPromise (state, val) {
+  resolveBusinessSelectorPromise(state, val) {
     state.businessSelectorResolver && state.businessSelectorResolver(val)
   },
-  setScrollerState (state, scrollerState) {
+  setScrollerState(state, scrollerState) {
     Object.assign(state.scrollerState, scrollerState)
   },
-  setConfig (state, config) {
+  setConfig(state, config) {
     // 按照数据格式约定验证规则的正则需要baes64解码
     const { validationRules } = config
     for (const rule of Object.values(validationRules)) {
@@ -137,7 +137,7 @@ const mutations = {
     window.CMDB_CONFIG = config
     window.CMDB_CONFIG.site = { ...window.Site, ...config.site }
   },
-  setValidatorSetuped (state) {
+  setValidatorSetuped(state) {
     state.validatorSetuped = true
   }
 }

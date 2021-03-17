@@ -82,7 +82,7 @@
     components: {
       setInstance
     },
-    data () {
+    data() {
       return {
         hasScrollbar: false,
         expandAll: false,
@@ -95,10 +95,10 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      setTemplateId () {
+      setTemplateId() {
         return this.$route.params['setTemplateId']
       },
-      setInstancesId () {
+      setInstancesId() {
         const id = `${this.bizId}_${this.setTemplateId}`
         let syncIdMap = this.$store.state.setFeatures.syncIdMap
         const sessionSyncIdMap = sessionStorage.getItem('setSyncIdMap')
@@ -108,28 +108,28 @@
         }
         return syncIdMap[id] || []
       },
-      isSingleSync () {
+      isSingleSync() {
         return !(this.setInstancesId.length > 1)
       }
     },
-    async created () {
+    async created() {
       this.getSetTemplateInfo()
       this.getDiffData()
     },
-    mounted () {
+    mounted() {
       addResizeListener(this.$refs.instancesInfo, this.resizeHandler)
     },
-    beforeDestroy () {
+    beforeDestroy() {
       removeResizeListener(this.$refs.instancesInfo, this.resizeHandler)
     },
     methods: {
-      resizeHandler () {
+      resizeHandler() {
         this.$nextTick(() => {
           const scroller = this.$el.parentElement
           this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
         })
       },
-      canSyncStatus () {
+      canSyncStatus() {
         let status = true
         this.$refs.setInstance.forEach((instance) => {
           if (!instance.canSyncStatus && status) {
@@ -138,7 +138,7 @@
         })
         return status
       },
-      async getSetTemplateInfo () {
+      async getSetTemplateInfo() {
         try {
           const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
             bizId: this.bizId,
@@ -149,7 +149,7 @@
           console.error(e)
         }
       },
-      async getDiffData () {
+      async getDiffData() {
         try {
           if (!this.setInstancesId.length) {
             this.diffList = []
@@ -193,7 +193,7 @@
           this.moduleHostCount = {}
         }
       },
-      async handleConfirmSync () {
+      async handleConfirmSync() {
         try {
           await this.$store.dispatch('setSync/syncTemplateToInstances', {
             bizId: this.bizId,
@@ -220,19 +220,19 @@
           console.error(e)
         }
       },
-      handleExpandAll (expand) {
+      handleExpandAll(expand) {
         this.$refs.setInstance.forEach((instance) => {
           instance.localExpand = expand
         })
       },
-      handleCloseInstance (id) {
+      handleCloseInstance(id) {
         this.$store.commit('setFeatures/deleteInstancesId', {
           id: `${this.bizId}_${this.setTemplateId}`,
           deleteId: id
         })
         this.diffList = this.diffList.filter(instance => instance.bk_set_id !== id)
       },
-      handleGoback () {
+      handleGoback() {
         const moduleId = this.$route.params['moduleId']
         if (moduleId) {
           this.$routerActions.redirect({

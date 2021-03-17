@@ -122,7 +122,7 @@
         type: String
       }
     },
-    data () {
+    data() {
       return {
         relationInfo: {
           id: null,
@@ -136,17 +136,17 @@
       }
     },
     computed: {
-      createParams () {
+      createParams() {
         const createParams = { ...this.relationInfo }
         delete createParams.id
         return createParams
       },
-      updateParams () {
+      updateParams() {
         const updateParams = { ...this.relationInfo }
         delete updateParams['bk_asst_id']
         return updateParams
       },
-      changedValues () {
+      changedValues() {
         const values = {}
         Object.keys(this.relationInfo).forEach((key) => {
           if (this.relationInfo[key] !== this.originInfo[key]) {
@@ -156,7 +156,7 @@
         return values
       }
     },
-    created () {
+    created() {
       if (this.isEdit) {
         for (const key in this.relationInfo) {
           this.relationInfo[key] = this.$tools.clone(this.relation[key])
@@ -169,7 +169,7 @@
         'createAssociationType',
         'updateAssociationType'
       ]),
-      async saveRelation () {
+      async saveRelation() {
         try {
           if (!await this.$validator.validateAll()) {
             return
@@ -195,7 +195,7 @@
           console.error(e)
         }
       },
-      cancel () {
+      cancel() {
         this.$emit('cancel')
       }
     }

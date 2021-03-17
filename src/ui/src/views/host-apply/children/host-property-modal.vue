@@ -56,7 +56,7 @@
         default: () => ([])
       }
     },
-    data () {
+    data() {
       return {
         show: this.visible,
         localChecked: [],
@@ -69,22 +69,22 @@
       ...mapGetters('objectBiz', ['bizId'])
     },
     watch: {
-      visible (val) {
+      visible(val) {
         this.show = val
       },
       checkedList: {
-        handler () {
+        handler() {
           this.localChecked = this.checkedList
         },
         immediate: true
       }
     },
-    async created () {
+    async created() {
       await this.getHostPropertyList()
       this.propertyList = this.$tools.clone(this.configPropertyList.filter(property => property.host_apply_enabled))
     },
     methods: {
-      async getHostPropertyList () {
+      async getHostPropertyList() {
         try {
           const data = await this.$store.dispatch('hostApply/getProperties', {
             params: { bk_biz_id: this.bizId },
@@ -98,16 +98,16 @@
           console.error(e)
         }
       },
-      handleVisibleChange (val) {
+      handleVisibleChange(val) {
         this.$emit('update:visible', val)
       },
-      handleConfirm () {
+      handleConfirm() {
         this.$emit('update:checkedList', this.localChecked)
       },
-      handleCancel () {
+      handleCancel() {
         this.localChecked = this.checkedList
       },
-      hanldeFilterProperty () {
+      hanldeFilterProperty() {
         // 使用visible方式是为了兼容checkbox-group组件
         this.propertyList.forEach((property) => {
           property.__extra__.visible = property.bk_property_name.indexOf(this.searchName) > -1

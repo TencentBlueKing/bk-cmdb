@@ -24,7 +24,7 @@
         type: [String, Number]
       }
     },
-    data () {
+    data() {
       return {
         resources: [{
           id: 'host',
@@ -34,17 +34,17 @@
     },
     computed: {
       selected: {
-        get () {
+        get() {
           return this.value
         },
-        set (value, oldValue) {
+        set(value, oldValue) {
           this.$emit('input', value)
           this.$emit('change', value, oldValue)
         }
       }
     },
     methods: {
-      getResourceInfo () {
+      getResourceInfo() {
         const resource = this.resources.find(resource => resource.id === this.value)
         return resource ? resource.name : '--'
       }

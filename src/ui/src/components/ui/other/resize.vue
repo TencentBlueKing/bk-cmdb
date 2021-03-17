@@ -19,10 +19,10 @@
     name: 'cmdb-resize-layout',
     props: {
       direction: {
-        default () {
+        default() {
           return ['bottom', 'right']
         },
-        validator (val) {
+        validator(val) {
           const validDirections = ['bottom', 'right']
           if (typeof val === 'string') {
             return validDirections.includes(val)
@@ -33,24 +33,24 @@
         }
       },
       min: {
-        default () {
+        default() {
           return {
             bottom: 0,
             right: 0
           }
         },
-        validator (val) {
+        validator(val) {
           return ['object', 'number'].includes(typeof val)
         }
       },
       max: {
-        default () {
+        default() {
           return {
             bottom: Infinity,
             right: Infinity
           }
         },
-        validator (val) {
+        validator(val) {
           return ['object', 'number'].includes(typeof val)
         }
       },
@@ -64,19 +64,19 @@
       },
       disabled: Boolean
     },
-    data () {
+    data() {
       return {
         state: {}
       }
     },
     computed: {
-      localDirections () {
+      localDirections() {
         if (typeof this.direction === 'string') {
           return [this.direction]
         }
         return this.direction
       },
-      localMin () {
+      localMin() {
         const min = {
           bottom: 0,
           right: 0
@@ -89,7 +89,7 @@
         }
         return min
       },
-      localMax () {
+      localMax() {
         const max = {
           bottom: Infinity,
           right: Infinity
@@ -104,7 +104,7 @@
       }
     },
     methods: {
-      getHandlerStyle (direction) {
+      getHandlerStyle(direction) {
         const style = {}
         if (direction === 'right') {
           style.width = this.handlerWidth + 'px'
@@ -115,7 +115,7 @@
         }
         return style
       },
-      handleMousedown (event, direction) {
+      handleMousedown(event, direction) {
         const $handler = event.currentTarget
         const handlerRect = $handler.getBoundingClientRect()
         const $container = this.$el

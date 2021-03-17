@@ -24,7 +24,7 @@ const getters = {
 }
 
 const actions = {
-  getAuthorizedBusiness ({ commit, state }, config = {}) {
+  getAuthorizedBusiness({ commit, state }, config = {}) {
     return $http.get('biz/with_reduced?sort=bk_biz_id', config)
   },
   /**
@@ -36,7 +36,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  createBusiness({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post(`biz/${rootGetters.supplierAccount}`, params, config)
   },
 
@@ -49,7 +49,7 @@ const actions = {
      * @param {Number} bkBizId 业务id
      * @return {promises} promises 对象
      */
-  deleteBusiness ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
+  deleteBusiness({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
     return $http.delete(`biz/${bkSupplierAccount}/${bkBizId}`)
   },
 
@@ -63,7 +63,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  updateBusiness ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+  updateBusiness({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
     return $http.put(`biz/${rootGetters.supplierAccount}/${bizId}`, params, config)
   },
 
@@ -75,7 +75,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  archiveBusiness ({ commit, state, dispatch, rootGetters }, bizId) {
+  archiveBusiness({ commit, state, dispatch, rootGetters }, bizId) {
     return $http.put(`biz/status/disabled/${rootGetters.supplierAccount}/${bizId}`)
   },
 
@@ -85,7 +85,7 @@ const actions = {
      * @param {Number} bizId 业务id
      * @return {promises} promises 对象
      */
-  recoveryBusiness ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+  recoveryBusiness({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
     return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${bizId}`, params, config)
   },
 
@@ -98,11 +98,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  searchBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchBusiness({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post(`${window.API_HOST}biz/search/web`, params, config)
   },
 
-  searchBusinessById ({ rootGetters }, { bizId, config }) {
+  searchBusinessById({ rootGetters }, { bizId, config }) {
     return $http.post(`biz/search/${rootGetters.supplierAccount}`, {
       condition: {
         'bk_biz_id': {
@@ -118,19 +118,19 @@ const actions = {
       return data.info[0] || {}
     })
   },
-  getFullAmountBusiness ({ commit }, config = {}) {
+  getFullAmountBusiness({ commit }, config = {}) {
     return $http.get('biz/simplify', config)
   }
 }
 
 const mutations = {
-  setBusiness (state, business) {
+  setBusiness(state, business) {
     state.business = business
   },
-  setBizId (state, bizId) {
+  setBizId(state, bizId) {
     state.bizId = bizId
   },
-  setAuthorizedBusiness (state, list) {
+  setAuthorizedBusiness(state, list) {
     state.authorizedBusiness = list
   }
 }

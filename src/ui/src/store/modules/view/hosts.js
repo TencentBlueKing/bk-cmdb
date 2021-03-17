@@ -1,4 +1,4 @@
-function getDefaultCondition () {
+function getDefaultCondition() {
   return ['biz', 'set', 'module', 'host', 'object'].map((modelId) => {
     return {
       bk_obj_id: modelId,
@@ -34,36 +34,36 @@ const getters = {
 }
 
 const mutations = {
-  setFilterList (state, list) {
+  setFilterList(state, list) {
     state.filterList = list
   },
-  setCollectionList (state, list) {
+  setCollectionList(state, list) {
     state.collectionList = list
   },
-  setCollection (state, collection) {
+  setCollection(state, collection) {
     state.collection = collection
   },
-  addCollection (state, collection) {
+  addCollection(state, collection) {
     state.collectionList.push(collection)
   },
-  updateCollection (state, updatedData) {
+  updateCollection(state, updatedData) {
     Object.assign(state.collection, updatedData)
   },
-  deleteCollection (state, id) {
+  deleteCollection(state, id) {
     state.collectionList = state.collectionList.filter(collection => collection.id !== id)
   },
-  clearFilter (state) {
+  clearFilter(state) {
     state.filterList = []
     state.collection = null
     state.condition = getDefaultCondition()
   },
-  setPropertyList (state, list) {
+  setPropertyList(state, list) {
     state.propertyList = list
   },
-  setCondition (state, condition) {
+  setCondition(state, condition) {
     state.condition = condition
   },
-  setShouldInjectAsset (state, shouldInjectAsset) {
+  setShouldInjectAsset(state, shouldInjectAsset) {
     state.shouldInjectAsset = !!shouldInjectAsset
   }
 }

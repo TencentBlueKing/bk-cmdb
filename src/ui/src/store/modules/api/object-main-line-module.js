@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-  createMainlineObject ({ commit, state, dispatch }, { params }) {
+  createMainlineObject({ commit, state, dispatch }, { params }) {
     return $http.post('create/topomodelmainline', params)
   },
 
@@ -40,7 +40,7 @@ const actions = {
      * @param {String} bkObjId 对象的模型id
      * @return {promises} promises 对象
      */
-  deleteMainlineObject ({ commit, state, dispatch, rootGetters }, { bkObjId, config }) {
+  deleteMainlineObject({ commit, state, dispatch, rootGetters }, { bkObjId, config }) {
     return $http.delete(`delete/topomodelmainline/object/${bkObjId}`, config)
   },
 
@@ -51,7 +51,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-  searchMainlineObject ({ commit, state, dispatch, rootGetters }, { params, config }) {
+  searchMainlineObject({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('find/topomodelmainline', params, config)
   },
 
@@ -63,7 +63,7 @@ const actions = {
      * @param {String} bkBizId 业务id
      * @return {promises} promises 对象
      */
-  getInstTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+  getInstTopo({ commit, state, dispatch, rootGetters }, { bizId, config }) {
     return $http.post(`find/topoinst/biz/${bizId}`, config)
   },
 
@@ -75,7 +75,7 @@ const actions = {
      * @param {String} bizId 业务id
      * @return {promises} promises 对象
      */
-  getInstTopoInstanceNum ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+  getInstTopoInstanceNum({ commit, state, dispatch, rootGetters }, { bizId, config }) {
     return $http.post(`/find/topoinst_with_statistics/biz/${bizId}`, {}, config)
   },
 
@@ -90,7 +90,7 @@ const actions = {
      * @param {String} bkInstId 实例id
      * @return {promises} promises 对象
      */
-  searchInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
+  searchInstTopo({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
     return $http.get(`topoinstchild/object/${bkObjId}/biz/${bkBizId}/inst/${bkInstId}`)
   },
 
@@ -103,11 +103,11 @@ const actions = {
      * @param {String} bkBizId 业务id
      * @return {promises} promises 对象
      */
-  getInternalTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+  getInternalTopo({ commit, state, dispatch, rootGetters }, { bizId, config }) {
     return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}/with_statistics`, config)
   },
 
-  getTopoPath (context, { bizId, params, config }) {
+  getTopoPath(context, { bizId, params, config }) {
     return $http.post(`find/topopath/biz/${bizId}`, params, config)
   }
 }

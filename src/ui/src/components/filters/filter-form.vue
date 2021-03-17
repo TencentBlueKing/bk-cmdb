@@ -159,7 +159,7 @@
         }
       }
     },
-    data () {
+    data() {
       return {
         isShow: false,
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
@@ -179,19 +179,19 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      storageSelected () {
+      storageSelected() {
         return FilterStore.selected
       },
-      storageIPCondition () {
+      storageIPCondition() {
         return FilterStore.IP
       },
-      collectable () {
+      collectable() {
         return FilterStore.collectable
       },
-      collection () {
+      collection() {
         return FilterStore.activeCollection
       },
-      allowCollect () {
+      allowCollect() {
         const hasIP = !!this.IPCondition.text.trim().length
         const hasCondition = Object.keys(this.condition).some((id) => {
           const value = this.condition[id].value
@@ -203,7 +203,7 @@
     watch: {
       storageSelected: {
         immediate: true,
-        handler () {
+        handler() {
           const newCondition = this.$tools.clone(FilterStore.condition)
           Object.keys(newCondition).forEach((id) => {
             if (this.condition.hasOwnProperty(id)) {
@@ -216,7 +216,7 @@
       },
       storageIPCondition: {
         immediate: true,
-        handler () {
+        handler() {
           this.IPCondition = {
             ...this.storageIPCondition
           }
@@ -224,11 +224,11 @@
       }
     },
     methods: {
-      getLabelSuffix (property) {
+      getLabelSuffix(property) {
         const model = this.getModelById(property.bk_obj_id)
         return model ? model.bk_obj_name : model.bk_obj_id
       },
-      getComponentType (property) {
+      getComponentType(property) {
         const {
           bk_obj_id: modelId,
           bk_property_id: propertyId,
@@ -245,7 +245,7 @@
         }
         return normal
       },
-      getBindProps (property) {
+      getBindProps(property) {
         const props = Utils.getBindProps(property)
         if (!FilterStore.bizId) {
           return props
@@ -261,21 +261,21 @@
         }
         return props
       },
-      getPlaceholder (property) {
+      getPlaceholder(property) {
         return Utils.getPlaceholder(property)
       },
-      handleIPOptionChange (negativeType, value) {
+      handleIPOptionChange(negativeType, value) {
         if (!(value || this.IPCondition[negativeType])) {
           this.IPCondition[negativeType] = true
         }
       },
-      handleOperatorChange (property, operator) {
+      handleOperatorChange(property, operator) {
         const value = this.condition[property.id].value
         const effectValue = Utils.getOperatorSideEffect(property, operator, value)
         this.condition[property.id].value = effectValue
       },
       // 人员选择器参考定位空间不足，备选面板左移了，此处将其通过offset配置移到最右边
-      handleComponentActiveChange (property, active) {
+      handleComponentActiveChange(property, active) {
         if (!active) {
           return false
         }
@@ -295,7 +295,7 @@
           console.error(error)
         }
       },
-      handleRemove (property) {
+      handleRemove(property) {
         const index = this.selected.indexOf(property)
         index > -1 && this.selected.splice(index, 1)
         this.$delete(this.condition, property.id)
@@ -305,10 +305,10 @@
           })
         }
       },
-      handleSelectProperty () {
+      handleSelectProperty() {
         PropertySelector.show()
       },
-      handleSearch () {
+      handleSearch() {
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
@@ -320,12 +320,12 @@
           this.close()
         }, 300)
       },
-      handleCreateCollection () {
+      handleCreateCollection() {
         const instance = this.$refs.collectionPopover.instance
         this.errors.clear()
         instance.show()
       },
-      closeCollectionForm () {
+      closeCollectionForm() {
         const { collectionPopover } = this.$refs
         if (!collectionPopover) {
           return false
@@ -333,10 +333,10 @@
         const instance = this.$refs.collectionPopover.instance
         instance.hide()
       },
-      handleCollectionFormFocus () {
+      handleCollectionFormFocus() {
         this.collectionForm.error = null
       },
-      async handleSaveCollection () {
+      async handleSaveCollection() {
         try {
           const isValid = await this.$validator.validate('collectionName')
           if (!isValid) {
@@ -355,7 +355,7 @@
           console.error(error)
         }
       },
-      getCollectionQueryParams () {
+      getCollectionQueryParams() {
         const params = this.selected.map(property => ({
           bk_obj_id: property.bk_obj_id,
           field: property.bk_property_id,
@@ -364,7 +364,7 @@
         }))
         return JSON.stringify(params)
       },
-      async handleUpdateCollection () {
+      async handleUpdateCollection() {
         try {
           await FilterStore.updateCollection({
             ...this.collection,
@@ -376,7 +376,7 @@
           console.error(error)
         }
       },
-      handleReset () {
+      handleReset() {
         this.IPCondition.text = ''
         Object.keys(this.condition).forEach((id) => {
           const property = this.selected.find(property => property.id.toString() === id.toString())
@@ -386,23 +386,23 @@
         })
         this.errors.clear()
       },
-      focusCollectionName () {
+      focusCollectionName() {
         this.$refs.collectionName.$refs.input.focus()
       },
-      clearCollectionName () {
+      clearCollectionName() {
         this.collectionForm.name = ''
         this.closeCollectionForm.error = ''
       },
-      handleClosed () {
+      handleClosed() {
         this.$emit('closed')
       },
-      open () {
+      open() {
         this.isShow = true
       },
-      close () {
+      close() {
         this.isShow = false
       },
-      focusIP () {
+      focusIP() {
         this.$refs.ip.$el.querySelector('textarea').focus()
       }
     }

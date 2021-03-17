@@ -87,7 +87,7 @@
         default: () => []
       }
     },
-    data () {
+    data() {
       return {
         allTemplates: [],
         templates: [],
@@ -110,33 +110,33 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      isSelectAll () {
+      isSelectAll() {
         return this.localSelected.length === this.templates.length
       },
-      isHalfSelected () {
+      isHalfSelected() {
         return !this.isSelectAll && this.localSelected.length > 0
       },
-      isEditMode () {
+      isEditMode() {
         return this.$parent.$parent.mode === 'edit'
       }
     },
     watch: {
       localSelected: {
-        handler (value) {
+        handler(value) {
           this.$emit('select-change', value)
         },
         immediate: true
       },
-      allTemplates (value) {
+      allTemplates(value) {
         this.$emit('template-loaded', value)
       }
     },
-    async created () {
+    async created() {
       this.getTemplates()
       await this.getServiceCategory()
     },
     methods: {
-      async getTemplates () {
+      async getTemplates() {
         try {
           const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
             params: {
@@ -160,7 +160,7 @@
           this.templates = []
         }
       },
-      handleClick (template, disabled) {
+      handleClick(template, disabled) {
         if (disabled) return
         const index = this.localSelected.indexOf(template.id)
         if (index > -1) {
@@ -169,18 +169,18 @@
           this.localSelected.push(template.id)
         }
       },
-      getSelectedServices () {
+      getSelectedServices() {
         return this.localSelected.map(id => this.allTemplates.find(template => template.id === id))
       },
-      handleLinkClick () {
+      handleLinkClick() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE
         })
       },
-      handleFilterTemplates () {
+      handleFilterTemplates() {
         this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
       },
-      handleSelectAll (checked) {
+      handleSelectAll(checked) {
         const serviceExistHost = this.$parent.$parent.serviceExistHost
         if (checked) {
           this.localSelected = this.templates.map(template => template.id)
@@ -192,7 +192,7 @@
           }
         }
       },
-      async handleShowDetails (template = {}, event, disabled) {
+      async handleShowDetails(template = {}, event, disabled) {
         this.curTemplate = template
         this.processInfo.disabled = disabled
         const curInfo = this.templateDetailsData[template.id]
@@ -217,7 +217,7 @@
           console.error(e)
         }
       },
-      setProcessInfo (data = [], event) {
+      setProcessInfo(data = [], event) {
         this.processInfo.processes = data.map((process) => {
           const port = process.property
             ? process.property.port ? process.property.port.value : ''
@@ -244,11 +244,11 @@
           this.tips.instance && this.tips.instance.show()
         })
       },
-      handlehideTips () {
+      handlehideTips() {
         this.tips.instance && this.tips.instance.destroy()
         this.tips.instance = null
       },
-      async getServiceCategory () {
+      async getServiceCategory() {
         try {
           const data = await this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
             params: { bk_biz_id: this.bizId },

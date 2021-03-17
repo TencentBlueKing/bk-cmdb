@@ -12,7 +12,7 @@ const SYSTEM_ID = 'bk_cmdb'
 // relation: [[[1, 2], [3, 4]], [[1, 2], [5, 6]]] 表示该动作关联两个及以上的视图，为第二种情况的多视图场景，即关联多视图，操作多资源
 // 因第一、第二种均为第三种的子场景，因此通过简单的类型判断转换为第三种形式
 // 类型判断减少复杂度，只判断第一个元素的类型，不合法的混搭写法会报错
-function convertRelation (relation = [], type) {
+function convertRelation(relation = [], type) {
   if (!relation.length) return relation
   try {
     const [levelOne] = relation
@@ -33,7 +33,7 @@ function convertRelation (relation = [], type) {
 }
 
 // 将相同动作下的相同视图的实例合并到一起
-function mergeSameActions (actions) {
+function mergeSameActions(actions) {
   const actionMap = new Map()
   actions.forEach((action) => {
     const viewMap = actionMap.get(action.id) || new Map()
