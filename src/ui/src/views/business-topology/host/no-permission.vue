@@ -1,40 +1,40 @@
 <template>
-    <permission-main class="no-permission" ref="main" :permission="permission" :applied="applied"
-        @close="handleClose"
-        @apply="handleApply"
-        @refresh="handleRefresh" />
+  <permission-main class="no-permission" ref="main" :permission="permission" :applied="applied"
+    @close="handleClose"
+    @apply="handleApply"
+    @refresh="handleRefresh" />
 </template>
 <script>
-    import permissionMixins from '@/mixins/permission'
-    import PermissionMain from '@/components/modal/permission-main'
-    export default {
-        components: {
-            PermissionMain
-        },
-        mixins: [permissionMixins],
-        props: {
-            permission: Object
-        },
-        data () {
-            return {
-                applied: false
-            }
-        },
-        methods: {
-            handleClose () {
-                this.$emit('cancel')
-            },
-            async handleApply () {
-                try {
-                    await this.handleApplyPermission()
-                    this.applied = true
-                } catch (error) {}
-            },
-            handleRefresh () {
-                window.location.reload()
-            }
-        }
+  import permissionMixins from '@/mixins/permission'
+  import PermissionMain from '@/components/modal/permission-main'
+  export default {
+    components: {
+      PermissionMain
+    },
+    mixins: [permissionMixins],
+    props: {
+      permission: Object
+    },
+    data () {
+      return {
+        applied: false
+      }
+    },
+    methods: {
+      handleClose () {
+        this.$emit('cancel')
+      },
+      async handleApply () {
+        try {
+          await this.handleApplyPermission()
+          this.applied = true
+        } catch (error) {}
+      },
+      handleRefresh () {
+        window.location.reload()
+      }
     }
+  }
 </script>
 <style lang="scss" scoped>
     .no-permission {

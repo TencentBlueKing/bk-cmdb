@@ -1,120 +1,120 @@
 <template>
-    <div class="node-create-layout">
-        <h2 class="node-create-title">{{title}}</h2>
-        <div class="node-create-path">{{$t('添加节点已选择')}}：{{topoPath}}</div>
-        <div class="node-create-form"
-            :style="{
-                'max-height': Math.min($APP.height - 400, 400) + 'px',
-                'padding-bottom': formPaddingBottom
-            }">
-            <div v-for="(property, index) in sortedProperties"
-                :class="['form-group', { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }]"
-                :key="index">
-                <label :class="['form-label', 'inline-block-middle', {
-                    required: property['isrequired']
-                }]">
-                    {{property['bk_property_name']}}
-                </label>
-                <component v-if="!['longchar'].includes(property['bk_property_type'])" :is="`cmdb-form-${property['bk_property_type']}`"
-                    style="display: flex;"
-                    :unit="property['unit']"
-                    :data-vv-name="property['bk_property_id']"
-                    :data-vv-as="property['bk_property_name']"
-                    :options="property.option || []"
-                    :placeholder="$t('请输入xx', { name: property.bk_property_name })"
-                    v-validate="getValidateRules(property)"
-                    v-model.trim="values[property['bk_property_id']]">
-                </component>
-                <div v-else>
-                    <bk-input type="textarea" class="longchar-textarea"
-                        :data-vv-name="property['bk_property_id']"
-                        :data-vv-as="property['bk_property_name']"
-                        :options="property.option || []"
-                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
-                        v-validate="getValidateRules(property)"
-                        v-model.trim="values[property['bk_property_id']]">
-                    </bk-input>
-                </div>
-                <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
-            </div>
+  <div class="node-create-layout">
+    <h2 class="node-create-title">{{title}}</h2>
+    <div class="node-create-path">{{$t('添加节点已选择')}}：{{topoPath}}</div>
+    <div class="node-create-form"
+      :style="{
+        'max-height': Math.min($APP.height - 400, 400) + 'px',
+        'padding-bottom': formPaddingBottom
+      }">
+      <div v-for="(property, index) in sortedProperties"
+        :class="['form-group', { 'form-group-flex': sortedProperties.length === 1 || property['bk_property_type'] === 'longchar' }]"
+        :key="index">
+        <label :class="['form-label', 'inline-block-middle', {
+          required: property['isrequired']
+        }]">
+          {{property['bk_property_name']}}
+        </label>
+        <component v-if="!['longchar'].includes(property['bk_property_type'])" :is="`cmdb-form-${property['bk_property_type']}`"
+          style="display: flex;"
+          :unit="property['unit']"
+          :data-vv-name="property['bk_property_id']"
+          :data-vv-as="property['bk_property_name']"
+          :options="property.option || []"
+          :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+          v-validate="getValidateRules(property)"
+          v-model.trim="values[property['bk_property_id']]">
+        </component>
+        <div v-else>
+          <bk-input type="textarea" class="longchar-textarea"
+            :data-vv-name="property['bk_property_id']"
+            :data-vv-as="property['bk_property_name']"
+            :options="property.option || []"
+            :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+            v-validate="getValidateRules(property)"
+            v-model.trim="values[property['bk_property_id']]">
+          </bk-input>
         </div>
-        <div class="node-create-options">
-            <bk-button theme="primary"
-                :disabled="$loading() || errors.any()"
-                @click="handleSave">
-                {{$t('提交')}}
-            </bk-button>
-            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-        </div>
+        <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+      </div>
     </div>
+    <div class="node-create-options">
+      <bk-button theme="primary"
+        :disabled="$loading() || errors.any()"
+        @click="handleSave">
+        {{$t('提交')}}
+      </bk-button>
+      <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+    </div>
+  </div>
 </template>
 
 <script>
-    export default {
-        props: {
-            parentNode: {
-                type: Object,
-                required: true
-            },
-            properties: {
-                type: Array,
-                required: true
-            },
-            nextModelId: String
-        },
-        data () {
-            return {
-                values: {}
-            }
-        },
-        computed: {
-            topoPath () {
-                const nodePath = [...this.parentNode.parents, this.parentNode]
-                return nodePath.map(node => node.data.bk_inst_name).join('-')
-            },
-            sortedProperties () {
-                return this.properties.sort((propertyA, propertyB) => {
-                    return propertyA['bk_property_index'] - propertyB['bk_property_index']
-                })
-            },
-            title () {
-                return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
-            },
-            formPaddingBottom () {
-                return this.nextModelId === 'set' ? '20px' : '52px'
-            }
-        },
-        watch: {
-            properties () {
-                this.initValues()
-            }
-        },
-        created () {
-            this.initValues()
-        },
-        methods: {
-            initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, {})
-            },
-            getValidateRules (property) {
-                const rules = this.$tools.getValidateRules(property)
-                if (property.bk_property_id === 'bk_inst_name') {
-                    rules.businessTopoInstNames = true
-                }
-                return rules
-            },
-            handleSave () {
-                this.$validator.validateAll().then(isValid => {
-                    if (isValid) {
-                        this.$emit('submit', this.$tools.formatValues(this.values, this.properties))
-                    }
-                })
-            },
-            handleCancel () {
-                this.$emit('cancel')
-            }
+  export default {
+    props: {
+      parentNode: {
+        type: Object,
+        required: true
+      },
+      properties: {
+        type: Array,
+        required: true
+      },
+      nextModelId: String
+    },
+    data () {
+      return {
+        values: {}
+      }
+    },
+    computed: {
+      topoPath () {
+        const nodePath = [...this.parentNode.parents, this.parentNode]
+        return nodePath.map(node => node.data.bk_inst_name).join('-')
+      },
+      sortedProperties () {
+        return this.properties.sort((propertyA, propertyB) => {
+          return propertyA['bk_property_index'] - propertyB['bk_property_index']
+        })
+      },
+      title () {
+        return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
+      },
+      formPaddingBottom () {
+        return this.nextModelId === 'set' ? '20px' : '52px'
+      }
+    },
+    watch: {
+      properties () {
+        this.initValues()
+      }
+    },
+    created () {
+      this.initValues()
+    },
+    methods: {
+      initValues () {
+        this.values = this.$tools.getInstFormValues(this.properties, {})
+      },
+      getValidateRules (property) {
+        const rules = this.$tools.getValidateRules(property)
+        if (property.bk_property_id === 'bk_inst_name') {
+          rules.businessTopoInstNames = true
         }
+        return rules
+      },
+      handleSave () {
+        this.$validator.validateAll().then((isValid) => {
+          if (isValid) {
+            this.$emit('submit', this.$tools.formatValues(this.values, this.properties))
+          }
+        })
+      },
+      handleCancel () {
+        this.$emit('cancel')
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

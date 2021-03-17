@@ -19,7 +19,7 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      * 创建模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -29,11 +29,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createModule ({ commit, state, dispatch }, { bizId, setId, params, config }) {
-        return $http.post(`module/${bizId}/${setId}`, params, config)
-    },
+  createModule ({ commit, state, dispatch }, { bizId, setId, params, config }) {
+    return $http.post(`module/${bizId}/${setId}`, params, config)
+  },
 
-    /**
+  /**
      * 删除模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -43,11 +43,11 @@ const actions = {
      * @param {Number} bkModuleId 模块id
      * @return {promises} promises 对象
      */
-    deleteModule ({ commit, state, dispatch }, { bizId, setId, moduleId, config }) {
-        return $http.delete(`module/${bizId}/${setId}/${moduleId}`, config)
-    },
+  deleteModule ({ commit, state, dispatch }, { bizId, setId, moduleId, config }) {
+    return $http.delete(`module/${bizId}/${setId}/${moduleId}`, config)
+  },
 
-    /**
+  /**
      * 更新模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -57,11 +57,11 @@ const actions = {
      * @param {Number} bkModuleId 模块id
      * @return {promises} promises 对象
      */
-    updateModule ({ commit, state, dispatch }, { bizId, setId, moduleId, params, config }) {
-        return $http.put(`module/${bizId}/${setId}/${moduleId}`, params, config)
-    },
+  updateModule ({ commit, state, dispatch }, { bizId, setId, moduleId, params, config }) {
+    return $http.put(`module/${bizId}/${setId}/${moduleId}`, params, config)
+  },
 
-    /**
+  /**
      * 查询模块
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -71,9 +71,9 @@ const actions = {
      * @param {Number} bkSetId 集群id
      * @return {promises} promises 对象
      */
-    searchModule ({ commit, state, dispatch, rootGetters }, { bizId, setId, params, config }) {
-        return $http.post(`module/search/${rootGetters.supplierAccount}/${bizId}/${setId}`, params, config)
-    }
+  searchModule ({ commit, state, dispatch, rootGetters }, { bizId, setId, params, config }) {
+    return $http.post(`module/search/${rootGetters.supplierAccount}/${bizId}/${setId}`, params, config)
+  }
 }
 
 const mutations = {
@@ -81,9 +81,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

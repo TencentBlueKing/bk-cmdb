@@ -1,23 +1,23 @@
 <template>
-    <cmdb-tag-input
-        v-model="localValue"
-        v-bind="$attrs"
-        :fuzzy-search-method="fuzzySearchMethod"
-        :exact-search-method="exactSearchMethod"
-        @focus="handleToggle(true, ...arguments)"
-        @blur="handleToggle(false, ...arguments)">
-    </cmdb-tag-input>
+  <cmdb-tag-input
+    v-model="localValue"
+    v-bind="$attrs"
+    :fuzzy-search-method="fuzzySearchMethod"
+    :exact-search-method="exactSearchMethod"
+    @focus="handleToggle(true, ...arguments)"
+    @blur="handleToggle(false, ...arguments)">
+  </cmdb-tag-input>
 </template>
 
 <script>
-    import autocomplete from './mixins/autocomplete-set-module'
-    export default {
-        name: 'cmdb-search-set',
-        mixins: [autocomplete],
-        data () {
-            return {
-                type: 'set'
-            }
-        }
+  import autocomplete from './mixins/autocomplete-set-module'
+  export default {
+    name: 'cmdb-search-set',
+    mixins: [autocomplete],
+    data () {
+      return {
+        type: 'set'
+      }
     }
+  }
 </script>

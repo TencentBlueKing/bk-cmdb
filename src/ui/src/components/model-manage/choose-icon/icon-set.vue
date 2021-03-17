@@ -1,52 +1,52 @@
 <template>
-    <ul class="icon-set">
-        <li class="icon"
-            ref="iconItem"
-            :class="{ 'active': icon.value === value }"
-            v-bk-tooltips="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
-            v-for="(icon, index) in curIconList"
-            :key="index"
-            @click="handleChooseIcon(icon.value)">
-            <i :class="icon.value"></i>
-            <span class="checked-status"></span>
-        </li>
-    </ul>
+  <ul class="icon-set">
+    <li class="icon"
+      ref="iconItem"
+      :class="{ 'active': icon.value === value }"
+      v-bk-tooltips="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
+      v-for="(icon, index) in curIconList"
+      :key="index"
+      @click="handleChooseIcon(icon.value)">
+      <i :class="icon.value"></i>
+      <span class="checked-status"></span>
+    </li>
+  </ul>
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
-    export default {
-        props: {
-            value: {
-                type: String,
-                default: 'icon-cc-default'
-            },
-            iconList: {
-                type: Array,
-                default: () => []
-            },
-            filterIcon: {
-                type: String,
-                default: ''
-            }
-        },
-        computed: {
-            ...mapGetters([
-                'language'
-            ]),
-            curIconList () {
-                if (this.filterIcon) {
-                    return this.iconList.filter(icon => icon.nameZh.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1)
-                }
-                return this.iconList
-            }
-        },
-        methods: {
-            handleChooseIcon (value) {
-                this.$emit('input', value)
-            }
+  import { mapGetters } from 'vuex'
+  export default {
+    props: {
+      value: {
+        type: String,
+        default: 'icon-cc-default'
+      },
+      iconList: {
+        type: Array,
+        default: () => []
+      },
+      filterIcon: {
+        type: String,
+        default: ''
+      }
+    },
+    computed: {
+      ...mapGetters([
+        'language'
+      ]),
+      curIconList () {
+        if (this.filterIcon) {
+          return this.iconList.filter(icon => icon.nameZh.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(this.filterIcon.toLowerCase()) > -1)
         }
+        return this.iconList
+      }
+    },
+    methods: {
+      handleChooseIcon (value) {
+        this.$emit('input', value)
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

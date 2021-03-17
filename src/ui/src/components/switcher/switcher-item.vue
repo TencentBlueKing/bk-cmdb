@@ -1,50 +1,50 @@
 <template>
-    <span class="switcher-item"
-        v-bk-tooltips="{
-            boundary: 'window',
-            placement: 'top',
-            interactive: false,
-            disabled: !tips,
-            content: tips
-        }"
-        :class="{
-            'is-active': group && group.active === name
-        }"
-        @click="handleClick">
-        <slot></slot>
-    </span>
+  <span class="switcher-item"
+    v-bk-tooltips="{
+      boundary: 'window',
+      placement: 'top',
+      interactive: false,
+      disabled: !tips,
+      content: tips
+    }"
+    :class="{
+      'is-active': group && group.active === name
+    }"
+    @click="handleClick">
+    <slot></slot>
+  </span>
 </template>
 
 <script>
-    export default {
-        name: 'cmdb-switcher-item',
-        props: {
-            name: {
-                type: [String, Number],
-                default: ''
-            },
-            tips: {
-                type: String,
-                default: ''
-            }
-        },
-        computed: {
-            group () {
-                let group = this.$parent
-                while (group && !group.isSwitcherGroup) {
-                    group = group.$parent
-                }
-                return group
-            }
-        },
-        methods: {
-            handleClick () {
-                if (this.group) {
-                    this.group.setActive(this.name)
-                }
-            }
+  export default {
+    name: 'cmdb-switcher-item',
+    props: {
+      name: {
+        type: [String, Number],
+        default: ''
+      },
+      tips: {
+        type: String,
+        default: ''
+      }
+    },
+    computed: {
+      group () {
+        let group = this.$parent
+        while (group && !group.isSwitcherGroup) {
+          group = group.$parent
         }
+        return group
+      }
+    },
+    methods: {
+      handleClick () {
+        if (this.group) {
+          this.group.setActive(this.name)
+        }
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

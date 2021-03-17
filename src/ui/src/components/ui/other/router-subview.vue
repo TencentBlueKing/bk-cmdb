@@ -1,11 +1,11 @@
 <template>
-    <router-view class="subview"></router-view>
+  <router-view class="subview"></router-view>
 </template>
 
 <script>
-    export default {
-        name: 'router-subview'
-    }
+  export default {
+    name: 'router-subview'
+  }
 </script>
 
 <style lang="scss" scoped>

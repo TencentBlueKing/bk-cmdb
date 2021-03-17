@@ -1,45 +1,45 @@
 <template>
-    <div class="batch-edit-label">
-        <div class="exisiting-label">
-            <div class="title">
-                {{$t('已有标签')}}
-                <span>{{$t('已有标签提示')}}</span>
-            </div>
-            <div class="label-set">
-                <span class="label-item" :key="index" v-for="(label, index) in localLabels">
-                    {{`${label.key}：${label.value}`}}
-                    <i class="bk-icon icon-close-circle-shape" @click="handleRemove(index)"></i>
-                </span>
-            </div>
-        </div>
-        <div class="batch-add">
-            <div class="title">{{$t('批量添加标签')}}</div>
-            <slot name="batch-add-label"></slot>
-        </div>
+  <div class="batch-edit-label">
+    <div class="exisiting-label">
+      <div class="title">
+        {{$t('已有标签')}}
+        <span>{{$t('已有标签提示')}}</span>
+      </div>
+      <div class="label-set">
+        <span class="label-item" :key="index" v-for="(label, index) in localLabels">
+          {{`${label.key}：${label.value}`}}
+          <i class="bk-icon icon-close-circle-shape" @click="handleRemove(index)"></i>
+        </span>
+      </div>
     </div>
+    <div class="batch-add">
+      <div class="title">{{$t('批量添加标签')}}</div>
+      <slot name="batch-add-label"></slot>
+    </div>
+  </div>
 </template>
 
 <script>
-    export default {
-        props: {
-            labels: {
-                type: Array,
-                default: () => []
-            }
-        },
-        data () {
-            return {
-                localLabels: [...this.labels],
-                removeLabels: []
-            }
-        },
-        methods: {
-            handleRemove (index) {
-                this.removeLabels.push(this.localLabels[index])
-                this.localLabels.splice(index, 1)
-            }
-        }
+  export default {
+    props: {
+      labels: {
+        type: Array,
+        default: () => []
+      }
+    },
+    data () {
+      return {
+        localLabels: [...this.labels],
+        removeLabels: []
+      }
+    },
+    methods: {
+      handleRemove (index) {
+        this.removeLabels.push(this.localLabels[index])
+        this.localLabels.splice(index, 1)
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

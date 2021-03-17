@@ -15,7 +15,7 @@ const state = {}
 const getters = {}
 
 const actions = {
-    /**
+  /**
      * 查询服务模板详情列表
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -23,10 +23,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/service_template`, params, config)
-    },
-    /**
+  searchServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('findmany/proc/service_template', params, config)
+  },
+  /**
      * 查询服务模板统计数量
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -34,10 +34,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchServiceTemplateCount ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
-        return $http.post(`findmany/proc/service_template/count_info/biz/${bizId}`, params, config)
-    },
-    /**
+  searchServiceTemplateCount ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+    return $http.post(`findmany/proc/service_template/count_info/biz/${bizId}`, params, config)
+  },
+  /**
      * 查询服务模板详情列表
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -45,10 +45,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchServiceTemplateWithoutDetails ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/service_template`, params, config)
-    },
-    /**
+  searchServiceTemplateWithoutDetails ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('findmany/proc/service_template', params, config)
+  },
+  /**
      * 创建服务模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -56,10 +56,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`create/proc/service_template`, params, config)
-    },
-    /**
+  createServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('create/proc/service_template', params, config)
+  },
+  /**
      * 编辑服务模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -67,10 +67,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.put(`update/proc/service_template`, params, config)
-    },
-    /**
+  updateServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.put('update/proc/service_template', params, config)
+  },
+  /**
      * 删除服务模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -78,10 +78,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    deleteServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.delete(`delete/proc/service_template`, params)
-    },
-    /**
+  deleteServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.delete('delete/proc/service_template', params)
+  },
+  /**
      * 查看单个服务模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -89,21 +89,21 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    findServiceTemplate ({ commit, state, dispatch, rootGetters }, { id, config }) {
-        return $http.get(`find/proc/service_template/${id}/detail`, config)
-    },
+  findServiceTemplate ({ commit, state, dispatch, rootGetters }, { id, config }) {
+    return $http.get(`find/proc/service_template/${id}/detail`, config)
+  },
 
-    getServiceTemplateModules (context, { bizId, serviceTemplateId, params, config }) {
-        return $http.post(`module/bk_biz_id/${bizId}/service_template_id/${serviceTemplateId}`, params, config)
-    }
+  getServiceTemplateModules (context, { bizId, serviceTemplateId, params, config }) {
+    return $http.post(`module/bk_biz_id/${bizId}/service_template_id/${serviceTemplateId}`, params, config)
+  }
 }
 
 const mutations = {}
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

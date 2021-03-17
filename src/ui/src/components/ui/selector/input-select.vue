@@ -1,99 +1,99 @@
 <template>
-    <div class="input-select">
-        <bk-select class="select-box"
-            :clearable="clearable"
-            :searchable="searchable"
-            :disabled="disabled"
-            :value="localValue"
-            v-bind="$attrs"
-            @change="handleSelected">
-            <div class="input-box" slot="trigger">
-                <input :class="['input-text', { 'custom-error': errors.has(name) }]"
-                    autocomplete="off"
-                    :name="name"
-                    :placeholder="placeholder || $t('请选择或输入内容')"
-                    :disabled="disabled"
-                    v-validate="validate"
-                    v-model="localValue">
-            </div>
-            <bk-option v-for="(option, index) in options"
-                :key="index"
-                :id="option[settingKey]"
-                :name="option[settingKey]">
-            </bk-option>
-        </bk-select>
-        <span class="custom-form-error"
-            :title="errors.first(name)">
-            {{errors.first(name)}}
-        </span>
-    </div>
+  <div class="input-select">
+    <bk-select class="select-box"
+      :clearable="clearable"
+      :searchable="searchable"
+      :disabled="disabled"
+      :value="localValue"
+      v-bind="$attrs"
+      @change="handleSelected">
+      <div class="input-box" slot="trigger">
+        <input :class="['input-text', { 'custom-error': errors.has(name) }]"
+          autocomplete="off"
+          :name="name"
+          :placeholder="placeholder || $t('请选择或输入内容')"
+          :disabled="disabled"
+          v-validate="validate"
+          v-model="localValue">
+      </div>
+      <bk-option v-for="(option, index) in options"
+        :key="index"
+        :id="option[settingKey]"
+        :name="option[settingKey]">
+      </bk-option>
+    </bk-select>
+    <span class="custom-form-error"
+      :title="errors.first(name)">
+      {{errors.first(name)}}
+    </span>
+  </div>
 </template>
 
 <script>
-    export default {
-        name: 'cmdb-input-select',
-        props: {
-            value: {
-                type: [String, Number],
-                default: ''
-            },
-            disabled: {
-                type: Boolean,
-                default: false
-            },
-            name: {
-                type: [String, Number],
-                default: ''
-            },
-            validate: {
-                type: Object,
-                default: () => {}
-            },
-            options: {
-                type: Array,
-                default: () => []
-            },
-            settingKey: {
-                type: String,
-                default: 'id'
-            },
-            displayKey: {
-                type: String,
-                default: 'name'
-            },
-            placeholder: {
-                type: String,
-                default: ''
-            },
-            searchable: {
-                type: Boolean,
-                default: false
-            },
-            clearable: {
-                type: Boolean,
-                default: true
-            }
-        },
-        data () {
-            return {
-                localValue: this.value
-            }
-        },
-        watch: {
-            value (value) {
-                this.localValue = value
-            },
-            localValue (value) {
-                this.$emit('input', value)
-                this.$emit('on-change', value)
-            }
-        },
-        methods: {
-            handleSelected (value) {
-                this.localValue = value
-            }
-        }
+  export default {
+    name: 'cmdb-input-select',
+    props: {
+      value: {
+        type: [String, Number],
+        default: ''
+      },
+      disabled: {
+        type: Boolean,
+        default: false
+      },
+      name: {
+        type: [String, Number],
+        default: ''
+      },
+      validate: {
+        type: Object,
+        default: () => {}
+      },
+      options: {
+        type: Array,
+        default: () => []
+      },
+      settingKey: {
+        type: String,
+        default: 'id'
+      },
+      displayKey: {
+        type: String,
+        default: 'name'
+      },
+      placeholder: {
+        type: String,
+        default: ''
+      },
+      searchable: {
+        type: Boolean,
+        default: false
+      },
+      clearable: {
+        type: Boolean,
+        default: true
+      }
+    },
+    data () {
+      return {
+        localValue: this.value
+      }
+    },
+    watch: {
+      value (value) {
+        this.localValue = value
+      },
+      localValue (value) {
+        this.$emit('input', value)
+        this.$emit('on-change', value)
+      }
+    },
+    methods: {
+      handleSelected (value) {
+        this.localValue = value
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

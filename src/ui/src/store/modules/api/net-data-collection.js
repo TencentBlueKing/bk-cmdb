@@ -19,36 +19,36 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      *  采集器查询
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    searchDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`collector/netcollect/collector/action/search`, params, config)
-    },
-    /**
+  searchDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('collector/netcollect/collector/action/search', params, config)
+  },
+  /**
      *  采集器配置保存
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    updateDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`collector/netcollect/collector/action/update`, params, config)
-    },
-    /**
+  updateDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('collector/netcollect/collector/action/update', params, config)
+  },
+  /**
      *  采集器执行发现
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    collectDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`collector/netcollect/collector/action/discover`, params, config)
-    }
+  collectDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('collector/netcollect/collector/action/discover', params, config)
+  }
 }
 
 const mutations = {
@@ -56,9 +56,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

@@ -4,59 +4,59 @@ import magicbox from 'bk-magic-vue'
 import './magicbox.scss'
 
 const magicboxLanguageMap = {
-    zh_CN: magicbox.locale.lang.zhCN,
-    en: magicbox.locale.lang.enUS
+  zh_CN: magicbox.locale.lang.zhCN,
+  en: magicbox.locale.lang.enUS
 }
 i18n.mergeLocaleMessage(i18n.locale, magicboxLanguageMap[i18n.locale])
 magicbox.locale.use(magicboxLanguageMap[i18n.locale])
 Vue.use(magicbox, {
-    'bk-sideslider': {
-        quickClose: true,
-        width: 800
-    },
-    'bk-input': {
-        fontSize: 'medium'
-    },
-    'bk-select': {
-        fontSize: 'medium'
-    },
-    'bk-big-tree': {
-        useDefaultEmpty: true
-    },
-    i18n: (key, value) => i18n.t(key, value)
+  'bk-sideslider': {
+    quickClose: true,
+    width: 800
+  },
+  'bk-input': {
+    fontSize: 'medium'
+  },
+  'bk-select': {
+    fontSize: 'medium'
+  },
+  'bk-big-tree': {
+    useDefaultEmpty: true
+  },
+  i18n: (key, value) => i18n.t(key, value)
 })
 
 export const $error = (message, delay = 3000) => {
-    return magicbox.bkMessage({
-        message,
-        delay,
-        theme: 'error'
-    })
+  return magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'error'
+  })
 }
 
 export const $success = (message, delay = 3000) => {
-    return magicbox.bkMessage({
-        message,
-        delay,
-        theme: 'success'
-    })
+  return magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'success'
+  })
 }
 
 export const $info = (message, delay = 3000) => {
-    return magicbox.bkMessage({
-        message,
-        delay,
-        theme: 'primary'
-    })
+  return magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'primary'
+  })
 }
 
 export const $warn = (message, delay = 3000) => {
-    return magicbox.bkMessage({
-        message,
-        delay,
-        theme: 'warning',
-        hasCloseIcon: true
-    })
+  return magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'warning',
+    hasCloseIcon: true
+  })
 }
 
 Vue.prototype.$error = $error

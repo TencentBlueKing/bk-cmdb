@@ -19,7 +19,7 @@ const getters = {
 }
 
 const actions = {
-    /**
+  /**
      * 导出主机
      * @param {function} commit store commit mutation header
      * @param {Object} state store state
@@ -27,9 +27,9 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    exportHost ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${window.API_HOST}hosts/export`, params, config)
-    }
+  exportHost ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post(`${window.API_HOST}hosts/export`, params, config)
+  }
 }
 
 const mutations = {
@@ -37,9 +37,9 @@ const mutations = {
 }
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

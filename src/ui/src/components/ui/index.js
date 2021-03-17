@@ -42,58 +42,7 @@ import organization from './form/organization.vue'
 import propertyValue from './other/property-value.vue'
 import tagInput from './tag-input/tag-input.vue'
 const install = (Vue, opts = {}) => {
-    const components = [
-        businessSelector,
-        clipboardSelector,
-        selector,
-        details,
-        form,
-        formMultiple,
-        bool,
-        boolInput,
-        date,
-        dateRange,
-        time,
-        int,
-        float,
-        longchar,
-        singlechar,
-        timezone,
-        enumeration,
-        objuser,
-        resize,
-        collapseTransition,
-        collapse,
-        dotMenu,
-        input,
-        searchInput,
-        inputSelect,
-        iconButton,
-        tips,
-        dialog,
-        cloudSelector,
-        serviceCategorySelector,
-        auth,
-        authOption,
-        tableEmpty,
-        list,
-        table,
-        leaveConfirm,
-        textButton,
-        stickyLayout,
-        permission,
-        routerSubview,
-        organization,
-        propertyValue,
-        tagInput
-    ]
-    components.forEach(component => {
-        Vue.component(component.name, component)
-    })
-}
-
-export default {
-    install,
+  const components = [
     businessSelector,
     clipboardSelector,
     selector,
@@ -114,6 +63,7 @@ export default {
     objuser,
     resize,
     collapseTransition,
+    collapse,
     dotMenu,
     input,
     searchInput,
@@ -136,4 +86,54 @@ export default {
     organization,
     propertyValue,
     tagInput
+  ]
+  components.forEach((component) => {
+    Vue.component(component.name, component)
+  })
+}
+
+export default {
+  install,
+  businessSelector,
+  clipboardSelector,
+  selector,
+  details,
+  form,
+  formMultiple,
+  bool,
+  boolInput,
+  date,
+  dateRange,
+  time,
+  int,
+  float,
+  longchar,
+  singlechar,
+  timezone,
+  enumeration,
+  objuser,
+  resize,
+  collapseTransition,
+  dotMenu,
+  input,
+  searchInput,
+  inputSelect,
+  iconButton,
+  tips,
+  dialog,
+  cloudSelector,
+  serviceCategorySelector,
+  auth,
+  authOption,
+  tableEmpty,
+  list,
+  table,
+  leaveConfirm,
+  textButton,
+  stickyLayout,
+  permission,
+  routerSubview,
+  organization,
+  propertyValue,
+  tagInput
 }

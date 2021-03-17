@@ -1,438 +1,438 @@
 <template>
-    <div class="category-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-        <cmdb-tips class="mb10" tips-key="categoryTips">{{$t('服务分类功能提示')}}</cmdb-tips>
-        <div class="category-filter">
-            <bk-input class="filter-input"
-                :clearable="true"
-                :right-icon="'bk-icon icon-search'"
-                :placeholder="$t('请输入关键字')"
-                v-model.trim="keyword">
-            </bk-input>
-        </div>
-        <div class="category-list">
-            <div class="category-item bgc-white" v-for="(mainCategory, index) in displayList" :key="index">
-                <div class="category-title" :style="{ 'background-color': editMainStatus === mainCategory['id'] ? '#f0f1f5' : '' }">
-                    <div class="main-edit"
-                        :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"
-                        v-if="editMainStatus === mainCategory['id']">
-                        <category-input
-                            ref="editInput"
-                            :input-ref="'categoryInput'"
-                            :placeholder="$t('请输入一级分类')"
-                            name="categoryName"
-                            v-validate="'required|namedCharacter|length:128'"
-                            v-model="mainCategoryName"
-                            @on-confirm="handleEditCategory(mainCategory, 'main', index)"
-                            @on-cancel="handleCloseEditMain">
-                        </category-input>
-                    </div>
-                    <template v-else>
-                        <div class="category-name">
-                            <template v-if="mainCategory['is_built_in']">
-                                <div class="category-name-text is-built-in">
-                                    <div class="text-inner">
-                                        <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
-                                        <span class="main-id">{{mainCategory.id}}</span>
-                                    </div>
-                                </div>
-                                <span class="built-in-sign">{{$t('内置')}}</span>
-                            </template>
-                            <cmdb-auth v-else
-                                :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
-                                <div slot-scope="{ disabled }" :class="['category-name-text', { disabled }]">
-                                    <div class="text-inner" @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
-                                        <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
-                                        <span class="main-id">{{mainCategory.id}}</span>
-                                    </div>
-                                </div>
-                            </cmdb-auth>
-                        </div>
-                        <div class="menu-operational" v-if="!mainCategory['is_built_in']">
-                            <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
-                                <bk-button slot-scope="{ disabled }"
-                                    class="menu-btn"
-                                    :disabled="disabled"
-                                    :text="true"
-                                    @click="handleShowAddChild(mainCategory['id'])">
-                                    <i class="bk-cmdb-icon icon-cc-plus"></i>
-                                </bk-button>
-                            </cmdb-auth>
-                            <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }">
-                                <template slot-scope="{ disabled }">
-                                    <bk-button v-if="disabled || !mainCategory['child_category_list'].length"
-                                        class="menu-btn"
-                                        :text="true"
-                                        :disabled="disabled"
-                                        @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
-                                        <i class="bk-cmdb-icon icon-cc-del"></i>
-                                    </bk-button>
-                                    <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
-                                        <i class="bk-cmdb-icon icon-cc-del"></i>
-                                    </span>
-                                </template>
-                            </cmdb-auth>
-                        </div>
-                    </template>
-                </div>
-                <div class="child-category">
-                    <div v-for="(childCategory, childIndex) in mainCategory['child_category_list']"
-                        :key="childIndex"
-                        :class="['child-item', {
-                            'child-edit': editChildStatus === childCategory['id'],
-                            'is-built-in': childCategory['is_built_in']
-                        }]">
-                        <category-input
-                            v-if="editChildStatus === childCategory['id']"
-                            class="child-input"
-                            ref="editInput"
-                            :input-ref="'categoryInput'"
-                            :placeholder="$t('请输入二级分类')"
-                            name="categoryName"
-                            v-validate="'required|namedCharacter|length:128'"
-                            v-model="childCategoryName"
-                            @on-confirm="handleEditCategory(childCategory, 'child', index)"
-                            @on-cancel="handleCloseEditChild">
-                        </category-input>
-                        <template v-else>
-                            <div class="child-title">
-                                <span :title="childCategory['name']">{{childCategory['name']}}</span>
-                                <span class="child-id" :title="childCategory['id']">{{childCategory['id']}}</span>
-                                <div class="child-edit" v-if="!childCategory['is_built_in']">
-                                    <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
-                                        <bk-button slot-scope="{ disabled }"
-                                            class="child-edit-btn"
-                                            theme="primary"
-                                            :text="true"
-                                            :disabled="disabled"
-                                            @click.stop="handleEditChild(childCategory['id'], childCategory['name'])">
-                                            <i class="icon-cc-edit-shape"></i>
-                                        </bk-button>
-                                    </cmdb-auth>
-                                    <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }"
-                                        v-if="!childCategory['usage_amount']">
-                                        <bk-button slot-scope="{ disabled }"
-                                            class="child-edit-btn"
-                                            theme="primary"
-                                            :text="true"
-                                            :disabled="disabled"
-                                            @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
-                                            <i class="icon-cc-tips-close"></i>
-                                        </bk-button>
-                                    </cmdb-auth>
-                                    <i class="icon-cc-tips-close" v-else
-                                        style="color: #dcdee5; cursor: not-allowed; outline: none;"
-                                        v-bk-tooltips.top="tooltips">
-                                    </i>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                    <div class="child-item is-add" v-if="!mainCategory['is_built_in'] && !addChildStatus">
-                        <div class="child-title">
-                            <cmdb-auth @update-auth="isAuthcompleted = true" :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
-                                <bk-button slot-scope="{ disabled }"
-                                    class="add-btn"
-                                    :disabled="disabled"
-                                    :text="true"
-                                    v-show="isAuthcompleted"
-                                    @click="handleShowAddChild(mainCategory['id'])">
-                                    <i class="bk-cmdb-icon icon-cc-plus"></i>{{$t('添加')}}
-                                </bk-button>
-                            </cmdb-auth>
-                        </div>
-                    </div>
-                    <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
-                        <category-input
-                            class="child-input"
-                            ref="editInput"
-                            :input-ref="'categoryInput'"
-                            :placeholder="$t('请输入二级分类')"
-                            :edit-id="mainCategory['bk_root_id']"
-                            name="categoryName"
-                            v-validate="'required|namedCharacter|length:128'"
-                            v-model="categoryName"
-                            @on-confirm="handleAddCategory"
-                            @on-cancel="handleCloseAddChild">
-                        </category-input>
-                    </div>
-                </div>
-            </div>
-            <div class="category-item add-item"
-                :style="{ 'border-style': showAddMianCategory ? 'solid' : 'dashed' }"
-                v-show="!keyword">
-                <div class="category-title" :style="{ 'border-bottom-style': showAddMianCategory ? 'solid' : 'dashed' }">
-                    <div class="main-edit" style="width: 100%;" v-if="showAddMianCategory">
-                        <category-input
-                            ref="addCategoryInput"
-                            :input-ref="'categoryInput'"
-                            :placeholder="$t('请输入一级分类')"
-                            name="categoryName"
-                            v-validate="'required|namedCharacter|length:128'"
-                            v-model="categoryName"
-                            @on-confirm="handleAddCategory"
-                            @on-cancel="handleCloseAddBox">
-                        </category-input>
-                    </div>
-                </div>
-                <div class="child-category"></div>
-                <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }"
-                    v-show="!showAddMianCategory">
-                    <bk-button slot-scope="{ disabled }"
-                        class="add-btn"
-                        :disabled="disabled"
-                        @click="handleAddBox">
-                    </bk-button>
-                </cmdb-auth>
-            </div>
-            <bk-exception v-show="!displayList.length && !$loading(Object.values(request))" type="search-empty" scene="part"></bk-exception>
-        </div>
+  <div class="category-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+    <cmdb-tips class="mb10" tips-key="categoryTips">{{$t('服务分类功能提示')}}</cmdb-tips>
+    <div class="category-filter">
+      <bk-input class="filter-input"
+        :clearable="true"
+        :right-icon="'bk-icon icon-search'"
+        :placeholder="$t('请输入关键字')"
+        v-model.trim="keyword">
+      </bk-input>
     </div>
+    <div class="category-list">
+      <div class="category-item bgc-white" v-for="(mainCategory, index) in displayList" :key="index">
+        <div class="category-title" :style="{ 'background-color': editMainStatus === mainCategory['id'] ? '#f0f1f5' : '' }">
+          <div class="main-edit"
+            :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"
+            v-if="editMainStatus === mainCategory['id']">
+            <category-input
+              ref="editInput"
+              :input-ref="'categoryInput'"
+              :placeholder="$t('请输入一级分类')"
+              name="categoryName"
+              v-validate="'required|namedCharacter|length:128'"
+              v-model="mainCategoryName"
+              @on-confirm="handleEditCategory(mainCategory, 'main', index)"
+              @on-cancel="handleCloseEditMain">
+            </category-input>
+          </div>
+          <template v-else>
+            <div class="category-name">
+              <template v-if="mainCategory['is_built_in']">
+                <div class="category-name-text is-built-in">
+                  <div class="text-inner">
+                    <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
+                    <span class="main-id">{{mainCategory.id}}</span>
+                  </div>
+                </div>
+                <span class="built-in-sign">{{$t('内置')}}</span>
+              </template>
+              <cmdb-auth v-else
+                :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
+                <div slot-scope="{ disabled }" :class="['category-name-text', { disabled }]">
+                  <div class="text-inner" @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
+                    <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
+                    <span class="main-id">{{mainCategory.id}}</span>
+                  </div>
+                </div>
+              </cmdb-auth>
+            </div>
+            <div class="menu-operational" v-if="!mainCategory['is_built_in']">
+              <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
+                <bk-button slot-scope="{ disabled }"
+                  class="menu-btn"
+                  :disabled="disabled"
+                  :text="true"
+                  @click="handleShowAddChild(mainCategory['id'])">
+                  <i class="bk-cmdb-icon icon-cc-plus"></i>
+                </bk-button>
+              </cmdb-auth>
+              <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }">
+                <template slot-scope="{ disabled }">
+                  <bk-button v-if="disabled || !mainCategory['child_category_list'].length"
+                    class="menu-btn"
+                    :text="true"
+                    :disabled="disabled"
+                    @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
+                    <i class="bk-cmdb-icon icon-cc-del"></i>
+                  </bk-button>
+                  <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
+                    <i class="bk-cmdb-icon icon-cc-del"></i>
+                  </span>
+                </template>
+              </cmdb-auth>
+            </div>
+          </template>
+        </div>
+        <div class="child-category">
+          <div v-for="(childCategory, childIndex) in mainCategory['child_category_list']"
+            :key="childIndex"
+            :class="['child-item', {
+              'child-edit': editChildStatus === childCategory['id'],
+              'is-built-in': childCategory['is_built_in']
+            }]">
+            <category-input
+              v-if="editChildStatus === childCategory['id']"
+              class="child-input"
+              ref="editInput"
+              :input-ref="'categoryInput'"
+              :placeholder="$t('请输入二级分类')"
+              name="categoryName"
+              v-validate="'required|namedCharacter|length:128'"
+              v-model="childCategoryName"
+              @on-confirm="handleEditCategory(childCategory, 'child', index)"
+              @on-cancel="handleCloseEditChild">
+            </category-input>
+            <template v-else>
+              <div class="child-title">
+                <span :title="childCategory['name']">{{childCategory['name']}}</span>
+                <span class="child-id" :title="childCategory['id']">{{childCategory['id']}}</span>
+                <div class="child-edit" v-if="!childCategory['is_built_in']">
+                  <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
+                    <bk-button slot-scope="{ disabled }"
+                      class="child-edit-btn"
+                      theme="primary"
+                      :text="true"
+                      :disabled="disabled"
+                      @click.stop="handleEditChild(childCategory['id'], childCategory['name'])">
+                      <i class="icon-cc-edit-shape"></i>
+                    </bk-button>
+                  </cmdb-auth>
+                  <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }"
+                    v-if="!childCategory['usage_amount']">
+                    <bk-button slot-scope="{ disabled }"
+                      class="child-edit-btn"
+                      theme="primary"
+                      :text="true"
+                      :disabled="disabled"
+                      @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
+                      <i class="icon-cc-tips-close"></i>
+                    </bk-button>
+                  </cmdb-auth>
+                  <i class="icon-cc-tips-close" v-else
+                    style="color: #dcdee5; cursor: not-allowed; outline: none;"
+                    v-bk-tooltips.top="tooltips">
+                  </i>
+                </div>
+              </div>
+            </template>
+          </div>
+          <div class="child-item is-add" v-if="!mainCategory['is_built_in'] && !addChildStatus">
+            <div class="child-title">
+              <cmdb-auth @update-auth="isAuthcompleted = true" :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }">
+                <bk-button slot-scope="{ disabled }"
+                  class="add-btn"
+                  :disabled="disabled"
+                  :text="true"
+                  v-show="isAuthcompleted"
+                  @click="handleShowAddChild(mainCategory['id'])">
+                  <i class="bk-cmdb-icon icon-cc-plus"></i>{{$t('添加')}}
+                </bk-button>
+              </cmdb-auth>
+            </div>
+          </div>
+          <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
+            <category-input
+              class="child-input"
+              ref="editInput"
+              :input-ref="'categoryInput'"
+              :placeholder="$t('请输入二级分类')"
+              :edit-id="mainCategory['bk_root_id']"
+              name="categoryName"
+              v-validate="'required|namedCharacter|length:128'"
+              v-model="categoryName"
+              @on-confirm="handleAddCategory"
+              @on-cancel="handleCloseAddChild">
+            </category-input>
+          </div>
+        </div>
+      </div>
+      <div class="category-item add-item"
+        :style="{ 'border-style': showAddMianCategory ? 'solid' : 'dashed' }"
+        v-show="!keyword">
+        <div class="category-title" :style="{ 'border-bottom-style': showAddMianCategory ? 'solid' : 'dashed' }">
+          <div class="main-edit" style="width: 100%;" v-if="showAddMianCategory">
+            <category-input
+              ref="addCategoryInput"
+              :input-ref="'categoryInput'"
+              :placeholder="$t('请输入一级分类')"
+              name="categoryName"
+              v-validate="'required|namedCharacter|length:128'"
+              v-model="categoryName"
+              @on-confirm="handleAddCategory"
+              @on-cancel="handleCloseAddBox">
+            </category-input>
+          </div>
+        </div>
+        <div class="child-category"></div>
+        <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_CATEGORY, relation: [bizId] }"
+          v-show="!showAddMianCategory">
+          <bk-button slot-scope="{ disabled }"
+            class="add-btn"
+            :disabled="disabled"
+            @click="handleAddBox">
+          </bk-button>
+        </cmdb-auth>
+      </div>
+      <bk-exception v-show="!displayList.length && !$loading(Object.values(request))" type="search-empty" scene="part"></bk-exception>
+    </div>
+  </div>
 </template>
 
 <script>
-    import { mapActions, mapGetters } from 'vuex'
-    import debounce from 'lodash.debounce'
-    import categoryInput from './children/category-input'
-    export default {
-        components: {
-            categoryInput
+  import { mapActions, mapGetters } from 'vuex'
+  import debounce from 'lodash.debounce'
+  import categoryInput from './children/category-input'
+  export default {
+    components: {
+      categoryInput
+    },
+    data () {
+      return {
+        tooltips: {
+          content: this.$t('二级分类删除提示'),
+          onShow: this.handleCategoryTipsToggle,
+          onHide: this.handleCategoryTipsToggle
         },
-        data () {
-            return {
-                tooltips: {
-                    content: this.$t('二级分类删除提示'),
-                    onShow: this.handleCategoryTipsToggle,
-                    onHide: this.handleCategoryTipsToggle
-                },
-                deleteBtnTips: {
-                    content: this.$t('请先清空二级分类'),
-                    placements: ['right']
-                },
-                showAddMianCategory: false,
-                showAddChildCategory: false,
-                editMainStatus: null,
-                editChildStatus: null,
-                addChildStatus: null,
-                categoryName: '',
-                mainCategoryName: '',
-                childCategoryName: '',
-                list: [],
-                displayList: [],
-                keyword: '',
-                isAuthcompleted: false,
-                request: {
-                    category: Symbol('category')
-                }
-            }
+        deleteBtnTips: {
+          content: this.$t('请先清空二级分类'),
+          placements: ['right']
         },
-        computed: {
-            ...mapGetters('objectBiz', ['bizId'])
-        },
-        watch: {
-            list (list) {
-                this.displayList = list
-            },
-            keyword () {
-                this.handleFilter()
-            }
-        },
-        created () {
-            this.handleFilter = debounce(this.searchList, 300)
-            this.getCategoryList()
-        },
-        methods: {
-            ...mapActions('serviceClassification', [
-                'searchServiceCategory',
-                'createServiceCategory',
-                'updateServiceCategory',
-                'deleteServiceCategory'
-            ]),
-            getCategoryList () {
-                this.searchServiceCategory({
-                    params: { bk_biz_id: this.bizId },
-                    config: { requestId: this.request.category }
-                }).then((data) => {
-                    const categoryList = data.info.map(item => {
-                        return {
-                            usage_amount: item['usage_amount'],
-                            ...item['category']
-                        }
-                    })
-                    const list = categoryList.filter(category => !category['bk_parent_id'] && !(category['name'] === 'Default' && category['is_built_in']))
-                    this.list = list.map(mainCategory => {
-                        return {
-                            ...mainCategory,
-                            child_category_list: categoryList.filter(category => category['bk_parent_id'] === mainCategory['id'])
-                        }
-                    }).sort((prev, next) => prev.id - next.id)
-                })
-            },
-            searchList () {
-                if (this.keyword) {
-                    const reg = new RegExp(this.keyword, 'i')
-                    this.displayList = this.list.filter(mainCategory => {
-                        if (reg.test(mainCategory.name) || reg.test(mainCategory.id)) {
-                            return true
-                        }
-                        return mainCategory.child_category_list.findIndex(subCategory => {
-                            return reg.test(subCategory.name) || reg.test(subCategory.id)
-                        }) !== -1
-                    })
-                } else {
-                    this.displayList = this.list
-                }
-            },
-            createdCategory (name, rootId) {
-                this.createServiceCategory({
-                    params: {
-                        bk_biz_id: this.bizId,
-                        bk_root_id: rootId,
-                        bk_parent_id: rootId,
-                        name
-                    }
-                }).then(res => {
-                    this.$success(this.$t('保存成功'))
-                    this.showAddMianCategory = false
-                    this.handleCloseAddChild()
-                    if (rootId) {
-                        let markIndex = null
-                        const currentObj = this.list.find((category, index) => {
-                            markIndex = index
-                            return category.hasOwnProperty('bk_root_id') && category['bk_root_id'] === rootId
-                        })
-                        const childList = currentObj ? currentObj['child_category_list'] : []
-                        childList.push(res)
-                        this.$set(this.list[markIndex], 'child_category_list', childList)
-                    } else {
-                        this.getCategoryList()
-                    }
-                })
-            },
-            handleCategoryTipsToggle (tipsInstance) {
-                const willShow = !tipsInstance.state.isVisible
-                tipsInstance.reference.parentElement.classList[willShow ? 'add' : 'remove']('tips-active')
-            },
-            async handleAddCategory (name, bk_root_id = 0) {
-                if (!await this.$validator.validateAll()) {
-                    this.$bkMessage({
-                        message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
-                        theme: 'error'
-                    })
-                } else {
-                    this.createdCategory(name, bk_root_id)
-                }
-            },
-            async handleEditCategory (data, type, mainIndex) {
-                if (!await this.$validator.validateAll()) {
-                    this.$bkMessage({
-                        message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
-                        theme: 'error'
-                    })
-                } else if (data.name === this.mainCategoryName || data.name === this.childCategoryName) {
-                    this.handleCloseEditChild()
-                    this.handleCloseEditMain()
-                } else {
-                    this.updateServiceCategory({
-                        params: {
-                            bk_biz_id: this.bizId,
-                            id: data.id,
-                            name: type === 'main' ? this.mainCategoryName : this.childCategoryName
-                        }
-                    }).then(res => {
-                        this.$success(this.$t('保存成功'))
-                        this.handleCloseEditChild()
-                        // this.handleCloseEditMain()
-                        if (mainIndex !== undefined && type === 'child') {
-                            const childList = this.list[mainIndex].child_category_list.map(child => {
-                                if (child.id === res.id) {
-                                    return res
-                                }
-                                return child
-                            })
-                            this.$set(this.list[mainIndex], 'child_category_list', childList)
-                        } else {
-                            this.$set(this.list[mainIndex], 'name', res.name)
-                        }
-                    })
-                }
-            },
-            handleDeleteCategory (id, type, index) {
-                this.$bkInfo({
-                    title: this.$t('确认删除分类'),
-                    zIndex: 999,
-                    confirmFn: async () => {
-                        await this.deleteServiceCategory({
-                            params: {
-                                data: { id, bk_biz_id: this.bizId }
-                            },
-                            config: {
-                                requestId: 'delete_proc_services_category'
-                            }
-                        }).then(() => {
-                            this.$success(this.$t('删除成功'))
-                            if (type === 'main') {
-                                this.list.splice(index, 1)
-                            } else {
-                                let childIndex = -1
-                                this.list[index]['child_category_list'].find((category, findIndex) => {
-                                    childIndex = findIndex
-                                    return category.id === id
-                                })
-                                this.list[index]['child_category_list'].splice(childIndex, 1)
-                            }
-                        })
-                    }
-                })
-            },
-            handleEditMain (id, name) {
-                this.editMainStatus = id
-                this.mainCategoryName = name
-                this.handleCloseEditChild()
-                this.handleCloseAddChild()
-                this.handleCloseAddBox()
-                this.$nextTick(() => {
-                    this.$refs.editInput[0].$refs.categoryInput.focus()
-                })
-            },
-            handleCloseEditMain () {
-                this.editMainStatus = null
-            },
-            handleEditChild (id, name) {
-                this.editChildStatus = id
-                this.childCategoryName = name
-                this.handleCloseAddChild()
-                this.handleCloseEditMain()
-                this.handleCloseAddBox()
-                this.$nextTick(() => {
-                    this.$refs.editInput[0].$refs.categoryInput.focus()
-                })
-            },
-            handleCloseEditChild () {
-                this.editChildStatus = null
-            },
-            handleAddBox () {
-                this.showAddMianCategory = true
-                this.$nextTick(() => {
-                    this.$refs.addCategoryInput.$refs.categoryInput.focus()
-                })
-            },
-            handleCloseAddBox () {
-                this.showAddMianCategory = false
-                this.categoryName = ''
-            },
-            handleShowAddChild (id) {
-                this.addChildStatus = id
-                this.isAuthcompleted = false
-                this.$nextTick(() => {
-                    this.$refs.editInput[0].$refs.categoryInput.focus()
-                })
-            },
-            handleCloseAddChild () {
-                this.addChildStatus = null
-                this.categoryName = ''
-            }
+        showAddMianCategory: false,
+        showAddChildCategory: false,
+        editMainStatus: null,
+        editChildStatus: null,
+        addChildStatus: null,
+        categoryName: '',
+        mainCategoryName: '',
+        childCategoryName: '',
+        list: [],
+        displayList: [],
+        keyword: '',
+        isAuthcompleted: false,
+        request: {
+          category: Symbol('category')
         }
+      }
+    },
+    computed: {
+      ...mapGetters('objectBiz', ['bizId'])
+    },
+    watch: {
+      list (list) {
+        this.displayList = list
+      },
+      keyword () {
+        this.handleFilter()
+      }
+    },
+    created () {
+      this.handleFilter = debounce(this.searchList, 300)
+      this.getCategoryList()
+    },
+    methods: {
+      ...mapActions('serviceClassification', [
+        'searchServiceCategory',
+        'createServiceCategory',
+        'updateServiceCategory',
+        'deleteServiceCategory'
+      ]),
+      getCategoryList () {
+        this.searchServiceCategory({
+          params: { bk_biz_id: this.bizId },
+          config: { requestId: this.request.category }
+        }).then((data) => {
+          const categoryList = data.info.map((item) => {
+            return {
+              usage_amount: item['usage_amount'],
+              ...item['category']
+            }
+          })
+          const list = categoryList.filter(category => !category['bk_parent_id'] && !(category['name'] === 'Default' && category['is_built_in']))
+          this.list = list.map((mainCategory) => {
+            return {
+              ...mainCategory,
+              child_category_list: categoryList.filter(category => category['bk_parent_id'] === mainCategory['id'])
+            }
+          }).sort((prev, next) => prev.id - next.id)
+        })
+      },
+      searchList () {
+        if (this.keyword) {
+          const reg = new RegExp(this.keyword, 'i')
+          this.displayList = this.list.filter((mainCategory) => {
+            if (reg.test(mainCategory.name) || reg.test(mainCategory.id)) {
+              return true
+            }
+            return mainCategory.child_category_list.findIndex((subCategory) => {
+              return reg.test(subCategory.name) || reg.test(subCategory.id)
+            }) !== -1
+          })
+        } else {
+          this.displayList = this.list
+        }
+      },
+      createdCategory (name, rootId) {
+        this.createServiceCategory({
+          params: {
+            bk_biz_id: this.bizId,
+            bk_root_id: rootId,
+            bk_parent_id: rootId,
+            name
+          }
+        }).then((res) => {
+          this.$success(this.$t('保存成功'))
+          this.showAddMianCategory = false
+          this.handleCloseAddChild()
+          if (rootId) {
+            let markIndex = null
+            const currentObj = this.list.find((category, index) => {
+              markIndex = index
+              return category.hasOwnProperty('bk_root_id') && category['bk_root_id'] === rootId
+            })
+            const childList = currentObj ? currentObj['child_category_list'] : []
+            childList.push(res)
+            this.$set(this.list[markIndex], 'child_category_list', childList)
+          } else {
+            this.getCategoryList()
+          }
+        })
+      },
+      handleCategoryTipsToggle (tipsInstance) {
+        const willShow = !tipsInstance.state.isVisible
+        tipsInstance.reference.parentElement.classList[willShow ? 'add' : 'remove']('tips-active')
+      },
+      async handleAddCategory (name, bk_root_id = 0) {
+        if (!await this.$validator.validateAll()) {
+          this.$bkMessage({
+            message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
+            theme: 'error'
+          })
+        } else {
+          this.createdCategory(name, bk_root_id)
+        }
+      },
+      async handleEditCategory (data, type, mainIndex) {
+        if (!await this.$validator.validateAll()) {
+          this.$bkMessage({
+            message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
+            theme: 'error'
+          })
+        } else if (data.name === this.mainCategoryName || data.name === this.childCategoryName) {
+          this.handleCloseEditChild()
+          this.handleCloseEditMain()
+        } else {
+          this.updateServiceCategory({
+            params: {
+              bk_biz_id: this.bizId,
+              id: data.id,
+              name: type === 'main' ? this.mainCategoryName : this.childCategoryName
+            }
+          }).then((res) => {
+            this.$success(this.$t('保存成功'))
+            this.handleCloseEditChild()
+            // this.handleCloseEditMain()
+            if (mainIndex !== undefined && type === 'child') {
+              const childList = this.list[mainIndex].child_category_list.map((child) => {
+                if (child.id === res.id) {
+                  return res
+                }
+                return child
+              })
+              this.$set(this.list[mainIndex], 'child_category_list', childList)
+            } else {
+              this.$set(this.list[mainIndex], 'name', res.name)
+            }
+          })
+        }
+      },
+      handleDeleteCategory (id, type, index) {
+        this.$bkInfo({
+          title: this.$t('确认删除分类'),
+          zIndex: 999,
+          confirmFn: async () => {
+            await this.deleteServiceCategory({
+              params: {
+                data: { id, bk_biz_id: this.bizId }
+              },
+              config: {
+                requestId: 'delete_proc_services_category'
+              }
+            }).then(() => {
+              this.$success(this.$t('删除成功'))
+              if (type === 'main') {
+                this.list.splice(index, 1)
+              } else {
+                let childIndex = -1
+                this.list[index]['child_category_list'].find((category, findIndex) => {
+                  childIndex = findIndex
+                  return category.id === id
+                })
+                this.list[index]['child_category_list'].splice(childIndex, 1)
+              }
+            })
+          }
+        })
+      },
+      handleEditMain (id, name) {
+        this.editMainStatus = id
+        this.mainCategoryName = name
+        this.handleCloseEditChild()
+        this.handleCloseAddChild()
+        this.handleCloseAddBox()
+        this.$nextTick(() => {
+          this.$refs.editInput[0].$refs.categoryInput.focus()
+        })
+      },
+      handleCloseEditMain () {
+        this.editMainStatus = null
+      },
+      handleEditChild (id, name) {
+        this.editChildStatus = id
+        this.childCategoryName = name
+        this.handleCloseAddChild()
+        this.handleCloseEditMain()
+        this.handleCloseAddBox()
+        this.$nextTick(() => {
+          this.$refs.editInput[0].$refs.categoryInput.focus()
+        })
+      },
+      handleCloseEditChild () {
+        this.editChildStatus = null
+      },
+      handleAddBox () {
+        this.showAddMianCategory = true
+        this.$nextTick(() => {
+          this.$refs.addCategoryInput.$refs.categoryInput.focus()
+        })
+      },
+      handleCloseAddBox () {
+        this.showAddMianCategory = false
+        this.categoryName = ''
+      },
+      handleShowAddChild (id) {
+        this.addChildStatus = id
+        this.isAuthcompleted = false
+        this.$nextTick(() => {
+          this.$refs.editInput[0].$refs.categoryInput.focus()
+        })
+      },
+      handleCloseAddChild () {
+        this.addChildStatus = null
+        this.categoryName = ''
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

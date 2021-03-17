@@ -1,222 +1,222 @@
 <template>
-    <div class="property">
-        <div class="group"
-            v-for="(group, index) in $sortedGroups"
-            :key="index">
-            <h2 class="group-name">{{group.bk_group_name}}</h2>
-            <ul class="property-list">
-                <li class="property-item"
-                    v-for="property in $groupedProperties[index]"
-                    :key="property.id"
-                    :id="`property-item-${property.id}`">
-                    <span class="property-name" v-bk-overflow-tips>
-                        {{property.bk_property_name}}
-                    </span>
-                    <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
-                        v-bk-overflow-tips
-                        v-if="property !== editState.property">
-                        <cmdb-property-value
-                            :ref="`property-value-${property.bk_property_id}`"
-                            :value="instState[property.bk_property_id]"
-                            :property="property">
-                        </cmdb-property-value>
-                    </span>
-                    <template v-if="!loadingState.includes(property)">
-                        <template v-if="!isPropertyEditable(property)">
-                            <i class="is-related property-edit icon-cc-edit"
-                                v-bk-tooltips="{
-                                    content: $t('系统限定不可修改'),
-                                    placement: 'top',
-                                    onShow: () => {
-                                        setFocus(`#property-item-${property.id}`, true)
-                                    },
-                                    onHide: () => {
-                                        setFocus(`#property-item-${property.id}`, false)
-                                    }
-                                }">
-                            </i>
-                        </template>
-                        <template v-else>
-                            <cmdb-auth
-                                style="margin: 8px 0 0 8px; font-size: 0;"
-                                :auth="authData"
-                                v-show="property !== editState.property">
-                                <bk-button slot-scope="{ disabled }"
-                                    text
-                                    theme="primary"
-                                    class="property-edit-btn"
-                                    :disabled="disabled"
-                                    @click="setEditState(property)">
-                                    <i class="property-edit icon-cc-edit"></i>
-                                </bk-button>
-                            </cmdb-auth>
-                            <div class="property-form" v-if="property === editState.property">
-                                <div :class="['form-component', property.bk_property_type]">
-                                    <component
-                                        :is="`cmdb-form-${property.bk_property_type}`"
-                                        :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
-                                        :unit="property.unit"
-                                        :options="property.option || []"
-                                        :data-vv-name="property.bk_property_id"
-                                        :data-vv-as="property.bk_property_name"
-                                        :placeholder="getPlaceholder(property)"
-                                        :auto-check="false"
-                                        v-validate="$tools.getValidateRules(property)"
-                                        v-model.trim="editState.value"
-                                        :ref="`component-${property.bk_property_id}`">
-                                    </component>
-                                </div>
-                                <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                                <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
-                                <span class="form-error"
-                                    v-if="errors.has(property.bk_property_id)">
-                                    {{errors.first(property.bk_property_id)}}
-                                </span>
-                            </div>
-                        </template>
-                        <template v-if="instState[property.bk_property_id] && property !== editState.property">
-                            <div class="copy-box">
-                                <i
-                                    class="property-copy icon-cc-details-copy"
-                                    @click="handleCopy(property.bk_property_id)">
-                                </i>
-                                <transition name="fade">
-                                    <span class="copy-tips"
-                                        :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                                        v-if="showCopyTips === property.bk_property_id">
-                                        {{$t('复制成功')}}
-                                    </span>
-                                </transition>
-                            </div>
-                        </template>
-                    </template>
-                </li>
-            </ul>
-        </div>
+  <div class="property">
+    <div class="group"
+      v-for="(group, index) in $sortedGroups"
+      :key="index">
+      <h2 class="group-name">{{group.bk_group_name}}</h2>
+      <ul class="property-list">
+        <li class="property-item"
+          v-for="property in $groupedProperties[index]"
+          :key="property.id"
+          :id="`property-item-${property.id}`">
+          <span class="property-name" v-bk-overflow-tips>
+            {{property.bk_property_name}}
+          </span>
+          <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
+            v-bk-overflow-tips
+            v-if="property !== editState.property">
+            <cmdb-property-value
+              :ref="`property-value-${property.bk_property_id}`"
+              :value="instState[property.bk_property_id]"
+              :property="property">
+            </cmdb-property-value>
+          </span>
+          <template v-if="!loadingState.includes(property)">
+            <template v-if="!isPropertyEditable(property)">
+              <i class="is-related property-edit icon-cc-edit"
+                v-bk-tooltips="{
+                  content: $t('系统限定不可修改'),
+                  placement: 'top',
+                  onShow: () => {
+                    setFocus(`#property-item-${property.id}`, true)
+                  },
+                  onHide: () => {
+                    setFocus(`#property-item-${property.id}`, false)
+                  }
+                }">
+              </i>
+            </template>
+            <template v-else>
+              <cmdb-auth
+                style="margin: 8px 0 0 8px; font-size: 0;"
+                :auth="authData"
+                v-show="property !== editState.property">
+                <bk-button slot-scope="{ disabled }"
+                  text
+                  theme="primary"
+                  class="property-edit-btn"
+                  :disabled="disabled"
+                  @click="setEditState(property)">
+                  <i class="property-edit icon-cc-edit"></i>
+                </bk-button>
+              </cmdb-auth>
+              <div class="property-form" v-if="property === editState.property">
+                <div :class="['form-component', property.bk_property_type]">
+                  <component
+                    :is="`cmdb-form-${property.bk_property_type}`"
+                    :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+                    :unit="property.unit"
+                    :options="property.option || []"
+                    :data-vv-name="property.bk_property_id"
+                    :data-vv-as="property.bk_property_name"
+                    :placeholder="getPlaceholder(property)"
+                    :auto-check="false"
+                    v-validate="$tools.getValidateRules(property)"
+                    v-model.trim="editState.value"
+                    :ref="`component-${property.bk_property_id}`">
+                  </component>
+                </div>
+                <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                <span class="form-error"
+                  v-if="errors.has(property.bk_property_id)">
+                  {{errors.first(property.bk_property_id)}}
+                </span>
+              </div>
+            </template>
+            <template v-if="instState[property.bk_property_id] && property !== editState.property">
+              <div class="copy-box">
+                <i
+                  class="property-copy icon-cc-details-copy"
+                  @click="handleCopy(property.bk_property_id)">
+                </i>
+                <transition name="fade">
+                  <span class="copy-tips"
+                    :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                    v-if="showCopyTips === property.bk_property_id">
+                    {{$t('复制成功')}}
+                  </span>
+                </transition>
+              </div>
+            </template>
+          </template>
+        </li>
+      </ul>
     </div>
+  </div>
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
-    import formMixins from '@/mixins/form'
-    import authMixin from './mixin-auth'
-    export default {
-        filters: {
-            filterShowText (value, unit) {
-                return value === '--' ? '--' : value + unit
-            }
+  import { mapGetters, mapActions } from 'vuex'
+  import formMixins from '@/mixins/form'
+  import authMixin from './mixin-auth'
+  export default {
+    filters: {
+      filterShowText (value, unit) {
+        return value === '--' ? '--' : value + unit
+      }
+    },
+    mixins: [formMixins, authMixin],
+    props: {
+      inst: {
+        type: Object,
+        required: true
+      },
+      resourceType: {
+        type: String,
+        default: ''
+      }
+    },
+    data () {
+      return {
+        instState: this.inst,
+        editState: {
+          property: null,
+          value: null
         },
-        mixins: [formMixins, authMixin],
-        props: {
-            inst: {
-                type: Object,
-                required: true
-            },
-            resourceType: {
-                type: String,
-                default: ''
-            }
-        },
-        data () {
-            return {
-                instState: this.inst,
-                editState: {
-                    property: null,
-                    value: null
-                },
-                loadingState: [],
-                showCopyTips: false
-            }
-        },
-        computed: {
-            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-            authData () {
-                if (this.resourceType === 'business') {
-                    return this.INST_AUTH.U_BUSINESS
-                }
-                return this.INST_AUTH.U_INST
-            }
-        },
-        watch: {
-            inst (val) {
-                this.instState = val
-            }
-        },
-        methods: {
-            ...mapActions('objectCommonInst', ['updateInst']),
-            ...mapActions('objectBiz', ['updateBusiness']),
-            setFocus (id, focus) {
-                const item = this.$el.querySelector(id)
-                focus ? item.classList.add('focus') : item.classList.remove('focus')
-            },
-            getPlaceholder (property) {
-                const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
-                return this.$t(placeholderTxt, { name: property.bk_property_name })
-            },
-            isPropertyEditable (property) {
-                return property.editable && !property.bk_isapi
-            },
-            setEditState (property) {
-                const value = this.instState[property.bk_property_id]
-                this.editState.value = (value === null || value === undefined) ? '' : value
-                this.editState.property = property
-                this.$nextTick(() => {
-                    const component = this.$refs[`component-${property.bk_property_id}`]
-                    component[0] && component[0].focus && component[0].focus()
-                })
-            },
-            async confirm () {
-                const { property, value } = this.editState
-                try {
-                    const isValid = await this.$validator.validateAll()
-                    if (!isValid) {
-                        return false
-                    }
-                    this.loadingState.push(property)
-                    this.exitForm()
-
-                    const values = { [property['bk_property_id']]: value }
-
-                    if (this.resourceType === 'business') {
-                        await this.updateBusiness({
-                            bizId: this.instState.bk_biz_id,
-                            params: values
-                        })
-                    } else {
-                        await this.updateInst({
-                            objId: this.instState.bk_obj_id,
-                            instId: this.instState.bk_inst_id,
-                            params: values
-                        })
-                    }
-
-                    this.instState = { ...this.instState, ...values }
-
-                    this.loadingState = this.loadingState.filter(exist => exist !== property)
-                } catch (e) {
-                    console.error(e)
-                    this.loadingState = this.loadingState.filter(exist => exist !== property)
-                }
-            },
-            exitForm () {
-                this.editState.property = null
-                this.editState.value = null
-            },
-            handleCopy (propertyId) {
-                const component = this.$refs[`property-value-${propertyId}`]
-                const copyText = component[0] ? component[0].$el.innerText : ''
-                this.$copyText(copyText).then(() => {
-                    this.showCopyTips = propertyId
-                    const timer = setTimeout(() => {
-                        this.showCopyTips = false
-                        clearTimeout(timer)
-                    }, 200)
-                }, () => {
-                    this.$error(this.$t('复制失败'))
-                })
-            }
+        loadingState: [],
+        showCopyTips: false
+      }
+    },
+    computed: {
+      ...mapGetters('objectModelClassify', ['models', 'getModelById']),
+      authData () {
+        if (this.resourceType === 'business') {
+          return this.INST_AUTH.U_BUSINESS
         }
+        return this.INST_AUTH.U_INST
+      }
+    },
+    watch: {
+      inst (val) {
+        this.instState = val
+      }
+    },
+    methods: {
+      ...mapActions('objectCommonInst', ['updateInst']),
+      ...mapActions('objectBiz', ['updateBusiness']),
+      setFocus (id, focus) {
+        const item = this.$el.querySelector(id)
+        focus ? item.classList.add('focus') : item.classList.remove('focus')
+      },
+      getPlaceholder (property) {
+        const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+        return this.$t(placeholderTxt, { name: property.bk_property_name })
+      },
+      isPropertyEditable (property) {
+        return property.editable && !property.bk_isapi
+      },
+      setEditState (property) {
+        const value = this.instState[property.bk_property_id]
+        this.editState.value = (value === null || value === undefined) ? '' : value
+        this.editState.property = property
+        this.$nextTick(() => {
+          const component = this.$refs[`component-${property.bk_property_id}`]
+          component[0] && component[0].focus && component[0].focus()
+        })
+      },
+      async confirm () {
+        const { property, value } = this.editState
+        try {
+          const isValid = await this.$validator.validateAll()
+          if (!isValid) {
+            return false
+          }
+          this.loadingState.push(property)
+          this.exitForm()
+
+          const values = { [property['bk_property_id']]: value }
+
+          if (this.resourceType === 'business') {
+            await this.updateBusiness({
+              bizId: this.instState.bk_biz_id,
+              params: values
+            })
+          } else {
+            await this.updateInst({
+              objId: this.instState.bk_obj_id,
+              instId: this.instState.bk_inst_id,
+              params: values
+            })
+          }
+
+          this.instState = { ...this.instState, ...values }
+
+          this.loadingState = this.loadingState.filter(exist => exist !== property)
+        } catch (e) {
+          console.error(e)
+          this.loadingState = this.loadingState.filter(exist => exist !== property)
+        }
+      },
+      exitForm () {
+        this.editState.property = null
+        this.editState.value = null
+      },
+      handleCopy (propertyId) {
+        const component = this.$refs[`property-value-${propertyId}`]
+        const copyText = component[0] ? component[0].$el.innerText : ''
+        this.$copyText(copyText).then(() => {
+          this.showCopyTips = propertyId
+          const timer = setTimeout(() => {
+            this.showCopyTips = false
+            clearTimeout(timer)
+          }, 200)
+        }, () => {
+          this.$error(this.$t('复制失败'))
+        })
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

@@ -15,7 +15,7 @@ const state = {}
 const getters = {}
 
 const actions = {
-    /**
+  /**
      * 为服务模板新增进程
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -23,10 +23,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`createmany/proc/proc_template`, params, config)
-    },
-    /**
+  createProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('createmany/proc/proc_template', params, config)
+  },
+  /**
      * 批量查询进程模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -34,10 +34,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    getBatchProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/proc_template`, params, config)
-    },
-    /**
+  getBatchProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('findmany/proc/proc_template', params, config)
+  },
+  /**
      * 查询进程模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -45,10 +45,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    getProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`find/proc/proc_template/id/${params.processTemplateId}`, {}, config)
-    },
-    /**
+  getProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post(`find/proc/proc_template/id/${params.processTemplateId}`, {}, config)
+  },
+  /**
      * 更新服务模板中的进程模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -56,10 +56,10 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.put(`update/proc/proc_template`, params, config)
-    },
-    /**
+  updateProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.put('update/proc/proc_template', params, config)
+  },
+  /**
      * 删除服务模板中的进程模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -67,17 +67,17 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    deleteProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.delete(`deletemany/proc/proc_template`, params, config)
-    }
+  deleteProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.delete('deletemany/proc/proc_template', params, config)
+  }
 }
 
 const mutations = {}
 
 export default {
-    namespaced: true,
-    state,
-    getters,
-    actions,
-    mutations
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations
 }

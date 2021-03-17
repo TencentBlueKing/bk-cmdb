@@ -1,133 +1,133 @@
 <template>
-    <div class="classify">
-        <h4 class="classify-name" :title="classify['bk_classification_name']">
-            <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
-        </h4>
-        <div class="models-layout">
-            <div class="models-link" v-for="(model, index) in classify['bk_objects']"
-                :key="index"
-                :title="model['bk_obj_name']"
-                @click="redirect(model)">
-                <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
-                <span class="model-name">{{model['bk_obj_name']}}</span>
-                <i class="model-star bk-icon"
-                    :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
-                    @click.prevent.stop="toggleCustomNavigation(model)">
-                </i>
-                <span class="model-instance-count">{{getInstanceCount(model)}}</span>
-            </div>
-        </div>
+  <div class="classify">
+    <h4 class="classify-name" :title="classify['bk_classification_name']">
+      <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
+    </h4>
+    <div class="models-layout">
+      <div class="models-link" v-for="(model, index) in classify['bk_objects']"
+        :key="index"
+        :title="model['bk_obj_name']"
+        @click="redirect(model)">
+        <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
+        <span class="model-name">{{model['bk_obj_name']}}</span>
+        <i class="model-star bk-icon"
+          :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
+          @click.prevent.stop="toggleCustomNavigation(model)">
+        </i>
+        <span class="model-instance-count">{{getInstanceCount(model)}}</span>
+      </div>
     </div>
+  </div>
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
-    import {
-        MENU_RESOURCE_HOST,
-        MENU_RESOURCE_BUSINESS,
-        MENU_RESOURCE_INSTANCE,
-        MENU_RESOURCE_COLLECTION,
-        MENU_RESOURCE_HOST_COLLECTION,
-        MENU_RESOURCE_BUSINESS_COLLECTION
-    } from '@/dictionary/menu-symbol'
-    export default {
-        props: {
-            classify: {
-                type: Object,
-                required: true
-            },
-            instanceCount: {
-                type: Array,
-                required: true
-            },
-            collection: {
-                type: Array,
-                required: true
-            }
-        },
-        data () {
-            return {
-                maxCustomNavigationCount: 8
-            }
-        },
-        computed: {
-            ...mapGetters('userCustom', ['usercustom']),
-            collectedCount () {
-                return this.collection.length
-            }
-        },
-        methods: {
-            getInstanceCount (model) {
-                const data = this.instanceCount.find(data => data.bk_obj_id === model.bk_obj_id)
-                if (data) {
-                    return data.instance_count
-                }
-                return 0
-            },
-            redirect (model) {
-                const map = {
-                    host: MENU_RESOURCE_HOST,
-                    biz: MENU_RESOURCE_BUSINESS
-                }
-                if (map.hasOwnProperty(model.bk_obj_id)) {
-                    this.$routerActions.redirect({
-                        name: map[model.bk_obj_id]
-                    })
-                } else {
-                    this.$routerActions.redirect({
-                        name: MENU_RESOURCE_INSTANCE,
-                        params: {
-                            objId: model.bk_obj_id
-                        }
-                    })
-                }
-            },
-            isCollected (model) {
-                return this.collection.includes(model.bk_obj_id)
-            },
-            toggleCustomNavigation (model) {
-                if (['host', 'biz'].includes(model.bk_obj_id)) {
-                    this.toggleDefaultCollection(model)
-                } else {
-                    let isAdd = false
-                    let newCollection
-                    const oldCollection = this.usercustom[MENU_RESOURCE_COLLECTION] || []
-                    if (oldCollection.includes(model['bk_obj_id'])) {
-                        newCollection = oldCollection.filter(id => id !== model.bk_obj_id)
-                    } else {
-                        isAdd = true
-                        newCollection = [...oldCollection, model.bk_obj_id]
-                    }
-                    if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
-                        this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
-                        return false
-                    }
-                    const promise = this.$store.dispatch('userCustom/saveUsercustom', {
-                        [MENU_RESOURCE_COLLECTION]: newCollection
-                    })
-                    promise.then(() => {
-                        this.$success(isAdd ? this.$t('添加导航成功') : this.$t('取消导航成功'))
-                    })
-                }
-            },
-            async toggleDefaultCollection (model) {
-                const isCollected = this.collection.includes(model.bk_obj_id)
-                if (!isCollected && this.collection.length >= this.maxCustomNavigationCount) {
-                    this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
-                } else {
-                    try {
-                        const key = model.bk_obj_id === 'host' ? MENU_RESOURCE_HOST_COLLECTION : MENU_RESOURCE_BUSINESS_COLLECTION
-                        await this.$store.dispatch('userCustom/saveUsercustom', {
-                            [key]: !isCollected
-                        })
-                        this.$success(isCollected ? this.$t('取消导航成功') : this.$t('添加导航成功'))
-                    } catch (e) {
-                        console.error(e)
-                    }
-                }
-            }
+  import { mapGetters } from 'vuex'
+  import {
+    MENU_RESOURCE_HOST,
+    MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_INSTANCE,
+    MENU_RESOURCE_COLLECTION,
+    MENU_RESOURCE_HOST_COLLECTION,
+    MENU_RESOURCE_BUSINESS_COLLECTION
+  } from '@/dictionary/menu-symbol'
+  export default {
+    props: {
+      classify: {
+        type: Object,
+        required: true
+      },
+      instanceCount: {
+        type: Array,
+        required: true
+      },
+      collection: {
+        type: Array,
+        required: true
+      }
+    },
+    data () {
+      return {
+        maxCustomNavigationCount: 8
+      }
+    },
+    computed: {
+      ...mapGetters('userCustom', ['usercustom']),
+      collectedCount () {
+        return this.collection.length
+      }
+    },
+    methods: {
+      getInstanceCount (model) {
+        const data = this.instanceCount.find(data => data.bk_obj_id === model.bk_obj_id)
+        if (data) {
+          return data.instance_count
         }
+        return 0
+      },
+      redirect (model) {
+        const map = {
+          host: MENU_RESOURCE_HOST,
+          biz: MENU_RESOURCE_BUSINESS
+        }
+        if (map.hasOwnProperty(model.bk_obj_id)) {
+          this.$routerActions.redirect({
+            name: map[model.bk_obj_id]
+          })
+        } else {
+          this.$routerActions.redirect({
+            name: MENU_RESOURCE_INSTANCE,
+            params: {
+              objId: model.bk_obj_id
+            }
+          })
+        }
+      },
+      isCollected (model) {
+        return this.collection.includes(model.bk_obj_id)
+      },
+      toggleCustomNavigation (model) {
+        if (['host', 'biz'].includes(model.bk_obj_id)) {
+          this.toggleDefaultCollection(model)
+        } else {
+          let isAdd = false
+          let newCollection
+          const oldCollection = this.usercustom[MENU_RESOURCE_COLLECTION] || []
+          if (oldCollection.includes(model['bk_obj_id'])) {
+            newCollection = oldCollection.filter(id => id !== model.bk_obj_id)
+          } else {
+            isAdd = true
+            newCollection = [...oldCollection, model.bk_obj_id]
+          }
+          if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
+            this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
+            return false
+          }
+          const promise = this.$store.dispatch('userCustom/saveUsercustom', {
+            [MENU_RESOURCE_COLLECTION]: newCollection
+          })
+          promise.then(() => {
+            this.$success(isAdd ? this.$t('添加导航成功') : this.$t('取消导航成功'))
+          })
+        }
+      },
+      async toggleDefaultCollection (model) {
+        const isCollected = this.collection.includes(model.bk_obj_id)
+        if (!isCollected && this.collection.length >= this.maxCustomNavigationCount) {
+          this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
+        } else {
+          try {
+            const key = model.bk_obj_id === 'host' ? MENU_RESOURCE_HOST_COLLECTION : MENU_RESOURCE_BUSINESS_COLLECTION
+            await this.$store.dispatch('userCustom/saveUsercustom', {
+              [key]: !isCollected
+            })
+            this.$success(isCollected ? this.$t('取消导航成功') : this.$t('添加导航成功'))
+          } catch (e) {
+            console.error(e)
+          }
+        }
+      }
     }
+  }
 </script>
 
 <style lang="scss" scoped>

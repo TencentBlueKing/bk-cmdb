@@ -1,14 +1,14 @@
 <template>
-    <i class="loading" v-if="loading"></i>
-    <span v-else><slot></slot></span>
+  <i class="loading" v-if="loading"></i>
+  <span v-else><slot></slot></span>
 </template>
 
 <script>
-    export default {
-        props: {
-            loading: Boolean
-        }
+  export default {
+    props: {
+      loading: Boolean
     }
+  }
 </script>
 
 <style lang="scss" scoped>

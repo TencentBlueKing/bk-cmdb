@@ -17,28 +17,28 @@ import module from './module'
 import set from './set'
 
 export default {
-    install (Vue, ops = {}) {
-        const components = [
-            bool,
-            date,
-            enumComponent,
-            float,
-            foreignkey,
-            int,
-            list,
-            longchar,
-            objuser,
-            organization,
-            singlechar,
-            table,
-            time,
-            timezone,
-            serviceTemplate,
-            module,
-            set
-        ]
-        components.forEach(component => {
-            Vue.component(component.name, component)
-        })
-    }
+  install (Vue, ops = {}) {
+    const components = [
+      bool,
+      date,
+      enumComponent,
+      float,
+      foreignkey,
+      int,
+      list,
+      longchar,
+      objuser,
+      organization,
+      singlechar,
+      table,
+      time,
+      timezone,
+      serviceTemplate,
+      module,
+      set
+    ]
+    components.forEach((component) => {
+      Vue.component(component.name, component)
+    })
+  }
 }
