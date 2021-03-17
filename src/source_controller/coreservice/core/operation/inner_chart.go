@@ -73,33 +73,20 @@ func (m *operationManager) ModelInstCount(kit *rest.Kit, wg *sync.WaitGroup) err
 		return err
 	}
 
-	// 判断是否有模型实例
-	condition := mapstr.MapStr{}
-	count, err := mongodb.Client().Table(common.BKTableNameBaseInst).Find(condition).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("model's instance count fail, err: %v, rid: %v", err, kit.Rid)
-		return err
-	}
-
-	// 如果有模型实例，根据查询出来的模型，计数
 	modelInstNumber := make([]metadata.StringIDCount, 0)
-	if count > 0 {
-		for _, modelInfo := range modelInfos {
-			condition := mapstr.MapStr{
-				common.BKObjIDField: util.GetStrByInterface(modelInfo[common.BKObjIDField]),
-			}
-			count, err = mongodb.Client().Table(common.BKTableNameBaseInst).Find(condition).Count(kit.Ctx)
-			if err != nil {
-				blog.Errorf("model %s's instance count fail, err: %v, rid: %v", modelInfo[common.BKObjIDField], err, kit.Rid)
-				return err
-			}
 
-			modelInstNumber = append(modelInstNumber, metadata.StringIDCount{
-				ID:    util.GetStrByInterface(modelInfo[common.BKObjIDField]),
-				Count: int64(count),
-			})
+	for _, modelInfo := range modelInfos {
+		modelObjID := util.GetStrByInterface(modelInfo[common.BKObjIDField])
+		condition := mapstr.MapStr{common.BKObjIDField: modelObjID}
+
+		count, err := mongodb.Client().Table(common.GetObjectInstTableName(modelObjID)).Find(condition).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("count model %s instance failed, err: %v, rid: %v", modelObjID, err, kit.Rid)
+			return err
 		}
+		modelInstNumber = append(modelInstNumber, metadata.StringIDCount{ID: modelObjID, Count: int64(count)})
 	}
+
 	if err := m.UpdateInnerChartData(kit, common.ModelInstChart, modelInstNumber); err != nil {
 		blog.Errorf("update inner chart ModelInstCount data fail, err: %v, rid: %v", err, kit.Rid)
 		return err

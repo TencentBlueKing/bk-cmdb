@@ -113,11 +113,16 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 			}
 		}
 	} else {
-		instCount, countErr = mongodb.Client().Table(common.BKTableNameBaseInst).Find(cond).Count(kit.Ctx)
+		instCount, countErr = mongodb.Client().
+			Table(common.GetObjectInstTableName(inputParam.ObjID)).
+			Find(cond).
+			Count(kit.Ctx)
+
 		if countErr != nil {
 			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, countErr, kit.Rid)
 			return nil, countErr
 		}
+
 		if instCount > 0 {
 			pipeline := []M{
 				{common.BKDBMatch: M{common.BKDBAND: []M{
@@ -127,7 +132,12 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 				}}},
 				{common.BKDBGroup: M{"_id": groupField, "count": M{common.BKDBSum: 1}}},
 			}
-			if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &groupCountArr); err != nil {
+
+			err := mongodb.Client().
+				Table(common.GetObjectInstTableName(inputParam.ObjID)).
+				AggregateAll(kit.Ctx, pipeline, &groupCountArr)
+
+			if err != nil {
 				blog.Errorf("model's instance count aggregate failed, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
 				return nil, err
 			}
