@@ -455,13 +455,13 @@ func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
 		if key, err := o.ProcessPropertyFilter.Validate(); err != nil {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{err.Error() + fmt.Sprintf(", host_property_filter.%s", key)},
+				Args:    []interface{}{fmt.Sprintf("%s, host_property_filter.%s", err.Error(), key)},
 			}
 		}
 		if o.ProcessPropertyFilter.GetDeep() > querybuilder.MaxDeep {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{fmt.Sprintf("exceed max query condition deepth: %d", querybuilder.MaxDeep) + ", host_property_filter.rules"},
+				Args:    []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules", querybuilder.MaxDeep)},
 			}
 		}
 	}
