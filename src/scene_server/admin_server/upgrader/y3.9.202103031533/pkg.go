@@ -10,28 +10,27 @@
  * limitations under the License.
  */
 
-package hooks
+package y3_9_202103031533
 
 import (
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
+	"context"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-// SetVIPInfoForProcessHook if query fields contains vip info, set vip info for processes
-func SetVIPInfoForProcessHook(kit *rest.Kit, processes []mapstr.MapStr, fields []string, table string, db dal.DB) (
-	[]mapstr.MapStr, error) {
-
-	return processes, nil
+func init() {
+	upgrader.RegistUpgrader("y3.9.202103031533", upgrade)
 }
 
-// ParseVIPFieldsForProcessHook parse process vip fields for process
-func ParseVIPFieldsForProcessHook(fields []string, table string) ([]string, []string) {
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.9.202103031533")
 
-	return fields, make([]string, 0)
-}
-
-// UpdateProcessBindInfoHook if process need to update bind info, only update the specified fields
-func UpdateProcessBindInfoHook(kit *rest.Kit, objID string, origin mapstr.MapStr, data mapstr.MapStr) error {
+	err = removeHostCPUMhzField(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202103031533] remove bk_cpu_mhz field failed, err: %v", err)
+		return err
+	}
 	return nil
 }

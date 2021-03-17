@@ -136,6 +136,26 @@ func (s *AuthService) GetNoAuthSkipUrl(ctx *rest.Contexts) {
 	ctx.RespEntity(url)
 }
 
+// GetPermissionToApply get the permissions to apply
+// 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
+func (s *AuthService) GetPermissionToApply(ctx *rest.Contexts) {
+	input := make([]meta.ResourceAttribute, 0)
+	err := ctx.DecodeInto(&input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	permission, err := s.lgc.GetPermissionToApply(ctx.Kit, input)
+	if err != nil {
+		blog.ErrorJSON("GetPermissionToApply failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(permission)
+}
+
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
 func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 	input := new(metadata.IamInstanceWithCreator)

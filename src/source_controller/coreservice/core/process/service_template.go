@@ -13,7 +13,6 @@
 package process
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -299,8 +299,13 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 	}
 
 	if len(option.Search) > 0 {
-		filter[common.BKFieldName] = map[string]interface{}{
-			common.BKDBLIKE: fmt.Sprintf(".*%s.*", option.Search),
+		if option.IsExact {
+			filter[common.BKFieldName] = option.Search
+		} else {
+			filter[common.BKFieldName] = map[string]interface{}{
+				common.BKDBLIKE:    params.SpecialCharChange(option.Search),
+				common.BKDBOPTIONS: "i",
+			}
 		}
 	}
 

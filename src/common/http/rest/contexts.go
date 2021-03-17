@@ -300,7 +300,7 @@ func (c *Contexts) RespAutoError(err error) {
 			errMsg = t.Error()
 		} else {
 			code = common.CCErrorUnknownOrUnrecognizedError
-			errMsg = c.Kit.CCError.Error(code).Error()
+			errMsg = err.Error()
 		}
 	} else {
 		code = common.CCErrorUnknownOrUnrecognizedError

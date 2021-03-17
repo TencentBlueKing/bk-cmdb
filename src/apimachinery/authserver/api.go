@@ -121,6 +121,31 @@ func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input 
 	return response.Data, nil
 }
 
+func (a *authServer) GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
+	response := new(struct {
+		metadata.BaseResp `json:",inline"`
+		Data              *metadata.IamPermission `json:"data"`
+	})
+	subPath := "/find/permission_to_apply"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(response)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if response.Code != 0 {
+		return nil, response.CCError()
+	}
+
+	return response.Data, nil
+}
+
 func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 	response := new(struct {

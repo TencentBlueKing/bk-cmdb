@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 )
 
@@ -45,7 +44,7 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	// map[objID]map[inst_id][]Property
 	retAsstObjIDInstInfoMap := make(map[string]map[int64][]PropertyPrimaryVal)
 	for itemObjID, asstInstIDArr := range asstObjIDIDArr {
-		objPrimaryInfo, err := lgc.fetchInstAssocationData(ctx, header, itemObjID, asstInstIDArr, modelBizID)
+		objPrimaryInfo, err := lgc.fetchInstAssociationData(ctx, header, itemObjID, asstInstIDArr, modelBizID)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +53,7 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	return retAsstObjIDInstInfoMap, nil
 }
 
-func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) ([]*metadata.InstAsst, error) {
+func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) ([]*metadata.InstAsst, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -70,11 +69,11 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	}
 	bkObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
-		blog.Errorf("GetAssocationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
+		blog.ErrorJSON("fetchAssociationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !bkObjRst.Result {
-		blog.Errorf("GetAssocationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkObjRst.Code, bkObjRst.ErrMsg, input, rid)
+		blog.ErrorJSON("fetchAssociationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkObjRst.Code, bkObjRst.ErrMsg, input, rid)
 		return nil, ccErr.New(bkObjRst.Code, bkObjRst.ErrMsg)
 	}
 
@@ -85,11 +84,11 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	input.Condition = cond.ToMapStr()
 	bkAsstObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
-		blog.Errorf("GetAssocationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
+		blog.ErrorJSON("fetchAssociationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !bkAsstObjRst.Result {
-		blog.Errorf("GetAssocationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkAsstObjRst.Code, bkAsstObjRst.ErrMsg, input, rid)
+		blog.ErrorJSON("fetchAssociationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkAsstObjRst.Code, bkAsstObjRst.ErrMsg, input, rid)
 		return nil, ccErr.New(bkAsstObjRst.Code, bkAsstObjRst.ErrMsg)
 	}
 	result := append(bkObjRst.Data[:], bkAsstObjRst.Data...)
@@ -97,81 +96,40 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	return result, nil
 }
 
-func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) (map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) fetchInstAssociationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, modelBizID int64) (map[int64][]PropertyPrimaryVal, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	propertyArr, err := lgc.getObjectPrimaryFieldByObjID(objID, header, modelBizID)
 	if err != nil {
 		return nil, err
 	}
-	var dbFields []string
-	for _, property := range propertyArr {
-		dbFields = append(dbFields, property.ID)
-	}
+
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
-
-	dbFields = append(dbFields, instIDKey)
-
 	insts := make([]mapstr.MapStr, 0)
-	switch objID {
-	case common.BKInnerObjIDHost:
-		option := metadata.ListHostsWithNoBizParameter{
-			HostPropertyFilter: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionOr,
-					Rules: []querybuilder.Rule{
-						querybuilder.AtomRule{
-							Field:    common.BKHostIDField,
-							Operator: querybuilder.OperatorIn,
-							Value:    instIDArr,
-						},
-					},
-				},
+	option := mapstr.MapStr{
+		"condition": mapstr.MapStr{
+			instIDKey: mapstr.MapStr{
+				common.BKDBIN: instIDArr,
 			},
-			Fields: dbFields,
-		}
-
-		resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
-		if err != nil {
-			blog.ErrorJSON(" fetchInstAssocationData failed, ListHostWithoutApp err:%s, option: %s, rid: %s", err, option, rid)
-			return nil, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !resp.Result {
-			blog.ErrorJSON(" fetchInstAssocationData failed, ListHostWithoutApp resp:%s, option: %s, rid: %s", resp, option, rid)
-			return nil, resp.CCError()
-		}
-
-		for _, inst := range resp.Data.Info {
-			insts = append(insts, mapstr.NewFromMap(inst))
-		}
-	default:
-		option := mapstr.MapStr{
-			"condition": mapstr.MapStr{
-				instIDKey: mapstr.MapStr{
-					common.BKDBIN: instIDArr,
-				},
-			},
-			"fields": dbFields,
-		}
-
-		resp, err := lgc.CoreAPI.ApiServer().GetInstDetail(ctx, header, objID, option)
-		if err != nil {
-			blog.ErrorJSON(" fetchInstAssocationData failed, GetInstDetail err:%v, option: %s, rid: %s", err, option, rid)
-			return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !resp.Result {
-			blog.ErrorJSON(" fetchInstAssocationData failed, GetInstDetail resp:%s, option: %s, rid: %s", resp, option, rid)
-			return nil, resp.CCError()
-		}
-		insts = resp.Data.Info
+		},
 	}
+
+	resp, err := lgc.CoreAPI.ApiServer().GetInstUniqueFields(ctx, header, objID, option)
+	if err != nil {
+		blog.ErrorJSON("fetchInstAssociationData failed, GetInstUniqueFields err:%v, option: %s, rid: %s", err, option, rid)
+		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result {
+		blog.ErrorJSON("fetchInstAssociationData failed, GetInstUniqueFields resp:%s, option: %s, rid: %s", resp, option, rid)
+		return nil, resp.CCError()
+	}
+	insts = resp.Data.Info
 
 	retAsstInstInfo := make(map[int64][]PropertyPrimaryVal, 0)
 	for _, inst := range insts {
 		instID, err := inst.Int64(instIDKey)
 		if err != nil {
-			blog.Warnf("FetchInstAssocationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, instIDKey, err.Error(), inst, rid)
+			blog.Warnf("fetchInstAssociationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, instIDKey, err.Error(), inst, rid)
 			continue
 		}
 		isSkip := false
@@ -180,7 +138,7 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 			// use display , use string
 			val, err := inst.String(key.ID)
 			if err != nil {
-				blog.Warnf("FetchInstAssocationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, key, err.Error(), inst, rid)
+				blog.Warnf("fetchInstAssociationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, key, err.Error(), inst, rid)
 				isSkip = true
 				break
 			}

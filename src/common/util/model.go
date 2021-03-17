@@ -17,20 +17,36 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
-// AddModelBizIDConditon add model bizID condition according to bizID value
-func AddModelBizIDConditon(cond mapstr.MapStr, modelBizID int64) {
+// AddModelBizIDCondition add model bizID condition according to bizID value
+func AddModelBizIDCondition(cond mapstr.MapStr, modelBizID int64) {
+	var modelBizIDOrCondArr []mapstr.MapStr
 	if modelBizID > 0 {
 		// special business model and global shared model
-		cond[common.BKDBOR] = []mapstr.MapStr{
+		modelBizIDOrCondArr = []mapstr.MapStr{
 			{common.BKAppIDField: modelBizID},
 			{common.BKAppIDField: 0},
 			{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
 		}
 	} else {
 		// global shared model
-		cond[common.BKDBOR] = []mapstr.MapStr{
+		modelBizIDOrCondArr = []mapstr.MapStr{
 			{common.BKAppIDField: 0},
 			{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
+		}
+	}
+
+	if _, exists := cond[common.BKDBOR]; !exists {
+		cond[common.BKDBOR] = modelBizIDOrCondArr
+	} else {
+		andCondArr := []map[string]interface{}{
+			{common.BKDBOR: modelBizIDOrCondArr},
+		}
+
+		andCond, exists := cond[common.BKDBAND]
+		if !exists {
+			cond[common.BKDBAND] = andCondArr
+		} else {
+			cond[common.BKDBAND] = append(andCondArr, map[string]interface{}{common.BKDBAND: andCond})
 		}
 	}
 	delete(cond, common.BKAppIDField)

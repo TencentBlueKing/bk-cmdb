@@ -16,18 +16,25 @@ import (
 	"context"
 	"time"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type gc struct {
+	ccDB     dal.DB
+	isMaster discovery.ServiceManageInterface
+}
+
 // cleanDelArchiveData is to clean the table cc_DelArchive data which is a week ago.
 // we do this everyday at a fixed time.
 // we find the expired data with _id.
-func (f *Flow) cleanDelArchiveData(ctx context.Context) {
+func (f *gc) cleanDelArchiveData(ctx context.Context) {
 	blog.Infof("start clean cc_DelArchive data job success.")
 	go func() {
 		var lastCleanDay int
@@ -58,7 +65,7 @@ func (f *Flow) cleanDelArchiveData(ctx context.Context) {
 	}()
 }
 
-func (f *Flow) doClean(ctx context.Context, rid string) {
+func (f *gc) doClean(ctx context.Context, rid string) {
 	blog.Infof("do clean cc_DelArchive data job, rid: %s", rid)
 
 	// it's time to do the clean job.

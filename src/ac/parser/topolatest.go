@@ -810,6 +810,7 @@ var (
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
+	findObjectInstancesUniqueFieldsRegexp     = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/unique_fields/?$`)
 	findObjectInstancesNamesRegexp            = regexp.MustCompile(`^/api/v3/findmany/object/instances/names/?$`)
 )
 
@@ -1112,6 +1113,24 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		return ps
 	}
 
+	// find object's instances' unique fields operation
+	if ps.hitRegexp(findObjectInstancesUniqueFieldsRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find object's instances' unique fields, but got invalid url")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	// find object instances' brief info
 	if ps.hitRegexp(findObjectInstancesNamesRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
@@ -1136,6 +1155,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 const (
 	createObjectLatestPattern       = "/api/v3/create/object"
 	findObjectsLatestPattern        = "/api/v3/find/object"
+	findObjectBatchLatestPattern    = "/api/v3/findmany/object"
 	findObjectTopologyLatestPattern = "/api/v3/find/objecttopology"
 )
 
@@ -1258,6 +1278,26 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// get object operation.
 	if ps.hitPattern(findObjectsLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.Model,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	// get object in batch operation.
+	if ps.hitPattern(findObjectBatchLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.getBizIDFromBody()
 		if err != nil {
 			ps.err = err

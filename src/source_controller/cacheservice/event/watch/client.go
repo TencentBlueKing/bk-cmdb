@@ -78,8 +78,8 @@ func (c *Client) getLatestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNode,
 	node := new(watch.ChainNode)
 	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID+":-1").One(kit.Ctx, node)
 	if err != nil {
-		blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 		if !c.watchDB.IsNotFoundError(err) {
+			blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			return nil, false, fmt.Errorf("get last chain node from mongo failed, err: %v", err)
 		}
 		return nil, false, nil
@@ -98,9 +98,9 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 	node := new(watch.ChainNode)
 	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).One(kit.Ctx, node)
 	if err != nil {
-		blog.ErrorJSON("get chain node from mongo failed, err: %s, collection: %s, filter: %s, rid: %s", err,
-			key.ChainCollection(), filter, kit.Rid)
 		if !c.watchDB.IsNotFoundError(err) {
+			blog.ErrorJSON("get chain node from mongo failed, err: %s, collection: %s, filter: %s, rid: %s", err,
+				key.ChainCollection(), filter, kit.Rid)
 			return nil, false, fmt.Errorf("get first chain node from mongo failed, err: %v", err)
 		}
 		return nil, false, nil
@@ -154,11 +154,11 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			doc := new(event.HostArchive)
 			err := c.db.Table(common.BKTableNameDelArchive).Find(filter).Fields(detailFields...).One(kit.Ctx, doc)
 			if err != nil {
-				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
-					key.Collection(), node.Oid, err)
 				if c.db.IsNotFoundError(err) {
 					return nil, false, nil
 				}
+				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
+					key.Collection(), node.Oid, err)
 				return nil, false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
 			}
 
@@ -174,11 +174,11 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			doc := new(bsonx.Doc)
 			err := c.db.Table(common.BKTableNameDelArchive).Find(filter).Fields(detailFields...).One(kit.Ctx, doc)
 			if err != nil {
-				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
-					key.Collection(), node.Oid, err)
 				if c.db.IsNotFoundError(err) {
 					return nil, false, nil
 				}
+				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
+					key.Collection(), node.Oid, err)
 				return nil, false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
 			}
 
@@ -211,10 +211,10 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 	}
 
 	if err := c.db.Table(key.Collection()).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
-		blog.ErrorJSON("get detail from db failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 		if c.db.IsNotFoundError(err) {
 			return nil, false, nil
 		}
+		blog.ErrorJSON("get detail from db failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 		return nil, false, fmt.Errorf("get event detail from mongo failed, err: %v", err)
 	}
 
@@ -258,8 +258,22 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 			return false, nil, 0, err
 		}
 
+		// if the first cursor is not a valid event, returns node not exist with the last event id to start from
 		if !exists {
-			return false, make([]*watch.ChainNode, 0), 0, nil
+			filter := map[string]interface{}{
+				"_id": key.Collection(),
+			}
+
+			data := new(watch.LastChainNodeData)
+			err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
+			if err != nil {
+				if !c.watchDB.IsNotFoundError(err) {
+					blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
+					return false, nil, 0, err
+				}
+				return false, nil, 0, nil
+			}
+			return false, make([]*watch.ChainNode, 0), data.ID, nil
 		}
 
 		nodes, err := c.searchFollowingEventChainNodesByID(kit, node.ID, limit, types, key)
@@ -283,8 +297,8 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 	node := new(watch.ChainNode)
 	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, node)
 	if err != nil {
-		blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 		if !c.watchDB.IsNotFoundError(err) {
+			blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			return false, nil, 0, err
 		}
 
@@ -296,8 +310,8 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, startCursor strin
 		data := new(watch.LastChainNodeData)
 		err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
 		if err != nil {
-			blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			if !c.watchDB.IsNotFoundError(err) {
+				blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 				return false, nil, 0, err
 			}
 			return false, nil, 0, nil

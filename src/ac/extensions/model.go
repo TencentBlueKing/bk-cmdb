@@ -32,7 +32,7 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKObjIDField).In(objectIDs)
 	fCond := cond.ToMapStr()
-	util.AddModelBizIDConditon(fCond, businessID)
+	util.AddModelBizIDCondition(fCond, businessID)
 	fCond.Remove(metadata.BKMetadata)
 	queryCond := &metadata.QueryCondition{Condition: fCond}
 

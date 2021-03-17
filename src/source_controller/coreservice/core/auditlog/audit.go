@@ -56,6 +56,12 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 		}
 		log.SupplierAccount = kit.SupplierAccount
 		log.User = kit.User
+		if appCode := kit.Header.Get(common.BKHTTPRequestAppCode); len(appCode) > 0 {
+			log.AppCode = appCode
+		}
+		if rid := kit.Rid; len(rid) > 0 {
+			log.RequestID = kit.Rid
+		}
 		log.OperationTime = metadata.Now()
 		log.ID = int64(ids[index])
 

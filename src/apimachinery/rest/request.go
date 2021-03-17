@@ -227,10 +227,8 @@ func (r *Request) WrapURL() *url.URL {
 	return finalUrl
 }
 
-const maxToleranceLatencyTime = 2 * time.Second
-
 func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string) {
-	if time.Since(*start) < maxToleranceLatencyTime {
+	if time.Since(*start) < r.capability.ToleranceLatencyTime {
 		return
 	}
 
@@ -241,9 +239,9 @@ func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string
 	}
 
 	// request time larger than the maxToleranceLatencyTime time, then log the request
-	blog.Warnf("[apimachinery] request exceeded max latency time. code: %s, user: %s, %s, url: %s cost: %d ms,"+
-		" body: %s, rid: %s", r.headers.Get(common.BKHTTPRequestAppCode), r.headers.Get(common.BKHTTPHeaderUser),
-		r.verb, url, time.Since(*start)/time.Millisecond, r.body, rid)
+	blog.Warnf("[apimachinery] request exceeded max latency time. cost: %d ms, code: %s, user: %s, %s, url: %s,"+
+		" body: %s, rid: %s", time.Since(*start)/time.Millisecond, r.headers.Get(common.BKHTTPRequestAppCode),
+		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, r.body, rid)
 }
 
 func (r *Request) Do() *Result {

@@ -80,7 +80,7 @@ func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, biz
 	}
 
 	bizCond := make(mapstr.MapStr)
-	util.AddModelBizIDConditon(bizCond, bizID)
+	util.AddModelBizIDCondition(bizCond, bizID)
 
 	queryCond.Condition.Merge(bizCond)
 	result, err := s.core.ModelOperation().SearchModelAttributes(kit, objID, queryCond)

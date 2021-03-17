@@ -58,7 +58,7 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID
 
 func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
 	resp = new(metadata.ObjectAttrBatchResult)
-	subPath := "object/search/batch"
+	subPath := "/findmany/object"
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -74,6 +74,20 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID stri
 
 	resp = new(metadata.QueryInstResult)
 	subPath := "/find/instance/object/%s"
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+
+	resp = new(metadata.QueryInstResult)
+	subPath := "/find/instance/object/%s/unique_fields"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).

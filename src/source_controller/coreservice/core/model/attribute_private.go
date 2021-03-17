@@ -31,7 +31,7 @@ func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, model
 		common.BKObjIDField:               objID,
 	}
 
-	util.AddModelBizIDConditon(filter, modelBizID)
+	util.AddModelBizIDCondition(filter, modelBizID)
 	oneAttribute = &metadata.Attribute{}
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).One(kit.Ctx, oneAttribute)
 	if nil != err && !mongodb.Client().IsNotFoundError(err) {

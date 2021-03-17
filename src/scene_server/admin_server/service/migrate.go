@@ -29,6 +29,7 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/source_controller/cacheservice/event"
 	daltypes "configcenter/src/storage/dal/types"
+	streamtypes "configcenter/src/storage/stream/types"
 
 	"github.com/emicklei/go-restful"
 )
@@ -170,6 +171,10 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 		data := watch.LastChainNodeData{
 			Coll:  key.Collection(),
 			Token: "",
+			StartAtTime: streamtypes.TimeStamp{
+				Sec:  uint32(time.Now().Unix()),
+				Nano: 0,
+			},
 		}
 		if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
 			blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)

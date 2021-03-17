@@ -621,6 +621,7 @@ const (
 	BKCursorField      = "cursor"
 	BKClusterTimeField = "cluster_time"
 	BKEventTypeField   = "type"
+	BKStartAtTimeField = "start_at_time"
 )
 
 const (

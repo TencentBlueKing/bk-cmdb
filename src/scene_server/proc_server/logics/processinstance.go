@@ -283,7 +283,9 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	}
 
 	if metadata.IsAsDefaultValue(t.ProcNum.AsDefaultValue) {
-		if (t.ProcNum.Value == nil && i.ProcNum != nil) || (t.ProcNum.Value != nil && i.ProcNum == nil) || (t.ProcNum.Value != nil && *t.ProcNum.Value != *i.ProcNum) {
+		if (t.ProcNum.Value == nil && i.ProcNum != nil) ||
+			(t.ProcNum.Value != nil && i.ProcNum == nil) ||
+			(t.ProcNum.Value != nil && i.ProcNum != nil && *t.ProcNum.Value != *i.ProcNum) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["proc_num"].ID,
 				PropertyID:            "proc_num",

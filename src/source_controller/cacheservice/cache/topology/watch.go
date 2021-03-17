@@ -32,11 +32,20 @@ func (t *Topology) watchSet() error {
 		},
 	}
 
+	tokenHandler := newTokenHandler("set")
+	startAtTime, err := tokenHandler.getStartWatchTime(context.Background())
+	if err != nil {
+		blog.Errorf("get start watch time for %s failed, err: %v", watchOpts.Collection, err)
+		return err
+	}
+	watchOpts.StartAtTime = startAtTime
+	watchOpts.WatchFatalErrorCallback = tokenHandler.resetWatchToken
+
 	loopOptions := &types.LoopBatchOptions{
 		LoopOptions: types.LoopOptions{
 			Name:         "topology cache with set",
 			WatchOpt:     watchOpts,
-			TokenHandler: newTokenHandler("set"),
+			TokenHandler: tokenHandler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 10,
 				RetryDuration: 1 * time.Second,
@@ -126,11 +135,20 @@ func (t *Topology) watchModule() error {
 		},
 	}
 
+	tokenHandler := newTokenHandler("module")
+	startAtTime, err := tokenHandler.getStartWatchTime(context.Background())
+	if err != nil {
+		blog.Errorf("get start watch time for %s failed, err: %v", watchOpts.Collection, err)
+		return err
+	}
+	watchOpts.StartAtTime = startAtTime
+	watchOpts.WatchFatalErrorCallback = tokenHandler.resetWatchToken
+
 	loopOptions := &types.LoopBatchOptions{
 		LoopOptions: types.LoopOptions{
 			Name:         "topology cache with module",
 			WatchOpt:     watchOpts,
-			TokenHandler: newTokenHandler("module"),
+			TokenHandler: tokenHandler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 10,
 				RetryDuration: 1 * time.Second,
@@ -223,11 +241,20 @@ func (t *Topology) watchCustom() error {
 		},
 	}
 
+	tokenHandler := newTokenHandler("custom_level")
+	startAtTime, err := tokenHandler.getStartWatchTime(context.Background())
+	if err != nil {
+		blog.Errorf("get start watch time for %s failed, err: %v", watchOpts.Collection, err)
+		return err
+	}
+	watchOpts.StartAtTime = startAtTime
+	watchOpts.WatchFatalErrorCallback = tokenHandler.resetWatchToken
+
 	loopOptions := &types.LoopBatchOptions{
 		LoopOptions: types.LoopOptions{
 			Name:         "topology cache with custom level",
 			WatchOpt:     watchOpts,
-			TokenHandler: newTokenHandler("custom_level"),
+			TokenHandler: tokenHandler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 10,
 				RetryDuration: 1 * time.Second,

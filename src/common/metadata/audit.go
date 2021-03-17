@@ -113,6 +113,10 @@ type AuditLog struct {
 	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
 	// ResourceName is the name of the resource, such as a switch model has a name "switch"
 	ResourceName string `json:"resource_name" bson:"resource_name"`
+	// AppCode is the app code of the system where the request comes from
+	AppCode string `json:"code,omitempty" bson:"code,omitempty"`
+	// RequestID is the request id of the request
+	RequestID string `json:"rid,omitempty" bson:"rid,omitempty"`
 }
 
 type bsonAuditLog struct {
@@ -128,6 +132,8 @@ type bsonAuditLog struct {
 	BusinessID      int64           `json:"bk_biz_id" bson:"bk_biz_id"`
 	ResourceID      interface{}     `json:"resource_id" bson:"resource_id"`
 	ResourceName    string          `json:"resource_name" bson:"resource_name"`
+	AppCode         string          `json:"code" bson:"code"`
+	RequestID       string          `json:"rid" bson:"rid"`
 }
 
 type jsonAuditLog struct {
@@ -143,6 +149,8 @@ type jsonAuditLog struct {
 	BusinessID      int64           `json:"bk_biz_id" bson:"bk_biz_id"`
 	ResourceID      interface{}     `json:"resource_id" bson:"resource_id"`
 	ResourceName    string          `json:"resource_name" bson:"resource_name"`
+	AppCode         string          `json:"code" bson:"code"`
+	RequestID       string          `json:"rid" bson:"rid"`
 }
 
 type DetailFactory interface {
@@ -165,6 +173,8 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	auditLog.BusinessID = audit.BusinessID
 	auditLog.ResourceID = audit.ResourceID
 	auditLog.ResourceName = audit.ResourceName
+	auditLog.AppCode = audit.AppCode
+	auditLog.RequestID = audit.RequestID
 
 	if audit.OperationDetail == nil {
 		return nil
@@ -224,6 +234,8 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	auditLog.BusinessID = audit.BusinessID
 	auditLog.ResourceID = audit.ResourceID
 	auditLog.ResourceName = audit.ResourceName
+	auditLog.AppCode = audit.AppCode
+	auditLog.RequestID = audit.RequestID
 
 	if audit.OperationDetail == nil {
 		return nil
@@ -280,6 +292,8 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit.BusinessID = auditLog.BusinessID
 	audit.ResourceID = auditLog.ResourceID
 	audit.ResourceName = auditLog.ResourceName
+	audit.AppCode = auditLog.AppCode
+	audit.RequestID = auditLog.RequestID
 	var err error
 	switch val := auditLog.OperationDetail.(type) {
 	default:

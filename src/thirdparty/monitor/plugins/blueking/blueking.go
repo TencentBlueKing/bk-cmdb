@@ -13,6 +13,7 @@
 package blueking
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -41,52 +42,53 @@ func NewBKmonitor() (*bkMonitor, error) {
 // Report is a interface implement for bkMonitor
 func (m *bkMonitor) Report(c meta.Content) error {
 	if config.MonitorCfg.DataID == 0 {
-		blog.Errorf("Report failed, config monitor.dataID is not set")
-		return fmt.Errorf("Report failed, config monitor.dataID is not set")
+		blog.ErrorJSON("Report failed, config monitor.dataID is not set, detail: %s", c)
+		return errors.New("report failed, config monitor.dataID is not set")
 	}
 
 	alarm, ok := c.(*meta.Alarm)
 	if !ok {
 		blog.Errorf("Report failed, the content typeis not *Alarm, but %T, value:%#v", c, c)
-		return fmt.Errorf("Report failed, the content typeis not *Alarm, but %T", c)
+		return fmt.Errorf("report failed, the content typeis not *Alarm, but %T", c)
 	}
 
 	msg, err := m.convertToReportMsg(alarm)
 	if err != nil {
-		blog.Errorf("Report failed, convertToReportMsg err:%v, data:%#v", err, msg)
+		blog.Errorf("report failed, convertToReportMsg err: %v, data: %s", err, msg)
 		return err
 	}
 
 	err = m.gseCmdline.Report(msg)
 	if err != nil {
-		blog.Errorf("Report failed, gseCmdline Report err:%v, msg:%#v", err, msg)
+		blog.Errorf("report failed, gseCmdline Report err: %v, msg: %s", err, msg)
 		return err
 	}
+
+	blog.V(4).Infof("send alarm report success, detail: %s", msg)
 
 	return nil
 }
 
 // convertToReportMsg convert data to a msg used by gseCmdline
 func (m *bkMonitor) convertToReportMsg(alarm *meta.Alarm) (string, error) {
+	one := EventMsg{
+		EventName:   string(alarm.Type),
+		EventInfo:   EventInfo{Content: alarm.Detail},
+		Target:      config.MonitorCfg.SourceIP,
+		Dimension:   alarm.Dimension,
+		TimeStampMs: time.Now().UnixNano() / 1e6,
+	}
+	one.Dimension["module"] = alarm.Module
+	one.Dimension["request_id"] = alarm.RequestID
+
 	event := EventData{
 		DataID: config.MonitorCfg.DataID,
-		Data: []*EventMsg{
-			{
-				EventName: string(alarm.Type),
-				EventInfo: EventInfo{Content: alarm.Detail},
-				Target:    config.MonitorCfg.SourceIP,
-				Dimension: map[string]string{
-					"module":     alarm.Module,
-					"request_id": alarm.RequestID,
-				},
-				TimeStampMs: time.Now().UnixNano() / 1e6,
-			},
-		},
+		Data:   []*EventMsg{&one},
 	}
 	msg, err := json.Marshal(event)
 	if err != nil {
-		blog.Errorf("marshal error:%v, msg:%s", err, msg)
-		return "", fmt.Errorf("convertToReportMsg failed")
+		blog.Errorf("convert alarm message failed, marshal err: %v, msg:%s", err, msg)
+		return "", err
 	}
 	return string(msg), nil
 }

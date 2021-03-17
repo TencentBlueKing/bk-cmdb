@@ -193,7 +193,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	if actionLen := len(removedResourceActionMap); actionLen > 0 {
 		removedResourceActionIDs := make([]ActionID, actionLen)
 		idx := 0
-		for resourceActionID, _ := range removedResourceActionMap {
+		for resourceActionID := range removedResourceActionMap {
 			removedResourceActionIDs[idx] = resourceActionID
 			idx++
 		}
@@ -205,7 +205,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	if selectionLen := len(removedInstanceSelectionMap); selectionLen > 0 {
 		removedInstanceSelectionIDs := make([]InstanceSelectionID, selectionLen)
 		idx := 0
-		for resourceActionID, _ := range removedInstanceSelectionMap {
+		for resourceActionID := range removedInstanceSelectionMap {
 			removedInstanceSelectionIDs[idx] = resourceActionID
 			idx++
 		}
@@ -217,7 +217,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	if typeLen := len(removedResourceTypeMap); typeLen > 0 {
 		removedResourceTypeIDs := make([]TypeID, len(removedResourceTypeMap))
 		idx := 0
-		for resourceType, _ := range removedResourceTypeMap {
+		for resourceType := range removedResourceTypeMap {
 			removedResourceTypeIDs[idx] = resourceType
 			idx++
 		}
@@ -381,6 +381,10 @@ func (a *authorizer) ListAuthorizedResources(ctx context.Context, h http.Header,
 
 func (a *authorizer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error) {
 	return a.authClientSet.GetNoAuthSkipUrl(ctx, h, input)
+}
+
+func (a *authorizer) GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
+	return a.authClientSet.GetPermissionToApply(ctx, h, input)
 }
 
 func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
