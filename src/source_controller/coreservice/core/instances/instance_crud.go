@@ -25,15 +25,18 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (id uint64, err error) {
+func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
 	if objID == common.BKInnerObjIDHost {
 		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
 	}
-	tableName := common.GetInstTableName(objID)
-	id, err = mongodb.Client().NextSequence(kit.Ctx, tableName)
-	if nil != err {
-		return id, err
+
+	instTableName := common.GetInstTableName(objID)
+	id, err := mongodb.Client().NextSequence(kit.Ctx, instTableName)
+	if err != nil {
+		return 0, err
 	}
+
+	// build new object instance data.
 	instIDFieldName := common.GetInstIDField(objID)
 	inputParam[instIDFieldName] = id
 	if !util.IsInnerObject(objID) {
@@ -43,8 +46,42 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	inputParam.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
-	err = mongodb.Client().Table(tableName).Insert(kit.Ctx, inputParam)
-	return id, err
+
+	// build new object instance mapping data.
+	mapping := make(mapstr.MapStr, 0)
+	mapping[instIDFieldName] = id
+	mapping[common.BKObjIDField] = objID
+
+	// save instance object type mapping.
+	err = mongodb.Client().Table( /*TODO rename*/ "cc_ObjectMapping").Insert(kit.Ctx, mapping)
+	if err != nil {
+		return 0, err
+	}
+
+	// save object instance.
+	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, inputParam)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (m *instanceManager) deleteInstanceMapping(kit *rest.Kit, objID string, instIDs []int64) error {
+	instIDFieldName := common.GetInstIDField(objID)
+
+	for _, instID := range instIDs {
+		mappingCond := mongo.NewCondition()
+		mappingCond.Element(mongo.Field(instIDFieldName).Eq(instID))
+
+		err := mongodb.Client().Table( /*TODO rename*/ "cc_ObjectMapping").Delete(kit.Ctx, mappingCond)
+		if err != nil {
+			blog.Warnf("delete objID %s instance %d mapping failed, err: %s, rid: %s",
+				objID, instID, err.Error(), kit.Rid)
+		}
+	}
+
+	return nil
 }
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {

@@ -417,8 +417,10 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 }
 
 func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+	instIDs := []int64{}
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
+
 	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 
@@ -432,6 +434,8 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		if nil != err {
 			return nil, err
 		}
+		instIDs = append(instIDs, instID)
+
 		exists, err := m.dependent.IsInstAsstExist(kit, objID, uint64(instID))
 		if nil != err {
 			return nil, err
@@ -441,20 +445,25 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		}
 	}
 
+	// delete object instance data.
 	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID, err.Error(), inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
+	// delete object instance mapping.
+	m.deleteInstanceMapping(kit, objID, instIDs)
+
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
 func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+	instIDs := []int64{}
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
+
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
-	blog.V(5).Infof("cascade delete model instance get inst error:%v, rid: %s", origins, kit.Rid)
 	if nil != err {
 		blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", err, kit.Rid)
 		return &metadata.DeletedCount{}, err
@@ -465,15 +474,23 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
+		instIDs = append(instIDs, instID)
+
 		err = m.dependent.DeleteInstAsst(kit, objID, uint64(instID))
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
 	}
+
+	// delete object instance data.
 	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
+
+	// delete object instance mapping.
+	m.deleteInstanceMapping(kit, objID, instIDs)
+
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
