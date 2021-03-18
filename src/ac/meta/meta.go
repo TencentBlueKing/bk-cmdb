@@ -129,6 +129,7 @@ const (
 	WatchSet          Action = "set"
 	WatchModule       Action = "module"
 	WatchSetTemplate  Action = "set_template"
+	WatchProcess      Action = "process"
 
 	// can view business related resources, including business and business collection resources
 	ViewBusinessResource Action = "viewBusinessResource"

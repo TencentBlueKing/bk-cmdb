@@ -113,6 +113,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchSetEvent:                       "集群事件监听",
 	WatchModuleEvent:                    "模块数据监听",
 	WatchSetTemplateEvent:               "集群模板数据监听",
+	WatchProcessEvent:                   "进程数据监听",
 	GlobalSettings:                      "全局设置",
 }
 
@@ -1282,6 +1283,16 @@ func genEventWatchActions() []ResourceAction {
 		ID:                   WatchSetTemplateEvent,
 		Name:                 ActionIDNameMap[WatchSetTemplateEvent],
 		NameEn:               "Set Template Event Listen",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   WatchProcessEvent,
+		Name:                 ActionIDNameMap[WatchProcessEvent],
+		NameEn:               "Process Event Listen",
 		Type:                 View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
