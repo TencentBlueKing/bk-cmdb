@@ -13,19 +13,27 @@
 package model
 
 import (
+	"context"
 	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/json"
+	"configcenter/src/common/index"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
+
+/*************
+
+TODO: 索引操作需要排它性， 需要加锁
+
+*************/
 
 func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
 	results = []metadata.ObjectUnique{}
@@ -93,6 +101,21 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	}
+
+	dbIndex, ccErr := m.toDBUniqueIndex(kit, objID, id, inputParam.Data.Keys, properties)
+	if ccErr != nil {
+		blog.Errorf("[CreateObjectUnique] toDBUniqueIndex for %s with %#v err: %#v, rid: %s",
+			objID, inputParam, ccErr, kit.Rid)
+		return 0, ccErr
+	}
+
+	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
+	objInstTable := common.GetInstTableName(objID)
+	if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
+		blog.Errorf("[CreateObjectUnique] create unique index for %s with %#v err: %#v, rid: %s",
+			objID, inputParam, err, kit.Rid)
+		return 0, kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
 	}
 
 	unique := metadata.ObjectUnique{
@@ -187,6 +210,12 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
+
+	if err := m.updateDBUnique(kit, oldUnique, unique, properties); err != nil {
+		blog.Errorf("[UpdateObjectUnique] updateDBUnique error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -223,6 +252,15 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	if nil != err {
 		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v, rid: %s", err, fCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	}
+
+	indexName := index.GetUniqueIndexNameByID(id)
+	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
+	objInstTable := common.GetInstTableName(objID)
+	// 删除失败，忽略即可以,后需会有任务补偿
+	if err := mongodb.Table(objInstTable).DropIndex(context.Background(), indexName); err != nil {
+		blog.WarnJSON("[DeleteObjectUnique] Delete db unique index error, err: %s, index name: %s, rid: %s",
+			err.Error(), indexName, kit.Rid)
 	}
 
 	return nil
@@ -309,9 +347,6 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 	}})
 
 	pipeline = append(pipeline, mapstr.MapStr{common.BKDBCount: "unique_count"})
-
-	js, _ := json.Marshal(pipeline)
-	fmt.Println("pipeline: ", string(js))
 
 	result := struct {
 		UniqueCount uint64 `bson:"unique_count"`
@@ -415,5 +450,91 @@ func getBasicDataType(propertyType string) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("unsupported type: %s", propertyType)
 	}
+
+}
+
+func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.ObjectUnique,
+	newUnique metadata.UpdateUniqueRequest, properties []metadata.Attribute) errors.CCErrorCoder {
+
+	if equalUniqueKey(oldUnique.Keys, newUnique.Keys) {
+		return nil
+	}
+
+	dbIndex, ccErr := m.toDBUniqueIndex(kit, oldUnique.ObjID, oldUnique.ID, newUnique.Keys, properties)
+	if ccErr != nil {
+		blog.Errorf("[UpdateObjectUnique] toDBUniqueIndex for %s err: %#v, rid: %s",
+			oldUnique.ObjID, ccErr.Error(), kit.Rid)
+		return ccErr
+	}
+	objInstTable := common.GetInstTableName(oldUnique.ObjID)
+
+	dbInndexNameMap, _, ccErr := m.getTableIndexs(kit, objInstTable)
+	if ccErr != nil {
+		return ccErr
+	}
+
+	if _, exists := dbInndexNameMap[dbIndex.Name]; exists {
+		// 删除原来的索引，
+		if err := mongodb.Table(objInstTable).DropIndex(context.Background(), dbIndex.Name); err != nil {
+			blog.Errorf("[UpdateObjectUnique] drop unique index name %s for %s err: %#v, rid: %s",
+				dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
+			return kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
+		}
+	}
+
+	// 新加索引， 新加失败 不能回滚事务，原因删除索引不能回滚
+	if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
+		blog.Errorf("[UpdateObjectUnique] create unique index name %s for %s err: %#v, rid: %s",
+			dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
+	}
+	return nil
+}
+
+func (m *modelAttrUnique) getTableIndexs(kit *rest.Kit,
+	tableName string) (map[string]types.Index, []types.Index, errors.CCErrorCoder) {
+	idxList, err := mongodb.Table(tableName).Indexes(context.Background())
+	if err != nil {
+		blog.Errorf("find db table %s index list error. err: %s, rid: %s", tableName, err.Error(), kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCoreServiceSearchDBUniqueIndex)
+	}
+	idxNameMap := make(map[string]types.Index, len(idxList))
+	for _, idx := range idxList {
+		idxNameMap[idx.Name] = idx
+	}
+	return idxNameMap, idxList, nil
+}
+
+func equalUniqueKey(src, dst []metadata.UniqueKey) bool {
+	if len(src) != len(dst) {
+		return false
+	}
+
+	dstIDMap := make(map[uint64]metadata.UniqueKey, len(dst))
+	for _, key := range dst {
+		dstIDMap[key.ID] = key
+	}
+
+	for _, key := range src {
+		dstKey, exists := dstIDMap[key.ID]
+		if !exists {
+			return false
+		}
+		if dstKey.Kind != key.Kind {
+			return false
+		}
+	}
+	return true
+}
+
+func (m *modelAttrUnique) toDBUniqueIndex(kit *rest.Kit, objID string, id uint64, keys []metadata.UniqueKey,
+	properties []metadata.Attribute) (types.Index, errors.CCErrorCoder) {
+
+	dbIndex, err := index.ToDBUniqueIndex(objID, id, keys, properties)
+	if err != nil {
+		blog.ErrorJSON("build unique index error. err: %s, rid: %s", err.Error(), kit.Rid)
+		return dbIndex, err
+	}
+
+	return dbIndex, nil
 
 }

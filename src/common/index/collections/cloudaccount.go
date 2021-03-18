@@ -10,48 +10,32 @@
  * limitations under the License.
  */
 
-package index
+package collections
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
 )
 
-/*
-通用模型实例表中的索引。新建模型的时候使用
-*/
+func init() {
 
-var (
-	instanceDefaultIndexes = []types.Index{
-		{
-			Name: common.CCLogicIndexNamePrefix + "bkObjId",
-			Keys: map[string]int32{
-				"bk_obj_id": 1,
-			},
-			Background: true,
+	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
+	registerIndexes(common.BKTableNameCloudAccount, deprecatedCloudAccountIndexes)
+	registerIndexes(common.BKTableNameCloudAccount, commCloudAccountIndexes)
+
+}
+
+//  新加和修改后的索引,索引名字一定要用对用的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
+
+var commCloudAccountIndexes = []types.Index{}
+
+// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
+var deprecatedCloudAccountIndexes = []types.Index{
+	{
+		Name: "bk_account_id",
+		Keys: map[string]int32{
+			"bk_account_id": 1,
 		},
-		{
-			Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount",
-			Keys: map[string]int32{
-				"bk_supplier_account": 1,
-			},
-			Background: true,
-		},
-		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstId",
-			Keys: map[string]int32{
-				"bk_inst_id": 1,
-			},
-			Background: true,
-			// 新加 2021年03月11日
-			Unique: true,
-		},
-		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstName",
-			Keys: map[string]int32{
-				"bk_inst_name": 1,
-			},
-			Background: false,
-		},
-	}
-)
+		Background: true,
+	},
+}

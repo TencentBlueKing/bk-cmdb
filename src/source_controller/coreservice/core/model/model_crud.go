@@ -206,8 +206,8 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) e
 	instAsstTableName := common.GetObjectInstAsstTableName(objID)
 
 	// collections indexes.
-	instTableIndexes := dbindex.InstanceIndex()
-	instAsstTableIndexes := dbindex.InstanceAssoicationIndex()
+	instTableIndexes := dbindex.InstanceIndexes()
+	instAsstTableIndexes := dbindex.InstanceAssociationIndexes()
 
 	// create object instance table.
 	err := m.createShardingTable(kit, instTableName, instTableIndexes)
