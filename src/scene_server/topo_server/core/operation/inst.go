@@ -1100,7 +1100,7 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 			"bk_obj_id":      objID,
 		}
 
-		asstInst, err := c.asst.SearchInstAssociation(kit, query)
+		asstInst, err := c.asst.SearchInstAssociation(kit, objID, query)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to search the association inst, err: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, err

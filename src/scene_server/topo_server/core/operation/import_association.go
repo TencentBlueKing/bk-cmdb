@@ -173,7 +173,7 @@ func (ia *importAssociation) importAssociation() {
 			conds.Field(common.BKObjIDField).Eq(ia.objID)
 			conds.Field(common.BKInstIDField).Eq(srcInstID)
 			conds.Field(common.AssociatedObjectIDField).Eq(asstID.AsstObjID)
-			isExist, err := ia.isExistInstAsst(idx, conds, dstInstID, asstID.Mapping)
+			isExist, err := ia.isExistInstAsst(idx, conds, dstInstID, ia.objID, asstID.Mapping)
 			if err != nil {
 				ia.parseImportDataErr[idx] = err.Error()
 				continue
@@ -190,7 +190,7 @@ func (ia *importAssociation) importAssociation() {
 			conds.Field(common.BKInstIDField).Eq(srcInstID)
 			conds.Field(common.AssociatedObjectIDField).Eq(asstID.AsstObjID)
 			conds.Field(common.BKAsstInstIDField).Eq(dstInstID)
-			ia.delSrcAssociation(idx, conds)
+			ia.delSrcAssociation(idx, ia.objID, conds)
 		default:
 			ia.parseImportDataErr[idx] = ia.language.Language("import_association_operate_not_found")
 		}
@@ -444,13 +444,18 @@ func (ia *importAssociation) parseInstToImportAssociationInst(objID, instIDKey s
 	}
 }
 
-func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition) {
+func (ia *importAssociation) delSrcAssociation(idx int, objID string, cond condition.Condition) {
 	_, ok := ia.parseImportDataErr[idx]
 	if ok {
 		return
 	}
 
-	result, err := ia.cli.clientSet.CoreService().Association().DeleteInstAssociation(ia.ctx, ia.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	delOpt := &metadata.InstAsstDeleteOption{
+		Opt:   metadata.DeleteOption{Condition: cond.ToMapStr()},
+		ObjID: objID,
+	}
+
+	result, err := ia.cli.clientSet.CoreService().Association().DeleteInstAssociation(ia.ctx, ia.kit.Header, delOpt)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
 		return
@@ -487,7 +492,9 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	}
 }
 
-func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, dstInstID int64, asstMapping metadata.AssociationMapping) (isExit bool, err error) {
+func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, dstInstID int64, objID string,
+	asstMapping metadata.AssociationMapping) (isExit bool, err error) {
+
 	_, ok := ia.parseImportDataErr[idx]
 	if ok {
 		return
@@ -495,7 +502,12 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 	if asstMapping != metadata.OneToOneMapping {
 		cond.Field(common.BKAsstInstIDField).Eq(dstInstID)
 	}
-	rsp, err := ia.cli.clientSet.CoreService().Association().ReadInstAssociation(ia.ctx, ia.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+
+	queryCond := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: cond.ToMapStr()},
+		ObjID: objID,
+	}
+	rsp, err := ia.cli.clientSet.CoreService().Association().ReadInstAssociation(ia.ctx, ia.kit.Header, queryCond)
 	if err != nil {
 		return false, err
 	}

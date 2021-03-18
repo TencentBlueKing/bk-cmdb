@@ -22,30 +22,37 @@ import (
 */
 
 var (
-	assoicationDefaultIndex = []types.Index{
+	associationDefaultIndexes = []types.Index{
 		{
+			Name: common.CCLogicIndexNamePrefix + "bkObjId_bkInstID",
 			Keys: map[string]int32{
-				common.BKOwnerIDField: 1,
-				common.BKInstIDField:  1,
+				"bk_obj_id":  1,
+				"bk_inst_id": 1,
 			},
-			Name:       "bkcc_idx_ObjID_InstID",
 			Background: true,
 		},
 		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "id",
 			Keys: map[string]int32{
-				common.BKFieldID: 1,
+				"id": 1,
 			},
-			Name:       "bkcc_unique_ID",
 			Unique:     true,
 			Background: true,
 		},
 		{
+			Name: common.CCLogicIndexNamePrefix + "bkInstId_bkObjId",
 			Keys: map[string]int32{
-				common.BKAsstObjIDField:  1,
-				common.BKAsstInstIDField: 1,
+				"bk_inst_id": 1,
+				"bk_obj_id":  1,
 			},
-			Name:       "bkcc_idx_AsstObjID_AsstInstID",
-			Unique:     true,
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "bkAsstObjId_bkAsstInstId",
+			Keys: map[string]int32{
+				"bk_asst_obj_id":  1,
+				"bk_asst_inst_id": 1,
+			},
 			Background: true,
 		},
 	}

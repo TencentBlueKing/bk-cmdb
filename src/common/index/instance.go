@@ -22,35 +22,36 @@ import (
 */
 
 var (
-	instanceDefaultIndex = []types.Index{
+	instanceDefaultIndexes = []types.Index{
 		{
+			Name: common.CCLogicIndexNamePrefix + "bkObjId",
 			Keys: map[string]int32{
-				common.BKObjIDField: 1,
+				"bk_obj_id": 1,
 			},
-			Name:       "bkcc_idx_ObjID",
 			Background: true,
 		},
 		{
+			Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount",
 			Keys: map[string]int32{
-				common.BKOwnerIDField: 1,
+				"bk_supplier_account": 1,
 			},
-			Name:       "bkcc_idx_supplierAccount",
 			Background: true,
 		},
 		{
+			Name: common.CCLogicIndexNamePrefix + "bkInstId",
 			Keys: map[string]int32{
-				common.BKInstIDField: 1,
+				"bk_inst_id": 1,
 			},
-			Name:       "bkcc_idx_InstId",
 			Background: true,
-			Unique:     true,
+			// 新加 2021年03月11日
+			Unique: true,
 		},
 		{
+			Name: common.CCLogicIndexNamePrefix + "bkInstName",
 			Keys: map[string]int32{
-				common.BKInstNameField: 1,
+				"bk_inst_name": 1,
 			},
-			Name:       "bkcc_idx_InstName",
-			Background: true,
+			Background: false,
 		},
 	}
 )

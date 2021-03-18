@@ -881,7 +881,7 @@ func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
 	}
 
 	blog.V(5).Infof("input:%#v, rid:%s", input, ctx.Kit.Rid)
-	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationList(ctx.Kit, input)
+	infos, cnt, err := s.Core.AssociationOperation().SearchInstAssociationList(ctx.Kit, objID, input)
 	if err != nil {
 		blog.ErrorJSON("parse page illegal, input:%s, err:%s, rid:%s", input, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)

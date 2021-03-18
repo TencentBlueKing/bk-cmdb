@@ -180,9 +180,9 @@ func (ps *parseStream) getModelAssociation(cond mapstr.MapStr) ([]metadata.Assoc
 	return asst.Data.Info, nil
 }
 
-func (ps *parseStream) getInstAssociation(cond mapstr.MapStr) (metadata.InstAsst, error) {
+func (ps *parseStream) getInstAssociation(objID string, cond mapstr.MapStr) (metadata.InstAsst, error) {
 	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadInstAssociation(context.Background(), ps.RequestCtx.Header,
-		&metadata.QueryCondition{Condition: cond})
+		&metadata.InstAsstQueryCondition{Cond: metadata.QueryCondition{Condition: cond}, ObjID: objID})
 	if err != nil {
 		return metadata.InstAsst{}, err
 	}

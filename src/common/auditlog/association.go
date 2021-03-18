@@ -25,12 +25,18 @@ type instanceAssociationAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of instance association, if data is nil, will auto get data by id and instance association.
-func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, data *metadata.InstAsst) (
-	*metadata.AuditLog, error) {
+func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64, objID string,
+	data *metadata.InstAsst) (*metadata.AuditLog, error) {
 	kit := parameter.kit
 
 	if data == nil {
-		cond := metadata.QueryCondition{Condition: map[string]interface{}{metadata.AssociationFieldAssociationId: id}}
+		cond := metadata.InstAsstQueryCondition{
+			Cond: metadata.QueryCondition{
+				Condition: map[string]interface{}{metadata.AssociationFieldAssociationId: id},
+			},
+			ObjID: objID,
+		}
+
 		result, err := a.clientSet.Association().ReadInstAssociation(kit.Ctx, kit.Header, &cond)
 		if err != nil {
 			blog.Errorf("generate inst asst audit log failed, get instance association failed, err: %v, rid: %s", err, kit.Rid)

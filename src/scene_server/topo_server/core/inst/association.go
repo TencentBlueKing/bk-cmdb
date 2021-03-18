@@ -57,9 +57,13 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 	return nil
 }
 
-func (cli *inst) searchInstAssociation(cond condition.Condition) ([]metadata.InstAsst, error) {
+func (cli *inst) searchInstAssociation(cond condition.Condition, objID string) ([]metadata.InstAsst, error) {
+	queryCond := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: cond.ToMapStr()},
+		ObjID: objID,
+	}
 
-	rsp, err := cli.clientSet.CoreService().Association().ReadInstAssociation(cli.kit.Ctx, cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Association().ReadInstAssociation(cli.kit.Ctx, cli.kit.Header, queryCond)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -83,7 +87,11 @@ func (cli *inst) deleteInstAssociation(instID, asstInstID int64, objID, asstObjI
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKAsstObjIDField).Eq(asstObjID)
 
-	rsp, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(cli.kit.Ctx, cli.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	delOpt := &metadata.InstAsstDeleteOption{
+		Opt:   metadata.DeleteOption{Condition: cond.ToMapStr()},
+		ObjID: objID,
+	}
+	rsp, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(cli.kit.Ctx, cli.kit.Header, delOpt)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -180,7 +188,7 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 		cond.Field(common.BKAsstObjIDField).Eq(cli.target.Object().ObjectID)
 		cond.Field(common.AssociationObjAsstIDField).Eq(objPair.Association.AssociationName)
 
-		asstItems, err := cli.searchInstAssociation(cond)
+		asstItems, err := cli.searchInstAssociation(cond, objPair.Object.Object().ObjectID)
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association, the err: %s, rid: %s", err.Error(), cli.kit.Rid)
 			return result, err
@@ -256,7 +264,7 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 		cond.Field(common.BKAsstObjIDField).Eq(objPair.Object.Object().ObjectID)
 		cond.Field(common.AssociationObjAsstIDField).Eq(objPair.Association.AssociationName)
 
-		asstItems, err := cli.searchInstAssociation(cond)
+		asstItems, err := cli.searchInstAssociation(cond, cli.target.Object().ObjectID)
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association,  the err: %s, rid: %s", err.Error(), cli.kit.Rid)
 			return result, err

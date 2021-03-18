@@ -57,7 +57,7 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	input := &metadata.SearchAssociationInstRequest{}
+	input := &metadata.SearchAssociationInstRequest{ObjID: objID}
 
 	//实例作为关联关系源模型
 	cond := condition.CreateCondition()

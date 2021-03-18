@@ -790,8 +790,8 @@ const (
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
 	CCErrCoreServiceModelHasAssociationErr           = 1113031
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
-	// SearchTopoTreeScanTooManyData means hit too many data, we return directly.
-	SearchTopoTreeScanTooManyData = 1113033
+	// Deprecated SearchTopoTreeScanTooManyData means hit too many data, we return directly.
+	SearchTopoTreeScanTooManyData = 1113038
 
 	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
 	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
@@ -799,6 +799,12 @@ const (
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
 	CCErrCoreServiceHostNotUnderAnyResourceDirectory = 11130034
+	// CCErrCoreServiceUniqueIndexPropertyType 唯一索引不支持的字段类型. 字段名: %s
+	CCErrCoreServiceUniqueIndexPropertyType = 1113035
+	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败
+	CCErrCoreServiceCreateDBUniqueIndex = 1113036
+	// CCErrCoreServiceSearchDBUniqueIndex 获取db唯一索引失败
+	CCErrCoreServiceSearchDBUniqueIndex = 1113037
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

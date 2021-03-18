@@ -726,6 +726,12 @@ func (c *Mongo) HasTable(ctx context.Context, collName string) (bool, error) {
 	return false, nil
 }
 
+// ListTables 获取所有的表名
+func (c *Mongo) ListTables(ctx context.Context) ([]string, error) {
+	return c.dbc.Database(c.dbname).ListCollectionNames(ctx, bson.M{"type": "collection"})
+
+}
+
 // DropTable 移除集合
 func (c *Mongo) DropTable(ctx context.Context, collName string) error {
 	return c.dbc.Database(c.dbname).Collection(collName).Drop(ctx)
@@ -739,8 +745,9 @@ func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	createIndexOpt := &options.IndexOptions{
-		Background: &index.Background,
-		Unique:     &index.Unique,
+		Background:              &index.Background,
+		Unique:                  &index.Unique,
+		PartialFilterExpression: index.PartialFilterExpression,
 	}
 	if index.Name != "" {
 		createIndexOpt.Name = &index.Name

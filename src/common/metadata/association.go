@@ -106,6 +106,7 @@ type SearchAssociationRelatedInstRequestCond struct {
 
 type SearchAssociationInstRequest struct {
 	Condition mapstr.MapStr `json:"condition"` // construct condition mapstr by condition.Condition
+	ObjID     string        `json:"bk_obj_id"`
 }
 
 type SearchAssociationRelatedInstRequest struct {
@@ -134,7 +135,8 @@ type DeleteAssociationInstRequest struct {
 }
 
 type DeleteAssociationInstBatchRequest struct {
-	ID []int64 `json:"id"`
+	ID    []int64 `json:"id"`
+	ObjID string  `json:"bk_obj_id"`
 }
 
 type DeleteAssociationInstResult struct {
@@ -498,4 +500,14 @@ type NodeTopoPath struct {
 	BizID int64                       `json:"bk_biz_id" mapstructure:"bk_biz_id"`
 	Node  TopoNode                    `json:"topo_node" mapstructure:"topo_node"`
 	Path  []*TopoInstanceNodeSimplify `json:"topo_path" mapstructure:"topo_path"`
+}
+
+type InstAsstQueryCondition struct {
+	Cond  QueryCondition `json:"cond"`
+	ObjID string         `json:"bk_obj_id"`
+}
+
+type InstAsstDeleteOption struct {
+	Opt   DeleteOption `json:"opt"`
+	ObjID string       `json:"bk_obj_id"`
 }
