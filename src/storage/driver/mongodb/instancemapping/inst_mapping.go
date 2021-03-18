@@ -47,12 +47,12 @@ type document struct {
 }
 
 var (
-	tableName = "cc_InstanceObjectIDMapping"
+	tableName = "cc_ObjectBaseMapping"
 )
 
 // deprecated 不建议使用，新加的要求用户必须传bk_obj_id, 改功能是在实例数据分表后， 只有实例id，没有bk_obj_id的时候使用，
 //     负责将实例id 转为bk_obj_id,
-func ObjectIDByInstIDS(ids []int64) (map[int64]string, error) {
+func GetInstanceMapping(ids []int64) (map[int64]string, error) {
 	if len(ids) > 200 {
 		return nil, fmt.Errorf("id array count must lt 200")
 	}
@@ -77,12 +77,12 @@ func ObjectIDByInstIDS(ids []int64) (map[int64]string, error) {
 }
 
 // 新加实例id与模型id的对应关系就， ctx 是为了保证事务， doc 为数组的时候表示插入多条数据
-func Add(ctx context.Context, doc interface{}) error {
+func Create(ctx context.Context, doc interface{}) error {
 	return mongodb.Table(tableName).Insert(ctx, doc)
 }
 
 //  移除实例id与模型id的对应关系就， ctx 是为了保证事务
-func Remmove(ctx context.Context, ids []int64) error {
+func Delete(ctx context.Context, ids []int64) error {
 	filter := map[string]interface{}{
 		common.BKInstIDField: map[string]interface{}{
 			common.BKDBIN: ids,
