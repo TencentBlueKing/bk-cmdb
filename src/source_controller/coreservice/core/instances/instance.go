@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/mongodb/instancemapping"
 	"configcenter/src/thirdparty/hooks"
 )
 
@@ -453,7 +454,10 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 	}
 
 	// delete object instance mapping.
-	m.deleteInstanceMapping(kit, objID, instIDs)
+	if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
+		blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
+			objID, err.Error(), instIDs, kit.Rid)
+	}
 
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
@@ -490,7 +494,10 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 	}
 
 	// delete object instance mapping.
-	m.deleteInstanceMapping(kit, objID, instIDs)
+	if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
+		blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
+			objID, err.Error(), instIDs, kit.Rid)
+	}
 
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }

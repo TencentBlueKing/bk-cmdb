@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
@@ -53,7 +54,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	mapping[common.BKObjIDField] = objID
 
 	// save instance object type mapping.
-	err = mongodb.Client().Table( /*TODO rename*/ "cc_ObjectMapping").Insert(kit.Ctx, mapping)
+	err = instancemapping.Create(kit.Ctx, mapping)
 	if err != nil {
 		return 0, err
 	}
@@ -65,23 +66,6 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	}
 
 	return id, nil
-}
-
-func (m *instanceManager) deleteInstanceMapping(kit *rest.Kit, objID string, instIDs []int64) error {
-	instIDFieldName := common.GetInstIDField(objID)
-
-	for _, instID := range instIDs {
-		mappingCond := mongo.NewCondition()
-		mappingCond.Element(mongo.Field(instIDFieldName).Eq(instID))
-
-		err := mongodb.Client().Table( /*TODO rename*/ "cc_ObjectMapping").Delete(kit.Ctx, mappingCond)
-		if err != nil {
-			blog.Warnf("delete objID %s instance %d mapping failed, err: %s, rid: %s",
-				objID, instID, err.Error(), kit.Rid)
-		}
-	}
-
-	return nil
 }
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {
