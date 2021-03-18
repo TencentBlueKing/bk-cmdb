@@ -177,7 +177,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s", req.Request.RemoteAddr, req.Request.Method, req.Request.URL.Path, err, rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommParseAuthAttributeFailed,
-				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
+				ErrMsg: err.Error(),
 				Result: false,
 			}
 			resp.WriteAsJson(rsp)
