@@ -616,6 +616,7 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	ret, err := s.Core.AssociationOperation().SearchInst(ctx.Kit, request)
+
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -624,6 +625,22 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	if ret.Code != 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
 		return
+	}
+	if request.Condition["bk_obj_id"] == request.Condition["bk_asst_obj_id"] {
+		param := request
+		param.Condition["bk_asst_inst_id"] = request.Condition["bk_inst_id"]
+		delete(param.Condition, "bk_inst_id")
+		retAsst, errAsst := s.Core.AssociationOperation().SearchInst(ctx.Kit, param)
+		if errAsst != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if retAsst.Code != 0 {
+			ctx.RespAutoError(ctx.Kit.CCError.New(retAsst.Code, retAsst.ErrMsg))
+			return
+		}
+		ret.Data = append(ret.Data, retAsst.Data...)
 	}
 
 	ctx.RespEntity(ret.Data)

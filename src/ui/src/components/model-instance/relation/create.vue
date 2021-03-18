@@ -393,10 +393,13 @@
             },
             isAssociated (inst) {
                 return this.existInstAssociation.some(exist => {
-                    if (this.isSource) {
+                    if (this.currentOption['bk_obj_id'] === this.currentOption['bk_asst_obj_id']) {
+                        return exist['bk_inst_id'] === inst[this.instanceIdKey] || exist['bk_asst_inst_id'] === inst[this.instanceIdKey]
+                    } else if (this.isSource) {
                         return exist['bk_asst_inst_id'] === inst[this.instanceIdKey]
+                    } else {
+                        return exist['bk_inst_id'] === inst[this.instanceIdKey]
                     }
-                    return exist['bk_inst_id'] === inst[this.instanceIdKey]
                 })
             },
             async updateAssociation (instId, updateType = 'new') {
