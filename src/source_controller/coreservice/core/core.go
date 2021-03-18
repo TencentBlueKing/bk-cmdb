@@ -119,8 +119,8 @@ type ModelAssociation interface {
 type InstanceAssociation interface {
 	CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
 	CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
-	SearchInstanceAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
-	DeleteInstanceAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	SearchInstanceAssociation(kit *rest.Kit, objID string, param metadata.QueryCondition) (*metadata.QueryResult, error)
+	DeleteInstanceAssociation(kit *rest.Kit, objID string, param metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
 // DataSynchronizeOperation manager data synchronize interface

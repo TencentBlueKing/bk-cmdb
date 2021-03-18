@@ -340,6 +340,7 @@ func (lgc *Logics) findInstAssociation(header http.Header, objectID string, inst
 
 	option := &metadata.SearchAssociationInstRequest{
 		Condition: cond.ToMapStr(),
+		ObjID:     objectID,
 	}
 	resp, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(context.Background(), header, option)
 	if err != nil {

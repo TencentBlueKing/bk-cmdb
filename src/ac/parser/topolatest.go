@@ -483,7 +483,7 @@ const (
 )
 
 var (
-	deleteObjectInstanceAssociationLatestRegexp      = regexp.MustCompile("^/api/v3/delete/instassociation/[0-9]+/?$")
+	deleteObjectInstanceAssociationLatestRegexp      = regexp.MustCompile(`^/api/v3/delete/instassociation/[^\s/]+/[0-9]+/?$`)
 	deleteObjectInstanceAssociationBatchLatestRegexp = regexp.MustCompile("^/api/v3/delete/instassociation/batch")
 	findObjectInstanceTopologyUILatestRegexp         = regexp.MustCompile(`^/api/v3/findmany/inst/association/object/[^\s/]+/inst_id/[0-9]+/offset/[0-9]+/limit/[0-9]+/web$`)
 	findInstAssociationObjInstInfoLatestRegexp       = regexp.MustCompile(`^/api/v3/findmany/inst/association/association_object/inst_base_info$`)
@@ -652,13 +652,19 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// delete object's instance association operation. for web
 	if ps.hitRegexp(deleteObjectInstanceAssociationLatestRegexp, http.MethodDelete) {
-		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("delete object instance association, but got invalid association id %s", ps.RequestCtx.Elements[4])
+		objID := ps.RequestCtx.Elements[4]
+		if len(objID) == 0 {
+			ps.err = fmt.Errorf("delete object instance association, but got empty object id")
 			return ps
 		}
 
-		asst, err := ps.getInstAssociation(mapstr.MapStr{common.BKFieldID: assoID})
+		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("delete object instance association, but got invalid association id %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		asst, err := ps.getInstAssociation(objID, mapstr.MapStr{common.BKFieldID: assoID})
 		if err != nil {
 			ps.err = err
 			return ps

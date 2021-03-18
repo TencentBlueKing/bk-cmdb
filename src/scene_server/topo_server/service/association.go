@@ -614,6 +614,11 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(request.ObjID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	ret, err := s.Core.AssociationOperation().SearchInst(ctx.Kit, request)
 	if err != nil {
@@ -697,16 +702,22 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 }
 
 func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	if len(objID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("association_id"), 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "association_id"))
 		return
 	}
 
 	var ret *metadata.DeleteAssociationInstResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
+		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, objID, id)
 		if err != nil {
 			return err
 		}
@@ -740,12 +751,16 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded, "The number of ID should be less than 500."))
 		return
 	}
+	if len(request.ObjID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		for _, id := range request.ID {
 			var ret *metadata.DeleteAssociationInstResult
 			var err error
-			ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
+			ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, request.ObjID, id)
 			if err != nil {
 				return err
 			}

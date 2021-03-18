@@ -179,14 +179,14 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 
 	return
 }
-func (asst *Association) DeleteInst(ctx context.Context, h http.Header, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
+func (asst *Association) DeleteInst(ctx context.Context, h http.Header, objID string, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
 	resp = new(metadata.DeleteAssociationInstResult)
-	subPath := "/delete/instassociation/%d"
+	subPath := "/delete/instassociation/%s/%d"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, assoID).
+		SubResourcef(subPath, objID, assoID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

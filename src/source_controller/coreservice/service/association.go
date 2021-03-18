@@ -264,12 +264,12 @@ func (s *coreService) CreateManyInstanceAssociation(ctx *rest.Contexts) {
 }
 
 func (s *coreService) SearchInstanceAssociation(ctx *rest.Contexts) {
-	inputData := metadata.QueryCondition{}
+	inputData := metadata.InstAsstQueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	result, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx.Kit, inputData)
+	result, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx.Kit, inputData.ObjID, inputData.Cond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -278,12 +278,12 @@ func (s *coreService) SearchInstanceAssociation(ctx *rest.Contexts) {
 }
 
 func (s *coreService) DeleteInstanceAssociation(ctx *rest.Contexts) {
-	inputData := metadata.DeleteOption{}
+	inputData := metadata.InstAsstDeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	result, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx.Kit, inputData)
+	result, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx.Kit, inputData.ObjID, inputData.Opt)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

@@ -291,8 +291,9 @@ func (lgc *Logics) GetHostIDByInstID(kit *rest.Kit, asstObjId string, instIDArr 
 	cond := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).
 		WithAssoObjID(asstObjId).WithAssoInstID(map[string]interface{}{common.BKDBIN: instIDArr}).Data()
 
-	query := &meta.QueryCondition{
-		Condition: cond,
+	query := &meta.InstAsstQueryCondition{
+		Cond:  meta.QueryCondition{Condition: cond},
+		ObjID: common.BKInnerObjIDHost,
 	}
 	result, err := lgc.CoreAPI.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, query)
 	if err != nil {
