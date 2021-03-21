@@ -248,6 +248,7 @@ func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 }
 
 func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
+
 	allDBTables, err := dt.db.ListTables(ctx)
 	if err != nil {
 		blog.Errorf("show tables error. err: %s, rid: %s", err.Error(), dt.rid)
@@ -270,20 +271,17 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 
 	for _, obj := range objs {
 		blog.Infof("start object(%s) sharding table rid: %s", obj.ObjectID, dt.rid)
+
 		instTable := common.GetObjectInstTableName(obj.ObjectID)
 		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID)
 
-		hasUniqueIndex := true
 		uniques, err := dt.findObjUniques(ctx, obj.ObjectID)
 		if err != nil {
 			blog.Errorf("object(%s) logic unique to db index error. err: %s, rid: %s",
 				obj.ObjectID, err.Error(), dt.rid)
 			// 服务降级，只是不处理唯一索引
-			hasUniqueIndex = false
 		}
 
-		// 是否需要执行db表中索引和定义的索引同步操作
-		canObjIndex := true
 		objIndexes := append(index.InstanceIndexes(), uniques...)
 		// 内置模型不需要简表
 		if !obj.IsPre {
@@ -295,14 +293,6 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 					// NOTICE: 索引有专门的任务处理
 				}
 				dt.createIndexes(ctx, instTable, objIndexes)
-				canObjIndex = false
-			}
-		}
-
-		if canObjIndex {
-			if err := dt.syncObjTableIndexes(ctx, instTable, objIndexes, nil, hasUniqueIndex); err != nil {
-				blog.Errorf("sync table(%s) definition index to table error. err: %s, rid: %s",
-					instTable, err.Error(), dt.rid)
 			}
 		}
 
