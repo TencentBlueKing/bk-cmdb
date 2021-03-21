@@ -223,13 +223,6 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 	input[common.BKCreator] = user
 	input[common.BKLastEditor] = user
 
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeResourceCreate(ctx.Kit.Ctx, ctx.Kit.Header, 0, authmeta.Model); err != nil {
-		blog.Errorf("check create plat authorization failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-		return
-	}
-
 	instInfo := &meta.CreateModelInstance{
 		Data: mapstr.NewFromMap(input),
 	}
