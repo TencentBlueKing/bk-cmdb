@@ -30,10 +30,10 @@ func InstanceAssociationIndexes() []types.Index {
 	return associationDefaultIndexes
 }
 
-func CCFieldTypeToDBType(typ string) string {
+func ccFieldTypeToDBType(typ string) string {
 	switch typ {
-	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum, common.FieldTypeUser, common.FieldTypeTimeZone,
-		common.FieldTypeList, common.FieldTypeOrganization:
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum,
+		common.FieldTypeUser, common.FieldTypeTimeZone, common.FieldTypeOrganization:
 		return "string"
 	case common.FieldTypeInt, common.FieldTypeFloat:
 		return "number"
@@ -41,6 +41,8 @@ func CCFieldTypeToDBType(typ string) string {
 		return "date"
 	case common.FieldTypeBool:
 		return "bool"
+	case common.FieldTypeList:
+		return "array"
 	}
 
 	// other type not support
@@ -78,10 +80,16 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 	for _, key := range keys {
 		attr := propertiesIDMap[int64(key.ID)]
 		if objID == common.BKInnerObjIDHost && attr.PropertyID == common.BKCloudIDField {
-			// NOTEICE: 2021年03月12日 特殊逻辑。 现在运去在主机的字段中类型未foreignkey 特殊的类型
+			// NOTEICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
 			attr.PropertyType = common.FieldTypeInt
 		}
-		dbType := CCFieldTypeToDBType(attr.PropertyType)
+		if objID == common.BKInnerObjIDHost &&
+			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostInnerIPField ||
+				attr.PropertyID == common.BKOperatorField || attr.PropertyID == common.BKBakOperatorField) {
+			// NOTEICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
+			attr.PropertyType = common.FieldTypeList
+		}
+		dbType := ccFieldTypeToDBType(attr.PropertyType)
 		if dbType == "" {
 			return dbIndex, errors.GetGlobalCCError().CreateDefaultCCErrorIf(string(common.English)).
 				CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyID)

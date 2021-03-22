@@ -10,27 +10,44 @@
  * limitations under the License.
  */
 
-package collections
+package y3_9_202103241156
 
 import (
+	"context"
+
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 )
 
-func init() {
+func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
-	registerIndexes("cc_InstanceObjectIDMapping", commInstanceObjectIDMappingIndexes)
+	exists, err := db.HasTable(ctx, instanceObjectIDMappingTable)
+	if err != nil {
+		blog.ErrorJSON("check table(%s) exist error, err: %s", instanceObjectIDMappingTable, err)
+		return err
 
-}
+	}
+	if !exists {
+		if err := db.CreateTable(ctx, instanceObjectIDMappingTable); err != nil {
+			blog.ErrorJSON("create table(%s) error, err: %s", instanceObjectIDMappingTable, err)
+			return err
+		}
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
+	}
 
-var commInstanceObjectIDMappingIndexes = []types.Index{
-	{
+	index := types.Index{
 		Name: common.CCLogicIndexNamePrefix + "InstID",
 		Keys: map[string]int32{
 			common.BKInstIDField: 1,
 		},
 		Background: true,
-	},
+	}
+	if err := db.Table(instanceObjectIDMappingTable).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
+		return err
+	}
+
+	return nil
 }

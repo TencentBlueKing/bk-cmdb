@@ -29,10 +29,12 @@ func registerIndexes(tableName string, indexes []types.Index) {
 				panic(fmt.Sprintf("table(%s). index(%s) with the same name already exists", tableName, idx.Name))
 			}
 			if indexKeyEqual(newIdx, idx) {
-				panic(fmt.Sprintf("table(%s).  index with the same keys. index name: (%s, %s) ",
+				panic(fmt.Sprintf("table(%s).  index with the same keys. index: (%s, %s) ",
 					tableName, idx.Name, newIdx.Name))
 			}
 		}
+		tableNameIndexes[tableName] = append(tableNameIndexes[tableName], newIdx)
+
 	}
 
 }
@@ -40,7 +42,7 @@ func registerIndexes(tableName string, indexes []types.Index) {
 // IndexEqual 索引对比， 索引名字不参与对比
 func indexKeyEqual(toDBIndex, dbIndex types.Index) bool {
 
-	if len(toDBIndex.Keys) != len(toDBIndex.Keys) {
+	if len(toDBIndex.Keys) != len(dbIndex.Keys) {
 		return false
 	}
 

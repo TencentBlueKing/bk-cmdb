@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202103211606
+package y3_9_202103241156
 
 import (
 	"context"
@@ -62,6 +62,14 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 		}
 
 		if obj.IsPre {
+			objInstTable := innerObjIDTableNameRelation[obj.ObjectID]
+			if objInstTable != "" {
+				if err = createTableLogicUniqueIndex(ctx, obj.ObjectID, objInstTable, db); err != nil {
+					blog.Errorf("create obj(%s) inst unique table index error. err: %s", obj.ObjectID, err.Error())
+					return
+				}
+			}
+
 			// 内置模型只创建关联关系表
 			continue
 		}
@@ -276,6 +284,16 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 		return err
 	}
 
+	isIDUniqueFunc := func(idx types.Index) bool {
+		if len(idx.Keys) != 1 {
+			return false
+		}
+		if _, exist := idx.Keys["id"]; exist {
+			return true
+		}
+		return false
+	}
+
 	for _, idx := range idxs {
 		_, idExist := idx.Keys["_id"]
 		if len(idx.Keys) == 1 && idExist {
@@ -286,12 +304,21 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 		if ok {
 			if commIdx.IndexEqual(idx, alreadyIdx) {
 				continue
+			} else {
+				if err := db.Table(tableName).DropIndex(ctx, idx.Name); err != nil {
+					return fmt.Errorf("delete index(%s) error. err: %s", idx.Name, err.Error())
+				}
 			}
 		}
-		alreadyIdx, ok = commIdx.FindIndexByIndexFields(idx.Keys, dbIndexList)
+		alreadyIdx, ok = FindIndexByIndexFields(idx.Keys, dbIndexList)
 		if ok {
-			if commIdx.IndexEqual(idx, alreadyIdx) {
+
+			if isIDUniqueFunc(idx) {
 				continue
+			} else {
+				if err := db.Table(tableName).DropIndex(ctx, alreadyIdx.Name); err != nil {
+					return fmt.Errorf("delete index(%s) error. err: %s", alreadyIdx.Name, err.Error())
+				}
 			}
 		}
 		if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil {
@@ -325,7 +352,7 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 		return fmt.Errorf("get obj(%s) logic unique index error. err: %s", objID, err.Error())
 	}
 
-	alreadyIdxNameMap, _, err := getTableAlreadyIndexes(ctx, tableName, db)
+	alreadyIdxNameMap, dbTableIndexes, err := getTableAlreadyIndexes(ctx, tableName, db)
 	if err != nil {
 		return err
 	}
@@ -341,6 +368,17 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 		if err != nil {
 			return fmt.Errorf("obj(%s). %s", objID, err.Error())
 		}
+
+		dbTableIndex, exist := FindIndexByIndexFields(newDBIndex.Keys, dbTableIndexes)
+		if exist {
+			if dbTableIndex.Name == newDBIndex.Name {
+				continue
+			}
+			if err := db.Table(tableName).DropIndex(ctx, dbTableIndex.Name); err != nil {
+				return fmt.Errorf("delete unique index(%s) error. err: %s", dbTableIndex.Name, err.Error())
+			}
+		}
+
 		// 升级版本程序不考虑，数据不一致的情况
 		if _, exists := alreadyIdxNameMap[newDBIndex.Name]; !exists {
 			if err := db.Table(tableName).CreateIndex(ctx, newDBIndex); err != nil {
@@ -388,10 +426,20 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index
 	// attrIDMap数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
 	for _, key := range idx.Keys {
 		attr := attrIDMap[int64(key.ID)]
+		if idx.ObjID == common.BKInnerObjIDHost && attr.PropertyID == common.BKCloudIDField {
+			// NOTEICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
+			attr.PropertyType = common.FieldTypeInt
+		}
+		if idx.ObjID == common.BKInnerObjIDHost &&
+			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostInnerIPField) {
+			// NOTEICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
+			attr.PropertyType = common.FieldTypeList
+		}
 		dbType := convFieldTypeToDBType(attr.PropertyType)
 		if dbType == "" {
-			blog.ErrorJSON("build unique index property id: %s type not support.", key.Kind)
-			return dbIdx, fmt.Errorf("build unique index property(%s) type not support.", key.Kind)
+			blog.ErrorJSON("build unique index property id: %s type: %s not support.", key.Kind, attr.PropertyType)
+			return dbIdx, fmt.Errorf("build unique index property(%s) type(%s) not support.",
+				key.Kind, attr.PropertyType)
 		}
 		dbIdx.Keys[attr.PropertyID] = 1
 		dbIdx.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
@@ -430,15 +478,19 @@ type uniqueKey struct {
 
 func convFieldTypeToDBType(typ string) string {
 	switch typ {
-	case FieldTypeSingleChar, FieldTypeLongChar:
+	case FieldTypeSingleChar, FieldTypeLongChar, FieldTypeEnum, FieldTypeTimeZone, FieldTypeOrganization:
 		return "string"
-	case FieldTypeInt, FieldTypeFloat, FieldTypeEnum, FieldTypeUser, FieldTypeTimeZone,
-		FieldTypeList, FieldTypeOrganization:
+	case FieldTypeInt, FieldTypeFloat:
 		return "number"
 	case FieldTypeDate, FieldTypeTime:
 		return "date"
 	case FieldTypeBool:
 		return "bool"
+	case "foreignkey":
+		// 用于运区域
+		return "number"
+	case FieldTypeList:
+		return "array"
 
 	}
 
@@ -576,4 +628,25 @@ type Attribute struct {
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator"`
+}
+
+func FindIndexByIndexFields(keys map[string]int32, indexList []types.Index) (dbIndex types.Index, exists bool) {
+	for _, idx := range indexList {
+		if len(idx.Keys) != len(keys) {
+			continue
+		}
+		exists = true
+		for key := range idx.Keys {
+			if _, keyExists := keys[key]; !keyExists {
+				exists = false
+				break
+			}
+		}
+		if exists {
+			return idx, exists
+		}
+
+	}
+
+	return types.Index{}, false
 }

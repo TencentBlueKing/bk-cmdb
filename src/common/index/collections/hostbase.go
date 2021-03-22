@@ -25,9 +25,20 @@ func init() {
 
 }
 
-//  新加和修改后的索引,索引名字一定要用对用的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commHostBaseIndexes = []types.Index{}
+//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
+var commHostBaseIndexes = []types.Index{
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIP_bkCloudID",
+		Keys: map[string]int32{
+			common.BKHostInnerIPField: 1,
+			common.BKCloudIDField:     1,
+		},
+		Unique: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKHostInnerIPField: map[string]string{common.BKDBType: "array"},
+		},
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedHostBaseIndexes = []types.Index{
@@ -46,13 +57,6 @@ var deprecatedHostBaseIndexes = []types.Index{
 		Background: true,
 	},
 	{
-		Name: "bk_host_outerip_1",
-		Keys: map[string]int32{
-			"bk_host_outerip": 1,
-		},
-		Background: true,
-	},
-	{
 		Name: "bk_host_id_1_bk_supplier_account_1",
 		Keys: map[string]int32{
 			"bk_host_id":          1,
@@ -60,14 +64,14 @@ var deprecatedHostBaseIndexes = []types.Index{
 		},
 		Background: true,
 	},
-	{
+	/* 	{
 		Name: "innerIP_platID",
 		Keys: map[string]int32{
 			"bk_host_innerip": 1,
 			"bk_cloud_id":     1,
 		},
 		Background: false,
-	},
+	}, */
 	{
 		Name: "bk_supplier_account_1",
 		Keys: map[string]int32{
