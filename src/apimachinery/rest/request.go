@@ -239,8 +239,8 @@ func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string
 	}
 
 	// request time larger than the maxToleranceLatencyTime time, then log the request
-	blog.Warnf("[apimachinery] request exceeded max latency time. cost: %d ms, code: %s, user: %s, %s, url: %s,"+
-		" body: %s, rid: %s", time.Since(*start)/time.Millisecond, r.headers.Get(common.BKHTTPRequestAppCode),
+	blog.InfofDepthf(3, "[apimachinery] request exceeded max latency time. cost: %d ms, code: %s, user: %s, %s, "+
+		"url: %s, body: %s, rid: %s", time.Since(*start)/time.Millisecond, r.headers.Get(common.BKHTTPRequestAppCode),
 		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, r.body, rid)
 }
 
