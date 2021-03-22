@@ -208,7 +208,7 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 
 	observer := &observer{
 		isMaster:       lw.isMaster,
-		previousStatus: false,
+		previousStatus: lw.isMaster.IsMaster(),
 	}
 
 	for {
@@ -327,7 +327,7 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 
 	observer := &observer{
 		isMaster:       lw.isMaster,
-		previousStatus: false,
+		previousStatus: lw.isMaster.IsMaster(),
 	}
 
 	for one := range watcher.EventChan {
