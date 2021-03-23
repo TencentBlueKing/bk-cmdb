@@ -61,7 +61,6 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 			valid.requireFields = append(valid.requireFields, attr.PropertyID)
 		}
 	}
-
 	uniqueAttrs, err := valid.dependent.SearchUnique(kit, valid.objID)
 	if nil != err {
 		return nil, err
