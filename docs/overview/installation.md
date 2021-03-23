@@ -146,6 +146,7 @@ mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
 | mongo-url                | MongoDB实例的主节点访问地址。详情请参见。[mongo-url](https://rwynn.github.io/monstache-site/config/#mongo-url)                                                                                                                                                                                     |
 | elasticsearch-urls       | Elasticsearch的访问地址。详情请参见 [elasticsearch-urls](https://rwynn.github.io/monstache-site/config/#elasticsearch-urls)                                                                                                                                                                        |
 | direct-read-namespaces   | 指定待同步的集合，详情请参见[direct-read-namespaces](https://rwynn.github.io/monstache-site/config/#direct-read-namespaces)。                                                                                                                                                                      |
+| direct-read-dynamic-include-regex   | 过正则表达式指定需要监听的集合。此设置可以用来监控符合正则表达式的集合中数据，注意：该功能是再2021-03-18日才合入rel6分支，编译的使用请使用最新的rel6分支或者2021-03-18之后后的release                                                                                                                                                                       |
 | change-stream-namespaces | 如果要使用MongoDB变更流功能，需要指定此参数。启用此参数后，oplog追踪会被设置为无效，详情请参见[change-stream-namespaces](https://rwynn.github.io/monstache-site/config/#change-stream-namespaces)。                                                                                                |
 | namespace-regex          | 通过正则表达式指定需要监听的集合。此设置可以用来监控符合正则表达式的集合中数据的变化。                                                                                                                                                                                                             |
 | elasticsearch-user       | 访问Elasticsearch的用户名。                                                                                                                                                                                                                                                                        |
@@ -173,14 +174,16 @@ elasticsearch-urls = ["http://localhost:9200"]
 
 # if you need to seed an index from a collection and not just listen and sync changes events
 # you can copy entire collections or views from MongoDB to Elasticsearch
-direct-read-namespaces = ["cmdb.cc_ApplicationBase","cmdb.cc_HostBase","cmdb.cc_ObjectBase","cmdb.cc_ObjDes"]
+direct-read-namespaces = [""]
+direct-read-dynamic-include-regex = "cmdb.cc_ObjectBase_pub_|cmdb.cc_ApplicationBase|cmdb.cc_HostBase|cmdb.cc_ObjDes"
 
 # if you want to use MongoDB change streams instead of legacy oplog tailing use change-stream-namespaces
 # change streams require at least MongoDB API 3.6+
 # if you have MongoDB 4+ you can listen for changes to an entire database or entire deployment
 # in this case you usually don't need regexes in your config to filter collections unless you target the deployment.
 # to listen to an entire db use only the database name.  For a deployment use an empty string.
-change-stream-namespaces = ["cmdb.cc_ApplicationBase","cmdb.cc_HostBase","cmdb.cc_ObjectBase","cmdb.cc_ObjDes"]
+change-stream-namespaces = [""]
+namespace-regex =  "cmdb.cc_ObjectBase_pub_|cmdb.cc_ApplicationBase|cmdb.cc_HostBase|cmdb.cc_ObjDes"
 
 # additional settings
 
@@ -208,6 +211,28 @@ resume-strategy = 0
 # print detailed information including request traces
 verbose = true
 
+
+enable-patches = true
+
+[[script]]
+#namespace = "cmdb_oa.cc_ObjectBase_pub_"
+# this script does not declare a namespace
+# it is global to all collections
+routing = true 
+script = """
+
+var re = new RegExp("cmdb_oa.cc_ObjectBase_pub")
+module.exports = function(doc, ns, updateDesc) {
+    doc["aa"]=ns 
+    if(re.test(ns)) {
+        doc["_meta_monstache"] = {"index":"cmdb.cc_objectbase"};
+    }
+    // the doc namespace e.g. test.test is passed as the 2nd arg
+        // if available, an object containing the update description is passed as the 3rd arg
+    return  doc 
+}
+"""
+
 # mapping settings
 
 [[mapping]]
@@ -217,10 +242,6 @@ index = "cmdb.cc_applicationbase"
 [[mapping]]
 namespace = "cmdb.cc_HostBase"
 index = "cmdb.cc_hostbase"
-
-[[mapping]]
-namespace = "cmdb.cc_ObjectBase"
-index = "cmdb.cc_objectbase"
 
 [[mapping]]
 namespace = "cmdb.cc_ObjDes"
