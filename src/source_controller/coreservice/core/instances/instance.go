@@ -435,7 +435,9 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		if nil != err {
 			return nil, err
 		}
-		instIDs = append(instIDs, instID)
+		if metadata.IsCommon(objID) {
+			instIDs = append(instIDs, instID)
+		}
 
 		exists, err := m.dependent.IsInstAsstExist(kit, objID, uint64(instID))
 		if nil != err {
@@ -454,9 +456,11 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 	}
 
 	// delete object instance mapping.
-	if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
-		blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
-			objID, err.Error(), instIDs, kit.Rid)
+	if metadata.IsCommon(objID) {
+		if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
+			blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
+				objID, err.Error(), instIDs, kit.Rid)
+		}
 	}
 
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
@@ -478,7 +482,9 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
-		instIDs = append(instIDs, instID)
+		if metadata.IsCommon(objID) {
+			instIDs = append(instIDs, instID)
+		}
 
 		err = m.dependent.DeleteInstAsst(kit, objID, uint64(instID))
 		if nil != err {
@@ -494,9 +500,11 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 	}
 
 	// delete object instance mapping.
-	if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
-		blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
-			objID, err.Error(), instIDs, kit.Rid)
+	if metadata.IsCommon(objID) {
+		if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
+			blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
+				objID, err.Error(), instIDs, kit.Rid)
+		}
 	}
 
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil

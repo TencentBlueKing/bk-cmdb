@@ -48,15 +48,16 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
 
-	// build new object instance mapping data.
-	mapping := make(mapstr.MapStr, 0)
-	mapping[instIDFieldName] = id
-	mapping[common.BKObjIDField] = objID
+	// build and save new object mapping data for inner object instance.
+	if metadata.IsCommon(objID) {
+		mapping := make(mapstr.MapStr, 0)
+		mapping[instIDFieldName] = id
+		mapping[common.BKObjIDField] = objID
 
-	// save instance object type mapping.
-	err = instancemapping.Create(kit.Ctx, mapping)
-	if err != nil {
-		return 0, err
+		// save instance object type mapping.
+		if err := instancemapping.Create(kit.Ctx, mapping); err != nil {
+			return 0, err
+		}
 	}
 
 	// save object instance.
