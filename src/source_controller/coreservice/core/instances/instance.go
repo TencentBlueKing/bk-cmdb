@@ -458,8 +458,9 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 	// delete object instance mapping.
 	if metadata.IsCommon(objID) {
 		if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
-			blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
+			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
 				objID, err.Error(), instIDs, kit.Rid)
+			return nil, err
 		}
 	}
 
@@ -502,8 +503,9 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 	// delete object instance mapping.
 	if metadata.IsCommon(objID) {
 		if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
-			blog.Warnf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
+			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
 				objID, err.Error(), instIDs, kit.Rid)
+			return nil, err
 		}
 	}
 
