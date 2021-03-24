@@ -153,14 +153,23 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]int
 		switch v := value.(type) {
 		case string:
 			v = strings.TrimSpace(v)
+			v = strings.Trim(v, ",")
 			if len(v) == 0 {
-				host[field] = make([]string, 0)
+				host[field] = nil
 			} else {
 				host[field] = strings.Split(v, ",")
 			}
 		case []string:
+			if len(v) == 0 {
+				host[field] = nil
+			}
+		case []interface{}:
+			if len(v) == 0 {
+				host[field] = nil
+			} else {
+				blog.Errorf("host %s type invalid, value %v", field, host[field])
+			}
 		case nil:
-			host[field] = make([]string, 0)
 		default:
 			blog.Errorf("host %s type invalid, value %v", field, host[field])
 		}

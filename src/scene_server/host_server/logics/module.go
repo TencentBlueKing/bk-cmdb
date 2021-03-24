@@ -211,7 +211,7 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 		return nil, err
 	}
 
-	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
+	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(conf.ApplicationID)
 	moduleID, err := lgc.GetResourcePoolModuleID(kit, conds.MapStr())
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), kit.Rid)
@@ -350,7 +350,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 		return nil, kit.CCError.Errorf(common.CCErrHostModuleConfigNotMatch, strings.Join(errHostIP, ","))
 	}
 
-	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
+	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(conf.ApplicationID)
 	moduleID, err := lgc.GetResourcePoolModuleID(kit, mConds.MapStr())
 	if err != nil {
 		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,params:%+v,rid:%s", err, conf, mConds.MapStr(), kit.Rid)
