@@ -25,10 +25,7 @@ import (
 func NewLoopWatch(streamW *event.Event, isMaster discovery.ServiceManageInterface) (*LoopsWatch, error) {
 	loops := &LoopsWatch{
 		streamWatch: streamW,
-		observer: &observer{
-			isMaster:       isMaster,
-			previousStatus: false,
-		},
+		isMaster:    isMaster,
 	}
 
 	return loops, nil
@@ -36,7 +33,7 @@ func NewLoopWatch(streamW *event.Event, isMaster discovery.ServiceManageInterfac
 
 type LoopsWatch struct {
 	streamWatch *event.Event
-	observer    *observer
+	isMaster    discovery.ServiceManageInterface
 }
 
 // WithOne allows users to watch events one by one.
@@ -209,9 +206,14 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 
 	ticker := time.NewTicker(50 * time.Millisecond)
 
+	observer := &observer{
+		isMaster:       lw.isMaster,
+		previousStatus: lw.isMaster.IsMaster(),
+	}
+
 	for {
 
-		reWatch, loop := lw.observer.canLoop()
+		reWatch, loop := observer.canLoop()
 		if reWatch {
 			// stop the tick to release resource.
 			ticker.Stop()
@@ -323,6 +325,11 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 	retryObserver *retryHandler,
 	opts *types.LoopOneOptions) {
 
+	observer := &observer{
+		isMaster:       lw.isMaster,
+		previousStatus: lw.isMaster.IsMaster(),
+	}
+
 	for one := range watcher.EventChan {
 		select {
 		case <-ctxWithCancel.Done():
@@ -332,7 +339,7 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 		default:
 		}
 
-		reWatch, loop := lw.observer.canLoop()
+		reWatch, loop := observer.canLoop()
 		if reWatch {
 			blog.Warnf("%s job, master status has changed, try to re-watch %s again", opts.Name, opts.WatchOpt.Collection)
 			// trigger re-watch action now.
