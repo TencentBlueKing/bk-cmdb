@@ -35,6 +35,8 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 	go func() {
 		pipeline, streamOptions := generateOptions(&opts.Options)
 
+		blog.InfoJSON("start watch with pipeline: %s, options: %s, stream options: %s", pipeline, opts, streamOptions)
+
 		var stream *mongo.ChangeStream
 		var err error
 
@@ -71,6 +73,7 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 				}
 			}
 
+			blog.InfoJSON("start watch with pipeline: %s, options: %s, stream options: %s", pipeline, opts, streamOptions)
 			if opts.Collection != "" {
 				stream, err = e.client.
 					Database(e.database).
@@ -133,6 +136,8 @@ func (e *Event) loopWatch(ctx context.Context,
 				// so that we can continue the event from where it just broken.
 				streamOptions.SetStartAfter(currentToken)
 			}
+
+			blog.InfoJSON("retry watch with pipeline: %s, options: %s, stream options: %s", pipeline, opts, streamOptions)
 
 			var err error
 			if opts.Collection != "" {

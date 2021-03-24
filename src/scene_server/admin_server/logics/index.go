@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/index"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 )
@@ -42,6 +43,7 @@ type dbTable struct {
 }
 
 func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB) {
+	dbReady := false
 	for {
 		rid := util.GenerateRID()
 		dt := &dbTable{db: db, rid: rid}
@@ -53,6 +55,20 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB) {
 			continue
 
 		}
+		if !dbReady {
+			var err error
+			dbReady, err = upgrader.DBReady(ctx, db)
+			if err != nil {
+				blog.Errorf("Check whether the db initialization is complete error. err: %s rid: %s", err.Error(), rid)
+			}
+			if !dbReady {
+				blog.Errorf("db not initialization is complete, rid: %s", rid)
+			}
+
+			time.Sleep(20 * time.Second)
+			continue
+		}
+
 		blog.Infof("start object sharding table rid: %s", rid)
 		// 先处理模型实例和关联关系表
 		if err := dt.syncModelShardingTable(ctx); err != nil {
@@ -117,6 +133,7 @@ func (dt *dbTable) findObjAttrs(ctx context.Context, objID string) ([]metadata.A
 
 func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 	logicIndexes []types.Index, deprecatedTableIndexNames []string) (err error) {
+
 	dbIndexList, err := dt.db.Table(tableName).Indexes(ctx)
 	if err != nil {
 		blog.Errorf("find db table(%s) index list error. err: %s, rid: %s", tableName, err.Error(), dt.rid)
@@ -129,14 +146,28 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 	for _, index := range dbIndexList {
 
 		dbIdxNameMap[index.Name] = index
-		if strings.HasPrefix(index.Name, common.CCLogicIndexNamePrefix) {
+		if strings.HasPrefix(index.Name, common.CCLogicIndexNamePrefix) ||
+			strings.HasPrefix(index.Name, common.CCLogicUniqueIdxNamePrefix) {
 			waitDelIdxNameMap[index.Name] = struct{}{}
 		}
 
 	}
-	// TODO: 所有不规范索引的索引名字, 也加入进来
+	//  加入所有不规范索引的索引名字
 	for _, indexName := range deprecatedTableIndexNames {
 		waitDelIdxNameMap[indexName] = struct{}{}
+	}
+
+	for _, logicIndex := range logicIndexes {
+		delete(waitDelIdxNameMap, logicIndex.Name)
+	}
+
+	for indexName := range waitDelIdxNameMap {
+		if err := dt.db.Table(tableName).DropIndex(ctx, indexName); err != nil &&
+			!ErrDropIndexNameNotFound(err) {
+			blog.Errorf("remove redundancy table(%s) index(%s) error. err: %s, rid: %s",
+				tableName, indexName, err.Error(), dt.rid)
+			return err
+		}
 	}
 
 	for _, logicIndex := range logicIndexes {
@@ -145,79 +176,13 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 		// 是否存在同名
 		dbIndex, indexNameExist := dbIdxNameMap[logicIndex.Name]
 		if indexNameExist {
-			delete(waitDelIdxNameMap, logicIndex.Name)
 			if err := dt.tryUpdateTableIndex(ctx, tableName, dbIndex, logicIndex); err != nil {
 				// 不影响后需执行，
 				blog.Error("try update table index err: %s, rid: %s", err.Error(), dt.rid)
 				continue
 			}
-		}
-
-	}
-
-	for indexName := range waitDelIdxNameMap {
-		if err := dt.db.Table(tableName).DropIndex(ctx, indexName); err != nil &&
-			!ErrDropIndexNameNotFound(err) {
-			blog.Errorf("remove redundancy table(%s) index(%s) error. err: %s, rid: %s",
-				tableName, indexName, err.Error(), dt.rid)
-			return err
-		}
-	}
-
-	return nil
-
-}
-
-func (dt *dbTable) syncObjTableIndexes(ctx context.Context, tableName string,
-	logicIndexes []types.Index, deprecatedTableIndexNames []string, hasUnique bool) (err error) {
-	dbIndexList, err := dt.db.Table(tableName).Indexes(ctx)
-	if err != nil {
-		blog.Errorf("find db table(%s) index list error. err: %s, rid: %s", tableName, err.Error(), dt.rid)
-		return err
-	}
-
-	dbIdxNameMap := make(map[string]types.Index, len(dbIndexList))
-	// 等待删除处理索引名字,所有规范后索引名字
-	waitDelIdxNameMap := make(map[string]struct{}, 0)
-	for _, index := range dbIndexList {
-
-		dbIdxNameMap[index.Name] = index
-		if strings.HasPrefix(index.Name, common.CCLogicIndexNamePrefix) {
-			waitDelIdxNameMap[index.Name] = struct{}{}
-		}
-		if hasUnique && strings.HasPrefix(index.Name, common.CCLogicUniqueIdxNamePrefix) {
-			waitDelIdxNameMap[index.Name] = struct{}{}
-		}
-
-	}
-	for _, indexName := range deprecatedTableIndexNames {
-		waitDelIdxNameMap[indexName] = struct{}{}
-	}
-
-	for _, logicIndex := range logicIndexes {
-		// 是否存在相同key的索引
-		indexNameExist := false
-		// 是否存在同名
-		dbIndex, indexNameExist := dbIdxNameMap[logicIndex.Name]
-		if indexNameExist {
-			delete(waitDelIdxNameMap, logicIndex.Name)
-			if err := dt.tryUpdateTableIndex(ctx, tableName, dbIndex, logicIndex); err != nil {
-				// 不影响后需执行，
-				blog.Error("try update table index error, index: %s, err: %s, rid: %s", logicIndex, err.Error(), dt.rid)
-				continue
-			}
 		} else {
 			dt.createIndexes(ctx, tableName, []types.Index{logicIndex})
-		}
-
-	}
-
-	for indexName := range waitDelIdxNameMap {
-		if err := dt.db.Table(tableName).DropIndex(ctx, indexName); err != nil &&
-			!ErrDropIndexNameNotFound(err) {
-			blog.Errorf("remove redundancy table(%s) index(%s) error. err: %s, rid: %s",
-				tableName, indexName, err.Error(), dt.rid)
-			return err
 		}
 	}
 
@@ -248,6 +213,7 @@ func (dt *dbTable) tryUpdateTableIndex(ctx context.Context, tableName string,
 }
 
 func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
+
 	allDBTables, err := dt.db.ListTables(ctx)
 	if err != nil {
 		blog.Errorf("show tables error. err: %s, rid: %s", err.Error(), dt.rid)
@@ -270,20 +236,18 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 
 	for _, obj := range objs {
 		blog.Infof("start object(%s) sharding table rid: %s", obj.ObjectID, dt.rid)
+
 		instTable := common.GetObjectInstTableName(obj.ObjectID)
 		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID)
 
-		hasUniqueIndex := true
 		uniques, err := dt.findObjUniques(ctx, obj.ObjectID)
 		if err != nil {
 			blog.Errorf("object(%s) logic unique to db index error. err: %s, rid: %s",
 				obj.ObjectID, err.Error(), dt.rid)
+			// TODO: 报错
 			// 服务降级，只是不处理唯一索引
-			hasUniqueIndex = false
 		}
 
-		// 是否需要执行db表中索引和定义的索引同步操作
-		canObjIndex := true
 		objIndexes := append(index.InstanceIndexes(), uniques...)
 		// 内置模型不需要简表
 		if !obj.IsPre {
@@ -295,14 +259,11 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 					// NOTICE: 索引有专门的任务处理
 				}
 				dt.createIndexes(ctx, instTable, objIndexes)
-				canObjIndex = false
-			}
-		}
-
-		if canObjIndex {
-			if err := dt.syncObjTableIndexes(ctx, instTable, objIndexes, nil, hasUniqueIndex); err != nil {
-				blog.Errorf("sync table(%s) definition index to table error. err: %s, rid: %s",
-					instTable, err.Error(), dt.rid)
+			} else {
+				if err := dt.syncIndexesToDB(ctx, instTable, objIndexes, nil); err != nil {
+					blog.Errorf("sync table(%s) definition index to table error. err: %s, rid: %s",
+						instTable, err.Error(), dt.rid)
+				}
 			}
 		}
 
@@ -317,9 +278,8 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 		} else {
 			if err := dt.syncIndexesToDB(ctx, instAsstTable, index.InstanceAssociationIndexes(), nil); err != nil {
 				blog.Errorf("sync table(%s) definition index to table error. err: %s, rid: %s",
-					instAsstTable, err.Error(), dt.rid)
+					instTable, err.Error(), dt.rid)
 			}
-
 		}
 
 		delete(modelDBTableNameMap, instTable)
@@ -382,8 +342,9 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 func (dt *dbTable) createIndexes(ctx context.Context, tableName string, indexes []types.Index) {
 
 	for _, index := range indexes {
-		if err := dt.db.Table(tableName).CreateIndex(ctx, index); err != nil {
+		if err := dt.db.Table(tableName).CreateIndex(ctx, index); err != nil && !dt.db.IsDuplicatedError(err) {
 			// 不影响后需执行，
+			// TODO: 报警
 			blog.WarnJSON("create table(%s) error. index: %s, err: %s, rid: %s", tableName, index, err, dt.rid)
 		}
 	}
@@ -425,7 +386,7 @@ func (dt *dbTable) findObjUniques(ctx context.Context, objID string) ([]types.In
 }
 
 func ErrDropIndexNameNotFound(err error) bool {
-	if strings.HasPrefix(err.Error(), "index not found with name") {
+	if strings.HasPrefix(err.Error(), "(IndexNotFound) index not found with name") {
 		return true
 	}
 	return false

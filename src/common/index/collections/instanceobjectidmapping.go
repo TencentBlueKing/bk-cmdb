@@ -19,38 +19,18 @@ import (
 
 func init() {
 
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameObjClassification, deprecatedObjClassificationIndexes)
-	registerIndexes(common.BKTableNameObjClassification, commObjClassificationIndexes)
+	registerIndexes("cc_InstanceObjectIDMapping", commInstanceObjectIDMappingIndexes)
 
 }
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
-var commObjClassificationIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedObjClassificationIndexes = []types.Index{
+var commInstanceObjectIDMappingIndexes = []types.Index{
 	{
-		Name: "bk_classification_id_1",
+		Name: common.CCLogicIndexNamePrefix + "InstID",
 		Keys: map[string]int32{
-			"bk_classification_id": 1,
+			common.BKInstIDField: 1,
 		},
-		Background: true,
-	},
-	{
-		Name: "bk_classification_name_1",
-		Keys: map[string]int32{
-			"bk_classification_name": 1,
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_unique_id",
-		Keys: map[string]int32{
-			"id": 1,
-		},
-		Unique:     true,
 		Background: true,
 	},
 }

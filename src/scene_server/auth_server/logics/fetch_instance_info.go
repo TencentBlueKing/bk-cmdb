@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/util"
 	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/types"
+	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 var resourceParentMap = iam.GetResourceParentMap()
@@ -256,6 +257,103 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 	}
 
 	return hosts, nil
+}
+
+// FetchObjInstInfo fetch object instances' specified attributes info using instance ids
+func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+	[]map[string]interface{}, error) {
+
+	if resourceType != iam.SysInstance {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	}
+
+	if len(filter.Attrs) == 0 {
+		return make([]map[string]interface{}, 0), nil
+	}
+
+	// if attribute filter is set, add id attribute and convert display_name to the real name field
+	var attrs []string
+	needPath := false
+	if len(filter.Attrs) > 0 {
+		attrs = append(filter.Attrs, common.BKInstIDField)
+		for index, attr := range attrs {
+			if attr == types.NameField {
+				attrs[index] = common.BKInstNameField
+				continue
+			}
+			if attr == sdktypes.IamPathKey {
+				needPath = true
+			}
+		}
+		if needPath {
+			for _, parent := range resourceParentMap[resourceType] {
+				attrs = append(attrs, GetResourceIDField(parent))
+			}
+		}
+	}
+
+	ids := make([]int64, len(filter.IDs))
+	for idx, idStr := range filter.IDs {
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			blog.Errorf("id %s parse int failed, error: %s, rid: %s, skip it", idStr, err.Error(), kit.Rid)
+			return nil, err
+		}
+		ids[idx] = id
+	}
+
+	instIDObjIDMap, err := instancemapping.GetInstanceMapping(ids)
+	if err != nil {
+		blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", ids, err, kit.Rid)
+		return nil, err
+	}
+
+	objIDInstIDsMap := make(map[string][]int64)
+	for instID, objID := range instIDObjIDMap {
+		objIDInstIDsMap[objID] = append(objIDInstIDsMap[objID], instID)
+	}
+
+	instances := make([]map[string]interface{}, 0)
+	for objID, instIDs := range objIDInstIDsMap {
+		query := &metadata.QueryCondition{
+			Condition: map[string]interface{}{
+				common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs},
+			},
+			Fields: attrs,
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+
+		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
+		if err != nil {
+			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
+			return nil, err
+		}
+
+		if err := result.CCError(); err != nil {
+			blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, instIDs, err, kit.Rid)
+			return nil, err
+		}
+
+		// covert id and display_name field
+		for _, instance := range result.Data.Info {
+			instance[types.IDField] = util.GetStrByInterface(instance[common.BKInstIDField])
+			if instance[common.BKInstNameField] != nil {
+				instance[types.NameField] = util.GetStrByInterface(instance[common.BKInstNameField])
+			}
+			if needPath {
+				instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
+				if err != nil {
+					blog.ErrorJSON("get iam path failed, err: %s, instance: %s, rid: %s", err, instance, kit.Rid)
+					return nil, err
+				}
+			}
+			instances = append(instances, instance)
+		}
+	}
+
+	return instances, nil
 }
 
 func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.FetchInstanceInfoFilter, error) {

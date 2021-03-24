@@ -81,12 +81,10 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 
 	case iam.SysInstance:
 		return types.ResourcePullMethod{
-			ListAttr:      s.lgc.ListAttr,
-			ListAttrValue: s.lgc.ListAttrValue,
-			ListInstance:  s.lgc.ListModelInstance,
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
-			},
+			ListAttr:          s.lgc.ListAttr,
+			ListAttrValue:     s.lgc.ListAttrValue,
+			ListInstance:      s.lgc.ListModelInstance,
+			FetchInstanceInfo: s.lgc.FetchObjInstInfo,
 			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
 				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
 			},

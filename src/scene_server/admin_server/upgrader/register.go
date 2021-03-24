@@ -240,6 +240,32 @@ func Upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *Config) 
 	return currentVersion, finishedMigrations, nil
 }
 
+// DBReady 已经执行过init_db. 数据库初始化成功
+func DBReady(ctx context.Context, db dal.RDB) (bool, error) {
+
+	sort.Slice(upgraderPool, func(i, j int) bool {
+		return VersionCmp(upgraderPool[i].version, upgraderPool[j].version) < 0
+	})
+
+	cmdbVersion, err := getVersion(ctx, db)
+	if err != nil {
+		return false, fmt.Errorf("getVersion failed, err: %s", err.Error())
+	}
+
+	currentVersion := ""
+	for _, v := range upgraderPool {
+		if VersionCmp(v.version, currentVersion) <= 0 {
+			blog.Infof(`currentVision is "%s" skip upgrade "%s"`, currentVersion, v.version)
+			continue
+		}
+		currentVersion = v.version
+	}
+	if currentVersion == cmdbVersion.CurrentVersion {
+		return true, nil
+	}
+	return false, nil
+}
+
 // UpgradeSpecifyVersion 强制执行version版本的migrate, 不会修改数据库cc_System表中migrate 版本
 func UpgradeSpecifyVersion(ctx context.Context, db dal.RDB, cache redis.Client, conf *Config, version string) (err error) {
 	sort.Slice(upgraderPool, func(i, j int) bool {

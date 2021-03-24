@@ -23,17 +23,21 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
-func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (id uint64, err error) {
+func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
 	if objID == common.BKInnerObjIDHost {
 		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
 	}
-	tableName := common.GetInstTableName(objID)
-	id, err = mongodb.Client().NextSequence(kit.Ctx, tableName)
-	if nil != err {
-		return id, err
+
+	instTableName := common.GetInstTableName(objID)
+	id, err := mongodb.Client().NextSequence(kit.Ctx, instTableName)
+	if err != nil {
+		return 0, err
 	}
+
+	// build new object instance data.
 	instIDFieldName := common.GetInstIDField(objID)
 	inputParam[instIDFieldName] = id
 	if !util.IsInnerObject(objID) {
@@ -43,8 +47,26 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	inputParam.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
-	err = mongodb.Client().Table(tableName).Insert(kit.Ctx, inputParam)
-	return id, err
+
+	// build and save new object mapping data for inner object instance.
+	if metadata.IsCommon(objID) {
+		mapping := make(mapstr.MapStr, 0)
+		mapping[instIDFieldName] = id
+		mapping[common.BKObjIDField] = objID
+
+		// save instance object type mapping.
+		if err := instancemapping.Create(kit.Ctx, mapping); err != nil {
+			return 0, err
+		}
+	}
+
+	// save object instance.
+	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, inputParam)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {

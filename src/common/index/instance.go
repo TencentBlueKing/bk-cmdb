@@ -53,5 +53,12 @@ var (
 			},
 			Background: false,
 		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "bkParentID",
+			Keys: map[string]int32{
+				"bk_parent_id": 1,
+			},
+			Background: false,
+		},
 	}
 )

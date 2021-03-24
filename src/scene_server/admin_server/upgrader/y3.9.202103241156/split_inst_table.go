@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202103041536
+package y3_9_202103241156
 
 import (
 	"context"
@@ -25,6 +25,15 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
+var (
+	oldInstTable                 = "cc_ObjectBase"
+	oldInstAsstTable             = "cc_InstAsst"
+	instTablePrefix              = "cc_ObjectBase_pub_"
+	instAsstTablePrefix          = "cc_InstAsst_pub_"
+	instanceObjectIDMappingTable = "cc_InstanceObjectIDMapping"
+	maxWorkNumber                = 60
+)
+
 func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	objs := make([]object, 0)
 	if err = db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
@@ -36,12 +45,12 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 	instIdxs := instanceDefaultIndexes
 	instAsstIdxs := associationDefaultIndexes
 
-	instTablePrefix := common.BKTableNameBaseInst + "_pub_"
-	instAsstTablePrefix := common.BKTableNameInstAsst + "_pub_"
+	var objectIDs []string
 	for _, obj := range objs {
 		objInstTable := instTablePrefix + obj.ObjectID
 		objInstAsstTable := instAsstTablePrefix + obj.ObjectID
 
+		objectIDs = append(objectIDs, obj.ObjectID)
 		if err = createTableFunc(ctx, objInstAsstTable, db); err != nil {
 			blog.Errorf("create obj(%s) inst asst table error. err: %s", obj.ObjectID, err.Error())
 			return
@@ -53,6 +62,14 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 		}
 
 		if obj.IsPre {
+			objInstTable := innerObjIDTableNameRelation[obj.ObjectID]
+			if objInstTable != "" {
+				if err = createTableLogicUniqueIndex(ctx, obj.ObjectID, objInstTable, db); err != nil {
+					blog.Errorf("create obj(%s) inst unique table index error. err: %s", obj.ObjectID, err.Error())
+					return
+				}
+			}
+
 			// 内置模型只创建关联关系表
 			continue
 		}
@@ -72,57 +89,182 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 			return
 		}
 
-		if err = splitInstTable(ctx, obj.ObjectID, objInstTable, db); err != nil {
-			return
-		}
+	}
 
+	blog.Info("start copy instance to sharding table")
+	if err = splitInstTable(ctx, db); err != nil {
+		return err
+	}
+
+	blog.Info("start copy instance association to sharding table")
+	if err = splitInstAsstTable(ctx, db); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func splitInstTable(ctx context.Context, objID string, tableName string, db dal.RDB) error {
-
-	filter := map[string]interface{}{
-		common.BKObjIDField: objID,
+func initWorkerChn(workerNum int) chan struct{} {
+	workerNumCtlChn := make(chan struct{}, workerNum)
+	for idx := 0; idx < workerNum; idx++ {
+		workerNumCtlChn <- struct{}{}
 	}
-	otps := types.FindOpts{
+	return workerNumCtlChn
+}
+
+func splitInstAsstTable(ctx context.Context, db dal.RDB) error {
+	filter := map[string]interface{}{}
+	opts := types.FindOpts{
 		WithObjectID: true,
 	}
 	const pageSize = uint64(1000)
 	start := uint64(0)
-	query := db.Table(common.BKTableNameBaseInst).Find(filter, otps).Limit(pageSize)
+	query := db.Table(oldInstAsstTable).Find(filter, opts).Limit(pageSize)
+	workerChn := initWorkerChn(maxWorkNumber)
+	errChn := make(chan error, maxWorkNumber)
 	for {
-		insts := make([]map[string]interface{}, pageSize)
-		if err := query.Start(start).All(ctx, &insts); err != nil {
-			return fmt.Errorf("find obj(%s) inst list error. err: %s", objID, err.Error())
+		asstList := make([]map[string]interface{}, pageSize)
+		if err := query.Start(start).All(ctx, &asstList); err != nil {
+			return fmt.Errorf("find inst association list error. err: %s", err.Error())
 		}
-		if len(insts) == 0 {
+
+		if len(asstList) == 0 {
+			// 没有数据了，
 			break
 		}
-		start += pageSize
-		// 为了可以重复执行，这里没有采用批量插入数据的方法
-		for _, inst := range insts {
-			filter := map[string]interface{}{
-				"_id": inst["_id"],
+
+		for _, asst := range asstList {
+			if len(errChn) > 0 {
+				return <-errChn
 			}
-			cnt, err := db.Table(tableName).Find(filter).Count(ctx)
-			if err != nil {
-				return fmt.Errorf("check obj(%s) inst exists error. err: %s", objID, err.Error())
-			}
-			if cnt > 0 {
-				continue
-			}
-			// TODO: test 1kw rows
-			if err := db.Table(tableName).Insert(ctx, inst); err != nil {
-				return fmt.Errorf("insert obj(%s) inst  error. err: %s", objID, err.Error())
-			}
+			<-workerChn
+			go func(copyAsst map[string]interface{}) {
+				defer func() {
+					workerChn <- struct{}{}
+				}()
+				if err := copyInstanceAssociationToShardingTable(ctx, copyAsst, db); err != nil {
+					errChn <- err
+				}
+			}(asst)
 		}
-		//time.Sleep(time.Millisecond * 10)
+		start += pageSize
+
+	}
+
+	// 等待所有任务的结束
+	for idx := 0; idx < maxWorkNumber; idx++ {
+		<-workerChn
+	}
+
+	// 避免最后一个任务的时候出现错误
+	if len(errChn) > 0 {
+		return <-errChn
 	}
 
 	return nil
 
+}
+
+func copyInstanceAssociationToShardingTable(ctx context.Context, association map[string]interface{}, db dal.RDB) error {
+	objID := fmt.Sprintf("%v", association[common.BKObjIDField])
+	asstObjID := fmt.Sprintf("%v", association[common.BKAsstObjIDField])
+
+	objTableName := instAsstTablePrefix + objID
+	asstObjTableName := instAsstTablePrefix + asstObjID
+
+	filter := map[string]interface{}{
+		"_id": association["_id"],
+	}
+
+	if err := db.Table(objTableName).Upsert(ctx, filter, association); err != nil {
+		blog.ErrorJSON("copy instance association error. association: %s, err: %s", association, err.Error())
+		return fmt.Errorf("copy instance association error . err: %s", err.Error())
+	}
+	if err := db.Table(asstObjTableName).Upsert(ctx, filter, association); err != nil {
+		blog.ErrorJSON("copy instance association error. association: %s, err: %s", association, err.Error())
+		return fmt.Errorf("copy instance association error . err: %s", err.Error())
+	}
+
+	return nil
+
+}
+
+func splitInstTable(ctx context.Context, db dal.RDB) error {
+	filter := map[string]interface{}{}
+	opts := types.FindOpts{
+		WithObjectID: true,
+	}
+	const pageSize = uint64(1000)
+	start := uint64(0)
+	query := db.Table(oldInstTable).Find(filter, opts).Limit(pageSize)
+
+	workerChn := initWorkerChn(maxWorkNumber)
+	errChn := make(chan error, maxWorkNumber)
+	for {
+		insts := make([]map[string]interface{}, pageSize)
+		if err := query.Start(start).All(ctx, &insts); err != nil {
+			return fmt.Errorf("find inst list error. err: %s", err.Error())
+		}
+		if len(insts) == 0 {
+			// 没有数据了
+			break
+		}
+
+		for _, inst := range insts {
+			if len(errChn) > 0 {
+				return <-errChn
+			}
+			<-workerChn
+			go func(copyInst map[string]interface{}) {
+				defer func() {
+					workerChn <- struct{}{}
+				}()
+				if err := copyInstanceToShardingTable(ctx, inst, db); err != nil {
+					errChn <- err
+				}
+			}(inst)
+		}
+		start += pageSize
+
+	}
+
+	// 等待所有任务的结束
+	for idx := 0; idx < maxWorkNumber; idx++ {
+		<-workerChn
+	}
+
+	// 避免最后一个任务的时候出现错误
+	if len(errChn) > 0 {
+		return <-errChn
+	}
+	return nil
+}
+
+func copyInstanceToShardingTable(ctx context.Context, inst map[string]interface{}, db dal.RDB) error {
+
+	objID := fmt.Sprintf("%v", inst[common.BKObjIDField])
+	tableName := instTablePrefix + objID
+
+	mappingFilter := map[string]interface{}{
+		common.BKInstIDField: inst[common.BKInstIDField],
+	}
+	doc := map[string]interface{}{
+		common.BKObjIDField: objID,
+	}
+
+	if err := db.Table(instanceObjectIDMappingTable).Upsert(ctx, mappingFilter, doc); err != nil {
+		return fmt.Errorf("upsert instance id and object id mapping error. row object id: %v, err: %s",
+			inst["_id"], err.Error())
+	}
+
+	filter := map[string]interface{}{
+		"_id": inst["_id"],
+	}
+	if err := db.Table(tableName).Upsert(ctx, filter, inst); err != nil {
+		return fmt.Errorf("insert obj(%s) inst  error. err: %s", objID, err.Error())
+	}
+
+	return nil
 }
 
 func createTableFunc(ctx context.Context, tableName string, db dal.DB) error {
@@ -142,6 +284,16 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 		return err
 	}
 
+	isIDUniqueFunc := func(idx types.Index) bool {
+		if len(idx.Keys) != 1 {
+			return false
+		}
+		if _, exist := idx.Keys["id"]; exist {
+			return true
+		}
+		return false
+	}
+
 	for _, idx := range idxs {
 		_, idExist := idx.Keys["_id"]
 		if len(idx.Keys) == 1 && idExist {
@@ -152,12 +304,21 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 		if ok {
 			if commIdx.IndexEqual(idx, alreadyIdx) {
 				continue
+			} else {
+				if err := db.Table(tableName).DropIndex(ctx, idx.Name); err != nil {
+					return fmt.Errorf("delete index(%s) error. err: %s", idx.Name, err.Error())
+				}
 			}
 		}
-		alreadyIdx, ok = commIdx.FindIndexByIndexFields(idx.Keys, dbIndexList)
+		alreadyIdx, ok = FindIndexByIndexFields(idx.Keys, dbIndexList)
 		if ok {
-			if commIdx.IndexEqual(idx, alreadyIdx) {
+
+			if isIDUniqueFunc(idx) {
 				continue
+			} else {
+				if err := db.Table(tableName).DropIndex(ctx, alreadyIdx.Name); err != nil {
+					return fmt.Errorf("delete index(%s) error. err: %s", alreadyIdx.Name, err.Error())
+				}
 			}
 		}
 		if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil {
@@ -191,7 +352,7 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 		return fmt.Errorf("get obj(%s) logic unique index error. err: %s", objID, err.Error())
 	}
 
-	alreadyIdxNameMap, _, err := getTableAlreadyIndexes(ctx, tableName, db)
+	alreadyIdxNameMap, dbTableIndexes, err := getTableAlreadyIndexes(ctx, tableName, db)
 	if err != nil {
 		return err
 	}
@@ -207,6 +368,17 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 		if err != nil {
 			return fmt.Errorf("obj(%s). %s", objID, err.Error())
 		}
+
+		dbTableIndex, exist := FindIndexByIndexFields(newDBIndex.Keys, dbTableIndexes)
+		if exist {
+			if dbTableIndex.Name == newDBIndex.Name {
+				continue
+			}
+			if err := db.Table(tableName).DropIndex(ctx, dbTableIndex.Name); err != nil {
+				return fmt.Errorf("delete unique index(%s) error. err: %s", dbTableIndex.Name, err.Error())
+			}
+		}
+
 		// 升级版本程序不考虑，数据不一致的情况
 		if _, exists := alreadyIdxNameMap[newDBIndex.Name]; !exists {
 			if err := db.Table(tableName).CreateIndex(ctx, newDBIndex); err != nil {
@@ -254,10 +426,20 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index
 	// attrIDMap数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
 	for _, key := range idx.Keys {
 		attr := attrIDMap[int64(key.ID)]
+		if idx.ObjID == common.BKInnerObjIDHost && attr.PropertyID == common.BKCloudIDField {
+			// NOTEICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
+			attr.PropertyType = common.FieldTypeInt
+		}
+		if idx.ObjID == common.BKInnerObjIDHost &&
+			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostInnerIPField) {
+			// NOTEICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
+			attr.PropertyType = common.FieldTypeList
+		}
 		dbType := convFieldTypeToDBType(attr.PropertyType)
 		if dbType == "" {
-			blog.ErrorJSON("build unique index property id: %s type not support.", key.Kind)
-			return dbIdx, fmt.Errorf("build unique index property(%s) type not support.", key.Kind)
+			blog.ErrorJSON("build unique index property id: %s type: %s not support.", key.Kind, attr.PropertyType)
+			return dbIdx, fmt.Errorf("build unique index property(%s) type(%s) not support.",
+				key.Kind, attr.PropertyType)
 		}
 		dbIdx.Keys[attr.PropertyID] = 1
 		dbIdx.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
@@ -296,15 +478,19 @@ type uniqueKey struct {
 
 func convFieldTypeToDBType(typ string) string {
 	switch typ {
-	case FieldTypeSingleChar, FieldTypeLongChar:
+	case FieldTypeSingleChar, FieldTypeLongChar, FieldTypeEnum, FieldTypeTimeZone, FieldTypeOrganization:
 		return "string"
-	case FieldTypeInt, FieldTypeFloat, FieldTypeEnum, FieldTypeUser, FieldTypeTimeZone,
-		FieldTypeList, FieldTypeOrganization:
+	case FieldTypeInt, FieldTypeFloat:
 		return "number"
 	case FieldTypeDate, FieldTypeTime:
 		return "date"
 	case FieldTypeBool:
 		return "bool"
+	case "foreignkey":
+		// 用于运区域
+		return "number"
+	case FieldTypeList:
+		return "array"
 
 	}
 
@@ -442,4 +628,25 @@ type Attribute struct {
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator"`
+}
+
+func FindIndexByIndexFields(keys map[string]int32, indexList []types.Index) (dbIndex types.Index, exists bool) {
+	for _, idx := range indexList {
+		if len(idx.Keys) != len(keys) {
+			continue
+		}
+		exists = true
+		for key := range idx.Keys {
+			if _, keyExists := keys[key]; !keyExists {
+				exists = false
+				break
+			}
+		}
+		if exists {
+			return idx, exists
+		}
+
+	}
+
+	return types.Index{}, false
 }
