@@ -78,6 +78,16 @@ type StringIDCount struct {
 	Count int64  `json:"count" bson:"count"`
 }
 
+// ObjectIDCount object count statistics information used for
+// group aggregate operation.
+type ObjectIDCount struct {
+	// ObjID object id.
+	ObjID string `bson:"_id" json:"bk_obj_id"`
+
+	// Count targets count.
+	Count int64 `bson:"count" json:"instance_count"`
+}
+
 type UpdateInstCount struct {
 	ID    UpdateID `json:"id" bson:"_id"`
 	Count int64    `json:"count" bson:"count"`

@@ -193,6 +193,10 @@ func (s *coreService) SearchModel(ctx *rest.Contexts) {
 
 // GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
 func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
+	// statistics data include all object model statistics.
+	statistics := []metadata.ObjectIDCount{}
+
+	// stat set count.
 	filter := map[string]interface{}{}
 	setCount, err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
@@ -200,21 +204,27 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	statistics = append(statistics, metadata.ObjectIDCount{ObjID: common.BKInnerObjIDSet, Count: int64(setCount)})
 
+	// stat module count.
 	moduleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count module model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+	statistics = append(statistics, metadata.ObjectIDCount{ObjID: common.BKInnerObjIDModule, Count: int64(moduleCount)})
 
+	// stat host count.
 	hostCount, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("GetModelStatistics failed, count host model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+	statistics = append(statistics, metadata.ObjectIDCount{ObjID: common.BKInnerObjIDHost, Count: int64(hostCount)})
 
+	// stat biz count.
 	appFilter := map[string]interface{}{
 		common.BKDefaultField: map[string]interface{}{
 			common.BKDBNE: common.DefaultAppFlag,
@@ -229,8 +239,13 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	// db.getCollection('cc_ObjectBase').aggregate([{$group: {_id: "$bk_obj_id", count: {$sum : 1}}}])
-	pipeline := []map[string]interface{}{
+	statistics = append(statistics, metadata.ObjectIDCount{ObjID: common.BKInnerObjIDApp, Count: int64(bizCount)})
+
+	// stat common object counts.
+	allObjects := []metadata.ObjectIDCount{}
+	commonObjects := []metadata.ObjectIDCount{}
+
+	objectFilter := []map[string]interface{}{
 		{
 			common.BKDBGroup: map[string]interface{}{
 				"_id": "$bk_obj_id",
@@ -240,30 +255,37 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 			},
 		},
 	}
-	type AggregationItem struct {
-		ObjID string `bson:"_id" json:"bk_obj_id"`
-		Count int64  `bson:"count" json:"instance_count"`
-	}
-	aggregationItems := make([]AggregationItem, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseInst).AggregateAll(ctx.Kit.Ctx, pipeline, &aggregationItems); err != nil {
+	err = mongodb.Client().Table(common.BKTableNameObjDes).AggregateAll(ctx.Kit.Ctx, objectFilter, &allObjects)
+	if err != nil {
+		blog.Errorf("get all object models failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	aggregationItems = append(aggregationItems, AggregationItem{
-		ObjID: common.BKInnerObjIDHost,
-		Count: int64(hostCount),
-	}, AggregationItem{
-		ObjID: common.BKInnerObjIDSet,
-		Count: int64(setCount),
-	}, AggregationItem{
-		ObjID: common.BKInnerObjIDModule,
-		Count: int64(moduleCount),
-	}, AggregationItem{
-		ObjID: common.BKInnerObjIDApp,
-		Count: int64(bizCount),
-	})
 
-	ctx.RespEntity(aggregationItems)
+	// only stat common object models.
+	for _, object := range allObjects {
+		if metadata.IsCommon(object.ObjID) {
+			commonObjects = append(commonObjects, object)
+		}
+	}
+
+	// stat common object counts in sharding tables.
+	for _, object := range commonObjects {
+		// stat object sharding data one by one.
+		data := []metadata.ObjectIDCount{}
+
+		// sharding table name.
+		tableName := common.GetObjectInstTableName(object.ObjID)
+
+		if err := mongodb.Client().Table(tableName).AggregateAll(ctx.Kit.Ctx, objectFilter, &data); err != nil {
+			blog.Errorf("get object %s instances count failed, err: %+v, rid: %s", object.ObjID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		statistics = append(statistics, data...)
+	}
+
+	ctx.RespEntity(statistics)
 }
 
 func (s *coreService) CreateModelAttributeGroup(ctx *rest.Contexts) {
