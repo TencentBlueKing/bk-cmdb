@@ -176,7 +176,38 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 
 	cond[common.BKObjIDField] = objID
 
-	return lgc.listInstance(kit, cond, resourceType, page)
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Fields:    []string{common.BKInstIDField, common.BKInstNameField},
+		Page: metadata.BasePage{
+			Start: int(page.Offset),
+			Limit: int(page.Limit),
+		},
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
+	if err != nil {
+		blog.Errorf("read object %s instances failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
+
+	if err := result.CCError(); err != nil {
+		blog.Errorf("read object %s instances failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
+
+	instances := make([]types.InstanceResource, len(result.Data.Info))
+	for index, instance := range result.Data.Info {
+		instances[index] = types.InstanceResource{
+			ID:          util.GetStrByInterface(instance[common.BKInstIDField]),
+			DisplayName: util.GetStrByInterface(instance[common.BKInstNameField]),
+		}
+	}
+
+	return &types.ListInstanceResult{
+		Count:   int64(result.Data.Count),
+		Results: instances,
+	}, nil
 }
 
 func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID string) (string, error) {
