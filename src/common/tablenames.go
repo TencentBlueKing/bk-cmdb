@@ -166,16 +166,24 @@ const (
 	TableSpecifierPublic TableSpecifier = "pub"
 )
 
+const (
+	// BKObjectInstShardingTablePrefix is prefix of object instance sharding table.
+	BKObjectInstShardingTablePrefix = BKTableNameBaseInst + "_"
+
+	// BKObjectInstAsstShardingTablePrefix is prefix of object instance association sharding table.
+	BKObjectInstAsstShardingTablePrefix = BKTableNameInstAsst + "_"
+)
+
 // GetObjectInstTableName return the object instance table name in sharding mode base on
 // the object ID. Format: cc_ObjectBase_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_pub_switch'.
 func GetObjectInstTableName(objID string) string {
-	return fmt.Sprintf("%s_%s_%s", BKTableNameBaseInst, TableSpecifierPublic, objID)
+	return fmt.Sprintf("%s%s_%s", BKObjectInstShardingTablePrefix, TableSpecifierPublic, objID)
 }
 
 // GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
 // the object ID. Format: cc_InstAsst_{Specifier}_{ObjectID}, such as 'cc_InstAsst_pub_switch'.
 func GetObjectInstAsstTableName(objID string) string {
-	return fmt.Sprintf("%s_%s_%s", BKTableNameInstAsst, TableSpecifierPublic, objID)
+	return fmt.Sprintf("%s%s_%s", BKObjectInstAsstShardingTablePrefix, TableSpecifierPublic, objID)
 }
 
 // IsObjectShardingTable returns if the target table is an object sharding table, include
@@ -190,13 +198,13 @@ func IsObjectShardingTable(tableName string) bool {
 // IsObjectInstShardingTable returns if the target table is an object instance sharding table.
 func IsObjectInstShardingTable(tableName string) bool {
 	// check object instance table, cc_ObjectBase_{Specifier}_{ObjectID}
-	return strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameBaseInst))
+	return strings.HasPrefix(tableName, BKObjectInstShardingTablePrefix)
 }
 
 // IsObjectInstAsstShardingTable returns if the target table is an object instance association sharding table.
 func IsObjectInstAsstShardingTable(tableName string) bool {
 	// check object instance association table, cc_InstAsst_{Specifier}_{ObjectID}
-	return strings.HasPrefix(tableName, fmt.Sprintf("%s_", BKTableNameInstAsst))
+	return strings.HasPrefix(tableName, BKObjectInstAsstShardingTablePrefix)
 }
 
 // GetInstTableName returns inst data table name
