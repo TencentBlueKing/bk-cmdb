@@ -25,7 +25,7 @@ func init() {
 
 }
 
-//  新加和修改后的索引,索引名字一定要用对用的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
+//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
 var commChartConfigIndexes = []types.Index{}
 

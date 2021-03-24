@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202103041536
+package y3_9_202103241156
 
 import (
 	"context"
@@ -21,15 +21,26 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.9.202103041536", upgrade)
+	upgrader.RegistUpgrader("y3.9.202103241156", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("y3.9.202103041536")
+	blog.Info("y3.9.202103241156")
+
+	if err := instanceObjectIDMapping(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202103241156] migrate instance object id mapping table failed, error:%s",
+			err.Error())
+		return err
+	}
 
 	err = splitTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202103041536] migrate inst aplit table failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202103241156] migrate inst split table failed, error  %s", err.Error())
+		return err
+	}
+
+	if err = syncInnerObjectIndex(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.9.202103241156] migrate inner object index failed, error  %s", err.Error())
 		return err
 	}
 

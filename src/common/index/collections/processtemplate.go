@@ -25,7 +25,7 @@ func init() {
 
 }
 
-//  新加和修改后的索引,索引名字一定要用对用的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
+//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
 var commProcessTemplateIndexes = []types.Index{}
 
@@ -49,15 +49,6 @@ var deprecatedProcessTemplateIndexes = []types.Index{
 		Name: "idx_unique_id",
 		Keys: map[string]int32{
 			"id": 1,
-		},
-		Unique:     true,
-		Background: true,
-	},
-	{
-		Name: "bk_idx_service_template_idd_bk_process_name",
-		Keys: map[string]int32{
-			"service_template_id": 1,
-			"bk_process_name":     1,
 		},
 		Unique:     true,
 		Background: true,

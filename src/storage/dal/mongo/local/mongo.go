@@ -744,6 +744,8 @@ func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
+	mtc.collectOperCount(c.collName, indexCreateOper)
+
 	createIndexOpt := &options.IndexOptions{
 		Background:              &index.Background,
 		Unique:                  &index.Unique,
@@ -765,6 +767,7 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.CreateOne(ctx, createIndexInfo)
 	if err != nil {
+		mtc.collectErrorCount(c.collName, indexCreateOper)
 		// ignore the following case
 		// 1.the new index is exactly the same as the existing one
 		// 2.the new index has same keys with the existing one, but its name is different
@@ -779,9 +782,14 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 
 // DropIndex remove index by name
 func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
+	mtc.collectOperCount(c.collName, indexDropOper)
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	_, err := indexView.DropOne(ctx, indexName)
-	return err
+	if err != nil {
+		mtc.collectErrorCount(c.collName, indexDropOper)
+		return err
+	}
+	return nil
 }
 
 // Indexes get all indexes for the collection
@@ -792,14 +800,14 @@ func (c *Collection) Indexes(ctx context.Context) ([]types.Index, error) {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-	var indexs []types.Index
+	var indexes []types.Index
 	for cursor.Next(ctx) {
 		idxResult := types.Index{}
 		cursor.Decode(&idxResult)
-		indexs = append(indexs, idxResult)
+		indexes = append(indexes, idxResult)
 	}
 
-	return indexs, nil
+	return indexes, nil
 }
 
 // AddColumn add a new column for the collection
