@@ -75,6 +75,10 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 		}
 
 		if err != nil {
+			if err == context.Canceled {
+				// if error is context cancelled, then loop watch will exit at the same time
+				return
+			}
 			blog.Fatalf("mongodb watch failed with conf: %+v, err: %v", *opts, err)
 		}
 
