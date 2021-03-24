@@ -15,6 +15,7 @@ package event
 import (
 	"fmt"
 
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 )
@@ -51,3 +52,5 @@ type HostArchive struct {
 	Oid    string              `bson:"oid"`
 	Detail metadata.HostMapStr `bson:"detail"`
 }
+
+const ObjInstTablePrefixRegex = "^" + common.BKObjectInstShardingTablePrefix

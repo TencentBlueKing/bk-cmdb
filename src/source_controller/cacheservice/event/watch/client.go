@@ -26,6 +26,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/driver/mongodb/instancemapping"
 	"configcenter/src/storage/stream/types"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -143,6 +144,12 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 		filter := map[string]interface{}{
 			"oid":  node.Oid,
 			"coll": key.Collection(),
+		}
+
+		if key.Collection() == common.BKTableNameBaseInst {
+			filter["coll"] = map[string]interface{}{
+				common.BKDBLIKE: event.ObjInstTablePrefixRegex,
+			}
 		}
 
 		detailFields := make([]string, len(fields))
@@ -454,6 +461,8 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 	oids := make([]primitive.ObjectID, 0)
 	deletedOids := make([]string, 0)
 	oidIndexMap := make(map[string][]int)
+	coll := key.Collection()
+	instIDs := make([]int64, 0)
 	for _, node := range nodes {
 		if node.EventType == watch.Delete {
 			deletedOids = append(deletedOids, node.Oid)
@@ -466,12 +475,15 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 			oids = append(oids, objectId)
 		}
 
+		if coll == common.BKTableNameBaseInst {
+			instIDs = append(instIDs, node.InstanceID)
+		}
+
 		oidIndexMap[node.Oid] = append(oidIndexMap[node.Oid], errCursorIndexMap[node.Cursor])
 	}
-	coll := key.Collection()
-	oidDetailMap := make(map[int]string)
 
 	// get details in collection by oids, need to get _id to do mapping
+	oidDetailMap := make(map[int]string)
 	if len(oids) > 0 {
 		filter := map[string]interface{}{
 			"_id": map[string]interface{}{common.BKDBIN: oids},
@@ -503,6 +515,40 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 				detailJson, _ := json.Marshal(detailMap)
 				for _, index := range oidIndexMap[oid] {
 					oidDetailMap[index] = string(detailJson)
+				}
+			}
+		} else if coll == common.BKTableNameBaseInst {
+			instIDObjIDMap, err := instancemapping.GetInstanceMapping(instIDs)
+			if err != nil {
+				blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", instIDs, err, kit.Rid)
+				return nil, err
+			}
+
+			objIDInstIDsMap := make(map[string][]int64)
+			for instID, objID := range instIDObjIDMap {
+				objIDInstIDsMap[objID] = append(objIDInstIDsMap[objID], instID)
+			}
+
+			for objID, instIDs := range objIDInstIDsMap {
+				detailArr := make([]mapStrWithOid, 0)
+				filter = map[string]interface{}{
+					common.BKInstIDField: map[string]interface{}{
+						common.BKDBIN: instIDs,
+					},
+				}
+
+				objColl := common.GetInstTableName(objID)
+				if err := c.db.Table(objColl).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
+					blog.Errorf("get details from db failed, err: %s, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
+					return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
+				}
+
+				for _, detailMap := range detailArr {
+					oid := detailMap.Oid.Hex()
+					detailJson, _ := json.Marshal(detailMap.MapStr)
+					for _, index := range oidIndexMap[oid] {
+						oidDetailMap[index] = string(detailJson)
+					}
 				}
 			}
 		} else {
@@ -550,6 +596,12 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 	deleteFilter := map[string]interface{}{
 		"oid":  map[string]interface{}{common.BKDBIN: deletedOids},
 		"coll": coll,
+	}
+
+	if coll == common.BKTableNameBaseInst {
+		deleteFilter["coll"] = map[string]interface{}{
+			common.BKDBLIKE: event.ObjInstTablePrefixRegex,
+		}
 	}
 
 	if coll == common.BKTableNameBaseHost {

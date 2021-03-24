@@ -55,6 +55,10 @@ func generateOptions(opts *types.Options) (mongo.Pipeline, *options.ChangeStream
 		fields = append(fields, bson.E{Key: "operationType", Value: *opts.OperationType})
 	}
 
+	if opts.Collection == "" {
+		fields = append(fields, bson.E{Key: "ns.coll", Value: opts.CollectionFilter})
+	}
+
 	if opts.Filter != nil {
 		for k, v := range opts.Filter {
 			fields = append(fields, bson.E{Key: fullDocPrefix + k, Value: v})

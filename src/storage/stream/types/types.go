@@ -124,6 +124,11 @@ type Options struct {
 	// document
 	Filter map[string]interface{}
 
+	// CollectionFilter helps you filter out which kind of collection's change event you want to receive,
+	// such as the filter : {"$regex":"^cc_ObjectBase"} means you can only receive events from collections
+	// starts with the prefix cc_ObjectBase
+	CollectionFilter interface{}
+
 	// EventStruct is the point data struct that the event decoded into.
 	// Note: must be a point value.
 	EventStruct interface{}
@@ -162,7 +167,7 @@ func (opts *Options) CheckSetDefault() error {
 		opts.MaxAwaitTime = &defaultMaxAwaitTime
 	}
 
-	if len(opts.Collection) == 0 {
+	if len(opts.Collection) == 0 && opts.CollectionFilter == nil {
 		return errors.New("invalid Namespace field, database and collection can not be empty")
 	}
 	return nil
