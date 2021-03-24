@@ -79,6 +79,13 @@ func (f *Flow) RunFlow(ctx context.Context) error {
 		watchOpts.EventStruct = &metadata.HostMapStr{}
 	}
 
+	if f.key.Collection() == common.BKTableNameBaseInst {
+		watchOpts.Collection = ""
+		watchOpts.CollectionFilter = map[string]interface{}{
+			common.BKDBLIKE: event.ObjInstTablePrefixRegex,
+		}
+	}
+
 	f.tokenHandler = NewFlowTokenHandler(f.key, f.watchDB, f.metrics)
 
 	startAtTime, err := f.tokenHandler.getStartWatchTime(ctx)
@@ -407,6 +414,12 @@ func (f *Flow) getDeleteEventDetails(es []*types.Event) (map[string][]byte, bool
 	filter := map[string]interface{}{
 		"oid":  map[string]interface{}{common.BKDBIN: deletedEventOids},
 		"coll": f.key.Collection(),
+	}
+
+	if f.key.Collection() == common.BKTableNameBaseInst {
+		filter["coll"] = map[string]interface{}{
+			common.BKDBLIKE: event.ObjInstTablePrefixRegex,
+		}
 	}
 
 	if f.key.Collection() == common.BKTableNameBaseHost {

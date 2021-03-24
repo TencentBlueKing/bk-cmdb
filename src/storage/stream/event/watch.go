@@ -37,10 +37,17 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 
 		var stream *mongo.ChangeStream
 		var err error
-		stream, err = e.client.
-			Database(e.database).
-			Collection(opts.Collection).
-			Watch(ctx, pipeline, streamOptions)
+
+		if opts.Collection != "" {
+			stream, err = e.client.
+				Database(e.database).
+				Collection(opts.Collection).
+				Watch(ctx, pipeline, streamOptions)
+		} else {
+			stream, err = e.client.
+				Database(e.database).
+				Watch(ctx, pipeline, streamOptions)
+		}
 
 		if err != nil && isFatalError(err) {
 			// TODO: send alarm immediately.
@@ -64,10 +71,16 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 				}
 			}
 
-			stream, err = e.client.
-				Database(e.database).
-				Collection(opts.Collection).
-				Watch(ctx, pipeline, streamOptions)
+			if opts.Collection != "" {
+				stream, err = e.client.
+					Database(e.database).
+					Collection(opts.Collection).
+					Watch(ctx, pipeline, streamOptions)
+			} else {
+				stream, err = e.client.
+					Database(e.database).
+					Watch(ctx, pipeline, streamOptions)
+			}
 		}
 
 		if err != nil {
@@ -122,10 +135,16 @@ func (e *Event) loopWatch(ctx context.Context,
 			}
 
 			var err error
-			stream, err = e.client.
-				Database(e.database).
-				Collection(opts.Collection).
-				Watch(ctx, pipeline, streamOptions)
+			if opts.Collection != "" {
+				stream, err = e.client.
+					Database(e.database).
+					Collection(opts.Collection).
+					Watch(ctx, pipeline, streamOptions)
+			} else {
+				stream, err = e.client.
+					Database(e.database).
+					Watch(ctx, pipeline, streamOptions)
+			}
 			if err != nil {
 				if isFatalError(err) {
 					// TODO: send alarm immediately.
