@@ -88,7 +88,24 @@ func (s *uniqueCheckService) checkUnique() error {
 			return err
 		}
 
+		uniqueKeyMap := make(map[uint64]uint64)
 		for _, unique := range uniques {
+			isValid := true
+			for _, key := range unique.Keys {
+				id, exists := uniqueKeyMap[key.ID]
+				if exists {
+					isValid = false
+					fmt.Printf("object(%s) unique(%d) key(%d) duplicate with %d\n", objID, unique.ID, key.ID, id)
+					continue
+				}
+				uniqueKeyMap[key.ID] = unique.ID
+			}
+
+			if !isValid {
+				fmt.Printf("object(%s) unique(%d) has invalid key, **skip checking instance**\n", objID, unique.ID)
+				continue
+			}
+
 			if err := s.checkObjectUnique(ctx, objID, unique, attrMap); err != nil {
 				return err
 			}
