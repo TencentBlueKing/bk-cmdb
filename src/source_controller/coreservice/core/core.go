@@ -80,6 +80,7 @@ type ModelOperation interface {
 	CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error)
 	SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 	SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error)
+	CreateModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error
 }
 
 // InstanceOperation instance methods

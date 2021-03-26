@@ -59,6 +59,9 @@ type ModelClientInterface interface {
 	UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedOptionResult, error)
 	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedOptionResult, error)
 	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (*metadata.ReadModelUniqueResult, error)
+
+	CreateModelTables(ctx context.Context, h http.Header,
+		input *metadata.CreateModelTable) (err error)
 }
 
 func NewModelClientInterface(client rest.ClientInterface) ModelClientInterface {

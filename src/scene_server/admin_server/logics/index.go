@@ -38,8 +38,9 @@ func DBSync(e *backbone.Engine, db dal.RDB) {
 }
 
 type dbTable struct {
-	db  dal.RDB
-	rid string
+	db                         dal.RDB
+	preCleanRedundancyTableMap map[string]struct{}
+	rid                        string
 }
 
 func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB) {
@@ -302,6 +303,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 		// NOTICE: 错误直接忽略不行后需功能
 		return err
 	}
+
 	// 再次确认数据，保证存在模型的的表不被删除
 	for _, objIDInterface := range objIDInterfaceArr {
 		strObjID := fmt.Sprintf("%v", objIDInterface)
@@ -311,7 +313,22 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 		delete(modelDBTableNameMap, instAsstTable)
 
 	}
+
+	//清理表的时候，需要有延时，表至少要生存两个定时删除的周期
+	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
+	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
+	// Collection minimum is Timestamp(1616747878, 5)
+	if len(dt.preCleanRedundancyTableMap) == 0 {
+		dt.preCleanRedundancyTableMap = modelDBTableNameMap
+		return nil
+	}
+
 	for name := range modelDBTableNameMap {
+		// 上个周期不存在，不删除表
+		if _, exists := dt.preCleanRedundancyTableMap[name]; !exists {
+			continue
+		}
 		row := make(map[string]interface{}, 0)
 		// 检查是否有数据
 		if err := dt.db.Table(name).Find(nil).One(ctx, &row); err != nil {
@@ -336,6 +353,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 
 	}
 
+	dt.preCleanRedundancyTableMap = modelDBTableNameMap
 	return nil
 }
 

@@ -532,3 +532,12 @@ func (s *coreService) DeleteModelAttrUnique(ctx *rest.Contexts) {
 
 	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id))
 }
+
+func (s *coreService) CreateModelTables(ctx *rest.Contexts) {
+	inputData := metadata.CreateModelTable{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateModelTables(ctx.Kit, inputData))
+}

@@ -13,7 +13,9 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
+	"time"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -31,6 +33,15 @@ import (
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	data := new(map[string]operation.ImportObjectData)
 	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
+	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
+	// Collection minimum is Timestamp(1616747878, 5)
+	if err := s.createObjectTableBatch(ctx, *data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -73,6 +84,15 @@ func (s *Service) SearchObjectBatch(ctx *rest.Contexts) {
 func (s *Service) CreateObject(ctx *rest.Contexts) {
 	data := new(mapstr.MapStr)
 	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
+	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
+	// Collection minimum is Timestamp(1616747878, 5)
+	if err := s.createObjectTable(ctx, *data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -219,4 +239,54 @@ func (s *Service) GetModelStatistics(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(result.Data)
+}
+
+// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
+// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
+// Collection minimum is Timestamp(1616747878, 5)
+func (s *Service) createObjectTable(ctx *rest.Contexts, object map[string]interface{}) error {
+
+	input := &metadata.CreateModelTable{}
+	if objID := object[common.BKObjIDField]; objID != nil {
+		strObjID := fmt.Sprintf("%v", objID)
+		input.ObjectIDs = []string{strObjID}
+		return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
+
+	}
+	return nil
+}
+
+// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
+// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
+// Collection minimum is Timestamp(1616747878, 5)
+func (s *Service) createObjectTableBatch(ctx *rest.Contexts, objectMap map[string]operation.ImportObjectData) error {
+
+	input := &metadata.CreateModelTable{}
+	for objID := range objectMap {
+		if objID != "" {
+			input.ObjectIDs = append(input.ObjectIDs, objID)
+
+		}
+	}
+
+	// 表创建成功后，需要sleep 要不然有查询操作会报错
+	time.Sleep(time.Millisecond * 400)
+	return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
+}
+
+// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
+// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
+// Collection minimum is Timestamp(1616747878, 5)
+func (s *Service) createObjectTableByObjectID(ctx *rest.Contexts, objectID string) error {
+	input := &metadata.CreateModelTable{}
+
+	if objectID != "" {
+		input.ObjectIDs = []string{objectID}
+		return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
+
+	}
+	return nil
 }
