@@ -41,7 +41,7 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(parameter *generateAuditCommon
 		if rsp.Result != true {
 			blog.Errorf("generate audit log of attribute group failed, failed to read attribute group, rsp code is %v, err: %s, rid: %s",
 				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
+			return nil, rsp.CCError()
 		}
 		if len(rsp.Data.Info) <= 0 {
 			blog.Errorf("generate audit log of model attribute failed, failed to read attribute group, err: %s, rid: %s",
