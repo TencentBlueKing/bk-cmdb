@@ -105,7 +105,7 @@ type Index struct {
 	Name                    string                 `json:"name" bson:"name"`
 	Unique                  bool                   `json:"unique" bson:"unique"`
 	Background              bool                   `json:"background" bson:"background"`
-	ExpireAfterSeconds      int32                  `json:"expire_after_seconds" bson:"expire_after_seconds"`
+	ExpireAfterSeconds      int32                  `json:"expire_after_seconds" bson:"expire_after_seconds,omitempty"`
 	PartialFilterExpression map[string]interface{} `json:"partialFilterExpression" bson:"partialFilterExpression"`
 }
 
