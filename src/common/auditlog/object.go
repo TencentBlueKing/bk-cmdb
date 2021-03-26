@@ -45,7 +45,7 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 		if len(rsp.Data.Info) <= 0 {
 			blog.Errorf("generate audit log of model failed, failed to read model, err: %s, rid: %s",
 				kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
-			return nil, err
+			return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
 		}
 
 		data = &rsp.Data.Info[0].Spec
