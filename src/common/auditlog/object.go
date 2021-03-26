@@ -40,7 +40,7 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 		if rsp.Result != true {
 			blog.Errorf("generate audit log of model failed, failed to read model, rsp code is %v, err: %s, rid: %s",
 				rsp.Code, rsp.ErrMsg, kit.Rid)
-			return nil, parameter.kit.CCError.New(rsp.Code, rsp.ErrMsg)
+			return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 		if len(rsp.Data.Info) <= 0 {
 			blog.Errorf("generate audit log of model failed, failed to read model, err: %s, rid: %s",
