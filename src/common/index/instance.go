@@ -47,20 +47,39 @@ var (
 			Unique: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstName",
-			Keys: map[string]int32{
-				"bk_inst_name": 1,
-			},
-			Background: false,
-		},
-		{
 			Name: common.CCLogicIndexNamePrefix + "bkParentID",
 			Keys: map[string]int32{
 				"bk_parent_id": 1,
 			},
 			Background: false,
 		},
+	}
+)
 
+// 建表前需要先建立预定义主线模型的唯一索引
+func MainLineInstanceUniqueIndex() []types.Index {
+
+	return []types.Index{
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "bkParentID_bkInstName",
+			Keys: map[string]int32{
+				"bk_parent_id": 1,
+				"bk_inst_name": 1,
+			},
+			Background: false,
+			Unique:     true,
+			PartialFilterExpression: map[string]interface{}{
+				"bk_inst_name": map[string]interface{}{"$type": "string"},
+				"bk_parent_id": map[string]interface{}{"$type": "number"},
+			},
+		},
+	}
+}
+
+// 建表前需要先建立预非主线模型的唯一索引
+func InstanceUniqueIndex() []types.Index {
+
+	return []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkParentID_bkInstName",
 			Keys: map[string]int32{
@@ -71,26 +90,4 @@ var (
 			Unique:     true,
 		},
 	}
-)
-
-// 创建唯一索引的时候可以被忽略的索引
-func IngoreInstanceUniqueIndex(dbIndex types.Index) bool {
-	if !dbIndex.Unique {
-		return false
-	}
-	// 后需优化支持多个
-	if len(dbIndex.Keys) != 2 {
-		return false
-	}
-
-	if _, exist := dbIndex.Keys["bk_parent_id"]; !exist {
-		return false
-	}
-
-	if _, exist := dbIndex.Keys["bk_inst_name"]; !exist {
-		return false
-	}
-
-	return true
-
 }

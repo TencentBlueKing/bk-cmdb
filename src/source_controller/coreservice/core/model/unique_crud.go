@@ -15,6 +15,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -104,16 +105,19 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, ccErr
 	}
 
-
-	if !index.IngoreInstanceUniqueIndex(dbIndex) {
-		// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
-		objInstTable := common.GetInstTableName(objID)
+	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
+	objInstTable := common.GetInstTableName(objID)
+	_, dbIndexes, ccErr := m.getTableIndexs(kit, objInstTable)
+	if err != nil {
+		return 0, ccErr
+	}
+	rawDBIndexInfo, exists := index.FindIndexByIndexFields(dbIndex.Keys, dbIndexes)
+	if !exists || !rawDBIndexInfo.Unique || !strings.HasPrefix(rawDBIndexInfo.Name, common.CCLogicUniqueIdxNamePrefix) {
 		if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
 			blog.ErrorJSON("[CreateObjectUnique] create unique index for %s with %s err: %s, index: %s, rid: %s",
 				objID, inputParam, err, dbIndex, kit.Rid)
 			return 0, kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
 		}
-
 	}
 
 	unique := metadata.ObjectUnique{
@@ -178,12 +182,6 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
-	}
-
-	err = m.recheckUniqueForExistsInstances(kit, objID, properties, unique.MustCheck)
-	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommDuplicateItem, "instance")
 	}
 
 	cond := condition.CreateCondition()
@@ -485,6 +483,7 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.Objec
 		blog.Errorf("[UpdateObjectUnique] create unique index name %s for %s err: %#v, rid: %s",
 			dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
 	}
+
 	return nil
 }
 

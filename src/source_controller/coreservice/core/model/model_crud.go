@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/index"
 	dbindex "configcenter/src/common/index"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -200,7 +201,7 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 
 // createObjectShardingTables creates new collections for new model,
 // which create new object instance and association collections, and fix missing indexes.
-func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) error {
+func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {
 	// collection names.
 	instTableName := common.GetObjectInstTableName(objID)
 	instAsstTableName := common.GetObjectInstAsstTableName(objID)
@@ -208,6 +209,12 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string) e
 	// collections indexes.
 	instTableIndexes := dbindex.InstanceIndexes()
 	instAsstTableIndexes := dbindex.InstanceAssociationIndexes()
+	// 主线模型和非主线模型的唯一索引不一样
+	if isMainLine {
+		instTableIndexes = append(instTableIndexes, index.MainLineInstanceUniqueIndex()...)
+	} else {
+		instTableIndexes = append(instTableIndexes, index.InstanceUniqueIndex()...)
+	}
 
 	// create object instance table.
 	err := m.createShardingTable(kit, instTableName, instTableIndexes)

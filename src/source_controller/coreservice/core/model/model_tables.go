@@ -20,7 +20,7 @@ import (
 
 func (m *modelManager) CreateModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error {
 	for _, objID := range inputParam.ObjectIDs {
-		if err := m.createObjectShardingTables(kit, objID); err != nil {
+		if err := m.createObjectShardingTables(kit, objID, inputParam.IsMainLine); err != nil {
 			blog.ErrorJSON("create module table error. err: %s, objID: %s, rid: %s", err.Error(), objID, kit.Rid)
 			return err
 		}

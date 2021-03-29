@@ -26,12 +26,12 @@ import (
 )
 
 var (
-	oldInstTable                 = "cc_ObjectBase"
-	oldInstAsstTable             = "cc_InstAsst"
-	instTablePrefix              = "cc_ObjectBase_pub_"
-	instAsstTablePrefix          = "cc_InstAsst_pub_"
-	instanceObjectIDMappingTable = "cc_InstanceObjectIDMapping"
-	maxWorkNumber                = 60
+	oldInstTable        = "cc_ObjectBase"
+	oldInstAsstTable    = "cc_InstAsst"
+	instTablePrefix     = "cc_ObjectBase_pub_"
+	instAsstTablePrefix = "cc_InstAsst_pub_"
+	objectBaseMapping   = "cc_ObjectBaseMapping"
+	maxWorkNumber       = 60
 )
 
 func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
