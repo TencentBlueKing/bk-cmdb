@@ -654,3 +654,8 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 
 	return errors.RawErrorInfo{}
 }
+
+// CreateModelTable create model table params
+type CreateModelTable struct {
+	ObjectIDs []string `json:"bk_object_ids"`
+}

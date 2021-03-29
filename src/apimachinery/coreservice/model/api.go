@@ -16,7 +16,10 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreatedManyOptionResult, err error) {
@@ -478,4 +481,31 @@ func (m *model) GetModelStatistics(ctx context.Context, h http.Header) (resp *me
 		Do().
 		Into(resp)
 	return
+}
+
+func (m *model) CreateModelTables(ctx context.Context, h http.Header,
+	input *metadata.CreateModelTable) (err error) {
+
+	rid := util.GetHTTPCCRequestID(h)
+	resp := new(metadata.Response)
+	subPath := "/create/model/tables"
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		blog.ErrorJSON("http do error, err: %s, input: %s, rid: %s", err.Error(), input, rid)
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		blog.ErrorJSON("http reply error, reply: %s, input: %s, rid: %s", resp, input, rid)
+		return err
+	}
+
+	return nil
 }

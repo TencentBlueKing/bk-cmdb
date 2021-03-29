@@ -91,12 +91,6 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
-	err = m.recheckUniqueForExistsInstances(kit, objID, properties, inputParam.Data.MustCheck)
-	if nil != err {
-		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v err: %#v, rid: %s", objID, inputParam, err, kit.Rid)
-		return 0, kit.CCError.Errorf(common.CCErrCommDuplicateItem, "instance")
-	}
-
 	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjUnique)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v, rid: %s", err, kit.Rid)
@@ -110,12 +104,16 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, ccErr
 	}
 
-	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
-	objInstTable := common.GetInstTableName(objID)
-	if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
-		blog.Errorf("[CreateObjectUnique] create unique index for %s with %#v err: %#v, rid: %s",
-			objID, inputParam, err, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
+
+	if !index.IngoreInstanceUniqueIndex(dbIndex) {
+		// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
+		objInstTable := common.GetInstTableName(objID)
+		if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
+			blog.ErrorJSON("[CreateObjectUnique] create unique index for %s with %s err: %s, index: %s, rid: %s",
+				objID, inputParam, err, dbIndex, kit.Rid)
+			return 0, kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
+		}
+
 	}
 
 	unique := metadata.ObjectUnique{

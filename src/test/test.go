@@ -120,7 +120,9 @@ func ClearDatabase() {
 	}
 	db, err := local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
-	for _, tableName := range common.AllTables {
+	tables, err := db.ListTables(context.Background())
+	Expect(err).Should(BeNil())
+	for _, tableName := range tables {
 		db.DropTable(context.Background(), tableName)
 	}
 	db.Close()
