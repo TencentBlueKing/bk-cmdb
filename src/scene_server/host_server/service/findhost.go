@@ -92,7 +92,7 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 
 	// get module info
-	hostModuleConfig, err := s.Logic.GetConfigByCond(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
+	hostModuleConfig, err := s.Logic.GetHostRelations(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
 		Fields: []string{common.BKModuleIDField, common.BKHostIDField}})
 	if err != nil {
 		blog.Errorf("GetConfigByCond failed, err: %v, hostIDArr: %v, rid: %s", err, hostIDArr, ctx.Kit.Rid)
@@ -386,7 +386,7 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 	} else if option.ObjID == common.BKInnerObjIDModule {
 		distinctHostCond.ModuleIDArr = []int64{option.InstID}
 	} else {
-		setIDArr, err := s.Logic.GetSetIDsByTopo(ctx.Kit, option.ObjID, option.InstID)
+		setIDArr, err := s.Logic.GetSetIDsByTopo(ctx.Kit, option.ObjID, []int64{option.InstID})
 		if err != nil {
 			blog.Errorf("find hosts by topo failed, get set ID by topo err: %v, objID: %s, instID: %d, rid: %s",
 				err, option.ObjID, option.InstID, ctx.Kit.Rid)
@@ -723,7 +723,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		HostIDArr:     hostIDs,
 		Fields:        []string{common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
-	relations, err := s.Logic.GetConfigByCond(ctx.Kit, relationCond)
+	relations, err := s.Logic.GetHostRelations(ctx.Kit, relationCond)
 	if nil != err {
 		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -840,6 +840,56 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(hostTopos)
 
+}
+
+func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
+	header := ctx.Kit.Header
+	rid := ctx.Kit.Rid
+	defErr := ctx.Kit.CCError
+
+	options := new(meta.ListHostsDetailAndTopoOption)
+	if err := ctx.DecodeInto(&options); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := options.Validate(); rawErr != nil {
+		blog.ErrorJSON("list host detail and topology, but validate option failed, option: %s, err: %s, rid:%s",
+			options, rawErr, ctx.Kit.Rid)
+		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, rawErr.Args))
+		return
+	}
+
+	// read data from secondary mongodb nodes
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	// search all hosts
+	option := &meta.ListHosts{
+		HostPropertyFilter: options.HostPropertyFilter,
+		Fields:             append(options.Fields, common.BKHostIDField),
+		Page:               options.Page,
+	}
+	hosts, err := s.CoreAPI.CoreService().Host().ListHosts(ctx.Kit.Ctx, header, option)
+	if err != nil {
+		blog.Errorf("find host failed, err: %s, input:%#v, rid:%s", err.Error(), options, rid)
+		ctx.RespAutoError(defErr.Error(common.CCErrHostGetFail))
+		return
+	}
+
+	if len(hosts.Info) == 0 {
+		ctx.RespEntityWithCount(int64(hosts.Count), make([]*meta.HostDetailWithTopo, 0))
+		return
+	}
+
+	hostTopo, err := s.Logic.ArrangeHostDetailAndTopology(ctx.Kit, options.WithBiz, hosts.Info)
+	if err != nil {
+		blog.Errorf("arrange host detail and topology failed, err: %v, rid :%s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntityWithCount(int64(hosts.Count), hostTopo)
+	return
 }
 
 func (s *Service) CountTopoNodeHosts(ctx *rest.Contexts) {

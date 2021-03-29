@@ -123,7 +123,7 @@ func (lgc *Logics) GetSetMapByCond(kit *rest.Kit, fields []string, cond mapstr.M
 }
 
 // GetSetIDsByTopo get set IDs by custom layer node
-func (lgc *Logics) GetSetIDsByTopo(kit *rest.Kit, objID string, instID int64) ([]int64, error) {
+func (lgc *Logics) GetSetIDsByTopo(kit *rest.Kit, objID string, instIDs []int64) ([]int64, error) {
 	if objID == common.BKInnerObjIDApp || objID == common.BKInnerObjIDSet || objID == common.BKInnerObjIDModule {
 		blog.Errorf("get set IDs by topo failed, obj(%s) is a inner object, rid: %s", objID, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
@@ -154,7 +154,6 @@ func (lgc *Logics) GetSetIDsByTopo(kit *rest.Kit, objID string, instID int64) ([
 	}
 
 	// traverse down topo till set, get set ids
-	instIDs := []int64{instID}
 	for {
 		idField := common.GetInstIDField(childObj)
 		query := &metadata.QueryCondition{
