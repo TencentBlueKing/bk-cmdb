@@ -31,13 +31,6 @@ var commApplicationBaseIndexes = []types.Index{}
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedApplicationBaseIndexes = []types.Index{
 	{
-		Name: "bk_biz_name_1",
-		Keys: map[string]int32{
-			"bk_biz_name": 1,
-		},
-		Background: true,
-	},
-	{
 		Name: "default_1",
 		Keys: map[string]int32{
 			"default": 1,

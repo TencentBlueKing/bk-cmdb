@@ -47,11 +47,11 @@ var (
 		"plat":    "cc_PlatBase",
 	}
 	innerObjTableName = map[string]struct{}{
-		"cc_ApplicationBase": struct{}{},
-		"cc_SetBase":         struct{}{},
-		"cc_ModuleBase":      struct{}{},
-		"cc_HostBase":        struct{}{},
-		"cc_Process":         struct{}{},
-		"cc_PlatBase":        struct{}{},
+		"cc_ApplicationBase": {},
+		"cc_SetBase":         {},
+		"cc_ModuleBase":      {},
+		"cc_HostBase":        {},
+		"cc_Process":         {},
+		"cc_PlatBase":        {},
 	}
 )

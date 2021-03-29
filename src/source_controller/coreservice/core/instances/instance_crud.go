@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -63,13 +64,18 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	// save object instance.
 	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, inputParam)
 	if err != nil {
+		blog.ErrorJSON("save instance error. err: %s, objID: %s, instance: %s, rid: %s",
+			err.Error(), objID, inputParam, kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			return id, kit.CCError.CCError(common.CCErrCommDuplicateItem)
+		}
 		return 0, err
 	}
 
 	return id, nil
 }
 
-func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {
+func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) errors.CCError {
 	if objID == common.BKInnerObjIDHost {
 		data = metadata.ConvertHostSpecialStringToArray(data)
 	}
@@ -80,7 +86,17 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	ts := time.Now()
 	data.Set(common.LastTimeField, ts)
 	data.Remove(common.BKObjIDField)
-	return mongodb.Client().Table(tableName).Update(kit.Ctx, cond, data)
+	err := mongodb.Client().Table(tableName).Update(kit.Ctx, cond, data)
+
+	if err != nil {
+		blog.ErrorJSON("update instance error. err: %s, objID: %s, instance: %s, cond: %s, rid: %s",
+			err.Error(), objID, data, cond, kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			return kit.CCError.CCError(common.CCErrCommDuplicateItem)
+		}
+		return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
 }
 
 func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
