@@ -255,6 +255,20 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 
+	// register or update common actions
+	commonActions := GenerateCommonActions()
+	if len(systemResp.Data.CommonActions) == 0 {
+		if err = i.client.RegisterCommonActions(ctx, commonActions); err != nil {
+			blog.ErrorJSON("register common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
+			return err
+		}
+	} else {
+		if err = i.client.UpdateCommonActions(ctx, commonActions); err != nil {
+			blog.ErrorJSON("update common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
+			return err
+		}
+	}
+
 	return nil
 }
 
