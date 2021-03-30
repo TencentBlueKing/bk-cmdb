@@ -247,7 +247,9 @@ func (s *Service) GetModelStatistics(ctx *rest.Contexts) {
 // Collection minimum is Timestamp(1616747878, 5)
 func (s *Service) createObjectTable(ctx *rest.Contexts, object map[string]interface{}) error {
 
-	input := &metadata.CreateModelTable{}
+	input := &metadata.CreateModelTable{
+		IsMainLine: false,
+	}
 	if objID := object[common.BKObjIDField]; objID != nil {
 		strObjID := fmt.Sprintf("%v", objID)
 		input.ObjectIDs = []string{strObjID}
@@ -263,7 +265,9 @@ func (s *Service) createObjectTable(ctx *rest.Contexts, object map[string]interf
 // Collection minimum is Timestamp(1616747878, 5)
 func (s *Service) createObjectTableBatch(ctx *rest.Contexts, objectMap map[string]operation.ImportObjectData) error {
 
-	input := &metadata.CreateModelTable{}
+	input := &metadata.CreateModelTable{
+		IsMainLine: false,
+	}
 	for objID := range objectMap {
 		if objID != "" {
 			input.ObjectIDs = append(input.ObjectIDs, objID)
@@ -280,8 +284,10 @@ func (s *Service) createObjectTableBatch(ctx *rest.Contexts, objectMap map[strin
 // (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 // please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 // Collection minimum is Timestamp(1616747878, 5)
-func (s *Service) createObjectTableByObjectID(ctx *rest.Contexts, objectID string) error {
-	input := &metadata.CreateModelTable{}
+func (s *Service) createObjectTableByObjectID(ctx *rest.Contexts, objectID string, isMainline bool) error {
+	input := &metadata.CreateModelTable{
+		IsMainLine: isMainline,
+	}
 
 	if objectID != "" {
 		input.ObjectIDs = []string{objectID}

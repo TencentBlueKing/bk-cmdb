@@ -77,7 +77,6 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 
 	id, err := m.save(kit, objID, inputParam.Data)
 	if err != nil {
-		blog.ErrorJSON("CreateModelInstance failed, save error:%v, objID:%s, data:%#v, rid:%s", err, objID, inputParam.Data, kit.Rid)
 		return nil, err
 	}
 
@@ -115,7 +114,6 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, i
 
 		id, err := m.save(kit, objID, item)
 		if nil != err {
-			blog.Errorf("CreateManyModelInstance failed, save err:%v, objID:%s, item:%#v, rid:%s", err, objID, item, kit.Rid)
 			return nil, err
 		}
 
@@ -186,7 +184,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 	if err != nil {
 		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, data:%#v, condition:%s, rid:%s",
 			objID, err, inputParam.Condition, inputParam.Data, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBUpdateFailed)
+		return nil, err
 	}
 
 	if objID == common.BKInnerObjIDHost {

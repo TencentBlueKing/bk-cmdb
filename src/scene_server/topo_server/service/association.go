@@ -50,7 +50,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableByObjectID(ctx, mainLineAssociation.ObjectID); err != nil {
+	if err := s.createObjectTableByObjectID(ctx, mainLineAssociation.ObjectID, true); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}

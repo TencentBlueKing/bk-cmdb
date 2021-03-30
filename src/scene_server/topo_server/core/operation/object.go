@@ -460,6 +460,8 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	uni.SetKeys(keys)
 	uni.SetIsPre(false)
 	uni.SetMustCheck(true)
+	// NOTICE: 2021年03月29日  唯一索引与index.MainLineInstanceUniqueIndex,index.InstanceUniqueIndex定义强依赖
+	// 原因：建立模型之前要将表和表中的索引提前建立，mongodb 4.2.6(4.4之前)事务中不能建表，事务操作表中数据操作和建表，建立索引为互斥操作。
 	if err = uni.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err

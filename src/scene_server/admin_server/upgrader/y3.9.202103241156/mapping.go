@@ -24,15 +24,15 @@ import (
 
 func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
-	exists, err := db.HasTable(ctx, instanceObjectIDMappingTable)
+	exists, err := db.HasTable(ctx, objectBaseMapping)
 	if err != nil {
-		blog.ErrorJSON("check table(%s) exist error, err: %s", instanceObjectIDMappingTable, err)
+		blog.ErrorJSON("check table(%s) exist error, err: %s", objectBaseMapping, err)
 		return err
 
 	}
 	if !exists {
-		if err := db.CreateTable(ctx, instanceObjectIDMappingTable); err != nil {
-			blog.ErrorJSON("create table(%s) error, err: %s", instanceObjectIDMappingTable, err)
+		if err := db.CreateTable(ctx, objectBaseMapping); err != nil {
+			blog.ErrorJSON("create table(%s) error, err: %s", objectBaseMapping, err)
 			return err
 		}
 
@@ -45,7 +45,7 @@ func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Con
 		},
 		Background: true,
 	}
-	if err := db.Table(instanceObjectIDMappingTable).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
+	if err := db.Table(objectBaseMapping).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
 		return err
 	}
 

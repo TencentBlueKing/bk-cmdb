@@ -26,12 +26,12 @@ import (
 )
 
 var (
-	oldInstTable                 = "cc_ObjectBase"
-	oldInstAsstTable             = "cc_InstAsst"
-	instTablePrefix              = "cc_ObjectBase_pub_"
-	instAsstTablePrefix          = "cc_InstAsst_pub_"
-	instanceObjectIDMappingTable = "cc_InstanceObjectIDMapping"
-	maxWorkNumber                = 60
+	oldInstTable        = "cc_ObjectBase"
+	oldInstAsstTable    = "cc_InstAsst"
+	instTablePrefix     = "cc_ObjectBase_pub_"
+	instAsstTablePrefix = "cc_InstAsst_pub_"
+	objectBaseMapping   = "cc_ObjectBaseMapping"
+	maxWorkNumber       = 60
 )
 
 func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
@@ -252,7 +252,7 @@ func copyInstanceToShardingTable(ctx context.Context, inst map[string]interface{
 		common.BKObjIDField: objID,
 	}
 
-	if err := db.Table(instanceObjectIDMappingTable).Upsert(ctx, mappingFilter, doc); err != nil {
+	if err := db.Table(objectBaseMapping).Upsert(ctx, mappingFilter, doc); err != nil {
 		return fmt.Errorf("upsert instance id and object id mapping error. row object id: %v, err: %s",
 			inst["_id"], err.Error())
 	}
@@ -321,6 +321,7 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 				}
 			}
 		}
+
 		if err := db.Table(tableName).CreateIndex(ctx, idx); err != nil {
 			return fmt.Errorf("create index(%s) error. err: %s", idx.Name, err.Error())
 		}
@@ -368,6 +369,7 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 		if err != nil {
 			return fmt.Errorf("obj(%s). %s", objID, err.Error())
 		}
+		blog.InfoJSON("create unique index table, table: %s, index: %s", tableName, newDBIndex)
 
 		dbTableIndex, exist := FindIndexByIndexFields(newDBIndex.Keys, dbTableIndexes)
 		if exist {

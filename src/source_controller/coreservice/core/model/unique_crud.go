@@ -15,6 +15,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -104,16 +105,19 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, ccErr
 	}
 
-
-	if !index.IngoreInstanceUniqueIndex(dbIndex) {
-		// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
-		objInstTable := common.GetInstTableName(objID)
+	objInstTable := common.GetInstTableName(objID)
+	_, dbIndexes, ccErr := m.getTableIndexes(kit, objInstTable)
+	if err != nil {
+		return 0, ccErr
+	}
+	rawDBIndexInfo, exists := index.FindIndexByIndexFields(dbIndex.Keys, dbIndexes)
+	// 这样写是为了避免建立主线模型的时候， 唯一索引与修改表中数据的事务产生死锁的问题
+	if !exists || !rawDBIndexInfo.Unique || !strings.HasPrefix(rawDBIndexInfo.Name, common.CCLogicUniqueIdxNamePrefix) {
 		if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
 			blog.ErrorJSON("[CreateObjectUnique] create unique index for %s with %s err: %s, index: %s, rid: %s",
 				objID, inputParam, err, dbIndex, kit.Rid)
 			return 0, kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
 		}
-
 	}
 
 	unique := metadata.ObjectUnique{
@@ -178,12 +182,6 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
-	}
-
-	err = m.recheckUniqueForExistsInstances(kit, objID, properties, unique.MustCheck)
-	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommDuplicateItem, "instance")
 	}
 
 	cond := condition.CreateCondition()
@@ -364,10 +362,10 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 
 // checkUniqueRequireExist  check if either is a required unique check
 // ignoreUniqueIDS 除ignoreUniqueIDS之外是否有唯一校验项目
-func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, ignoreUnqiqueIDS []uint64) (bool, error) {
+func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, ignoreUniqueIDS []uint64) (bool, error) {
 	cond := condition.CreateCondition()
-	if len(ignoreUnqiqueIDS) > 0 {
-		cond.Field(common.BKFieldID).NotIn(ignoreUnqiqueIDS)
+	if len(ignoreUniqueIDS) > 0 {
+		cond.Field(common.BKFieldID).NotIn(ignoreUniqueIDS)
 	}
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field("must_check").Eq(true)
@@ -466,12 +464,16 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.Objec
 	}
 	objInstTable := common.GetInstTableName(oldUnique.ObjID)
 
-	dbInndexNameMap, _, ccErr := m.getTableIndexs(kit, objInstTable)
+	if ccErr := m.checkDuplicateInstances(kit, objInstTable, dbIndex); ccErr != nil {
+		return ccErr
+	}
+
+	dbIndexNameMap, _, ccErr := m.getTableIndexes(kit, objInstTable)
 	if ccErr != nil {
 		return ccErr
 	}
 
-	if _, exists := dbInndexNameMap[dbIndex.Name]; exists {
+	if _, exists := dbIndexNameMap[dbIndex.Name]; exists {
 		// 删除原来的索引，
 		if err := mongodb.Table(objInstTable).DropIndex(context.Background(), dbIndex.Name); err != nil {
 			blog.Errorf("[UpdateObjectUnique] drop unique index name %s for %s err: %#v, rid: %s",
@@ -485,10 +487,61 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.Objec
 		blog.Errorf("[UpdateObjectUnique] create unique index name %s for %s err: %#v, rid: %s",
 			dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
 	}
+
 	return nil
 }
 
-func (m *modelAttrUnique) getTableIndexs(kit *rest.Kit,
+func (m *modelAttrUnique) checkDuplicateInstances(kit *rest.Kit, objInstTable string,
+	index types.Index) errors.CCErrorCoder {
+	if !index.Unique {
+		return nil
+	}
+
+	groupFilter := make(map[string]interface{}, 0)
+	for key := range index.Keys {
+		groupFilter[key] = "$" + key
+	}
+	checkInstDupFilter := []map[string]interface{}{
+		// 按照类型匹配的限制
+		{common.BKDBMatch: index.PartialFilterExpression},
+		// 按照执行值做group 统计
+		{
+			common.BKDBGroup: map[string]interface{}{
+				"_id":   groupFilter,
+				"total": map[string]interface{}{common.BKDBSum: 1},
+			},
+		},
+		// 过滤出来有重复的数据
+		{
+			common.BKDBMatch: map[string]interface{}{
+				"total": map[string]interface{}{
+					common.BKDBGTE: 2,
+				},
+			},
+		},
+		{
+			"$limit": 1,
+		},
+	}
+	var result interface{}
+	// check data has duplicate. 这里不能用事务， 会出现事务与索引操作互斥
+	if err := mongodb.Table(objInstTable).AggregateOne(context.Background(), checkInstDupFilter, &result); err != nil {
+		// 没有找到重复的数据
+		if mongodb.Client().IsNotFoundError(err) {
+			return nil
+		}
+		blog.ErrorJSON("find db table %s duplicate instance error. err: %s, filter: %s, rid: %s",
+			objInstTable, err.Error(), checkInstDupFilter, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+
+	}
+
+	blog.ErrorJSON("find db table %s duplicate instance error. duplicate instance: %s, filter: %s, rid: %s",
+		objInstTable, result, checkInstDupFilter, kit.Rid)
+	return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, result)
+
+}
+func (m *modelAttrUnique) getTableIndexes(kit *rest.Kit,
 	tableName string) (map[string]types.Index, []types.Index, errors.CCErrorCoder) {
 	idxList, err := mongodb.Table(tableName).Indexes(context.Background())
 	if err != nil {
