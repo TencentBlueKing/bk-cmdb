@@ -1,5 +1,5 @@
 <template>
-    <div class="sync-set-layout" ref="instancesInfo" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
+    <cmdb-sticky-layout class="sync-set-layout" ref="instancesInfo" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
         <template v-if="noInfo">
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
@@ -54,28 +54,29 @@
                     </set-instance>
                 </div>
             </div>
-            <div class="options" :class="{ 'is-sticky': hasScrollbar }">
-                <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
-                    <template slot-scope="{ disabled }">
-                        <bk-button v-if="canSyncStatus()"
-                            class="mr10"
-                            theme="primary"
-                            :disabled="disabled"
-                            @click="handleConfirmSync">
-                            {{$t('确认同步')}}
-                        </bk-button>
-                        <span class="text-btn mr10" v-else v-bk-tooltips="$t('请先删除不可同步的实例')">{{$t('确认同步')}}</span>
-                    </template>
-                </cmdb-auth>
-                <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
-            </div>
         </template>
-    </div>
+        <div class="options" slot="footer" slot-scope="{ sticky }"
+            v-if="!noInfo && !isLatestInfo && diffList.length"
+            :class="{ 'is-sticky': sticky }">
+            <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
+                <template slot-scope="{ disabled }">
+                    <bk-button v-if="canSyncStatus()"
+                        class="mr10"
+                        theme="primary"
+                        :disabled="disabled"
+                        @click="handleConfirmSync">
+                        {{$t('确认同步')}}
+                    </bk-button>
+                    <span class="text-btn mr10" v-else v-bk-tooltips="$t('请先删除不可同步的实例')">{{$t('确认同步')}}</span>
+                </template>
+            </cmdb-auth>
+            <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
+        </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import { mapGetters } from 'vuex'
-    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
     export default {
@@ -84,7 +85,6 @@
         },
         data () {
             return {
-                hasScrollbar: false,
                 expandAll: false,
                 diffList: [],
                 noInfo: false,
@@ -116,19 +116,7 @@
             this.getSetTemplateInfo()
             this.getDiffData()
         },
-        mounted () {
-            addResizeListener(this.$refs.instancesInfo, this.resizeHandler)
-        },
-        beforeDestroy () {
-            removeResizeListener(this.$refs.instancesInfo, this.resizeHandler)
-        },
         methods: {
-            resizeHandler () {
-                this.$nextTick(() => {
-                    const scroller = this.$el.parentElement
-                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
-                })
-            },
             canSyncStatus () {
                 let status = true
                 this.$refs.setInstance.forEach(instance => {
@@ -260,8 +248,8 @@
 
 <style lang="scss" scoped>
     .sync-set-layout {
-        height: auto;
         padding: 15px 0 0 0;
+        @include scrollbar-y;
     }
     .no-content {
         position: absolute;
@@ -314,9 +302,6 @@
         }
     }
     .options {
-        position: sticky;
-        left: 0;
-        bottom: 0;
         display: flex;
         align-items: center;
         padding: 10px 20px;

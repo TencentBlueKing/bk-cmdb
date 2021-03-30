@@ -1,5 +1,5 @@
 <template>
-    <div class="conflict-layout">
+    <cmdb-sticky-layout class="conflict-layout">
         <cmdb-tips class="resolve-tips" tips-key="hostApplyConfirmTips">{{$t('策略失效提示语')}}</cmdb-tips>
         <div class="conflict-table-wrapper" ref="conflictTable">
             <bk-table
@@ -37,16 +37,15 @@
                 </bk-table-column>
             </bk-table>
         </div>
-        <div :class="['footer-btns', { 'sticky': scrollbar }]">
+        <div slot="footer" slot-scope="{ sticky }" :class="['footer-btns', { 'sticky': sticky }]">
             <bk-button theme="primary" class="mr10" :disabled="confirmButtonDisabled" @click="handleConfirm">{{$t('确定')}}</bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import { mapGetters } from 'vuex'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     import propertyFormElement from './property-form-element'
     export default {
         components: {
@@ -68,7 +67,6 @@
                 conflictPropertyListSnapshot: [],
                 result: {},
                 moduleMap: {},
-                scrollbar: false,
                 confirmButtonDisabled: false
             }
         },
@@ -86,12 +84,6 @@
         },
         created () {
             this.getData()
-        },
-        mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$refs.conflictTable, this.checkScrollbar)
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$refs.conflictTable, this.checkScrollbar)
         },
         methods: {
             async getData () {
@@ -163,10 +155,6 @@
                         h('span', { style }, this.$t('冲突值'))
                     ]
                 )
-            },
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             restoreConflictPropertyList () {
                 this.conflictPropertyList = this.$tools.clone(this.conflictPropertyListSnapshot)
@@ -248,10 +236,6 @@
         }
     }
     .footer-btns {
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        width: 100%;
         padding: 20px 20px 0;
         background-color: #FFFFFF;
         z-index: 10;

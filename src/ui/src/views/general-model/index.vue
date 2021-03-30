@@ -154,32 +154,28 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <bk-tab type="unborder-card" slot="content"
-                v-if="slider.contentShow"
-                :active.sync="tab.active" :show-header="attribute.type !== 'create'">
-                <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
-                    <cmdb-form v-if="['update', 'create'].includes(attribute.type)"
-                        ref="form"
-                        :properties="properties"
-                        :property-groups="propertyGroups"
-                        :inst="attribute.inst.edit"
-                        :type="attribute.type"
-                        :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
-                        :object-unique="objectUnique"
-                        @on-submit="handleSave"
-                        @on-cancel="handleCancel">
-                    </cmdb-form>
-                    <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
-                        ref="multipleForm"
-                        :uneditable-properties="['bk_inst_name']"
-                        :properties="properties"
-                        :property-groups="propertyGroups"
-                        :object-unique="objectUnique"
-                        @on-submit="handleMultipleSave"
-                        @on-cancel="handleMultipleCancel">
-                    </cmdb-form-multiple>
-                </bk-tab-panel>
-            </bk-tab>
+            <template slot="content" v-if="slider.contentShow">
+                <cmdb-form v-if="['update', 'create'].includes(attribute.type)"
+                    ref="form"
+                    :properties="properties"
+                    :property-groups="propertyGroups"
+                    :inst="attribute.inst.edit"
+                    :type="attribute.type"
+                    :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
+                    :object-unique="objectUnique"
+                    @on-submit="handleSave"
+                    @on-cancel="handleCancel">
+                </cmdb-form>
+                <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
+                    ref="multipleForm"
+                    :uneditable-properties="['bk_inst_name']"
+                    :properties="properties"
+                    :property-groups="propertyGroups"
+                    :object-unique="objectUnique"
+                    @on-submit="handleMultipleSave"
+                    @on-cancel="handleMultipleCancel">
+                </cmdb-form-multiple>
+            </template>
         </bk-sideslider>
         <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"

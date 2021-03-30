@@ -1,5 +1,5 @@
 <template>
-    <div class="details-layout">
+    <cmdb-sticky-layout class="details-layout">
         <slot name="prepend"></slot>
         <div ref="detailsWrapper">
             <slot name="details-header"></slot>
@@ -39,9 +39,9 @@
                 </div>
             </template>
         </div>
-        <div class="details-options"
+        <div class="details-options" slot="footer" slot-scope="{ sticky }"
             v-if="showOptions"
-            :class="{ sticky: scrollbar }">
+            :class="{ sticky: sticky }">
             <slot name="details-options">
                 <cmdb-auth v-if="showEdit" class="inline-block-middle" :auth="editAuth">
                     <bk-button slot-scope="{ disabled }"
@@ -63,14 +63,12 @@
                 </cmdb-auth>
             </slot>
         </div>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     import Formatter from '@/filters/formatter.js'
-    import Throttle from 'lodash.throttle'
     export default {
         name: 'cmdb-details',
         mixins: [formMixins],
@@ -118,7 +116,6 @@
         },
         data () {
             return {
-                scrollbar: false,
                 resizeEvent: null
             }
         },
@@ -130,18 +127,7 @@
                 return this.deleteButtonText || this.$t('删除')
             }
         },
-        mounted () {
-            this.resizeEvent = Throttle(this.checkScrollbar, 100, { leading: false, trailing: true })
-            RESIZE_EVENTS.addResizeListener(this.$refs.detailsWrapper, this.resizeEvent)
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.resizeEvent)
-        },
         methods: {
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
-            },
             handleToggleGroup (group) {
                 const groupId = group['bk_group_id']
                 const collapse = !!this.groupState[groupId]
@@ -240,17 +226,13 @@
         }
     }
     .details-options {
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        padding: 28px 18px 0;
+        padding: 10px 18px;
         &.sticky {
             width: calc(100% + 32px);
             margin: 0 0 0 -40px;
             padding: 10px 50px;
-            border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
+            border-top: 1px solid $cmdbBorderColor;
         }
         .button-edit {
             min-width: 76px;
