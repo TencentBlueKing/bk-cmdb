@@ -295,14 +295,41 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
+
+	innerIPArr := strings.Split(innerIP, ",")
+	innerIPMap := make(map[string]struct{})
+	for _, ip := range innerIPArr {
+		innerIPMap[ip] = struct{}{}
+	}
+
+	outerIPArr := strings.Split(outerIP, ",")
+	outerIPMap := make(map[string]struct{})
+	for _, ip := range outerIPArr {
+		outerIPMap[ip] = struct{}{}
+	}
+
 	var OuterMAC, InnerMAC string
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
-			ip := strings.Split(addr.String(), "/")[0]
-			if ip == innerIP {
-				InnerMAC = inter.Get("hardwareaddr").String()
-			} else if ip == outerIP {
-				OuterMAC = inter.Get("hardwareaddr").String()
+			splitAddr := strings.Split(addr.String(), "/")
+			if len(splitAddr) == 0 {
+				continue
+			}
+			ip := splitAddr[0]
+			if _, exists := innerIPMap[ip]; exists {
+				innerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
+				if len(InnerMAC) == 0 {
+					InnerMAC = innerMAC
+				} else {
+					InnerMAC += "," + innerMAC
+				}
+			} else if _, exists := outerIPMap[ip]; exists {
+				outerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
+				if len(OuterMAC) == 0 {
+					OuterMAC = outerMAC
+				} else {
+					OuterMAC += "," + outerMAC
+				}
 			}
 		}
 	}
