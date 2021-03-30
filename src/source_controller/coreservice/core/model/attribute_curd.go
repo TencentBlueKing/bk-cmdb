@@ -144,9 +144,11 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	for _, attrItem := range resultAttrs {
 		if attrItem.PropertyID == propertyID {
+			blog.ErrorJSON("check unique attribute id duplicate. attr: %s, rid: %s", attrItem, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommDuplicateItem, lang.Language("model_attr_bk_property_id"))
 		}
 		if attrItem.PropertyName == propertyName {
+			blog.ErrorJSON("check unique attribute id duplicate. attr: %s, rid: %s", attrItem, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommDuplicateItem, lang.Language("model_attr_bk_property_name"))
 		}
 	}

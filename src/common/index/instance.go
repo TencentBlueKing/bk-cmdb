@@ -81,9 +81,8 @@ func InstanceUniqueIndex() []types.Index {
 
 	return []types.Index{
 		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "bkParentID_bkInstName",
+			Name: common.CCLogicUniqueIdxNamePrefix + "bkInstName",
 			Keys: map[string]int32{
-				"bk_parent_id": 1,
 				"bk_inst_name": 1,
 			},
 			Background: false,
