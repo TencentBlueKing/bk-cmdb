@@ -354,6 +354,7 @@
                     const assoId = associationInstance.asso_id
                     await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
                         id: assoId,
+                        objId: this.id,
                         config: {
                             data: {}
                         }
