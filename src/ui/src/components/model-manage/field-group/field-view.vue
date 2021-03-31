@@ -35,20 +35,20 @@
                 <div class="property-name">
                     <span>{{$t('正则校验')}}</span>：
                 </div>
-                <span class="property-value">{{field.option || '--'}}</span>
+                <span class="property-value">{{option || '--'}}</span>
             </div>
             <template v-else-if="['int', 'float'].includes(field.bk_property_type)">
                 <div class="property-item">
                     <div class="property-name">
                         <span>{{$t('最小值')}}</span>：
                     </div>
-                    <span class="property-value">{{field.option.min || (field.option.min === 0 ? 0 : '--')}}</span>
+                    <span class="property-value">{{option.min || (option.min === 0 ? 0 : '--')}}</span>
                 </div>
                 <div class="property-item">
                     <div class="property-name">
                         <span>{{$t('最大值')}}</span>：
                     </div>
-                    <span class="property-value">{{field.option.max || (field.option.max === 0 ? 0 : '--')}}</span>
+                    <span class="property-value">{{option.max || (option.max === 0 ? 0 : '--')}}</span>
                 </div>
             </template>
             <div class="property-item">
@@ -105,6 +105,20 @@
                     'organization': this.$t('组织')
                 },
                 scrollbar: false
+            }
+        },
+        computed: {
+            type () {
+                return this.field.bk_property_type
+            },
+            option () {
+                if (['int', 'float'].includes(this.type)) {
+                    return this.field.option || { min: null, max: null }
+                }
+                if (['enum', 'list'].includes(this.type)) {
+                    return this.field.option || []
+                }
+                return this.field.option
             }
         },
         methods: {
