@@ -807,8 +807,12 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 10)
 	result := make([]*metadata.ModuleDiffWithTemplateDetail, 0)
+	isFinish := false
 
 	for _, moduleID := range diffOption.ModuleIDs {
+		if isFinish {
+			break
+		}
 		pipeline <- true
 		wg.Add(1)
 
@@ -831,6 +835,13 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				return
 			}
 			result = append(result, oneModuleResult)
+
+			// judge whether need compare partial and finish in advance
+			if diffOption.PartialCompare {
+				if oneModuleResult.HasDifference {
+					isFinish = true
+				}
+			}
 
 		}(diffOption.BizID, moduleID)
 	}

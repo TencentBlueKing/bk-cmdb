@@ -111,6 +111,9 @@ type GetServiceInstanceBySetTemplateInput struct {
 type DiffModuleWithTemplateOption struct {
 	BizID     int64   `json:"bk_biz_id"`
 	ModuleIDs []int64 `json:"bk_module_ids"`
+	// PartialCompare judge whether need compare partial and finish in advance
+	// it finish the compare in advance once one module has difference with service template
+	PartialCompare bool `json:"partial_compare"`
 }
 
 type DiffOneModuleWithTemplateOption struct {
