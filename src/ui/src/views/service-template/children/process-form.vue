@@ -1,5 +1,5 @@
 <template>
-    <div class="form-layout">
+    <cmdb-sticky-layout class="form-layout">
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -60,9 +60,9 @@
                 </div>
             </template>
         </div>
-        <div class="form-options"
+        <div class="form-options" slot="footer" slot-scope="{ sticky }"
             v-if="showOptions"
-            :class="{ sticky: scrollbar }">
+            :class="{ sticky: sticky }">
             <slot name="form-options">
                 <cmdb-auth :auth="auth">
                     <bk-button slot-scope="{ disabled }"
@@ -77,12 +77,11 @@
             </slot>
             <slot name="extra-options"></slot>
         </div>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     import { mapMutations } from 'vuex'
     import ProcessFormPropertyTable from './process-form-property-table'
     export default {
@@ -136,7 +135,6 @@
                     bk_func_name: ''
                 },
                 refrenceValues: {},
-                scrollbar: false,
                 invisibleNameProperties: ['bind_info'],
                 defaultLocked: ['bk_func_name', 'bk_process_name', 'bind_info']
             }
@@ -164,12 +162,6 @@
         },
         created () {
             this.initValues()
-        },
-        mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
@@ -214,10 +206,6 @@
             },
             btnStatus () {
                 return this.type === 'create' ? false : !this.hasChange()
-            },
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
                 const restValues = {}
@@ -481,17 +469,12 @@
         }
     }
     .form-options {
-        position: sticky;
-        bottom: 0;
-        left: 0;
         width: 100%;
-        padding: 28px 32px 0;
+        padding: 10px 32px;
         font-size: 0;
-        z-index: 101;
+        background-color: #fff;
         &.sticky {
-            padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
-            background-color: #fff;
         }
         .button-save {
             min-width: 76px;

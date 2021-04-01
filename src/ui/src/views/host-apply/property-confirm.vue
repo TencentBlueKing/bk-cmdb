@@ -22,7 +22,7 @@
             :total="table.total"
         >
         </property-confirm-table>
-        <div :class="['bottom-actionbar', { 'is-sticky': hasScrollbar }]">
+        <div class="bottom-actionbar">
             <div class="actionbar-inner">
                 <bk-button theme="default" @click="handlePrevStep">{{$t('上一步')}}</bk-button>
                 <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
@@ -69,7 +69,6 @@
         MENU_BUSINESS_HOST_APPLY_EDIT,
         MENU_BUSINESS_HOST_APPLY_FAILED
     } from '@/dictionary/menu-symbol'
-    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         components: {
             leaveConfirm,
@@ -99,12 +98,6 @@
             isBatch () {
                 return this.$route.query.batch === 1
             }
-        },
-        mounted () {
-            addResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
-        },
-        beforeDestroy () {
-            removeResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
         },
         beforeRouteLeave (to, from, next) {
             if (to.name !== MENU_BUSINESS_HOST_APPLY_EDIT) {
@@ -160,12 +153,6 @@
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY,
                     query
-                })
-            },
-            resizeHandler (a, b, c) {
-                this.$nextTick(() => {
-                    const scroller = this.$refs.propertyConfirmTable.$el.querySelector('.bk-table-body-wrapper')
-                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
                 })
             },
             saveAndApply () {
@@ -293,8 +280,6 @@
     .bottom-actionbar {
         width: 100%;
         height: 50px;
-        bottom: 0;
-        left: 0;
         z-index: 100;
 
         .actionbar-inner {
@@ -305,14 +290,5 @@
             }
         }
 
-        &.is-sticky {
-            position: absolute;
-            background: #fff;
-            border-top: 1px solid #dcdee5;
-
-            .actionbar-inner {
-                padding: 8px 0 0 20px;
-            }
-        }
     }
 </style>

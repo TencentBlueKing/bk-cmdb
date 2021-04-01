@@ -163,6 +163,9 @@
                     this.setDefaultExpand()
                     this.checkExactActive()
                 }
+            },
+            isBusinessNav (isBusinessNav) {
+                isBusinessNav && this.refreshAuthorizedList()
             }
         },
         methods: {
@@ -251,6 +254,19 @@
                     },
                     reload: true
                 })
+            },
+            async refreshAuthorizedList () {
+                try {
+                    const { info } = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+                    this.$store.commit('objectBiz/setAuthorizedBusiness', Object.freeze(info))
+                    const bizId = this.$route.params.bizId
+                    const exist = info.some(biz => biz.bk_biz_id.toString() === bizId.toString())
+                    if (!exist) {
+                        this.$route.matched[0].meta.view = 'permission'
+                    }
+                } catch (error) {
+                    console.error(error)
+                }
             }
         }
     }

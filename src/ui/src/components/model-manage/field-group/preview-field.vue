@@ -55,7 +55,6 @@
 
 <script>
     import formMixins from '@/mixins/form'
-    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         mixins: [formMixins],
         props: {
@@ -80,7 +79,6 @@
             return {
                 values: {},
                 refrenceValues: {},
-                scrollbar: false,
                 groupState: {
                     none: true
                 }
@@ -104,17 +102,7 @@
         created () {
             this.initValues()
         },
-        mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
-        beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
-        },
         methods: {
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
-            },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
                 this.refrenceValues = this.$tools.clone(this.values)
