@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	cErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
 )
@@ -433,9 +434,10 @@ type ListProcessRelatedInfoOption struct {
 	Set             SetCondOfP             `json:"set"`
 	Module          ModuleCondOfP          `json:"module"`
 	ServiceInstance ServiceInstanceCondOfP `json:"service_instance"`
-	Process         ProcessCondOfP         `json:"process"`
-	Fields          []string               `json:"fields"`
-	Page            BasePage               `json:"page"`
+	// ProcessPropertyFilter used to filter process instances by process properties
+	ProcessPropertyFilter *querybuilder.QueryFilter `json:"process_property_filter"`
+	Fields                []string                  `json:"fields"`
+	Page                  BasePage                  `json:"page"`
 }
 
 type SetCondOfP struct {
@@ -450,14 +452,23 @@ type ServiceInstanceCondOfP struct {
 	IDs []int64 `json:"ids"`
 }
 
-type ProcessCondOfP struct {
-	ProcessNames []string `json:"bk_process_names"`
-	FuncIDs      []string `json:"bk_func_ids"`
-	ProcessIDs   []int64  `json:"bk_process_ids"`
-}
-
 // Validate validates the input param
 func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
+	if o.ProcessPropertyFilter != nil {
+		if key, err := o.ProcessPropertyFilter.Validate(); err != nil {
+			return cErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{fmt.Sprintf("%s, host_property_filter.%s", err.Error(), key)},
+			}
+		}
+		if o.ProcessPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return cErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules", querybuilder.MaxDeep)},
+			}
+		}
+	}
+
 	if o.Page.IsIllegal() {
 		return cErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
