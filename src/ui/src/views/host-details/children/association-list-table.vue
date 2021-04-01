@@ -329,6 +329,7 @@
                     const associationInstance = this.instances.find(instance => instance.bk_inst_id === item[idKey])
                     await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
                         id: associationInstance.asso_id,
+                        objId: this.id,
                         config: {
                             data: {}
                         }

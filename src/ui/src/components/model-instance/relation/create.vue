@@ -379,10 +379,10 @@
                 const isSource = this.isSource
                 return this.searchInstAssociation({
                     params: {
+                        bk_obj_id: isSource ? this.objId : option['bk_obj_id'],
                         condition: {
                             'bk_asst_id': option['bk_asst_id'],
                             'bk_obj_asst_id': option['bk_obj_asst_id'],
-                            'bk_obj_id': isSource ? this.objId : option['bk_obj_id'],
                             'bk_asst_obj_id': isSource ? option['bk_asst_obj_id'] : this.objId,
                             [`${isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
                         }
@@ -441,7 +441,8 @@
                     return exist['bk_inst_id'] === instId
                 })
                 return this.deleteInstAssociation({
-                    id: (instAssociation || {}).id
+                    id: (instAssociation || {}).id,
+                    objId: this.objId
                 })
             },
             beforeUpdate (event, instId, updateType = 'new') {
