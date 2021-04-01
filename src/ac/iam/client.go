@@ -65,7 +65,8 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
-		WithParam("fields", "base_info,resource_types,actions,action_groups,instance_selections,resource_creator_actions").
+		WithParam("fields", "base_info,resource_types,actions,action_groups,instance_selections,"+
+			"resource_creator_actions,common_actions").
 		Body(nil).Do()
 	err := result.Into(resp)
 	if err != nil {
@@ -422,6 +423,54 @@ func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCr
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("update resource creator actions %v failed, code: %d, msg:%s", resourceCreatorActions, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) RegisterCommonActions(ctx context.Context, commonActions []CommonAction) error {
+	resp := new(BaseResponse)
+	result := c.client.Post().
+		SubResourcef("/api/v1/model/systems/%s/configs/common_actions", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(commonActions).Do()
+
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason: fmt.Errorf("register common actions %v failed, code: %d, msg: %s", commonActions, resp.Code,
+				resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) UpdateCommonActions(ctx context.Context, commonActions []CommonAction) error {
+	resp := new(BaseResponse)
+	result := c.client.Put().
+		SubResourcef("/api/v1/model/systems/%s/configs/common_actions", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(commonActions).Do()
+
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason: fmt.Errorf("update common actions %v failed, code: %d, msg: %s", commonActions, resp.Code,
+				resp.Message),
 		}
 	}
 
