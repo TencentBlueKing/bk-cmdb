@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	meta "configcenter/src/common/metadata"
 )
 
 // HostModuleRelation transfer host to module specify by bk_module_id (in the same business)
@@ -163,7 +164,7 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := metadata.HostModuleRelationRequest{
+	cond := &metadata.HostModuleRelationRequest{
 		HostIDArr: data.HostID,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
@@ -182,6 +183,60 @@ func (s *Service) GetHostModuleRelation(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(moduleHostConfig.Info)
 	return
+}
+
+// 根据主线拓扑上的模型实例，分页查询主机关系数据
+func (s *Service) GetHostRelationsWithMainlineTopoInstance(ctx *rest.Contexts) {
+
+	option := new(meta.FindHostRelationWtihTopoOpt)
+	if err := ctx.DecodeInto(option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := option.Validate(); rawErr != nil {
+		blog.Errorf("find host relations with topo failed, option: %#v, err: %+v, rid: %s", *option, rawErr,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	filter := &meta.HostModuleRelationRequest{
+		ApplicationID: option.Business,
+		Page:          option.Page,
+		Fields:        option.Fields,
+	}
+
+	switch option.ObjID {
+	case common.BKInnerObjIDSet:
+		filter.SetIDArr = option.InstIDs
+	case common.BKInnerObjIDModule:
+		filter.ModuleIDArr = option.InstIDs
+	default:
+		setList, err := s.Logic.GetSetIDsByTopo(ctx.Kit, option.ObjID, option.InstIDs)
+		if err != nil {
+			blog.ErrorJSON("find hosts relation by topo, but get set ids by topo failed, options: %s, err: %s, rid: %s",
+				option, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if len(setList) == 0 {
+			ctx.RespEntity(meta.SearchHost{})
+			return
+		}
+
+		filter.SetIDArr = setList
+	}
+
+	relations, err := s.Logic.GetHostModuleRelation(ctx.Kit, filter)
+	if err != nil {
+		blog.ErrorJSON("get host relations failed, filter: %s, err: %s, rid:%s", filter, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntityWithCount(relations.Count, relations.Info)
 }
 
 // TransferHostAcrossBusiness  Transfer host across business,
@@ -327,7 +382,7 @@ func (s *Service) GetAppHostTopoRelation(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Logic.GetHostModuleRelation(ctx.Kit, *data)
+	result, err := s.Logic.GetHostModuleRelation(ctx.Kit, data)
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation logic failed, cond:%#v, err:%s, rid:%s", data, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
