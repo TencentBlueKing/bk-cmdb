@@ -371,37 +371,6 @@ registerServer:
   addrs: $rd_server
   usr:
   pwd:
-# mongodb配置
-mongodb:
-  host: $mongo_host
-  port: $mongo_port
-  usr: $mongo_user
-  pwd: "$mongo_pass"
-  database: $db
-  maxOpenConns: 5
-  maxIdleConns: 1
-  mechanism: SCRAM-SHA-1
-  rsName: $rs_name
-  # mongodb事件监听存储事件链的mongodb配置
-watch:
-  host: $mongo_host
-  port: $mongo_port
-  usr: $mongo_user
-  pwd: "$mongo_pass"
-  database: $db
-  maxOpenConns: 10
-  maxIdleConns: 5
-  mechanism: SCRAM-SHA-1
-  rsName: $rs_name
-  socketTimeoutSeconds: 10
-# redis配置
-redis:
-  host: $redis_host:$redis_port
-  pwd: "$redis_pass"
-  sentinelPwd: "$sentinel_pass"
-  database: "0"
-  maxOpenConns: 5
-  maxIDleConns: 1
 # 指定configures的路径，通过这个路径找到其他的配置文件
 confs:
   dir: $configures_dir
@@ -411,14 +380,6 @@ errors:
 # 指定language的路径
 language:
   res: conf/language
-# 权限相关配置
-auth:
-  #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
-  address: $auth_address
-  #cmdb项目在蓝鲸权限中心的应用编码
-  appCode: $auth_app_code
-  #cmdb项目在蓝鲸权限中心的应用密钥
-  appSecret: $auth_app_secret
     '''
 
     template = FileTemplate(migrate_file_template_str)

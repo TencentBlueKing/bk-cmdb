@@ -45,15 +45,16 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB       mongo.Config
-	WatchDB       mongo.Config
-	Errors        ErrorConfig
-	Language      LanguageConfig
-	Configures    ConfConfig
-	Register      RegisterConfig
-	ProcSrvConfig ProcSrvConfig
-	Redis         redis.Config
-	Iam           iam.AuthConfig
+	MongoDB    mongo.Config
+	WatchDB    mongo.Config
+	Errors     ErrorConfig
+	Language   LanguageConfig
+	Configures ConfConfig
+	Register   RegisterConfig
+	Redis      redis.Config
+	SnapRedis  redis.Config
+	Iam        iam.AuthConfig
+	SnapDataID int64
 }
 
 type LanguageConfig struct {
@@ -70,8 +71,4 @@ type ConfConfig struct {
 
 type RegisterConfig struct {
 	Address string
-}
-
-type ProcSrvConfig struct {
-	CCApiSrvAddr string
 }
