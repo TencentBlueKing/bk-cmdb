@@ -31,9 +31,8 @@ import (
 
 // Config config for upgrader
 type Config struct {
-	OwnerID      string
-	User         string
-	CCApiSrvAddr string // cmdb nginx address
+	OwnerID string
+	User    string
 }
 
 // Upgrader define a version upgrader

@@ -13,6 +13,7 @@ package gse
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -111,4 +112,212 @@ func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metad
 		Into(resp)
 
 	return
+}
+
+func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
+	*metadata.GseConfigAddStreamToResult, error) {
+
+	resp := new(metadata.GseConfigAddStreamToResp)
+	subPath := "/v2/gse/config_add_streamto/"
+	params := &esbGseConfigAddStreamToParams{
+		EsbCommParams:              esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigAddStreamToParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("gse config add streamto failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return resp.Data, nil
+}
+
+func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateStreamToParams) error {
+	resp := new(metadata.EsbBaseResponse)
+	subPath := "/v2/gse/config_update_streamto/"
+	params := &esbGseConfigUpdateStreamToParams{
+		EsbCommParams:                 esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigUpdateStreamToParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return fmt.Errorf("gse config update streamto failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return nil
+}
+
+func (p *gse) ConfigDeleteStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteStreamToParams) error {
+	resp := new(metadata.EsbBaseResponse)
+	subPath := "/v2/gse/config_delete_streamto/"
+	params := &esbGseConfigDeleteStreamToParams{
+		EsbCommParams:                 esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigDeleteStreamToParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return fmt.Errorf("gse config delete streamto failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return nil
+}
+
+func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigQueryStreamToParams) (
+	[]metadata.GseConfigAddStreamToParams, error) {
+
+	resp := new(metadata.GseConfigQueryStreamToResp)
+	subPath := "/v2/gse/config_query_streamto/"
+	params := &esbGseConfigQueryStreamToParams{
+		EsbCommParams:                esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigQueryStreamToParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("gse config query streamto failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return resp.Data, nil
+}
+
+func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.GseConfigAddRouteParams) (
+	*metadata.GseConfigAddRouteResult, error) {
+
+	resp := new(metadata.GseConfigAddRouteResp)
+	subPath := "/v2/gse/config_add_route/"
+	params := &esbGseConfigAddRouteParams{
+		EsbCommParams:           esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigAddRouteParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("gse config add route failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return resp.Data, nil
+}
+
+func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error {
+	resp := new(metadata.EsbBaseResponse)
+	subPath := "/v2/gse/config_update_route/"
+	params := &esbGseConfigUpdateRouteParams{
+		EsbCommParams:              esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigUpdateRouteParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return fmt.Errorf("gse config update route failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return nil
+}
+
+func (p *gse) ConfigDeleteRoute(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteRouteParams) error {
+	resp := new(metadata.EsbBaseResponse)
+	subPath := "/v2/gse/config_delete_route/"
+	params := &esbGseConfigDeleteRouteParams{
+		EsbCommParams:              esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigDeleteRouteParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return fmt.Errorf("gse config delete route failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return nil
+}
+
+func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
+	[]metadata.GseConfigChannel, error) {
+
+	resp := new(metadata.GseConfigQueryRouteResp)
+	subPath := "/v2/gse/config_query_route/"
+	params := &esbGseConfigQueryRouteParams{
+		EsbCommParams:             esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseConfigQueryRouteParams: data,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("gse config query route failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+	return resp.Data, nil
 }

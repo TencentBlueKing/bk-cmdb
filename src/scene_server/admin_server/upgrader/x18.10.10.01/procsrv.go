@@ -13,12 +13,8 @@ package x18_10_10_01
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
@@ -92,38 +88,6 @@ func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.
 		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
 			return err
 		}
-	}
-	return nil
-}
-func addProcFreshInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	if "" != conf.CCApiSrvAddr {
-		tableName := common.BKTableNameSubscription
-		sID, err := db.NextSequence(ctx, tableName)
-		if nil != err {
-			return err
-		}
-		SubscriptionName := "process instance refresh [Do not remove it]"
-		cnt, err := db.Table(tableName).Find(mapstr.MapStr{common.BKSubscriptionNameField: SubscriptionName, common.BKOperatorField: conf.User}).Count(ctx)
-		if nil != err {
-			return err
-		}
-		if 0 < cnt {
-			return nil
-		}
-		subscription := metadata.Subscription{
-			SubscriptionID:   int64(sID),
-			SubscriptionName: SubscriptionName,
-			SystemName:       "cmdb",
-			CallbackURL:      fmt.Sprintf("http://%s/api/v3/proc/process/refresh/hostinstnum", strings.Trim(conf.CCApiSrvAddr, "/")),
-			ConfirmMode:      metadata.ConfirmModeHTTPStatus,
-			ConfirmPattern:   "200",
-			TimeOutSeconds:   120,
-			SubscriptionForm: "hostupdate,moduletransfer,update,processmodule,processupdate",
-			OwnerID:          common.BKDefaultOwnerID,
-			Operator:         conf.User,
-			LastTime:         metadata.Now(),
-		}
-		return db.Table(tableName).Insert(ctx, subscription)
 	}
 	return nil
 }
