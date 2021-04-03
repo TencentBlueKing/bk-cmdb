@@ -286,7 +286,8 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 		parentTable := common.GetInstTableName(parentObjectID, s.supplierAccount)
 		err := s.service.DbProxy.Table(parentTable).Find(mongoCondition.ToMapStr()).All(context.Background(), &missedInstances)
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "find missing parent intance for object %s and instance: %d failed, err: %+v, parentObjectID: %s, ParentInstanceID: %d\n",
+			_, _ = fmt.Fprintf(os.Stderr, "find missing parent instance for object %s and instance: %d failed, "+
+				"err: %+v, parentObjectID: %s, ParentInstanceID: %d\n",
 				instance.ObjectID, instance.InstanceID, err, parentObjectID, instance.ParentInstanceID)
 			continue
 		}

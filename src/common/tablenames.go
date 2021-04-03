@@ -103,7 +103,7 @@ const (
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,
-// such as object instance sharding table 'cc_ObjectBase_pub_{objectID}'.
+// such as object instance sharding table 'cc_ObjectBase_{supplierAccount}_pub_{objectID}'.
 var AllTables = []string{
 	BKTableNamePropertyGroup,
 	BKTableNameObjDes,
@@ -177,13 +177,13 @@ const (
 // GetObjectInstTableName return the object instance table name in sharding mode base on
 // the object ID. Format: cc_ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_0_pub_switch'.
 func GetObjectInstTableName(objID, supplierAccount string) string {
-	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, TableSpecifierPublic, objID)
+	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, supplierAccount, TableSpecifierPublic, objID)
 }
 
 // GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
 // the object ID. Format: cc_InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_InstAsst_0_pub_switch'.
 func GetObjectInstAsstTableName(objID, supplierAccount string) string {
-	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, TableSpecifierPublic, objID)
+	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, supplierAccount, TableSpecifierPublic, objID)
 }
 
 // IsObjectShardingTable returns if the target table is an object sharding table, include
