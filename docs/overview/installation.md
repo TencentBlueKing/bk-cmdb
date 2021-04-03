@@ -402,7 +402,7 @@ python init.py  \
   --mongo_port         27017 \
   --mongo_user         cc \
   --mongo_pass         cc \
-  --blueking_cmdb_url  http://127.0.0.1:8080/ \
+  --blueking_cmdb_url  http://127.0.0.1:8080 \
   --blueking_paas_url  http://paas.domain.com \
   --listen_port        8080 \
   --auth_scheme        internal \
@@ -422,11 +422,11 @@ python init.py  \
 配置文件的存储路径：{安装目录}/cmdb_adminserver/configures/
 
 ``` shell
--rw-r--r-- 1 root root 873 Jun 18 17:25 common.conf
--rw-r--r-- 1 root root   0 Jun 18 15:20 extra.conf
--rw-r--r-- 1 root root 580 Jun 18 15:20 migrate.conf
--rw-r--r-- 1 root root 155 Jun 18 15:20 mongodb.conf
--rw-r--r-- 1 root root 321 Jun 18 15:20 redis.conf
+-rw-r--r-- 1 root root 873 Jun 18 17:25 common.yaml
+-rw-r--r-- 1 root root   0 Jun 18 15:20 extra.yaml
+-rw-r--r-- 1 root root 580 Jun 18 15:20 migrate.yaml
+-rw-r--r-- 1 root root 155 Jun 18 15:20 mongodb.yaml
+-rw-r--r-- 1 root root 321 Jun 18 15:20 redis.yaml
 ``` 
 
 配置文件目录：{安装目录}/cmdb_adminserver/configures
