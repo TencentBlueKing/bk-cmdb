@@ -116,6 +116,7 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http
 
 func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header http.Header) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
+	supplierAccount := util.GetOwnerID(header)
 
 	// load other mainline instance(except business,set,module) list of target business
 	for _, objectID := range im.modelIDs {
@@ -125,12 +126,12 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 			},
 			common.MetadataLabelBiz: strconv.FormatInt(im.bkBizID, 10),
 		}
-		filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
+		filter = util.SetQueryOwner(filter, supplierAccount)
 
 		mainlineInstances := []mapstr.MapStr{}
 
 		err := mongodb.Client().
-			Table(common.GetObjectInstTableName(objectID)).
+			Table(common.GetObjectInstTableName(objectID, supplierAccount)).
 			Find(filter).
 			All(ctx, &mainlineInstances)
 
@@ -288,6 +289,8 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 
 func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
+	supplierAccount := util.GetOwnerID(header)
+
 	for _, topoInstance := range im.allTopoInstances {
 		blog.V(5).Infof("topo instance: %#v, rid: %s", topoInstance, rid)
 		if topoInstance.ParentInstanceID == 0 {
@@ -315,12 +318,12 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 		filter := map[string]interface{}{
 			common.BKInstIDField: topoInstance.ParentInstanceID,
 		}
-		filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
+		filter = util.SetQueryOwner(filter, supplierAccount)
 
 		missedInstances := make([]mapstr.MapStr, 0)
 
 		err := mongodb.Client().
-			Table(common.GetObjectInstTableName(topoInstance.ObjectID)).
+			Table(common.GetObjectInstTableName(topoInstance.ObjectID, supplierAccount)).
 			Find(filter).
 			All(ctx, &missedInstances)
 
@@ -390,6 +393,8 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 
 func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, header http.Header, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
+	supplierAccount := util.GetOwnerID(header)
+
 	topoInstanceNodeMap := map[string]*metadata.TopoInstanceNode{}
 	for index := 0; index < len(im.allTopoInstances); index++ {
 		topoInstance := im.allTopoInstances[index]
@@ -414,11 +419,11 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 						common.BKObjIDField:  parentObjectID,
 						common.BKInstIDField: topoInstance.ParentInstanceID,
 					}
-					cond = util.SetQueryOwner(cond, util.GetOwnerID(header))
+					cond = util.SetQueryOwner(cond, supplierAccount)
 
 					inst := mapstr.MapStr{}
 					err := mongodb.Client().
-						Table(common.GetObjectInstTableName(parentObjectID)).
+						Table(common.GetObjectInstTableName(parentObjectID, supplierAccount)).
 						Find(cond).
 						One(context.Background(), &inst)
 

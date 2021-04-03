@@ -760,7 +760,9 @@ func getCache(ctx context.Context, cache redis.Client, clientSet apimachinery.Cl
 		getInstCondition := map[string]interface{}{
 			common.GetInstIDField(objType): instID,
 		}
-		if err = db.Table(common.GetInstTableName(objType)).Find(getInstCondition).One(ctx, &inst.data); err != nil {
+		// NOTICE: 预定义的系统模型的实例未分表，供应商id直接用默认的， 2021年04月03日
+		tableName := common.GetInstTableName(objType, common.BKDefaultOwnerID)
+		if err = db.Table(tableName).Find(getInstCondition).One(ctx, &inst.data); err != nil {
 			blog.ErrorJSON("find object %s inst %s error: %s", objType, instID, err)
 			return nil, err
 		}

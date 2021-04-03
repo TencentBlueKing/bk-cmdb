@@ -64,7 +64,7 @@ func removeField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		if !common.IsInnerModel(objectID) {
 			instFilter[common.BKObjIDField] = objectID
 		}
-		tableName := common.GetInstTableName(objectID)
+		tableName := GetInstTableName(objectID)
 		instIDField := common.GetInstIDField(objectID)
 
 		for {
@@ -108,3 +108,59 @@ func removeField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	}
 	return nil
 }
+
+// GetInstTableName returns inst data table name
+func GetInstTableName(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKTableNameBaseApp
+	case BKInnerObjIDSet:
+		return BKTableNameBaseSet
+	case BKInnerObjIDModule:
+		return BKTableNameBaseModule
+	case BKInnerObjIDHost:
+		return BKTableNameBaseHost
+	case BKInnerObjIDProc:
+		return BKTableNameBaseProcess
+	case BKInnerObjIDPlat:
+		return BKTableNameBasePlat
+	default:
+		return BKTableNameBaseInst
+	}
+}
+
+const (
+	// BKTableNameInstAsst the table name of the inst association
+	BKTableNameInstAsst = "cc_InstAsst"
+
+	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseHost    = "cc_HostBase"
+	BKTableNameBaseModule  = "cc_ModuleBase"
+	BKTableNameBaseInst    = "cc_ObjectBase"
+	BKTableNameBasePlat    = "cc_PlatBase"
+	BKTableNameBaseSet     = "cc_SetBase"
+	BKTableNameBaseProcess = "cc_Process"
+)
+
+const (
+	// BKInnerObjIDApp the inner object
+	BKInnerObjIDApp = "biz"
+
+	// BKInnerObjIDSet the inner object
+	BKInnerObjIDSet = "set"
+
+	// BKInnerObjIDModule the inner object
+	BKInnerObjIDModule = "module"
+
+	// BKInnerObjIDHost the inner object
+	BKInnerObjIDHost = "host"
+
+	// BKInnerObjIDObject the inner object
+	BKInnerObjIDObject = "object"
+
+	// BKInnerObjIDProc the inner object
+	BKInnerObjIDProc = "process"
+
+	// BKInnerObjIDPlat the inner object
+	BKInnerObjIDPlat = "plat"
+)

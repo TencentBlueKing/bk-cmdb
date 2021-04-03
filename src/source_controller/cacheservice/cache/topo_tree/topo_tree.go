@@ -149,7 +149,7 @@ func (do *doSearch) searchCustomLevel() {
 	}
 
 	// search custom instance.
-	list, err := do.bizCache.GetCustomLevelBaseList(do.opt.Level.Object, do.opt.BusinessID)
+	list, err := do.bizCache.GetCustomLevelBaseList(do.opt.Level.Object, do.opt.SupplierAccount, do.opt.BusinessID)
 	if err != nil {
 		do.hitError = fmt.Errorf("get custom base list failed, err: %v", err)
 		return
@@ -357,7 +357,7 @@ func (do *doSearch) withCustomLevel() (*Topology, error) {
 				}
 			}
 		} else {
-			customs, err := do.bizCache.GetCustomLevelBaseList(nextLevel, do.opt.BusinessID)
+			customs, err := do.bizCache.GetCustomLevelBaseList(nextLevel, do.opt.SupplierAccount, do.opt.BusinessID)
 			if err != nil {
 				return nil, fmt.Errorf("get object base list failed, err: %v", err)
 			}

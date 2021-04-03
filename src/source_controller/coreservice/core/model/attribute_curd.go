@@ -416,7 +416,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 			cond = util.SetQueryOwner(cond, ownerID)
 
-			collectionName := common.GetInstTableName(object)
+			collectionName := common.GetInstTableName(object, ownerID)
 			wg.Add(1)
 			go func(collName string, filter types.Filter, fields []string) {
 				defer wg.Done()

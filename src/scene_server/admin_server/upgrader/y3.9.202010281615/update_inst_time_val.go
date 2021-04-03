@@ -36,7 +36,7 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		// find attributes of model time type
 		propertyIDArray := make([]map[string]string, 0)
 		filter := mapstr.MapStr{
-			common.BKObjIDField: objID,
+			common.BKObjIDField:        objID,
 			common.BKPropertyTypeField: common.FieldTypeTime,
 		}
 		if err := db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKPropertyIDField).All(ctx, &propertyIDArray); err != nil {
@@ -52,7 +52,7 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		}
 
 		// start to find model instances
-		instTable := common.GetInstTableName(objID)
+		instTable := GetInstTableName(objID)
 		filter = mapstr.MapStr{}
 
 		if isTimeTypeAttrExist == nil {
@@ -106,11 +106,11 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 				}
 
 				filter := map[string]interface{}{
-					instIDField : inst[instIDField],
+					instIDField: inst[instIDField],
 				}
 
 				if err := db.Table(instTable).Update(ctx, filter, doc); err != nil {
-					blog.ErrorJSON("update the value of the instance time type failed, " +
+					blog.ErrorJSON("update the value of the instance time type failed, "+
 						"table: %s, filter: %s, doc: %s, err: %s", instTable, filter, doc, err)
 					return err
 				}
@@ -120,3 +120,59 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 
 	return nil
 }
+
+// GetInstTableName returns inst data table name
+func GetInstTableName(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKTableNameBaseApp
+	case BKInnerObjIDSet:
+		return BKTableNameBaseSet
+	case BKInnerObjIDModule:
+		return BKTableNameBaseModule
+	case BKInnerObjIDHost:
+		return BKTableNameBaseHost
+	case BKInnerObjIDProc:
+		return BKTableNameBaseProcess
+	case BKInnerObjIDPlat:
+		return BKTableNameBasePlat
+	default:
+		return BKTableNameBaseInst
+	}
+}
+
+const (
+	// BKTableNameInstAsst the table name of the inst association
+	BKTableNameInstAsst = "cc_InstAsst"
+
+	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseHost    = "cc_HostBase"
+	BKTableNameBaseModule  = "cc_ModuleBase"
+	BKTableNameBaseInst    = "cc_ObjectBase"
+	BKTableNameBasePlat    = "cc_PlatBase"
+	BKTableNameBaseSet     = "cc_SetBase"
+	BKTableNameBaseProcess = "cc_Process"
+)
+
+const (
+	// BKInnerObjIDApp the inner object
+	BKInnerObjIDApp = "biz"
+
+	// BKInnerObjIDSet the inner object
+	BKInnerObjIDSet = "set"
+
+	// BKInnerObjIDModule the inner object
+	BKInnerObjIDModule = "module"
+
+	// BKInnerObjIDHost the inner object
+	BKInnerObjIDHost = "host"
+
+	// BKInnerObjIDObject the inner object
+	BKInnerObjIDObject = "object"
+
+	// BKInnerObjIDProc the inner object
+	BKInnerObjIDProc = "process"
+
+	// BKInnerObjIDPlat the inner object
+	BKInnerObjIDPlat = "plat"
+)

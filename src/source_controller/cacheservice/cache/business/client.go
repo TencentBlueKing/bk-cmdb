@@ -470,7 +470,7 @@ func (c *Client) ListSetDetails(setIDs []int64) ([]string, error) {
 	return c.listSetDetailFromMongo(setIDs)
 }
 
-func (c *Client) GetCustomLevelBaseList(objectID string, bizID int64) ([]CustomInstanceBase, error) {
+func (c *Client) GetCustomLevelBaseList(objectID, supplierAccount string, bizID int64) ([]CustomInstanceBase, error) {
 	c.tryRefreshBaseList(bizID, refreshList{
 		mainKey:        customKey.objListKeyWithBiz(objectID, bizID),
 		lockKey:        customKey.objListLockKeyWithBiz(objectID, bizID),
@@ -488,17 +488,17 @@ func (c *Client) GetCustomLevelBaseList(objectID string, bizID int64) ([]CustomI
 	blog.Errorf("get biz: %s, obj: %s custom level list keys from cache failed, will get from mongodb, err: %v",
 		bizID, objectID, err)
 
-	return c.getCustomLevelBaseFromMongodb(objectID, bizID)
+	return c.getCustomLevelBaseFromMongodb(objectID, supplierAccount, bizID)
 }
 
-func (c *Client) GetCustomLevelDetail(objID string, instID int64) (string, error) {
+func (c *Client) GetCustomLevelDetail(objID, supplierAccount string, instID int64) (string, error) {
 	c.tryRefreshInstanceDetail(instID, refreshInstance{
 		mainKey:        customKey.detailKey(objID, instID),
 		lockKey:        customKey.detailLockKey(objID, instID),
 		expireKey:      customKey.detailExpireKey(objID, instID),
 		expireDuration: customKey.detailExpireDuration,
 		getDetail: func(instID int64) (s string, err error) {
-			return c.getCustomLevelDetail(objID, instID)
+			return c.getCustomLevelDetail(objID, supplierAccount, instID)
 		},
 	})
 
@@ -508,10 +508,10 @@ func (c *Client) GetCustomLevelDetail(objID string, instID int64) (string, error
 	}
 	blog.Errorf("get biz custom level, obj:%s, inst: %d failed from redis, err: %v", objID, instID, err)
 	// get from db directly.
-	return c.getCustomLevelDetail(objID, instID)
+	return c.getCustomLevelDetail(objID, supplierAccount, instID)
 }
 
-func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string, error) {
+func (c *Client) ListCustomLevelDetail(objID, supplierAccount string, instIDs []int64) ([]string, error) {
 
 	if len(instIDs) == 0 {
 		return make([]string, 0), nil
@@ -525,7 +525,7 @@ func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string,
 			expireKey:      customKey.detailExpireKey(objID, instID),
 			expireDuration: customKey.detailExpireDuration,
 			getDetail: func(instID int64) (s string, err error) {
-				return c.getCustomLevelDetail(objID, instID)
+				return c.getCustomLevelDetail(objID, supplierAccount, instID)
 			},
 		})
 
@@ -537,7 +537,7 @@ func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string,
 		all := make([]string, 0)
 		for idx, cu := range customs {
 			if cu == nil {
-				detail, isNotFound, err := c.getCustomLevelDetailCheckNotFound(objID, instIDs[idx])
+				detail, isNotFound, err := c.getCustomLevelDetailCheckNotFound(objID, supplierAccount, instIDs[idx])
 				// 跳过不存在的自定义节点，因为作为批量查询的API，调用方希望查询到存在的资源，并自动过滤掉不存在的资源
 				if isNotFound {
 					blog.Errorf("custom layer %s/%d not exist, err: %v", objID, instIDs[idx], err)
@@ -559,7 +559,7 @@ func (c *Client) ListCustomLevelDetail(objID string, instIDs []int64) ([]string,
 
 	blog.Errorf("get biz custom level, obj:%s, inst: %v failed from redis, err: %v", objID, instIDs, err)
 	// get from db directly.
-	return c.listCustomLevelDetail(objID, instIDs)
+	return c.listCustomLevelDetail(objID, supplierAccount, instIDs)
 }
 
 func (c *Client) GetTopology() ([]string, error) {

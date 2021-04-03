@@ -89,7 +89,7 @@ func (m *operationManager) SearchInstCount(kit *rest.Kit, inputParam map[string]
 		objectCounts := []metadata.ObjectIDCount{}
 
 		// sharding table name.
-		tableName := common.GetObjectInstTableName(object.ObjID)
+		tableName := common.GetObjectInstTableName(object.ObjID, kit.SupplierAccount)
 
 		if err := mongodb.Client().Table(tableName).AggregateAll(kit.Ctx, objectFilter, &objectCounts); err != nil {
 			blog.Errorf("get object %s instances count failed, err: %+v, rid: %s", object.ObjID, err, kit.Rid)
@@ -176,7 +176,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 		}
 	} else {
 		instCount, countErr = mongodb.Client().
-			Table(common.GetObjectInstTableName(inputParam.ObjID)).
+			Table(common.GetObjectInstTableName(inputParam.ObjID, kit.SupplierAccount)).
 			Find(cond).
 			Count(kit.Ctx)
 
@@ -196,7 +196,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 			}
 
 			err := mongodb.Client().
-				Table(common.GetObjectInstTableName(inputParam.ObjID)).
+				Table(common.GetObjectInstTableName(inputParam.ObjID, kit.SupplierAccount)).
 				AggregateAll(kit.Ctx, pipeline, &groupCountArr)
 
 			if err != nil {

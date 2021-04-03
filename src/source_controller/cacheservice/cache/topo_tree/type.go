@@ -26,10 +26,11 @@ var OverHeadError = errors.New("hit data is overhead")
 type SearchOption struct {
 	BusinessID int64 `json:"bk_biz_id"`
 	// if BusinessID is > 0, then BusinessName will be ignored
-	BusinessName string      `json:"bk_biz_name"`
-	SetName      string      `json:"bk_set_name"`
-	ModuleName   string      `json:"bk_module_name"`
-	Level        CustomLevel `json:"bk_level"`
+	BusinessName    string      `json:"bk_biz_name"`
+	SetName         string      `json:"bk_set_name"`
+	ModuleName      string      `json:"bk_module_name"`
+	Level           CustomLevel `json:"bk_level"`
+	SupplierAccount string      `json:"bk_supplier_account"`
 }
 
 func (s SearchOption) Validate() error {

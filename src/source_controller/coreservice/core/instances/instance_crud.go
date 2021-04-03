@@ -32,7 +32,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
 	}
 
-	instTableName := common.GetInstTableName(objID)
+	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	id, err := mongodb.Client().NextSequence(kit.Ctx, instTableName)
 	if err != nil {
 		return 0, err
@@ -79,7 +79,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	if objID == common.BKInnerObjIDHost {
 		data = metadata.ConvertHostSpecialStringToArray(data)
 	}
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
@@ -101,7 +101,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 
 func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
 	origins = make([]mapstr.MapStr, 0)
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
@@ -118,12 +118,12 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 }
 
 func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr, err error) {
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.GetInstIDField(objID), Val: instID})
 
-	if common.IsObjectInstShardingTable(common.GetInstTableName(objID)) {
+	if common.IsObjectInstShardingTable(common.GetInstTableName(objID, kit.SupplierAccount)) {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
 
@@ -141,7 +141,7 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID in
 }
 
 func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 
 	if common.IsObjectInstShardingTable(tableName) {
 		objIDCond, ok := cond[common.BKObjIDField]

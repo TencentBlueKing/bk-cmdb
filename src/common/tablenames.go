@@ -175,15 +175,15 @@ const (
 )
 
 // GetObjectInstTableName return the object instance table name in sharding mode base on
-// the object ID. Format: cc_ObjectBase_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_pub_switch'.
-func GetObjectInstTableName(objID string) string {
-	return fmt.Sprintf("%s%s_%s", BKObjectInstShardingTablePrefix, TableSpecifierPublic, objID)
+// the object ID. Format: cc_ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_0_pub_switch'.
+func GetObjectInstTableName(objID, supplierAccount string) string {
+	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, TableSpecifierPublic, objID)
 }
 
 // GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
-// the object ID. Format: cc_InstAsst_{Specifier}_{ObjectID}, such as 'cc_InstAsst_pub_switch'.
-func GetObjectInstAsstTableName(objID string) string {
-	return fmt.Sprintf("%s%s_%s", BKObjectInstAsstShardingTablePrefix, TableSpecifierPublic, objID)
+// the object ID. Format: cc_InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_InstAsst_0_pub_switch'.
+func GetObjectInstAsstTableName(objID, supplierAccount string) string {
+	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, TableSpecifierPublic, objID)
 }
 
 // IsObjectShardingTable returns if the target table is an object sharding table, include
@@ -208,7 +208,7 @@ func IsObjectInstAsstShardingTable(tableName string) bool {
 }
 
 // GetInstTableName returns inst data table name
-func GetInstTableName(objID string) string {
+func GetInstTableName(objID, supplierAccount string) string {
 	switch objID {
 	case BKInnerObjIDApp:
 		return BKTableNameBaseApp
@@ -223,6 +223,6 @@ func GetInstTableName(objID string) string {
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
 	default:
-		return GetObjectInstTableName(objID)
+		return GetObjectInstTableName(objID, supplierAccount)
 	}
 }
