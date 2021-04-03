@@ -31,8 +31,25 @@ var (
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount",
+			Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount_bkObjID",
 			Keys: map[string]int32{
+				"bk_supplier_account": 1,
+				"bk_obj_id":           1,
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "bkInstId_bkSupplierAccount",
+			Keys: map[string]int32{
+				"bk_inst_id":          1,
+				"bk_supplier_account": 1,
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "bkInstName_bkSupplierAccount",
+			Keys: map[string]int32{
+				"bk_inst_name":        1,
 				"bk_supplier_account": 1,
 			},
 			Background: true,
@@ -45,13 +62,6 @@ var (
 			Background: true,
 			// 新加 2021年03月11日
 			Unique: true,
-		},
-		{
-			Name: common.CCLogicIndexNamePrefix + "bkParentID",
-			Keys: map[string]int32{
-				"bk_parent_id": 1,
-			},
-			Background: false,
 		},
 	}
 )
