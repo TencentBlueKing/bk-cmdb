@@ -34,6 +34,8 @@ func (s *cacheService) SearchTopologyTreeInCache(ctx *rest.Contexts) {
 		return
 	}
 
+	opt.SupplierAccount = ctx.Kit.SupplierAccount
+
 	if err := opt.Validate(); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "search topology tree, but request parameter is invalid: %v", err)
 		return
@@ -278,7 +280,7 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	inst, err := s.cacheSet.Business.GetCustomLevelDetail(objID, instID)
+	inst, err := s.cacheSet.Business.GetCustomLevelDetail(objID, ctx.Kit.SupplierAccount, instID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v", err)
 		return
@@ -308,7 +310,7 @@ func (s *cacheService) SearchBizTopologyNodePath(ctx *rest.Contexts) {
 
 	opt.Business = bizID
 
-	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt)
+	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt, ctx.Kit.SupplierAccount)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

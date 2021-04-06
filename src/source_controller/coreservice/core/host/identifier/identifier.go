@@ -337,7 +337,8 @@ func (i *Identifier) findHostLayerInfo(kit *rest.Kit) error {
 		layers := make([]metadata.MainlineInstInfo, 0)
 		cond := condition.CreateCondition().Field(common.BKInstIDField).In(parentIDs)
 		cond.Field(common.BKObjIDField).Eq(curObj)
-		err := i.dbQuery.ExecQuery(kit, common.GetObjectInstTableName(curObj), nil, cond.ToMapStr(), &layers)
+		tableName := common.GetObjectInstTableName(curObj, kit.SupplierAccount)
+		err := i.dbQuery.ExecQuery(kit, tableName, nil, cond.ToMapStr(), &layers)
 		if err != nil {
 			blog.Errorf("findHostLayerInfo query layer info error. condition:%#v, rid:%s", cond.ToMapStr(), kit.Rid)
 			return err

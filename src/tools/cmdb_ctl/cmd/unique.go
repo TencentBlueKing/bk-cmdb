@@ -106,7 +106,7 @@ func (s *uniqueCheckService) checkUnique() error {
 				continue
 			}
 
-			if err := s.checkObjectUnique(ctx, objID, unique, attrMap); err != nil {
+			if err := s.checkObjectUnique(ctx, objID, unique.OwnerID, unique, attrMap); err != nil {
 				return err
 			}
 		}
@@ -180,8 +180,8 @@ func (s *uniqueCheckService) getObjAttrMap(ctx context.Context, objID string) (m
 	return attrMap, nil
 }
 
-func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID string, unique metadata.ObjectUnique,
-	attrMap map[int64]metadata.Attribute) error {
+func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID, supplierAccount string,
+	unique metadata.ObjectUnique, attrMap map[int64]metadata.Attribute) error {
 
 	// check if all unique keys are valid
 	uniqueFields := make([]metadata.Attribute, 0)
@@ -245,7 +245,7 @@ func (s *uniqueCheckService) checkObjectUnique(ctx context.Context, objID string
 
 	var tableName string
 	if common.IsInnerModel(objID) {
-		tableName = common.GetInstTableName(objID)
+		tableName = common.GetInstTableName(objID, supplierAccount)
 	} else {
 		tableName = common.BKTableNameBaseInst
 	}

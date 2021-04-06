@@ -203,8 +203,8 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {
 	// collection names.
-	instTableName := common.GetObjectInstTableName(objID)
-	instAsstTableName := common.GetObjectInstAsstTableName(objID)
+	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 
 	// collections indexes.
 	instTableIndexes := dbindex.InstanceIndexes()
@@ -234,8 +234,8 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, i
 // dropObjectShardingTables drops the collections of target model.
 func (m *modelManager) dropObjectShardingTables(kit *rest.Kit, objID string) error {
 	// collection names.
-	instTableName := common.GetObjectInstTableName(objID)
-	instAsstTableName := common.GetObjectInstAsstTableName(objID)
+	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 
 	// drop object instance table.
 	err := m.dropShardingTable(kit, instTableName)

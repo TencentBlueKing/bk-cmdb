@@ -309,8 +309,8 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 	}
 
 	objIDInstIDsMap := make(map[string][]int64)
-	for instID, objID := range instIDObjIDMap {
-		objIDInstIDsMap[objID] = append(objIDInstIDsMap[objID], instID)
+	for instID, row := range instIDObjIDMap {
+		objIDInstIDsMap[row.ObjectID] = append(objIDInstIDsMap[row.ObjectID], instID)
 	}
 
 	instances := make([]map[string]interface{}, 0)

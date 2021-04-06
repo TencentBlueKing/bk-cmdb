@@ -524,32 +524,39 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 				return nil, err
 			}
 
-			objIDInstIDsMap := make(map[string][]int64)
-			for instID, objID := range instIDObjIDMap {
-				objIDInstIDsMap[objID] = append(objIDInstIDsMap[objID], instID)
+			objIDOwnerIDInstIDsMap := make(map[string]map[string][]int64, 0)
+			for instID, row := range instIDObjIDMap {
+				if _, ok := objIDOwnerIDInstIDsMap[row.ObjectID]; !ok {
+					objIDOwnerIDInstIDsMap[row.ObjectID] = make(map[string][]int64, 0)
+				}
+				objIDOwnerIDInstIDsMap[row.ObjectID][row.ObjectID] =
+					append(objIDOwnerIDInstIDsMap[row.ObjectID][row.ObjectID], instID)
 			}
 
-			for objID, instIDs := range objIDInstIDsMap {
-				detailArr := make([]mapStrWithOid, 0)
-				filter = map[string]interface{}{
-					common.BKInstIDField: map[string]interface{}{
-						common.BKDBIN: instIDs,
-					},
-				}
+			for objID, ownerIDInstMap := range objIDOwnerIDInstIDsMap {
+				for ownerID, instIDs := range ownerIDInstMap {
+					detailArr := make([]mapStrWithOid, 0)
+					filter = map[string]interface{}{
+						common.BKInstIDField: map[string]interface{}{
+							common.BKDBIN: instIDs,
+						},
+					}
 
-				objColl := common.GetInstTableName(objID)
-				if err := c.db.Table(objColl).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
-					blog.Errorf("get details from db failed, err: %s, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
-					return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
-				}
+					objColl := common.GetInstTableName(objID, ownerID)
+					if err := c.db.Table(objColl).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
+						blog.Errorf("get details from db failed, err: %s, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
+						return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
+					}
 
-				for _, detailMap := range detailArr {
-					oid := detailMap.Oid.Hex()
-					detailJson, _ := json.Marshal(detailMap.MapStr)
-					for _, index := range oidIndexMap[oid] {
-						oidDetailMap[index] = string(detailJson)
+					for _, detailMap := range detailArr {
+						oid := detailMap.Oid.Hex()
+						detailJson, _ := json.Marshal(detailMap.MapStr)
+						for _, index := range oidIndexMap[oid] {
+							oidDetailMap[index] = string(detailJson)
+						}
 					}
 				}
+
 			}
 		} else {
 			detailArr := make([]mapStrWithOid, 0)

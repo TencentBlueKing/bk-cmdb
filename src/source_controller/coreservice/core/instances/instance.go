@@ -48,7 +48,7 @@ func New(dependent OperationDependences, language language.CCLanguageIf, clientS
 }
 
 func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	cnt, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
@@ -353,7 +353,7 @@ func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]int
 func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	if common.IsObjectInstShardingTable(tableName) {
 		if inputParam.Condition == nil {
 			inputParam.Condition = mapstr.MapStr{}
@@ -417,7 +417,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 
 func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := []int64{}
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instIDFieldName := common.GetInstIDField(objID)
 
 	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
@@ -467,7 +467,7 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 
 func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := []int64{}
-	tableName := common.GetInstTableName(objID)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instIDFieldName := common.GetInstIDField(objID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)

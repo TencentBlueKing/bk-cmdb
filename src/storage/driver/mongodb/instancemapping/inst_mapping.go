@@ -41,9 +41,10 @@ document 只包含bk_obj_id, bk_inst_id 两个字段
 查询次数：100w	 每次查询ID个数：1	耗时：17m51.628125676s	QPS: 933
 ***/
 
-type document struct {
+type ObjectMapping struct {
 	ID       int64  `bson:"bk_inst_id"`
 	ObjectID string `bson:"bk_obj_id"`
+	OwnerID  string `bson:"bk_supplier_account"`
 }
 
 var (
@@ -52,7 +53,7 @@ var (
 
 // deprecated 不建议使用，新加的要求用户必须传bk_obj_id, 改功能是在实例数据分表后， 只有实例id，没有bk_obj_id的时候使用，
 //     负责将实例id 转为bk_obj_id,
-func GetInstanceMapping(ids []int64) (map[int64]string, error) {
+func GetInstanceMapping(ids []int64) (map[int64]ObjectMapping, error) {
 	if len(ids) > 200 {
 		return nil, fmt.Errorf("id array count must lt 200")
 	}
@@ -61,15 +62,15 @@ func GetInstanceMapping(ids []int64) (map[int64]string, error) {
 			common.BKDBIN: ids,
 		},
 	}
-	rows := make([]document, 0)
+	rows := make([]ObjectMapping, 0)
 	// 看不到事务中未提交的数据
 	if err := mongodb.Table(tableName).Find(filter).All(context.Background(), &rows); err != nil {
 		return nil, err
 	}
 
-	mapping := make(map[int64]string, 0)
+	mapping := make(map[int64]ObjectMapping, 0)
 	for _, row := range rows {
-		mapping[row.ID] = row.ObjectID
+		mapping[row.ID] = row
 	}
 
 	return mapping, nil

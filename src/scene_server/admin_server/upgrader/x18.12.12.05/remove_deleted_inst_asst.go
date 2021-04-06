@@ -219,10 +219,10 @@ func handleAsst(ctx context.Context, db dal.RDB, asstArr []metadata.InstAsst) er
 
 func getInst(ctx context.Context, db dal.RDB, objID string, instID []int64) (map[int64]bool, error) {
 	idField := common.GetInstIDField(objID)
-	insttable := common.GetInstTableName(objID)
+	insttable := GetInstTableName(objID)
 	cond := condition.CreateCondition()
 	cond.Field(idField).In(instID)
-	if insttable == common.BKTableNameBaseInst {
+	if insttable == BKTableNameBaseInst {
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
 	instArr := make([]map[string]int64, 0)
@@ -285,8 +285,8 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	createIdxArr := []types.Index{
-		types.Index{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
-		types.Index{Name: "idx_asstID_id", Keys: map[string]int32{common.AssociationObjAsstIDField: -1, common.BKFieldID: -1}, Background: true, Unique: false},
+		{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
+		{Name: "idx_asstID_id", Keys: map[string]int32{common.AssociationObjAsstIDField: -1, common.BKFieldID: -1}, Background: true, Unique: false},
 	}
 	for _, idx := range createIdxArr {
 		exist := false
@@ -310,3 +310,59 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 	return nil
 
 }
+
+// GetInstTableName returns inst data table name
+func GetInstTableName(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKTableNameBaseApp
+	case BKInnerObjIDSet:
+		return BKTableNameBaseSet
+	case BKInnerObjIDModule:
+		return BKTableNameBaseModule
+	case BKInnerObjIDHost:
+		return BKTableNameBaseHost
+	case BKInnerObjIDProc:
+		return BKTableNameBaseProcess
+	case BKInnerObjIDPlat:
+		return BKTableNameBasePlat
+	default:
+		return BKTableNameBaseInst
+	}
+}
+
+const (
+	// BKTableNameInstAsst the table name of the inst association
+	BKTableNameInstAsst = "cc_InstAsst"
+
+	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseHost    = "cc_HostBase"
+	BKTableNameBaseModule  = "cc_ModuleBase"
+	BKTableNameBaseInst    = "cc_ObjectBase"
+	BKTableNameBasePlat    = "cc_PlatBase"
+	BKTableNameBaseSet     = "cc_SetBase"
+	BKTableNameBaseProcess = "cc_Process"
+)
+
+const (
+	// BKInnerObjIDApp the inner object
+	BKInnerObjIDApp = "biz"
+
+	// BKInnerObjIDSet the inner object
+	BKInnerObjIDSet = "set"
+
+	// BKInnerObjIDModule the inner object
+	BKInnerObjIDModule = "module"
+
+	// BKInnerObjIDHost the inner object
+	BKInnerObjIDHost = "host"
+
+	// BKInnerObjIDObject the inner object
+	BKInnerObjIDObject = "object"
+
+	// BKInnerObjIDProc the inner object
+	BKInnerObjIDProc = "process"
+
+	// BKInnerObjIDPlat the inner object
+	BKInnerObjIDPlat = "plat"
+)

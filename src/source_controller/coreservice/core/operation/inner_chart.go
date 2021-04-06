@@ -64,11 +64,14 @@ func (m *operationManager) ModelInstCount(kit *rest.Kit, wg *sync.WaitGroup) err
 	defer wg.Done()
 
 	// 查询模型 （排除top模型：biz\set\module\process\host\plat）
-	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet,
+		common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 	cond := mapstr.MapStr{}
 	cond[common.BKObjIDField] = mapstr.MapStr{common.BKDBNIN: innerObject}
-	modelInfos := []map[string]interface{}{}
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Fields(common.BKObjIDField).All(kit.Ctx, &modelInfos); err != nil {
+	fields := []string{common.BKObjIDField, common.BkSupplierAccount}
+	modelInfos := make([]metadata.Object, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).
+		Fields(fields...).All(kit.Ctx, &modelInfos); err != nil {
 		blog.Errorf("count model's instance, search model info fail ,err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
@@ -76,15 +79,15 @@ func (m *operationManager) ModelInstCount(kit *rest.Kit, wg *sync.WaitGroup) err
 	modelInstNumber := make([]metadata.StringIDCount, 0)
 
 	for _, modelInfo := range modelInfos {
-		modelObjID := util.GetStrByInterface(modelInfo[common.BKObjIDField])
-		condition := mapstr.MapStr{common.BKObjIDField: modelObjID}
 
-		count, err := mongodb.Client().Table(common.GetObjectInstTableName(modelObjID)).Find(condition).Count(kit.Ctx)
+		tableName := common.GetObjectInstTableName(modelInfo.ObjectID, modelInfo.OwnerID)
+		condition := mapstr.MapStr{common.BKObjIDField: modelInfo.ObjectID}
+		count, err := mongodb.Client().Table(tableName).Find(condition).Count(kit.Ctx)
 		if err != nil {
-			blog.Errorf("count model %s instance failed, err: %v, rid: %v", modelObjID, err, kit.Rid)
+			blog.Errorf("count model %s instance failed, err: %v, rid: %v", modelInfo.ObjectID, err, kit.Rid)
 			return err
 		}
-		modelInstNumber = append(modelInstNumber, metadata.StringIDCount{ID: modelObjID, Count: int64(count)})
+		modelInstNumber = append(modelInstNumber, metadata.StringIDCount{ID: modelInfo.ObjectID, Count: int64(count)})
 	}
 
 	if err := m.UpdateInnerChartData(kit, common.ModelInstChart, modelInstNumber); err != nil {

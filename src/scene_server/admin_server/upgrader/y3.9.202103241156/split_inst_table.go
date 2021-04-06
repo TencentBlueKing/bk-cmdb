@@ -28,8 +28,7 @@ import (
 var (
 	oldInstTable        = "cc_ObjectBase"
 	oldInstAsstTable    = "cc_InstAsst"
-	instTablePrefix     = "cc_ObjectBase_pub_"
-	instAsstTablePrefix = "cc_InstAsst_pub_"
+	instAsstTableFormat = "cc_InstAsst_%v_pub_%v"
 	objectBaseMapping   = "cc_ObjectBaseMapping"
 	maxWorkNumber       = 60
 )
@@ -37,7 +36,7 @@ var (
 func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	objs := make([]object, 0)
 	if err = db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
-		common.BKIsPre).All(ctx, &objs); err != nil {
+		common.BKIsPre, common.BKOwnerIDField).All(ctx, &objs); err != nil {
 		blog.Errorf("list all object id from db error. err: %s", err.Error())
 		return
 	}
@@ -47,8 +46,8 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 
 	var objectIDs []string
 	for _, obj := range objs {
-		objInstTable := instTablePrefix + obj.ObjectID
-		objInstAsstTable := instAsstTablePrefix + obj.ObjectID
+		objInstTable := buildInstTableName(obj.ObjectID, obj.OwnerID)         //instTablePrefix + obj.ObjectID
+		objInstAsstTable := buildInstAsstTableName(obj.ObjectID, obj.OwnerID) //instAsstTablePrefix + obj.ObjectID
 
 		objectIDs = append(objectIDs, obj.ObjectID)
 		if err = createTableFunc(ctx, objInstAsstTable, db); err != nil {
@@ -165,12 +164,18 @@ func splitInstAsstTable(ctx context.Context, db dal.RDB) error {
 
 }
 
-func copyInstanceAssociationToShardingTable(ctx context.Context, association map[string]interface{}, db dal.RDB) error {
-	objID := fmt.Sprintf("%v", association[common.BKObjIDField])
-	asstObjID := fmt.Sprintf("%v", association[common.BKAsstObjIDField])
+func buildInstTableName(objID, supplierAccount interface{}) string {
+	return fmt.Sprintf("cc_ObjectBase_%v_pub_%v", supplierAccount, objID)
+}
 
-	objTableName := instAsstTablePrefix + objID
-	asstObjTableName := instAsstTablePrefix + asstObjID
+func buildInstAsstTableName(objID, supplierAccount interface{}) string {
+	return fmt.Sprintf("cc_InstAsst_%v_pub_%v", supplierAccount, objID)
+}
+
+func copyInstanceAssociationToShardingTable(ctx context.Context, association map[string]interface{}, db dal.RDB) error {
+
+	objTableName := buildInstAsstTableName(association[common.BKObjIDField], association[common.BKOwnerIDField])
+	asstObjTableName := buildInstAsstTableName(association[common.BKAsstObjIDField], association[common.BKOwnerIDField])
 
 	filter := map[string]interface{}{
 		"_id": association["_id"],
@@ -243,13 +248,14 @@ func splitInstTable(ctx context.Context, db dal.RDB) error {
 func copyInstanceToShardingTable(ctx context.Context, inst map[string]interface{}, db dal.RDB) error {
 
 	objID := fmt.Sprintf("%v", inst[common.BKObjIDField])
-	tableName := instTablePrefix + objID
+	tableName := buildInstTableName(objID, inst[common.BKOwnerIDField]) //instTablePrefix + objID
 
 	mappingFilter := map[string]interface{}{
 		common.BKInstIDField: inst[common.BKInstIDField],
 	}
 	doc := map[string]interface{}{
-		common.BKObjIDField: objID,
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: inst[common.BKOwnerIDField],
 	}
 
 	if err := db.Table(objectBaseMapping).Upsert(ctx, mappingFilter, doc); err != nil {
@@ -459,8 +465,9 @@ type object struct {
 	// IsHidden front-end don't display the object if IsHidden is true
 	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden"`
 
-	IsPre    bool `field:"ispre" json:"ispre" bson:"ispre"`
-	IsPaused bool `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
+	IsPre    bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPaused bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
+	OwnerID  string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type objectUnique struct {

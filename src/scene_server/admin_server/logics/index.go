@@ -230,7 +230,7 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 
 	objs := make([]metadata.Object, 0)
 	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
-		common.BKIsPre).All(ctx, &objs); err != nil {
+		common.BKIsPre, common.BKOwnerIDField).All(ctx, &objs); err != nil {
 		blog.Errorf("get all common object id  error. err: %s, rid: %s", err.Error(), dt.rid)
 		return err
 	}
@@ -238,8 +238,8 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 	for _, obj := range objs {
 		blog.Infof("start object(%s) sharding table rid: %s", obj.ObjectID, dt.rid)
 
-		instTable := common.GetObjectInstTableName(obj.ObjectID)
-		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID)
+		instTable := common.GetObjectInstTableName(obj.ObjectID, obj.OwnerID)
+		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, obj.OwnerID)
 
 		uniques, err := dt.findObjUniques(ctx, obj.ObjectID)
 		if err != nil {
@@ -296,19 +296,18 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 }
 
 func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap map[string]struct{}) error {
-	filter := map[string]interface{}{common.BKIsPre: false}
-	objIDInterfaceArr, err := dt.db.Table(common.BKTableNameObjDes).Distinct(ctx, common.BKObjIDField, filter)
-	if err != nil {
+	objs := make([]metadata.Object, 0)
+	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
+		common.BKIsPre, common.BKOwnerIDField).All(ctx, &objs); err != nil {
 		blog.Errorf("get all common object id  error. err: %s, rid: %s", err.Error(), dt.rid)
 		// NOTICE: 错误直接忽略不行后需功能
 		return err
 	}
 
 	// 再次确认数据，保证存在模型的的表不被删除
-	for _, objIDInterface := range objIDInterfaceArr {
-		strObjID := fmt.Sprintf("%v", objIDInterface)
-		instTable := common.GetObjectInstTableName(strObjID)
-		instAsstTable := common.GetObjectInstAsstTableName(strObjID)
+	for _, obj := range objs {
+		instTable := common.GetObjectInstTableName(obj.ObjectID, obj.OwnerID)
+		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, obj.OwnerID)
 		delete(modelDBTableNameMap, instTable)
 		delete(modelDBTableNameMap, instAsstTable)
 

@@ -105,7 +105,7 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		return 0, ccErr
 	}
 
-	objInstTable := common.GetInstTableName(objID)
+	objInstTable := common.GetInstTableName(objID, kit.SupplierAccount)
 	_, dbIndexes, ccErr := m.getTableIndexes(kit, objInstTable)
 	if err != nil {
 		return 0, ccErr
@@ -252,7 +252,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 
 	indexName := index.GetUniqueIndexNameByID(id)
 	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
-	objInstTable := common.GetInstTableName(objID)
+	objInstTable := common.GetInstTableName(objID, kit.SupplierAccount)
 	// 删除失败，忽略即可以,后需会有任务补偿
 	if err := mongodb.Table(objInstTable).DropIndex(context.Background(), indexName); err != nil {
 		blog.WarnJSON("[DeleteObjectUnique] Delete db unique index error, err: %s, index name: %s, rid: %s",
@@ -347,7 +347,8 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 	result := struct {
 		UniqueCount uint64 `bson:"unique_count"`
 	}{}
-	err := mongodb.Client().Table(common.GetInstTableName(objID)).AggregateOne(kit.Ctx, pipeline, &result)
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	err := mongodb.Client().Table(tableName).AggregateOne(kit.Ctx, pipeline, &result)
 	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s, rid: %s", err, pipeline, kit.Rid)
 		return err
@@ -462,7 +463,7 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.Objec
 			oldUnique.ObjID, ccErr.Error(), kit.Rid)
 		return ccErr
 	}
-	objInstTable := common.GetInstTableName(oldUnique.ObjID)
+	objInstTable := common.GetInstTableName(oldUnique.ObjID, kit.SupplierAccount)
 
 	if ccErr := m.checkDuplicateInstances(kit, objInstTable, dbIndex); ccErr != nil {
 		return ccErr

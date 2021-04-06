@@ -275,7 +275,7 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 		data := []metadata.ObjectIDCount{}
 
 		// sharding table name.
-		tableName := common.GetObjectInstTableName(object.ObjID)
+		tableName := common.GetObjectInstTableName(object.ObjID, ctx.Kit.SupplierAccount)
 
 		if err := mongodb.Client().Table(tableName).AggregateAll(ctx.Kit.Ctx, objectFilter, &data); err != nil {
 			blog.Errorf("get object %s instances count failed, err: %+v, rid: %s", object.ObjID, err, ctx.Kit.Rid)
