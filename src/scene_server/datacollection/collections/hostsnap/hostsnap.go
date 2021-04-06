@@ -309,6 +309,8 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	}
 
 	var OuterMAC, InnerMAC string
+	innerMacMap := make(map[string]struct{})
+	outerMacMap := make(map[string]struct{})
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			splitAddr := strings.Split(addr.String(), "/")
@@ -320,15 +322,19 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 				innerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
 				if len(InnerMAC) == 0 {
 					InnerMAC = innerMAC
-				} else {
+					innerMacMap[innerMAC] = struct{}{}
+				} else if _, exists := innerMacMap[innerMAC]; !exists {
 					InnerMAC += "," + innerMAC
+					innerMacMap[innerMAC] = struct{}{}
 				}
 			} else if _, exists := outerIPMap[ip]; exists {
 				outerMAC := strings.TrimSpace(inter.Get("hardwareaddr").String())
 				if len(OuterMAC) == 0 {
 					OuterMAC = outerMAC
-				} else {
+					outerMacMap[outerMAC] = struct{}{}
+				} else if _, exists := outerMacMap[outerMAC]; !exists {
 					OuterMAC += "," + outerMAC
+					outerMacMap[outerMAC] = struct{}{}
 				}
 			}
 		}
