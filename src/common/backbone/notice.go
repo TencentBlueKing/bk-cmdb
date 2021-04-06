@@ -55,12 +55,15 @@ func (handler *noticeHandler) handleLogNotice(ctx context.Context) error {
 			_, _, ch, err = handler.client.GetW(logVPath)
 			if err != nil {
 				blog.Errorf("log watch failed, will watch after 10s, path: %s, err: %s", logVPath, err.Error())
-				switch err {
-				case zk.ErrClosing, zk.ErrConnectionClosed:
+				if handler.client.IsConnectionError(err) {
 					if conErr := handler.client.Connect(); conErr != nil {
 						blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n", logVPath, conErr.Error())
 						time.Sleep(10 * time.Second)
 					}
+					continue
+				}
+
+				switch err {
 				case zk.ErrNoNode:
 					data["v"] = blog.GetV()
 					logVData, _ := json.Marshal(data)
