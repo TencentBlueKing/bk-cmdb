@@ -9,6 +9,7 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -328,6 +329,9 @@ const (
 	updateHostPropertyBatchPattern = "/api/v3/hosts/property/batch"
 	cloneHostPropertyBatchPattern  = "/api/v3/hosts/property/clone"
 
+	findHostRelationWithObjInstPattern = "/api/v3/findmany/hosts/relation/with_topo"
+	listHostDetailAndTopologyPattern   = "/api/v3/findmany/hosts/detail_topo"
+
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
 
@@ -404,6 +408,20 @@ func (ps *parseStream) host() *parseStream {
 				},
 			},
 		}
+		return ps
+	}
+
+	// find host relations with custom object instances
+	if ps.hitPattern(findHostRelationWithObjInstPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		blog.Infof("hit auth, url: %s rid: %s", ps.RequestCtx.URI, ps.RequestCtx.Rid)
 		return ps
 	}
 
@@ -667,6 +685,20 @@ func (ps *parseStream) host() *parseStream {
 			},
 		}
 
+		return ps
+	}
+
+	// list host's detail and it's topology info
+	if ps.hitPattern(listHostDetailAndTopologyPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		blog.Infof("hit auth, url: %s rid: %s", ps.RequestCtx.URI, ps.RequestCtx.Rid)
 		return ps
 	}
 

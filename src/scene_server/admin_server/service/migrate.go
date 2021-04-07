@@ -40,9 +40,8 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 	updateCfg := &upgrader.Config{
-		OwnerID:      ownerID,
-		User:         common.CCSystemOperatorUserName,
-		CCApiSrvAddr: s.ccApiSrvAddr,
+		OwnerID: ownerID,
+		User:    common.CCSystemOperatorUserName,
 	}
 
 	if err := s.createWatchDBChainCollections(rid); err != nil {
@@ -191,9 +190,8 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 	updateCfg := &upgrader.Config{
-		OwnerID:      ownerID,
-		User:         common.CCSystemOperatorUserName,
-		CCApiSrvAddr: s.ccApiSrvAddr,
+		OwnerID: ownerID,
+		User:    common.CCSystemOperatorUserName,
 	}
 
 	input := new(MigrateSpecifyVersionRequest)

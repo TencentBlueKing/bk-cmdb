@@ -36,7 +36,6 @@ type Service struct {
 	db           dal.RDB
 	watchDB      dal.RDB
 	cache        redis.Client
-	ccApiSrvAddr string
 	ctx          context.Context
 	Config       options.Config
 	iam          *iam.Iam
@@ -65,10 +64,6 @@ func (s *Service) SetIam(iam *iam.Iam) {
 	s.iam = iam
 }
 
-func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
-	s.ccApiSrvAddr = ccApiSrvAddr
-}
-
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
@@ -89,6 +84,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
 	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))
+	api.Route(api.POST("/migrate/dataid").To(s.migrateDataID))
 	api.Route(api.GET("/healthz").To(s.Healthz))
 
 	container.Add(api)

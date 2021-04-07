@@ -821,8 +821,7 @@ var _ = Describe("no service template test", func() {
 				ServiceInstance: metadata.ServiceInstanceCondOfP{
 					IDs: []int64{serviceId},
 				},
-				Process: metadata.ProcessCondOfP{},
-				Fields:  []string{},
+				Fields: []string{},
 				Page: metadata.BasePage{
 					Start: 0,
 					Limit: 100,

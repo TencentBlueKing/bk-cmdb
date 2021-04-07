@@ -1,5 +1,6 @@
+
 <template>
-  <div class="field-view-layout">
+  <cmdb-sticky-layout class="field-view-layout">
     <div class="field-view-list" ref="fieldList">
       <div class="property-item">
         <div class="property-name">
@@ -35,20 +36,20 @@
         <div class="property-name">
           <span>{{$t('正则校验')}}</span>：
         </div>
-        <span class="property-value">{{field.option || '--'}}</span>
+        <span class="property-value">{{option || '--'}}</span>
       </div>
       <template v-else-if="['int', 'float'].includes(field.bk_property_type)">
         <div class="property-item">
           <div class="property-name">
             <span>{{$t('最小值')}}</span>：
           </div>
-          <span class="property-value">{{field.option.min || (field.option.min === 0 ? 0 : '--')}}</span>
+          <span class="property-value">{{option.min || (option.min === 0 ? 0 : '--')}}</span>
         </div>
         <div class="property-item">
           <div class="property-name">
             <span>{{$t('最大值')}}</span>：
           </div>
-          <span class="property-value">{{field.option.max || (field.option.max === 0 ? 0 : '--')}}</span>
+          <span class="property-value">{{option.max || (option.max === 0 ? 0 : '--')}}</span>
         </div>
       </template>
       <div class="property-item">
@@ -70,15 +71,16 @@
         <span class="property-value" v-html="getEnumValue()"></span>
       </div>
     </div>
-    <div class="btns" :class="{ 'sticky-layout': scrollbar }" v-if="canEdit">
-      <bk-button class="mr10" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
-      <bk-button class="delete-btn" v-if="!field.ispre" @click="handleDelete">{{$t('删除')}}</bk-button>
-    </div>
-  </div>
+    <template slot="footer" slot-scope="{ sticky }" v-if="canEdit">
+      <div class="btns" :class="{ 'is-sticky': sticky }">
+        <bk-button class="mr10" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
+        <bk-button class="delete-btn" v-if="!field.ispre" @click="handleDelete">{{$t('删除')}}</bk-button>
+      </div>
+    </template>
+  </cmdb-sticky-layout>
 </template>
 
 <script>
-  import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   export default {
     props: {
       field: {
@@ -106,11 +108,19 @@
         scrollbar: false
       }
     },
-    mounted() {
-      addResizeListener(this.$refs.fieldList, this.handleScrollbar)
-    },
-    beforeDestroy() {
-      removeResizeListener(this.$refs.fieldList, this.handleScrollbar)
+    computed: {
+      type() {
+        return this.field.bk_property_type
+      },
+      option() {
+        if (['int', 'float'].includes(this.type)) {
+          return this.field.option || { min: null, max: null }
+        }
+        if (['enum', 'list'].includes(this.type)) {
+          return this.field.option || []
+        }
+        return this.field.option
+      }
     },
     methods: {
       getEnumValue() {
@@ -136,10 +146,6 @@
       },
       handleDelete() {
         this.$emit('on-delete')
-      },
-      handleScrollbar() {
-        const el = this.$refs.fieldList
-        this.scrollbar = el.scrollHeight !== el.offsetHeight
       }
     }
   }
@@ -148,11 +154,9 @@
 <style lang="scss" scoped>
     .field-view-layout {
         height: 100%;
-        overflow: hidden;
+        @include scrollbar-y;
     }
     .field-view-list {
-        max-height: calc(100% - 52px);
-        @include scrollbar-y;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
@@ -183,9 +187,6 @@
         }
     }
     .btns {
-        position: sticky;
-        bottom: 0;
-        left: 0;
         background: #ffffff;
         padding: 10px 20px;
         font-size: 0;
@@ -194,7 +195,7 @@
             background-color: #ff5656;
             border-color: #ff5656;
         }
-        &.sticky-layout {
+        &.is-sticky {
             border-top: 1px solid #dcdee5;
         }
     }

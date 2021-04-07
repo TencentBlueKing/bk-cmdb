@@ -15,6 +15,7 @@ package x19_05_16_01
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -353,14 +354,25 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 								}
 							}
 
-							bindIP, err := tplBindIP.IP(hostMap[moduleHost.HostID])
-							if err != nil {
-								return err
-							}
+							if tplBindIP == "" {
+								*inst.BindIP = "127.0.0.1"
+							} else {
+								matched, err := regexp.MatchString(common.PatternIP, *inst.BindIP)
+								if err != nil {
+									return err
+								}
 
-							*inst.BindIP = bindIP
+								if !matched {
+									bindIP, err := tplBindIP.IP(hostMap[moduleHost.HostID])
+									if err != nil {
+										return err
+									}
+									*inst.BindIP = bindIP
+								}
+							}
 						} else {
-							inst.BindIP = new(string)
+							bindIP := "127.0.0.1"
+							inst.BindIP = &bindIP
 						}
 						inst.SupplierAccount = ownerID
 						blog.InfoJSON("procInst: %s", inst)

@@ -38,10 +38,5 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x18.10.10.01] addProcInstanceDetailTable error  %s", err.Error())
 		return err
 	}
-	err = addProcFreshInstance(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x18.10.10.01] addProcFreshInstance error  %s", err.Error())
-		return err
-	}
 	return
 }

@@ -1,21 +1,22 @@
 import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import store from '@/store'
 
 const requestId = Symbol('getAuthorizedBusiness')
 
 let committed = false
-export async function getAuthorizedBusiness(app) {
-  const { info } = await app.$store.dispatch('objectBiz/getAuthorizedBusiness', {
+export async function getAuthorizedBusiness() {
+  const { info } = await store.dispatch('objectBiz/getAuthorizedBusiness', {
     requestId: requestId,
     fromCache: true
   })
   if (!committed) {
-    app.$store.commit('objectBiz/setAuthorizedBusiness', Object.freeze(info))
+    store.commit('objectBiz/setAuthorizedBusiness', Object.freeze(info))
     committed = true
   }
   return info
 }
 
-export const before = async function (app, to, from, next) {
+export const before = async function (to, from, next) {
   const toTopRoute = to.matched[0]
   const fromTopRoute = from.matched[0]
   if (!toTopRoute || toTopRoute.name !== MENU_BUSINESS) {
@@ -33,7 +34,7 @@ export const before = async function (app, to, from, next) {
     next()
     return false
   }
-  const authorizedList = await getAuthorizedBusiness(app)
+  const authorizedList = await getAuthorizedBusiness()
   const id = parseInt(to.params.bizId || window.localStorage.getItem('selectedBusiness'))
   const business = authorizedList.find(business => business.bk_biz_id === id)
   const hasURLId = to.params.bizId
@@ -43,7 +44,7 @@ export const before = async function (app, to, from, next) {
     const isSubRoute = to.matched.length > 1
     toTopRoute.meta.view = 'default'
     window.localStorage.setItem('selectedBusiness', id)
-    app.$store.commit('objectBiz/setBizId', id)
+    store.commit('objectBiz/setBizId', id)
 
     if (!isSubRoute) { // 如果是一级路由，则重定向到带业务id的二级路由首页(业务拓扑)
       next({
@@ -77,7 +78,7 @@ export const before = async function (app, to, from, next) {
     toTopRoute.meta.view = 'default'
     const defaultId = firstBusiness.bk_biz_id
     window.localStorage.setItem('selectedBusiness', defaultId)
-    app.$store.commit('objectBiz/setBizId', defaultId)
+    store.commit('objectBiz/setBizId', defaultId)
     next({
       path: `/business/${defaultId}/index`,
       replace: true

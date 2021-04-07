@@ -14,7 +14,6 @@ package event
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -31,49 +30,61 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 	if err := opts.CheckSetDefault(); err != nil {
 		return nil, err
 	}
-	pipeline, streamOptions := generateOptions(&opts.Options)
 
-	var stream *mongo.ChangeStream
-	var err error
-	stream, err = e.client.
-		Database(e.database).
-		Collection(opts.Collection).
-		Watch(ctx, pipeline, streamOptions)
+	eventChan := make(chan *types.Event, types.DefaultEventChanSize)
+	go func() {
+		pipeline, streamOptions := generateOptions(&opts.Options)
 
-	if err != nil && isFatalError(err) {
-		// TODO: send alarm immediately.
-		blog.Errorf("mongodb watch collection: %s got a fatal error, skip resume token and retry, err: %v",
-			opts.Collection, err)
-		// reset the resume token, because we can not use the former resume token to watch success for now.
-		streamOptions.StartAfter = nil
-		// cause we have already got a fatal error, we can not try to watch from where we lost.
-		// so re-watch from 1 minutes ago to avoid lost events.
-		// Note: apparently, we may got duplicate events with this re-watch
-		startAtTime := uint32(time.Now().Unix()) - 60
-		streamOptions.StartAtOperationTime = &primitive.Timestamp{
-			T: startAtTime,
-			I: 0,
-		}
+		blog.InfoJSON("start watch with pipeline: %s, options: %s, stream options: %s", pipeline, opts, streamOptions)
 
-		if opts.WatchFatalErrorCallback != nil {
-			err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})
-			if err != nil {
-				blog.Errorf("do watch fatal error callback for coll %s failed, err: %v", opts.Collection, err)
-			}
-		}
-
+		var stream *mongo.ChangeStream
+		var err error
 		stream, err = e.client.
 			Database(e.database).
 			Collection(opts.Collection).
 			Watch(ctx, pipeline, streamOptions)
-	}
 
-	if err != nil {
-		blog.Errorf("mongodb watch failed with conf: %+v, err: %v", *opts, err)
-		return nil, fmt.Errorf("watch collection: %s failed, err: %v", opts.Collection, err)
-	}
-	eventChan := make(chan *types.Event, types.DefaultEventChanSize)
-	go e.loopWatch(ctx, &opts.Options, streamOptions, stream, pipeline, eventChan)
+		if err != nil && isFatalError(err) {
+			// TODO: send alarm immediately.
+			blog.Errorf("mongodb watch collection: %s got a fatal error, skip resume token and retry, err: %v",
+				opts.Collection, err)
+			// reset the resume token, because we can not use the former resume token to watch success for now.
+			streamOptions.StartAfter = nil
+			// cause we have already got a fatal error, we can not try to watch from where we lost.
+			// so re-watch from 1 minutes ago to avoid lost events.
+			// Note: apparently, we may got duplicate events with this re-watch
+			startAtTime := uint32(time.Now().Unix()) - 60
+			streamOptions.StartAtOperationTime = &primitive.Timestamp{
+				T: startAtTime,
+				I: 0,
+			}
+
+			if opts.WatchFatalErrorCallback != nil {
+				err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})
+				if err != nil {
+					blog.Errorf("do watch fatal error callback for coll %s failed, err: %v", opts.Collection, err)
+				}
+			}
+
+			blog.InfoJSON("start watch with pipeline: %s, options: %s, stream options: %s", pipeline, opts, streamOptions)
+
+			stream, err = e.client.
+				Database(e.database).
+				Collection(opts.Collection).
+				Watch(ctx, pipeline, streamOptions)
+		}
+
+		if err != nil {
+			if err == context.Canceled {
+				// if error is context cancelled, then loop watch will exit at the same time
+				return
+			}
+			blog.Fatalf("mongodb watch failed with conf: %+v, err: %v", *opts, err)
+		}
+
+		go e.loopWatch(ctx, &opts.Options, streamOptions, stream, pipeline, eventChan)
+
+	}()
 
 	watcher := &types.Watcher{
 		EventChan: eventChan,
@@ -117,6 +128,8 @@ func (e *Event) loopWatch(ctx context.Context,
 				// so that we can continue the event from where it just broken.
 				streamOptions.SetStartAfter(currentToken)
 			}
+
+			blog.InfoJSON("retry watch with pipeline: %s, options: %s, stream options: %s", pipeline, opts, streamOptions)
 
 			var err error
 			stream, err = e.client.

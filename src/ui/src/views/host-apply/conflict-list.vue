@@ -3,18 +3,16 @@
     <property-confirm-table
       ref="propertyConfirmTable"
       :list="table.list"
-      :total="table.total"
-    >
+      :total="table.total">
     </property-confirm-table>
-    <div :class="['bottom-actionbar', { 'is-sticky': hasScrollbar }]">
+    <div class="bottom-actionbar">
       <div class="actionbar-inner">
         <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
           <bk-button
             theme="primary"
             slot-scope="{ disabled }"
             :disabled="applyButtonDisabled || disabled"
-            @click="handleApply"
-          >
+            @click="handleApply">
             {{$t('应用')}}
           </bk-button>
         </cmdb-auth>
@@ -25,8 +23,7 @@
       :request="applyRequest"
       @return="handleStatusModalBack"
       @view-host="handleViewHost"
-      @view-failed="handleViewFailed"
-    >
+      @view-failed="handleViewFailed">
     </apply-status-modal>
   </div>
 </template>
@@ -40,7 +37,6 @@
     MENU_BUSINESS_HOST_APPLY,
     MENU_BUSINESS_HOST_APPLY_FAILED
   } from '@/dictionary/menu-symbol'
-  import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   export default {
     components: {
       applyStatusModal,
@@ -53,8 +49,7 @@
           total: 0
         },
         applyRequest: null,
-        applyButtonDisabled: false,
-        hasScrollbar: false
+        applyButtonDisabled: false
       }
     },
     computed: {
@@ -68,12 +63,6 @@
         }
         return moduleIds
       }
-    },
-    mounted() {
-      addResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
-    },
-    beforeDestroy() {
-      removeResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
     },
     created() {
       this.setBreadcrumbs()
@@ -107,12 +96,6 @@
       goBack() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY
-        })
-      },
-      resizeHandler(a, b, c) {
-        this.$nextTick(() => {
-          const scroller = this.$refs.propertyConfirmTable.$el.querySelector('.bk-table-body-wrapper')
-          this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
         })
       },
       postApply() {
@@ -186,24 +169,12 @@
     .bottom-actionbar {
         width: 100%;
         height: 50px;
-        bottom: 0;
-        left: 0;
         z-index: 100;
 
         .actionbar-inner {
             padding: 20px 0 0 0;
             .bk-button {
                 min-width: 86px;
-            }
-        }
-
-        &.is-sticky {
-            position: absolute;
-            background: #fff;
-            border-top: 1px solid #dcdee5;
-
-            .actionbar-inner {
-                padding: 8px 0 0 20px;
             }
         }
     }

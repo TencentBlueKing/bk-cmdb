@@ -1,5 +1,5 @@
 <template>
-  <div class="model-slider-content">
+  <cmdb-sticky-layout class="model-slider-content">
     <div class="slider-main" ref="sliderMain">
       <label class="form-label">
         <span class="label-text">
@@ -100,7 +100,9 @@
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
       </div>
-      <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">
+    </div>
+    <template slot="footer" slot-scope="{ sticky }">
+      <div class="btn-group" :class="{ 'is-sticky': sticky }">
         <bk-button theme="primary"
           :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
           @click="saveField">
@@ -110,12 +112,11 @@
           {{$t('取消')}}
         </bk-button>
       </div>
-    </div>
-  </div>
+    </template>
+  </cmdb-sticky-layout>
 </template>
 
 <script>
-  import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import theFieldChar from './char'
   import theFieldInt from './int'
   import theFieldFloat from './float'
@@ -210,8 +211,7 @@
           option: ''
         },
         originalFieldInfo: {},
-        charMap: ['singlechar', 'longchar'],
-        scrollbar: false
+        charMap: ['singlechar', 'longchar']
       }
     },
     computed: {
@@ -273,12 +273,6 @@
         this.initData()
       }
     },
-    mounted() {
-      addResizeListener(this.$refs.sliderMain, this.handleScrollbar)
-    },
-    beforeDestroy() {
-      removeResizeListener(this.$refs.sliderMain, this.handleScrollbar)
-    },
     methods: {
       ...mapActions('objectModelProperty', [
         'createBizObjectAttribute',
@@ -286,10 +280,6 @@
         'updateObjectAttribute',
         'updateBizObjectAttribute'
       ]),
-      handleScrollbar() {
-        const el = this.$refs.sliderMain
-        this.scrollbar = el.scrollHeight !== el.offsetHeight
-      },
       initData() {
         for (const key in this.fieldInfo) {
           this.fieldInfo[key] = this.$tools.clone(this.field[key])
@@ -384,7 +374,7 @@
     .model-slider-content {
         height: 100%;
         padding: 0;
-        overflow: hidden;
+        @include scrollbar-y;
         .slider-main {
             max-height: calc(100% - 52px);
             @include scrollbar-y;
@@ -428,7 +418,7 @@
         }
         .btn-group {
             padding: 10px 20px;
-            &.sticky-layout {
+            &.is-sticky {
                 border-top: 1px solid #dcdee5;
             }
         }

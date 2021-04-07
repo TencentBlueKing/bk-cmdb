@@ -451,16 +451,10 @@ func IsExist(key string) bool {
 }
 
 func getRedisParser() *viperParser {
-	if migrateParser != nil {
-		return migrateParser
-	}
 	return redisParser
 }
 
 func getMongodbParser() *viperParser {
-	if migrateParser != nil {
-		return migrateParser
-	}
 	return mongodbParser
 }
 

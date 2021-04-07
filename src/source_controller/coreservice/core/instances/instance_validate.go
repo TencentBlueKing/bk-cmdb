@@ -106,23 +106,15 @@ func (m *instanceManager) getHostRelatedBizID(kit *rest.Kit, hostID int64) (bizI
 	filter := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
-	hostConfig := make([]metadata.ModuleHost, 0)
-	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
+
+	relation := new(metadata.ModuleHost)
+	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(common.BKAppIDField).
+		One(kit.Ctx, relation); err != nil {
 		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if len(hostConfig) == 0 {
-		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
-		return 0, kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
-	}
-	bizID = hostConfig[0].AppID
-	for _, item := range hostConfig {
-		if item.AppID != bizID {
-			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
-			return 0, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
-		}
-	}
-	return bizID, nil
+
+	return relation.AppID, nil
 }
 
 func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {

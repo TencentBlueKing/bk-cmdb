@@ -116,6 +116,7 @@ type RegisteredSystemInfo struct {
 	ActionGroups           []ActionGroup          `json:"action_groups"`
 	InstanceSelections     []InstanceSelection    `json:"instance_selections"`
 	ResourceCreatorActions ResourceCreatorActions `json:"resource_creator_actions"`
+	CommonActions          []CommonAction         `json:"common_actions"`
 }
 
 type BaseResponse struct {
@@ -309,6 +310,7 @@ const (
 	WatchSetEvent          ActionID = "watch_set_event"
 	WatchModuleEvent       ActionID = "watch_module_event"
 	WatchSetTemplateEvent  ActionID = "watch_set_template_event"
+	WatchProcessEvent      ActionID = "watch_process_event"
 	GlobalSettings         ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
@@ -465,4 +467,11 @@ type ResourceCreatorAction struct {
 type CreatorRelatedAction struct {
 	ID         ActionID `json:"id"`
 	IsRequired bool     `json:"required"`
+}
+
+// CommonAction specifies a common operation's related iam actions
+type CommonAction struct {
+	Name        string         `json:"name"`
+	EnglishName string         `json:"name_en"`
+	Actions     []ActionWithID `json:"actions"`
 }

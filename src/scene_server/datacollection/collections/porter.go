@@ -370,8 +370,7 @@ func (p *SimplePorter) fusing() {
 				p.fusingTotal.Inc()
 
 			case <-time.After(defaultMessageChanTimeout):
-				// no more stacked data, mark early stop
-				// flag, it's shit to break here.
+				// no more stacked data, mark early stop flag, DO NOT use 'break' here.
 				needEarlyStop = true
 			}
 		}

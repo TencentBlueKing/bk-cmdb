@@ -260,6 +260,67 @@ func (o *FindHostsByTopoOpt) Validate() (rawError errors.RawErrorInfo) {
 	return errors.RawErrorInfo{}
 }
 
+type FindHostRelationWtihTopoOpt struct {
+	Business int64    `json:"bk_biz_id"`
+	ObjID    string   `json:"bk_obj_id"`
+	InstIDs  []int64  `json:"bk_inst_ids"`
+	Fields   []string `json:"fields"`
+	Page     BasePage `json:"page"`
+}
+
+func (f *FindHostRelationWtihTopoOpt) Validate() *errors.RawErrorInfo {
+	if f.ObjID == "" {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if f.ObjID == common.BKInnerObjIDApp {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if f.Business <= 0 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if len(f.InstIDs) <= 0 || len(f.InstIDs) > 50 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKInstIDField},
+		}
+	}
+
+	if len(f.Fields) == 0 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if f.Page.Limit > common.BKMaxInstanceLimit {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	if f.Page.IsIllegal() {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page"},
+		}
+	}
+
+	return nil
+}
+
 type FindModuleHostRelationParameter struct {
 	ModuleIDS    []int64  `json:"bk_module_ids"`
 	ModuleFields []string `json:"module_fields"`
@@ -373,6 +434,55 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 	return "", nil
 }
 
+type ListHostsDetailAndTopoOption struct {
+	// return the host's topology with biz info.
+	WithBiz            bool                      `json:"with_biz"`
+	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
+	Page               BasePage                  `json:"page"`
+}
+
+func (option *ListHostsDetailAndTopoOption) Validate() *errors.RawErrorInfo {
+
+	if key, err := option.Page.Validate(false); err != nil {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page." + key},
+		}
+	}
+
+	if option.Page.Limit > common.BKMaxInstanceLimit {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page." + "limit"},
+		}
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return &errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"host_property_filter." + key},
+			}
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return &errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"host_property_filter exceeded max allowed deep"},
+			}
+		}
+	}
+
+	if len(option.Fields) == 0 {
+		return &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	return nil
+}
+
 type CountTopoNodeHostsOption struct {
 	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
 }
@@ -460,6 +570,22 @@ type Topo struct {
 	SetID   int64    `json:"bk_set_id" bson:"bk_set_id"`
 	SetName string   `json:"bk_set_name" bson:"bk_set_name"`
 	Module  []Module `json:"module" bson:"module"`
+}
+
+type HostDetailWithTopo struct {
+	Host map[string]interface{} `json:"host"`
+	Topo []*HostTopoNode        `json:"topo"`
+}
+
+type HostTopoNode struct {
+	Instance *NodeInstance   `json:"inst"`
+	Children []*HostTopoNode `json:"children"`
+}
+
+type NodeInstance struct {
+	Object   string      `json:"obj"`
+	InstName interface{} `json:"name"`
+	InstID   interface{} `json:"id"`
 }
 
 type Module struct {
