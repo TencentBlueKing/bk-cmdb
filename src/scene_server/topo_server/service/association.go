@@ -758,7 +758,7 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 		if err = ret.CCError(); err != nil {
 			return err
 		}
-		result.Data++
+		result.Data = len(request.ID)
 		return nil
 	})
 	if txnErr != nil {
