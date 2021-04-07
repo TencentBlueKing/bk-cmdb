@@ -706,7 +706,10 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 	var ret *metadata.DeleteAssociationInstResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
+		idList := []int64{id}
+		// bkObjID has no actual effect here for now.
+		bkObjID := ""
+		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, idList, bkObjID)
 		if err != nil {
 			return err
 		}
@@ -727,7 +730,6 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 
 func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 	request := &metadata.DeleteAssociationInstBatchRequest{}
-	result := &metadata.DeleteAssociationInstBatchResult{}
 	if err := ctx.DecodeInto(request); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
 		return
@@ -740,20 +742,23 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded, "The number of ID should be less than 500."))
 		return
 	}
+	if request.ObjectID == "" {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommHTTPInputInvalid))
+		return
+	}
 
+	result := &metadata.DeleteAssociationInstBatchResult{}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		for _, id := range request.ID {
-			var ret *metadata.DeleteAssociationInstResult
-			var err error
-			ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id)
-			if err != nil {
-				return err
-			}
-			if err = ret.CCError(); err != nil {
-				return err
-			}
-			result.Data++
+		var ret *metadata.DeleteAssociationInstResult
+		var err error
+		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, request.ID, request.ObjectID)
+		if err != nil {
+			return err
 		}
+		if err = ret.CCError(); err != nil {
+			return err
+		}
+		result.Data++
 		return nil
 	})
 	if txnErr != nil {
