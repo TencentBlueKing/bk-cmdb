@@ -261,8 +261,9 @@ type ServiceDifferenceDetails struct {
 }
 
 type SrvInstBriefInfo struct {
-	ID   int64  `field:"id" json:"id"`
-	Name string `field:"name" json:"name"`
+	ID        int64  `field:"id" json:"id"`
+	Name      string `field:"name" json:"name"`
+	SvcTempID int64  `field:"service_template_id" json:"service_template_id"`
 }
 
 type CreateServiceInstanceOption struct {
