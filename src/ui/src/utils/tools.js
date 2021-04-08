@@ -99,6 +99,7 @@ export function formatValue (value, property) {
         case 'int':
         case 'float':
         case 'list':
+        case 'time':
             formattedValue = null
             break
         case 'bool':
