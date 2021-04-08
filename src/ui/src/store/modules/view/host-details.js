@@ -54,7 +54,8 @@ const getters = {
     targetInstances: state => state.instances.target,
     isBusinessHost: state => {
         return (state.info.biz || []).some(business => business.default === 0)
-    }
+    },
+    properties: state => state.properties
 }
 
 const mutations = {

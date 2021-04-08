@@ -19,12 +19,10 @@
         <div class="info-item fl">
             <span class="name fl">{{$t('主机属性自动应用')}}</span>
             <div class="fl">
-                <cmdb-loading :loading="$loading('getRules')">
-                    <div class="template-value" @click="linkToAutoApply">
-                        <span class="text link">{{autoApplyRule ? '已启用' : '未启用'}}</span>
-                        <i class="icon-cc-share link"></i>
-                    </div>
-                </cmdb-loading>
+                <div class="template-value" @click="linkToAutoApply">
+                    <span class="text link">{{autoApplyEnable ? '已启用' : '未启用'}}</span>
+                    <i class="icon-cc-share link"></i>
+                </div>
             </div>
         </div>
     </div>
@@ -33,13 +31,9 @@
 <script>
     import { mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
-    import CmdbLoading from '@/components/loading/loading'
     const serviceCategoryRequestId = Symbol('serviceCategoryRequestId')
     export default {
         name: 'service-template-info',
-        components: {
-            CmdbLoading
-        },
         props: {
             instance: {
                 type: Object,
@@ -56,6 +50,9 @@
             ...mapGetters('objectBiz', ['bizId']),
             selectedNode () {
                 return this.$store.state.businessHost.selectedNode
+            },
+            autoApplyEnable () {
+                return this.selectedNode && this.selectedNode.data.host_apply_enabled
             }
         },
         watch: {
@@ -68,24 +65,7 @@
         },
         methods: {
             setInfo () {
-                this.getAutoApplyInfo()
                 this.getServiceInfo()
-            },
-            async getAutoApplyInfo () {
-                try {
-                    const { info: [autoApplyRule] } = await this.$store.dispatch('hostApply/getRules', {
-                        bizId: this.bizId,
-                        params: {
-                            bk_module_ids: [this.selectedNode.data.bk_inst_id]
-                        },
-                        config: {
-                            requestId: 'getRules'
-                        }
-                    })
-                    this.autoApplyRule = autoApplyRule
-                } catch (error) {
-                    this.autoApplyRule = null
-                }
             },
             async getServiceInfo () {
                 const categories = await this.getServiceCategories()
