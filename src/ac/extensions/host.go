@@ -115,19 +115,9 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 		businessIDs = append(businessIDs, host.BKAppIDField)
 	}
 	businessIDs = util.IntArrayUnique(businessIDs)
-	bizIDCorrectMap := make(map[int64]int64)
 	resPoolBizID, err := am.getResourcePoolBusinessID(ctx, header)
 	if err != nil {
 		return nil, fmt.Errorf("correct host related business id failed, err: %+v", err)
-	}
-	for _, businessID := range businessIDs {
-		if businessID == resPoolBizID {
-			// if this is resource pool business, then change the biz id to 0, so that it
-			// represent global resources
-			bizIDCorrectMap[businessID] = 0
-		} else {
-			bizIDCorrectMap[businessID] = businessID
-		}
 	}
 
 	resources := make([]meta.ResourceAttribute, 0)
@@ -140,7 +130,24 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 				InstanceID: host.BKHostIDField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      bizIDCorrectMap[host.BKAppIDField],
+		}
+
+		businessID := host.BKAppIDField
+		if businessID == resPoolBizID {
+			resource.Layers = []meta.Item{
+				{
+					Type:       meta.ResourcePoolDirectory,
+					InstanceID: host.BKModuleIDField,
+				},
+			}
+		} else {
+			resource.Layers = []meta.Item{
+				{
+					Type:       meta.Business,
+					InstanceID: host.BKAppIDField,
+				},
+			}
+			resource.BusinessID = businessID
 		}
 		resources = append(resources, resource)
 	}
