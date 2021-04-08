@@ -962,17 +962,17 @@ func (assoc *association) DeleteInst(kit *rest.Kit, asstIDList []int64, bkObjID 
 	}
 
 	// asstIDList check duplicate
-	idMap := map[int64]interface{}{}
-	for i, id := range asstIDList {
+	idMap := make(map[int64]struct{})
+	for _, id := range asstIDList {
 		if id <= 0 {
 			blog.ErrorJSON("Delete instance association failed, input id list contains illegal id %d, kit: %+v, rid: %s", id, kit, kit.Rid)
 			return nil, fmt.Errorf("input id list contains illegal id %d", id)
 		}
-		idMap[id] = i
-	}
-	if len(idMap) != len(asstIDList) {
-		blog.ErrorJSON("Delete instance association failed, input id list contains duplicate id, kit: %+v, rid: %s", kit, kit.Rid)
-		return nil, fmt.Errorf("input id list contains duplicate id")
+		if _, exists := idMap[id]; exists {
+			blog.ErrorJSON("Delete instance association failed, input id list contains duplicate id %d, kit: %+v, rid: %s", kit, kit.Rid)
+			return nil, fmt.Errorf("input id list contains duplicate id %d", id)
+		}
+		idMap[id] = struct{}{}
 	}
 
 	searchCondition := metadata.QueryCondition{
