@@ -257,10 +257,9 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 	return
 }
 
-func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
-
+func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "object/batch"
+	subPath := "/createmany/object"
 
 	err = a.client.Post().
 		WithContext(ctx).
