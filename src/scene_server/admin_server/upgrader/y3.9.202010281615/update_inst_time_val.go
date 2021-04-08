@@ -36,7 +36,7 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		// find attributes of model time type
 		propertyIDArray := make([]map[string]string, 0)
 		filter := mapstr.MapStr{
-			common.BKObjIDField: objID,
+			common.BKObjIDField:        objID,
 			common.BKPropertyTypeField: common.FieldTypeTime,
 		}
 		if err := db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKPropertyIDField).All(ctx, &propertyIDArray); err != nil {
@@ -94,8 +94,8 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 					if ok == false {
 						continue
 					}
-					if util.IsTime(valStr) {
-						doc[field] = util.Str2Time(valStr)
+					if timeType, isTime := util.IsTime(valStr); isTime {
+						doc[field] = util.Str2Time(valStr, timeType)
 						continue
 					}
 					blog.ErrorJSON("It is not a time type string, table: %s, filed: %s, val: %s", instTable, field, val)
@@ -106,11 +106,11 @@ func updateInstTimeVal(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 				}
 
 				filter := map[string]interface{}{
-					instIDField : inst[instIDField],
+					instIDField: inst[instIDField],
 				}
 
 				if err := db.Table(instTable).Update(ctx, filter, doc); err != nil {
-					blog.ErrorJSON("update the value of the instance time type failed, " +
+					blog.ErrorJSON("update the value of the instance time type failed, "+
 						"table: %s, filter: %s, doc: %s, err: %s", instTable, filter, doc, err)
 					return err
 				}

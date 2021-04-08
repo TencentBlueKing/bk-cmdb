@@ -194,7 +194,7 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 		}
 	}
 
-	result := util.IsTime(valStr)
+	_, result := util.IsTime(valStr)
 	if !result {
 		blog.Errorf("params not valid, rid: %s", rid)
 		return errors.RawErrorInfo{
