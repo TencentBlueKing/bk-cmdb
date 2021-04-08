@@ -240,10 +240,9 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, inputPara
 	}
 
 	dataResult := &metadata.QueryResult{}
-	var count uint64
 	// the InstAsst number will be counted by default.
 	if !inputParam.DisableCounter {
-		count, err = m.countInstanceAssociation(kit, inputParam.Condition)
+		count, err := m.countInstanceAssociation(kit, inputParam.Condition)
 		if nil != err {
 			blog.Errorf("search inst association count err [%#v], rid: %s", err, kit.Rid)
 			return &metadata.QueryResult{}, err

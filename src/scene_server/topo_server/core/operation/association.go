@@ -961,17 +961,31 @@ func (assoc *association) DeleteInst(kit *rest.Kit, asstIDList []int64, bkObjID 
 		cond.Field(common.BKObjIDField).Eq(bkObjID)
 	}
 
+	// asstIDList check duplicate
+	idMap := map[int64]interface{}{}
+	for i, id := range asstIDList {
+		if id <= 0 {
+			blog.ErrorJSON("Delete instance association failed, input id list contains illegal id %d, kit: %+v, rid: %s", id, kit, kit.Rid)
+			return nil, fmt.Errorf("input id list contains illegal id %d", id)
+		}
+		idMap[id] = i
+	}
+	if len(idMap) != len(asstIDList) {
+		blog.ErrorJSON("Delete instance association failed, input id list contains duplicate id, kit: %+v, rid: %s", kit, kit.Rid)
+		return nil, fmt.Errorf("input id list contains duplicate id")
+	}
+
 	searchCondition := metadata.QueryCondition{
 		Condition:      cond.ToMapStr(),
 		DisableCounter: true,
 	}
 	data, err := assoc.clientSet.CoreService().Association().ReadInstAssociation(kit.Ctx, kit.Header, &searchCondition)
 	if err != nil {
-		blog.Errorf("DeleteInst failed, get instance association failed, kit: %+v, err: %+v, rid: %s", kit, err, kit.Rid)
+		blog.Errorf("Delete instance association failed, get instance association failed, kit: %+v, err: %+v, rid: %s", kit, err, kit.Rid)
 		return nil, err
 	}
 	if len(data.Data.Info) != len(asstIDList) {
-		blog.Errorf("DeleteInst failed, got unexpected number of instance associations %d which should be %d, searchCondition: %+v, err: %+v, rid: %s", len(data.Data.Info), len(asstIDList), searchCondition, err, kit.Rid)
+		blog.Errorf("Delete instance association failed, got unexpected number of instance associations %d which should be %d, searchCondition: %+v, err: %+v, rid: %s", len(data.Data.Info), len(asstIDList), searchCondition, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
@@ -981,11 +995,11 @@ func (assoc *association) DeleteInst(kit *rest.Kit, asstIDList []int64, bkObjID 
 	searchCond.Field(common.AssociationObjAsstIDField).Eq(instanceAssociation.ObjectAsstID)
 	assInfoResult, err := assoc.SearchObject(kit, &metadata.SearchAssociationObjectRequest{Condition: searchCond.ToMapStr()})
 	if err != nil {
-		blog.Errorf("DeleteInst failed, search object association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("Delete instance association failed, search object association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !assInfoResult.Result {
-		blog.Errorf("DeleteInst failed, search object association with cond[%v] failed, err: %s, rid: %s", cond, assInfoResult.ErrMsg, kit.Rid)
+		blog.Errorf("Delete instance association failed, search object association with cond[%v] failed, err: %s, rid: %s", cond, assInfoResult.ErrMsg, kit.Rid)
 		return nil, assInfoResult.CCError()
 	}
 
@@ -994,7 +1008,7 @@ func (assoc *association) DeleteInst(kit *rest.Kit, asstIDList []int64, bkObjID 
 	}
 	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociation(kit.Ctx, kit.Header, &input)
 	if err != nil {
-		blog.ErrorJSON("DeleteInstAssociation failed, err: %s, input: %s, rid: %s", err, input, kit.Rid)
+		blog.ErrorJSON("Delete instance association failed, err: %s, input: %s, rid: %s", err, input, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	resp = &metadata.DeleteAssociationInstResult{
@@ -1005,19 +1019,20 @@ func (assoc *association) DeleteInst(kit *rest.Kit, asstIDList []int64, bkObjID 
 	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 
+	auditList := []metadata.AuditLog{}
 	for i, asstID := range asstIDList {
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asstID, &data.Data.Info[i])
 		if err != nil {
-			blog.Errorf(" delete inst asst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+			blog.Errorf("Delete instance association failed, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
 		}
-
-		// save audit log.
-		err = audit.SaveAuditLog(kit, *auditLog)
-		if err != nil {
-			blog.Errorf("delete inst asst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-		}
+		auditList = append(auditList, *auditLog)
+	}
+	// save audit log.
+	err = audit.SaveAuditLog(kit, auditList...)
+	if err != nil {
+		blog.Errorf("Delete instance association failed, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
 	return resp, nil
