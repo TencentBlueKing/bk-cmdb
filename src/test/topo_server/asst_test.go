@@ -189,10 +189,22 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
+	//check "DeleteInstBatch" necessary input: bk_obj_id
+	It("delete inst association batch", func() {
+		input := &metadata.DeleteAssociationInstBatchRequest{
+			ID:       []int64{instAsst1, instAsst2},
+			ObjectID: "",
+		}
+		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
 	//check "DeleteInstBatch" features available.
 	It("delete inst association batch", func() {
 		input := &metadata.DeleteAssociationInstBatchRequest{
-			ID: []int64{instAsst1, instAsst2},
+			ID:       []int64{instAsst1, instAsst2},
+			ObjectID: "bk_router",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
 		util.RegisterResponse(rsp)
@@ -200,5 +212,4 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(Equal(2))
 	})
-
 })
