@@ -1,6 +1,4 @@
-/* eslint-disable no-unused-vars */
 import has from 'has'
-
 const state = {
   info: {},
   properties: [],
@@ -39,7 +37,7 @@ const getters = {
       const bizCustomNext = isBizCustomData(next)
       if (
         (bizCustomPrev && bizCustomNext)
-                || (!bizCustomPrev && !bizCustomNext)
+              || (!bizCustomPrev && !bizCustomNext)
       ) {
         return prev.bk_group_index - next.bk_group_index
       } if (bizCustomPrev) {
@@ -54,7 +52,8 @@ const getters = {
   target: state => state.association.target,
   sourceInstances: state => state.instances.source,
   targetInstances: state => state.instances.target,
-  isBusinessHost: state => (state.info.biz || []).some(business => business.default === 0)
+  isBusinessHost: state => (state.info.biz || []).some(business => business.default === 0),
+  properties: state => state.properties
 }
 
 const mutations = {

@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
@@ -173,6 +174,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			Content: policyArr,
 		},
 	}
+
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
@@ -184,6 +186,32 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	}
 	if cond == nil {
 		return []string{}, nil
+	}
+
+	if len(opts.IDList) > 0 {
+		idCond := make(map[string]interface{})
+		if isResourceIDStringType(resourceType) {
+			idCond[idField] = map[string]interface{}{
+				common.BKDBIN: opts.IDList,
+			}
+		} else {
+			ids := make([]int64, len(opts.IDList))
+			for idx, idStr := range opts.IDList {
+				id, err := strconv.ParseInt(idStr, 10, 64)
+				if err != nil {
+					blog.Errorf("parse id %s to int failed, error: %v", idStr, err)
+					return nil, err
+				}
+				ids[idx] = id
+			}
+			idCond[idField] = map[string]interface{}{
+				common.BKDBIN: ids,
+			}
+		}
+
+		cond = map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{idCond, cond},
+		}
 	}
 
 	param := metadata.PullResourceParam{
@@ -202,20 +230,9 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		return nil, res.Error()
 	}
 
-	idMap := make(map[string]bool)
-	needFilterID := false
-	if len(opts.IDList) > 0 {
-		needFilterID = true
-		for _, id := range opts.IDList {
-			idMap[id] = true
-		}
-	}
 	idList := make([]string, 0)
 	for _, instance := range res.Data.Info {
 		id := util.GetStrByInterface(instance[idField])
-		if needFilterID && !idMap[id] {
-			continue
-		}
 		idList = append(idList, id)
 	}
 	return idList, nil

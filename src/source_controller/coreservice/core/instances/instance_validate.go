@@ -417,8 +417,8 @@ func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, propertys []
 		if ok == false {
 			return stderr.New("it is not a string of time type")
 		}
-		if util.IsTime(valStr) {
-			valData[field.PropertyID] = util.Str2Time(valStr)
+		if timeType, isTime := util.IsTime(valStr); isTime {
+			valData[field.PropertyID] = util.Str2Time(valStr, timeType)
 			continue
 		}
 		return stderr.New("can not convert value from string type to time type")

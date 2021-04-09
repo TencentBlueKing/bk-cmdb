@@ -1,5 +1,5 @@
 import moment from 'moment'
-import getValueByPath from 'get-value'
+import GET_VALUE from 'get-value'
 import has from 'has'
 
 /**
@@ -51,7 +51,7 @@ function getDefaultOptionValue(property) {
   return ''
 }
 
-export function getInstFormValues(properties, inst = {}, auto = true) {
+export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   const values = {}
   properties.forEach((property) => {
     const propertyId = property.bk_property_id
@@ -65,21 +65,22 @@ export function getInstFormValues(properties, inst = {}, auto = true) {
     } else if (['int', 'float'].includes(propertyType)) {
       values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
     } else if (['bool'].includes(propertyType)) {
-      if ([null, undefined].includes(inst[propertyId]) && auto) {
+      if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
         values[propertyId] = typeof property.option === 'boolean' ? property.option : false
       } else {
         values[propertyId] = !!inst[propertyId]
       }
     } else if (['enum'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (auto ? getDefaultOptionValue(property) : '') : inst[propertyId]
+      // eslint-disable-next-line no-nested-ternary,max-len
+      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
     } else if (['timezone'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (auto ? 'Asia/Shanghai' : '') : inst[propertyId]
+      // eslint-disable-next-line no-nested-ternary,max-len
+      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
       values[propertyId] = inst[propertyId] || null
     } else if (['table'].includes(propertyType)) {
-      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, auto))
+      // eslint-disable-next-line max-len
+      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, autoSelect))
     } else {
       values[propertyId] = has(inst, propertyId) ? inst[propertyId] : ''
     }
@@ -102,6 +103,7 @@ export function formatValue(value, property) {
     case 'int':
     case 'float':
     case 'list':
+    case 'time':
       formattedValue = null
       break
     case 'bool':
@@ -292,8 +294,8 @@ export function getSort(sort, defaultSort = {}) {
 }
 
 export function getValue() {
-  // eslint-disable-next-line prefer-rest-params
-  return getValueByPath(...arguments)
+  // eslint-disable-next-line prefer-rest-params, new-cap
+  return GET_VALUE(...arguments)
 }
 
 export function transformHostSearchParams(params) {

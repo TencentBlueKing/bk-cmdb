@@ -129,7 +129,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		},
 	}
 
-	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, common.BKDefaultOwnerID, objID, params)
+	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, params)
 	if nil != err {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))

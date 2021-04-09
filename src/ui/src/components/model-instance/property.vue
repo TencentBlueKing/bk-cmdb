@@ -139,7 +139,7 @@
     },
     watch: {
       inst(val) {
-        this.instState = val
+        this.instState = this.$tools.getInstFormValues(this.properties, val, false)
       }
     },
     methods: {
@@ -172,10 +172,12 @@
           if (!isValid) {
             return false
           }
-          this.loadingState.push(property)
           this.exitForm()
+          const oldValue = this.instState[property.bk_property_id]
+          if (oldValue === value) return
 
-          const values = { [property.bk_property_id]: value }
+          this.loadingState.push(property)
+          const values = { [property.bk_property_id]: this.$tools.formatValue(value, property) }
 
           if (this.resourceType === 'business') {
             await this.updateBusiness({
