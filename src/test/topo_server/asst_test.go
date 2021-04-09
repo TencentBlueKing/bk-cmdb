@@ -182,8 +182,8 @@ var _ = Describe("inst test", func() {
 	It("delete inst association batch", func() {
 		list := make([]int64, 501, 501)
 		input := &metadata.DeleteAssociationInstBatchRequest{
-			ID:    list,
-			ObjID: "bk_router",
+			ID:       list,
+			ObjectID: "bk_router",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
 		util.RegisterResponse(rsp)
